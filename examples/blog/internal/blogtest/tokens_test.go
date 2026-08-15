@@ -6,10 +6,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
-	blogassets "blog"
 	"github.com/carlosframework/rastrillo/ui"
 )
 
@@ -28,11 +28,13 @@ func TestVendoredTokensCSSMatchesTheLibrary(t *testing.T) {
 	}
 }
 
-// The embedded static tree serves through FileServerFS exactly as the
-// old http.Dir did — /static/tokens.css resolves against the embedded
-// paths, which carry the static/ prefix (F8).
+// The embedded static tree serves through the fingerprinting handler
+// exactly as the old FileServerFS did for a bare name — /static/
+// tokens.css resolves against the embedded paths, which carry the
+// static/ prefix (F8) — it just adds no-cache so a changed file always
+// shows on an ordinary reload.
 func TestEmbeddedStaticServesTokensCSS(t *testing.T) {
-	h := http.FileServerFS(blogassets.StaticFS)
+	h, _ := newApp(t)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/static/tokens.css", nil))
 	if rec.Code != http.StatusOK {
@@ -40,5 +42,30 @@ func TestEmbeddedStaticServesTokensCSS(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "--rst-bg") {
 		t.Errorf("served tokens.css lacks the token block: %d bytes", rec.Body.Len())
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "no-cache" {
+		t.Errorf("Cache-Control = %q, want no-cache on a bare name", got)
+	}
+}
+
+// Every rendered screen links its stylesheets by fingerprinted URL,
+// and that URL is served cacheable-forever: with the platform's edge
+// cache in front, a hibernating blog's assets never wake it.
+func TestScreensLinkFingerprintedStylesheets(t *testing.T) {
+	h, _ := newApp(t)
+	body := get(t, h, "/").Body.String()
+	href := regexp.MustCompile(`/static/tokens\.[0-9a-f]{16}\.css`).FindString(body)
+	if href == "" {
+		t.Fatalf("front page links no fingerprinted tokens.css:\n%s", body)
+	}
+	rec := get(t, h, href)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET %s: status %d, want 200", href, rec.Code)
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
+		t.Errorf("GET %s: Cache-Control = %q, want immutable year", href, got)
+	}
+	if bare := regexp.MustCompile(`/static/blog\.[0-9a-f]{16}\.css`).FindString(body); bare == "" {
+		t.Error("front page links no fingerprinted blog.css")
 	}
 }

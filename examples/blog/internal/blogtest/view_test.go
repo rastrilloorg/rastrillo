@@ -2,6 +2,7 @@ package blogtest
 
 import (
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -57,8 +58,16 @@ func TestLayoutWrapsEveryPage(t *testing.T) {
 
 	wantContains(t, html, `<html lang="en">`)
 	wantContains(t, html, `<title>The blog · The blog</title>`)
-	wantContains(t, html, `<link rel="stylesheet" href="/static/tokens.css">`)
-	wantContains(t, html, `<link rel="stylesheet" href="/static/blog.css">`)
+	// Stylesheet hrefs are fingerprinted ({{asset ...}}), so pin the
+	// shape, not a literal hash that changes with every CSS edit.
+	for _, re := range []string{
+		`<link rel="stylesheet" href="/static/tokens\.[0-9a-f]{16}\.css">`,
+		`<link rel="stylesheet" href="/static/blog\.[0-9a-f]{16}\.css">`,
+	} {
+		if !regexp.MustCompile(re).MatchString(html) {
+			t.Errorf("missing a stylesheet link matching %s in:\n%s", re, html)
+		}
+	}
 	wantContains(t, html, `<div class="rst-page">`)
 	wantContains(t, html, `<footer class="blog-footer">`)
 	wantNotContains(t, html, "<script")

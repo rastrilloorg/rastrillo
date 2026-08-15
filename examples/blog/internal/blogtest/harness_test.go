@@ -36,6 +36,9 @@ func newApp(t *testing.T) (http.Handler, *sql.DB) {
 	mux := gen.Router(func(*http.Request) *rastrillo.Ctx {
 		return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: blog.Render}
 	})
+	// The same fingerprinting mount main.go wires, so asset tests
+	// exercise the real handler behind the layout's {{asset}} hrefs.
+	mux.Handle("GET /static/", blog.Assets.Handler())
 	return mux, db
 }
 

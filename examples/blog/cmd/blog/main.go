@@ -1,8 +1,7 @@
 // Command blog runs the example blog.
 //
-// Run it from the app root — static assets are served from ./static, so
-// starting the binary from anywhere else 404s both stylesheets and every
-// screen renders unstyled:
+// Static assets are embedded and fingerprinted (see assets.go and
+// blog.Assets), so the binary is self-contained and runs from anywhere:
 //
 //	cd examples/blog && go build ./cmd/blog && ./blog -addr :8080
 package main
@@ -15,7 +14,6 @@ import (
 
 	"github.com/carlosframework/rastrillo"
 
-	blogassets "blog"
 	"blog/gen"
 	"blog/gen/locales"
 	"blog/internal/blog"
@@ -62,11 +60,15 @@ func main() {
 
 			// The app serves its own static files — the framework
 			// never does. They are embedded (see assets.go), so the
-			// binary is self-contained wherever it starts (F8).
+			// binary is self-contained wherever it starts (F8), and
+			// fingerprinted: the layout's {{asset ...}} hrefs carry
+			// each file's content hash, and blog.Assets.Handler
+			// serves those URLs cacheable-forever (the same Assets
+			// instance, so href and handler always agree).
 			// "GET /static/" is a longer pattern than "GET /{$}", so
 			// the stdlib mux prefers it and no ordering care is
 			// needed.
-			mux.Handle("GET /static/", http.FileServerFS(blogassets.StaticFS))
+			mux.Handle("GET /static/", blog.Assets.Handler())
 			return mux, nil
 		},
 	})

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -73,17 +74,39 @@ func TestNewStillScaffoldsTheRestOfTheApp(t *testing.T) {
 	}
 }
 
-// The generated app serves its own static directory. rastrillo.Serve
-// never serves CSS — that is the app's job, in the app's own code.
-func TestMainTemplateServesTheStaticDir(t *testing.T) {
+// The generated app serves its own static directory, fingerprinted:
+// rastrillo.Serve never serves CSS — that is the app's job, in the
+// app's own code — and the scaffold wires rastrillo.Assets so those
+// files are immutable-cacheable from day one.
+func TestMainTemplateServesFingerprintedStatic(t *testing.T) {
 	src := fmt.Sprintf(mainTemplate, "blogapp")
-	want := `mux.Handle("GET /static/", http.FileServerFS(app.StaticFS))`
-	if !strings.Contains(src, want) {
-		t.Errorf("main.go does not serve static/:\n%s", src)
+	for _, want := range []string{
+		`assets := rastrillo.NewAssets(app.StaticFS)`,
+		`mux.Handle("GET /static/", assets.Handler())`,
+		`Assets: assets`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("main.go template missing %q:\n%s", want, src)
+		}
 	}
-	// It has to come after the router exists, or it has nothing to attach to.
-	if strings.Index(src, "gen.Router(") > strings.Index(src, want) {
+	// The mount has to come after the router exists, or it has nothing
+	// to attach to.
+	if strings.Index(src, "gen.Router(") > strings.Index(src, `assets.Handler()`) {
 		t.Error("the static handler is registered before gen.Router builds the mux")
+	}
+}
+
+// The starter action is a real HTML page linking the stylesheet by its
+// content-hashed URL — the scaffold demonstrating its own asset story.
+func TestActionTemplateLinksFingerprintedStylesheet(t *testing.T) {
+	for _, want := range []string{
+		`ctx.Assets.Path("static/tokens.css")`,
+		`<h1>Hello, World — this is a rastrillo app.</h1>`,
+		`text/html; charset=utf-8`,
+	} {
+		if !strings.Contains(actionTemplate, want) {
+			t.Errorf("action template missing %q", want)
+		}
 	}
 }
 
@@ -150,6 +173,73 @@ func TestNewSanitizesHyphenatedAppName(t *testing.T) {
 	}
 	if !strings.Contains(string(main), `app "my-blog"`) {
 		t.Errorf("main.go does not import the app under its hyphenated name:\n%s", main)
+	}
+}
+
+// Out of the box you get a tested app: rastrillo new scaffolds a
+// harness (the blog example's blogtest pattern, delivered as
+// app-owned files) plus example tests that pass immediately and pin
+// the asset-fingerprinting behavior.
+func TestNewScaffoldsTestHarness(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"my-blog"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	harness, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblogtest", "harness_test.go"))
+	if err != nil {
+		t.Fatalf("expected a scaffolded harness: %v", err)
+	}
+	for _, want := range []string{
+		"package myblogtest",
+		"func newApp(t *testing.T) http.Handler",
+		`app "my-blog"`,
+		"rastrillo.NewAssets(app.StaticFS)",
+		"rastrillo.OpenDB",
+	} {
+		if !strings.Contains(string(harness), want) {
+			t.Errorf("harness_test.go missing %q:\n%s", want, harness)
+		}
+	}
+	index, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblogtest", "index_test.go"))
+	if err != nil {
+		t.Fatalf("expected scaffolded example tests: %v", err)
+	}
+	for _, want := range []string{
+		"func TestIndexRenders",
+		"func TestIndexLinksFingerprintedStylesheet",
+		"func TestBareAssetNameStaysFresh",
+		"public, max-age=31536000, immutable",
+	} {
+		if !strings.Contains(string(index), want) {
+			t.Errorf("index_test.go missing %q:\n%s", want, index)
+		}
+	}
+}
+
+// The scaffold's own tests pass, from zero, before the developer
+// writes a line: go test ./... against the freshly generated app,
+// with the rastrillo require replaced by this checkout (the same
+// scratch-module pattern internal/manifest's goeval tests use).
+func TestScaffoldedAppTestsPass(t *testing.T) {
+	root := repoRoot(t)
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	f, err := os.OpenFile(filepath.Join("blogapp", "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("\nreplace github.com/carlosframework/rastrillo => " + root + "\n"); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	cmd := exec.Command("go", "test", "./...")
+	cmd.Dir = "blogapp"
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("scaffolded app's tests fail:\n%s", out)
 	}
 }
 
