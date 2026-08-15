@@ -40,6 +40,12 @@ const PageSize = 10
 // which.
 var pages = buildPages()
 
+// Assets fingerprints the app's embedded static files. One instance
+// shared by the "asset" template func and main.go's /static/ mount,
+// so the URL a layout renders is always one the handler serves
+// immutable.
+var Assets = rastrillo.NewAssets(blogassets.StaticFS)
+
 // buildPages parses ui's partials and the layout into a base tree,
 // then clones that base once per screen — the clone is what makes the
 // shared layout work: every screen file defines "content", the same
@@ -55,7 +61,7 @@ var pages = buildPages()
 // T everywhere costs nothing and means a future hand page can start
 // using it without a second base tree appearing.
 func buildPages() map[string]*template.Template {
-	base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT})
+	base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT, "asset": Assets.Path})
 	base = template.Must(base.ParseFS(ui.Templates(), "*.html"))
 	base = template.Must(base.ParseFS(templateFS, "templates/layout.html"))
 
