@@ -73,17 +73,39 @@ func TestNewStillScaffoldsTheRestOfTheApp(t *testing.T) {
 	}
 }
 
-// The generated app serves its own static directory. rastrillo.Serve
-// never serves CSS — that is the app's job, in the app's own code.
-func TestMainTemplateServesTheStaticDir(t *testing.T) {
+// The generated app serves its own static directory, fingerprinted:
+// rastrillo.Serve never serves CSS — that is the app's job, in the
+// app's own code — and the scaffold wires rastrillo.Assets so those
+// files are immutable-cacheable from day one.
+func TestMainTemplateServesFingerprintedStatic(t *testing.T) {
 	src := fmt.Sprintf(mainTemplate, "blogapp")
-	want := `mux.Handle("GET /static/", http.FileServerFS(app.StaticFS))`
-	if !strings.Contains(src, want) {
-		t.Errorf("main.go does not serve static/:\n%s", src)
+	for _, want := range []string{
+		`assets := rastrillo.NewAssets(app.StaticFS)`,
+		`mux.Handle("GET /static/", assets.Handler())`,
+		`Assets: assets`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("main.go template missing %q:\n%s", want, src)
+		}
 	}
-	// It has to come after the router exists, or it has nothing to attach to.
-	if strings.Index(src, "gen.Router(") > strings.Index(src, want) {
+	// The mount has to come after the router exists, or it has nothing
+	// to attach to.
+	if strings.Index(src, "gen.Router(") > strings.Index(src, `assets.Handler()`) {
 		t.Error("the static handler is registered before gen.Router builds the mux")
+	}
+}
+
+// The starter action is a real HTML page linking the stylesheet by its
+// content-hashed URL — the scaffold demonstrating its own asset story.
+func TestActionTemplateLinksFingerprintedStylesheet(t *testing.T) {
+	for _, want := range []string{
+		`ctx.Assets.Path("static/tokens.css")`,
+		`<h1>Hello, World — this is a rastrillo app.</h1>`,
+		`text/html; charset=utf-8`,
+	} {
+		if !strings.Contains(actionTemplate, want) {
+			t.Errorf("action template missing %q", want)
+		}
 	}
 }
 

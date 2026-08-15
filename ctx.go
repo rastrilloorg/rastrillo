@@ -19,6 +19,13 @@ type Ctx struct {
 	DB     *sql.DB
 	Logger *slog.Logger
 
+	// Assets is the app's fingerprinted static-file registry, when
+	// the app wires one — the scaffold does, over its embedded
+	// static/ tree. Actions link assets by hashed URL:
+	// ctx.Assets.Path("static/tokens.css"). Nil for an app that
+	// serves assets some other way — the same contract as DB.
+	Assets *Assets
+
 	// Locale is the resolved locale for this request (design doc §10).
 	// The v1 request-scoped surface for localization is
 	// rastrillo.LocaleFrom(r) / rastrillo.T(r, ...) / rastrillo.Tf(r,

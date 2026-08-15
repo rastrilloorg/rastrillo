@@ -120,8 +120,27 @@ import (
 )
 
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello, World — this is a rastrillo app.")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, page, ctx.Assets.Path("static/tokens.css"))
 }
+
+// page links the design-token stylesheet by its content-hashed URL:
+// cacheable forever, and a brand-new URL the moment the file changes.
+const page = ` + "`" + `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello, World</title>
+<link rel="stylesheet" href="%s">
+</head>
+<body>
+<main>
+<h1>Hello, World — this is a rastrillo app.</h1>
+</main>
+</body>
+</html>
+` + "`" + `
 `
 
 // assetsTemplate is the scaffolded assets.go: static/ compiled into
@@ -154,18 +173,23 @@ import (
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
+	// The app's static files, embedded (see assets.go) and
+	// content-fingerprinted: ctx.Assets.Path("static/tokens.css")
+	// returns a URL carrying the file's hash, and the handler below
+	// serves that URL cacheable-forever. Edit static/ and rebuild —
+	// rastrillo dev does that on save — and the hash (so the URL)
+	// changes, which is why a plain reload always sees fresh assets.
+	assets := rastrillo.NewAssets(app.StaticFS)
+
 	// A single shared Ctx for now: this app has no per-request state
 	// yet (no DB, no locale, no scope). Once it needs a database,
 	// switch Options.Mux for Options.Router and build the mux from
 	// the *sql.DB Serve hands back.
-	ctx := &rastrillo.Ctx{Logger: logger}
+	ctx := &rastrillo.Ctx{Logger: logger, Assets: assets}
 	mux := gen.Router(func(*http.Request) *rastrillo.Ctx { return ctx })
 
 	// The app serves its own static files — the framework never does.
-	// They are embedded (see assets.go), so the binary is
-	// self-contained wherever and however it starts; edit static/ and
-	// rebuild — rastrillo dev does that on save.
-	mux.Handle("GET /static/", http.FileServerFS(app.StaticFS))
+	mux.Handle("GET /static/", assets.Handler())
 
 	// Run speaks the platform's activation contract: -socket/-addr/-db
 	// flags for agent exec children, or a bare "serve" subcommand for
