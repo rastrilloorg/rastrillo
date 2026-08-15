@@ -13,10 +13,11 @@ Out of the box, a rastrillo app should get two things it currently
 doesn't:
 
 1. **Assets that are long-cached but update on reload.** Today the
-   scaffold serves `static/` through a bare `http.FileServer` with no
-   cache headers. Browsers cache heuristically: sometimes a changed
-   stylesheet doesn't show up without a hard refresh, and nothing is ever
-   cached as aggressively as it safely could be. The fix is the standard
+   scaffold serves its embedded `static/` tree (F8) through a bare
+   `http.FileServerFS` with no cache headers. Browsers cache
+   heuristically: sometimes a changed stylesheet doesn't show up without
+   a hard refresh, and nothing is ever cached as aggressively as it
+   safely could be. The fix is the standard
    one — content-hashed asset URLs (`/static/tokens.d1e8a70b5ccab1dc.css`)
    served `Cache-Control: public, max-age=31536000, immutable`, with the
    HTML always referencing the current hash. A changed file gets a new
@@ -46,21 +47,25 @@ today every asset request wakes it.
 ### API (root package, matching the flat surface of Serve/Run/Icon)
 
 ```go
-// NewAssets wraps a file tree — os.DirFS("static") in the scaffold, an
-// embed.FS if the app prefers — in a content-hash registry.
+// NewAssets wraps a file tree — the scaffold's embedded StaticFS (F8),
+// or os.DirFS for an app serving a live directory — in a content-hash
+// registry.
 func NewAssets(fsys fs.FS) *Assets
 
-// Path maps a file name to its currently-hashed URL path element:
-// Path("tokens.css") → "tokens.d1e8a70b5ccab1dc.css". Names may include
-// subdirectories; the hash is inserted into the basename. A missing
-// file returns the name unchanged (the 404 then surfaces at request
-// time, visibly, instead of a panic at render time).
+// Path maps an FS path to its currently-hashed absolute URL path:
+// Path("static/tokens.css") → "/static/tokens.d1e8a70b5ccab1dc.css".
+// With http.FileServerFS semantics (the F8 idiom: no StripPrefix), URL
+// path = "/" + FS path, so Assets is not mount-agnostic and doesn't
+// need to be. Names may include subdirectories; the hash is inserted
+// into the basename, before its extension. A missing file returns
+// "/" + name unchanged (the 404 then surfaces at request time,
+// visibly, instead of a panic at render time).
 func (a *Assets) Path(name string) string
 
 // Handler serves the tree. The app mounts it exactly where the old
-// FileServer sat:
+// FileServerFS sat:
 //
-//	mux.Handle("GET /static/", http.StripPrefix("/static/", assets.Handler()))
+//	mux.Handle("GET /static/", assets.Handler())
 func (a *Assets) Handler() http.Handler
 ```
 
@@ -72,17 +77,18 @@ handler the scaffold wires up.
 
 - SHA-256 of the file content, truncated to 16 hex characters, inserted
   before the extension: `tokens.css` → `tokens.<16hex>.css`.
+- The scaffold's `static/` is embedded (F8), and `rastrillo dev`
+  watches `static/`: a save rebuilds and restarts, the new process
+  embeds the new bytes, and the next page render links the new hash.
+  Save the CSS, reload the page, the browser fetches fresh — that is
+  the whole "long cache, updates on reload" contract. embed.FS reports
+  zero mtimes, so each file hashes once per process — correct, since
+  embedded content can't change without a rebuild-and-restart.
 - Hashes are cached per file, keyed by (mtime, size) from a `Stat` on
-  every lookup. A stat is ~1µs; in exchange, an edited file re-hashes on
-  the next `Path` call or request with **no restart and no watcher** —
-  which matters because `rastrillo dev` deliberately does not watch
-  `static/` (nothing needs regenerating or rebuilding for an asset
-  edit). Save the CSS, reload the page: the HTML links the new hash, the
-  browser fetches fresh. That is the whole "long cache, updates on
-  reload" contract.
-- An `fs.FS` without useful mtimes (embed.FS reports zero times) simply
-  hashes once and caches forever — correct, since embedded content can't
-  change without a rebuild-and-restart.
+  every lookup. A stat is ~1µs; in exchange, an app that serves a live
+  directory instead (`os.DirFS` — opting out of embedding) re-hashes an
+  edited file on the next `Path` call or request with no restart and no
+  watcher.
 
 ### Serving rules
 
@@ -106,21 +112,20 @@ Missing files 404. `http.ServeContent` does the byte-serving
 
 - `Ctx` gains an `Assets *Assets` field (additive; nil for apps that
   don't use it, same contract as `DB`).
-- `mainTemplate` replaces the bare FileServer:
+- `mainTemplate` replaces the bare FileServerFS:
 
   ```go
-  assets := rastrillo.NewAssets(os.DirFS("static"))
+  assets := rastrillo.NewAssets(app.StaticFS)
   ctx := &rastrillo.Ctx{Logger: logger, Assets: assets}
   // ...
-  mux.Handle("GET /static/", http.StripPrefix("/static/", assets.Handler()))
+  mux.Handle("GET /static/", assets.Handler())
   ```
 
 - `actionTemplate` (index.GET.go) grows up from `fmt.Fprintln` plain
   text to a minimal HTML page whose stylesheet href is
-  `"/static/" + ctx.Assets.Path("tokens.css")` — `Path` returns only
-  the hashed name element, because `Assets` never knows where the app
-  mounted it; the caller owns the prefix, same as the mount line in
-  `main.go`. The scaffold actually
+  `ctx.Assets.Path("static/tokens.css")` — already absolute, no manual
+  prefixing, because with the embedded-FS idiom the FS layout is the
+  URL layout. The scaffold actually
   demonstrates the feature and ships a styled page. The template stays
   small (a `html/template` literal in the action; no new files, no
   ui-partials dependency).
@@ -134,9 +139,10 @@ gets updated to do exactly that, as the reference for real apps.
 - **Runtime hashing (chosen).** No build step, single static binary
   preserved, dev freshness for free via stat-checks.
 - **Generate-time manifest** (`rastrillo generate` writes hashes into
-  `gen/`): rejected — `dev` doesn't watch `static/`, so edits would
-  serve stale hashes until an unrelated regenerate; more moving parts
-  for no gain at this scale.
+  `gen/`): rejected — every asset edit would churn a generated file
+  (noisy diffs for zero information), a production binary serving a
+  live directory would serve stale hashes, and it's more moving parts
+  for no gain over hashing at runtime.
 - **Query-string versioning** (`?v=<hash>`): rejected — intermediary
   caches treat query strings inconsistently, and path-based names are
   the established convention the edge cache is guaranteed to key on.
