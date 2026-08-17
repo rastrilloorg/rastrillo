@@ -1,0 +1,147 @@
+{{/* The manifest screens: full standalone pages composing the ui
+     partials, zero JS, styled by the app-owned tokens stylesheet the
+     layout links (Deps.CSSPath). Every name here is overridable via
+     Deps.Templates — define the same name and yours wins. */}}
+
+{{define "screen_head"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<link rel="stylesheet" href="{{.CSS}}">
+</head>
+<body>
+<div class="rst-page">
+{{end}}
+
+{{define "screen_foot"}}</div>
+</body>
+</html>
+{{end}}
+
+{{define "screen_list"}}{{template "screen_head" .}}
+{{template "page-header" dict "Title" .Title "ActionHref" .NewURL "ActionLabel" .NewLabel "ActionIcon" "plus"}}
+<div class="rst-list">
+  {{- if or .Search .Filters}}
+  <div class="rst-lbar">
+    {{- if .Search}}
+    {{template "list-bar-search" dict "Action" .BaseURL "Query" .Query}}
+    {{- end}}
+    {{- range .Filters}}
+    <form method="get" action="{{$.BaseURL}}" class="rst-screen-filter">
+      {{- if $.Query}}<input type="hidden" name="q" value="{{$.Query}}">{{end}}
+      <label>{{.Label}}
+        <select name="{{.Name}}">
+          {{- range .Options}}
+          <option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>
+          {{- end}}
+        </select>
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+    {{- end}}
+  </div>
+  {{- end}}
+  {{- if .Empty}}
+  {{template "empty-state" dict "Body" .EmptyMsg "ActionHref" .NewURL "ActionLabel" .NewLabel}}
+  {{- else}}
+  <div class="rst-screen-table-wrap">
+    <table class="rst-screen-table">
+      <thead>
+        <tr>
+          {{- range .Headers}}
+          <th scope="col">{{.}}</th>
+          {{- end}}
+        </tr>
+      </thead>
+      <tbody>
+        {{- range .Rows}}
+        <tr>
+          {{- $row := .}}
+          {{- range $i, $cell := .Cells}}
+          <td>{{if eq $i 0}}<a href="{{$row.ShowURL}}">{{$cell}}</a>{{else}}{{$cell}}{{end}}</td>
+          {{- end}}
+        </tr>
+        {{- end}}
+      </tbody>
+    </table>
+  </div>
+  {{- end}}
+</div>
+{{- if .Pages}}
+{{template "pagination" dict "Items" .Pages}}
+{{- end}}
+{{template "screen_foot" .}}{{end}}
+
+{{define "screen_form"}}{{template "screen_head" .}}
+{{template "page-header" dict "Title" .Title}}
+{{- if .Error}}
+<p class="rst-screen-error" role="alert">{{.Error}}</p>
+{{- end}}
+{{- range .Sections}}
+<div class="rst-list">
+  <form method="post" action="{{.Action}}" enctype="multipart/form-data" class="rst-screen-form">
+    {{- if .Title}}<h2>{{.Title}}</h2>{{end}}
+    {{- range .Fields}}
+    <div class="rst-screen-field">
+      {{- if eq .Control "checkbox"}}
+      <label><input type="checkbox" name="{{.Name}}"{{if .Checked}} checked{{end}}> {{.Label}}</label>
+      {{- else if eq .Control "textarea"}}
+      <label>{{.Label}}
+        <textarea name="{{.Name}}" rows="8"{{if .Required}} required{{end}}>{{.Value}}</textarea>
+      </label>
+      {{- else if eq .Control "select"}}
+      <label>{{.Label}}
+        <select name="{{.Name}}"{{if .Required}} required{{end}}>
+          {{- range .Options}}
+          <option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>
+          {{- end}}
+        </select>
+      </label>
+      {{- else if eq .Control "file"}}
+      <label>{{.Label}}
+        <input type="file" name="{{.Name}}">
+      </label>
+      {{- else if eq .Control "readonly"}}
+      <label>{{.Label}}
+        <input type="text" value="{{.Value}}" readonly>
+      </label>
+      {{- else}}
+      <label>{{.Label}}
+        <input type="text" name="{{.Name}}" value="{{.Value}}"{{if .Required}} required{{end}}>
+      </label>
+      {{- end}}
+      {{- if .Hint}}<p class="rst-screen-hint">{{.Hint}}</p>{{end}}
+    </div>
+    {{- end}}
+    <button class="rst-btn rst-btn--primary" type="submit">{{.Submit}}</button>
+  </form>
+</div>
+{{- end}}
+<p><a href="{{.BackURL}}">Back to the list</a></p>
+{{template "screen_foot" .}}{{end}}
+
+{{define "screen_confirm"}}{{template "screen_head" .}}
+{{template "page-header" dict "Title" .Title}}
+<div class="rst-list">
+  <p>{{.Sentence}}</p>
+  <form method="post" action="{{.Action}}">
+    <button class="rst-btn rst-btn--primary" type="submit">{{.Title}}</button>
+    <a href="{{.CancelURL}}">Cancel</a>
+  </form>
+</div>
+{{template "screen_foot" .}}{{end}}
+
+{{define "screen_show"}}{{template "screen_head" .}}
+{{template "page-header" dict "Title" .Title "ActionHref" .EditURL "ActionLabel" "Edit"}}
+<div class="rst-list">
+  <dl class="rst-screen-pairs">
+    {{- range .Pairs}}
+    <dt>{{.Label}}</dt>
+    <dd>{{.Value}}</dd>
+    {{- end}}
+  </dl>
+</div>
+<p><a href="{{.BackURL}}">Back to the list</a> · <a href="{{.DeleteURL}}">Delete</a></p>
+{{template "screen_foot" .}}{{end}}

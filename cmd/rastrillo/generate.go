@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/carlosframework/rastrillo/internal/generate"
 )
@@ -50,16 +51,34 @@ func runGenerate(args []string) error {
 		return fmt.Errorf("no actions/ directory in %s", dir)
 	}
 
-	actions, collisions, err := generate.Discover(actionsDir)
+	actions, _, err := generate.Discover(actionsDir)
 	if err != nil {
 		return fmt.Errorf("discover actions: %w", err)
 	}
+
+	specs, err := generate.LoadManifests(filepath.Join(dir, "manifest"))
+	if err != nil {
+		return fmt.Errorf("load manifests: %w", err)
+	}
+	manifestActions, skipped, err := generate.ManifestActions(module, actionsDir, specs)
+	if err != nil {
+		return fmt.Errorf("manifest actions: %w", err)
+	}
+
+	all := append(append([]generate.Action{}, actions...), actionsOf(manifestActions)...)
+	sort.Slice(all, func(i, j int) bool { return all[i].Route < all[j].Route })
+
+	collisions := generate.FindCollisions(all)
 	if len(collisions) > 0 {
 		fmt.Fprintln(os.Stderr, "rastrillo generate: route collisions —")
 		for _, c := range collisions {
 			fmt.Fprintf(os.Stderr, "  %s claimed by:\n", c.Route)
 			for _, s := range c.Sources {
-				fmt.Fprintf(os.Stderr, "    actions/%s\n", s)
+				if strings.HasPrefix(s, "manifest:") {
+					fmt.Fprintf(os.Stderr, "    %s (generated screen)\n", s)
+				} else {
+					fmt.Fprintf(os.Stderr, "    actions/%s\n", s)
+				}
 			}
 		}
 		return fmt.Errorf("%d route collision(s); build fails loudly on purpose (design doc §4)", len(collisions))
@@ -107,7 +126,8 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d locale catalog(s) incomplete; silent fallback while iterating, loud failure before ship (design doc §10)", len(missing))
 		}
 
-		fmt.Printf("rastrillo generate --check: %d route(s), actions tagged, locale catalogs complete\n", len(actions))
+		fmt.Printf("rastrillo generate --check: %d route(s) (%d from manifests, %d taken over by hand), actions tagged, locale catalogs complete\n",
+			len(all), len(manifestActions), len(skipped))
 		return nil
 	}
 
@@ -120,8 +140,34 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("rewrite %s: %w", a.SourcePath, err)
 		}
 	}
+	for _, ma := range manifestActions {
+		outDir := filepath.Join(genDir, "actions", filepath.FromSlash(ma.GenDir))
+		if err := os.MkdirAll(outDir, 0o755); err != nil {
+			return err
+		}
+		base := ma.SourcePath[strings.LastIndex(ma.SourcePath, "/")+1:] + ".go"
+		if err := os.WriteFile(filepath.Join(outDir, base), ma.Content, 0o644); err != nil {
+			return err
+		}
+	}
 
-	router, err := generate.Router(module, actions)
+	manifestGenDir := filepath.Join(genDir, "manifest")
+	if len(specs) > 0 {
+		pkg, err := generate.ManifestPackage(module, specs)
+		if err != nil {
+			return fmt.Errorf("render gen/manifest: %w", err)
+		}
+		if err := os.MkdirAll(manifestGenDir, 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(manifestGenDir, "manifest.go"), pkg, 0o644); err != nil {
+			return err
+		}
+	} else if err := os.RemoveAll(manifestGenDir); err != nil {
+		return fmt.Errorf("clear stale gen/manifest: %w", err)
+	}
+
+	router, err := generate.Router(module, all)
 	if err != nil {
 		return fmt.Errorf("render router.go: %w", err)
 	}
@@ -129,9 +175,25 @@ func runGenerate(args []string) error {
 		return err
 	}
 
-	fmt.Printf("rastrillo generate: %d route(s) wired\n", len(actions))
-	for _, a := range actions {
-		fmt.Printf("  %-24s actions/%s\n", a.Route, a.SourcePath)
+	fmt.Printf("rastrillo generate: %d route(s) wired\n", len(all))
+	for _, a := range all {
+		if strings.HasPrefix(a.SourcePath, "manifest:") {
+			fmt.Printf("  %-24s %s (generated screen)\n", a.Route, a.SourcePath)
+		} else {
+			fmt.Printf("  %-24s actions/%s\n", a.Route, a.SourcePath)
+		}
+	}
+	for _, s := range skipped {
+		fmt.Printf("  taken over by hand: actions/%s\n", s)
 	}
 	return nil
+}
+
+// actionsOf projects ManifestActions to their routing halves.
+func actionsOf(mas []generate.ManifestAction) []generate.Action {
+	out := make([]generate.Action, len(mas))
+	for i, ma := range mas {
+		out[i] = ma.Action
+	}
+	return out
 }
