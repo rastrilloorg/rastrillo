@@ -1,0 +1,12 @@
+{
+  "comment": "Merge-order vectors: the spec for the deterministic default order (lamport, ts, writer, seq). Any reimplementation of the merge (another language, the platform's transport) must read these events back in expected_order regardless of ingest order. Fix implementations, not vectors.",
+  "stream": "orders/42",
+  "events": [
+    {"stream": "orders/42", "writer": "edge-a", "seq": 1, "lamport": 1, "ts": "2026-08-17T10:00:00Z", "actor": "human", "kind": "created", "payload": {"total": 100}},
+    {"stream": "orders/42", "writer": "edge-b", "seq": 1, "lamport": 1, "ts": "2026-08-17T10:00:00Z", "actor": "human", "kind": "noted", "payload": {"note": "same lamport, same ts: writer breaks the tie"}},
+    {"stream": "orders/42", "writer": "edge-b", "seq": 2, "lamport": 2, "ts": "2026-08-17T10:00:05Z", "actor": "agent:restock", "kind": "adjusted", "payload": {"delta": -10}},
+    {"stream": "orders/42", "writer": "edge-a", "seq": 2, "lamport": 2, "ts": "2026-08-17T10:00:07Z", "actor": "human", "kind": "adjusted", "payload": {"delta": 5}},
+    {"stream": "orders/42", "writer": "edge-a", "seq": 3, "lamport": 3, "ts": "2026-08-17T10:01:00Z", "actor": "human", "kind": "closed", "payload": {}}
+  ],
+  "expected_order": ["edge-a:1", "edge-b:1", "edge-b:2", "edge-a:2", "edge-a:3"]
+}
