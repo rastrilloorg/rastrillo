@@ -20,6 +20,11 @@ import (
 //	                                        arrives via LISTEN_FDS (fd 3)
 //	                                        and state lives in
 //	                                        $STATE_DIRECTORY
+//	<binary> sidecar run                    the host's sidecar — spawned
+//	                                        beside the instance when its
+//	                                        sidecar env file exists; runs
+//	                                        Options.Sidecar in a loop, no
+//	                                        listener (design doc §8)
 //
 // Flags override the corresponding Options fields. A relative
 // Options.DBPath (or -db value) is resolved inside $STATE_DIRECTORY when
@@ -29,6 +34,9 @@ import (
 // from the app: the activator owns the restore/replicate cycle, and
 // Serve's SIGTERM drain (10s) fits inside the activator's 20s budget.
 func Run(opts Options) error {
+	if isSidecarInvocation(os.Args[1:]) {
+		return runSidecar(opts)
+	}
 	opts, err := Resolve(opts)
 	if err != nil {
 		return err

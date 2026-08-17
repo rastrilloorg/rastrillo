@@ -11,7 +11,9 @@ package rastrillo
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -81,6 +83,39 @@ type Options struct {
 	Socket string
 	Addr   string
 
+	// Wrap, if set, wraps the app's mux — middleware, the usual
+	// net/http way. It runs inside the framework's own endpoints
+	// (/healthz, /api/version and friends stay unwrapped; a probe never
+	// depends on app middleware) and inside the locale middleware, so a
+	// wrapped handler sees the locale-stripped path. Before this seam,
+	// a consumer wanting one security-header middleware had to build an
+	// outer catch-all mux just to satisfy Router's return type — see
+	// amadan's internal/hub/server.go, the friction this closes.
+	Wrap func(http.Handler) http.Handler
+
+	// NextDue, if set, answers the platform's scheduled-wake poll: the
+	// activator asks a running instance GET /api/next-due (bearer
+	// $CARLOS_ADMIN_TOKEN) and hibernates knowing when to wake it —
+	// carlosframework/platform internal/activator/backend_exec.go. The
+	// returned time is the next moment the app has work; zero means
+	// nothing scheduled. Unset, the route does not exist and the
+	// activator treats the app as having no schedule (unit tenants
+	// never get the poll at all).
+	NextDue func() time.Time
+
+	// Sidecar is the app's sidecar pass — the wake → read since
+	// bookmark → decide → act loop's body (design doc §8). When the
+	// platform spawns `<binary> sidecar run` (it does exactly that when
+	// the host's sidecar env file exists), Run calls Sidecar in a loop:
+	// each pass returns when it has caught up, reporting when it next
+	// has scheduled work (zero: nothing scheduled — Run re-runs after
+	// a default poll interval). A pass error is logged and retried with
+	// backoff, never fatal: a sidecar outliving a flaky dependency is
+	// the point of having one. SIGTERM/SIGINT cancels the context and
+	// ends the loop. Nil with a `sidecar run` invocation is a loud
+	// startup error, not a silent serve.
+	Sidecar func(ctx context.Context) (time.Time, error)
+
 	// Locales declares the app's locale codes (design doc §10) — the
 	// catalogs LocaleFS carries as locales/<code>.toml. Empty means a
 	// monolingual app: no locale middleware is installed and requests
@@ -107,36 +142,16 @@ type Options struct {
 // process receives SIGTERM/SIGINT. It always answers GET /healthz itself
 // — the manifest/action layer never has to remember to.
 func Serve(opts Options) error {
-	if (opts.Mux == nil) == (opts.Router == nil) {
-		return errors.New("rastrillo: exactly one of Options.Mux and Options.Router must be set")
-	}
 	logger := opts.Logger
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	var db *sql.DB
-	var err error
-	if opts.DBPath != "" {
-		db, err = OpenDB(opts.DBPath, opts.Migrations)
-		if err != nil {
-			return fmt.Errorf("rastrillo: open database: %w", err)
-		}
-		defer db.Close()
-	}
-
-	opts.Mux, err = buildMux(opts, db)
+	handler, closeDB, err := Handler(opts)
 	if err != nil {
 		return err
 	}
-
-	handler, err := buildHandler(opts)
-	if err != nil {
-		// buildHandler's only error source is NewLocales, whose errors
-		// already carry the "rastrillo:" prefix — wrapping again here
-		// would read "rastrillo: rastrillo: ...".
-		return err
-	}
+	defer closeDB()
 
 	ln, err := listen(opts.Socket, opts.Addr)
 	if err != nil {
@@ -166,12 +181,59 @@ func Serve(opts Options) error {
 	return nil
 }
 
+// Handler is everything Serve builds short of the listener and the
+// signal handling: it opens the database (if configured), applies
+// migrations, resolves the Mux/Router choice, and assembles the full
+// serving handler — framework endpoints included. The returned close
+// func releases the database handle (a no-op without one).
+//
+// Exported for test harnesses: before this seam, every app's harness
+// hand-duplicated /healthz, /api/version and the DSN pragma ordering
+// because Serve blocks on a real listener (vitogo's vitotest says so in
+// its own comments; seapointish copied the same shape). Now a harness is
+// httptest.NewServer around this.
+func Handler(opts Options) (http.Handler, func() error, error) {
+	closeNothing := func() error { return nil }
+	if (opts.Mux == nil) == (opts.Router == nil) {
+		return nil, closeNothing, errors.New("rastrillo: exactly one of Options.Mux and Options.Router must be set")
+	}
+
+	var db *sql.DB
+	var err error
+	if opts.DBPath != "" {
+		db, err = OpenDB(opts.DBPath, opts.Migrations)
+		if err != nil {
+			return nil, closeNothing, fmt.Errorf("rastrillo: open database: %w", err)
+		}
+	}
+	closeDB := closeNothing
+	if db != nil {
+		closeDB = db.Close
+	}
+
+	opts.Mux, err = buildMux(opts, db)
+	if err != nil {
+		closeDB()
+		return nil, closeNothing, err
+	}
+
+	handler, err := buildHandler(opts)
+	if err != nil {
+		// buildHandler's only error source is NewLocales, whose errors
+		// already carry the "rastrillo:" prefix — wrapping again here
+		// would read "rastrillo: rastrillo: ...".
+		closeDB()
+		return nil, closeNothing, err
+	}
+	return handler, closeDB, nil
+}
+
 // buildHandler assembles the serving handler: the framework's own
-// endpoints, the app mux, and — when Options.Locales is set — the
-// locale middleware wrapped around the whole thing, so a locale
-// prefix strips before routing and the translator rides the request
-// context (§10). Split from Serve so the assembly is testable
-// without sockets.
+// endpoints, the app mux (wrapped by Options.Wrap when set), and —
+// when Options.Locales is set — the locale middleware wrapped around
+// the whole thing, so a locale prefix strips before routing and the
+// translator rides the request context (§10). Split from Handler so
+// the assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -180,7 +242,14 @@ func buildHandler(opts Options) (http.Handler, error) {
 	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, BuildVersion)
 	})
-	mux.Handle("/", opts.Mux)
+	if opts.NextDue != nil {
+		mux.HandleFunc("GET /api/next-due", nextDueHandler(opts.NextDue))
+	}
+	var app http.Handler = opts.Mux
+	if opts.Wrap != nil {
+		app = opts.Wrap(app)
+	}
+	mux.Handle("/", app)
 
 	if len(opts.Locales) == 0 {
 		return mux, nil
@@ -211,6 +280,28 @@ func buildMux(opts Options, db *sql.DB) (*http.ServeMux, error) {
 		return nil, errors.New("rastrillo: Options.Router returned a nil mux")
 	}
 	return mux, nil
+}
+
+// nextDueHandler answers the activator's scheduled-wake poll (see
+// Options.NextDue). The bearer token is $CARLOS_ADMIN_TOKEN — the
+// instance-local secret the platform's exec backend delivers in the
+// overlay env file. No token in the environment means nobody can
+// authenticate: fail closed, don't fail open.
+func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := os.Getenv("CARLOS_ADMIN_TOKEN")
+		auth := r.Header.Get("Authorization")
+		if token == "" || subtle.ConstantTimeCompare([]byte(auth), []byte("Bearer "+token)) != 1 {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		var due int64
+		if t := nextDue(); !t.IsZero() {
+			due = t.Unix()
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]int64{"due": due})
+	}
 }
 
 // listen resolves the platform's activation contract, exactly matching
