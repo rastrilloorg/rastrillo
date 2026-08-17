@@ -19,38 +19,48 @@ import (
 )
 
 // Router builds the app's mux. ctxFactory constructs a fresh
-// *rastrillo.Ctx per request; see cmd/<app>/main.go.
+// *rastrillo.Ctx per request; see cmd/<app>/main.go. An actor stamped
+// on the request context (rastrillo.WithActor — the tools dispatcher's
+// doing) lands on Ctx.Actor after the factory runs, so agent calls are
+// attributed even when the app factory never thinks about actors.
 func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	mux := http.NewServeMux()
+	handle := func(r *http.Request) *rastrillo.Ctx {
+		c := ctxFactory(r)
+		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
+			c.Actor = a
+		}
+		return c
+	}
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		act_index_get.Handle(ctxFactory(r), w, r)
+		act_index_get.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("GET /admin/ticket_types", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_index_get.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_index_get.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("GET /admin/ticket_types/new", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_new_get.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_new_get.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("GET /admin/ticket_types/{id}", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_index_get.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_id_index_get.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("GET /admin/ticket_types/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_delete_get.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_id_delete_get.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("GET /admin/ticket_types/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_edit_get.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_id_edit_get.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("POST /admin/ticket_types", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_index_post.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_index_post.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("POST /admin/ticket_types/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_delete_post.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_id_delete_post.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-advanced", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_edit_advanced_post.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_id_edit_advanced_post.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_edit_basics_post.Handle(ctxFactory(r), w, r)
+		act_admin_ticket_types_id_edit_basics_post.Handle(handle(r), w, r)
 	})
 	return mux
 }

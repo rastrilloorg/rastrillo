@@ -68,6 +68,11 @@ func runGenerate(args []string) error {
 	all := append(append([]generate.Action{}, actions...), actionsOf(manifestActions)...)
 	sort.Slice(all, func(i, j int) bool { return all[i].Route < all[j].Route })
 
+	tools, err := generate.CollectTools(actionsDir, actions)
+	if err != nil {
+		return fmt.Errorf("collect tools: %w", err)
+	}
+
 	collisions := generate.FindCollisions(all)
 	if len(collisions) > 0 {
 		fmt.Fprintln(os.Stderr, "rastrillo generate: route collisions —")
@@ -126,8 +131,21 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d locale catalog(s) incomplete; silent fallback while iterating, loud failure before ship (design doc §10)", len(missing))
 		}
 
-		fmt.Printf("rastrillo generate --check: %d route(s) (%d from manifests, %d taken over by hand), actions tagged, locale catalogs complete\n",
-			len(all), len(manifestActions), len(skipped))
+		// The agent-gate check (§13's buildable half): a write tool with
+		// no Confirm sentence is an action an agent could execute with
+		// no consent sentence to show — refused before it ships, not
+		// discovered after.
+		if unconfirmed := generate.UnconfirmedWriteTools(tools); len(unconfirmed) > 0 {
+			fmt.Fprintln(os.Stderr, "rastrillo generate: write tools missing a Confirm sentence —")
+			for _, id := range unconfirmed {
+				fmt.Fprintf(os.Stderr, "  %s\n", id)
+			}
+			fmt.Fprintln(os.Stderr, "every rastrillo.ToolWrite needs Confirm: the sentence a person sees before the write runs (design doc §8)")
+			return fmt.Errorf("%d write tool(s) without consent sentences", len(unconfirmed))
+		}
+
+		fmt.Printf("rastrillo generate --check: %d route(s) (%d from manifests, %d taken over by hand), %d tool(s), actions tagged, locale catalogs complete\n",
+			len(all), len(manifestActions), len(skipped), len(tools))
 		return nil
 	}
 
@@ -172,6 +190,14 @@ func runGenerate(args []string) error {
 		return fmt.Errorf("render router.go: %w", err)
 	}
 	if err := os.WriteFile(filepath.Join(genDir, "router.go"), router, 0o644); err != nil {
+		return err
+	}
+
+	toolsFile, err := generate.ToolsFile(tools)
+	if err != nil {
+		return fmt.Errorf("render tools.go: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(genDir, "tools.go"), toolsFile, 0o644); err != nil {
 		return err
 	}
 
