@@ -3,10 +3,14 @@
 // substrate it runs on. See the design doc for the full picture:
 // https://github.com/carlosframework/platform/blob/main/docs/superpowers/specs/2026-08-01-carlos-framework-design.md
 //
-// This is a v1 walking skeleton: the filesystem-routing generator, the
-// action signature, and this bootstrap. Manifests/codegen-with-skip, the
-// crypto core, WebAuthn, agents, localization, and blob storage are
-// designed in the doc above but not yet built here — see README.md.
+// The root package holds the process shape (Run/Serve/Handler, the
+// activation contract, the SQLite opener, migrations), the action
+// vocabulary (Ctx, Actor), the manifest vocabulary (Resource, Kind,
+// Tool), and localization. The subsystems live beside it: crypto (the
+// family envelope), auth (keymail sign-in with the magic-link
+// fallback), webauthn, eventlog (the Mergeable store), blobs, mail,
+// screens (the manifest runtime), tools (agent dispatch), and ui (the
+// component partials). README.md keeps the honest status list.
 package rastrillo
 
 import (
