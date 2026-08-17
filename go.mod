@@ -2,7 +2,10 @@ module github.com/carlosframework/rastrillo
 
 go 1.25.0
 
-require modernc.org/sqlite v1.55.0
+require (
+	github.com/keymaildev/signin v0.1.0
+	modernc.org/sqlite v1.55.0
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
