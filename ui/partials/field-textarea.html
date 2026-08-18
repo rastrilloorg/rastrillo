@@ -1,0 +1,23 @@
+{{/* field-textarea — field-text's wrapper around a <textarea>. The
+     wrapper is repeated, not composed — see field-text's comment.
+
+     Keys:
+       Name      string, required — name, id, and hint/error id prefix
+       Label     string, required — the visible label
+       Value     string, optional — the current content
+       Rows      int, optional — the rows attribute; omitted when unset
+                 so the browser default applies
+       Required  bool, optional — required attribute + visible *
+       Hint      string, optional — muted guidance under the control
+       Error     string, optional — validation message; also sets
+                 aria-invalid */}}
+{{define "field-textarea"}}<div class="rst-field">
+  <label class="rst-field__label" for="{{.Name}}">{{.Label}}{{if .Required}} <span class="rst-field__required" aria-hidden="true">*</span>{{end}}</label>
+  <textarea class="rst-textarea" id="{{.Name}}" name="{{.Name}}"{{if .Rows}} rows="{{.Rows}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>{{if .Value}}{{.Value}}{{end}}</textarea>
+  {{- if .Hint}}
+  <small class="rst-field__hint" id="{{.Name}}-hint">{{.Hint}}</small>
+  {{- end}}
+  {{- if .Error}}
+  <small class="rst-field__error" id="{{.Name}}-error">{{.Error}}</small>
+  {{- end}}
+</div>{{end}}

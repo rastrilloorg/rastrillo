@@ -62,7 +62,7 @@ func TestDeleteRemovesThePost(t *testing.T) {
 		t.Errorf("Location = %q, want %q", got, want)
 	}
 
-	n, err := blog.Count(db, "")
+	n, err := blog.Count(db, "", "")
 	if err != nil {
 		t.Fatalf("count: %v", err)
 	}

@@ -10,17 +10,10 @@ import (
 	"blog/internal/blog"
 )
 
-// Handle is GET /.
+// Handle is GET /{$}: exactly the homepage. The generator anchors the
+// root index, so unmatched paths 404 without the hand guard this
+// action used to carry (friction log F6).
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	// Go's mux treats "/" as a prefix pattern, so this action receives
-	// every unmatched GET. Without this guard the homepage answers
-	// /nonsense with a 200. Every rastrillo app with an index action
-	// needs it — friction finding F6.
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-
 	page := blog.PageParam(r)
 	total, err := blog.CountPublished(ctx.DB)
 	if err != nil {
@@ -36,6 +29,6 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	blog.Render(ctx, w, "index", http.StatusOK, blog.HomeView{
 		Head:       blog.Head{Title: "The blog"},
 		Rows:       blog.PublicRows(posts),
-		Pagination: blog.BuildPagination("/", "", page, total),
+		Pagination: blog.BuildPagination("/", "", "", page, total),
 	})
 }

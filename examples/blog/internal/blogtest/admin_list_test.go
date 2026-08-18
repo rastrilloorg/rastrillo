@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"blog/internal/blog"
 )
 
 func TestAdminListShowsDraftsAndPublished(t *testing.T) {
@@ -18,10 +20,10 @@ func TestAdminListShowsDraftsAndPublished(t *testing.T) {
 
 	wantContains(t, body, "A draft")
 	wantContains(t, body, "Live post")
-	// Status rides in the row's Sub as prose: the stock row has no status
-	// slot (friction finding F1).
-	wantContains(t, body, "Draft · edited")
-	wantContains(t, body, "Published ")
+	// Status now rides in the pill.
+	wantContains(t, body, `data-tone="neutral">Draft<`)
+	wantContains(t, body, "Edited")
+	wantContains(t, body, `data-tone="positive">Published<`)
 	// The published row gets a pill; the draft, having no public page, does not.
 	if n := strings.Count(body, `class="rst-row__action"`); n != 1 {
 		t.Errorf("%d action pills, want exactly 1 (the published row)", n)
@@ -127,4 +129,57 @@ func TestAdminSecondPageShowsTheEleventhPost(t *testing.T) {
 
 	wantContains(t, body, "Post 01")
 	wantNotContains(t, body, "Post 11")
+}
+
+func TestAdminListFiltersByStatus(t *testing.T) {
+	h, db := newApp(t)
+	seed(t, db, "Draft post", "b", false)
+	seed(t, db, "Published post", "b", true)
+
+	rec := get(t, h, "/admin/posts?status=draft")
+	body := rec.Body.String()
+	if !strings.Contains(body, "Draft post") || strings.Contains(body, "Published post") {
+		t.Errorf("draft filter listed the wrong rows: %s", body)
+	}
+	// The applied choice is marked, and the summary names it.
+	if !strings.Contains(body, `aria-current="true"`) {
+		t.Errorf("current filter item not marked: %s", body)
+	}
+	if !strings.Contains(body, `aria-label="Filter by status: Drafts"`) {
+		t.Errorf("summary does not name the applied filter: %s", body)
+	}
+	// Searching from a filtered list keeps the filter.
+	if !strings.Contains(body, `<input type="hidden" name="status" value="draft">`) {
+		t.Errorf("search form does not carry the filter: %s", body)
+	}
+}
+
+func TestAdminListFilterComposesWithSearchAndPaging(t *testing.T) {
+	h, db := newApp(t)
+	for i := 0; i < blog.PageSize+1; i++ {
+		seed(t, db, fmt.Sprintf("Note %02d", i), "b", false)
+	}
+	rec := get(t, h, "/admin/posts?q=Note&status=draft")
+	body := rec.Body.String()
+	// Pagination carries both q and status, page last — checked on the
+	// page-2 link itself so the filter dropdown's own href (which also
+	// contains "q=Note" and "status=draft", but never "page=") can't
+	// satisfy this assertion by accident.
+	if !strings.Contains(body, `href="/admin/posts?q=Note&amp;status=draft&amp;page=2"`) {
+		t.Errorf("pagination dropped a parameter: %s", body)
+	}
+}
+
+func TestAdminListFilterWithNoMatchesSaysSo(t *testing.T) {
+	h, db := newApp(t)
+	seed(t, db, "Only draft", "b", false)
+
+	rec := get(t, h, "/admin/posts?status=published")
+	body := rec.Body.String()
+	if !strings.Contains(body, "No published posts yet.") {
+		t.Errorf("missing the filtered no-match note: %s", body)
+	}
+	if strings.Contains(body, "Every blog starts empty") {
+		t.Errorf("empty-state card shown for a filter miss: %s", body)
+	}
 }

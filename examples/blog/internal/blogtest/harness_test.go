@@ -1,6 +1,7 @@
 package blogtest
 
 import (
+	"context"
 	"database/sql"
 	"io"
 	"log/slog"
@@ -10,10 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carlosframework/rastrillo"
 
 	"blog/gen"
+	postsstore "blog/gen/store/posts"
 	"blog/internal/blog"
 )
 
@@ -31,8 +34,11 @@ func newApp(t *testing.T) (http.Handler, *sql.DB) {
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	mux := gen.Router(func(*http.Request) *rastrillo.Ctx {
-		return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}}
+		return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: blog.Render}
 	})
+	// The same fingerprinting mount main.go wires, so asset tests
+	// exercise the real handler behind the layout's {{asset}} hrefs.
+	mux.Handle("GET /static/", blog.Assets.Handler())
 	return mux, db
 }
 
@@ -52,10 +58,19 @@ func post(t *testing.T, h http.Handler, target string, form url.Values) *httptes
 	return rec
 }
 
-// seed creates a post through the store, so the tests exercise it too.
+// seed creates a post through the generated store — the same one the
+// admin create/update actions now use — so the tests exercise it too.
+// Publishing stays a blog.SetPublished call: published isn't a
+// manifest field, so it's not something the generated store knows
+// about at all (see internal/blog/store.go's Migrations doc comment).
 func seed(t *testing.T, db *sql.DB, title, body string, published bool) int64 {
 	t.Helper()
-	id, err := blog.Create(db, title, body)
+	now := time.Now().UTC().Format(time.RFC3339)
+	id, err := postsstore.New(db).CreatePost(context.Background(), postsstore.CreatePostParams{
+		Title: title,
+		Body:  body,
+		Now:   now,
+	})
 	if err != nil {
 		t.Fatalf("seed %q: %v", title, err)
 	}

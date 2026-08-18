@@ -5,12 +5,12 @@
 //
 // The root package holds the process shape (Run/Serve/Handler, the
 // activation contract, the SQLite opener, migrations), the action
-// vocabulary (Ctx, Actor), the manifest vocabulary (Resource, Kind,
-// Tool), and localization. The subsystems live beside it: crypto (the
-// family envelope), auth (keymail sign-in with the magic-link
-// fallback), webauthn, eventlog (the Mergeable store), blobs, mail,
-// screens (the manifest runtime), tools (agent dispatch), and ui (the
-// component partials). README.md keeps the honest status list.
+// vocabulary (Ctx, Actor), the manifest vocabulary (Resource, Tool),
+// fingerprinted assets, and localization. The subsystems live beside
+// it: crypto (the family envelope), auth (keymail sign-in with the
+// magic-link fallback), webauthn, eventlog (the Mergeable store),
+// blobs, mail, tools (agent dispatch), and ui (the component
+// partials). README.md keeps the honest status list.
 package rastrillo
 
 import (
@@ -67,6 +67,17 @@ type Options struct {
 	// that needs a handle outside Serve's lifetime calls OpenDB itself.
 	Router func(db *sql.DB) (*http.ServeMux, error)
 
+	// Wrap, if set, wraps the app's mux — the one seam for app
+	// middleware: sessions, CSRF, panic pages, authorization
+	// (gleester's friction, James 2026-08-04; also the friction behind
+	// amadan's outer-catch-all-mux workaround). It runs inside the
+	// framework's chrome: GET /healthz and GET /api/version are
+	// answered outside it (platform probes never traverse app
+	// middleware), and locale-prefix stripping happens before it,
+	// so middleware sees the same paths routes match on. Nil means
+	// no wrapping. Returning nil is a boot error.
+	Wrap func(http.Handler) http.Handler
+
 	// DBPath, if set, opens a SQLite database with the pragma ordering
 	// and connection settings the survey found hand-propagated,
 	// error-prone, repo to repo (design doc §5): busy_timeout set
@@ -86,16 +97,6 @@ type Options struct {
 	// to Addr ":8080".
 	Socket string
 	Addr   string
-
-	// Wrap, if set, wraps the app's mux — middleware, the usual
-	// net/http way. It runs inside the framework's own endpoints
-	// (/healthz, /api/version and friends stay unwrapped; a probe never
-	// depends on app middleware) and inside the locale middleware, so a
-	// wrapped handler sees the locale-stripped path. Before this seam,
-	// a consumer wanting one security-header middleware had to build an
-	// outer catch-all mux just to satisfy Router's return type — see
-	// amadan's internal/hub/server.go, the friction this closes.
-	Wrap func(http.Handler) http.Handler
 
 	// NextDue, if set, answers the platform's scheduled-wake poll: the
 	// activator asks a running instance GET /api/next-due (bearer
@@ -136,6 +137,17 @@ type Options struct {
 	// lookups fall back to the key itself, which keeps a missing
 	// catalog visible instead of silently blank (§10).
 	LocaleFS fs.FS
+
+	// BaseCatalog optionally supplies a base catalog that sits UNDER
+	// every app catalog (Locales' own doc comment: requested locale's
+	// app catalog, then the default locale's app catalog, then this) —
+	// normally the generated gen/locales/locales.go var BaseCatalog a
+	// manifest resource's field labels and shared ui.* chrome strings
+	// compile to (design doc §9's manifest system; internal/generate's
+	// EmitLocales emits it from the same map as the human-readable
+	// gen/locales/en.toml, so the two cannot drift). Nil is legal — an
+	// app with no manifest resources has nothing to layer.
+	BaseCatalog Catalog
 
 	// Logger defaults to slog.Default() if nil.
 	Logger *slog.Logger
@@ -188,8 +200,9 @@ func Serve(opts Options) error {
 // Handler is everything Serve builds short of the listener and the
 // signal handling: it opens the database (if configured), applies
 // migrations, resolves the Mux/Router choice, and assembles the full
-// serving handler — framework endpoints included. The returned close
-// func releases the database handle (a no-op without one).
+// serving handler — framework endpoints, Wrap, locales and all. The
+// returned close func releases the database handle (a no-op without
+// one).
 //
 // Exported for test harnesses: before this seam, every app's harness
 // hand-duplicated /healthz, /api/version and the DSN pragma ordering
@@ -223,9 +236,8 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 
 	handler, err := buildHandler(opts)
 	if err != nil {
-		// buildHandler's only error source is NewLocales, whose errors
-		// already carry the "rastrillo:" prefix — wrapping again here
-		// would read "rastrillo: rastrillo: ...".
+		// buildHandler's error sources (NewLocales, the Wrap nil-handler
+		// check) already carry the rastrillo: prefix, so no re-wrap here.
 		closeDB()
 		return nil, closeNothing, err
 	}
@@ -233,11 +245,11 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 }
 
 // buildHandler assembles the serving handler: the framework's own
-// endpoints, the app mux (wrapped by Options.Wrap when set), and —
-// when Options.Locales is set — the locale middleware wrapped around
+// endpoints, the app mux (wrapped by Options.Wrap when set), and
+// — when Options.Locales is set — the locale middleware wrapped around
 // the whole thing, so a locale prefix strips before routing and the
-// translator rides the request context (§10). Split from Handler so
-// the assembly is testable without a database.
+// translator rides the request context (§10). Split from Handler so the
+// assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -249,9 +261,11 @@ func buildHandler(opts Options) (http.Handler, error) {
 	if opts.NextDue != nil {
 		mux.HandleFunc("GET /api/next-due", nextDueHandler(opts.NextDue))
 	}
-	var app http.Handler = opts.Mux
+	app := http.Handler(opts.Mux)
 	if opts.Wrap != nil {
-		app = opts.Wrap(app)
+		if app = opts.Wrap(opts.Mux); app == nil {
+			return nil, errors.New("rastrillo: Options.Wrap returned a nil handler")
+		}
 	}
 	mux.Handle("/", app)
 
@@ -262,7 +276,19 @@ func buildHandler(opts Options) (http.Handler, error) {
 	if def == "" {
 		def = opts.Locales[0]
 	}
-	loc, err := NewLocales(opts.Locales, def, nil, opts.LocaleFS)
+	// The framework base catalog (rastrillo.ui.* keys) is the third
+	// fallback layer §10 reserved — passing it here, rather than nil, is
+	// what lets ui's partials resolve correctly-worded English defaults
+	// through T for an app that ships no catalog of its own at all. An
+	// app's own Options.BaseCatalog (normally the manifest-generated
+	// gen/locales var) shares that layer: it overlays the framework's
+	// keys, app winning on any shared key, still under every per-locale
+	// app catalog.
+	base := BaseCatalog()
+	for k, v := range opts.BaseCatalog {
+		base[k] = v
+	}
+	loc, err := NewLocales(opts.Locales, def, base, opts.LocaleFS)
 	if err != nil {
 		return nil, err
 	}

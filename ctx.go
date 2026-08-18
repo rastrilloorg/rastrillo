@@ -29,6 +29,13 @@ type Ctx struct {
 	DB     *sql.DB
 	Logger *slog.Logger
 
+	// Assets is the app's fingerprinted static-file registry, when
+	// the app wires one — the scaffold does, over its embedded
+	// static/ tree. Actions link assets by hashed URL:
+	// ctx.Assets.Path("static/tokens.css"). Nil for an app that
+	// serves assets some other way — the same contract as DB.
+	Assets *Assets
+
 	// Locale is the resolved locale for this request (design doc §10).
 	// The v1 request-scoped surface for localization is
 	// rastrillo.LocaleFrom(r) / rastrillo.T(r, ...) / rastrillo.Tf(r,
@@ -45,4 +52,15 @@ type Ctx struct {
 	// Scope is resolved by app-level middleware (_middleware.go, design
 	// doc §4) and type-asserted by the handler. Rastrillo never reads it.
 	Scope any
+
+	// Render is the manifest system's seam (design doc's manifest
+	// slice): generated actions cannot call an app-private helper like
+	// a hand-rolled blog.Render, so they call ctx.Render instead. The
+	// app's ctx factory sets it (e.g. &rastrillo.Ctx{DB: db, Render:
+	// blog.Render}); a generated action nil-checks it and answers a
+	// logged 500 rather than a nil-pointer panic when an app forgets
+	// to wire it. See RenderFunc and internal/generate's action
+	// emitter for the exact page names a generated action calls it
+	// with.
+	Render RenderFunc
 }

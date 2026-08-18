@@ -1,0 +1,18 @@
+{{/* field-select — field's envelope (label/hint/help/error, identical
+     describedby wiring) around a native <select>. Kept as a complete
+     file rather than sharing field's body through template composition,
+     so the three field partials stay independently readable — the
+     envelope markup is deliberately byte-identical across all three.
+     Keys:
+       ID, Name, Label  strings, required
+       Options   list, required — each {Value, Label, Selected}
+       Required  bool, optional
+       Hint      string, optional — quiet parenthetical after the label
+       Help      string, optional — the line under the control
+       Error     string, optional — validation message
+       Short     bool, optional — compact width */}}
+{{define "field-select"}}<div class="rst-field"><label class="rst-field__label" for="{{.ID}}">{{.Label}}{{with .Hint}} <span class="rst-field__hint">({{.}})</span>{{end}}</label>
+<select class="rst-input{{if .Short}} rst-input--short{{end}}" id="{{.ID}}" name="{{.Name}}"{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>{{range .Options}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+{{if .Error}}<p class="rst-field__error" id="{{.ID}}-error" role="alert">{{.Error}}</p>
+{{else if .Help}}<p class="rst-field__help" id="{{.ID}}-help">{{.Help}}</p>
+{{end}}</div>{{end}}

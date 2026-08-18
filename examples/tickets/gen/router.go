@@ -6,8 +6,6 @@ import (
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
-	act_admin_ticket_types_id_delete_get "tickets/gen/actions/admin/ticket_types/id/delete_get"
-	act_admin_ticket_types_id_delete_post "tickets/gen/actions/admin/ticket_types/id/delete_post"
 	act_admin_ticket_types_id_edit_advanced_post "tickets/gen/actions/admin/ticket_types/id/edit_advanced_post"
 	act_admin_ticket_types_id_edit_basics_post "tickets/gen/actions/admin/ticket_types/id/edit_basics_post"
 	act_admin_ticket_types_id_edit_get "tickets/gen/actions/admin/ticket_types/id/edit_get"
@@ -15,7 +13,6 @@ import (
 	act_admin_ticket_types_index_get "tickets/gen/actions/admin/ticket_types/index_get"
 	act_admin_ticket_types_index_post "tickets/gen/actions/admin/ticket_types/index_post"
 	act_admin_ticket_types_new_get "tickets/gen/actions/admin/ticket_types/new_get"
-	act_index_get "tickets/gen/actions/index_get"
 )
 
 // Router builds the app's mux. ctxFactory constructs a fresh
@@ -32,11 +29,11 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 		}
 		return c
 	}
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		act_index_get.Handle(handle(r), w, r)
-	})
 	mux.HandleFunc("GET /admin/ticket_types", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_index_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("POST /admin/ticket_types", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_ticket_types_index_post.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("GET /admin/ticket_types/new", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_new_get.Handle(handle(r), w, r)
@@ -44,23 +41,14 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	mux.HandleFunc("GET /admin/ticket_types/{id}", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_id_index_get.Handle(handle(r), w, r)
 	})
-	mux.HandleFunc("GET /admin/ticket_types/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_delete_get.Handle(handle(r), w, r)
-	})
 	mux.HandleFunc("GET /admin/ticket_types/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_id_edit_get.Handle(handle(r), w, r)
 	})
-	mux.HandleFunc("POST /admin/ticket_types", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_index_post.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("POST /admin/ticket_types/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_delete_post.Handle(handle(r), w, r)
+	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_ticket_types_id_edit_basics_post.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-advanced", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_id_edit_advanced_post.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_ticket_types_id_edit_basics_post.Handle(handle(r), w, r)
 	})
 	return mux
 }

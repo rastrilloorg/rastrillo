@@ -55,10 +55,9 @@ func TestIndexSecondPageShowsTheEleventhPost(t *testing.T) {
 	wantNotContains(t, second.Body.String(), "Post 11")
 }
 
-// GET / is a prefix pattern, so the index action answers every unmatched
-// GET and has to guard the path itself (friction finding F6). The
-// trailing-slash cases land there too: none of this app's routes is
-// registered with a trailing slash, so Go's mux never redirects to one.
+// The generator anchors the root index to GET /{$}, so unmatched GETs
+// — including the trailing-slash forms, which no route registers —
+// fall to the mux's own 404 (F6).
 func TestUnmatchedGETsAre404NotTheHomepage(t *testing.T) {
 	app, db := newApp(t)
 	seed(t, db, "Published", "Body.", true)
@@ -71,13 +70,24 @@ func TestUnmatchedGETsAre404NotTheHomepage(t *testing.T) {
 	}
 }
 
-// GET / matches the path of POST /nonsense but not its method, so the
-// stdlib mux answers 405 before any action runs. Worth knowing before
-// someone reads a 405 as a routing bug.
-func TestPostToAnUnmatchedPathIs405(t *testing.T) {
+// GET /{$} is an exact match for just "/", so POST to an unmatched path
+// has no route at all and gets 404 from the mux, not 405. The generator's
+// exact pattern anchors the root and eliminates the prefix-match ambiguity.
+func TestPostToAnUnmatchedPathIs404(t *testing.T) {
 	app, _ := newApp(t)
 
 	rec := post(t, app, "/nonsense", nil)
+	wantStatus(t, rec, http.StatusNotFound)
+}
+
+// POST to "/" — a path with a registered GET handler but no POST — returns
+// 405 with the allowed methods. Ensuring this isn't regressed by a
+// reappearing catch-all guard is important for the mux's error handling
+// contract.
+func TestPostToAnExistingGETRouteIs405(t *testing.T) {
+	app, _ := newApp(t)
+
+	rec := post(t, app, "/", nil)
 	wantStatus(t, rec, http.StatusMethodNotAllowed)
 	if got, want := rec.Header().Get("Allow"), "GET, HEAD"; got != want {
 		t.Errorf("Allow = %q, want %q", got, want)

@@ -9,63 +9,12 @@ runs on. Read the full design at
 ## Status
 
 v1 was a walking skeleton, built overnight to prove the core loop end
-to end. A second overnight pass (2026-08-17,
-`docs/superpowers/specs/2026-08-17-completion-design.md`) built the
-rest of the pending list against what the family's apps actually
-hand-rolled in the meantime. **Built:**
-
-- **`rastrillo/crypto`** — the family envelope: ECDH P-256 ephemeral →
-  HKDF-SHA256 → AES-256-GCM sealing (`ephPub(65) ‖ iv(12) ‖ ct`), ECDSA
-  raw r‖s signing over `SHA-256(context ‖ 0x00 ‖ msg)`, the symmetric
-  half (`Derive`/`SealSym`/`OpenSym`), keypair marshalling, and a
-  WebCrypto JS twin (`crypto.JS()`), all proven against amadan's pinned
-  golden vectors — the compatibility contract that lets amadan,
-  seapointish and keymail delete their local copies.
-- **`rastrillo/auth`** — keymail sign-in with the magic-link email
-  fallback, wrapping `keymaildev/signin` the way seapointish's reviewed
-  integration does: one long-lived flow with an explicit rate limiter,
-  single-use links via `DELETE … RETURNING`, sessions with real
-  revocation, `__Host-` cookies on https origins, same-origin CSRF on
-  every state-changing handler, an `Authorize` admission hook, and the
-  classifier fix for signin v0.1.0's wrong lookup path.
-- **`rastrillo/webauthn`** — the passkey identity half, lifted from
-  kass tests-and-all: ES256 only, no attestation checking, the CBOR
-  subset reader, `LegacyRPID` for hostname moves, plus the `authtest`
-  fake authenticator as a public sub-package and the browser half as an
-  embedded ES module (`webauthn.JS()`).
-- **`rastrillo/eventlog`** — the `Mergeable` store shape: append-only
-  per-resource streams (many single-writer streams), a pure generic
-  `Derive` fold, idempotent `Ingest` as the platform transport's seam,
-  and a deterministic default merge order pinned by JSON vectors.
-- **`rastrillo/blobs`** — content-addressed bytes: `S3FromEnv()` over
-  the platform's object-storage primitive (`CARLOS_STORE_*`), a
-  hand-rolled SigV4 signer + presigned GET/PUT pinned against the
-  official AWS vectors, `Dir` and `Inline` backends (with the 4 KiB
-  rule: bigger belongs in the object store), and `Sealed()` for E2EE.
-- **`rastrillo/mail`** — the one outbound-email surface (SMTP or
-  loudly-logged fallback, header-injection refused), signature-
-  compatible with signin's Mailer.
-- **The manifest system** (design doc §3) — `rastrillo.Resource` typed
-  Go + TOML sugar, one pipeline; kinds Text/LongText/Bool/Time/Money/
-  Meter/Blob/Select; generation-with-skip emitting every screen
-  (List → Show → Edit/New, Basics/Advanced as two independent saves,
-  the confirm-page delete flow) as real replaceable actions; the
-  `screens` runtime composing the `ui` partials; labels as translation
-  keys. `examples/tickets` is the checked-in proof.
-- **Agents** (§8) — actions opt in as tools (`var Tool =
-  rastrillo.Tool{...}`), the generator emits the registry
-  (`gen.Tools()`), the `tools` package renders schemas and dispatches
-  registry-validated, consent-gated, actor-attributed calls through the
-  same mux; `Options.Sidecar` + the `sidecar run` argv speak the
-  platform's sidecar contract, and `Options.NextDue` answers the
-  activator's `GET /api/next-due` scheduled-wake poll.
-- **Serve seams** — `Options.Wrap` (middleware without the outer-mux
-  workaround), exported `rastrillo.Handler` (Serve minus the listener,
-  for test harnesses), and the scaffold's host awareness: a Makefile
-  `ci` gate, executable `.amadan/ci` + `.amadan/ci.d/` steps delegating
-  to it, and a `CLAUDE.md` preload (§12).
-
-**From v1:**
+to end. Two overnight passes since then split the remaining design
+between them: one built the manifest system, the ui vocabulary,
+fingerprinted assets and the scaffolded harness on main; the other
+(`docs/superpowers/specs/2026-08-17-completion-design.md`) built the
+subsystem packages against what the family's apps had hand-rolled in
+the meantime. This list is their union. **Built:**
 
 - **`rastrillo new <name>`** — scaffolds a Go app: `go.mod`, one starter
   action, a `main.go` wiring `rastrillo.Run`. Runs generate once so
@@ -109,6 +58,11 @@ hand-rolled in the meantime. **Built:**
   An app that keeps its database in `Ctx` sets `Options.Router` instead
   of `Options.Mux` and is handed the `*sql.DB` Serve opened;
   `rastrillo.OpenDB` is the same corrected opener exported for tests.
+  `Options.Wrap` is the app-middleware seam: it wraps the app's mux
+  (sessions, CSRF, panic pages, authorization) inside the framework's
+  chrome — `GET /healthz`, `GET /api/version`, and locale-prefix stripping
+  stay outside it, so probes never traverse app middleware and
+  middleware sees the same paths routes match on.
   Between `Serve` and `Run`, the activation contract is covered end to
   end: every route kind the platform runs — always-on instance,
   hibernating exec child, unit tenant — boots the same scaffolded app.
@@ -124,9 +78,11 @@ hand-rolled in the meantime. **Built:**
   lookup falls back through the requested locale's catalog, the default
   locale's catalog, the framework's base catalog, and finally the key
   itself — a missing translation stays visible on the page, never blank.
-  The framework base catalog layer is empty in v1 (it stays empty until
-  the component library ships its base English catalog), so today that
-  fallback step is a no-op. `rastrillo generate --check [--default-locale
+  The framework base catalog (`rastrillo.BaseCatalog()`, wired into every
+  `Serve`d app's `Locales` automatically) carries `rastrillo/ui`'s own
+  `rastrillo.ui.*` strings, so a single-locale app gets correctly-worded
+  built-in components without writing a catalog of its own; an app
+  catalog entry for the same key still wins. `rastrillo generate --check [--default-locale
   <code>]` fails loudly when a non-default catalog is missing keys the
   default has (§10's "silent fallback while iterating, loud failure
   before ship"); that gate runs under `--check` only — plain `rastrillo
@@ -142,21 +98,93 @@ hand-rolled in the meantime. **Built:**
   `ServeMux` trailing-slash redirect issued under a locale prefix
   currently emits the unprefixed path, dropping the locale on that one
   redirect (known limitation).
+- **`rastrillo/ui`** — the component/UI vocabulary (design doc's List
+  screens plus the display, form, and route families): badges, meters,
+  person cells, callouts, fields, choice cards, toggle blocks, seg-tabs,
+  confirm forms, bulk select, modal shells, and the rest of the List
+  screen set — with framework strings resolved through the §10 locale
+  chain. An app registers `ui.Funcs()` (`dict`, `list`, `icon`, `T`) on
+  its own template tree and `ParseFS`s `ui.Templates()` alongside its own
+  templates; `ui.TokensCSS()` is the design-token stylesheet
+  `rastrillo new` writes once into a new app's `static/` directory, app-
+  owned from then on. `T` resolves a partial's own hardcoded-English
+  default (e.g. `pagination`'s "Pagination", `confirm-form`'s "Cancel")
+  through the framework base catalog — a caller-supplied value always
+  wins over it — and `ui.FuncsWith` lets an app rebind `T` to a
+  request-scoped `rastrillo.T` lookup so those defaults resolve in the
+  request's locale instead. See `ui`'s package doc for the full class
+  idiom vocabulary (list grid, dropdown, filter tokens, help tooltip,
+  selection checkbox) that isn't a Go template partial.
 - **`examples/helloworld`** — a real scaffolded app, checked in, proven
   to ship/promote/serve through the actual `carlos` binary — see
   [`hack/local-deploy-demo.sh`](hack/local-deploy-demo.sh).
+- **Manifests** (design doc §9) — declare a `rastrillo.Resource` and
+  `rastrillo generate` builds its store, its four screens' worth of
+  actions and templates, and their locale keys, with `sqlc` query
+  colocation for the store. See "Manifests" below.
+- **`examples/blog`** — a whole app built from stock parts: `ui`'s
+  partials, no JavaScript, and (new on this branch) a manifest-declared
+  resource adopted alongside hand-written actions and ejected
+  templates — see [`examples/blog/README.md`](examples/blog/README.md).
+- **`examples/tickets`** — the fully generated proof: one manifest
+  resource, zero hand actions, zero ejected templates — see
+  [`examples/tickets/README.md`](examples/tickets/README.md).
 
-**Not built yet**, honestly: `sqlc` query colocation and its
-portability lint (no family app uses sqlc yet — the generated store is
-the blog's proven hand-SQL shape instead); `WrapKey`/`UnwrapKey`/
-`DeriveInvite` in the crypto core (Eleven's invite wire is unconfirmed;
-guessing it would mint a format three apps would have to migrate off);
-step-up auth (`prompt=login` — the session schema already records
-`auth_time` so it lands without a migration); the mergeable store's
-transport (edge sync is the platform's designed territory —
-`eventlog.Ingest` is the seam it will call); any LLM client (§8 leaves
-the provider per app); and the framework's base English catalog for
-component copy.
+- **`rastrillo/crypto`** — the family envelope: ECDH P-256 ephemeral →
+  HKDF-SHA256 → AES-256-GCM sealing (`ephPub(65) ‖ iv(12) ‖ ct`), ECDSA
+  raw r‖s signing over `SHA-256(context ‖ 0x00 ‖ msg)`, the symmetric
+  half (`Derive`/`SealSym`/`OpenSym`), keypair marshalling, and a
+  WebCrypto JS twin (`crypto.JS()`), all proven against amadan's pinned
+  golden vectors — the compatibility contract that lets amadan,
+  seapointish and keymail delete their local copies.
+- **`rastrillo/auth`** — keymail sign-in with the magic-link email
+  fallback, wrapping `keymaildev/signin` the way seapointish's reviewed
+  integration does: one long-lived flow with an explicit rate limiter,
+  single-use links via `DELETE … RETURNING`, sessions with real
+  revocation, `__Host-` cookies on https origins, same-origin CSRF on
+  every state-changing handler, an `Authorize` admission hook, and the
+  classifier fix for signin v0.1.0's wrong lookup path.
+- **`rastrillo/webauthn`** — the passkey identity half, lifted from
+  kass tests-and-all: ES256 only, no attestation checking, the CBOR
+  subset reader, `LegacyRPID` for hostname moves, plus the `authtest`
+  fake authenticator as a public sub-package and the browser half as an
+  embedded ES module (`webauthn.JS()`).
+- **`rastrillo/eventlog`** — the `Mergeable` store shape: append-only
+  per-resource streams (many single-writer streams), a pure generic
+  `Derive` fold, idempotent `Ingest` as the platform transport's seam,
+  and a deterministic default merge order pinned by JSON vectors.
+- **`rastrillo/blobs`** — content-addressed bytes: `S3FromEnv()` over
+  the platform's object-storage primitive (`CARLOS_STORE_*`), a
+  hand-rolled SigV4 signer + presigned GET/PUT pinned against the
+  official AWS vectors, `Dir` and `Inline` backends (with the 4 KiB
+  rule: bigger belongs in the object store), and `Sealed()` for E2EE.
+- **`rastrillo/mail`** — the one outbound-email surface (SMTP or
+  loudly-logged fallback, header-injection refused), signature-
+  compatible with signin's Mailer.
+- **Agents** (design doc §8) — actions opt in as tools (`var Tool =
+  rastrillo.Tool{...}`), the generator emits the registry
+  (`gen.Tools()`), the `tools` package renders schemas and dispatches
+  registry-validated, consent-gated, actor-attributed calls through the
+  same mux; `Options.Sidecar` + the `sidecar run` argv speak the
+  platform's sidecar contract, and `Options.NextDue` answers the
+  activator's `GET /api/next-due` scheduled-wake poll.
+- **Serve seams** — `Options.Wrap` (the one middleware seam), exported
+  `rastrillo.Handler` (Serve minus the listener, for test harnesses),
+  and the scaffold's host awareness: a Makefile `ci` gate, executable
+  `.amadan/ci` + `.amadan/ci.d/` steps delegating to it, an empty
+  `manifest/` with a README, and a `CLAUDE.md` preload (§12).
+
+**Not built yet**, honestly: `WrapKey`/`UnwrapKey`/`DeriveInvite` in
+the crypto core (Eleven's invite wire is unconfirmed; guessing would
+mint a format three apps would have to migrate off); step-up auth
+(`prompt=login` — the session schema already records `auth_time` so it
+lands without a migration); the mergeable store's transport and its
+manifest wiring (edge sync is the platform's designed territory —
+`eventlog.Ingest` is the seam it will call; a `store = "mergeable"`
+manifest resource is declared vocabulary the generator does not yet
+compile); richer manifest kinds beyond text/textarea/money (Bool,
+Time, Select, Blob and delete flows arrive as manifest slices); and
+any LLM client (§8 leaves the provider per app).
 
 ## A known implementation decision worth flagging
 
@@ -172,6 +200,131 @@ beyond the package clause. A future version could instead lift just the
 package boilerplate," but that's real complexity, deliberately deferred
 rather than rushed — see `internal/generate/generate.go`'s package doc.
 
+## Manifests
+
+Design doc §9's `Resource` sugar: declare a data entity once and
+`rastrillo generate` builds its store, its screens, and their locale
+keys — a CRUD interface for a fraction of the cost of writing each of
+those by hand. Drop this in `manifest/posts.toml`:
+
+```toml
+name  = "posts"
+route = "/admin/posts"
+store = "exclusive"
+
+[list]
+columns = [{ field = "Title" }, { field = "Status" }]
+search  = true
+
+[[list.filters]]
+field  = "Status"
+values = ["draft", "published"]
+
+[form]
+basics = [{ name = "Title", required = true }, { name = "Body", kind = "textarea" }]
+```
+
+(or build the same `rastrillo.Resource` value in `manifest/*.go` — a
+typed alternative for a shape TOML can't express, evaluated with `go
+run` against the app's own module, for when a resource's shape wants to
+be computed rather than declared literally) and `rastrillo generate`
+produces, per resource:
+
+- **A store** — `gen/store/<name>/`: `schema.sql`/`queries.sql` (sqlc's
+  own input, colocated per resource) plus `migrations.go` (the same
+  table as `CREATE TABLE IF NOT EXISTS`, for `Options.Migrations`).
+  Generation runs `go tool sqlc generate` against that input, so an
+  app adopting a manifest must add the tool directive once:
+  `go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc`.
+- **Actions** for the four canonical states — list, show, new+create,
+  edit (basics, plus advanced when the manifest declares `[form]
+  advanced` fields) — written straight into `gen/actions/`, compiled
+  normally: unlike a hand action under `actions/`, a manifest's action
+  files never pass through the filesystem router's own
+  Discover/Rewrite step, so they carry no `//go:build` tag. Each hands
+  its page to the app's own template tree through `Ctx.Render` — the
+  one seam generated code needs, since it cannot call an app-private
+  helper like a hand-rolled `blog.Render`. Page names are always
+  `<resource>/list`, `<resource>/show` or `<resource>/form`, regardless
+  of which of the (up to) seven action files is rendering.
+- **Templates** — `gen/templates/<name>/{list,show,form}.html`,
+  composed entirely from the `ui` package's partials. `list.html` is
+  gated on `search` at generation time: a resource with `search =
+  false` gets no search box at all. A `[[list.filters]]` entry declares
+  a filterable field and a set of enumerable values (e.g.
+  `field = "Status"` with `values = ["draft", "published"]`): the
+  generated list renders a dropdown control that filters by value and
+  composes with search and pagination. Each filter value becomes a
+  translation key `resource.<name>.filter.<field>.<value>`, plus
+  `ui.all` for the all-items state. The bare `filter` field (superseded)
+  validates but generates no control.
+- **Locale keys** — `gen/locales/<default>.toml` (for humans/
+  translators) and `gen/locales/locales.go` (a generated `BaseCatalog`
+  var, wired as `Options.BaseCatalog`) carry a title-cased fallback
+  label for every field and screen a resource declares, from one source
+  map so the two files cannot drift — layered underneath whatever
+  catalog the app supplies.
+- **`gen/manifest.json`** — the whole resource set as one stable JSON
+  artifact (sorted by name, two-space indent, evolution additive-only),
+  for any future renderer or tool that wants a resource's shape without
+  parsing TOML or running Go.
+
+**Eject a template or action file, or skip generating one at all.** A
+hand-written file already sitting at the exact path generation would
+compute — `templates/<name>/list.html`, or `actions/<route
+path>/index.GET.go` — is left alone: the generator writes nothing
+there. That is the whole ejection story: copy a generated file's own
+content out to its hand path (each file's header names the exact path
+to copy to), and generation of that one file stops there; every other
+file for that resource keeps regenerating normally. A route claimed by
+two sources — hand and generated, or two resources whose computed
+paths collide — fails the build loudly, the same as a filesystem-router
+collision. `rastrillo generate --check` runs the whole pipeline into a
+scratch directory and diffs it against the committed `gen/`, catching
+both a stale/hand-edited generated file (idempotency) and a collision,
+without writing anything.
+
+**Filters** — at most one `[[list.filters]]` entry per resource. Field
+values are validated at generation time (must name a declared list
+column); each declared value must be non-empty, match `^[a-z0-9_-]+$`,
+and appear only once — they travel in URLs and double as translation
+keys, so they can't be arbitrary text. A filter's selection persists
+across search and pagination (carried in the generated hrefs); the
+dropdown's own open/closed `<details>` state does not survive
+navigation.
+
+**Required fields** — `required = true` on a form field marker adds a
+client-side `required` attribute via the field partial AND generates
+server-side validation: a blank submission re-renders the form with a
+400 status and the field's own error message (e.g. "Title is required").
+A `Money` field marked `required = true` still accepts `"0"` as valid —
+the field must be present and parseable, not necessarily non-zero.
+
+**Manifest-only apps** — a resource need not coexist with hand actions.
+An app with *only* declared resources (and no `actions/` or
+`templates/` directory at all) is legal: `rastrillo generate` produces
+the whole store, all seven actions, and every template, compiled
+normally, and the app runs without any hand-written route or screen
+handlers.
+
+**Migrations** — the generated `migrations.go` emits `CREATE TABLE IF
+NOT EXISTS`. A fresh database runs the generated migration and works
+out of the box. An existing database that predates a manifest field
+addition needs an app-owned additive migration (e.g. `ALTER TABLE posts
+ADD COLUMN status TEXT`): manifest edits regenerate code and
+migrations, but the generated migration stays idempotent
+(`IF NOT EXISTS`) — schema evolution is the app's own work (roadmap:
+automatic manifest-diff ALTER emission). `examples/blog` shows the
+pattern: the generated `CREATE TABLE IF NOT EXISTS posts` runs first,
+then the app's own `ALTER TABLE posts ADD COLUMN published BOOLEAN`
+runs after.
+
+Generates no delete action; `store = "mergeable"` isn't built yet
+either (`Validate` rejects it by name). `examples/blog` shows what an
+app adds by hand to cover what a manifest doesn't generate;
+`examples/tickets` is the fully generated proof (one manifest resource,
+no hand actions or templates).
+
 ## Try it
 
 ```
@@ -183,13 +336,6 @@ cd myapp && go mod tidy && rastrillo dev
 Then edit an action, save, refresh — `rastrillo dev` regenerates,
 rebuilds, and restarts for you. For a one-off build without the watch
 loop: `go build ./cmd/myapp && ./myapp -addr :8080`.
-
-For a whole admin screen set from one file, drop a TOML manifest into
-`manifest/` (the scaffolded `manifest/README.md` shows the shape) and
-save — `dev` regenerates the screens. `examples/tickets` is the
-checked-in version: the design doc's ticket_types manifest, its
-generated screens, and an end-to-end test. `examples/blog` is the same
-kind of app hand-written — the framework's before and after.
 
 Or via Homebrew: `brew install carlosframework/tap/rastrillo`.
 

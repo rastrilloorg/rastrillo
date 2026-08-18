@@ -13,6 +13,12 @@ import (
 // published posts (so the guarded pagination strip appears on both list
 // screens, and /?page=2 is a real second page rather than an empty
 // state), plus one draft so the edit screen has a neutral pill to show.
+//
+// The admin list/new/edit/show targets all render through the
+// manifest system's own template tree now (task 10's adoption):
+// posts/show stays fully generated, posts/list and posts/form are
+// ejected app-owned files (task 11) rather than the old hand
+// admin_list.html/admin_new.html/admin_edit.html.
 func populatedScreens(t *testing.T) map[string]string {
 	t.Helper()
 	app, db := newApp(t)
@@ -31,6 +37,7 @@ func populatedScreens(t *testing.T) map[string]string {
 		"/admin/posts?q=go",
 		"/admin/posts?q=zzz",
 		"/admin/posts/new",
+		fmt.Sprintf("/admin/posts/%d", published),
 		fmt.Sprintf("/admin/posts/%d/edit", published),
 		fmt.Sprintf("/admin/posts/%d/edit", draft),
 	} {
@@ -67,10 +74,10 @@ func allScreens(t *testing.T) map[string]string {
 	return out
 }
 
-// The acceptance criterion, made executable: all eight partials are used
+// The acceptance criterion, made executable: all stock partials are used
 // by the running app, not by a fixture. The marker strings are the ones
 // ui_test.go's own smoke test uses.
-func TestAllEightPartialsAppearAcrossTheApp(t *testing.T) {
+func TestAllStockPartialsAppearAcrossTheApp(t *testing.T) {
 	var combined strings.Builder
 	for _, html := range allScreens(t) {
 		combined.WriteString(html)
@@ -86,6 +93,10 @@ func TestAllEightPartialsAppearAcrossTheApp(t *testing.T) {
 		"status-pill":        `<span class="rst-status"`,
 		"empty-state":        `<div class="rst-empty">`,
 		"pagination":         `<nav class="rst-pagination"`,
+		"rst-form":           `<form class="rst-form"`,
+		"field-text":         `<input class="rst-input"`,
+		"field-textarea":     `<textarea class="rst-textarea"`,
+		"form-foot":          `<div class="rst-form__foot">`,
 	}
 	for name, marker := range markers {
 		if !strings.Contains(out, marker) {
@@ -97,6 +108,12 @@ func TestAllEightPartialsAppearAcrossTheApp(t *testing.T) {
 func TestEveryScreenHasAPageHeaderAndATitle(t *testing.T) {
 	titleRe := regexp.MustCompile(`<title>([^<]+)</title>`)
 	for name, html := range allScreens(t) {
+		// Every screen carries a page-header now, generated and
+		// ejected alike: task 11 ejected posts/list and posts/form
+		// (templates/posts/{list,form}.html) and added one to both
+		// the New and Edit screens the (single) ejected form.html
+		// covers — the exclusion this test used to need for them is
+		// gone along with the reason for it.
 		if !strings.Contains(html, `<header class="rst-page-header">`) {
 			t.Errorf("%s has no page header", name)
 		}
@@ -182,15 +199,12 @@ func TestBlogCSSStylesNoLibraryClass(t *testing.T) {
 	}
 }
 
-// Colours and spacing come from tokens, never literals — that is the
-// whole mechanism by which these controls track the dark theme.
+// Colours come from tokens, never literals — that is the whole mechanism
+// by which these controls track the dark theme.
 func TestBlogCSSUsesTokensNotLiterals(t *testing.T) {
 	css := regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(readBlogCSS(t), "")
 	if m := regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b`).FindString(css); m != "" {
 		t.Errorf("blog.css contains a literal colour %q", m)
-	}
-	if !strings.Contains(css, "var(--rst-accent)") {
-		t.Errorf("blog.css does not restate the focus ring with the accent token")
 	}
 }
 

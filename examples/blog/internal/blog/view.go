@@ -8,10 +8,13 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	blogassets "blog"
 
 	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/ui"
@@ -24,20 +27,42 @@ var templateFS embed.FS
 // that eleven posts produce a real page strip in a test.
 const PageSize = 10
 
-// pages is one template tree per screen, built once at process start.
+// pages is one template tree per screen, built once at process start:
+// bare-named ("index", "post") for the app's own hand screens that
+// have nothing to do with a manifest resource, and
+// "<resource>/<page>" (e.g. "posts/list", "posts/show", "posts/form")
+// for every manifest-driven one — internal/generate/actions.go's
+// page-name contract, restated in that package's own doc comment.
+// A resource-keyed entry's *source file* may be hand-ejected
+// (templates/<resource>/<page>.html — task 11's ejection) or still
+// generated (gen/templates/<resource>/<page>.html); resourceSources
+// resolves that per key, so Render itself never has to know or care
+// which.
 var pages = buildPages()
 
-// buildPages parses ui's partials and the layout into a base tree, then
-// clones that base once per page file.
+// Assets fingerprints the app's embedded static files. One instance
+// shared by the "asset" template func and main.go's /static/ mount,
+// so the URL a layout renders is always one the handler serves
+// immutable.
+var Assets = rastrillo.NewAssets(blogassets.StaticFS)
+
+// buildPages parses ui's partials and the layout into a base tree,
+// then clones that base once per screen — the clone is what makes the
+// shared layout work: every screen file defines "content", the same
+// name in every file, so parsing them into one shared tree would let
+// the last one clobber the rest (see the package's own template
+// tests, TestEachPageRendersItsOwnContent). A clone per screen gives
+// each one its own "content", so layout.html can call {{template
+// "content" .Data}} with the one constant name html/template requires.
 //
-// The clone is what makes the layout work: every page file defines
-// "content", the same name in every file. Parsed into one shared tree
-// they would overwrite each other silently — last file wins, wrong screen
-// rendered, no error anywhere. A clone per page gives each screen its own
-// "content", so layout.html can call {{template "content" .}} with the
-// constant name html/template requires.
+// T resolves against gen/locales.BaseCatalog (genT, genrender.go) for
+// every screen, not only generated/ejected ones: the app's own bare
+// pages happen to spell every string literally today, but registering
+// T everywhere costs nothing and means a future hand page can start
+// using it without a second base tree appearing.
 func buildPages() map[string]*template.Template {
-	base := template.Must(template.New("").Funcs(ui.Funcs()).ParseFS(ui.Templates(), "*.html"))
+	base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT, "asset": Assets.Path})
+	base = template.Must(base.ParseFS(ui.Templates(), "*.html"))
 	base = template.Must(base.ParseFS(templateFS, "templates/layout.html"))
 
 	names, err := fs.Glob(templateFS, "templates/pages/*.html")
@@ -53,20 +78,108 @@ func buildPages() map[string]*template.Template {
 		t = template.Must(t.ParseFS(templateFS, n))
 		out[strings.TrimSuffix(filepath.Base(n), ".html")] = t
 	}
+
+	for key, src := range resourceSources() {
+		t := template.Must(base.Clone())
+		t = template.Must(t.ParseFS(src.fsys, src.name))
+		out[key] = t
+	}
+
 	return out
 }
 
-// Render executes one page's "layout" into a buffer and only then writes
-// the status and the bytes, so a template error is a clean 500 rather
-// than half a page followed by a stack trace.
+// templateSource is one resolved "<resource>/<page>" entry: the
+// filesystem and path resourceSources found it at.
+type templateSource struct {
+	fsys fs.FS
+	name string
+}
+
+// resourceSources walks gen/templates first, then templates/ (the
+// ejection root — see genassets.go's AppTemplatesFS), so a key present
+// in both overwrites with the ejected copy. In practice the two never
+// collide once a file is properly ejected: EmitTemplates
+// (internal/generate/templates.go) stops writing a generated file the
+// moment a hand file claims its computed path, and this task deleted
+// the stale generated copies it left behind before ejecting — but
+// walking both, rather than hard-coding which of posts/list.html,
+// posts/form.html or posts/show.html is which, means a later resource
+// or a later ejection needs no change here.
+func resourceSources() map[string]templateSource {
+	out := map[string]templateSource{}
+	addResourceDir(out, blogassets.GenTemplatesFS, "gen/templates")
+	addResourceDir(out, blogassets.AppTemplatesFS, "templates")
+	return out
+}
+
+// addResourceDir walks root's immediate subdirectories (one per
+// manifest resource) inside embedded, adding a "<dir>/<file>" entry
+// for every *.html file straight under each — overwriting whatever
+// out already holds for that key, which is exactly how a later call
+// with the ejection root lets an ejected file win over a generated one
+// at the same key.
+func addResourceDir(out map[string]templateSource, embedded embed.FS, root string) {
+	sub, err := fs.Sub(embedded, root)
+	if err != nil {
+		panic(err) // root is a constant, embedded at compile time
+	}
+	resDirs, err := fs.ReadDir(sub, ".")
+	if err != nil {
+		panic(err)
+	}
+	for _, rd := range resDirs {
+		if !rd.IsDir() {
+			continue
+		}
+		files, err := fs.Glob(sub, rd.Name()+"/*.html")
+		if err != nil {
+			panic(err)
+		}
+		for _, f := range files {
+			key := rd.Name() + "/" + strings.TrimSuffix(path.Base(f), ".html")
+			out[key] = templateSource{fsys: sub, name: f}
+		}
+	}
+}
+
+// pageData is "layout"'s one data value: Head carries what <head>
+// needs, Data is passed through to "content" untouched. Every hand
+// screen's own view model already declares its own Head field
+// (HomeView.Head, PostView.Head, AdminListView.Head, ...); headFor
+// (genrender.go) reflects it out rather than duplicating it, so a
+// hand screen's content template still sees its own struct exactly,
+// only reached through .Data instead of directly. A truly generated
+// view model (posts/show's showView) carries no Head field at all —
+// the action emitter doesn't know about the app's layout, by design —
+// so headFor falls back to a page-name default for those.
+type pageData struct {
+	Head Head
+	Data any
+}
+
+// Render executes one page's "layout" into a buffer and only then
+// writes the status and the bytes, so a template error is a clean 500
+// rather than half a page followed by a stack trace.
+//
+// This is also the one seam every generated action's ctx.Render call
+// resolves to (main.go wires it: &rastrillo.Ctx{Render: blog.Render}).
+// "posts/form" gets one extra step before Execute: formStripData
+// (genrender.go) enriches the generated formView-shaped data with the
+// Edit screen's Published/status-pill/publish-unpublish-delete-strip
+// fields, none of which a generated new.GET/edit.GET action has any
+// way to know about (posts.toml declares no such field) — see that
+// function's own doc comment.
 func Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any) {
 	t, ok := pages[page]
 	if !ok {
 		Fail(ctx, w, "rendering "+page, fmt.Errorf("no such page template"))
 		return
 	}
+	if page == "posts/form" {
+		data = formStripData(ctx, data)
+	}
 	var buf bytes.Buffer
-	if err := t.ExecuteTemplate(&buf, "layout", data); err != nil {
+	if err := t.ExecuteTemplate(&buf, "layout", pageData{Head: headFor(page, data), Data: data}); err != nil {
 		Fail(ctx, w, "rendering "+page, err)
 		return
 	}
@@ -121,6 +234,8 @@ type Row struct {
 	Href        string
 	Main        string
 	Sub         string
+	StatusTone  string
+	StatusLabel string
 	ActionHref  string
 	ActionLabel string
 	ActionAria  string
@@ -164,13 +279,82 @@ type AdminListView struct {
 	Head  Head
 	Query string
 	// Carry is list-bar's Hidden: name/value pairs a search must
-	// preserve. Empty here — this screen has no sort order or page size
-	// to keep, and a new search deliberately returns to page 1.
-	Carry      [][2]string
-	Rows       []Row
-	Pagination Pagination
-	Empty      bool // no posts at all: the real blank state
-	NoMatch    bool // a search that matched nothing: a plain note, not a card
+	// preserve. The handler sets it to [][2]string{{"status", status}}
+	// when a filter is applied, so a search from a filtered list keeps
+	// it — a new search still deliberately returns to page 1.
+	Carry       [][2]string
+	Filter      Filter
+	NoMatchNote string
+	Rows        []Row
+	Pagination  Pagination
+	Empty       bool // no posts at all: the real blank state
+	NoMatch     bool // a search or filter that matched nothing: a plain note, not a card
+}
+
+// FilterItem is one dropdown choice; Filter is list-bar's Filter value.
+// The field names match the dropdown partial's key contract.
+type FilterItem struct {
+	Href    string
+	Label   string
+	Current bool
+}
+
+type Filter struct {
+	Label string
+	Aria  string
+	Items []FilterItem
+}
+
+// statusLabels resolves a normalized status to its visible label.
+var statusLabels = map[string]string{"": "All", "draft": "Drafts", "published": "Published"}
+
+// NormalizeStatus maps a raw query value onto the three states the
+// screen has. Anything unrecognized is "all", not an error: a stale
+// bookmark should show posts, not a 400.
+func NormalizeStatus(raw string) string {
+	if raw == "draft" || raw == "published" {
+		return raw
+	}
+	return ""
+}
+
+// BuildStatusFilter builds the admin list's status dropdown. Hrefs
+// carry the current search and reset paging — changing a filter starts
+// at page 1 by construction. status must be a NormalizeStatus result
+// ("", "draft" or "published"): it is interpolated into the href
+// unescaped, which every current caller satisfies.
+func BuildStatusFilter(q, status string) Filter {
+	href := func(s string) string {
+		var params []string
+		if q != "" {
+			params = append(params, "q="+url.QueryEscape(q))
+		}
+		if s != "" {
+			params = append(params, "status="+s)
+		}
+		if len(params) == 0 {
+			return "/admin/posts"
+		}
+		return "/admin/posts?" + strings.Join(params, "&")
+	}
+	f := Filter{
+		Label: statusLabels[status],
+		Aria:  "Filter by status: " + statusLabels[status],
+	}
+	for _, s := range []string{"", "draft", "published"} {
+		f.Items = append(f.Items, FilterItem{Href: href(s), Label: statusLabels[s], Current: s == status})
+	}
+	return f
+}
+
+// NoMatchNote words the "nothing matched" note for the applied search
+// and filter. Formatting stays in Go, where a test reaches it.
+func NoMatchNote(q, status string) string {
+	subject := map[string]string{"": "posts", "draft": "drafts", "published": "published posts"}[status]
+	if q != "" {
+		return fmt.Sprintf("No %s match “%s”.", subject, q)
+	}
+	return fmt.Sprintf("No %s yet.", subject)
 }
 
 // AdminFormView is GET /admin/posts/new and GET /admin/posts/{id}/edit,
@@ -223,9 +407,9 @@ func FormatDate(t time.Time) string { return t.Format("2 January 2006") }
 // PublishedLine is a published post's meta line.
 func PublishedLine(t time.Time) string { return "Published " + FormatDate(t) }
 
-// DraftLine is a draft's meta line. Status rides in the row's Sub as
-// prose because the stock row has no status slot — friction finding F1.
-func DraftLine(t time.Time) string { return "Draft · edited " + FormatDate(t) }
+// DraftLine is a draft's meta line: when it was last touched. Status
+// lives in the row's pill, not here.
+func DraftLine(t time.Time) string { return "Edited " + FormatDate(t) }
 
 // PublicRows builds the public index's rows. No action pill: the row
 // already goes to the only place it could go, and a second link to the
@@ -249,12 +433,15 @@ func AdminRows(posts []Post) []Row {
 	rows := make([]Row, 0, len(posts))
 	for _, p := range posts {
 		row := Row{
-			Href: fmt.Sprintf("/admin/posts/%d/edit", p.ID),
-			Main: p.Title,
-			Sub:  DraftLine(p.UpdatedAt),
+			Href:        fmt.Sprintf("/admin/posts/%d/edit", p.ID),
+			Main:        p.Title,
+			Sub:         DraftLine(p.UpdatedAt),
+			StatusTone:  "neutral",
+			StatusLabel: "Draft",
 		}
 		if p.Published {
 			row.Sub = PublishedLine(p.CreatedAt)
+			row.StatusTone, row.StatusLabel = "positive", "Published"
 			row.ActionHref = fmt.Sprintf("/posts/%d", p.ID)
 			row.ActionLabel = "View"
 			row.ActionAria = "View " + p.Title
@@ -281,8 +468,10 @@ func Paragraphs(body string) []string {
 
 // BuildPagination builds the page strip for a list of total items at a
 // 1-based page number. Show is false at or below one page, and the page
-// template guards the partial with it.
-func BuildPagination(base, q string, page, total int) Pagination {
+// template guards the partial with it. status must be a NormalizeStatus
+// result ("", "draft" or "published"): it is interpolated into each
+// href unescaped, which every current caller satisfies.
+func BuildPagination(base, q, status string, page, total int) Pagination {
 	p := Pagination{Show: total > PageSize}
 	if !p.Show {
 		return p
@@ -298,10 +487,15 @@ func BuildPagination(base, q string, page, total int) Pagination {
 	// Built by hand rather than with url.Values.Encode, which sorts its
 	// keys and would emit page before q.
 	href := func(n int) string {
+		var params []string
 		if q != "" {
-			return base + "?q=" + url.QueryEscape(q) + "&page=" + strconv.Itoa(n)
+			params = append(params, "q="+url.QueryEscape(q))
 		}
-		return base + "?page=" + strconv.Itoa(n)
+		if status != "" {
+			params = append(params, "status="+status)
+		}
+		params = append(params, "page="+strconv.Itoa(n))
+		return base + "?" + strings.Join(params, "&")
 	}
 
 	items := []PageItem{{Label: "Previous", Disabled: true}}

@@ -6,11 +6,13 @@
      events is broken for a keyboard user with JavaScript disabled.
 
      Keys:
-       Label  string, optional — the button's text, default "Search".
-              This package wires no localization catalog, so an app with
-              one passes its own string. list-bar-search hands its whole
-              data value through, so setting Label there sets it here. */}}
-{{define "list-search-submit"}}<button class="rst-sr-only" type="submit">{{if .Label}}{{.Label}}{{else}}Search{{end}}</button>{{end}}
+       Label  string, optional — the button's text, default resolved
+              through T ("rastrillo.ui.search_submit" — "Search" in the
+              framework base catalog; see Funcs/FuncsWith). An app
+              passing its own Label always wins over T.
+              list-bar-search hands its whole data value through, so
+              setting Label there sets it here. */}}
+{{define "list-search-submit"}}<button class="rst-sr-only" type="submit">{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}</button>{{end}}
 
 {{/* list-bar-search — the search form: a magnifying glass, one
      <input type="search">, any hidden pairs the list needs carried
@@ -26,9 +28,14 @@
        Query        string, optional — the current q value, echoed back
                     so a search survives paging
        Placeholder  string, optional — the field's placeholder AND its
-                    accessible name. Defaults to "Search" for the
-                    accessible name only: an input with no name at all
-                    would fail WCAG 2.2 AA, so this one always has one.
+                    accessible name. Defaults, for the accessible name
+                    only, to T "rastrillo.ui.search_submit" ("Search" in
+                    the framework base catalog) — reusing that key rather
+                    than declaring a separate one, since its English
+                    value is exactly the string this input needs too; an
+                    app passing Placeholder always wins over T. An input
+                    with no name at all would fail WCAG 2.2 AA, so this
+                    one always has one.
        Hidden       [][2]string, optional — extra name/value pairs to
                     carry across the search (an existing sort order, a
                     page size)
@@ -36,7 +43,7 @@
                     list-search-submit as its screen-reader text */}}
 {{define "list-bar-search"}}<form class="rst-search" role="search" method="get"{{if .Action}} action="{{.Action}}"{{end}}>
   {{icon "search"}}
-  <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}Search{{end}}">
+  <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}">
   {{- if .Hidden}}{{range .Hidden}}
   <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">
   {{- end}}{{end}}

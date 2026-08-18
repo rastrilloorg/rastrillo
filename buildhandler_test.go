@@ -13,9 +13,13 @@ import (
 // reached it: the path after any locale-prefix strip, the locale
 // Middleware resolved (empty when no locale middleware ran), and a
 // translation lookup — the three things buildHandler's assembly can
-// change without a live socket.
+// change without a live socket. translatedBase is a second, independent
+// translation lookup slot some tests use for a key the base catalog (not
+// an app catalog) resolves — kept separate from translated so a test can
+// assert on both an app-catalog override and an unrelated base-layer hit
+// from the same request.
 type captured struct {
-	path, locale, translated string
+	path, locale, translated, translatedBase string
 }
 
 // helloMux is an app mux with one route, /hello, whose handler stashes
@@ -183,6 +187,47 @@ func TestBuildHandlerNoLocalesNeverErrors(t *testing.T) {
 	}
 	if h == nil {
 		t.Fatal("buildHandler returned a nil handler with no error")
+	}
+}
+
+// TestBuildHandlerOverridesFrameworkBaseCatalog covers the layering order
+// buildHandler now wires (Step 2): an app catalog entry for a
+// rastrillo.ui.* key must win over the framework base layer BaseCatalog()
+// supplies, through the same public request path an action uses —
+// T(r, key) — not through Locales.T directly. It also covers a key the
+// app catalog does NOT override, which must still resolve through the
+// base layer rather than falling all the way back to the key itself —
+// this is the assertion that actually pins buildHandler's
+// NewLocales(..., BaseCatalog(), ...) wiring down: reverting that call's
+// third argument back to nil leaves the override assertion passing (an
+// app catalog entry always wins regardless of what sits under it) but
+// fails this one, since with a nil base layer "rastrillo.ui.pagination"
+// has nothing to fall back to but the key itself.
+func TestBuildHandlerOverridesFrameworkBaseCatalog(t *testing.T) {
+	fsys := fstest.MapFS{
+		"locales/en.toml": &fstest.MapFile{Data: []byte(`rastrillo.ui.cancel = "Never mind"` + "\n")},
+	}
+	var cap captured
+	mux := http.NewServeMux()
+	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+		cap.translated = T(r, "rastrillo.ui.cancel")
+		cap.translatedBase = T(r, "rastrillo.ui.pagination")
+		fmt.Fprint(w, "hi")
+	})
+	h, err := buildHandler(Options{
+		Mux:      mux,
+		Locales:  []string{"en"},
+		LocaleFS: fsys,
+	})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+	get(h, "/hello", "")
+	if cap.translated != "Never mind" {
+		t.Errorf("app catalog override lost to the framework base layer: got %q, want %q", cap.translated, "Never mind")
+	}
+	if cap.translatedBase != "Pagination" {
+		t.Errorf("base layer not wired into buildHandler: T(r, %q) = %q, want %q (nil base would yield the key itself)", "rastrillo.ui.pagination", cap.translatedBase, "Pagination")
 	}
 }
 

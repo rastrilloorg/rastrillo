@@ -1,0 +1,27 @@
+{{/* bulk-bar — select-mode's header strip, replacing the list-bar:
+     count, escalate/clear link, and the actions menu whose items are
+     real submit buttons on the surrounding form. Entering and leaving
+     select mode are plain links (?select=1 / DoneHref) — the server
+     renders both modes; nothing here needs JS.
+     Keys:
+       DoneHref  string, required — leaves select mode
+       DoneLabel string, optional — its accessible name, default resolved
+                 through T ("rastrillo.ui.done" — "Done selecting" in the
+                 framework base catalog; see Funcs/FuncsWith). Without
+                 either, the icon-only close link would render
+                 aria-label="" — an unlabeled control indistinguishable
+                 from decoration to a screen reader. An app passing its
+                 own DoneLabel always wins over T.
+       Count     string, required — the selection line ("3 selected",
+                 "All 412 selected", "Select items…")
+       EscalateHref, EscalateLabel  strings, optional — "Select all 412
+                 matching" or "Clear selection"
+       MenuLabel string, required — the actions summary text ("Actions")
+       Actions   list, required — each {Value, Label, Danger}: submit
+                 buttons named "action". Order Actions with the
+                 destructive item last — the first entry is the
+                 surrounding form's implicit-Enter default (pressing
+                 Enter in any text field on the form submits it,
+                 whether or not the menu is even open), so a Danger
+                 entry must never be first. */}}
+{{define "bulk-bar"}}<div class="rst-bulkbar"><a class="rst-bulkbar__close" href="{{.DoneHref}}" aria-label="{{if .DoneLabel}}{{.DoneLabel}}{{else}}{{T "rastrillo.ui.done"}}{{end}}">{{icon "x"}}</a><span class="rst-bulkbar__count">{{.Count}}</span>{{if .EscalateHref}}<a class="rst-bulkbar__escalate" href="{{.EscalateHref}}">{{.EscalateLabel}}</a>{{end}}<details class="rst-dropdown"><summary>{{.MenuLabel}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Actions}}<button type="submit" name="action" value="{{.Value}}"{{if .Danger}} class="rst-danger"{{end}}>{{.Label}}</button>{{end}}</div></details></div>{{end}}

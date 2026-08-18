@@ -1,0 +1,35 @@
+{{/* field-text — one labelled text input with optional hint and error
+     lines, wired together for assistive tech: the hint and error get
+     ids derived from Name, aria-describedby lists exactly the ids that
+     render, and an Error also sets aria-invalid.
+
+     The required marker's * is aria-hidden: the input's own required
+     attribute is the programmatic signal, so the star is presentation
+     on top of it, not a substitute.
+
+     field-textarea repeats this wrapper rather than composing it: Go
+     templates cannot capture a rendered fragment into a variable, so
+     composition would push control rendering back into every caller's
+     Go code. A few duplicated lines beat that.
+
+     Keys:
+       Name          string, required — the input's name and id, and
+                     the prefix for the hint/error ids
+       Label         string, required — the visible label
+       Value         string, optional — the current value
+       Type          string, optional — the input type, default "text"
+       Required      bool, optional — required attribute + visible *
+       Hint          string, optional — muted guidance under the input
+       Error         string, optional — validation message; also sets
+                     aria-invalid
+       Autocomplete  string, optional — the autocomplete attribute */}}
+{{define "field-text"}}<div class="rst-field">
+  <label class="rst-field__label" for="{{.Name}}">{{.Label}}{{if .Required}} <span class="rst-field__required" aria-hidden="true">*</span>{{end}}</label>
+  <input class="rst-input" id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+  {{- if .Hint}}
+  <small class="rst-field__hint" id="{{.Name}}-hint">{{.Hint}}</small>
+  {{- end}}
+  {{- if .Error}}
+  <small class="rst-field__error" id="{{.Name}}-error">{{.Error}}</small>
+  {{- end}}
+</div>{{end}}

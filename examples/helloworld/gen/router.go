@@ -23,7 +23,7 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 		}
 		return c
 	}
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		act_index_get.Handle(handle(r), w, r)
 	})
 	return mux

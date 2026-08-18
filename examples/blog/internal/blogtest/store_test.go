@@ -9,14 +9,24 @@
 // generated actions, which import blog/internal/blog: an internal test of
 // that package would be an import cycle. Keeping the tests here also
 // means they see the app exactly as main.go does, through gen.
+//
+// These tests seed rows through the generated postsstore (via seed, in
+// harness_test.go) rather than blog.Create/blog.Update, which no longer
+// exist: the manifest adoption (task 10) moved create/update for posts
+// onto the generated store, and internal/blog/store.go shrank to what
+// nothing generated covers — Get, List/Count, ListPublished/
+// CountPublished, SetPublished, Delete, and the paging helpers.
 package blogtest
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 
+	postsstore "blog/gen/store/posts"
 	"blog/internal/blog"
 )
 
@@ -39,9 +49,7 @@ func TestOpenIsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first open: %v", err)
 	}
-	if _, err := blog.Create(first, "Kept", "Body."); err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	seed(t, first, "Kept", "Body.", false)
 	first.Close()
 
 	second, err := blog.Open(path)
@@ -49,7 +57,7 @@ func TestOpenIsIdempotent(t *testing.T) {
 		t.Fatalf("second open: %v", err)
 	}
 	defer second.Close()
-	n, err := blog.Count(second, "")
+	n, err := blog.Count(second, "", "")
 	if err != nil {
 		t.Fatalf("count: %v", err)
 	}
@@ -60,10 +68,7 @@ func TestOpenIsIdempotent(t *testing.T) {
 
 func TestCreateStartsADraftWithTimestamps(t *testing.T) {
 	db := newDB(t)
-	id, err := blog.Create(db, "First post", "Body.")
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	id := seed(t, db, "First post", "Body.", false)
 
 	post, err := blog.Get(db, id)
 	if err != nil {
@@ -91,16 +96,10 @@ func TestListOrdersNewestFirstWithAnIDTiebreak(t *testing.T) {
 	db := newDB(t)
 	// Two posts created in the same second are ordinary in a test, which
 	// is exactly why the ordering carries an id tiebreak.
-	older, err := blog.Create(db, "Older", "Body.")
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	newer, err := blog.Create(db, "Newer", "Body.")
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	older := seed(t, db, "Older", "Body.", false)
+	newer := seed(t, db, "Newer", "Body.", false)
 
-	posts, err := blog.List(db, "", 0, blog.PageSize)
+	posts, err := blog.List(db, "", "", 0, blog.PageSize)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -111,16 +110,8 @@ func TestListOrdersNewestFirstWithAnIDTiebreak(t *testing.T) {
 
 func TestListPublishedExcludesDrafts(t *testing.T) {
 	db := newDB(t)
-	live, err := blog.Create(db, "Live", "Body.")
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	if _, err := blog.Create(db, "Draft", "Body."); err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	if err := blog.SetPublished(db, live, true); err != nil {
-		t.Fatalf("publish: %v", err)
-	}
+	live := seed(t, db, "Live", "Body.", true)
+	seed(t, db, "Draft", "Body.", false)
 
 	posts, err := blog.ListPublished(db, 0, blog.PageSize)
 	if err != nil {
@@ -141,11 +132,9 @@ func TestListPublishedExcludesDrafts(t *testing.T) {
 func TestListPagesWithOffsetAndLimit(t *testing.T) {
 	db := newDB(t)
 	for i := 0; i < 3; i++ {
-		if _, err := blog.Create(db, "Post", "Body."); err != nil {
-			t.Fatalf("create: %v", err)
-		}
+		seed(t, db, "Post", "Body.", false)
 	}
-	posts, err := blog.List(db, "", 2, 2)
+	posts, err := blog.List(db, "", "", 2, 2)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -156,21 +145,17 @@ func TestListPagesWithOffsetAndLimit(t *testing.T) {
 
 func TestSearchMatchesTitlesCaseInsensitively(t *testing.T) {
 	db := newDB(t)
-	if _, err := blog.Create(db, "Going to production", "Body."); err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	if _, err := blog.Create(db, "Unrelated", "mentions going in the body"); err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	seed(t, db, "Going to production", "Body.", false)
+	seed(t, db, "Unrelated", "mentions going in the body", false)
 
-	posts, err := blog.List(db, "GOING", 0, blog.PageSize)
+	posts, err := blog.List(db, "GOING", "", 0, blog.PageSize)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
 	if len(posts) != 1 || posts[0].Title != "Going to production" {
 		t.Fatalf("search matched %v, want just the title match", titles(posts))
 	}
-	n, err := blog.Count(db, "GOING")
+	n, err := blog.Count(db, "GOING", "")
 	if err != nil {
 		t.Fatalf("count: %v", err)
 	}
@@ -183,21 +168,17 @@ func TestSearchMatchesTitlesCaseInsensitively(t *testing.T) {
 // the wildcards in a user's string are escaped before the LIKE.
 func TestSearchEscapesLikeWildcards(t *testing.T) {
 	db := newDB(t)
-	if _, err := blog.Create(db, "Shipping 100% of the time", "Body."); err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	if _, err := blog.Create(db, "Shipping sometimes", "Body."); err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	seed(t, db, "Shipping 100% of the time", "Body.", false)
+	seed(t, db, "Shipping sometimes", "Body.", false)
 
-	posts, err := blog.List(db, "100%", 0, blog.PageSize)
+	posts, err := blog.List(db, "100%", "", 0, blog.PageSize)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
 	if len(posts) != 1 {
 		t.Fatalf("search matched %v, want just the literal match", titles(posts))
 	}
-	if underscores, err := blog.Count(db, "_"); err != nil {
+	if underscores, err := blog.Count(db, "_", ""); err != nil {
 		t.Fatalf("count: %v", err)
 	} else if underscores != 0 {
 		t.Errorf("_ matched %d titles as a wildcard, want 0", underscores)
@@ -206,12 +187,14 @@ func TestSearchEscapesLikeWildcards(t *testing.T) {
 
 func TestUpdateAndSetPublishedAndDelete(t *testing.T) {
 	db := newDB(t)
-	id, err := blog.Create(db, "Before", "Old body.")
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	id := seed(t, db, "Before", "Old body.", false)
 
-	if err := blog.Update(db, id, "After", "New body."); err != nil {
+	// The generated store's UpdatePostBasics is what the edit-basics
+	// action now calls too (see gen/actions/admin/posts/id/edit_basics_post).
+	now := time.Now().UTC().Format(time.RFC3339)
+	if err := postsstore.New(db).UpdatePostBasics(context.Background(), postsstore.UpdatePostBasicsParams{
+		Title: "After", Body: "New body.", Now: now, ID: id,
+	}); err != nil {
 		t.Fatalf("update: %v", err)
 	}
 	post, err := blog.Get(db, id)
@@ -244,6 +227,45 @@ func TestUpdateAndSetPublishedAndDelete(t *testing.T) {
 	}
 	if _, err := blog.Get(db, id); !errors.Is(err, sql.ErrNoRows) {
 		t.Errorf("err = %v after delete, want sql.ErrNoRows", err)
+	}
+}
+
+func TestListFiltersByStatus(t *testing.T) {
+	db := newDB(t)
+	draftID := seed(t, db, "Draft one", "b", false)
+	pubID := seed(t, db, "Published one", "b", true)
+
+	drafts, err := blog.List(db, "", "draft", 0, blog.PageSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(drafts) != 1 || drafts[0].ID != draftID {
+		t.Errorf("draft filter: got %v", drafts)
+	}
+
+	pubs, err := blog.List(db, "", "published", 0, blog.PageSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pubs) != 1 || pubs[0].ID != pubID {
+		t.Errorf("published filter: got %v", pubs)
+	}
+
+	// Search and status compose with AND.
+	both, err := blog.List(db, "one", "draft", 0, blog.PageSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(both) != 1 || both[0].ID != draftID {
+		t.Errorf("search+status: got %v", both)
+	}
+
+	n, err := blog.Count(db, "", "draft")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Errorf("Count draft = %d, want 1", n)
 	}
 }
 

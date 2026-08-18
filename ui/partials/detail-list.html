@@ -1,0 +1,14 @@
+{{/* detail-list — a record's labelled facts as a definition list — the Show
+     state's body. Mono marks machine-ish values.
+
+     Keys:
+       Items  []map, required — list of items; each has:
+         Label  string, required — the property name
+         Value  string, required — the property value
+         Mono   bool, optional — marks machine-ish values */}}
+{{define "detail-list"}}<dl class="rst-detail">
+  {{- range .Items}}
+  <dt>{{.Label}}</dt>
+  <dd{{if .Mono}} class="rst-mono"{{end}}>{{.Value}}</dd>
+  {{- end}}
+</dl>{{end}}

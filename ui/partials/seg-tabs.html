@@ -1,0 +1,8 @@
+{{/* seg-tabs — a segmented control of server-rendered links: edit-form
+     Basics/Advanced (each tab its own form, so one tab's save can never
+     clobber the other's fields) and list scope-switching. Zero JS —
+     the current tab is just aria-current on a link.
+     Keys:
+       Label  string, required — the nav's accessible name
+       Items  list, required — each {Label, Href, Current} */}}
+{{define "seg-tabs"}}<nav class="rst-seg-tabs" aria-label="{{.Label}}">{{range .Items}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>{{end}}

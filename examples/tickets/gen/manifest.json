@@ -1,0 +1,61 @@
+[
+  {
+    "name": "ticket_types",
+    "route": "/admin/ticket_types",
+    "store": "exclusive",
+    "list": {
+      "columns": [
+        {
+          "field": "Name",
+          "kind": "text"
+        },
+        {
+          "field": "Price",
+          "kind": "money"
+        },
+        {
+          "field": "Status",
+          "kind": "text"
+        }
+      ],
+      "search": true,
+      "filter": null,
+      "filters": [
+        {
+          "field": "Status",
+          "values": [
+            "draft",
+            "on_sale",
+            "sold_out"
+          ]
+        }
+      ]
+    },
+    "form": {
+      "basics": [
+        {
+          "name": "Name",
+          "kind": "text",
+          "required": true
+        },
+        {
+          "name": "Price",
+          "kind": "money",
+          "required": true
+        },
+        {
+          "name": "Status",
+          "kind": "text",
+          "required": false
+        }
+      ],
+      "advanced": [
+        {
+          "name": "MaxPerOrder",
+          "kind": "text",
+          "required": false
+        }
+      ]
+    }
+  }
+]

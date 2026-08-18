@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	rastrillo "github.com/carlosframework/rastrillo"
@@ -120,6 +121,26 @@ func extractToolLit(lit *ast.CompositeLit) (rastrillo.Tool, error) {
 		}
 	}
 	return t, nil
+}
+
+func keyName(e ast.Expr) string {
+	if id, ok := e.(*ast.Ident); ok {
+		return id.Name
+	}
+	return ""
+}
+
+func isRastrilloType(expr ast.Expr, name string) bool {
+	sel, ok := expr.(*ast.SelectorExpr)
+	return ok && sel.Sel.Name == name
+}
+
+func stringLit(e ast.Expr) (string, error) {
+	bl, ok := e.(*ast.BasicLit)
+	if !ok || bl.Kind != token.STRING {
+		return "", fmt.Errorf("want a string literal (the generator reads Tool markers statically)")
+	}
+	return strconv.Unquote(bl.Value)
 }
 
 func accessLit(e ast.Expr) (rastrillo.Access, error) {

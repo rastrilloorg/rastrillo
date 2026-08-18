@@ -4,33 +4,15 @@
  *   1. Every value comes from a token. No literal colour, no literal px
  *      spacing — that is the whole mechanism by which these controls
  *      follow the dark theme without this file knowing dark exists.
- *   2. It never styles an .rst- class. The forms use .rst-btn in their
- *      markup; no rule here redefines one.
+ *   2. It never styles an .rst- class. The forms use field-text,
+ *      field-textarea and form-foot now, and .rst-form for their
+ *      container; no rule here redefines any of them.
  *
- * It covers exactly what the library deliberately does not ship: form
- * controls (the field partials are deferred — friction finding F2) and a
- * prose measure for the public post page.
+ * Form controls used to live here (friction finding F2, now fixed by
+ * those partials); what's left is page styling the library deliberately
+ * leaves to the app: error/note lines, the status strip, the article
+ * measure, and the footer.
  */
-
-.blog-form { display: flex; flex-direction: column; gap: var(--rst-sp-2); max-inline-size: 44rem; }
-.blog-form label { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 600; }
-.blog-form input[type="text"],
-.blog-form textarea {
-  background: var(--rst-surface);
-  border: 1px solid var(--rst-line-strong);
-  border-radius: var(--rst-radius-sm);
-  color: var(--rst-text);
-  font: inherit;
-  padding: var(--rst-sp-2) var(--rst-sp-3);
-}
-.blog-form textarea { line-height: 1.6; resize: vertical; }
-.blog-form__actions { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
-
-/* tokens.css scopes its :focus-visible rule to the library's own
- * containers, so nothing on a form screen inherits it. Same token, same
- * shape, restated where the library's scope ends — friction finding F2. */
-.blog-form :focus-visible,
-.blog-status :focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 
 .blog-error { color: var(--rst-tone-negative-fg); font-weight: 600; margin: 0 0 var(--rst-sp-3); }
 .blog-note { color: var(--rst-text-muted); margin: 0; padding: var(--rst-sp-3); }

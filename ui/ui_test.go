@@ -3,8 +3,11 @@ package ui
 import (
 	"html/template"
 	"io/fs"
+	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/carlosframework/rastrillo"
 )
 
 // parseAll builds the template tree exactly the way an app is documented
@@ -76,6 +79,7 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		"--rst-tone-positive-fg", "--rst-tone-positive-bg",
 		"--rst-tone-warning-fg", "--rst-tone-warning-bg",
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
+		"--rst-shadow-pop",
 	}
 	for _, prop := range themed {
 		// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
@@ -83,6 +87,208 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		if got := strings.Count(css, prop+":"); got != 3 {
 			t.Errorf("%s is declared %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", prop, got)
 		}
+	}
+}
+
+// reducedMotionAllowlist names selectors that carry a transition/animation
+// with no matching disable under @media (prefers-reduced-motion: reduce),
+// found pre-existing at the time this gate was added. Task 5 only adds
+// the gate; it does not silently fix CSS it did not write. Empty today —
+// every transition tokens.css declares (rst-caret, rst-switch__track and
+// its ::after, rst-tip::after) already has a reduce-block "transition:
+// none" counterpart, so nothing needs listing. If a future change adds a
+// transition without one, this test fails; add the selector here only
+// with a comment explaining why it is deliberately left un-disabled, not
+// as a way to silence the failure.
+var reducedMotionAllowlist = map[string]bool{}
+
+// braceMatchEnd returns the index of the '}' matching the '{' implicitly
+// opened at css[start-1] (i.e. depth starts at 1) — tokens.css nests at
+// most one level (a media query wrapping plain rules), and no selector or
+// value in this file contains a literal brace, so simple depth counting
+// is exact here.
+func braceMatchEnd(css string, start int) int {
+	depth := 1
+	for j := start; j < len(css); j++ {
+		switch css[j] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return j
+			}
+		}
+	}
+	return len(css)
+}
+
+// reducedMotionBlocks returns the raw contents of every
+// @media (prefers-reduced-motion: reduce) { ... } block in css, and rest
+// = css with those blocks (header, braces and all) removed — so a
+// transition-selector search over rest never mistakes a reduce block's
+// own "transition: none" for an active, undisabled transition.
+func reducedMotionBlocks(css string) (blocks []string, rest string) {
+	const header = "@media (prefers-reduced-motion: reduce) {"
+	var b strings.Builder
+	last, idx := 0, 0
+	for {
+		i := strings.Index(css[idx:], header)
+		if i < 0 {
+			break
+		}
+		blockStart := idx + i
+		contentStart := blockStart + len(header)
+		end := braceMatchEnd(css, contentStart)
+		blocks = append(blocks, css[contentStart:end])
+		b.WriteString(css[last:blockStart])
+		last = end + 1
+		idx = end + 1
+	}
+	b.WriteString(css[last:])
+	return blocks, b.String()
+}
+
+// leafRule is one selector plus its (brace-matched, non-nested)
+// declaration body.
+type leafRule struct{ selector, body string }
+
+// leafRulePattern's selector group ([^{}]+) is greedy over everything
+// since the previous rule's closing brace, which includes any comment
+// sitting between the two rules — for the very first rule in the file,
+// that is tokens.css's entire, ~100-line file-header comment. blockCommentPattern
+// strips /* ... */ spans (across lines: (?s) makes '.' match '\n') out of
+// a raw selector capture before it is trimmed and used as a map key or
+// error-message value, so neither is unusably long or noisy.
+var blockCommentPattern = regexp.MustCompile(`(?s)/\*.*?\*/`)
+
+// leafRulePattern extracts every innermost selector{...} rule in css —
+// this naturally includes rules nested inside an @media block (matched
+// before the wrapping @media's own, still-open brace), since none of
+// them nest further themselves.
+var leafRulePattern = regexp.MustCompile(`([^{}]+)\{([^{}]*)\}`)
+
+func leafRules(css string) []leafRule {
+	var out []leafRule
+	for _, m := range leafRulePattern.FindAllStringSubmatch(css, -1) {
+		sel := blockCommentPattern.ReplaceAllString(m[1], "")
+		// Fields+Join collapses any remaining internal whitespace/newlines
+		// left by a stripped multi-line comment down to single spaces, on
+		// top of trimming the ends.
+		sel = strings.Join(strings.Fields(sel), " ")
+		out = append(out, leafRule{selector: sel, body: m[2]})
+	}
+	return out
+}
+
+// selectorList splits a (possibly comma-separated) selector into its
+// individual, trimmed selectors — ".a, .a::after" becomes [".a",
+// ".a::after"], each compared for exact equality elsewhere in this file,
+// never by substring: a substring check would let a new, unguarded
+// ".rst-tip" rule pass by riding on ".rst-tip::after" already being
+// listed in a reduce block, which is exactly the false negative this
+// gate exists to catch.
+func selectorList(sel string) []string {
+	var out []string
+	for _, s := range strings.Split(sel, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// motionDecl is one transition/animation declaration: the CSS property
+// name and its (trimmed) value.
+type motionDecl struct{ prop, val string }
+
+// motionPropertyPattern finds every transition/animation declaration in
+// a rule body and captures its value, so "transition: none" (the disable
+// declaration itself) can be told apart from an actual animated
+// property, and so a rule declaring both properties is not silently
+// reduced to only the first FindAll would otherwise stop at.
+var motionPropertyPattern = regexp.MustCompile(`(?:^|;)\s*(transition|animation)\s*:\s*([^;]+)`)
+
+func motionDecls(body string) []motionDecl {
+	var out []motionDecl
+	for _, m := range motionPropertyPattern.FindAllStringSubmatch(body, -1) {
+		out = append(out, motionDecl{prop: m[1], val: strings.TrimSpace(m[2])})
+	}
+	return out
+}
+
+// reduceIndex maps an exact selector to the set of properties some
+// prefers-reduced-motion: reduce rule disables (declares "none") for
+// that exact selector.
+type reduceIndex map[string]map[string]bool
+
+func buildReduceIndex(blocks []string) reduceIndex {
+	idx := reduceIndex{}
+	for _, block := range blocks {
+		for _, rule := range leafRules(block) {
+			for _, sel := range selectorList(rule.selector) {
+				for _, d := range motionDecls(rule.body) {
+					if d.val != "none" {
+						continue
+					}
+					if idx[sel] == nil {
+						idx[sel] = map[string]bool{}
+					}
+					idx[sel][d.prop] = true
+				}
+			}
+		}
+	}
+	return idx
+}
+
+// TestReducedMotionDisablesEveryTransition is the motion gate (task 5):
+// every selector that declares a real transition or animation outside a
+// prefers-reduced-motion block must have that exact selector — not a
+// selector merely containing or contained by it — disable that exact
+// same property (transition disabled by "transition: none", animation by
+// "animation: none") somewhere inside a
+// @media (prefers-reduced-motion: reduce) block. Two failure modes this
+// specifically guards against, both found by mutation during review:
+// declaring a *different* motion property on an already-listed selector
+// (selector reappearing is not enough — the property must actually be
+// neutralized), and a new selector merely overlapping textually with one
+// already covered (".rst-tip" vs ".rst-tip::after") — hence the exact,
+// comma-split selector match in selectorList/buildReduceIndex rather than
+// a substring check.
+func TestReducedMotionDisablesEveryTransition(t *testing.T) {
+	css := string(TokensCSS())
+	reduceBlocks, rest := reducedMotionBlocks(css)
+	if len(reduceBlocks) == 0 {
+		t.Fatal("tokens.css declares no @media (prefers-reduced-motion: reduce) block at all")
+	}
+	idx := buildReduceIndex(reduceBlocks)
+
+	tested := 0
+	for _, rule := range leafRules(rest) {
+		decls := motionDecls(rule.body)
+		if len(decls) == 0 {
+			continue
+		}
+		for _, sel := range selectorList(rule.selector) {
+			for _, d := range decls {
+				if d.val == "none" {
+					// Already disabled unconditionally; nothing to gate.
+					continue
+				}
+				tested++
+				if reducedMotionAllowlist[sel] {
+					continue
+				}
+				if !idx[sel][d.prop] {
+					t.Errorf("selector %q declares %s: %s with no exact-selector %q: none under prefers-reduced-motion: reduce (add one, or add %q to reducedMotionAllowlist with a reason)",
+						sel, d.prop, d.val, d.prop+": none", sel)
+				}
+			}
+		}
+	}
+	if tested == 0 {
+		t.Fatal("found no transition/animation declarations to check outside reduce blocks — the parser likely broke, not that tokens.css lost every transition")
 	}
 }
 
@@ -327,9 +533,33 @@ func TestListBarWrapsTheSearchFormInAToolbarStrip(t *testing.T) {
 			t.Errorf("missing %q: %s", want, got)
 		}
 	}
-	// This slice renders no filter or sort control (spec §3).
+	// Without a Filter, the bar renders no dropdown — the key, not the
+	// slice boundary, is now what gates it.
 	if strings.Contains(got, "<details") {
-		t.Errorf("list-bar rendered a dropdown, which is a later slice: %s", got)
+		t.Errorf("list-bar rendered a dropdown without a Filter: %s", got)
+	}
+}
+
+func TestListBarRendersAFilterDropdownWhenGivenOne(t *testing.T) {
+	got := render(t, "list-bar", map[string]any{
+		"SearchAction": "/admin/posts",
+		"Filter": map[string]any{
+			"Label": "All",
+			"Aria":  "Filter by status: All",
+			"Items": []any{
+				map[string]any{"Href": "/admin/posts", "Label": "All", "Current": true},
+				map[string]any{"Href": "/admin/posts?status=draft", "Label": "Drafts"},
+			},
+		},
+	})
+	for _, want := range []string{
+		`<details class="rst-dropdown">`,
+		`aria-label="Filter by status: All"`,
+		`<a href="/admin/posts?status=draft">Drafts</a>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
 	}
 }
 
@@ -466,6 +696,54 @@ func TestPaginationWithNoItems(t *testing.T) {
 	}
 }
 
+func TestMeterClampsAndAlwaysShowsTheNumber(t *testing.T) {
+	over := render(t, "meter", map[string]any{"Percent": 140, "Text": "7/5"})
+	if !strings.Contains(over, "--rst-meter-fill: 100%") {
+		t.Errorf("percent not clamped high: %s", over)
+	}
+	under := render(t, "meter", map[string]any{"Percent": -3, "Text": "0/5"})
+	if !strings.Contains(under, "--rst-meter-fill: 0%") {
+		t.Errorf("percent not clamped low: %s", under)
+	}
+	if !strings.Contains(over, `<span class="rst-meter__num">7/5</span>`) {
+		t.Errorf("the fraction text is the accessible value and must render: %s", over)
+	}
+}
+
+func TestCalloutTones(t *testing.T) {
+	for tone, iconFrag := range map[string]string{
+		"info": "M12 16v-4", "positive": "m9 12 2 2 4-4",
+		"warning": "M12 9v4", "negative": "m15 9-6 6",
+	} {
+		got := render(t, "callout", map[string]any{"Tone": tone, "Body": "b"})
+		if !strings.Contains(got, `data-tone="`+tone+`"`) || !strings.Contains(got, iconFrag) {
+			t.Errorf("tone %s: wrong attribute or icon: %s", tone, got)
+		}
+	}
+	plain := render(t, "callout", map[string]any{"Body": "b"})
+	if !strings.Contains(plain, `data-tone="info"`) {
+		t.Errorf("default tone is info: %s", plain)
+	}
+	if strings.Contains(plain, `role="alert"`) {
+		t.Errorf("role=alert must be opt-in: %s", plain)
+	}
+	alert := render(t, "callout", map[string]any{"Body": "b", "Alert": true})
+	if !strings.Contains(alert, `role="alert"`) {
+		t.Errorf("Alert did not add role=alert: %s", alert)
+	}
+}
+
+func TestPersonAvatarIsDecorationOnly(t *testing.T) {
+	got := render(t, "person", fixtureFor(t, "person"))
+	if !strings.Contains(got, `aria-hidden="true"`) {
+		t.Errorf("avatar must be aria-hidden: %s", got)
+	}
+	empty := render(t, "person", map[string]any{"Href": "/x", "Name": "N"})
+	if !strings.Contains(empty, "rst-person__av--empty") {
+		t.Errorf("missing Initial renders the empty-avatar state: %s", empty)
+	}
+}
+
 // allPartials is the shipped set, with a fixture exercising every
 // optional field at once. Every href is deliberately relative: the
 // self-containment check below bans absolute URLs outright, so anything
@@ -514,6 +792,82 @@ func allPartials() []struct {
 				map[string]any{"Label": "9", "Href": "/posts?page=9"},
 			},
 		}},
+		{"badge", map[string]any{"Label": "Draft"}},
+		{"meter", map[string]any{"Percent": 82, "Text": "412/500"}},
+		{"person", map[string]any{
+			"Href": "/people/1", "Name": "Grace Hopper", "Email": "grace@example.com", "Initial": "G",
+		}},
+		{"callout", map[string]any{
+			"Tone": "warning", "Title": "Connect payments to start selling",
+			"Body": "Your event is live but can't take payment yet.",
+		}},
+		{"detail-list", map[string]any{
+			"Items": []any{
+				map[string]any{"Label": "Audience", "Value": "Members"},
+				map[string]any{"Label": "Main page", "Value": "No"},
+			},
+		}},
+		{"field", map[string]any{
+			"ID": "email", "Name": "email", "Label": "Email", "Type": "email",
+			"Required": true, "Help": "We'll never share this.",
+		}},
+		{"field-select", map[string]any{
+			"ID": "role", "Name": "role", "Label": "Role",
+			"Options": []any{
+				map[string]any{"Value": "admin", "Label": "Admin", "Selected": true},
+				map[string]any{"Value": "member", "Label": "Member"},
+			},
+		}},
+		{"field-textarea", map[string]any{
+			"Name": "bio", "Label": "Bio", "Rows": 4,
+			"Hint": "Shown on your profile.",
+		}},
+		{"field-text", map[string]any{
+			"Name": "title", "Label": "Title", "Hint": "Shown in the list.",
+		}},
+		{"dropdown", map[string]any{
+			"Label": "Sort",
+			"Items": []any{map[string]any{"Href": "/x", "Label": "Newest"}},
+		}},
+		{"form-foot", map[string]any{
+			"Submit": "Save", "CancelHref": "/admin/posts", "CancelLabel": "Back to posts",
+		}},
+		{"field-check", map[string]any{
+			"Name": "notify", "Label": "Email me about replies", "Checked": true,
+		}},
+		{"choice-field", map[string]any{
+			"Legend": "Plan", "Name": "plan",
+			"Options": []any{
+				map[string]any{"Value": "free", "Title": "Free", "Desc": "Good to start."},
+				map[string]any{"Value": "pro", "Title": "Pro", "Desc": "For growing teams.", "Checked": true},
+			},
+		}},
+		{"seg-tabs", map[string]any{
+			"Label": "Sections",
+			"Items": []any{
+				map[string]any{"Label": "Basics", "Href": "?tab=basics", "Current": true},
+				map[string]any{"Label": "Advanced", "Href": "?tab=advanced"},
+			},
+		}},
+		{"confirm-form", map[string]any{
+			"Action": "/orders/1/refund", "Label": "Refund €10.00", "Danger": true,
+			// [][2]string, caller order — csrf first, deliberately: see
+			// confirm-form.html's Hidden doc comment for why the map shape
+			// this used to take is a real footgun (silent CSRF-token loss),
+			// not just a stylistic mismatch with the rest of the library.
+			"Hidden": [][2]string{{"csrf", "tok"}, {"id", "42"}}, "CancelHref": "/orders/1",
+		}},
+		{"back-nav", map[string]any{"Href": "/orders/1", "Label": "Order AB3PX"}},
+		{"bulk-bar", map[string]any{
+			"DoneHref": "/orders", "DoneLabel": "Done selecting",
+			"Count":        "3 selected",
+			"EscalateHref": "/orders?select=all", "EscalateLabel": "Select all 412 matching",
+			"MenuLabel": "Actions",
+			"Actions": []any{
+				map[string]any{"Value": "export", "Label": "Export"},
+				map[string]any{"Value": "refund", "Label": "Refund…", "Danger": true},
+			},
+		}},
 	}
 }
 
@@ -531,20 +885,96 @@ func fixtureFor(t *testing.T, name string) map[string]any {
 	return nil
 }
 
-// All eight partials are present and named exactly as documented.
-func TestAllEightPartialsAreDefined(t *testing.T) {
+// T threading (task 5, §10): a partial's hardcoded-English default now
+// resolves through T, which Funcs binds to the framework base catalog —
+// and FuncsWith lets an app rebind every one of those defaults at once,
+// e.g. to a request-scoped rastrillo.T lookup, without touching the
+// partials themselves.
+func TestUIDefaultsResolveAndRebind(t *testing.T) {
+	got := render(t, "pagination", map[string]any{})
+	if !strings.Contains(got, `aria-label="Pagination"`) {
+		t.Errorf("default label lost: %s", got)
+	}
+	// list-bar-search's aria-label default reuses rastrillo.ui.search_submit
+	// (see basecatalog.go) rather than a key of its own — resolve and
+	// rebind it the same way, so that reuse is actually exercised.
+	if got := render(t, "list-bar-search", map[string]any{}); !strings.Contains(got, `aria-label="Search"`) {
+		t.Errorf("default aria-label lost: %s", got)
+	}
+	// bulk-bar's DoneLabel default (rastrillo.ui.done) — without it the
+	// icon-only close link would render aria-label="".
+	if got := render(t, "bulk-bar", map[string]any{"DoneHref": "/orders", "Count": "3 selected", "MenuLabel": "Actions"}); !strings.Contains(got, `aria-label="Done selecting"`) {
+		t.Errorf("default DoneLabel lost: %s", got)
+	}
+	// FuncsWith rebinds every default.
+	tmpl := template.Must(template.New("").Funcs(FuncsWith(func(key string, _ ...any) string {
+		return "X-" + key
+	})).ParseFS(Templates(), "*.html"))
+	var buf strings.Builder
+	if err := tmpl.ExecuteTemplate(&buf, "pagination", map[string]any{}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), `aria-label="X-rastrillo.ui.pagination"`) {
+		t.Errorf("FuncsWith did not rebind T: %s", buf.String())
+	}
+	buf.Reset()
+	if err := tmpl.ExecuteTemplate(&buf, "list-bar-search", map[string]any{}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), `aria-label="X-rastrillo.ui.search_submit"`) {
+		t.Errorf("FuncsWith did not rebind list-bar-search's aria-label default: %s", buf.String())
+	}
+	buf.Reset()
+	if err := tmpl.ExecuteTemplate(&buf, "bulk-bar", map[string]any{"DoneHref": "/orders", "Count": "3 selected", "MenuLabel": "Actions"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), `aria-label="X-rastrillo.ui.done"`) {
+		t.Errorf("FuncsWith did not rebind bulk-bar's DoneLabel default: %s", buf.String())
+	}
+}
+
+// A caller-supplied value always wins over T's default — the T threading
+// must never override an explicit Label/CancelLabel/Placeholder.
+func TestUIDefaultsYieldToExplicitValues(t *testing.T) {
+	if got := render(t, "pagination", map[string]any{"Label": "Paginación"}); !strings.Contains(got, `aria-label="Paginación"`) {
+		t.Errorf("explicit Label lost to T's default: %s", got)
+	}
+	if got := render(t, "list-search-submit", map[string]any{"Label": "Buscar"}); !strings.Contains(got, ">Buscar<") {
+		t.Errorf("explicit Label lost to T's default: %s", got)
+	}
+	if got := render(t, "list-bar-search", map[string]any{"Placeholder": "Buscar entradas"}); !strings.Contains(got, `aria-label="Buscar entradas"`) {
+		t.Errorf("explicit Placeholder lost to T's default: %s", got)
+	}
+	if got := render(t, "bulk-bar", map[string]any{
+		"DoneHref": "/orders", "DoneLabel": "Terminar selección", "Count": "3 selected", "MenuLabel": "Actions",
+	}); !strings.Contains(got, `aria-label="Terminar selección"`) {
+		t.Errorf("explicit DoneLabel lost to T's default: %s", got)
+	}
+	got := render(t, "confirm-form", map[string]any{
+		"Action": "/x", "Label": "Delete", "CancelHref": "/x", "CancelLabel": "Never mind",
+	})
+	if !strings.Contains(got, ">Never mind</a>") {
+		t.Errorf("explicit CancelLabel lost to T's default: %s", got)
+	}
+}
+
+// All partials are present and named exactly as documented.
+func TestAllPartialsAreDefined(t *testing.T) {
 	tmpl := parseAll(t)
 	want := []string{
 		"page-header", "list-bar", "list-bar-search", "list-search-submit",
 		"list-row-action", "status-pill", "empty-state", "pagination",
+		"badge", "meter", "person", "callout", "detail-list", "dropdown",
+		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
+		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 8 {
-		t.Fatalf("the shipped set is 8 partials, this list has %d", len(want))
+	if len(want) != 27 {
+		t.Fatalf("the shipped set is 27 partials, this list has %d", len(want))
 	}
 }
 
@@ -596,6 +1026,19 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 	if !strings.Contains(page, `aria-label="Pagination"`) {
 		t.Errorf("the pagination nav has no accessible name: %s", page)
 	}
+	field := render(t, "field", fixtureFor(t, "field"))
+	if !strings.Contains(field, `<label class="rst-field__label" for="email">`) {
+		t.Errorf("the field's input has no wired label: %s", field)
+	}
+	choice := render(t, "choice-field", fixtureFor(t, "choice-field"))
+	if !strings.Contains(choice, "<legend>Plan</legend>") {
+		t.Errorf("choice-field's legend did not render: %s", choice)
+	}
+	check := render(t, "field-check", fixtureFor(t, "field-check"))
+	trackEnd := strings.Index(check, `</span>`)
+	if trackEnd == -1 || !strings.Contains(check[trackEnd:], "Email me about replies") {
+		t.Errorf("field-check's label text must render outside the aria-hidden track: %s", check)
+	}
 }
 
 // The styleguide equivalent: one pass renders every partial together,
@@ -642,6 +1085,28 @@ func countOpenTags(s, tag string) int {
 	return strings.Count(s, "<"+tag+" ") + strings.Count(s, "<"+tag+">")
 }
 
+func TestListRowActionRendersAStatusPill(t *testing.T) {
+	got := render(t, "list-row-action", map[string]any{
+		"Href": "/admin/posts/1/edit", "Main": "Release notes",
+		"StatusTone": "positive", "StatusLabel": "Published",
+		"ActionHref": "/posts/1", "ActionLabel": "View",
+	})
+	if !strings.Contains(got, `<span class="rst-status" data-tone="positive">Published</span>`) {
+		t.Errorf("status pill missing or wrong: %s", got)
+	}
+	// The pill sits in the right-hand group, before the action pill.
+	if strings.Index(got, `class="rst-status"`) > strings.Index(got, `class="rst-row__action"`) {
+		t.Errorf("status pill rendered after the action pill: %s", got)
+	}
+}
+
+func TestListRowActionStatusPillAbsentByDefault(t *testing.T) {
+	got := render(t, "list-row-action", map[string]any{"Href": "/p", "Main": "M"})
+	if strings.Contains(got, "rst-status") {
+		t.Errorf("status pill rendered without StatusLabel: %s", got)
+	}
+}
+
 // F10 regression (examples/blog friction log): the class the partial
 // emits for a disabled chip and the selector tokens.css styles must be
 // the same string — they drifted apart once, leaving a disabled
@@ -657,5 +1122,620 @@ func TestDisabledPaginationChipIsStyled(t *testing.T) {
 	}
 	if strings.Contains(css, `.rst-pagination [aria-disabled=`) {
 		t.Errorf("tokens.css still carries the dead aria-disabled pagination rule no partial emits")
+	}
+}
+
+// Same drift check as TestDisabledPaginationChipIsStyled, extended to the
+// classes the five display partials added in this batch emit: every class
+// a partial can produce must have a styled selector in tokens.css, so
+// nothing new ships unstyled.
+func TestDisplayPartialClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{
+		"rst-badge", "rst-badge--warning", "rst-meter", "rst-meter__bar", "rst-meter__num",
+		"rst-person", "rst-person__av", "rst-callout", "rst-callout__ic", "rst-callout__body",
+		"rst-detail", "rst-mono",
+	} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
+	}
+}
+
+// Same drift check again, for the form family this task adds: field,
+// field-select, field-textarea, field-check and choice-field between
+// them can emit every one of these classes.
+func TestFormPartialClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{
+		"rst-field", "rst-field__label", "rst-field__hint", "rst-field__help", "rst-field__error",
+		"rst-input", "rst-input--short",
+		"rst-switch", "rst-switch__track",
+		"rst-choice", "rst-choice__cards", "rst-choice__title", "rst-choice__desc",
+		"rst-seg-tabs",
+	} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
+	}
+}
+
+// Help renders under the control wired via aria-describedby; Error
+// replaces it (never both at once) and additionally marks the control
+// aria-invalid and its own message role=alert.
+func TestFieldWiresHelpAndError(t *testing.T) {
+	help := render(t, "field", map[string]any{"ID": "f1", "Name": "n", "Label": "L", "Help": "h"})
+	if !strings.Contains(help, `aria-describedby="f1-help"`) || !strings.Contains(help, `id="f1-help"`) {
+		t.Errorf("Help not wired via aria-describedby: %s", help)
+	}
+	errd := render(t, "field", map[string]any{"ID": "f1", "Name": "n", "Label": "L", "Help": "h", "Error": "bad"})
+	if !strings.Contains(errd, `aria-invalid="true"`) || !strings.Contains(errd, `role="alert"`) {
+		t.Errorf("Error not wired: %s", errd)
+	}
+	if strings.Contains(errd, "f1-help") {
+		t.Errorf("Error replaces Help — both rendered: %s", errd)
+	}
+}
+
+// The switch is a real checkbox: keyboard and AT operate the actual
+// input, and the visible track is aria-hidden decoration on top of it.
+func TestFieldCheckIsARealCheckbox(t *testing.T) {
+	got := render(t, "field-check", map[string]any{"Name": "on", "Label": "Enable", "Checked": true})
+	for _, want := range []string{`type="checkbox"`, "checked", `aria-hidden="true"`, "rst-switch__track"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+}
+
+// Exactly one tab is aria-current at a time — the accessibility signal,
+// not only the CSS that highlights it.
+func TestSegTabsMarksCurrent(t *testing.T) {
+	got := render(t, "seg-tabs", map[string]any{"Label": "Sections", "Items": []any{
+		map[string]any{"Label": "Basics", "Href": "?tab=basics", "Current": true},
+		map[string]any{"Label": "Advanced", "Href": "?tab=advanced"},
+	}})
+	if !strings.Contains(got, `aria-current="page">Basics`) {
+		t.Errorf("current tab unmarked: %s", got)
+	}
+	if strings.Count(got, "aria-current") != 1 {
+		t.Errorf("exactly one current tab: %s", got)
+	}
+}
+
+// confirm-form's Cancel is the group's first element in the DOM — no CSS
+// reorders it. DOM order, visual order (.rst-form-actions is a plain
+// flex row, no order property), and tab order therefore all agree:
+// Cancel, then the submit. The destructive control is never the first
+// focusable element in the group, so a keyboard user tabbing forward
+// always meets Cancel before they can reach it.
+func TestConfirmFormShape(t *testing.T) {
+	got := render(t, "confirm-form", fixtureFor(t, "confirm-form"))
+	for _, want := range []string{`method="post"`, `action="/orders/1/refund"`,
+		`<input type="hidden" name="csrf" value="tok">`, "rst-btn--danger",
+		`href="/orders/1"`, ">Cancel</a>"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+	// Cancel is an <a>, never a submit — a GET never mutates.
+	if strings.Contains(got, `type="submit">Cancel`) {
+		t.Errorf("cancel must be a link: %s", got)
+	}
+	// Cancel precedes the submit button in the DOM — the sole source of
+	// both visual order and tab order now that no CSS reorders them.
+	if cancel, submit := strings.Index(got, `<a class="rst-btn rst-btn--ghost"`), strings.Index(got, `<button type="submit"`); cancel == -1 || submit == -1 || cancel > submit {
+		t.Errorf("cancel must precede the submit button in the DOM: %s", got)
+	}
+	// Hidden inputs render in the caller's slice order, not key-sorted —
+	// [][2]string has no keys to sort. The fixture passes csrf before id
+	// deliberately (see confirm-form.html's Hidden doc comment), so this
+	// asserts the caller's own ordering came through unchanged; it is not
+	// a guarantee the partial itself makes about any particular field.
+	if csrf, id := strings.Index(got, `name="csrf"`), strings.Index(got, `name="id"`); csrf == -1 || id == -1 || csrf > id {
+		t.Errorf("hidden inputs must render in caller order (fixture puts csrf before id): %s", got)
+	}
+}
+
+func TestBackNavRendersArrowLink(t *testing.T) {
+	got := render(t, "back-nav", fixtureFor(t, "back-nav"))
+	if !strings.Contains(got, `<p class="rst-back-nav">`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
+		t.Errorf("missing back-nav shape: %s", got)
+	}
+}
+
+// notice and form-error are string-data partials — the partial's dot is
+// the message itself, not a dict-built map — so render() is called with
+// a plain string. Both render nothing at all for an empty string, rather
+// than an empty-but-present element: a caller can call {{template
+// "notice" .Flash}} unconditionally, flash message or not.
+func TestNoticeRendersMessageOrNothing(t *testing.T) {
+	if got := render(t, "notice", ""); strings.TrimSpace(got) != "" {
+		t.Errorf("empty notice should render nothing: %q", got)
+	}
+	got := render(t, "notice", "Refund sent.")
+	if !strings.Contains(got, `role="status"`) || !strings.Contains(got, "Refund sent.") {
+		t.Errorf("missing notice text or role: %s", got)
+	}
+}
+
+func TestFormErrorRendersMessageOrNothing(t *testing.T) {
+	if got := render(t, "form-error", ""); strings.TrimSpace(got) != "" {
+		t.Errorf("empty form-error should render nothing: %q", got)
+	}
+	got := render(t, "form-error", "Amount is required.")
+	if !strings.Contains(got, `role="alert"`) || !strings.Contains(got, "Amount is required.") {
+		t.Errorf("missing form-error text or role: %s", got)
+	}
+}
+
+// The actions menu's items are real submit buttons on the surrounding
+// form (name="action", value per item) — not links, not onclick — so
+// bulk operations work with JavaScript off exactly like every other
+// mutation in this library. The close control is icon-only, so its
+// accessible name has to come from somewhere other than visible text.
+func TestBulkBarActionsAreRealSubmits(t *testing.T) {
+	fixture := fixtureFor(t, "bulk-bar")
+	got := render(t, "bulk-bar", fixture)
+	if !strings.Contains(got, `<button type="submit" name="action" value="refund" class="rst-danger">`) {
+		t.Errorf("actions must be named submit buttons on the surrounding form: %s", got)
+	}
+	if !strings.Contains(got, `aria-label=`) {
+		t.Errorf("the close control needs an accessible name: %s", got)
+	}
+	// The first Actions entry is the surrounding form's implicit-Enter
+	// default — Enter in any text field on the form submits it, whether
+	// or not the menu is even open — so it must never be the
+	// destructive one, and the rendered danger button must be the last
+	// button in the menu, not merely somewhere after the first.
+	actions, ok := fixture["Actions"].([]any)
+	if !ok || len(actions) == 0 {
+		t.Fatalf("fixture has no Actions to check ordering against")
+	}
+	if first, ok := actions[0].(map[string]any); ok && first["Danger"] == true {
+		t.Errorf("the fixture's first action is the form's implicit-Enter default and must not be destructive: %+v", first)
+	}
+	lastButton, dangerAttr := strings.LastIndex(got, "<button "), strings.Index(got, `class="rst-danger"`)
+	if lastButton == -1 || dangerAttr == -1 || dangerAttr < lastButton {
+		t.Errorf("the danger button must be the last button in the actions menu: %s", got)
+	}
+}
+
+// iconSVG returns one vendored icon's markup as a plain string for
+// building styleguide samples inline. rastrillo.Icon returns
+// template.HTML; string() is safe here because every argument this
+// package's tests pass is a compile-time constant slug, never
+// request-derived text.
+func iconSVG(slug string) string { return string(rastrillo.Icon(slug)) }
+
+// styleguideSamples are the canonical markup samples for the class
+// idioms — structural components with arbitrary bodies that a Go
+// template partial cannot wrap. The smoke test renders them so every
+// documented class is exercised, and the class↔css test keeps them
+// honest against tokens.css (the F10 lesson, generalized). ui.go's
+// package doc references this map by name rather than duplicating the
+// markup, so the two cannot drift.
+var styleguideSamples = map[string]string{
+	"box": `<div class="rst-box-head"><h2>Payout</h2><a class="rst-btn" href="/payout/edit">Edit</a></div>
+<section class="rst-box"><p>Everything on a screen sits inside boxes.</p><div class="rst-box-foot">Last updated 2 hours ago</div></section>`,
+	"list-grid": `<div class="rst-card" style="--rst-cols: 2fr 110px 32px">
+  <div class="rst-lrow rst-lrow--head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
+  <div class="rst-lrow">
+    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
+    <span class="rst-m-hide rst-cell-mut">Paid</span>
+    <details class="rst-row-menu"><summary aria-label="Actions for order AB3PX">` + iconSVG("kebab") + `</summary>
+      <div class="rst-row-menu__panel"><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
+    </details>
+  </div>
+  <p class="rst-no-match">No orders match. <a href="/orders">Clear filters</a></p>
+</div>
+<p class="rst-count-line">Displaying <strong>1–20</strong> of <strong>412</strong></p>`,
+	"dropdown": `<details class="rst-dropdown" name="list-controls">
+  <summary>Filter<span class="rst-caret" aria-hidden="true">` + iconSVG("chevron-down") + `</span><span class="rst-sr-only">Filter orders: Paid</span></summary>
+  <div class="rst-dropdown__menu">
+    <a aria-current="true" href="/orders?status=paid">Paid</a>
+    <details class="rst-menu-group" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
+  </div>
+</details>
+<span class="rst-ftok"><span class="rst-ftok__k">Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span>`,
+	// form-layout demonstrates the classes tokens.css ships for form
+	// rhythm and the save bar (rst-form-flow, rst-field-row, rst-grow,
+	// rst-form-foot, rst-form-actions) — no partial emits these, since
+	// they wrap a caller-composed run of "field" partials rather than a
+	// single data shape. Two adjacent .rst-field divs exercise the
+	// rst-form-flow spacing rule; the row's grown field exercises
+	// rst-grow. The cancel/save pair reuses the existing button classes
+	// (Task 3's ambiguity resolution: no new rst-btn variant needed).
+	"form-layout": `<form class="rst-form-flow" method="post" action="/settings">
+  <div class="rst-field">
+    <label class="rst-field__label" for="name">Name</label>
+    <input class="rst-input" type="text" id="name" name="name">
+  </div>
+  <div class="rst-field">
+    <label class="rst-field__label" for="email">Email</label>
+    <input class="rst-input" type="email" id="email" name="email">
+  </div>
+  <div class="rst-field-row">
+    <div class="rst-field rst-grow">
+      <label class="rst-field__label" for="city">City</label>
+      <input class="rst-input" type="text" id="city" name="city">
+    </div>
+    <div class="rst-field">
+      <label class="rst-field__label" for="zip">ZIP</label>
+      <input class="rst-input rst-input--short" type="text" id="zip" name="zip">
+    </div>
+  </div>
+  <div class="rst-form-foot">
+    <span class="rst-form-foot__note">Changes save immediately.</span>
+    <div class="rst-form-actions">
+      <a class="rst-btn" href="/settings">Cancel</a>
+      <button class="rst-btn rst-btn--primary" type="submit">Save</button>
+    </div>
+  </div>
+</form>`,
+	// tblock reuses field-check's exact switch markup (input + a sibling
+	// rst-switch__track) inside its own head, so :has() can key off the
+	// same input:checked selector tokens.css already ships for the
+	// switch. The body is hand-written static HTML — a caller's real
+	// body would be a "field" partial render, but this sample has no
+	// template engine of its own supplying that, so a plain input
+	// stands in for it.
+	"tblock": `<div class="rst-tblock">
+  <label class="rst-tblock__head"><input type="checkbox" name="notify" checked>
+    <span class="rst-switch__track" aria-hidden="true"></span>
+    <span><span class="rst-tblock__title">Email notifications</span><span class="rst-tblock__desc">Sent for every reply to a thread you're in.</span></span>
+  </label>
+  <div class="rst-tblock__body">
+    <div class="rst-field">
+      <label class="rst-field__label" for="notify-freq">Frequency</label>
+      <input class="rst-input" type="text" id="notify-freq" name="notify_freq" value="Daily digest">
+    </div>
+  </div>
+</div>`,
+	// modal route — the backdrop is marked inert (a real HTML attribute,
+	// not a class tokens.css needs to style) so the page behind the
+	// panel is unreachable by keyboard or screen reader while the modal
+	// is open. The nav rail's current item is aria-current, matching the
+	// dropdown and seg-tabs idioms. Closing is the plain rst-modal-close
+	// link back to the page the backdrop already shows.
+	"modal": `<div class="rst-backdrop" inert>
+  <div class="rst-page"><h1>Settings</h1></div>
+</div>
+<div class="rst-modal-overlay">
+  <div class="rst-modal-panel">
+    <nav>
+      <a href="/settings/profile" aria-current="page">Profile</a>
+      <a href="/settings/billing">Billing</a>
+      <a href="/settings/notifications">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>
+      <h2>Profile</h2>
+      <p>Update the name and photo shown across the account.</p>
+    </section>
+  </div>
+</div>`,
+	// help — the CSS tooltip (data-tip, shown via rst-tip::after on
+	// hover/focus) is decoration only; aria-label carries the real
+	// accessible name so a screen reader user gets the full sentence
+	// even though the tooltip itself never reaches the accessibility
+	// tree.
+	"help": `<a class="rst-help rst-tip" href="/help/orders" target="_blank" rel="noopener" aria-label="Help: orders" data-tip="About orders">` + iconSVG("help-circle") + `</a>`,
+	// selbox — the label restates the row's own identity ("order
+	// AB3PX"), the same disambiguation list-row-action's ActionAria and
+	// row-menu's per-row aria-label already use, rather than a bare
+	// "checkbox 3 of 12".
+	"selbox": `<label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label>`,
+}
+
+// The samples are static HTML with no template actions, so parsing them
+// through the ui funcs is enough to prove they are well-formed
+// standalone markup a styleguide page can Execute verbatim.
+func TestStyleguideSamplesRender(t *testing.T) {
+	for name, sample := range styleguideSamples {
+		tmpl, err := template.New(name).Funcs(Funcs()).Parse(sample)
+		if err != nil {
+			t.Fatalf("%s: Parse: %v", name, err)
+		}
+		var buf strings.Builder
+		if err := tmpl.Execute(&buf, nil); err != nil {
+			t.Fatalf("%s: Execute: %v", name, err)
+		}
+		out := buf.String()
+		if out == "" {
+			t.Errorf("%s: rendered empty", name)
+		}
+		// No sample reaches for a <script>: the modal shell, toggle-block
+		// reveal, and bulk-bar actions menu are all zero-JS by design
+		// (own-URL navigation, :has(), and real submit buttons,
+		// respectively), and this check applies across every sample —
+		// old and new — so a future one cannot quietly opt out.
+		if strings.Contains(out, "<script") {
+			t.Errorf("%s: reaches for <script>; this vocabulary is zero-JS: %s", name, out)
+		}
+		for _, tag := range []string{"div", "details", "section", "a", "span"} {
+			open, closed := countOpenTags(out, tag), strings.Count(out, "</"+tag+">")
+			if open != closed {
+				t.Errorf("%s: <%s> is unbalanced: %d opened, %d closed", name, tag, open, closed)
+			}
+		}
+	}
+}
+
+// rstClassPattern extracts one rst- class token, including its optional
+// BEM __element and --modifier suffixes.
+var rstClassPattern = regexp.MustCompile(`rst-[a-z-]+(?:__[a-z-]+)?(?:--[a-z-]+)?`)
+
+// classAttrPattern isolates class="..." attribute values, so extraction
+// runs over actual class tokens rather than the whole sample string —
+// the list-grid sample's inline `style="--rst-cols: …"` also matches
+// rstClassPattern (as "rst-cols"), but --rst-cols is a custom property
+// read with var(), never a class selector, and checking it against
+// tokens.css with a leading "." would be a false positive.
+var classAttrPattern = regexp.MustCompile(`class="([^"]*)"`)
+
+// TestIdiomClassesAreStyled is the F10 lesson in both directions: every
+// class a sample emits must have a selector in tokens.css (a sample
+// cannot reference a class that does not exist), and every selector this
+// task added must be exercised by some sample (an idiom cannot ship
+// undemonstrated).
+func TestIdiomClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	seen := map[string]bool{}
+	for _, sample := range styleguideSamples {
+		for _, attr := range classAttrPattern.FindAllStringSubmatch(sample, -1) {
+			for _, class := range rstClassPattern.FindAllString(attr[1], -1) {
+				seen[class] = true
+			}
+		}
+	}
+	for class := range seen {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q (used in a styleguide sample)", class)
+		}
+	}
+
+	// The selectors this task's Step 1 added to tokens.css, listed
+	// literally: each one must appear in at least one sample above.
+	for _, class := range []string{
+		"rst-box", "rst-box-head", "rst-box-foot",
+		"rst-card", "rst-lrow", "rst-lrow--head", "rst-m-hide", "rst-nm", "rst-cell-mut",
+		"rst-no-match", "rst-count-line",
+		"rst-row-menu", "rst-row-menu__panel", "rst-danger",
+		"rst-dropdown", "rst-dropdown__menu", "rst-menu-group", "rst-caret",
+		"rst-ftok",
+	} {
+		if !seen[class] {
+			t.Errorf("selector %q was added to tokens.css this task but no styleguide sample uses it", class)
+		}
+	}
+
+	// Task 3's form-layout selectors: no partial emits these (they wrap a
+	// caller-composed run of fields, not a single data shape), so the
+	// "form-layout" sample above is their only exercise.
+	for _, class := range []string{
+		"rst-form-flow", "rst-field-row", "rst-grow", "rst-form-foot", "rst-form-foot__note", "rst-form-actions",
+	} {
+		if !seen[class] {
+			t.Errorf("selector %q was added to tokens.css in the form-layout task but no styleguide sample uses it", class)
+		}
+	}
+
+	// Task 4's class-idiom selectors (toggle-block, modal route, help,
+	// selbox) — the "tblock", "modal", "help", and "selbox" samples above
+	// are their only exercise, the same way box/list-grid/dropdown/ftok
+	// are Task 2's and form-layout is Task 3's. bulk-bar's own classes
+	// (rst-bulkbar*) are excluded here on purpose: bulk-bar is a real
+	// partial, already exercised by allPartials()/TestRenderEverythingSmoke,
+	// and checked directly in TestRoutesFamilyPartialClassesAreStyled below.
+	for _, class := range []string{
+		"rst-tblock", "rst-tblock__head", "rst-tblock__title", "rst-tblock__desc", "rst-tblock__body",
+		"rst-backdrop", "rst-modal-overlay", "rst-modal-panel", "rst-modal-close",
+		"rst-help", "rst-tip", "rst-selbox",
+	} {
+		if !seen[class] {
+			t.Errorf("selector %q was added to tokens.css in the routes-family task but no styleguide sample uses it", class)
+		}
+	}
+}
+
+// Same drift check again, direct rather than sample-driven: the classes
+// this task's partials (confirm-form, back-nav, notice, form-error,
+// bulk-bar) emit themselves, so there is no arbitrary caller-composed
+// body for a styleguide sample to carry them — allPartials() already
+// exercises confirm-form/back-nav/bulk-bar's fixtures, and this pins
+// that every class they can render resolves to a tokens.css selector.
+func TestRoutesFamilyPartialClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{
+		"rst-btn--ghost", "rst-btn--danger",
+		"rst-back-nav", "rst-notice", "rst-form-error",
+		"rst-bulkbar", "rst-bulkbar__close", "rst-bulkbar__count", "rst-bulkbar__escalate",
+	} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
+	}
+}
+
+// The dropdown's exclusivity between siblings (only one open at a time)
+// is the native <details name> attribute, not JavaScript — this pins
+// both halves of that promise.
+func TestDropdownExclusivityIsNative(t *testing.T) {
+	sample := styleguideSamples["dropdown"]
+	if !strings.Contains(sample, `<details class="rst-dropdown" name=`) {
+		t.Errorf("dropdown sample's outer <details> carries no name attribute: %s", sample)
+	}
+	if strings.Contains(sample, "<script") {
+		t.Errorf("dropdown sample reaches for <script>; exclusivity must stay native: %s", sample)
+	}
+}
+
+func TestDropdownRendersADetailsMenuOfLinks(t *testing.T) {
+	got := render(t, "dropdown", map[string]any{
+		"Label": "All",
+		"Aria":  "Filter by status: All",
+		"Items": []any{
+			map[string]any{"Href": "/admin/posts", "Label": "All", "Current": true},
+			map[string]any{"Href": "/admin/posts?status=draft", "Label": "Drafts"},
+		},
+	})
+	for _, want := range []string{
+		`<details class="rst-dropdown">`,
+		`<summary class="rst-btn rst-dropdown__summary" aria-label="Filter by status: All">All`,
+		`<a href="/admin/posts" aria-current="true">All`,
+		`<a href="/admin/posts?status=draft">Drafts</a>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+	// The current item is marked twice — attribute and check icon; the
+	// non-current one carries neither.
+	if !strings.Contains(got, `path d="M20 6 9 17l-5-5"`) {
+		t.Errorf("current item lost its check icon: %s", got)
+	}
+	if strings.Count(got, "aria-current") != 1 {
+		t.Errorf("aria-current should mark exactly the current item: %s", got)
+	}
+}
+
+func TestDropdownMinimalFixture(t *testing.T) {
+	got := render(t, "dropdown", map[string]any{
+		"Label": "Sort",
+		"Items": []any{map[string]any{"Href": "/x", "Label": "Newest"}},
+	})
+	if strings.Contains(got, "aria-label") {
+		t.Errorf("Aria was absent but an aria-label rendered: %s", got)
+	}
+	if !strings.Contains(got, `path d="m6 9 6 6 6-6"`) {
+		t.Errorf("summary lost its disclosure chevron: %s", got)
+	}
+}
+
+func TestFieldTextMaximalFixture(t *testing.T) {
+	got := render(t, "field-text", map[string]any{
+		"Name": "title", "Label": "Title", "Value": "Hello", "Type": "text",
+		"Required": true, "Hint": "Shown in the list.", "Error": "Title is required.",
+		"Autocomplete": "off",
+	})
+	for _, want := range []string{
+		`<div class="rst-field">`,
+		`<label class="rst-field__label" for="title">Title`,
+		`<span class="rst-field__required" aria-hidden="true">*</span>`,
+		`<input class="rst-input" id="title" name="title" type="text" value="Hello" autocomplete="off" required aria-invalid="true" aria-describedby="title-hint title-error">`,
+		`<small class="rst-field__hint" id="title-hint">Shown in the list.</small>`,
+		`<small class="rst-field__error" id="title-error">Title is required.</small>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+}
+
+func TestFieldTextMinimalFixture(t *testing.T) {
+	got := render(t, "field-text", map[string]any{"Name": "q", "Label": "Query"})
+	if !strings.Contains(got, `<input class="rst-input" id="q" name="q" type="text">`) {
+		t.Errorf("minimal input wrong: %s", got)
+	}
+	for _, absent := range []string{"aria-describedby", "aria-invalid", "required", "value=", "rst-field__hint", "rst-field__error"} {
+		if strings.Contains(got, absent) {
+			t.Errorf("%q rendered without its key: %s", absent, got)
+		}
+	}
+}
+
+// aria-describedby lists only ids that exist: hint alone, error alone.
+func TestFieldTextDescribedByMatchesRenderedIds(t *testing.T) {
+	hintOnly := render(t, "field-text", map[string]any{"Name": "a", "Label": "A", "Hint": "h"})
+	if !strings.Contains(hintOnly, `aria-describedby="a-hint"`) {
+		t.Errorf("hint-only describedby wrong: %s", hintOnly)
+	}
+	errOnly := render(t, "field-text", map[string]any{"Name": "a", "Label": "A", "Error": "e"})
+	if !strings.Contains(errOnly, `aria-describedby="a-error"`) {
+		t.Errorf("error-only describedby wrong: %s", errOnly)
+	}
+}
+
+func TestFieldTextareaMaximalFixture(t *testing.T) {
+	got := render(t, "field-textarea", map[string]any{
+		"Name": "body", "Label": "Body", "Value": "Hello\n\nWorld",
+		"Rows": 18, "Required": true, "Hint": "Plain text.", "Error": "Too long.",
+	})
+	for _, want := range []string{
+		`<label class="rst-field__label" for="body">Body`,
+		`<textarea class="rst-textarea" id="body" name="body" rows="18" required aria-invalid="true" aria-describedby="body-hint body-error">Hello`,
+		`<small class="rst-field__hint" id="body-hint">Plain text.</small>`,
+		`<small class="rst-field__error" id="body-error">Too long.</small>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+}
+
+func TestFieldTextareaMinimalFixture(t *testing.T) {
+	got := render(t, "field-textarea", map[string]any{"Name": "notes", "Label": "Notes"})
+	if !strings.Contains(got, `<textarea class="rst-textarea" id="notes" name="notes"></textarea>`) {
+		t.Errorf("minimal textarea wrong: %s", got)
+	}
+	if strings.Contains(got, "rows=") {
+		t.Errorf("rows rendered without the key: %s", got)
+	}
+}
+
+func TestFormFootRendersSubmitAndCancel(t *testing.T) {
+	got := render(t, "form-foot", map[string]any{
+		"Submit": "Save", "CancelHref": "/admin/posts", "CancelLabel": "Back to posts",
+	})
+	for _, want := range []string{
+		`<div class="rst-form__foot">`,
+		`<button class="rst-btn rst-btn--primary" type="submit">Save</button>`,
+		`<a class="rst-btn" href="/admin/posts">Back to posts</a>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+}
+
+func TestFormFootMinimalFixture(t *testing.T) {
+	got := render(t, "form-foot", map[string]any{"Submit": "Create"})
+	if strings.Contains(got, "<a ") {
+		t.Errorf("cancel link rendered without CancelHref: %s", got)
+	}
+}
+
+// F2's second half: the focus ring covers the whole app column, so a
+// hand-rolled control inside .rst-page no longer restates the outline.
+func TestFocusRingScopeIncludesThePageColumn(t *testing.T) {
+	css := string(TokensCSS())
+	if !strings.Contains(css, ":where(.rst-page,") {
+		t.Error("tokens.css :focus-visible scope does not start with .rst-page")
+	}
+}
+
+func TestDetailListRendersLabelValueRows(t *testing.T) {
+	got := render(t, "detail-list", map[string]any{
+		"Items": []any{
+			map[string]any{"Label": "Title", "Value": "Hello"},
+			map[string]any{"Label": "Price", "Value": "$1.00", "Mono": true},
+		},
+	})
+	for _, want := range []string{
+		`<dl class="rst-detail">`,
+		`<dt>Title</dt>`, `<dd>Hello</dd>`,
+		`<dt>Price</dt>`, `<dd class="rst-mono">$1.00</dd>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+}
+
+func TestDetailListEmptyItemsRendersEmptyList(t *testing.T) {
+	got := render(t, "detail-list", map[string]any{"Items": []any{}})
+	if !strings.Contains(got, `<dl class="rst-detail">`) || strings.Contains(got, "<dt>") {
+		t.Errorf("empty detail-list wrong: %s", got)
 	}
 }

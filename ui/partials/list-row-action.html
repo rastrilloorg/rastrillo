@@ -20,6 +20,13 @@
                     pill when its visible text alone is not a full
                     accessible name. "Edit" repeated down a list has to
                     say which row it edits.
+       StatusTone   string, optional — the status-pill Tone for the
+                    row's state ("neutral", "positive", "warning",
+                    "negative"); meaningful only with StatusLabel
+       StatusLabel  string, optional — renders a status-pill in the
+                    row's right-hand group, before the action pill.
+                    State the row shows here should not also appear as
+                    prose in Sub.
        Lead         string, optional — a decorative leading marker: a
                     tone-tinted circle. One of "neutral", "positive",
                     "warning", "negative", "accent"; anything else falls
@@ -32,6 +39,9 @@
   <span class="rst-row__lead" data-lead="{{.Lead}}" aria-hidden="true">{{if .LeadInitial}}{{.LeadInitial}}{{end}}</span>
   {{- end}}
   <span class="rst-row__main"><a href="{{.Href}}">{{.Main}}</a>{{if .Sub}}<small class="rst-row__sub">{{.Sub}}</small>{{end}}</span>
+  {{- if .StatusLabel}}
+  {{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
+  {{- end}}
   {{- if .ActionHref}}
   <a class="rst-row__action" href="{{.ActionHref}}"{{if .ActionAria}} aria-label="{{.ActionAria}}"{{end}}>{{.ActionLabel}}</a>
   {{- end}}

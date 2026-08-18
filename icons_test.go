@@ -18,11 +18,17 @@ func TestVendoredIconsAreSelfContained(t *testing.T) {
 		s := string(svg)
 		for _, want := range []string{
 			"<svg", "</svg>", `viewBox="0 0 24 24"`,
-			`stroke="currentColor"`, `aria-hidden="true"`, `class="icon"`, "<path",
+			`stroke="currentColor"`, `aria-hidden="true"`, `class="icon"`,
 		} {
 			if !strings.Contains(s, want) {
 				t.Errorf("icon %q is missing %s: %s", slug, want, s)
 			}
+		}
+		// Real vector content, not an empty shell -- most icons draw in
+		// <path>, but kebab (Lucide's three-dot "more-vertical") is drawn
+		// entirely in <circle>, so either primitive satisfies this.
+		if !strings.Contains(s, "<path") && !strings.Contains(s, "<circle") {
+			t.Errorf("icon %q has no drawing primitive (<path> or <circle>): %s", slug, s)
 		}
 		for _, bad := range []string{"http://", "https://", "<image", "xlink:href", "url("} {
 			if strings.Contains(s, bad) {
@@ -43,13 +49,40 @@ func TestIconUnknownSlugRendersNothing(t *testing.T) {
 	}
 }
 
-// All four expected icon slugs are registered and non-empty.
+// All eleven expected icon slugs are registered and non-empty.
 func TestExpectedIconSlugsRegistered(t *testing.T) {
-	expected := []string{"chevron-down", "check", "plus", "search"}
+	expected := []string{
+		"chevron-down", "check", "plus", "search",
+		"kebab", "x", "info", "check-circle", "alert-triangle", "x-circle", "help-circle",
+	}
 	for _, slug := range expected {
 		if got := Icon(slug); got == "" {
 			t.Errorf("Icon(%q) is empty or not registered", slug)
 		}
+	}
+}
+
+// The seven display-partial icons resolve to non-empty, well-formed SVG
+// and stay silent to assistive tech, identically to the original four —
+// TestVendoredIconsAreSelfContained already covers shape and self-
+// containment for every entry in icons, this asserts the specific new
+// names exist with the same aria-hidden contract.
+func TestNewIconsResolveWithAriaHidden(t *testing.T) {
+	for _, slug := range []string{
+		"kebab", "x", "info", "check-circle", "alert-triangle", "x-circle", "help-circle",
+	} {
+		got := string(Icon(slug))
+		if got == "" {
+			t.Errorf("Icon(%q) is empty", slug)
+			continue
+		}
+		if !strings.Contains(got, "<svg") || !strings.Contains(got, `aria-hidden="true"`) {
+			t.Errorf("Icon(%q) missing <svg> or aria-hidden: %s", slug, got)
+		}
+	}
+	// An unknown slug still behaves as before: empty, no panic.
+	if got := Icon("not-a-real-icon"); got != "" {
+		t.Errorf("Icon(%q) = %q, want empty string", "not-a-real-icon", got)
 	}
 }
 

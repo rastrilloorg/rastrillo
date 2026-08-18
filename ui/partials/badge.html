@@ -1,0 +1,7 @@
+{{/* badge — an uppercase bordered chip for small static markers (LIVE,
+     Draft, Sold out): distinct from status-pill, which is record status.
+     Keys:
+       Label  string, required — the visible text
+       Tone   string, optional — positive | warning | negative | neutral;
+              omitted means the quiet default (border + muted text). */}}
+{{define "badge"}}<span class="rst-badge{{with .Tone}} rst-badge--{{.}}{{end}}">{{.Label}}</span>{{end}}

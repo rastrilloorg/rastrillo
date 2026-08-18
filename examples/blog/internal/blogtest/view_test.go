@@ -2,6 +2,7 @@ package blogtest
 
 import (
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -23,21 +24,33 @@ func renderPage(t *testing.T, page string, data any) string {
 // Parsed into one shared tree they would overwrite each other silently,
 // last file wins, and the app would render the wrong screen with no
 // error anywhere. This is the test that catches a lost clone.
+//
+// "posts/form" stands in for the old "admin_new" page here: the
+// manifest adoption (task 10) replaced the hand admin_new.html/
+// admin_edit.html pages (and their New/Edit actions) with the
+// generated form — see genrender.go's genPages tree, keyed by
+// "<resource>/<page>" rather than a bare basename. Any struct shaped
+// like the generated formView renders it: html/template resolves
+// fields by name via reflection, so this local, unexported literal
+// works exactly like the real (also unexported, and per-action-file)
+// formView the generated actions actually pass.
 func TestEachPageRendersItsOwnContent(t *testing.T) {
 	index := renderPage(t, "index", blog.HomeView{Head: blog.Head{Title: "The blog"}})
 	post := renderPage(t, "post", blog.PostView{
 		Head: blog.Head{Title: "Release notes"}, Title: "Release notes",
 		Date: "Published 2 August 2026", Paragraphs: []string{"One."},
 	})
-	adminNew := renderPage(t, "admin_new", blog.AdminFormView{
-		Head: blog.Head{Title: "New post"}, Action: "/admin/posts",
-	})
+	form := renderPage(t, "posts/form", struct {
+		IsNew  bool
+		Fields map[string]string
+		Errors map[string]string
+	}{IsNew: true, Fields: map[string]string{"Title": "", "Body": ""}})
 
 	wantContains(t, index, "Notes, in the order they were written.")
 	wantContains(t, post, `<article class="blog-article">`)
 	wantNotContains(t, post, "Notes, in the order they were written.")
-	wantContains(t, adminNew, `<form class="blog-form" method="post" action="/admin/posts">`)
-	wantNotContains(t, adminNew, `<article class="blog-article">`)
+	wantContains(t, form, `<form class="rst-form" method="post" action="/admin/posts">`)
+	wantNotContains(t, form, `<article class="blog-article">`)
 }
 
 func TestLayoutWrapsEveryPage(t *testing.T) {
@@ -45,8 +58,16 @@ func TestLayoutWrapsEveryPage(t *testing.T) {
 
 	wantContains(t, html, `<html lang="en">`)
 	wantContains(t, html, `<title>The blog · The blog</title>`)
-	wantContains(t, html, `<link rel="stylesheet" href="/static/tokens.css">`)
-	wantContains(t, html, `<link rel="stylesheet" href="/static/blog.css">`)
+	// Stylesheet hrefs are fingerprinted ({{asset ...}}), so pin the
+	// shape, not a literal hash that changes with every CSS edit.
+	for _, re := range []string{
+		`<link rel="stylesheet" href="/static/tokens\.[0-9a-f]{16}\.css">`,
+		`<link rel="stylesheet" href="/static/blog\.[0-9a-f]{16}\.css">`,
+	} {
+		if !regexp.MustCompile(re).MatchString(html) {
+			t.Errorf("missing a stylesheet link matching %s in:\n%s", re, html)
+		}
+	}
 	wantContains(t, html, `<div class="rst-page">`)
 	wantContains(t, html, `<footer class="blog-footer">`)
 	wantNotContains(t, html, "<script")
@@ -83,7 +104,7 @@ func TestMetaLinesFormatDatesInGo(t *testing.T) {
 	if got, want := blog.PublishedLine(when), "Published 2 August 2026"; got != want {
 		t.Errorf("PublishedLine = %q, want %q", got, want)
 	}
-	if got, want := blog.DraftLine(when), "Draft · edited 2 August 2026"; got != want {
+	if got, want := blog.DraftLine(when), "Edited 2 August 2026"; got != want {
 		t.Errorf("DraftLine = %q, want %q", got, want)
 	}
 }
@@ -129,10 +150,10 @@ func TestEditFormResolvesTheStatusPillPair(t *testing.T) {
 }
 
 func TestPaginationIsHiddenAtOnePageAndShownBeyondIt(t *testing.T) {
-	if got := blog.BuildPagination("/admin/posts", "", 1, 10); got.Show {
+	if got := blog.BuildPagination("/admin/posts", "", "", 1, 10); got.Show {
 		t.Errorf("ten posts is one page; the strip must stay away")
 	}
-	got := blog.BuildPagination("/admin/posts", "", 1, 11)
+	got := blog.BuildPagination("/admin/posts", "", "", 1, 11)
 	if !got.Show {
 		t.Fatalf("eleven posts is two pages; the strip must appear")
 	}
@@ -153,7 +174,7 @@ func TestPaginationIsHiddenAtOnePageAndShownBeyondIt(t *testing.T) {
 }
 
 func TestPaginationCarriesTheQueryAndDisablesNextOnTheLastPage(t *testing.T) {
-	got := blog.BuildPagination("/admin/posts", "go", 2, 11)
+	got := blog.BuildPagination("/admin/posts", "go", "", 2, 11)
 	if got.Items[0] != (blog.PageItem{Label: "Previous", Href: "/admin/posts?q=go&page=1"}) {
 		t.Errorf("Previous = %+v", got.Items[0])
 	}
@@ -163,10 +184,35 @@ func TestPaginationCarriesTheQueryAndDisablesNextOnTheLastPage(t *testing.T) {
 	}
 }
 
+// A non-empty status must flow through BuildPagination too, in order
+// after q and before page — the admin list's own filter dropdown href
+// also contains "q=Note" and "status=draft", so an assertion on the
+// full page string couldn't tell the two apart; this one reaches
+// BuildPagination directly.
+func TestPaginationCarriesTheStatusFilterAfterTheQuery(t *testing.T) {
+	got := blog.BuildPagination("/admin/posts", "Note", "draft", 1, blog.PageSize+1)
+	next := got.Items[len(got.Items)-1]
+	if next != (blog.PageItem{Label: "Next", Href: "/admin/posts?q=Note&status=draft&page=2"}) {
+		t.Errorf("Next = %+v", next)
+	}
+}
+
+// The admin list's integration tests only ever exercise a plain search
+// (q, no status) or a plain filter (status, no q); this test pins the
+// combined wording directly, plus the filter-only case's curly quotes.
+func TestNoMatchNotePinsTheCombinedQueryAndStatusWording(t *testing.T) {
+	if got, want := blog.NoMatchNote("x", "draft"), "No drafts match “x”."; got != want {
+		t.Errorf("NoMatchNote(%q, %q) = %q, want %q", "x", "draft", got, want)
+	}
+	if got, want := blog.NoMatchNote("", "published"), "No published posts yet."; got != want {
+		t.Errorf("NoMatchNote(%q, %q) = %q, want %q", "", "published", got, want)
+	}
+}
+
 // A gap needs 71 posts to appear, so the app builds it correctly and
 // never renders it — the library's own fixtures cover that item kind.
 func TestPaginationWindowsWithGapsPastSevenPages(t *testing.T) {
-	got := blog.BuildPagination("/", "", 5, 100) // ten pages
+	got := blog.BuildPagination("/", "", "", 5, 100) // ten pages
 	var labels []string
 	gaps := 0
 	for _, item := range got.Items {

@@ -1,0 +1,10 @@
+{{/* choice-field — option cards, the preferred radio/checkbox group:
+     whole-card hit target, native input visible (it signals pick-one
+     vs pick-any), selection ring via :has(). Long sentence labels are
+     what made forms hard to parse — Title stays short, Desc explains.
+     Keys:
+       Legend, Name  strings, required
+       Type          string, optional — "radio" (default) | "checkbox"
+       LegendHidden  bool, optional
+       Options       list, required — each {Value, Title, Desc, Checked} */}}
+{{define "choice-field"}}<fieldset class="rst-choice"><legend{{if .LegendHidden}} class="rst-sr-only"{{end}}>{{.Legend}}</legend><div class="rst-choice__cards">{{$name := .Name}}{{$type := or .Type "radio"}}{{range .Options}}<label><input type="{{$type}}" name="{{$name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}><span><span class="rst-choice__title">{{.Title}}</span>{{with .Desc}}<span class="rst-choice__desc">{{.}}</span>{{end}}</span></label>{{end}}</div></fieldset>{{end}}

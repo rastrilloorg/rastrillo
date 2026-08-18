@@ -1,0 +1,23 @@
+{{/* layout — the one shared shell every generated screen renders
+     inside. This app has no hand screen and no ejected template, so
+     unlike the blog's layout.html this one never has to reconcile a
+     hand view model's own Head with a generated one's absence of any
+     — every Data value that reaches "content" here comes straight off
+     a generated formView/showView/listView (internal/generate/
+     actions.go), and Head always comes from render.go's genHead
+     page-name default. */}}
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Head.Title}} · Tickets</title>
+<link rel="stylesheet" href="/static/tokens.css">
+</head>
+<body>
+<div class="rst-page">
+{{template "content" .Data}}
+</div>
+</body>
+</html>
+{{end}}

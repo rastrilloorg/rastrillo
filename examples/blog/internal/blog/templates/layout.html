@@ -1,15 +1,23 @@
+{{/* layout — the one shared shell every screen renders inside,
+     hand-owned and generated alike (task 11 unified genrender.go's
+     duplicated gen-layout into this file once posts/list and
+     posts/form were ejected — see view.go's Render/pageData doc
+     comments). Takes a pageData{Head, Data}: Head is this file's own
+     concern, Data reaches "content" exactly as the app's Render
+     caller built it, so no content template anywhere had to change
+     shape to gain a shared layout. */}}
 {{define "layout"}}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Head.Title}} · The blog</title>
-<link rel="stylesheet" href="/static/tokens.css">
-<link rel="stylesheet" href="/static/blog.css">
+<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<link rel="stylesheet" href="{{asset "static/blog.css"}}">
 </head>
 <body>
 <div class="rst-page">
-{{template "content" .}}
+{{template "content" .Data}}
 <footer class="blog-footer">
 <a href="/">The blog</a>
 <a href="/admin/posts">Posts admin</a>

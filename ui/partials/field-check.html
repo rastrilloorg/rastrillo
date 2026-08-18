@@ -1,0 +1,10 @@
+{{/* field-check — the one toggle mechanism: a real checkbox skinned as
+     a switch. The input is visually hidden but keyboard/AT-intact; the
+     focus ring is reproduced on the visible track via :has(). Plain
+     checkboxes are not part of the vocabulary — see choice-field for
+     pick-any lists that deserve explanation.
+     Keys:
+       Name, Label  strings, required
+       Value        string, optional
+       Checked, Disabled  bools, optional */}}
+{{define "field-check"}}<label class="rst-switch"><input type="checkbox" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{if .Checked}} checked{{end}}{{if .Disabled}} disabled{{end}}><span class="rst-switch__track" aria-hidden="true"></span> {{.Label}}</label>{{end}}

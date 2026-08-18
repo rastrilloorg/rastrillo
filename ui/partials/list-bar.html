@@ -1,21 +1,25 @@
-{{/* list-bar — the toolbar strip at the top of a list card.
+{{/* list-bar — the toolbar strip at the top of a list card: the search
+     form, and an optional filter dropdown in the space to its right
+     (the search field is capped at 20rem in tokens.css precisely so
+     that room stays free).
 
-     In this slice it holds the search form and reserves the space a
-     filter/sort control attaches to when the dropdown slice lands: the
-     search field is capped at 20rem in tokens.css precisely so the room
-     to its right stays free. It renders no filter or sort control
-     itself.
-
-     Keys, all passed straight through to list-bar-search:
+     Keys, search ones passed straight through to list-bar-search:
        SearchAction  string, optional — the search form's GET target
        Query         string, optional — the current q value
        Placeholder   string, optional — the field's placeholder and
                      accessible name
        Hidden        [][2]string, optional — name/value pairs carried
-                     across the search
+                     across the search (a page size — or the current
+                     filter, so searching keeps it applied)
+       Filter        dict, optional — passed whole to dropdown: Label,
+                     Aria, Items (Href/Label/Current). See dropdown's
+                     own contract.
 
      To override the submit button's screen-reader text, call
      list-bar-search directly inside your own <div class="rst-lbar">. */}}
 {{define "list-bar"}}<div class="rst-lbar">
   {{template "list-bar-search" dict "Action" .SearchAction "Query" .Query "Placeholder" .Placeholder "Hidden" .Hidden}}
+  {{- if .Filter}}
+  {{template "dropdown" .Filter}}
+  {{- end}}
 </div>{{end}}

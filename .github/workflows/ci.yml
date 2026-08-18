@@ -1,0 +1,97 @@
+# CI pins the claims the READMEs make: the root sweep, both examples'
+# full ./... sweeps (the F9 fix — actions/ is generator input the go
+# tool must skip), generate --check as the ship gate, committed gen/
+# output matching what the generator writes today, and a fresh scaffold
+# that builds. All of this was manually verified before CI existed;
+# this workflow is those exact commands, pinned.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # The READMEs' documented sweep commands all run with GOFLAGS=-mod=mod;
+    # the tests that build scratch modules (replace => this repo) rely on it
+    # to resolve module data the scratch go.sum doesn't carry. Without it,
+    # -mod=readonly fails every nested go build on a fresh runner.
+    env:
+      GOFLAGS: -mod=mod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt needed on:" && echo "$unformatted" && exit 1
+          fi
+
+      - name: root module
+        run: |
+          go build ./...
+          go vet ./...
+          go test ./... -count=1
+
+      - name: examples/helloworld ./... sweep
+        working-directory: examples/helloworld
+        run: |
+          go build ./...
+          go vet ./...
+          go test ./... -count=1
+
+      - name: examples/blog ./... sweep
+        working-directory: examples/blog
+        run: |
+          go build ./...
+          go vet ./...
+          go test ./... -count=1
+
+      # blog and tickets carry a `go tool sqlc` directive; their sweeps
+      # and the generate steps below fetch sqlc via the module proxy on
+      # first run. That network access is load-bearing - don't cache it
+      # away without keeping the module download path working.
+      - name: examples/tickets ./... sweep
+        working-directory: examples/tickets
+        run: |
+          go build ./...
+          go vet ./...
+          go test ./... -count=1
+
+      - name: generate --check and gen/ drift
+        run: |
+          go build -o /tmp/rastrillo ./cmd/rastrillo
+          /tmp/rastrillo generate --check examples/helloworld
+          /tmp/rastrillo generate --check examples/blog
+          /tmp/rastrillo generate --check examples/tickets
+          /tmp/rastrillo generate examples/helloworld
+          /tmp/rastrillo generate examples/blog
+          /tmp/rastrillo generate examples/tickets
+          # Committed gen/ must match what today's generator writes.
+          git diff --exit-code
+
+      - name: scaffold smoke
+        run: |
+          appdir=$(mktemp -d)
+          cd "$appdir"
+          /tmp/rastrillo new smokeapp
+          cd smokeapp
+          go mod edit -replace github.com/carlosframework/rastrillo="$GITHUB_WORKSPACE"
+          go mod tidy
+          go build ./...
+          go vet ./...
+          go build -o smokeapp ./cmd/smokeapp
+          ./smokeapp -addr 127.0.0.1:8199 &
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8199/healthz && break
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:8199/healthz
+          kill %1

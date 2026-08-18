@@ -24,6 +24,10 @@ func TestDiscoverRoutes(t *testing.T) {
 	writeAction(t, dir, "index.GET.go", "actions")
 	writeAction(t, dir, "orders/[id]/cancel.POST.go", "actions")
 	writeAction(t, dir, "orders/[id]/edit.GET.go", "actions")
+	// A nested index (not the root) contributes its directory as a
+	// path segment same as any other name would — only the root
+	// index.GET.go gets the {$} anchor treatment.
+	writeAction(t, dir, "orders/index.GET.go", "actions")
 
 	actions, collisions, err := Discover(dir)
 	if err != nil {
@@ -33,9 +37,10 @@ func TestDiscoverRoutes(t *testing.T) {
 		t.Fatalf("unexpected collisions: %v", collisions)
 	}
 	want := map[string]string{
-		"index.GET.go":               "GET /",
+		"index.GET.go":               "GET /{$}",
 		"orders/[id]/cancel.POST.go": "POST /orders/{id}/cancel",
 		"orders/[id]/edit.GET.go":    "GET /orders/{id}/edit",
+		"orders/index.GET.go":        "GET /orders",
 	}
 	if len(actions) != len(want) {
 		t.Fatalf("got %d actions, want %d: %+v", len(actions), len(want), actions)
@@ -123,7 +128,7 @@ func TestRewriteProducesUniquePackages(t *testing.T) {
 // its own signature references.
 func TestRouterImportsFrameworkNotAppModule(t *testing.T) {
 	actions := []Action{{
-		Route:       "GET /",
+		Route:       "GET /{$}",
 		PackageName: "act_index_get",
 		GenDir:      "index_get",
 	}}

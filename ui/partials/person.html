@@ -1,0 +1,11 @@
+{{/* person — initials avatar + name + email, the identity cell for
+     record types that are people; Large is the Show-header size.
+     The avatar is decoration (aria-hidden) — the text carries identity.
+     Keys:
+       Href     string, required — where the person's record lives
+       Name     string, required
+       Email    string, optional
+       Initial  string, optional — defaults to nothing rendered in the
+                avatar when empty (the dashed empty-avatar state)
+       Large    bool, optional */}}
+{{define "person"}}<a class="rst-person{{if .Large}} rst-person--lg{{end}}" href="{{.Href}}"><span class="rst-person__av{{if not .Initial}} rst-person__av--empty{{end}}" aria-hidden="true">{{.Initial}}</span><span class="rst-person__meta"><span class="rst-person__name">{{.Name}}</span>{{with .Email}}<span class="rst-person__email">{{.}}</span>{{end}}</span></a>{{end}}

@@ -20,9 +20,10 @@
               Exactly one of Href / Current / Disabled / Gap is
               meaningful per item.
        Label  string, optional — the <nav>'s accessible name, default
-              "Pagination". This package wires no localization catalog,
-              so an app with one passes its own string. */}}
-{{define "pagination"}}<nav class="rst-pagination" aria-label="{{if .Label}}{{.Label}}{{else}}Pagination{{end}}">
+              resolved through T ("rastrillo.ui.pagination" — "Pagination"
+              in the framework base catalog; see Funcs/FuncsWith). An app
+              passing its own Label always wins over T. */}}
+{{define "pagination"}}<nav class="rst-pagination" aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
   {{- if .Items}}{{range .Items}}
   {{- if .Gap}}<span class="rst-pagination__gap" aria-hidden="true">…</span>
   {{- else if .Current}}<span aria-current="page">{{.Label}}</span>

@@ -1,0 +1,29 @@
+{{/* dropdown — a zero-JS disclosure: a summary button that opens a
+     panel of plain links. Native <details> is the only disclosure HTML
+     has without JavaScript; the accepted cost is that the panel closes
+     only on a second click of the summary, not on Esc and not on an
+     outside click.
+
+     Every item is an ordinary link, so applying a filter is one click
+     and a GET — no submit button, nothing to script. The current item
+     carries aria-current="true" and a check icon; state is never
+     colour alone.
+
+     Keys:
+       Label  string, required — the summary's visible text, e.g. the
+              currently applied value ("All", "Newest").
+       Aria   string, optional — an aria-label for the summary when its
+              visible text is not a full accessible name. "All" alone
+              does not say all of *what*; "Filter by status: All" does.
+       Items  list, required — one dict per choice:
+                Href     string, required — the link target
+                Label    string, required — the visible text
+                Current  bool, optional — marks the applied choice */}}
+{{define "dropdown"}}<details class="rst-dropdown">
+  <summary class="rst-btn rst-dropdown__summary"{{if .Aria}} aria-label="{{.Aria}}"{{end}}>{{.Label}} {{icon "chevron-down"}}</summary>
+  <div class="rst-dropdown__menu">
+    {{- range .Items}}
+    <a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Label}}{{if .Current}} {{icon "check"}}{{end}}</a>
+    {{- end}}
+  </div>
+</details>{{end}}

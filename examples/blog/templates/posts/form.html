@@ -1,0 +1,48 @@
+{{/* Ejected (task 11) from gen/templates/posts/form.html — that
+     file's own comment says it best: "Eject: copy to
+     templates/posts/form.html and edit — generation of this one file
+     then stops." The field-text/field-textarea/form-foot calls below,
+     and the New-screen's <form>, are kept exactly as generated; this
+     file's own additions are the page-header on both screens and,
+     Edit only, the status pill and publish/unpublish/delete strip
+     that the old hand admin_edit.html carried before the manifest
+     adoption (task 10) replaced it — see that task's report. A new
+     post cannot be published, unpublished or deleted before it
+     exists, so the strip is Edit-only, guarded on .IsNew like every
+     other generation-time gate this app respects.
+
+     Fields IsNew/Fields/Errors/BasicsAction/AdvancedAction restate the
+     generated formView contract (internal/generate/actions.go) byte
+     for byte; ID/Published/StatusTone/StatusLabel/PublishHref/
+     UnpublishHref/DeleteHref/ViewHref are this file's own — a
+     generated new.GET/edit.GET action has no way to know about the
+     app's own `published` column (posts.toml declares no such field),
+     so genrender.go's formStripData computes them, once, in the one
+     seam every "posts/form" render already passes through. */}}
+{{define "content"}}
+{{if .IsNew}}
+{{template "page-header" dict "Title" "New post" "Sub" "It starts as a draft — nothing is public until you publish it."}}
+<form class="rst-form" method="post" action="/admin/posts">
+{{template "field-text" dict "Name" "Title" "Label" (T "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
+{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
+{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T "ui.cancel")}}
+</form>
+{{else}}
+{{template "page-header" dict "Title" .Fields.Title "Sub" "Editing"}}
+<div class="blog-status">
+{{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
+{{if .Published}}
+<form method="post" action="{{.UnpublishHref}}"><button class="rst-btn" type="submit">Unpublish</button></form>
+<a class="rst-btn" href="{{.ViewHref}}">View</a>
+{{else}}
+<form method="post" action="{{.PublishHref}}"><button class="rst-btn" type="submit">Publish</button></form>
+{{end}}
+<form method="post" action="{{.DeleteHref}}"><button class="rst-btn" type="submit">Delete</button></form>
+</div>
+<form class="rst-form" method="post" action="{{.BasicsAction}}">
+{{template "field-text" dict "Name" "Title" "Label" (T "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
+{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
+{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T "ui.cancel")}}
+</form>
+{{end}}
+{{end}}

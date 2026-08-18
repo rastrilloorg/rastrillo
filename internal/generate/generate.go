@@ -127,7 +127,7 @@ func Discover(actionsDir string) ([]Action, []Collision, error) {
 // routeFor builds a Go 1.22 mux pattern from an action's directory, its
 // filename (minus the .VERB.go suffix), and its HTTP method. "index" as
 // the filename contributes no extra path segment (actions/index.GET.go
-// -> "GET /"), mirroring the bracket-dir convention's own precedent.
+// -> "GET /{$}"), mirroring the bracket-dir convention's own precedent.
 func routeFor(dir, name, method string) (string, error) {
 	segs := strings.Split(filepath.ToSlash(dir), "/")
 	if dir == "." {
@@ -151,7 +151,15 @@ func routeFor(dir, name, method string) (string, error) {
 			out = append(out, s)
 		}
 	}
-	return method + " /" + strings.Join(out, "/"), nil
+	path := "/" + strings.Join(out, "/")
+	// A bare "/" is a prefix pattern to Go's mux — it matches every
+	// otherwise-unrouted path, so a root index action would swallow
+	// all unmatched GETs (friction log F6). "{$}" anchors it to
+	// exactly "/"; unmatched paths fall to the mux's own 404.
+	if path == "/" {
+		path = "/{$}"
+	}
+	return method + " " + path, nil
 }
 
 func genDirFor(dir, name, method string) string {

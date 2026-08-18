@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	act_admin_posts_id_delete_post "blog/gen/actions/admin/posts/id/delete_post"
+	act_admin_posts_id_edit_basics_post "blog/gen/actions/admin/posts/id/edit_basics_post"
 	act_admin_posts_id_edit_get "blog/gen/actions/admin/posts/id/edit_get"
-	act_admin_posts_id_index_post "blog/gen/actions/admin/posts/id/index_post"
+	act_admin_posts_id_index_get "blog/gen/actions/admin/posts/id/index_get"
 	act_admin_posts_id_publish_post "blog/gen/actions/admin/posts/id/publish_post"
 	act_admin_posts_id_unpublish_post "blog/gen/actions/admin/posts/id/unpublish_post"
 	act_admin_posts_index_get "blog/gen/actions/admin/posts/index_get"
@@ -32,27 +33,6 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 		}
 		return c
 	}
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		act_index_get.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("GET /admin/posts", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_posts_index_get.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("GET /admin/posts/new", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_posts_new_get.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("GET /admin/posts/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_posts_id_edit_get.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("GET /posts/{id}", func(w http.ResponseWriter, r *http.Request) {
-		act_posts_id_index_get.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("POST /admin/posts", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_posts_index_post.Handle(handle(r), w, r)
-	})
-	mux.HandleFunc("POST /admin/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
-		act_admin_posts_id_index_post.Handle(handle(r), w, r)
-	})
 	mux.HandleFunc("POST /admin/posts/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_posts_id_delete_post.Handle(handle(r), w, r)
 	})
@@ -61,6 +41,30 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	})
 	mux.HandleFunc("POST /admin/posts/{id}/unpublish", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_posts_id_unpublish_post.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /admin/posts", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_index_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		act_index_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /posts/{id}", func(w http.ResponseWriter, r *http.Request) {
+		act_posts_id_index_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("POST /admin/posts", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_index_post.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /admin/posts/new", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_new_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /admin/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_id_index_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /admin/posts/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_id_edit_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("POST /admin/posts/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_id_edit_basics_post.Handle(handle(r), w, r)
 	})
 	return mux
 }

@@ -1,21 +1,15 @@
-# The design doc §3 manifest, verbatim shape: one TOML file is the whole
-# admin surface. `rastrillo generate` lowers it to a typed
-# rastrillo.Resource in gen/manifest/ and emits every screen —
-# List → Show → Edit/New, the two-form save, the confirm-page delete —
-# as real actions under gen/actions/, each replaceable by writing a file
-# at the same path in actions/.
 name  = "ticket_types"
 route = "/admin/ticket_types"
 store = "exclusive"
 
 [list]
-columns = [{ field = "Name", kind = "text" }, { field = "Price", kind = "money" }, { field = "Status", kind = "select" }]
+columns = [{ field = "Name" }, { field = "Price", kind = "money" }, { field = "Status" }]
 search  = true
-filter  = ["Status"]
+
+[[list.filters]]
+field  = "Status"
+values = ["draft", "on_sale", "sold_out"]
 
 [form]
-basics   = [{ name = "Name", required = true }, { name = "Price", kind = "money" }, { name = "Status", kind = "select", options = ["draft", "live"] }]
-advanced = [{ name = "MaxPerOrder", kind = "money" }]
-
-[delete]
-confirm = "Delete this ticket type? Orders already placed keep their line items."
+basics   = [{ name = "Name", required = true }, { name = "Price", kind = "money", required = true }, { name = "Status" }]
+advanced = [{ name = "MaxPerOrder" }]

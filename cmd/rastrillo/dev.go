@@ -16,11 +16,11 @@ import (
 // watchDirs are the trees whose edits trigger the §11 loop: the design
 // doc's app/, actions/, manifest/, plus cmd/ — rastrillo new scaffolds
 // cmd/<name>/main.go, and a dev loop that ignores edits to it surprises
-// people — plus locales/ and templates/, which the app embeds into its
-// binary (§9, §10): without a rebuild, a saved catalog or template
-// keeps serving the copy compiled in at the last build. gen/ is
+// people — plus locales/, templates/, and static/, which the app embeds into its
+// binary (§9, §10, §8): without a rebuild, a saved catalog, template,
+// or static asset keeps serving the copy compiled in at the last build. gen/ is
 // deliberately absent: it is the generator's output.
-var watchDirs = []string{"actions", "app", "manifest", "cmd", "locales", "templates"}
+var watchDirs = []string{"actions", "app", "manifest", "cmd", "locales", "templates", "static"}
 
 const pollInterval = 250 * time.Millisecond
 
@@ -218,7 +218,7 @@ func parseDevArgs(args []string) (dir string, appArgs []string, help bool, err e
 func devUsage() {
 	fmt.Print(`usage: rastrillo dev [dir] [-- app args...]
 
-Watches actions/, app/, manifest/, cmd/, locales/, and templates/
+Watches actions/, app/, manifest/, cmd/, locales/, templates/, and static/
 (default dir: .); on any change it regenerates, rebuilds, and restarts
 the app. Everything after "--" is passed to the app verbatim (e.g.
 rastrillo dev . -- -addr :9000).

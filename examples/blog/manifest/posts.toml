@@ -1,0 +1,10 @@
+name  = "posts"
+route = "/admin/posts"
+store = "exclusive"
+
+[list]
+columns = [{ field = "Title" }]
+search  = true
+
+[form]
+basics = [{ name = "Title", required = true }, { name = "Body", kind = "textarea" }]

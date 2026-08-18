@@ -1,9 +1,12 @@
 package rastrillo
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+	"testing/fstest"
 )
 
 // A hibernate route's activator starts replicating the DB path from the
@@ -42,4 +45,41 @@ func TestOpenDBIdempotentAgainstExistingFile(t *testing.T) {
 		t.Fatalf("second OpenDB against existing file: %v", err)
 	}
 	defer db2.Close()
+}
+
+// TestBaseCatalogLayersUnderAppCatalog proves buildHandler actually
+// threads Options.BaseCatalog into NewLocales' base argument (it used
+// to be hardcoded nil) — not just that Locales.T itself layers
+// correctly, which locale_test.go already covers. A generated
+// gen/locales/locales.go var BaseCatalog is what an app wires here
+// (design doc §9's manifest system); the app's own catalog must still
+// win when both declare the same key, and a base-only key must still
+// surface when the app catalog is silent on it.
+func TestBaseCatalogLayersUnderAppCatalog(t *testing.T) {
+	fsys := fstest.MapFS{
+		"locales/en.toml": {Data: []byte("resource.notes.name = \"My Notes\"\n")},
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(T(r, "resource.notes.name") + "|" + T(r, "ui.save")))
+	})
+
+	handler, err := buildHandler(Options{
+		Mux:         mux,
+		Locales:     []string{"en"},
+		LocaleFS:    fsys,
+		BaseCatalog: Catalog{"resource.notes.name": "Notes", "ui.save": "Save"},
+	})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+
+	want := "My Notes|Save"
+	if got := rec.Body.String(); got != want {
+		t.Errorf("body = %q, want %q (app catalog must win over the base; a base-only key must still surface)", got, want)
+	}
 }

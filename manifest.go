@@ -2,321 +2,369 @@ package rastrillo
 
 import (
 	"fmt"
-	"html/template"
+	"net/http"
 	"regexp"
 	"strings"
 )
 
-// This file is the manifest vocabulary (design doc §3): the typed-Go
-// canonical form of a Resource. TOML manifests are an optional
-// serialization of the pure-data subset of these same structs — the
-// generator lowers them into identical values, one pipeline, two
-// spellings. Write TOML for a plain screen; drop to a .go manifest in
-// the app's manifest/ package the moment you need a function value
-// (a Column.Render — TOML cannot express a Go closure).
-//
-// A Resource generates the canonical screens (List → Show → Edit/New,
-// plus the confirm-page delete flow) as real action files under gen/,
-// each skipped when a hand-written file exists at the same computed
-// path in actions/ — override-by-existence, the one mechanism (§2).
-// The runtime half lives in the screens package; nothing here executes.
-
-// StoreKind selects a Resource's storage shape (§5).
-type StoreKind int
-
-const (
-	// Exclusive is the plain single-writer shape: ordinary rows in a
-	// generated table, UPDATEs in place — titogo's and kass's shape,
-	// and the default.
-	Exclusive StoreKind = iota
-
-	// Mergeable is the event-sourced shape: commands append immutable
-	// events (rastrillo/eventlog), a pure fold derives the rows, and
-	// merging other edges' streams is the platform's designed
-	// `mergeable` contract. Deleting appends a tombstone, never a
-	// DELETE.
-	Mergeable
-)
-
-// Kind is a field's semantic type — it decides the SQLite column, the
-// form control, and the list rendering in one place. The design doc
-// names Text, Money, Meter and Blob; LongText, Bool, Time and Select
-// are the richer kinds the blog and the surveyed apps actually needed.
-type Kind int
-
-const (
-	// Text is a one-line string.
-	Text Kind = iota
-	// LongText is a multi-line string (a textarea).
-	LongText
-	// Bool is a checkbox.
-	Bool
-	// Time is an RFC3339 timestamp, stored as TEXT in UTC — formatted
-	// in Go, never in a template (the family convention).
-	Time
-	// Money is an integer number of cents, never a float — CARLOS's
-	// non-negotiable: "a float never touches a value a person will be
-	// held to." Forms accept "12.34"; storage and arithmetic are int64.
-	Money
-	// Meter is a read-only gauge for lists — usually paired with a
-	// Column.Render. Never a form field.
-	Meter
-	// Blob is bytes stored content-addressed in a blobs.Store; the row
-	// holds only the Ref (hash, size, content type) as JSON (§5).
-	Blob
-	// Select is one value from a declared Options list.
-	Select
-)
-
-// kindNames maps the TOML spellings to kinds, and back for errors.
-var kindNames = map[string]Kind{
-	"text": Text, "longtext": LongText, "bool": Bool, "time": Time,
-	"money": Money, "meter": Meter, "blob": Blob, "select": Select,
-}
-
-// KindByName resolves a TOML kind spelling ("text", "money", ...).
-func KindByName(name string) (Kind, bool) {
-	k, ok := kindNames[name]
-	return k, ok
-}
-
-func (k Kind) String() string {
-	for name, kk := range kindNames {
-		if kk == k {
-			return name
-		}
-	}
-	return fmt.Sprintf("Kind(%d)", int(k))
-}
-
-// GoName returns the rastrillo identifier for generated code
-// ("rastrillo.LongText").
-func (k Kind) GoName() string {
-	switch k {
-	case Text:
-		return "Text"
-	case LongText:
-		return "LongText"
-	case Bool:
-		return "Bool"
-	case Time:
-		return "Time"
-	case Money:
-		return "Money"
-	case Meter:
-		return "Meter"
-	case Blob:
-		return "Blob"
-	case Select:
-		return "Select"
-	}
-	return k.String()
-}
-
-// SQLType is the SQLite column a kind stores as.
-func (k Kind) SQLType() string {
-	switch k {
-	case Bool, Money, Meter:
-		return "INTEGER NOT NULL DEFAULT 0"
-	default:
-		return "TEXT NOT NULL DEFAULT ''"
-	}
-}
-
-// Column is one list-screen column.
-type Column struct {
-	Field string
-	Kind  Kind
-
-	// Render replaces the default cell rendering — the reason to drop
-	// from TOML to a .go manifest. It receives the row (field names →
-	// values, plus "ID") and returns trusted HTML: escape anything
-	// user-authored yourself.
-	Render func(row map[string]any) template.HTML
-}
-
-// List declares a Resource's list screen.
-type List struct {
-	Columns []Column
-	// Search enables a LIKE search over the resource's Text and
-	// LongText fields, as a GET round trip (zero-JS, §9).
-	Search bool
-	// Filter names Bool or Select form fields that get an exact-match
-	// filter control.
-	Filter []string
-}
-
-// Field is one form field.
-type Field struct {
-	Name     string
-	Kind     Kind
-	Required bool
-	// Derived fields render read-only and are never part of any save's
-	// column list — the display half of "a computed field" (§3).
-	Derived bool
-	// Options is Select's closed value list.
-	Options []string
-}
-
-// Form declares the edit/new screens. Basics and Advanced generate two
-// independent POST actions, each scoped to only its own fields — a
-// basics save can never clobber an advanced setting, by construction
-// (§3, titogo's named safety property).
-type Form struct {
-	Basics   []Field
-	Advanced []Field
-}
-
-// Delete declares the delete flow: always its own confirm-page URL
-// (GET <route>/{id}/delete) before the POST — §9's "destructive actions
-// as their own confirm-page URL", which is also what §8's agent
-// consent gate renders.
-type Delete struct {
-	// Confirm is the confirm page's sentence. Empty generates
-	// "Delete this <singular name>? This cannot be undone." — via the
-	// translation key resource.<name>.delete.confirm, so a catalog can
-	// reword it per locale.
-	Confirm string
-}
-
-// Resource is one manifest: a named, routed, stored, listed, edited
-// thing. The canonical typed-Go form (§3).
-type Resource struct {
-	Name  string // snake_case; the table (or stream) name and the translation-key root
-	Route string // e.g. "/admin/ticket_types"; {params} allowed
-	Store StoreKind
-	List  List
-	Form  Form
-	Delete Delete
-}
-
-// Fields returns Basics then Advanced.
-func (r Resource) Fields() []Field {
-	return append(append([]Field{}, r.Form.Basics...), r.Form.Advanced...)
-}
-
-// FieldByName finds a form field.
-func (r Resource) FieldByName(name string) (Field, bool) {
-	for _, f := range r.Fields() {
-		if f.Name == name {
-			return f, true
-		}
-	}
-	return Field{}, false
-}
+// RenderFunc is how a generated action hands a page to the app's own
+// template tree — the seam generated code needs because it cannot
+// call an app-private helper (a hand-rolled blog.Render, say).
+// Ctx.Render carries it; the app's ctx factory sets it, and a
+// generated action nil-checks it before use. page is always one of
+// "<resource>/list", "<resource>/show" or "<resource>/form" —
+// internal/generate's action emitter documents and pins the exact
+// contract (see actions.go).
+type RenderFunc func(ctx *Ctx, w http.ResponseWriter, page string, status int, data any)
 
 var (
-	resourceNameRe = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
-	fieldNameRe    = regexp.MustCompile(`^[A-Z][A-Za-z0-9]*$`)
+	namePattern        = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+	segmentPattern     = regexp.MustCompile(`^[a-z0-9_-]+$`)
+	identPattern       = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	filterValuePattern = regexp.MustCompile(`^[a-z0-9_-]+$`)
 )
 
-// Validate checks the manifest's static shape — the same validation for
-// both spellings, run by the generator and again by screens at first
-// use, so a bad manifest fails loudly at generate time and can never
-// limp into serving.
-func (r Resource) Validate() error {
-	if !resourceNameRe.MatchString(r.Name) {
-		return fmt.Errorf("resource name %q must be snake_case ([a-z][a-z0-9_]*)", r.Name)
+// Kind categorizes the input type for a column or form field.
+type Kind string
+
+const (
+	Text     Kind = "text"
+	Textarea Kind = "textarea"
+	Money    Kind = "money"
+)
+
+// StoreKind categorizes how a resource's data is stored and synchronized.
+type StoreKind string
+
+const (
+	Exclusive StoreKind = "exclusive"
+	Mergeable StoreKind = "mergeable"
+)
+
+// Filter specifies a column and a set of values for filtering a list.
+type Filter struct {
+	Field  string   `json:"field" toml:"field"`
+	Values []string `json:"values" toml:"values"`
+}
+
+// Resource is one manifest: the §9 sugar a route opts into. Its JSON
+// encoding (the struct tags here and on the types it embeds) is the
+// generator's stable artifact — gen/manifest.json — consumed by any
+// renderer; evolution is additive only. It describes a CRUD interface
+// for a data entity.
+type Resource struct {
+	Name  string    `json:"name" toml:"name"`
+	Route string    `json:"route" toml:"route"`
+	Store StoreKind `json:"store" toml:"store"`
+	List  List      `json:"list" toml:"list"`
+	Form  Form      `json:"form" toml:"form"`
+}
+
+// List describes the table view for a resource.
+type List struct {
+	Columns []Column `json:"columns" toml:"columns"`
+	Search  bool     `json:"search" toml:"search"`
+	Filter  []string `json:"filter" toml:"filter"` // superseded by Filters; still validated, generates the WHERE clause but no control.
+	Filters []Filter `json:"filters" toml:"filters"`
+}
+
+// Column describes a column in a resource list.
+type Column struct {
+	Field string `json:"field" toml:"field"`
+	Kind  Kind   `json:"kind" toml:"kind"` // zero value means Text
+}
+
+// Form describes the form views for creating and editing a resource.
+type Form struct {
+	Basics   []Field `json:"basics" toml:"basics"`
+	Advanced []Field `json:"advanced" toml:"advanced"`
+}
+
+// Field describes an input field in a form.
+type Field struct {
+	Name     string `json:"name" toml:"name"`
+	Kind     Kind   `json:"kind" toml:"kind"` // zero value means Text
+	Required bool   `json:"required" toml:"required"`
+}
+
+// Validate checks the resource declaration for consistency and validity.
+// It normalizes zero values for Kind and Store in place.
+func (r *Resource) Validate() error {
+	// Zero values normalize: empty Kind → Text, empty Store → Exclusive
+	if r.Store == "" {
+		r.Store = Exclusive
 	}
-	if !strings.HasPrefix(r.Route, "/") || (len(r.Route) > 1 && strings.HasSuffix(r.Route, "/")) {
-		return fmt.Errorf("resource %s: route %q must start with / and not end with one", r.Name, r.Route)
+	for i := range r.List.Columns {
+		if r.List.Columns[i].Kind == "" {
+			r.List.Columns[i].Kind = Text
+		}
 	}
-	if len(r.Form.Basics) == 0 {
-		return fmt.Errorf("resource %s: Form.Basics must declare at least one field", r.Name)
+	for i := range r.Form.Basics {
+		if r.Form.Basics[i].Kind == "" {
+			r.Form.Basics[i].Kind = Text
+		}
+	}
+	for i := range r.Form.Advanced {
+		if r.Form.Advanced[i].Kind == "" {
+			r.Form.Advanced[i].Kind = Text
+		}
 	}
 
-	seen := map[string]bool{}
-	for _, f := range r.Fields() {
-		if !fieldNameRe.MatchString(f.Name) {
-			return fmt.Errorf("resource %s: field name %q must be an exported-style identifier", r.Name, f.Name)
+	if r.Name == "" {
+		return fmt.Errorf("name: must not be empty")
+	}
+	if !namePattern.MatchString(r.Name) {
+		return fmt.Errorf("name: must be snake_case")
+	}
+
+	if r.Route == "" {
+		return fmt.Errorf("route: must not be empty")
+	}
+	if !strings.HasPrefix(r.Route, "/") {
+		return fmt.Errorf("route: must start with /")
+	}
+	if strings.HasSuffix(r.Route, "/") && r.Route != "/" {
+		return fmt.Errorf("route: must not have trailing slash")
+	}
+	// Route segments must be either {param} or [a-z0-9_-]+
+	segments := strings.Split(strings.TrimPrefix(r.Route, "/"), "/")
+	for _, seg := range segments {
+		if seg == "" {
+			continue
 		}
-		if seen[f.Name] {
-			return fmt.Errorf("resource %s: field %q declared twice", r.Name, f.Name)
+		if strings.HasPrefix(seg, "{") && strings.HasSuffix(seg, "}") {
+			continue
 		}
-		seen[f.Name] = true
-		if f.Kind == Meter {
-			return fmt.Errorf("resource %s: field %q: Meter is a list-only kind, never a form field", r.Name, f.Name)
-		}
-		if f.Kind == Select && len(f.Options) == 0 {
-			return fmt.Errorf("resource %s: Select field %q needs Options", r.Name, f.Name)
-		}
-		if f.Kind != Select && len(f.Options) > 0 {
-			return fmt.Errorf("resource %s: field %q has Options but is not Select", r.Name, f.Name)
+		if !segmentPattern.MatchString(seg) {
+			return fmt.Errorf("route: invalid segment %q", seg)
 		}
 	}
 
-	for _, c := range r.List.Columns {
-		if c.Field == "CreatedAt" || c.Field == "UpdatedAt" {
-			continue // row metadata, always present
-		}
-		if _, ok := r.FieldByName(c.Field); !ok && c.Render == nil {
-			return fmt.Errorf("resource %s: list column %q is not a form field, not CreatedAt/UpdatedAt, and has no Render — nothing could fill it", r.Name, c.Field)
+	if r.Store == Mergeable {
+		return fmt.Errorf("store: mergeable is not yet built")
+	}
+	if r.Store != Exclusive && r.Store != Mergeable {
+		return fmt.Errorf("store: unknown value %q", r.Store)
+	}
+
+	for _, col := range r.List.Columns {
+		if col.Kind != Text && col.Kind != Textarea && col.Kind != Money {
+			return fmt.Errorf("kind: unknown value %q", col.Kind)
 		}
 	}
-	for _, name := range r.List.Filter {
-		f, ok := r.FieldByName(name)
-		if !ok {
-			return fmt.Errorf("resource %s: filter %q is not a form field", r.Name, name)
-		}
-		if f.Kind != Bool && f.Kind != Select {
-			return fmt.Errorf("resource %s: filter %q must be a Bool or Select field (an exact-match control needs a closed value set)", r.Name, name)
+	for _, fld := range r.Form.Basics {
+		if fld.Kind != Text && fld.Kind != Textarea && fld.Kind != Money {
+			return fmt.Errorf("kind: unknown value %q", fld.Kind)
 		}
 	}
+	for _, fld := range r.Form.Advanced {
+		if fld.Kind != Text && fld.Kind != Textarea && fld.Kind != Money {
+			return fmt.Errorf("kind: unknown value %q", fld.Kind)
+		}
+	}
+
+	if len(r.List.Columns) == 0 && len(r.Form.Basics) == 0 && len(r.Form.Advanced) == 0 {
+		return fmt.Errorf("declaration: must have at least one list column or form field")
+	}
+
+	columnFields := make(map[string]bool)
+	for _, col := range r.List.Columns {
+		columnFields[col.Field] = true
+	}
+
+	for _, f := range r.List.Filter {
+		if !columnFields[f] {
+			return fmt.Errorf("filter: %q is not a declared column", f)
+		}
+	}
+
+	if len(r.List.Filters) > 1 {
+		return fmt.Errorf("filters: at most one filter definition allowed")
+	}
+	for _, flt := range r.List.Filters {
+		if !columnFields[flt.Field] {
+			return fmt.Errorf("filter: %q is not a declared column", flt.Field)
+		}
+		if len(flt.Values) == 0 {
+			return fmt.Errorf("filter values: must not be empty")
+		}
+		valueSet := make(map[string]bool)
+		for _, v := range flt.Values {
+			if !filterValuePattern.MatchString(v) {
+				return fmt.Errorf("filter values: %q is invalid (must match ^[a-z0-9_-]+$)", v)
+			}
+			if valueSet[v] {
+				return fmt.Errorf("filter values: %q is duplicated", v)
+			}
+			valueSet[v] = true
+		}
+	}
+
+	// Field and column names must be valid identifiers
+	for _, col := range r.List.Columns {
+		if !identPattern.MatchString(col.Field) {
+			return fmt.Errorf("name: %q is not a valid identifier", col.Field)
+		}
+	}
+	for _, fld := range r.Form.Basics {
+		if !identPattern.MatchString(fld.Name) {
+			return fmt.Errorf("name: %q is not a valid identifier", fld.Name)
+		}
+	}
+	for _, fld := range r.Form.Advanced {
+		if !identPattern.MatchString(fld.Name) {
+			return fmt.Errorf("name: %q is not a valid identifier", fld.Name)
+		}
+	}
+
+	// Field and column names must not collide (case-insensitively) with
+	// the fixed columns every generated store adds unconditionally (id,
+	// created_at, updated_at — see internal/generate/store.go's
+	// schemaSQL): a manifest field literally named Id or CreatedAt would
+	// silently double-declare that column in the generated CREATE TABLE.
+	for _, col := range r.List.Columns {
+		if isReservedColumnName(col.Field) {
+			return fmt.Errorf("name: %q is reserved (collides with a fixed column every store emits)", col.Field)
+		}
+	}
+	for _, fld := range r.Form.Basics {
+		if isReservedColumnName(fld.Name) {
+			return fmt.Errorf("name: %q is reserved (collides with a fixed column every store emits)", fld.Name)
+		}
+	}
+	for _, fld := range r.Form.Advanced {
+		if isReservedColumnName(fld.Name) {
+			return fmt.Errorf("name: %q is reserved (collides with a fixed column every store emits)", fld.Name)
+		}
+	}
+
+	// Field and column names must also be the canonical spelling sqlc's
+	// own generated Go field name would derive back to (see
+	// isCanonicalIdent's doc for why identPattern alone isn't enough —
+	// "title" and "IPAddress" both match identPattern but neither
+	// round-trips). Checked after the reserved-name pass above so a name
+	// that fails BOTH checks (e.g. "updatedat") still reports as
+	// reserved, matching this function's existing precedence rather than
+	// surfacing a second, unrelated complaint about it first.
+	for _, col := range r.List.Columns {
+		if !isCanonicalIdent(col.Field) {
+			return fmt.Errorf("name: %q is not a canonical sqlc field spelling; use %q instead", col.Field, canonicalIdent(col.Field))
+		}
+	}
+	for _, fld := range r.Form.Basics {
+		if !isCanonicalIdent(fld.Name) {
+			return fmt.Errorf("name: %q is not a canonical sqlc field spelling; use %q instead", fld.Name, canonicalIdent(fld.Name))
+		}
+	}
+	for _, fld := range r.Form.Advanced {
+		if !isCanonicalIdent(fld.Name) {
+			return fmt.Errorf("name: %q is not a canonical sqlc field spelling; use %q instead", fld.Name, canonicalIdent(fld.Name))
+		}
+	}
+
+	// Form fields (Basics + Advanced combined) must have no case-insensitive duplicates;
+	// columns may repeat as form fields, but the form must not have duplicates.
+	formFieldsLower := make(map[string]bool)
+	for _, fld := range r.Form.Basics {
+		lower := strings.ToLower(fld.Name)
+		if formFieldsLower[lower] {
+			return fmt.Errorf("name: duplicate %q (case-insensitive)", fld.Name)
+		}
+		formFieldsLower[lower] = true
+	}
+	for _, fld := range r.Form.Advanced {
+		lower := strings.ToLower(fld.Name)
+		if formFieldsLower[lower] {
+			return fmt.Errorf("name: duplicate %q (case-insensitive)", fld.Name)
+		}
+		formFieldsLower[lower] = true
+	}
+
+	// Columns must have no case-insensitive duplicates among themselves
+	columnFieldsLower := make(map[string]bool)
+	for _, col := range r.List.Columns {
+		lower := strings.ToLower(col.Field)
+		if columnFieldsLower[lower] {
+			return fmt.Errorf("name: duplicate %q (case-insensitive)", col.Field)
+		}
+		columnFieldsLower[lower] = true
+	}
+
 	return nil
 }
 
-// Migration returns the additive CREATE TABLE for an Exclusive
-// resource. Mergeable resources have no table of their own — their
-// storage is eventlog.Migrations.
-func (r Resource) Migration() string {
-	if r.Store != Exclusive {
-		return ""
+// isReservedColumnName reports whether name collides case-insensitively
+// with one of the fixed columns every generated store table carries
+// unconditionally (id, created_at, updated_at).
+func isReservedColumnName(name string) bool {
+	switch strings.ToLower(name) {
+	case "id", "createdat", "updatedat":
+		return true
+	default:
+		return false
 	}
+}
+
+// identSQLName and identPascalCase are a deliberate duplicate of
+// internal/generate/store.go's sqlName and pascalCase, byte-for-byte
+// the same algorithm. They cannot be shared by import: internal/generate
+// imports this package (to build rastrillo.Resource-shaped output), so
+// this package importing internal/generate back would cycle, and
+// internal/generate is unexported to every consumer outside this
+// module besides. Duplication is the least-coupling option available —
+// the alternative (a third shared package under internal/ that both
+// import) would add a whole new package for five lines, and neither
+// side of the pair changes without deliberate, rare thought (sqlc's own
+// column-naming convention isn't going anywhere). If store.go's
+// algorithm ever changes, this copy must change with it in the same
+// commit — TestValidateRejections' canonical-ident cases and
+// store_test.go's sqlName/pascalCase cases are the tripwire that would
+// fire if the two drift.
+func identSQLName(s string) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "CREATE TABLE IF NOT EXISTS %s (\n  id INTEGER PRIMARY KEY", r.Name)
-	for _, f := range r.Fields() {
-		fmt.Fprintf(&b, ",\n  %s %s", SnakeCase(f.Name), f.Kind.SQLType())
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		isUpper := c >= 'A' && c <= 'Z'
+		prevUpper := i > 0 && s[i-1] >= 'A' && s[i-1] <= 'Z'
+		if isUpper && i > 0 && !prevUpper {
+			b.WriteByte('_')
+		}
+		if isUpper {
+			c += 'a' - 'A'
+		}
+		b.WriteByte(c)
 	}
-	b.WriteString(",\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n);")
 	return b.String()
 }
 
-// SnakeCase converts a field name ("MaxPerOrder") to its column name
-// ("max_per_order").
-func SnakeCase(name string) string {
-	var b strings.Builder
-	for i, r := range name {
-		if r >= 'A' && r <= 'Z' {
-			if i > 0 {
-				b.WriteByte('_')
-			}
-			b.WriteRune(r - 'A' + 'a')
-		} else {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
-// TitleCase is the label fallback when no translation catalog carries a
-// field's key: "MaxPerOrder" → "Max per order" (§10's title-cased
-// fallback).
-func TitleCase(name string) string {
-	var words []string
-	var cur strings.Builder
-	for i, r := range name {
-		if r >= 'A' && r <= 'Z' && i > 0 {
-			words = append(words, cur.String())
-			cur.Reset()
-		}
-		cur.WriteRune(r)
-	}
-	words = append(words, cur.String())
-	for i, w := range words {
-		if i == 0 {
+func identPascalCase(s string) string {
+	parts := strings.Split(s, "_")
+	for i, p := range parts {
+		if p == "" {
 			continue
 		}
-		words[i] = strings.ToLower(w)
+		parts[i] = strings.ToUpper(p[:1]) + p[1:]
 	}
-	return strings.Join(words, " ")
+	return strings.Join(parts, "")
+}
+
+// canonicalIdent is the spelling sqlc's own generated Go field name
+// would derive name back to: the schema column is identSQLName(name),
+// and sqlc pascal-cases that column name for the Go struct field, i.e.
+// identPascalCase(identSQLName(name)). A declared field/column name
+// that isn't already spelled this way (e.g. "title", whose canonical
+// form is "Title"; or "IPAddress", whose consecutive-capitals collapse
+// under identSQLName to "ipaddress" and pascal-case back to
+// "Ipaddress", not "IPAddress") generates actions that reference a
+// struct field sqlc never actually emits — a compile error in gen/,
+// not a validation error at manifest-load time, unless Validate
+// catches it first here.
+func canonicalIdent(name string) string {
+	return identPascalCase(identSQLName(name))
+}
+
+// isCanonicalIdent reports whether name is already its own canonical
+// form — see canonicalIdent's doc.
+func isCanonicalIdent(name string) bool {
+	return canonicalIdent(name) == name
 }

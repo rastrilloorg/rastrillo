@@ -1,0 +1,21 @@
+{{/* form-foot — a form's closing action row: one primary submit and an
+     optional cancel link. The cancel is a plain <a> styled as a
+     button: leaving a form is navigation, not an action, so it must
+     work as a link (open in new tab, middle-click, no JS).
+
+     Destructive actions do not belong here — they get their own
+     confirm-page route, per the zero-JS rule.
+
+     Wrap the whole form in <form class="rst-form"> — the app owns that
+     element, as it owns .rst-page and .rst-list.
+
+     Keys:
+       Submit       string, required — the submit button's text
+       CancelHref   string, optional — the cancel link target, with
+       CancelLabel  string           — its visible text */}}
+{{define "form-foot"}}<div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">{{.Submit}}</button>
+  {{- if .CancelHref}}
+  <a class="rst-btn" href="{{.CancelHref}}">{{.CancelLabel}}</a>
+  {{- end}}
+</div>{{end}}
