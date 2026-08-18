@@ -3,15 +3,21 @@
 // substrate it runs on. See the design doc for the full picture:
 // https://github.com/carlosframework/platform/blob/main/docs/superpowers/specs/2026-08-01-carlos-framework-design.md
 //
-// This is a v1 walking skeleton: the filesystem-routing generator, the
-// action signature, and this bootstrap. Manifests/codegen-with-skip, the
-// crypto core, WebAuthn, agents, localization, and blob storage are
-// designed in the doc above but not yet built here — see README.md.
+// The root package holds the process shape (Run/Serve/Handler, the
+// activation contract, the SQLite opener, migrations), the action
+// vocabulary (Ctx, Actor), the manifest vocabulary (Resource, Tool),
+// fingerprinted assets, and localization. The subsystems live beside
+// it: crypto (the family envelope), auth (keymail sign-in with the
+// magic-link fallback), webauthn, eventlog (the Mergeable store),
+// blobs, mail, tools (agent dispatch), and ui (the component
+// partials). README.md keeps the honest status list.
 package rastrillo
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -63,7 +69,8 @@ type Options struct {
 
 	// Wrap, if set, wraps the app's mux — the one seam for app
 	// middleware: sessions, CSRF, panic pages, authorization
-	// (gleester's friction, James 2026-08-04). It runs inside the
+	// (gleester's friction, James 2026-08-04; also the friction behind
+	// amadan's outer-catch-all-mux workaround). It runs inside the
 	// framework's chrome: GET /healthz and GET /api/version are
 	// answered outside it (platform probes never traverse app
 	// middleware), and locale-prefix stripping happens before it,
@@ -90,6 +97,29 @@ type Options struct {
 	// to Addr ":8080".
 	Socket string
 	Addr   string
+
+	// NextDue, if set, answers the platform's scheduled-wake poll: the
+	// activator asks a running instance GET /api/next-due (bearer
+	// $CARLOS_ADMIN_TOKEN) and hibernates knowing when to wake it —
+	// carlosframework/platform internal/activator/backend_exec.go. The
+	// returned time is the next moment the app has work; zero means
+	// nothing scheduled. Unset, the route does not exist and the
+	// activator treats the app as having no schedule (unit tenants
+	// never get the poll at all).
+	NextDue func() time.Time
+
+	// Sidecar is the app's sidecar pass — the wake → read since
+	// bookmark → decide → act loop's body (design doc §8). When the
+	// platform spawns `<binary> sidecar run` (it does exactly that when
+	// the host's sidecar env file exists), Run calls Sidecar in a loop:
+	// each pass returns when it has caught up, reporting when it next
+	// has scheduled work (zero: nothing scheduled — Run re-runs after
+	// a default poll interval). A pass error is logged and retried with
+	// backoff, never fatal: a sidecar outliving a flaky dependency is
+	// the point of having one. SIGTERM/SIGINT cancels the context and
+	// ends the loop. Nil with a `sidecar run` invocation is a loud
+	// startup error, not a silent serve.
+	Sidecar func(ctx context.Context) (time.Time, error)
 
 	// Locales declares the app's locale codes (design doc §10) — the
 	// catalogs LocaleFS carries as locales/<code>.toml. Empty means a
@@ -128,35 +158,16 @@ type Options struct {
 // process receives SIGTERM/SIGINT. It always answers GET /healthz itself
 // — the manifest/action layer never has to remember to.
 func Serve(opts Options) error {
-	if (opts.Mux == nil) == (opts.Router == nil) {
-		return errors.New("rastrillo: exactly one of Options.Mux and Options.Router must be set")
-	}
 	logger := opts.Logger
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	var db *sql.DB
-	var err error
-	if opts.DBPath != "" {
-		db, err = OpenDB(opts.DBPath, opts.Migrations)
-		if err != nil {
-			return fmt.Errorf("rastrillo: open database: %w", err)
-		}
-		defer db.Close()
-	}
-
-	opts.Mux, err = buildMux(opts, db)
+	handler, closeDB, err := Handler(opts)
 	if err != nil {
 		return err
 	}
-
-	handler, err := buildHandler(opts)
-	if err != nil {
-		// buildHandler's error sources (NewLocales, the Wrap nil-handler
-		// check) already carry the rastrillo: prefix, so no re-wrap here.
-		return err
-	}
+	defer closeDB()
 
 	ln, err := listen(opts.Socket, opts.Addr)
 	if err != nil {
@@ -186,12 +197,59 @@ func Serve(opts Options) error {
 	return nil
 }
 
+// Handler is everything Serve builds short of the listener and the
+// signal handling: it opens the database (if configured), applies
+// migrations, resolves the Mux/Router choice, and assembles the full
+// serving handler — framework endpoints, Wrap, locales and all. The
+// returned close func releases the database handle (a no-op without
+// one).
+//
+// Exported for test harnesses: before this seam, every app's harness
+// hand-duplicated /healthz, /api/version and the DSN pragma ordering
+// because Serve blocks on a real listener (vitogo's vitotest says so in
+// its own comments; seapointish copied the same shape). Now a harness is
+// httptest.NewServer around this.
+func Handler(opts Options) (http.Handler, func() error, error) {
+	closeNothing := func() error { return nil }
+	if (opts.Mux == nil) == (opts.Router == nil) {
+		return nil, closeNothing, errors.New("rastrillo: exactly one of Options.Mux and Options.Router must be set")
+	}
+
+	var db *sql.DB
+	var err error
+	if opts.DBPath != "" {
+		db, err = OpenDB(opts.DBPath, opts.Migrations)
+		if err != nil {
+			return nil, closeNothing, fmt.Errorf("rastrillo: open database: %w", err)
+		}
+	}
+	closeDB := closeNothing
+	if db != nil {
+		closeDB = db.Close
+	}
+
+	opts.Mux, err = buildMux(opts, db)
+	if err != nil {
+		closeDB()
+		return nil, closeNothing, err
+	}
+
+	handler, err := buildHandler(opts)
+	if err != nil {
+		// buildHandler's error sources (NewLocales, the Wrap nil-handler
+		// check) already carry the rastrillo: prefix, so no re-wrap here.
+		closeDB()
+		return nil, closeNothing, err
+	}
+	return handler, closeDB, nil
+}
+
 // buildHandler assembles the serving handler: the framework's own
 // endpoints, the app mux (wrapped by Options.Wrap when set), and
 // — when Options.Locales is set — the locale middleware wrapped around
 // the whole thing, so a locale prefix strips before routing and the
-// translator rides the request context (§10). Split from Serve so the
-// assembly is testable without sockets.
+// translator rides the request context (§10). Split from Handler so the
+// assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -200,6 +258,9 @@ func buildHandler(opts Options) (http.Handler, error) {
 	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, BuildVersion)
 	})
+	if opts.NextDue != nil {
+		mux.HandleFunc("GET /api/next-due", nextDueHandler(opts.NextDue))
+	}
 	app := http.Handler(opts.Mux)
 	if opts.Wrap != nil {
 		if app = opts.Wrap(opts.Mux); app == nil {
@@ -249,6 +310,28 @@ func buildMux(opts Options, db *sql.DB) (*http.ServeMux, error) {
 		return nil, errors.New("rastrillo: Options.Router returned a nil mux")
 	}
 	return mux, nil
+}
+
+// nextDueHandler answers the activator's scheduled-wake poll (see
+// Options.NextDue). The bearer token is $CARLOS_ADMIN_TOKEN — the
+// instance-local secret the platform's exec backend delivers in the
+// overlay env file. No token in the environment means nobody can
+// authenticate: fail closed, don't fail open.
+func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := os.Getenv("CARLOS_ADMIN_TOKEN")
+		auth := r.Header.Get("Authorization")
+		if token == "" || subtle.ConstantTimeCompare([]byte(auth), []byte("Bearer "+token)) != 1 {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		var due int64
+		if t := nextDue(); !t.IsZero() {
+			due = t.Unix()
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]int64{"due": due})
+	}
 }
 
 // listen resolves the platform's activation contract, exactly matching

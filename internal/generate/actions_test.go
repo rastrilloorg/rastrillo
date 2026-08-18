@@ -1757,6 +1757,8 @@ func TestEmitActionsGoldenFiles(t *testing.T) {
 		filepath.Join(genDir, "actions", "admin", "notes", "id", "index_get", "index.GET.go"),
 		filepath.Join(genDir, "actions", "admin", "notes", "id", "edit_get", "edit.GET.go"),
 		filepath.Join(genDir, "actions", "admin", "notes", "id", "edit_basics_post", "edit-basics.POST.go"),
+		filepath.Join(genDir, "actions", "admin", "notes", "id", "delete_get", "delete.GET.go"),
+		filepath.Join(genDir, "actions", "admin", "notes", "id", "delete_post", "delete.POST.go"),
 		filepath.Join(genDir, "actions", "admin", "notes", "id", "edit_advanced_post", "edit-advanced.POST.go"),
 	}
 	if len(written) != len(wantWritten) {
@@ -1830,8 +1832,8 @@ func TestEmitActionsSkipsHandWrittenFile(t *testing.T) {
 	if len(skipped) != 1 || skipped[0] != wantSkipped {
 		t.Fatalf("skipped = %v, want [%s]", skipped, wantSkipped)
 	}
-	if len(written) != 6 {
-		t.Fatalf("written = %v, want 6 files (index.GET skipped)", written)
+	if len(written) != 8 {
+		t.Fatalf("written = %v, want 8 files (index.GET skipped)", written)
 	}
 	for _, w := range written {
 		if w == wantSkipped {
@@ -1969,8 +1971,8 @@ func TestEmitActionsOmitsEditAdvancedWhenNoAdvancedFields(t *testing.T) {
 	if len(skipped) != 0 {
 		t.Fatalf("skipped = %v, want none", skipped)
 	}
-	if len(written) != 6 {
-		t.Fatalf("written = %v, want exactly 6 files (no edit-advanced.POST)", written)
+	if len(written) != 8 {
+		t.Fatalf("written = %v, want exactly 8 files (no edit-advanced.POST)", written)
 	}
 	for _, w := range written {
 		if strings.Contains(w, "edit_advanced") {
@@ -2030,6 +2032,10 @@ func (q *Queries) CountNotes(ctx context.Context, arg CountNotesParams) (int64, 
 
 func (q *Queries) GetNote(ctx context.Context, id int64) (Note, error) {
 	return Note{}, nil
+}
+
+func (q *Queries) DeleteNote(ctx context.Context, id int64) error {
+	return nil
 }
 
 type CreateNoteParams struct {
@@ -2107,6 +2113,10 @@ func (q *Queries) GetWidget(ctx context.Context, id int64) (Widget, error) {
 	return Widget{}, nil
 }
 
+func (q *Queries) DeleteWidget(ctx context.Context, id int64) error {
+	return nil
+}
+
 type CreateWidgetParams struct {
 	Name string
 	Now  string
@@ -2173,6 +2183,10 @@ func (q *Queries) GetArticle(ctx context.Context, id int64) (Article, error) {
 	return Article{}, nil
 }
 
+func (q *Queries) DeleteArticle(ctx context.Context, id int64) error {
+	return nil
+}
+
 type CreateArticleParams struct {
 	Title string
 	Now   string
@@ -2233,6 +2247,10 @@ func (q *Queries) CountTags(ctx context.Context, filterTitle interface{}) (int64
 
 func (q *Queries) GetTag(ctx context.Context, id int64) (Tag, error) {
 	return Tag{}, nil
+}
+
+func (q *Queries) DeleteTag(ctx context.Context, id int64) error {
+	return nil
 }
 
 type CreateTagParams struct {
@@ -2488,6 +2506,10 @@ func (q *Queries) CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (i
 
 func (q *Queries) GetInvoice(ctx context.Context, id int64) (Invoice, error) {
 	return Invoice{ID: id, Title: "Existing Invoice", Price: 500}, nil
+}
+
+func (q *Queries) DeleteInvoice(ctx context.Context, id int64) error {
+	return nil
 }
 
 type UpdateInvoiceBasicsParams struct {

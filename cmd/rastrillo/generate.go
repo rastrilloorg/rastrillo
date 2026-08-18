@@ -64,6 +64,14 @@ func runGenerate(args []string) error {
 	} else if !os.IsNotExist(err) {
 		return err
 	}
+	// The agent-tool registry (design doc §8): hand actions opt in with
+	// a rastrillo.Tool marker; the registry is collected statically here
+	// and emitted as gen/tools.go below.
+	tools, err := generate.CollectTools(actionsDir, actions)
+	if err != nil {
+		return fmt.Errorf("collect tools: %w", err)
+	}
+
 	if len(collisions) > 0 {
 		fmt.Fprintln(os.Stderr, "rastrillo generate: route collisions —")
 		for _, c := range collisions {
@@ -127,7 +135,20 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("manifest check: %w", err)
 		}
 
-		fmt.Printf("rastrillo generate --check: %d route(s), actions tagged, locale catalogs complete\n", len(actions))
+		// The agent-gate check (§13's buildable half): a write tool with
+		// no Confirm sentence is an action an agent could execute with
+		// no consent sentence to show — refused before it ships, not
+		// discovered after.
+		if unconfirmed := generate.UnconfirmedWriteTools(tools); len(unconfirmed) > 0 {
+			fmt.Fprintln(os.Stderr, "rastrillo generate: write tools missing a Confirm sentence —")
+			for _, id := range unconfirmed {
+				fmt.Fprintf(os.Stderr, "  %s\n", id)
+			}
+			fmt.Fprintln(os.Stderr, "every rastrillo.ToolWrite needs Confirm: the sentence a person sees before the write runs (design doc §8)")
+			return fmt.Errorf("%d write tool(s) without consent sentences", len(unconfirmed))
+		}
+
+		fmt.Printf("rastrillo generate --check: %d route(s), %d tool(s), actions tagged, locale catalogs complete\n", len(actions), len(tools))
 		return nil
 	}
 
@@ -186,6 +207,14 @@ func runGenerate(args []string) error {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(genDir, "router.go"), router, 0o644); err != nil {
+		return err
+	}
+
+	toolsFile, err := generate.ToolsFile(tools)
+	if err != nil {
+		return fmt.Errorf("render tools.go: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(genDir, "tools.go"), toolsFile, 0o644); err != nil {
 		return err
 	}
 

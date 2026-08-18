@@ -10,11 +10,21 @@ import (
 )
 
 // Router builds the app's mux. ctxFactory constructs a fresh
-// *rastrillo.Ctx per request; see cmd/<app>/main.go.
+// *rastrillo.Ctx per request; see cmd/<app>/main.go. An actor stamped
+// on the request context (rastrillo.WithActor — the tools dispatcher's
+// doing) lands on Ctx.Actor after the factory runs, so agent calls are
+// attributed even when the app factory never thinks about actors.
 func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	mux := http.NewServeMux()
+	handle := func(r *http.Request) *rastrillo.Ctx {
+		c := ctxFactory(r)
+		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
+			c.Actor = a
+		}
+		return c
+	}
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		act_index_get.Handle(ctxFactory(r), w, r)
+		act_index_get.Handle(handle(r), w, r)
 	})
 	return mux
 }

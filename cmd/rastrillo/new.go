@@ -17,9 +17,18 @@ import (
 // generate once so `go build` works immediately (design doc §11).
 //
 // The starter is a plain hand-written action, not a Resource/TOML
-// manifest: manifests are optional per route (design doc §3), and the
-// manifest/codegen-with-skip system isn't built yet (see README.md) —
-// scaffolding one would be scaffolding a feature that doesn't exist.
+// manifest: manifests are optional per route (design doc §3), and a
+// hello-world has nothing to administer. manifest/ is scaffolded empty
+// with a README instead, so the first admin screen is one TOML file
+// away.
+//
+// The scaffold also makes the app a good citizen of the family's two
+// hosts: a Makefile whose `ci` target is the one local/CI gate
+// definition, and .amadan/ci + .amadan/ci.d/ steps that exec those
+// targets — amadan's runner convention, where the steps must be
+// executable or the job silently resolves "skipped". CARLOS stays the
+// golden deployment target, not a requirement: Run speaks the
+// activation contract, and `./app -addr :8080` works anywhere.
 func runNew(args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("usage: rastrillo new <name>")
@@ -34,8 +43,10 @@ func runNew(args []string) error {
 		name,
 		filepath.Join(name, "actions"),
 		filepath.Join(name, "cmd", name),
+		filepath.Join(name, "manifest"),
 		filepath.Join(name, "static"),
 		filepath.Join(name, "internal", pkg+"test"),
+		filepath.Join(name, ".amadan", "ci.d"),
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0o755); err != nil {
@@ -58,9 +69,27 @@ func runNew(args []string) error {
 		// asset-fingerprinting behavior.
 		filepath.Join(name, "internal", pkg+"test", "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
+		filepath.Join(name, "manifest", "README.md"):                   manifestReadme,
+		filepath.Join(name, "Makefile"):                                makefileTemplate,
+		filepath.Join(name, "CLAUDE.md"):                               fmt.Sprintf(claudeMDTemplate, name),
 	}
 	for path, content := range files {
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			return err
+		}
+	}
+
+	// CI scripts must be executable: amadan's runner resolves a
+	// non-executable job "skipped" with only a hint — the known silent
+	// failure mode, closed at scaffold time.
+	ciScripts := map[string]string{
+		filepath.Join(name, ".amadan", "ci"):              amadanCI,
+		filepath.Join(name, ".amadan", "ci.d", "10-vet"):  amadanStep("vet"),
+		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):  amadanStep("fmt-check"),
+		filepath.Join(name, ".amadan", "ci.d", "30-test"): amadanStep("test"),
+	}
+	for path, content := range ciScripts {
+		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
 			return err
 		}
 	}
@@ -73,6 +102,10 @@ func runNew(args []string) error {
 	fmt.Println("  static/tokens.css")
 	fmt.Printf("  internal/%stest/harness_test.go\n", pkg)
 	fmt.Printf("  internal/%stest/index_test.go\n", pkg)
+	fmt.Println("  manifest/            (drop a <name>.toml here for a whole admin screen set)")
+	fmt.Println("  Makefile             (make ci = vet + fmt + test, the one gate definition)")
+	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
+	fmt.Println("  CLAUDE.md")
 
 	if err := runGenerate([]string{name}); err != nil {
 		return fmt.Errorf("initial generate: %w", err)
@@ -333,4 +366,108 @@ func main() {
 		os.Exit(1)
 	}
 }
+`
+const manifestReadme = `# manifest/
+
+Manifests live here (design doc §3). One TOML file declares a whole
+admin screen set — List → Show → Edit/New plus the confirm-page delete
+flow — generated as real actions under gen/ by ` + "`rastrillo generate`" + `:
+
+    name  = "ticket_types"
+    route = "/admin/ticket_types"
+
+    [list]
+    columns = [{ field = "Name", kind = "text" }, { field = "Price", kind = "money" }]
+    search  = true
+
+    [form]
+    basics = [{ name = "Name", required = true }, { name = "Price", kind = "money" }]
+
+Wire the generated migrations in cmd/<app>/main.go:
+` + "`Migrations: genmanifest.Migrations()`" + ` (import <module>/gen/manifest).
+
+Drop to a .go manifest in this directory (package manifest, a
+` + "`var X = rastrillo.Resource{...}`" + `) the moment you need a function
+value — a custom Column.Render, say. To take any single generated
+screen over by hand, write your own action file at the same computed
+path under actions/ — the generator skips that one from then on.
+`
+
+// makefileTemplate is the one gate definition: CI steps exec these
+// targets, never their own copies of the commands (amadan's own rule).
+const makefileTemplate = `.PHONY: build test vet fmt-check generate ci
+
+build: generate
+	go build ./...
+
+generate:
+	rastrillo generate
+
+test:
+	go test ./...
+
+vet:
+	go vet ./...
+
+fmt-check:
+	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
+
+# ci is the one gate: what a runner executes and what you run before
+# pushing are the same definition. amadan's runner falls back to this
+# target when .amadan/ci is absent.
+ci: vet fmt-check test
+`
+
+const amadanCI = `#!/bin/sh
+# amadan CI entry (single-script fallback for runners without step
+# support). The steps in ci.d/ are the same targets, reported one by
+# one. Must stay executable: a non-executable script resolves "skipped".
+set -e
+exec make ci
+`
+
+// amadanStep emits one .amadan/ci.d/ step: exec a Makefile target, so
+// CI and the local gate stay one definition.
+func amadanStep(target string) string {
+	return "#!/bin/sh\nexec make " + target + "\n"
+}
+
+const claudeMDTemplate = `# %s
+
+A [rastrillo](https://github.com/carlosframework/rastrillo) app. The
+conventions below are load-bearing; the framework enforces most of them
+mechanically.
+
+## Layout
+
+- ` + "`actions/`" + ` — one file per route (` + "`<name>.<VERB>.go`" + `, bracket dirs
+  for params: ` + "`orders/[id]/cancel.POST.go`" + `). Files carry
+  ` + "`//go:build rastrillo_actions`" + ` and are never compiled in place —
+  ` + "`rastrillo generate`" + ` copies them under ` + "`gen/`" + `. actions/ cannot
+  hold shared code: put it in an ordinary package (` + "`internal/...`" + `)
+  and import it.
+- ` + "`manifest/`" + ` — TOML or .go Resource manifests; each generates a full
+  screen set. A hand-written action file at a generated path takes that
+  screen over, silently, by existence.
+- ` + "`gen/`" + ` — generated; never edit. Regenerate with ` + "`rastrillo generate`" + `
+  (or let ` + "`rastrillo dev`" + ` watch and do it).
+
+## Rules the family holds hard
+
+- Migrations are additive and idempotent, applied at boot via
+  ` + "`rastrillo.Options.Migrations`" + `. Never rewrite one that shipped.
+- Money is integer cents. A float never touches a value a person will
+  be held to.
+- Screens work with JavaScript disabled; destructive actions get their
+  own confirm-page URL.
+- The gate is ` + "`make ci`" + ` (vet + gofmt + tests) — the same definition
+  CI runs. Run it before every push.
+
+## Serving
+
+` + "`rastrillo.Run`" + ` speaks the CARLOS activation contract (socket/addr/db
+argv, LISTEN_FDS, $STATE_DIRECTORY, ` + "`sidecar run`" + `) — the golden
+deployment target, not a requirement: ` + "`./app -addr :8080`" + ` serves
+anywhere. ` + "`GET /healthz`" + ` and ` + "`GET /api/version`" + ` are answered by the
+framework.
 `

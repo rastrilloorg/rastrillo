@@ -5,12 +5,15 @@
 # BaseCatalog is what the app actually wires (Options.BaseCatalog);
 # this file exists for humans/translators to read and copy from —
 # both are emitted from one source map, so they cannot drift.
+resource.posts.delete.confirm = "Delete this post? This cannot be undone."
+resource.posts.delete.title = "Delete post"
 resource.posts.empty.body = "Get started by creating your first one."
 resource.posts.empty.title = "No posts yet"
 resource.posts.field.body = "Body"
 resource.posts.field.title = "Title"
 resource.posts.name = "Posts"
 ui.cancel = "Cancel"
+ui.delete = "Delete"
 ui.edit = "Edit"
 ui.new = "New"
 ui.save = "Save"

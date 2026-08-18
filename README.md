@@ -6,10 +6,15 @@ runs on. Read the full design at
 [`carlosframework/platform`'s spec library](https://github.com/carlosframework/platform/blob/main/docs/superpowers/specs/2026-08-01-carlos-framework-design.md)
 (approved and merged 2026-08-01).
 
-## Status: v1 walking skeleton
+## Status
 
-This is a first pass, built overnight to prove the core loop end to end
-rather than to cover the full design. **Built:**
+v1 was a walking skeleton, built overnight to prove the core loop end
+to end. Two overnight passes since then split the remaining design
+between them: one built the manifest system, the ui vocabulary,
+fingerprinted assets and the scaffolded harness on main; the other
+(`docs/superpowers/specs/2026-08-17-completion-design.md`) built the
+subsystem packages against what the family's apps had hand-rolled in
+the meantime. This list is their union. **Built:**
 
 - **`rastrillo new <name>`** — scaffolds a Go app: `go.mod`, one starter
   action, a `main.go` wiring `rastrillo.Run`. Runs generate once so
@@ -125,11 +130,61 @@ rather than to cover the full design. **Built:**
   resource, zero hand actions, zero ejected templates — see
   [`examples/tickets/README.md`](examples/tickets/README.md).
 
-**Not built yet** — all designed in the spec above, none of it faked or
-stubbed here: the `Mergeable` event-sourced store shape, blobs, the
-crypto core, WebAuthn, the agents system, and the preloaded
-`CLAUDE.md`/skill scaffolding. Each is a real, separate piece of work —
-see the design doc for the shape of each.
+- **`rastrillo/crypto`** — the family envelope: ECDH P-256 ephemeral →
+  HKDF-SHA256 → AES-256-GCM sealing (`ephPub(65) ‖ iv(12) ‖ ct`), ECDSA
+  raw r‖s signing over `SHA-256(context ‖ 0x00 ‖ msg)`, the symmetric
+  half (`Derive`/`SealSym`/`OpenSym`), keypair marshalling, and a
+  WebCrypto JS twin (`crypto.JS()`), all proven against amadan's pinned
+  golden vectors — the compatibility contract that lets amadan,
+  seapointish and keymail delete their local copies.
+- **`rastrillo/auth`** — keymail sign-in with the magic-link email
+  fallback, wrapping `keymaildev/signin` the way seapointish's reviewed
+  integration does: one long-lived flow with an explicit rate limiter,
+  single-use links via `DELETE … RETURNING`, sessions with real
+  revocation, `__Host-` cookies on https origins, same-origin CSRF on
+  every state-changing handler, an `Authorize` admission hook, and the
+  classifier fix for signin v0.1.0's wrong lookup path.
+- **`rastrillo/webauthn`** — the passkey identity half, lifted from
+  kass tests-and-all: ES256 only, no attestation checking, the CBOR
+  subset reader, `LegacyRPID` for hostname moves, plus the `authtest`
+  fake authenticator as a public sub-package and the browser half as an
+  embedded ES module (`webauthn.JS()`).
+- **`rastrillo/eventlog`** — the `Mergeable` store shape: append-only
+  per-resource streams (many single-writer streams), a pure generic
+  `Derive` fold, idempotent `Ingest` as the platform transport's seam,
+  and a deterministic default merge order pinned by JSON vectors.
+- **`rastrillo/blobs`** — content-addressed bytes: `S3FromEnv()` over
+  the platform's object-storage primitive (`CARLOS_STORE_*`), a
+  hand-rolled SigV4 signer + presigned GET/PUT pinned against the
+  official AWS vectors, `Dir` and `Inline` backends (with the 4 KiB
+  rule: bigger belongs in the object store), and `Sealed()` for E2EE.
+- **`rastrillo/mail`** — the one outbound-email surface (SMTP or
+  loudly-logged fallback, header-injection refused), signature-
+  compatible with signin's Mailer.
+- **Agents** (design doc §8) — actions opt in as tools (`var Tool =
+  rastrillo.Tool{...}`), the generator emits the registry
+  (`gen.Tools()`), the `tools` package renders schemas and dispatches
+  registry-validated, consent-gated, actor-attributed calls through the
+  same mux; `Options.Sidecar` + the `sidecar run` argv speak the
+  platform's sidecar contract, and `Options.NextDue` answers the
+  activator's `GET /api/next-due` scheduled-wake poll.
+- **Serve seams** — `Options.Wrap` (the one middleware seam), exported
+  `rastrillo.Handler` (Serve minus the listener, for test harnesses),
+  and the scaffold's host awareness: a Makefile `ci` gate, executable
+  `.amadan/ci` + `.amadan/ci.d/` steps delegating to it, an empty
+  `manifest/` with a README, and a `CLAUDE.md` preload (§12).
+
+**Not built yet**, honestly: `WrapKey`/`UnwrapKey`/`DeriveInvite` in
+the crypto core (Eleven's invite wire is unconfirmed; guessing would
+mint a format three apps would have to migrate off); step-up auth
+(`prompt=login` — the session schema already records `auth_time` so it
+lands without a migration); the mergeable store's transport and its
+manifest wiring (edge sync is the platform's designed territory —
+`eventlog.Ingest` is the seam it will call; a `store = "mergeable"`
+manifest resource is declared vocabulary the generator does not yet
+compile); richer manifest kinds beyond text/textarea/money (Bool,
+Time, Select and Blob arrive as manifest slices); and any LLM client
+(§8 leaves the provider per app).
 
 ## A known implementation decision worth flagging
 
@@ -181,18 +236,21 @@ produces, per resource:
   Generation runs `go tool sqlc generate` against that input, so an
   app adopting a manifest must add the tool directive once:
   `go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc`.
-- **Actions** for the four canonical states — list, show, new+create,
-  edit (basics, plus advanced when the manifest declares `[form]
-  advanced` fields) — written straight into `gen/actions/`, compiled
-  normally: unlike a hand action under `actions/`, a manifest's action
-  files never pass through the filesystem router's own
-  Discover/Rewrite step, so they carry no `//go:build` tag. Each hands
-  its page to the app's own template tree through `Ctx.Render` — the
-  one seam generated code needs, since it cannot call an app-private
-  helper like a hand-rolled `blog.Render`. Page names are always
-  `<resource>/list`, `<resource>/show` or `<resource>/form`, regardless
-  of which of the (up to) seven action files is rendering.
-- **Templates** — `gen/templates/<name>/{list,show,form}.html`,
+- **Actions** for the four canonical states plus the delete flow —
+  list, show, new+create, edit (basics, plus advanced when the manifest
+  declares `[form] advanced` fields), and delete as its own confirm-page
+  URL: `GET <route>/{id}/delete` renders the question (a GET never
+  mutates), only the sibling POST deletes — written straight into
+  `gen/actions/`, compiled normally: unlike a hand action under
+  `actions/`, a manifest's action files never pass through the
+  filesystem router's own Discover/Rewrite step, so they carry no
+  `//go:build` tag. Each hands its page to the app's own template tree
+  through `Ctx.Render` — the one seam generated code needs, since it
+  cannot call an app-private helper like a hand-rolled `blog.Render`.
+  Page names are always `<resource>/list`, `<resource>/show`,
+  `<resource>/form` or `<resource>/confirm`, regardless of which of the
+  (up to) nine action files is rendering.
+- **Templates** — `gen/templates/<name>/{list,show,form,confirm}.html`,
   composed entirely from the `ui` package's partials. `list.html` is
   gated on `search` at generation time: a resource with `search =
   false` gets no search box at all. A `[[list.filters]]` entry declares

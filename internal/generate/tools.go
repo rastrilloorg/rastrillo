@@ -1,0 +1,222 @@
+package generate
+
+import (
+	"fmt"
+	"go/ast"
+	"go/format"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+
+	rastrillo "github.com/carlosframework/rastrillo"
+)
+
+// This file collects the tool registry (design doc §8): a top-level
+// `var Tool = rastrillo.Tool{...}` in an action file opts that action
+// in as an agent tool. The same static-AST discipline as manifests —
+// the registry is generated, never interpreted at runtime.
+
+// CollectTools scans the given actions' source files for Tool markers.
+func CollectTools(actionsDir string, actions []Action) ([]rastrillo.ToolDef, error) {
+	var defs []rastrillo.ToolDef
+	for _, a := range actions {
+		if strings.HasPrefix(a.SourcePath, "manifest:") {
+			continue // manifest screens don't opt in themselves (v1)
+		}
+		tool, ok, err := extractTool(filepath.Join(actionsDir, filepath.FromSlash(a.SourcePath)))
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", a.SourcePath, err)
+		}
+		if !ok {
+			continue
+		}
+		method, path, _ := strings.Cut(a.Route, " ")
+		defs = append(defs, rastrillo.ToolDef{
+			ID:     toolID(method, path),
+			Method: method,
+			Path:   path,
+			Tool:   tool,
+		})
+	}
+	sort.Slice(defs, func(i, j int) bool { return defs[i].ID < defs[j].ID })
+	return defs, nil
+}
+
+// toolID derives a stable identifier from the route: "POST
+// /orders/{id}/cancel" → "orders_id_cancel_post".
+func toolID(method, path string) string {
+	return sanitizeIdent(strings.TrimPrefix(path, "/") + "_" + strings.ToLower(method))
+}
+
+// UnconfirmedWriteTools names every write tool with an empty Confirm —
+// `generate --check`'s agent-gate failure (§13).
+func UnconfirmedWriteTools(defs []rastrillo.ToolDef) []string {
+	var out []string
+	for _, d := range defs {
+		if d.Access == rastrillo.ToolWrite && d.Confirm == "" {
+			out = append(out, d.ID)
+		}
+	}
+	return out
+}
+
+// extractTool parses one action file for the Tool marker.
+func extractTool(path string) (rastrillo.Tool, bool, error) {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return rastrillo.Tool{}, false, err
+	}
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, src, 0)
+	if err != nil {
+		return rastrillo.Tool{}, false, err
+	}
+	for _, decl := range file.Decls {
+		gd, ok := decl.(*ast.GenDecl)
+		if !ok || gd.Tok != token.VAR {
+			continue
+		}
+		for _, spec := range gd.Specs {
+			vs, ok := spec.(*ast.ValueSpec)
+			if !ok || len(vs.Names) != 1 || vs.Names[0].Name != "Tool" || len(vs.Values) != 1 {
+				continue
+			}
+			lit, ok := vs.Values[0].(*ast.CompositeLit)
+			if !ok || !isRastrilloType(lit.Type, "Tool") {
+				continue
+			}
+			tool, err := extractToolLit(lit)
+			return tool, err == nil, err
+		}
+	}
+	return rastrillo.Tool{}, false, nil
+}
+
+func extractToolLit(lit *ast.CompositeLit) (rastrillo.Tool, error) {
+	var t rastrillo.Tool
+	for _, el := range lit.Elts {
+		kv, ok := el.(*ast.KeyValueExpr)
+		if !ok {
+			return t, fmt.Errorf("Tool literal must use Field: value form")
+		}
+		var err error
+		switch keyName(kv.Key) {
+		case "Description":
+			t.Description, err = stringLit(kv.Value)
+		case "Access":
+			t.Access, err = accessLit(kv.Value)
+		case "Args":
+			t.Args, err = stringMapLit(kv.Value)
+		case "Confirm":
+			t.Confirm, err = stringLit(kv.Value)
+		default:
+			err = fmt.Errorf("unknown Tool field %s", keyName(kv.Key))
+		}
+		if err != nil {
+			return t, err
+		}
+	}
+	return t, nil
+}
+
+func keyName(e ast.Expr) string {
+	if id, ok := e.(*ast.Ident); ok {
+		return id.Name
+	}
+	return ""
+}
+
+func isRastrilloType(expr ast.Expr, name string) bool {
+	sel, ok := expr.(*ast.SelectorExpr)
+	return ok && sel.Sel.Name == name
+}
+
+func stringLit(e ast.Expr) (string, error) {
+	bl, ok := e.(*ast.BasicLit)
+	if !ok || bl.Kind != token.STRING {
+		return "", fmt.Errorf("want a string literal (the generator reads Tool markers statically)")
+	}
+	return strconv.Unquote(bl.Value)
+}
+
+func accessLit(e ast.Expr) (rastrillo.Access, error) {
+	sel, ok := e.(*ast.SelectorExpr)
+	if !ok {
+		return 0, fmt.Errorf("Access must be rastrillo.ToolRead or rastrillo.ToolWrite")
+	}
+	switch sel.Sel.Name {
+	case "ToolRead":
+		return rastrillo.ToolRead, nil
+	case "ToolWrite":
+		return rastrillo.ToolWrite, nil
+	}
+	return 0, fmt.Errorf("unknown access rastrillo.%s", sel.Sel.Name)
+}
+
+func stringMapLit(e ast.Expr) (map[string]string, error) {
+	cl, ok := e.(*ast.CompositeLit)
+	if !ok {
+		return nil, fmt.Errorf("Args must be a map[string]string literal")
+	}
+	out := map[string]string{}
+	for _, el := range cl.Elts {
+		kv, ok := el.(*ast.KeyValueExpr)
+		if !ok {
+			return nil, fmt.Errorf("Args entries must be \"name\": \"description\"")
+		}
+		k, err := stringLit(kv.Key)
+		if err != nil {
+			return nil, err
+		}
+		v, err := stringLit(kv.Value)
+		if err != nil {
+			return nil, err
+		}
+		out[k] = v
+	}
+	return out, nil
+}
+
+// ToolsFile renders gen/tools.go: the registry as data.
+func ToolsFile(defs []rastrillo.ToolDef) ([]byte, error) {
+	var b strings.Builder
+	b.WriteString("// Code generated by rastrillo generate. DO NOT EDIT.\n\n")
+	b.WriteString("package gen\n\n")
+	b.WriteString("import rastrillo \"github.com/carlosframework/rastrillo\"\n\n")
+	b.WriteString("// Tools is the app's agent-tool registry (design doc §8): every\n")
+	b.WriteString("// action that declared a rastrillo.Tool marker, keyed to its route.\n")
+	b.WriteString("// Hand it to the tools package for schemas and dispatch.\n")
+	b.WriteString("func Tools() []rastrillo.ToolDef {\n\treturn []rastrillo.ToolDef{\n")
+	for _, d := range defs {
+		fmt.Fprintf(&b, "\t\t{ID: %q, Method: %q, Path: %q, Tool: rastrillo.Tool{\n", d.ID, d.Method, d.Path)
+		fmt.Fprintf(&b, "\t\t\tDescription: %q,\n", d.Description)
+		if d.Access == rastrillo.ToolWrite {
+			b.WriteString("\t\t\tAccess: rastrillo.ToolWrite,\n")
+		}
+		if len(d.Args) > 0 {
+			keys := make([]string, 0, len(d.Args))
+			for k := range d.Args {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			b.WriteString("\t\t\tArgs: map[string]string{")
+			for i, k := range keys {
+				if i > 0 {
+					b.WriteString(", ")
+				}
+				fmt.Fprintf(&b, "%q: %q", k, d.Args[k])
+			}
+			b.WriteString("},\n")
+		}
+		if d.Confirm != "" {
+			fmt.Fprintf(&b, "\t\t\tConfirm: %q,\n", d.Confirm)
+		}
+		b.WriteString("\t\t}},\n")
+	}
+	b.WriteString("\t}\n}\n")
+	return format.Source([]byte(b.String()))
+}

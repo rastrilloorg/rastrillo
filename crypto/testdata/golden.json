@@ -1,0 +1,33 @@
+{
+  "envelope": {
+    "keypair": {
+      "sign_priv_d": "28c88c1519291eadd80b4a39c9de801085438d73774229d87e6eed3cd83836f2",
+      "box_priv_d": "9995b6b6021d5928c58b846ab9a51d269beb7a71a02fe2d0b75068611be4aa69"
+    },
+    "sign_pub": "BPs8zy/VyqCFsSsCSQ4MpVHu3qVQMesQ/RWCqBQBNDNcnb2YXQGgvE/ziM556t5v5VpYHfrvBnh2QyUw3/AFcrY=",
+    "box_pub": "BBIRCYt0K1DawmdUVc+IEheBWuPkWonIl8TiAfhgNAUT6VvPcB/Rkw5ZrNCnhfgafEgWBvd0p1Y+yGWiJsc/lt0=",
+    "seal": {
+      "context": "amadan-golden-seal-v1",
+      "plaintext": "YW1hZGFuIGdvbGRlbiB2ZWN0b3I6IHNlYWwvb3BlbiBjb21wYXRpYmlsaXR5IGZpeHR1cmUsIDIwMjYtMDgtMDM=",
+      "sealed": "BNjgIVpPp2caEr2YS1pg85kxpBFxVg2CsZOUcZai77IwfOjsMiN+3IDQpX8eTJ6w7lWAMOnM+NVFIzBkOuC7bhnFGUfal0ZAvwKuXUr/KlVchw5wQTLzZmV0njNAcFLZ2UONLlebIhCVX+6U5ekh5zgsCso470546kSeNr0IVIbdKim1rO7WOQaVgdVIsibRlKDerRdhltwFX7mH8UM="
+    },
+    "sign": {
+      "context": "amadan-golden-sign-v1",
+      "message": "YW1hZGFuIGdvbGRlbiB2ZWN0b3I6IHNpZ24vdmVyaWZ5IGNvbXBhdGliaWxpdHkgZml4dHVyZSwgMjAyNi0wOC0wMw==",
+      "signature": "OBL3i+GVtRZ5z/dELTDrRsYXuGaRhS9ylrEUC3hGQaIaEMJ2+P675FD6hVkKsVYVOdSiT7ZRjXMjFfJ8tto0kg=="
+    }
+  },
+  "repokey": {
+    "key": "EOxeYAPEfhJKsshL0Mtq0A8fyxNQodF53vdrFhvrU14=",
+    "derive": {
+      "pack": "bxlbuQ3mwAeeVdwg8FxlFRfuyhzwwCbcCmYylBKgQi4=",
+      "manifest": "ZGeQgwBQKgshTrVMO5wqYrhGHRqo2Td6oI2SIIKQkQY=",
+      "browse": "1CFWA4/pOImhbV7VrrPToHO77Sl6Engv6NBJhSrrQ5Q=",
+      "ci": "P9DWcE11mjdLjgFnMVfF29dmLDS7tuOKOJ8ryYlIPGk="
+    },
+    "sealsym": {
+      "plaintext": "YW1hZGFuIGdvbGRlbiB2ZWN0b3I6IHNlYWxzeW0vb3BlbnN5bSBjb21wYXRpYmlsaXR5IGZpeHR1cmUsIDIwMjYtMDgtMDM=",
+      "sealed": "Q71IzXWH4ZR5SreBbWFLGt7kJpZSTq4NOLIK4gR35R4EXTN3n846NC57f7jRdspTD2Afk6FnUx1cIuF9srRdgna84+33ds5CsX5d6xgIYCnTzK7OmasojibYAnAfatOO+C3u"
+    }
+  }
+}

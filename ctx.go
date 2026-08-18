@@ -13,6 +13,16 @@ type Actor struct {
 	Name  string // empty for a human; the agent's name otherwise
 }
 
+// String is the actor's audit-trail form: "human" or "agent:<name>" —
+// the encoding eventlog stores on every appended event, so a stream
+// always says who did what without importing this package.
+func (a Actor) String() string {
+	if a.Human || a.Name == "" {
+		return "human"
+	}
+	return "agent:" + a.Name
+}
+
 // Ctx is passed to every action. It is the one extension point for
 // per-request state a manifest or middleware needs to add — see Scope.
 type Ctx struct {
