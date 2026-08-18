@@ -1,9 +1,9 @@
 // Package generate's action emitter (this file) turns a validated
-// rastrillo.Resource into the seven action files a manifest owns:
-// gen/actions/<route>/{index.GET,index.POST,new.GET}.go and
-// gen/actions/<route>/[id]/{index.GET,edit.GET,edit-basics.POST}.go,
-// plus [id]/edit-advanced.POST.go when the resource declares
-// Form.Advanced. Each file is written straight into gen/actions/ —
+// rastrillo.Resource into the (up to) nine action files a manifest
+// owns: gen/actions/<route>/{index.GET,index.POST,new.GET}.go and
+// gen/actions/<route>/[id]/{index.GET,edit.GET,edit-basics.POST,
+// delete.GET,delete.POST}.go, plus [id]/edit-advanced.POST.go when the
+// resource declares Form.Advanced. Each file is written straight into gen/actions/ —
 // unlike a hand action under actions/, it never passes through
 // Discover/Rewrite, so it carries no `//go:build` constraint and
 // compiles as a normal package from the moment it's written (this is
@@ -30,8 +30,12 @@
 // page always one of exactly three names, independent of which of the
 // seven files is calling:
 //
-//	"<resource.Name>/list"  — index.GET only
-//	"<resource.Name>/show"  — [id]/index.GET only
+//	"<resource.Name>/list"     — index.GET only
+//	"<resource.Name>/show"     — [id]/index.GET only
+//	"<resource.Name>/confirm"  — [id]/delete.GET only: the confirm page
+//	                             every destructive action gets as its own
+//	                             URL (§9; also what §8's agent consent
+//	                             gate points a human at)
 //	"<resource.Name>/form"  — new.GET and [id]/edit.GET always; also
 //	                          every 400 re-render (index.POST,
 //	                          edit-basics.POST, edit-advanced.POST) —
@@ -193,6 +197,8 @@ func actionSpecs(r rastrillo.Resource) []actionSpec {
 		{idDir, "index", "GET", actionShowGET},
 		{idDir, "edit", "GET", actionEditGET},
 		{idDir, "edit-basics", "POST", actionEditBasicsPOST},
+		{idDir, "delete", "GET", actionDeleteGET},
+		{idDir, "delete", "POST", actionDeletePOST},
 	}
 	if len(r.Form.Advanced) > 0 {
 		specs = append(specs, actionSpec{idDir, "edit-advanced", "POST", actionEditAdvancedPOST})
@@ -1352,4 +1358,108 @@ func parseField(f rastrillo.Field) parsedField {
 			ErrCheck:  errCheck,
 		}
 	}
+}
+
+// ── [id]/delete.GET (Confirm) ───────────────────────────────────────
+
+// actionDeleteGET renders the delete confirm page — §9's rule that
+// every destructive action is its own URL first: a GET that never
+// mutates, showing the record, the question, and a form whose POST is
+// the only thing that deletes. It is also the page §8's agent consent
+// gate points a human at before a write tool may run.
+func actionDeleteGET(r rastrillo.Resource, module string) string {
+	alias, path := storeImport(r, module)
+	singular := singularPascal(r.Name)
+	main, _, _ := mainSubColumns(r)
+
+	var b strings.Builder
+	b.WriteString("import (\n")
+	b.WriteString("\t\"database/sql\"\n")
+	b.WriteString("\t\"errors\"\n")
+	b.WriteString("\t\"fmt\"\n")
+	b.WriteString("\t\"net/http\"\n")
+	b.WriteString("\t\"strconv\"\n")
+	b.WriteString("\t\"strings\"\n\n")
+	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	b.WriteString(")\n")
+
+	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}/delete: the confirm page. A GET never\n", r.Route)
+	b.WriteString("// mutates; the delete itself is the sibling POST.\n")
+	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	id, ok := parseID(r)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+`)
+	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
+	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), id)\n", singular)
+	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
+		http.NotFound(w, r)
+		return
+	}
+`)
+	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
+
+	fmt.Fprintf(&b, `
+render(ctx, w, %q, http.StatusOK, confirmView{
+	Title:      %s,
+	DeleteHref: fmt.Sprintf(%q, id),
+	CancelHref: fmt.Sprintf(%q, id),
+})
+}
+`, r.Name+"/confirm", fieldExpr("n", main, "formatCents"), r.Route+"/%d/delete", r.Route+"/%d")
+
+	b.WriteString(confirmViewType)
+	b.WriteString(helperFuncs(r.Name))
+	return b.String()
+}
+
+const confirmViewType = `
+type confirmView struct {
+	Title      string
+	DeleteHref string
+	CancelHref string
+}
+`
+
+// ── [id]/delete.POST ────────────────────────────────────────────────
+
+// actionDeletePOST is the delete itself: Get-or-404 first (a missing
+// row answers 404, never a silent no-op success), then the store's
+// DELETE, then 303 back to the list.
+func actionDeletePOST(r rastrillo.Resource, module string) string {
+	alias, path := storeImport(r, module)
+	singular := singularPascal(r.Name)
+
+	var b strings.Builder
+	b.WriteString("import (\n")
+	b.WriteString("\t\"database/sql\"\n")
+	b.WriteString("\t\"errors\"\n")
+	b.WriteString("\t\"fmt\"\n")
+	b.WriteString("\t\"net/http\"\n")
+	b.WriteString("\t\"strconv\"\n")
+	b.WriteString("\t\"strings\"\n\n")
+	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	b.WriteString(")\n")
+
+	fmt.Fprintf(&b, "\n// Handle is POST %s/{id}/delete.\n", r.Route)
+	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	id, ok := parseID(r)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+`)
+	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
+	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), id); errors.Is(err, sql.ErrNoRows) {\n", singular)
+	b.WriteString("\thttp.NotFound(w, r)\n\treturn\n")
+	fmt.Fprintf(&b, "} else if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
+	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), id); err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", singular, "deleting "+r.Name)
+	fmt.Fprintf(&b, "http.Redirect(w, r, %q, http.StatusSeeOther)\n}\n", r.Route)
+
+	b.WriteString(helperFuncs(r.Name))
+	return b.String()
 }

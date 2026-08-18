@@ -5,6 +5,7 @@ package gen
 import (
 	"net/http"
 
+	act_admin_posts_id_delete_get "blog/gen/actions/admin/posts/id/delete_get"
 	act_admin_posts_id_delete_post "blog/gen/actions/admin/posts/id/delete_post"
 	act_admin_posts_id_edit_basics_post "blog/gen/actions/admin/posts/id/edit_basics_post"
 	act_admin_posts_id_edit_get "blog/gen/actions/admin/posts/id/edit_get"
@@ -65,6 +66,9 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	})
 	mux.HandleFunc("POST /admin/posts/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_posts_id_edit_basics_post.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /admin/posts/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_posts_id_delete_get.Handle(handle(r), w, r)
 	})
 	return mux
 }

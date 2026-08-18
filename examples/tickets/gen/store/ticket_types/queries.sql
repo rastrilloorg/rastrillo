@@ -25,3 +25,6 @@ UPDATE ticket_types SET name = sqlc.arg(name), price = sqlc.arg(price), status =
 
 -- name: UpdateTicketTypeAdvanced :exec
 UPDATE ticket_types SET max_per_order = sqlc.arg(max_per_order), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
+
+-- name: DeleteTicketType :exec
+DELETE FROM ticket_types WHERE id = sqlc.arg(id);

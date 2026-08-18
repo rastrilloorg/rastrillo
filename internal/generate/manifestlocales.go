@@ -30,6 +30,7 @@ var uiKeys = map[string]string{
 	"ui.search": "Search",
 	"ui.cancel": "Cancel",
 	"ui.edit":   "Edit",
+	"ui.delete": "Delete",
 }
 
 // EmitLocales writes gen/locales/<defaultLocale>.toml (for humans/
@@ -117,6 +118,11 @@ func localeMap(rs []rastrillo.Resource) map[string]string {
 		for _, c := range columns(r) {
 			m[resourceKey(r.Name, "field."+c.SQL)] = titleCase(c.Name)
 		}
+		// The delete flow's confirm page (templates.go's confirmHTML):
+		// the page title and the one-sentence question under it.
+		singularLower := strings.ToLower(titleCase(singularPascal(r.Name)))
+		m[resourceKey(r.Name, "delete.title")] = "Delete " + singularLower
+		m[resourceKey(r.Name, "delete.confirm")] = fmt.Sprintf("Delete this %s? This cannot be undone.", singularLower)
 		if field, values, ok := declaredFilter(r); ok {
 			m["ui.all"] = "All"
 			prefix := resourceKey(r.Name, "filter."+sqlName(field))

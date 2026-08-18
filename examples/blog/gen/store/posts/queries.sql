@@ -20,3 +20,6 @@ RETURNING id;
 
 -- name: UpdatePostBasics :exec
 UPDATE posts SET title = sqlc.arg(title), body = sqlc.arg(body), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
+
+-- name: DeletePost :exec
+DELETE FROM posts WHERE id = sqlc.arg(id);

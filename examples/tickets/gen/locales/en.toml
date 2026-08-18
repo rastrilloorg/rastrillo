@@ -5,6 +5,8 @@
 # BaseCatalog is what the app actually wires (Options.BaseCatalog);
 # this file exists for humans/translators to read and copy from —
 # both are emitted from one source map, so they cannot drift.
+resource.ticket_types.delete.confirm = "Delete this ticket type? This cannot be undone."
+resource.ticket_types.delete.title = "Delete ticket type"
 resource.ticket_types.empty.body = "Get started by creating your first one."
 resource.ticket_types.empty.title = "No ticket types yet"
 resource.ticket_types.field.max_per_order = "Max per order"
@@ -17,6 +19,7 @@ resource.ticket_types.filter.status.sold_out = "Sold out"
 resource.ticket_types.name = "Ticket types"
 ui.all = "All"
 ui.cancel = "Cancel"
+ui.delete = "Delete"
 ui.edit = "Edit"
 ui.new = "New"
 ui.save = "Save"

@@ -11,14 +11,17 @@ import "github.com/carlosframework/rastrillo"
 // this Go var is what the app actually loads at runtime — the TOML
 // file is for humans/translators.
 var BaseCatalog = rastrillo.Catalog{
-	"resource.posts.empty.body":  "Get started by creating your first one.",
-	"resource.posts.empty.title": "No posts yet",
-	"resource.posts.field.body":  "Body",
-	"resource.posts.field.title": "Title",
-	"resource.posts.name":        "Posts",
-	"ui.cancel":                  "Cancel",
-	"ui.edit":                    "Edit",
-	"ui.new":                     "New",
-	"ui.save":                    "Save",
-	"ui.search":                  "Search",
+	"resource.posts.delete.confirm": "Delete this post? This cannot be undone.",
+	"resource.posts.delete.title":   "Delete post",
+	"resource.posts.empty.body":     "Get started by creating your first one.",
+	"resource.posts.empty.title":    "No posts yet",
+	"resource.posts.field.body":     "Body",
+	"resource.posts.field.title":    "Title",
+	"resource.posts.name":           "Posts",
+	"ui.cancel":                     "Cancel",
+	"ui.delete":                     "Delete",
+	"ui.edit":                       "Edit",
+	"ui.new":                        "New",
+	"ui.save":                       "Save",
+	"ui.search":                     "Search",
 }

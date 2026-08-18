@@ -11,6 +11,8 @@ import "github.com/carlosframework/rastrillo"
 // this Go var is what the app actually loads at runtime — the TOML
 // file is for humans/translators.
 var BaseCatalog = rastrillo.Catalog{
+	"resource.ticket_types.delete.confirm":         "Delete this ticket type? This cannot be undone.",
+	"resource.ticket_types.delete.title":           "Delete ticket type",
 	"resource.ticket_types.empty.body":             "Get started by creating your first one.",
 	"resource.ticket_types.empty.title":            "No ticket types yet",
 	"resource.ticket_types.field.max_per_order":    "Max per order",
@@ -23,6 +25,7 @@ var BaseCatalog = rastrillo.Catalog{
 	"resource.ticket_types.name":                   "Ticket types",
 	"ui.all":                                       "All",
 	"ui.cancel":                                    "Cancel",
+	"ui.delete":                                    "Delete",
 	"ui.edit":                                      "Edit",
 	"ui.new":                                       "New",
 	"ui.save":                                      "Save",

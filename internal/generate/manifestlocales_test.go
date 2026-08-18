@@ -68,6 +68,8 @@ func TestEmitLocalesKeySetMatchesTemplates(t *testing.T) {
 			name: "no declared filter",
 			r:    fixtureResource(), // notes: List Title/Price, Basics Title/Body, Advanced Price
 			want: []string{
+				"resource.notes.delete.confirm",
+				"resource.notes.delete.title",
 				"resource.notes.empty.body",
 				"resource.notes.empty.title",
 				"resource.notes.field.body",
@@ -75,6 +77,7 @@ func TestEmitLocalesKeySetMatchesTemplates(t *testing.T) {
 				"resource.notes.field.title",
 				"resource.notes.name",
 				"ui.cancel",
+				"ui.delete",
 				"ui.edit",
 				"ui.new",
 				"ui.save",
@@ -85,6 +88,8 @@ func TestEmitLocalesKeySetMatchesTemplates(t *testing.T) {
 			name: "declared filter",
 			r:    filteredFixtureResource(), // events: List Title/Status, Filters Status(draft,live)
 			want: []string{
+				"resource.events.delete.confirm",
+				"resource.events.delete.title",
 				"resource.events.empty.body",
 				"resource.events.empty.title",
 				"resource.events.field.status",
@@ -94,6 +99,7 @@ func TestEmitLocalesKeySetMatchesTemplates(t *testing.T) {
 				"resource.events.name",
 				"ui.all",
 				"ui.cancel",
+				"ui.delete",
 				"ui.edit",
 				"ui.new",
 				"ui.save",
@@ -150,6 +156,7 @@ func TestEmitLocalesUIKeyValues(t *testing.T) {
 		"ui.search": "Search",
 		"ui.cancel": "Cancel",
 		"ui.edit":   "Edit",
+		"ui.delete": "Delete",
 	}
 	for k, v := range want {
 		if m[k] != v {

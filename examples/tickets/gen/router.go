@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
+	act_admin_ticket_types_id_delete_get "tickets/gen/actions/admin/ticket_types/id/delete_get"
+	act_admin_ticket_types_id_delete_post "tickets/gen/actions/admin/ticket_types/id/delete_post"
 	act_admin_ticket_types_id_edit_advanced_post "tickets/gen/actions/admin/ticket_types/id/edit_advanced_post"
 	act_admin_ticket_types_id_edit_basics_post "tickets/gen/actions/admin/ticket_types/id/edit_basics_post"
 	act_admin_ticket_types_id_edit_get "tickets/gen/actions/admin/ticket_types/id/edit_get"
@@ -46,6 +48,12 @@ func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	})
 	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_id_edit_basics_post.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("GET /admin/ticket_types/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_ticket_types_id_delete_get.Handle(handle(r), w, r)
+	})
+	mux.HandleFunc("POST /admin/ticket_types/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+		act_admin_ticket_types_id_delete_post.Handle(handle(r), w, r)
 	})
 	mux.HandleFunc("POST /admin/ticket_types/{id}/edit-advanced", func(w http.ResponseWriter, r *http.Request) {
 		act_admin_ticket_types_id_edit_advanced_post.Handle(handle(r), w, r)

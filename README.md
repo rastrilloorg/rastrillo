@@ -183,8 +183,8 @@ manifest wiring (edge sync is the platform's designed territory —
 `eventlog.Ingest` is the seam it will call; a `store = "mergeable"`
 manifest resource is declared vocabulary the generator does not yet
 compile); richer manifest kinds beyond text/textarea/money (Bool,
-Time, Select, Blob and delete flows arrive as manifest slices); and
-any LLM client (§8 leaves the provider per app).
+Time, Select and Blob arrive as manifest slices); and any LLM client
+(§8 leaves the provider per app).
 
 ## A known implementation decision worth flagging
 
@@ -236,18 +236,21 @@ produces, per resource:
   Generation runs `go tool sqlc generate` against that input, so an
   app adopting a manifest must add the tool directive once:
   `go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc`.
-- **Actions** for the four canonical states — list, show, new+create,
-  edit (basics, plus advanced when the manifest declares `[form]
-  advanced` fields) — written straight into `gen/actions/`, compiled
-  normally: unlike a hand action under `actions/`, a manifest's action
-  files never pass through the filesystem router's own
-  Discover/Rewrite step, so they carry no `//go:build` tag. Each hands
-  its page to the app's own template tree through `Ctx.Render` — the
-  one seam generated code needs, since it cannot call an app-private
-  helper like a hand-rolled `blog.Render`. Page names are always
-  `<resource>/list`, `<resource>/show` or `<resource>/form`, regardless
-  of which of the (up to) seven action files is rendering.
-- **Templates** — `gen/templates/<name>/{list,show,form}.html`,
+- **Actions** for the four canonical states plus the delete flow —
+  list, show, new+create, edit (basics, plus advanced when the manifest
+  declares `[form] advanced` fields), and delete as its own confirm-page
+  URL: `GET <route>/{id}/delete` renders the question (a GET never
+  mutates), only the sibling POST deletes — written straight into
+  `gen/actions/`, compiled normally: unlike a hand action under
+  `actions/`, a manifest's action files never pass through the
+  filesystem router's own Discover/Rewrite step, so they carry no
+  `//go:build` tag. Each hands its page to the app's own template tree
+  through `Ctx.Render` — the one seam generated code needs, since it
+  cannot call an app-private helper like a hand-rolled `blog.Render`.
+  Page names are always `<resource>/list`, `<resource>/show`,
+  `<resource>/form` or `<resource>/confirm`, regardless of which of the
+  (up to) nine action files is rendering.
+- **Templates** — `gen/templates/<name>/{list,show,form,confirm}.html`,
   composed entirely from the `ui` package's partials. `list.html` is
   gated on `search` at generation time: a resource with `search =
   false` gets no search box at all. A `[[list.filters]]` entry declares
