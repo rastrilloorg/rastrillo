@@ -151,12 +151,110 @@ type Options struct {
 
 	// Logger defaults to slog.Default() if nil.
 	Logger *slog.Logger
+
+	// ReadHeaderTimeout bounds how long a client may take to send its
+	// request headers. Zero uses defaultReadHeaderTimeout. This is the
+	// slowloris bound: it costs a legitimate client nothing, because
+	// headers are small and sent up front.
+	ReadHeaderTimeout time.Duration
+
+	// IdleTimeout bounds how long an idle keep-alive connection is kept
+	// open between requests. Zero uses defaultIdleTimeout. It can never
+	// interrupt an in-flight request — only a connection doing nothing.
+	IdleTimeout time.Duration
+
+	// ReadTimeout and WriteTimeout are OFF by default (zero), and an app
+	// should think before setting them, because net/http applies them as
+	// TOTAL deadlines measured from the start of the request — not idle
+	// deadlines. A 40 MB upload over a slow link, a git pack streaming
+	// for minutes, a Server-Sent Events feed and a WebSocket are all
+	// legitimate and all unbounded in duration, and any of them is cut
+	// mid-flight by a total deadline no matter how healthy the peer is.
+	//
+	// Set these only for an app whose every request is known to be short
+	// (a JSON API with small bodies, say). To bound a STALLED peer on a
+	// long-lived request without capping a slow-but-healthy one, the tool
+	// is a per-handler idle deadline via http.ResponseController's
+	// SetReadDeadline/SetWriteDeadline, re-armed as bytes move — not
+	// these fields. See the package docs on Serve.
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+}
+
+// Default server timeouts. Both bound connection-level behaviour that no
+// legitimate request depends on, which is what makes them safe to apply
+// to every rastrillo app without an opt-out.
+const (
+	defaultReadHeaderTimeout = 20 * time.Second
+	defaultIdleTimeout       = 120 * time.Second
+)
+
+// newServer builds the http.Server Serve runs.
+//
+// It exists because the zero-value &http.Server{Handler: handler} this
+// replaced set no timeouts at all: a peer that stopped reading, or that
+// vanished without a FIN, tied up a connection — and whatever the handler
+// held — for as long as the process lived, with nothing anywhere in the
+// stack able to fire.
+//
+// What this does and does not buy is worth being precise about, because
+// the gap is where the real incidents live. It bounds two things at the
+// connection level: a client that never finishes its headers, and an idle
+// keep-alive connection. It does NOT bound a peer that stalls midway
+// through a request body or a response — that needs an idle deadline
+// around the streaming span itself, which only the handler can place,
+// because only the handler knows where that span is. See ReadTimeout's
+// doc comment for why the total-deadline fields are not that tool.
+func newServer(opts Options, handler http.Handler) *http.Server {
+	readHeader := opts.ReadHeaderTimeout
+	if readHeader == 0 {
+		readHeader = defaultReadHeaderTimeout
+	}
+	idle := opts.IdleTimeout
+	if idle == 0 {
+		idle = defaultIdleTimeout
+	}
+	return &http.Server{
+		Handler:           handler,
+		ReadHeaderTimeout: readHeader,
+		IdleTimeout:       idle,
+		ReadTimeout:       opts.ReadTimeout,
+		WriteTimeout:      opts.WriteTimeout,
+	}
 }
 
 // Serve opens the database (if configured), applies migrations, resolves
 // the platform's activation contract for a listener, and serves until the
 // process receives SIGTERM/SIGINT. It always answers GET /healthz itself
 // — the manifest/action layer never has to remember to.
+//
+// # Timeouts
+//
+// The server bounds two things for every app: how long a client may take
+// to send its request headers (Options.ReadHeaderTimeout) and how long an
+// idle keep-alive connection is kept open (Options.IdleTimeout). Neither
+// can interrupt an in-flight request, which is what makes them safe as
+// defaults.
+//
+// Nothing here bounds a peer that stalls PART-WAY through a request body
+// or a response. That is deliberate: net/http's ReadTimeout and
+// WriteTimeout are total deadlines, so using them for that would cut off
+// slow-but-healthy clients — a large upload, a git pack, an SSE feed, a
+// WebSocket — along with the stalled ones. They are available on Options
+// for apps that genuinely have only short requests, and off otherwise.
+//
+// An app that streams must therefore bound its own streaming span, with
+// an idle deadline re-armed as bytes move:
+//
+//	rc := http.NewResponseController(w)
+//	rc.SetWriteDeadline(time.Now().Add(idle)) // before each write
+//
+// Set it on the side that can actually block. A handler copying from a
+// subprocess pipe blocks on the READ of that pipe, not on the write to
+// the client, and a write deadline never fires there — the pipe needs its
+// own deadline (os.File supports one) and the child needs a process-group
+// kill to reap grandchildren still holding it open. This is not
+// hypothetical: it wedged a production app for 158 minutes on 2026-08-19.
 func Serve(opts Options) error {
 	logger := opts.Logger
 	if logger == nil {
@@ -175,7 +273,7 @@ func Serve(opts Options) error {
 	}
 	logger.Info("rastrillo: serving", "addr", ln.Addr().String(), "version", BuildVersion)
 
-	srv := &http.Server{Handler: handler}
+	srv := newServer(opts, handler)
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.Serve(ln) }()
 
