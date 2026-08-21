@@ -27,11 +27,8 @@
 package auth
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
-	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -41,6 +38,7 @@ import (
 	"github.com/keymaildev/signin"
 
 	"github.com/carlosframework/rastrillo/mail"
+	"github.com/carlosframework/rastrillo/sessions"
 )
 
 // Identity is the verified sign-in identity — signin's, aliased so an
@@ -111,8 +109,9 @@ type Config struct {
 // rate-limiter state on the value, so a Flow per request would get
 // fresh empty budgets every time — no rate limiting at all, silently.
 type Auth struct {
-	cfg  Config
-	flow *signin.Flow
+	cfg      Config
+	flow     *signin.Flow
+	sessions *sessions.Sessions
 }
 
 // ErrEmptyInstanceKey means Config.InstanceKey was empty — see the
@@ -153,7 +152,18 @@ func New(cfg Config) (*Auth, error) {
 		cfg.SessionTTL = DefaultSessionTTL
 	}
 
-	a := &Auth{cfg: cfg}
+	sess, err := sessions.New(sessions.Config{
+		DB:         cfg.DB,
+		Origin:     cfg.Origin,
+		TTL:        cfg.SessionTTL,
+		SigninPath: cfg.SigninPath,
+		Logger:     cfg.Logger,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	a := &Auth{cfg: cfg, sessions: sess}
 	a.flow = &signin.Flow{
 		Classifier: newClassifier(),
 		Keymail: func(server string) *signin.Keymail {
@@ -183,8 +193,9 @@ func (a *Auth) cookieName(base string) string {
 	return base
 }
 
-// SessionCookie is the session cookie's name for this Auth's origin.
-func (a *Auth) SessionCookie() string { return a.cookieName("rastrillo_session") }
+// SessionCookie is the session cookie's name for this Auth's origin —
+// delegated to the sessions core, which owns the cookie now.
+func (a *Auth) SessionCookie() string { return a.sessions.CookieName() }
 
 func (a *Auth) pendingCookie() string { return a.cookieName("rastrillo_pending") }
 
@@ -200,19 +211,11 @@ func (a *Auth) clearCookie(w http.ResponseWriter, name string) {
 	a.setCookie(w, name, "", -1)
 }
 
-// NewToken mints a session token and its storage hash. Only the hash is
-// stored; only the token rides the cookie.
-func NewToken() (token, hash string, err error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", "", err
-	}
-	token = base64.RawURLEncoding.EncodeToString(b)
-	return token, HashToken(token), nil
-}
+// NewToken mints a session token and its storage hash — a thin alias
+// over the sessions core, kept so existing callers of auth.NewToken
+// need no import change.
+func NewToken() (token, hash string, err error) { return sessions.NewToken() }
 
-// HashToken is the storage hash of a session token: SHA-256, hex.
-func HashToken(token string) string {
-	sum := sha256.Sum256([]byte(token))
-	return hex.EncodeToString(sum[:])
-}
+// HashToken is the storage hash of a session token: SHA-256, hex —
+// a thin alias over the sessions core.
+func HashToken(token string) string { return sessions.HashToken(token) }
