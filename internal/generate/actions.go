@@ -78,13 +78,13 @@
 //     exactly as before this — it has no enumerable Values to build a
 //     control or a normalizer from. Builds Rows from List.Columns[0]
 //     (Main) and, if declared, List.Columns[1] (Sub) — Money formatted
-//     as a dollar string via formatCents, everything else the raw
+//     as a dollar string via form.FormatCents, everything else the raw
 //     column value. Pagination has no gap-collapsing (v1
 //     simplification: every page number renders; see the report for
 //     the tradeoff).
 //   - index.POST (create): parses every Form.Basics + Form.Advanced
 //     field; a Money field's value is parsed as decimal dollars via
-//     parseCents, which rejects more than two decimal places, and any
+//     form.ParseCents, which rejects more than two decimal places, and any
 //     field (Text, Textarea or Money) the manifest marks Required is
 //     checked for blankness — Text/Textarea via strings.TrimSpace,
 //     Money via its RAW submitted text (so "0"/"0.00" is a valid
@@ -95,7 +95,7 @@
 //     in Fields — never reformatted, so a typo stays exactly as typed
 //     for correction. A Required Money field that's both blank AND
 //     would otherwise fail to parse (it never does — "" parses to zero,
-//     see parseCents) only ever reports the required message, never
+//     see form.ParseCents) only ever reports the required message, never
 //     both; a present-but-invalid Money value reports the parse error,
 //     never the required one — see parseField's Money case. Success
 //     stamps both timestamps with the same UTC RFC3339 "now" and
@@ -266,16 +266,16 @@ func mainSubColumns(r rastrillo.Resource) (main column, sub column, hasSub bool)
 
 // fieldExpr renders the Go expression that reads c's current value off
 // a record variable named varName: a Money column reads through
-// moneyFmt — either "formatCents" for a display-only context
+// moneyFmt — either "form.FormatCents" for a display-only context
 // (show.html's Fields/Title, index.GET's Rows) that wants the "$1.23"
-// string a human reads, or "formatCentsPlain" for a context that seeds
-// a form field a browser might resubmit completely unchanged
+// string a human reads, or "form.FormatCentsPlain" for a context that
+// seeds a form field a browser might resubmit completely unchanged
 // (edit.GET's Fields, and the OTHER field group's current values on a
 // validation-failure re-render) — that seed must come back out exactly
-// as parseCents itself accepts back in ("1.23", never "$1.23"; see
-// parseCents' own doc for why a leading "$" 400s an untouched edit).
-// Everything else (Text/Textarea) is the raw sqlc-generated field,
-// unaffected by either formatter.
+// as form.ParseCents itself accepts back in ("1.23", never "$1.23"; see
+// form.ParseCents' own doc for why a leading "$" 400s an untouched
+// edit). Everything else (Text/Textarea) is the raw sqlc-generated
+// field, unaffected by either formatter.
 func fieldExpr(varName string, c column, moneyFmt string) string {
 	if c.Kind == rastrillo.Money {
 		return fmt.Sprintf("%s(%s.%s)", moneyFmt, varName, c.Name)
@@ -287,9 +287,10 @@ func fieldExpr(varName string, c column, moneyFmt string) string {
 // every column in columns(r), each keyed by its declared name and
 // valued by fieldExpr(varName, c, moneyFmt) — the shape show.html and
 // the Edit half of form.html both read as Fields. Callers pass
-// "formatCents" (show's Fields, a display context) or
-// "formatCentsPlain" (edit's Fields, a re-submittable form seed) — see
-// fieldExpr's doc for why the two contexts need different formatters.
+// "form.FormatCents" (show's Fields, a display context) or
+// "form.FormatCentsPlain" (edit's Fields, a re-submittable form seed)
+// — see fieldExpr's doc for why the two contexts need different
+// formatters.
 func fieldsMapLiteral(r rastrillo.Resource, varName, moneyFmt string) string {
 	var b strings.Builder
 	b.WriteString("map[string]string{\n")
@@ -372,146 +373,78 @@ func declaredFilter(r rastrillo.Resource) (field string, values []string, ok boo
 	return r.List.Filters[0].Field, r.List.Filters[0].Values, true
 }
 
-// ── Shared boilerplate, identical across all seven files for a given
-// resource (only the "<name>: " log prefix varies) ─────────────────
+// ── form/view call-site plumbing, shared across all seven files for a
+// given resource ────────────────────────────────────────────────────
 
-// helperFuncs renders the
-// fail/render/parseID/formatCents/formatCentsPlain/parseCents helpers
-// every generated action carries. Including all six unconditionally in
-// every file (rather than computing per-file which are actually
-// called) keeps the emitter's per-file logic simple and costs nothing
-// real: an unused top-level func is valid Go, and each helper's own
-// body is what pulls in "fmt"/"strconv"/"strings" — never a needless
-// import.
-func helperFuncs(name string) string {
-	return fmt.Sprintf(`
-// fail logs through Ctx.Logger (when set) and answers a plain 500.
-func fail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error) {
-	if ctx.Logger != nil {
-		ctx.Logger.Error(%q+what, "err", err)
-	}
-	http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+// failWhat renders the "what" argument a view.Fail call site passes:
+// the shared view.Fail (form/view — Task 6) can't close over the
+// resource name the way the old stamped-per-file fail helper did, so
+// the "<name>: " prefix that used to live in the helper's own log line
+// is folded into this string instead. Net effect on the emitted log
+// line is unchanged: fail(ctx, w, "creating notes", err) under the old
+// stamped helper logged the same line view.Fail(ctx, w, "notes:
+// creating notes", err) logs now.
+func failWhat(r rastrillo.Resource, what string) string {
+	return r.Name + ": " + what
 }
 
-// render hands data to the app's template tree through ctx.Render (see
-// rastrillo.Ctx's Render field) — a 500 with a clear log line stands in
-// for a template an app forgot to wire, rather than a nil-pointer panic.
-func render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any) {
-	if ctx.Render == nil {
-		if ctx.Logger != nil {
-			ctx.Logger.Error(%q + "Ctx.Render is nil; the app's ctx factory must set it")
-		}
-		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
-		return
+// actionImportLines renders the module import lines every generated
+// action needs (rastrillo, always; view, always — every one of the
+// seven/eight files calls at least one of view.Fail/view.Render/
+// view.ParseID unconditionally) plus form when needsForm — an action
+// with no Money field anywhere it reads/writes must not import form
+// unused (go vet would reject it). Line order within the block doesn't
+// matter: go/format sorts import specs within a contiguous group
+// alphabetically, same as gofmt.
+func actionImportLines(needsForm bool) string {
+	var b strings.Builder
+	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	if needsForm {
+		b.WriteString("\t\"github.com/carlosframework/rastrillo/form\"\n")
 	}
-	ctx.Render(ctx, w, page, status, data)
+	b.WriteString("\t\"github.com/carlosframework/rastrillo/view\"\n")
+	return b.String()
 }
 
-// parseID reads the {id} path value. A non-numeric id is a URL that
-// was never ours, so the caller answers 404 rather than 400.
-func parseID(r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil || id < 1 {
-		return 0, false
-	}
-	return id, true
-}
-
-// formatCents renders cents as a dollar string for a DISPLAY context
-// (show.html's Fields/Title, index.GET's Rows) — the only money
-// formatting a generated template ever sees there; a template never
-// does money math itself. The sign, if any, is written once up front
-// against the absolute value: cents/100 and cents%%100 both truncate
-// toward zero in Go, so naively formatting a negative cents value
-// directly (an earlier draft did) mangles it into something like
-// "$-1.-50" instead of "-$1.50". parseCents below never actually
-// hands this function a negative value (v1 rejects negative money
-// outright), but a stored value could in principle be negative from
-// some other path, so the sign is still handled correctly here as
-// defense in depth.
-func formatCents(cents int64) string {
-	sign := ""
-	if cents < 0 {
-		sign = "-"
-		cents = -cents
-	}
-	return fmt.Sprintf("%%s$%%d.%%02d", sign, cents/100, cents%%100)
-}
-
-// formatCentsPlain renders cents exactly like formatCents but without
-// the leading "$" — the formatter edit.GET (and the OTHER field
-// group's current values on a validation-failure re-render) must use
-// to seed a form field a browser might resubmit completely unchanged:
-// the seed has to be exactly what parseCents itself accepts back in,
-// and parseCents rejects a leading "$" (see its own doc). Using
-// formatCents there instead (an earlier draft did) meant resubmitting
-// an untouched Money field always 400ed.
-func formatCentsPlain(cents int64) string {
-	sign := ""
-	if cents < 0 {
-		sign = "-"
-		cents = -cents
-	}
-	return fmt.Sprintf("%%s%%d.%%02d", sign, cents/100, cents%%100)
-}
-
-// parseCents parses a decimal-dollars string (e.g. "12.34") into
-// cents, rejecting more than two decimal places. An empty string
-// parses to zero cents, not an error — a Required Money field rejects
-// blankness on the raw text before this runs. v1 also has no use for
-// negative prices, so any sign character is rejected outright as a
-// field error rather than accepted and applied: the whole and
-// fractional parts must each be composed entirely of ASCII digits.
-// This is stricter than handing each half to strconv.ParseInt
-// directly (an earlier draft did),
-// which happily accepts its own leading "+"/"-" in either half — so
-// "12.-5" or "12.+5" would silently mis-parse into a different
-// magnitude than the digits alone suggest, rather than being rejected
-// as the not-a-dollar-amount that it is.
-func parseCents(s string) (int64, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return 0, nil
-	}
-	whole, frac, hasFrac := strings.Cut(s, ".")
-	if hasFrac && len(frac) > 2 {
-		return 0, fmt.Errorf("enter a dollar amount with at most 2 decimal places")
-	}
-	for len(frac) < 2 {
-		frac += "0"
-	}
-	if whole == "" {
-		whole = "0"
-	}
-	if !isDigits(whole) || !isDigits(frac) {
-		return 0, fmt.Errorf("enter a valid dollar amount")
-	}
-	wholeN, err := strconv.ParseInt(whole, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("enter a valid dollar amount")
-	}
-	fracN, err := strconv.ParseInt(frac, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("enter a valid dollar amount")
-	}
-	return wholeN*100 + fracN, nil
-}
-
-// isDigits reports whether s is non-empty and every byte is an ASCII
-// digit — parseCents' guard against a sign character ("-"/"+")
-// slipping through either half via strconv.ParseInt's own leniency.
-func isDigits(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i := 0; i < len(s); i++ {
-		if s[i] < '0' || s[i] > '9' {
-			return false
+// hasMoneyColumn reports whether any of cols is a Money column.
+func hasMoneyColumn(cols []column) bool {
+	for _, c := range cols {
+		if c.Kind == rastrillo.Money {
+			return true
 		}
 	}
-	return true
+	return false
 }
-`, name+": ", name+": ")
+
+// fieldsHaveMoney reports whether any of fields is a Money field.
+func fieldsHaveMoney(fields []rastrillo.Field) bool {
+	for _, f := range fields {
+		if f.Kind == rastrillo.Money {
+			return true
+		}
+	}
+	return false
+}
+
+// fieldsNeedStrings reports whether parsing fields needs the strings
+// package in the generated file: a Text field's Decls always trims via
+// strings.TrimSpace, and a Required Textarea field's ErrCheck trims
+// the raw submitted value before checking blankness (see parseField).
+// A group with neither has no strings usage of its own now that the
+// stamped parseCents/formatCents/parseID helpers (which always used
+// strings/strconv, making them safe to import unconditionally) are
+// gone — see actionImportLines' own doc for the same reasoning applied
+// to form/view.
+func fieldsNeedStrings(fields []rastrillo.Field) bool {
+	for _, f := range fields {
+		if f.Kind == rastrillo.Text {
+			return true
+		}
+		if f.Kind == rastrillo.Textarea && f.Required {
+			return true
+		}
+	}
+	return false
 }
 
 // listViewTypes renders index.GET's data-shape types. hasFilter is
@@ -623,6 +556,8 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 		}
 	}
 
+	needsForm := main.Kind == rastrillo.Money || (hasSub && sub.Kind == rastrillo.Money)
+
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"fmt\"\n")
@@ -630,7 +565,7 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"net/url\"\n")
 	b.WriteString("\t\"strconv\"\n")
 	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -714,7 +649,7 @@ offset := (page - 1) * pageSize
 		}
 		b.WriteString("})\n")
 	}
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "counting "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "counting "+r.Name))
 
 	b.WriteString("rows, err := store.List" + plural + "(r.Context(), " + alias + ".List" + plural + "Params{\n")
 	if searchParam {
@@ -725,7 +660,7 @@ offset := (page - 1) * pageSize
 	}
 	b.WriteString("PageOffset: int64(offset),\nPageLimit: pageSize,\n")
 	b.WriteString("})\n")
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
 items := make([]listRow, 0, len(rows))
@@ -736,7 +671,7 @@ for _, n := range rows {
 		Sub:  %s,
 	})
 }
-`, r.Route+"/%d", fieldExpr("n", main, "formatCents"), subExpr(sub, hasSub))
+`, r.Route+"/%d", fieldExpr("n", main, "form.FormatCents"), subExpr(sub, hasSub))
 
 	b.WriteString(`
 totalPages := (int(total) + pageSize - 1) / pageSize
@@ -770,7 +705,7 @@ if show {
 	}
 
 	fmt.Fprintf(&b, `
-render(ctx, w, %q, http.StatusOK, listView{
+view.Render(ctx, w, %q, http.StatusOK, listView{
 	Empty:      total == 0,
 	Query:      %s,
 	Carry:      carry,
@@ -801,7 +736,6 @@ func href(search string, carry [][2]string, page int) string {
 	}
 
 	b.WriteString(listViewTypes(filtersDeclared))
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -911,7 +845,7 @@ func subExpr(sub column, hasSub bool) string {
 	if !hasSub {
 		return `""`
 	}
-	return fieldExpr("n", sub, "formatCents")
+	return fieldExpr("n", sub, "form.FormatCents")
 }
 
 // searchExprForHref is the argument href() is called with at each of
@@ -970,14 +904,17 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 		rawFieldLines = append(rawFieldLines, fmt.Sprintf("%q: \"\",\n", c.Name))
 	}
 
+	needsForm := fieldsHaveMoney(order)
+
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n")
+	if fieldsNeedStrings(order) {
+		b.WriteString("\t\"strings\"\n")
+	}
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1000,7 +937,7 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 			b.WriteString(ec)
 		}
 		b.WriteString("\nif len(errs) > 0 {\n")
-		fmt.Fprintf(&b, "render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
+		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
 		b.WriteString("IsNew: true,\nFields: map[string]string{\n")
 		for _, l := range rawFieldLines {
 			b.WriteString(l)
@@ -1016,11 +953,10 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	}
 	b.WriteString("Now: now,\n")
 	b.WriteString("})\n")
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "creating "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "creating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
 	b.WriteString(formViewType)
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -1029,21 +965,17 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 func actionNewGET(r rastrillo.Resource, module string) string {
 	var b strings.Builder
 	b.WriteString("import (\n")
-	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"net/http\"\n\n")
+	b.WriteString(actionImportLines(false))
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/new.\n", r.Route)
 	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
-	fmt.Fprintf(&b, "render(ctx, w, %q, http.StatusOK, formView{\n", r.Name+"/form")
+	fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusOK, formView{\n", r.Name+"/form")
 	b.WriteString("IsNew: true,\nFields: " + zeroFieldsMapLiteral(r) + ",\n")
 	b.WriteString("})\n}\n")
 
 	b.WriteString(formViewType)
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -1053,22 +985,21 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	main, _, _ := mainSubColumns(r)
+	needsForm := hasMoneyColumn(columns(r))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"net/http\"\n\n")
+	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}.\n", r.Route)
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := parseID(r)
+	id, ok := view.ParseID(r)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -1081,19 +1012,18 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
-render(ctx, w, %q, http.StatusOK, showView{
+view.Render(ctx, w, %q, http.StatusOK, showView{
 	Title:    %s,
 	EditHref: fmt.Sprintf(%q, id),
 	Fields:   %s,
 })
 }
-`, r.Name+"/show", fieldExpr("n", main, "formatCents"), r.Route+"/%d/edit", fieldsMapLiteral(r, "n", "formatCents"))
+`, r.Name+"/show", fieldExpr("n", main, "form.FormatCents"), r.Route+"/%d/edit", fieldsMapLiteral(r, "n", "form.FormatCents"))
 
 	b.WriteString(showViewType)
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -1103,22 +1033,21 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	hasAdvanced := len(r.Form.Advanced) > 0
+	needsForm := hasMoneyColumn(columns(r))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"net/http\"\n\n")
+	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}/edit.\n", r.Route)
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := parseID(r)
+	id, ok := view.ParseID(r)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -1131,21 +1060,20 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
-render(ctx, w, %q, http.StatusOK, formView{
+view.Render(ctx, w, %q, http.StatusOK, formView{
 	IsNew:  false,
 	Fields: %s,
 	BasicsAction: fmt.Sprintf(%q, id),
-`, r.Name+"/form", fieldsMapLiteral(r, "n", "formatCentsPlain"), r.Route+"/%d/edit-basics")
+`, r.Name+"/form", fieldsMapLiteral(r, "n", "form.FormatCentsPlain"), r.Route+"/%d/edit-basics")
 	if hasAdvanced {
 		fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
 	}
 	b.WriteString("})\n}\n")
 
 	b.WriteString(formViewType)
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -1188,16 +1116,19 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		paramLines = append(paramLines, byName[f.Name].ParamLine)
 	}
 
+	needsForm := groupHasValidation && hasMoneyColumn(columns(r))
+
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n")
+	if fieldsNeedStrings(group) {
+		b.WriteString("\t\"strings\"\n")
+	}
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1208,7 +1139,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		http.Error(w, "Bad request.", http.StatusBadRequest)
 		return
 	}
-	id, ok := parseID(r)
+	id, ok := view.ParseID(r)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -1226,7 +1157,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n\n", "loading "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n\n", failWhat(r, "loading "+r.Name))
 
 	for _, d := range decls {
 		b.WriteString(d)
@@ -1238,11 +1169,11 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 			b.WriteString(ec)
 		}
 		b.WriteString("\nif len(errs) > 0 {\n")
-		b.WriteString("fields := " + fieldsMapLiteral(r, "n", "formatCentsPlain") + "\n")
+		b.WriteString("fields := " + fieldsMapLiteral(r, "n", "form.FormatCentsPlain") + "\n")
 		for _, f := range group {
 			fmt.Fprintf(&b, "fields[%q] = %s\n", f.Name, byName[f.Name].RawExpr)
 		}
-		fmt.Fprintf(&b, "render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
+		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
 		b.WriteString("IsNew: false,\nFields: fields,\nErrors: errs,\n")
 		fmt.Fprintf(&b, "BasicsAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-basics")
 		if hasAdvanced {
@@ -1259,13 +1190,12 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	}
 	b.WriteString("Now: now,\nID: id,\n")
 	b.WriteString("}); err != nil {\n")
-	fmt.Fprintf(&b, "fail(ctx, w, %q, err)\nreturn\n}\n", "updating "+r.Name)
+	fmt.Fprintf(&b, "view.Fail(ctx, w, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
 	if groupHasValidation {
 		b.WriteString(formViewType)
 	}
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -1321,8 +1251,8 @@ func parseField(f rastrillo.Field) parsedField {
 		var errCheck string
 		if f.Required {
 			// Required-ness is checked against the RAW submitted text,
-			// not the parsed cents value: parseCents("") succeeds with
-			// 0 (see its own doc), so an empty input never trips
+			// not the parsed cents value: form.ParseCents("") succeeds
+			// with 0 (see its own doc), so an empty input never trips
 			// errVar != nil on its own — only the raw == "" branch
 			// below catches it. "0"/"0.00" is a non-empty raw string
 			// that parses cleanly, so it lands in neither branch and is
@@ -1336,7 +1266,7 @@ func parseField(f rastrillo.Field) parsedField {
 			errCheck = fmt.Sprintf("if %s != nil {\nerrs[%q] = %s.Error()\n}\n", errVar, f.Name, errVar)
 		}
 		return parsedField{
-			Decls: fmt.Sprintf("%s := r.PostFormValue(%q)\n%s, %s := parseCents(%s)\n",
+			Decls: fmt.Sprintf("%s := r.PostFormValue(%q)\n%s, %s := form.ParseCents(%s)\n",
 				raw, f.Name, v, errVar, raw),
 			ParamLine: fmt.Sprintf("%s: %s,\n", f.Name, v),
 			RawExpr:   raw,
@@ -1371,23 +1301,22 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	main, _, _ := mainSubColumns(r)
+	needsForm := main.Kind == rastrillo.Money
 
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"net/http\"\n\n")
+	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}/delete: the confirm page. A GET never\n", r.Route)
 	b.WriteString("// mutates; the delete itself is the sibling POST.\n")
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := parseID(r)
+	id, ok := view.ParseID(r)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -1400,19 +1329,18 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
-render(ctx, w, %q, http.StatusOK, confirmView{
+view.Render(ctx, w, %q, http.StatusOK, confirmView{
 	Title:      %s,
 	DeleteHref: fmt.Sprintf(%q, id),
 	CancelHref: fmt.Sprintf(%q, id),
 })
 }
-`, r.Name+"/confirm", fieldExpr("n", main, "formatCents"), r.Route+"/%d/delete", r.Route+"/%d")
+`, r.Name+"/confirm", fieldExpr("n", main, "form.FormatCents"), r.Route+"/%d/delete", r.Route+"/%d")
 
 	b.WriteString(confirmViewType)
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
 
@@ -1437,17 +1365,14 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 	b.WriteString("import (\n")
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
-	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"strconv\"\n")
-	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"net/http\"\n\n")
+	b.WriteString(actionImportLines(false))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is POST %s/{id}/delete.\n", r.Route)
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := parseID(r)
+	id, ok := view.ParseID(r)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -1456,10 +1381,9 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), id); errors.Is(err, sql.ErrNoRows) {\n", singular)
 	b.WriteString("\thttp.NotFound(w, r)\n\treturn\n")
-	fmt.Fprintf(&b, "} else if err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", "loading "+r.Name)
-	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), id); err != nil {\n\tfail(ctx, w, %q, err)\n\treturn\n}\n", singular, "deleting "+r.Name)
+	fmt.Fprintf(&b, "} else if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), id); err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", singular, failWhat(r, "deleting "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, %q, http.StatusSeeOther)\n}\n", r.Route)
 
-	b.WriteString(helperFuncs(r.Name))
 	return b.String()
 }
