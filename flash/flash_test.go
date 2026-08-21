@@ -157,3 +157,39 @@ func TestMessageSurvivesEncoding(t *testing.T) {
 		t.Errorf("Message = %q, want %q", flash.Message, message)
 	}
 }
+
+func TestMessageWithSeparator(t *testing.T) {
+	// Regression: message containing the separator byte (\x00) must
+	// round-trip intact, not be silently truncated.
+
+	message := "bad\x00message"
+	kind := "notice"
+
+	// Set a flash with separator in the message
+	w := httptest.NewRecorder()
+	Set(w, kind, message)
+
+	// Extract and carry the cookie to a new request
+	cookies := w.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatal("No cookies in response")
+	}
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.AddCookie(cookies[0])
+
+	// Take the flash
+	w2 := httptest.NewRecorder()
+	flash, ok := Take(w2, req)
+
+	// Verify the message survived intact with the embedded separator
+	if !ok {
+		t.Error("Take returned ok=false, expected true")
+	}
+	if flash.Kind != kind {
+		t.Errorf("Kind = %q, want %q", flash.Kind, kind)
+	}
+	if flash.Message != message {
+		t.Errorf("Message = %q, want %q", flash.Message, message)
+	}
+}

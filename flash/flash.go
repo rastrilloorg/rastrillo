@@ -40,6 +40,19 @@ func Set(w http.ResponseWriter, kind, message string) {
 	http.SetCookie(w, cookie)
 }
 
+// clear writes a clearing cookie (MaxAge=-1) to the response.
+func clear(w http.ResponseWriter) {
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	}
+	http.SetCookie(w, cookie)
+}
+
 // Take reads a flash cookie from the request, clears it, and returns it.
 // If no flash cookie is present, it returns (Flash{}, false) and writes
 // no Set-Cookie header. If the cookie is present but malformed, it still
@@ -55,44 +68,20 @@ func Take(w http.ResponseWriter, r *http.Request) (Flash, bool) {
 	data, err := base64.RawURLEncoding.DecodeString(cookie.Value)
 	if err != nil {
 		// Malformed cookie, clear it and return false
-		clearCookie := &http.Cookie{
-			Name:     cookieName,
-			Value:    "",
-			Path:     "/",
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-			MaxAge:   -1,
-		}
-		http.SetCookie(w, clearCookie)
+		clear(w)
 		return Flash{}, false
 	}
 
-	// Split on separator
-	parts := strings.Split(string(data), sep)
+	// Split on separator (only on first occurrence to allow separator in message)
+	parts := strings.SplitN(string(data), sep, 2)
 	if len(parts) != 2 {
 		// Malformed data, clear it and return false
-		clearCookie := &http.Cookie{
-			Name:     cookieName,
-			Value:    "",
-			Path:     "/",
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-			MaxAge:   -1,
-		}
-		http.SetCookie(w, clearCookie)
+		clear(w)
 		return Flash{}, false
 	}
 
 	// Clear the cookie
-	clearCookie := &http.Cookie{
-		Name:     cookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   -1,
-	}
-	http.SetCookie(w, clearCookie)
+	clear(w)
 
 	// Return the flash
 	return Flash{
