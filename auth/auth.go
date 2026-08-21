@@ -183,7 +183,10 @@ func New(cfg Config) (*Auth, error) {
 // secure reports whether the app's origin is https — which decides both
 // the Secure cookie attribute and the __Host- name prefix (the prefix
 // requires Secure, so a plain-http dev origin gets the unprefixed name;
-// the vitogo TODO, resolved by deciding on the origin).
+// the vitogo TODO, resolved by deciding on the origin). Only the pending
+// cookie uses this now; the session cookie's equivalent decision lives
+// in sessions.Sessions.secure — the two must keep agreeing, since both
+// derive from the same Config.Origin.
 func (a *Auth) secure() bool { return strings.HasPrefix(a.cfg.Origin, "https://") }
 
 func (a *Auth) cookieName(base string) string {

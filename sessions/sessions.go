@@ -306,6 +306,15 @@ func UserID(r *http.Request) (int64, bool) {
 	return id, true
 }
 
+// Sweep deletes expired session rows. Correctness never depends on it —
+// From and lookup check expiry themselves — its job is keeping
+// abandoned sessions from accumulating for the life of the instance.
+// Call it from boot, a sidecar pass, or not at all.
+func (s *Sessions) Sweep(now time.Time) error {
+	_, err := s.cfg.DB.Exec(`DELETE FROM sessions WHERE expires_at < ?`, now.UTC().Format(time.RFC3339))
+	return err
+}
+
 // SafeReturn returns r.FormValue("return_to") when it is a same-site
 // absolute path — starts with exactly one "/", no scheme, no
 // backslash — and fallback otherwise. Anything laxer is an open

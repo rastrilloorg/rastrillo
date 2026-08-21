@@ -243,6 +243,42 @@ func TestRequireStashesCurrent(t *testing.T) {
 	}
 }
 
+func TestSweepDeletesExpiredKeepsLive(t *testing.T) {
+	s, db := newTestSessions(t, nil)
+	now := time.Now().UTC()
+	insert := func(hash string, expires time.Time) {
+		t.Helper()
+		if _, err := db.Exec(`INSERT INTO sessions (token_hash, subject, method, auth_time, created_at, expires_at)
+			VALUES (?, ?, ?, ?, ?, ?)`, hash, "1", "password", "",
+			now.Format(time.RFC3339), expires.UTC().Format(time.RFC3339)); err != nil {
+			t.Fatalf("insert %q: %v", hash, err)
+		}
+	}
+	insert("expired", now.Add(-time.Hour))
+	insert("live", now.Add(time.Hour))
+
+	if err := s.Sweep(now); err != nil {
+		t.Fatalf("Sweep: %v", err)
+	}
+
+	var hashes []string
+	rows, err := db.Query(`SELECT token_hash FROM sessions`)
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var h string
+		if err := rows.Scan(&h); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
+		hashes = append(hashes, h)
+	}
+	if len(hashes) != 1 || hashes[0] != "live" {
+		t.Fatalf("sessions after Sweep = %v, want only %q", hashes, "live")
+	}
+}
+
 func TestSafeReturnRejectsAbsoluteAndSchemeless(t *testing.T) {
 	const fallback = "/"
 	cases := []struct {

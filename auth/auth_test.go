@@ -295,6 +295,93 @@ func TestClassifierLookupPathFix(t *testing.T) {
 	}
 }
 
+// legacyMigrations is the pre-sessions-core schema — just auth's own
+// two tables, as a pre-upgrade deployment would have had.
+var legacyMigrations = []string{
+	`CREATE TABLE IF NOT EXISTS auth_links (
+	  hash       TEXT PRIMARY KEY,
+	  address    TEXT NOT NULL,
+	  purpose    TEXT NOT NULL,
+	  expires_at TEXT NOT NULL
+	);`,
+	`CREATE TABLE IF NOT EXISTS auth_sessions (
+	  token_hash TEXT PRIMARY KEY,
+	  address    TEXT NOT NULL,
+	  method     TEXT NOT NULL,
+	  auth_time  TEXT NOT NULL DEFAULT '',
+	  created_at TEXT NOT NULL,
+	  expires_at TEXT NOT NULL
+	);`,
+}
+
+// TestUpgradeCopiesLiveAuthSessionsThenSelfHeals pins the upgrade path
+// end to end: a session minted under the pre-sessions-core schema still
+// admits after the app upgrades to auth.Migrations (the copy), and —
+// the resurrection fix — a session revoked post-upgrade stays revoked
+// even after the migrations run again on a later boot (auth_sessions
+// having been emptied means there is nothing left to re-copy).
+func TestUpgradeCopiesLiveAuthSessionsThenSelfHeals(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "upgrade.db")
+	db, err := rastrillo.OpenDB(path, legacyMigrations)
+	if err != nil {
+		t.Fatalf("OpenDB (legacy): %v", err)
+	}
+
+	token, hash, err := NewToken()
+	if err != nil {
+		t.Fatalf("NewToken: %v", err)
+	}
+	now := time.Now().UTC()
+	if _, err := db.Exec(`INSERT INTO auth_sessions (token_hash, address, method, auth_time, created_at, expires_at)
+		VALUES (?, ?, ?, ?, ?, ?)`,
+		hash, "old@example.com", "magiclink", "",
+		now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339)); err != nil {
+		t.Fatalf("seed auth_sessions: %v", err)
+	}
+	db.Close()
+
+	// Re-open with the real Migrations — the upgrade boot.
+	db, err = rastrillo.OpenDB(path, Migrations)
+	if err != nil {
+		t.Fatalf("OpenDB (upgrade): %v", err)
+	}
+	defer db.Close()
+
+	a, err := New(Config{DB: db, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	cookie := &http.Cookie{Name: a.SessionCookie(), Value: token}
+	r := httptest.NewRequest("GET", "http://app.test/", nil)
+	r.AddCookie(cookie)
+	if id, ok := a.SessionFrom(r); !ok || id.Address != "old@example.com" {
+		t.Fatalf("SessionFrom after upgrade = %+v, ok=%v, want the copied pre-upgrade session admitted", id, ok)
+	}
+
+	// Sign out — revokes the copied row in `sessions`.
+	signout := httptest.NewRequest("POST", "http://app.test/signout", nil)
+	signout.Header.Set("Sec-Fetch-Site", "same-origin")
+	signout.AddCookie(cookie)
+	a.Signout(httptest.NewRecorder(), signout)
+
+	// Simulate a restart: re-run the migration statements again.
+	// Without emptying auth_sessions, the still-populated row would be
+	// re-copied by INSERT OR IGNORE (its PK now absent from `sessions`
+	// post-signout) and the revoked token would work again.
+	for _, stmt := range Migrations {
+		if _, err := db.Exec(stmt); err != nil {
+			t.Fatalf("re-run migration %q: %v", stmt, err)
+		}
+	}
+
+	r2 := httptest.NewRequest("GET", "http://app.test/", nil)
+	r2.AddCookie(cookie)
+	if _, ok := a.SessionFrom(r2); ok {
+		t.Fatal("SessionFrom admitted a revoked session resurrected by re-running the migrations")
+	}
+}
+
 func TestSweep(t *testing.T) {
 	a, m := newTestAuth(t, nil)
 	ls := &linkStore{db: a.cfg.DB}
