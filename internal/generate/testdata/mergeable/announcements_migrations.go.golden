@@ -11,6 +11,12 @@ import "github.com/carlosframework/rastrillo/eventlog"
 // The statements are read out of eventlog.Schema — the *migrate.Set
 // the package ships — rather than copied, so this file cannot drift
 // from the schema migrate.Apply installs for an app on the ledger.
+//
+// One element per migration FILE, not per statement, so keep each
+// file independently idempotent: OpenDB tolerates a duplicate-column
+// error by skipping the rest of that element, which with a
+// multi-statement file means skipping every statement after it and
+// still reporting success.
 var Migrations = eventlogSchemaSQL()
 
 func eventlogSchemaSQL() []string {

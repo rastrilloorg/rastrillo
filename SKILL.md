@@ -271,7 +271,8 @@ errors otherwise. `Lookup(ctx, email) (id, hash, error)` returns
 decoy hash flattens timing). Any error from `Create` reads as a duplicate
 email.
 `Signin`/`Signup`/`Signout` are **POST-only** — Page variants on GET, the
-rest on POST. Render callbacks take `(w, r, password.PageData)`;
+rest on POST, 405 to anything else. Render callbacks take
+`(w, r, password.PageData)` = `{Error, Email, ReturnTo}`;
 password writes the 422 itself, so the callback must not.
 
 **Rate limiting:** Signin and Signup share a per-email budget — 10 failures in
