@@ -1,9 +1,11 @@
 package password_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -454,6 +456,26 @@ func TestSignoutRevokes(t *testing.T) {
 // revoked), since a GET route would put a plaintext password in the
 // URL/referrer/logs (Signin, Signup) or escape the app-wide CSRF
 // guard, which only gates POST/PUT/PATCH/DELETE (Signout).
+func TestConfiguredLoggerReceivesErrors(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+	env := newTestEnv(t, func(cfg *password.Config) {
+		cfg.Logger = logger
+		cfg.Lookup = func(context.Context, string) (int64, string, error) {
+			return 0, "", errors.New("db is on fire")
+		}
+	})
+
+	w := httptest.NewRecorder()
+	env.h.Signin(w, signinRequest("a@example.com", "whatever0", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", w.Code)
+	}
+	if !strings.Contains(buf.String(), "db is on fire") {
+		t.Errorf("configured logger did not receive the lookup error; log output: %q", buf.String())
+	}
+}
+
 func TestMutatingHandlersRejectNonPost(t *testing.T) {
 	env := newTestEnv(t, nil)
 	hash, _ := password.Hash("s3cretpw")

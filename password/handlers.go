@@ -60,6 +60,8 @@ type Config struct {
 	// RenderSignup renders the signup page/form the same way
 	// RenderSignin does for sign-in. Required only when Create is set.
 	RenderSignup func(w http.ResponseWriter, r *http.Request, d PageData)
+
+	Logger *slog.Logger
 }
 
 // Handlers is the wired plugin: an app builds one at boot (New) and
@@ -84,6 +86,9 @@ func New(cfg Config) (*Handlers, error) {
 	}
 	if cfg.SignedInPath == "" {
 		cfg.SignedInPath = "/"
+	}
+	if cfg.Logger == nil {
+		cfg.Logger = slog.Default()
 	}
 	return &Handlers{cfg: cfg}, nil
 }
@@ -134,7 +139,7 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 		h.rerenderSignin(w, r, email)
 		return
 	case err != nil:
-		slog.Default().Error("rastrillo/password: lookup", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: lookup", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
@@ -190,7 +195,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := Hash(submitted)
 	if err != nil {
-		slog.Default().Error("rastrillo/password: hash", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: hash", "err", err)
 		http.Error(w, "sign-up failed", http.StatusInternalServerError)
 		return
 	}
@@ -202,7 +207,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 		// rather than leaking storage details, but it's still logged —
 		// a DB outage should not vanish silently just because it looks
 		// like a duplicate-email case to the caller.
-		slog.Default().Error("rastrillo/password: create", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: create", "err", err)
 		h.rerenderSignup(w, r, "That email is already registered.", email)
 		return
 	}
@@ -228,7 +233,7 @@ func (h *Handlers) signInAndRedirect(w http.ResponseWriter, r *http.Request, id 
 		AuthTime: time.Now(),
 	})
 	if err != nil {
-		slog.Default().Error("rastrillo/password: sign in", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: sign in", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
