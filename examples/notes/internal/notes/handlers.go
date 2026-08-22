@@ -165,7 +165,7 @@ func (a *app) startExport(w http.ResponseWriter, r *http.Request) {
 	owner := sess.Subject
 	exportID := newToken()
 	g := a.db
-	job := a.jobs.Start(owner, "Export notes", "/exports/"+exportID,
+	job, err := a.jobs.Start(owner, "Export notes", "/exports/"+exportID,
 		func(ctx context.Context, progress func(string)) error {
 			var notes []Note
 			if err := scope.Owned(g.WithContext(ctx), uid).Order("id").Find(&notes).Error; err != nil {
@@ -187,6 +187,13 @@ func (a *app) startExport(w http.ResponseWriter, r *http.Request) {
 			}
 			return nil
 		})
+	// ErrOwnerBusy in our own words, not err.Error(): the refusal is
+	// per owner (four running jobs), so waiting genuinely clears it.
+	if err != nil {
+		flash.Set(w, "error", "You already have exports running — wait for one to finish.")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/jobs/"+job.ID, http.StatusSeeOther)
 }
 
