@@ -52,6 +52,12 @@ type glyph struct {
 }
 
 type set struct {
+	// credit is emitted as a comment above the generated glyph map. Font
+	// Awesome's licence asks that the attribution comments in their
+	// distributed files not be removed; transcribing path data into Go
+	// drops them as a side effect, so this puts one back where the data
+	// actually lives. Empty for a set that asks nothing.
+	credit       string
 	openTag      string // inline <svg> open tag, minus the viewBox
 	glyphs       map[string]glyph
 	cdnHref      string
@@ -105,8 +111,12 @@ func Deliveries() []string { return []string{"cdn", "inline", "js"} }
 //
 //	curl -sfL <url> | openssl dgst -sha384 -binary | openssl base64 -A
 //
-// Nothing re-pins these automatically; see the issue tracker for who
-// owns the bump.
+// Nothing re-pins these automatically. `go test -tags pins
+// ./internal/iconsets/` checks both halves against the network: that
+// every pinned URL still hashes to the integrity value beside it, and
+// whether a newer release exists. Run it at release time; it is
+// build-tagged so the ordinary suite never depends on someone else's
+// CDN being up.
 //
 // Font Awesome here is Font Awesome FREE. Pro is a paid product that
 // cannot be vendored or linked on a user's behalf, so Pro-only icons do
@@ -143,6 +153,10 @@ var sets = map[string]set{
 	"font-awesome": {
 		// Font Awesome is a filled set; its solid icons sit on 512-high
 		// viewBoxes that vary in width, so ViewBox is per glyph.
+		credit: "Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com\n" +
+			"License - https://fontawesome.com/license/free\n" +
+			"(Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT)\n" +
+			"Copyright 2026 Fonticons, Inc. Please keep this notice.",
 		openTag: `<svg class="icon" fill="currentColor" aria-hidden="true"`,
 		glyphs: map[string]glyph{
 			"alert-triangle": {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 0c14.7 0 28.2 8.1 35.2 21l216 400c6.7 12.4 6.4 27.4-.8 39.5S486.1 480 472 480L40 480c-14.1 0-27.2-7.4-34.4-19.5s-7.5-27.1-.8-39.5l216-400c7-12.9 20.5-21 35.2-21zm0 352a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.5 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"/>`, Element: `<i class="icon fa-solid fa-triangle-exclamation" aria-hidden="true"></i>`},
@@ -164,19 +178,33 @@ var sets = map[string]set{
 		attribName:   "ICONS-LICENCE.md",
 		attribution: `# Icon licence — Font Awesome Free 7.3.1
 
-The icons in internal/icons are Font Awesome Free, used under CC BY 4.0.
-Font Awesome Free is by @fontawesome — https://fontawesome.com
+The icons in this app's icons package are Font Awesome Free by
+Fonticons, Inc. — https://fontawesome.com — used under the Font Awesome
+Free License: https://fontawesome.com/license/free
 
-- Icons: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
-- Fonts: SIL OFL 1.1
+Which licence covers what, per that file:
+
+- Icons (SVG and JS file types): CC BY 4.0
+  https://creativecommons.org/licenses/by/4.0/
+- Fonts (web and desktop font files): SIL OFL 1.1
 - Code: MIT
 
-CC BY 4.0 requires attribution wherever these icons are used. Keep this
-file in the repository, and credit Font Awesome somewhere a user of the
-deployed app can reach — an about page, a colophon, or the footer.
+Which of those you are relying on depends on the delivery mode chosen at
+scaffold time: inline vendors SVG path data (icons, CC BY 4.0); cdn loads
+the stylesheet and its webfonts (fonts, OFL, plus MIT code); js loads
+their script (icons-as-JS and MIT code).
 
-rastrillo scaffolded this file because you chose --icons=font-awesome.
-Deleting it does not remove the obligation.
+## Why this file exists
+
+Font Awesome's licence says their distributed files carry embedded
+attribution comments that are sufficient on their own, and asks that you
+not work to remove them. rastrillo does not ship their files: it
+transcribes path data into an app-owned Go source file, which drops those
+comments as a side effect. This file, and the comment above the glyph map
+in the icons package, are that attribution restored — keep both.
+
+Nothing here obliges you to credit Font Awesome in the running app's UI.
+Doing so is welcome but is not what the licence asks for.
 `,
 	},
 }
@@ -214,9 +242,11 @@ func Render(name string, d Delivery) (Rendered, error) {
 		SrcIntegrity  string
 		Init          string
 		Notice        string
+		Credit        string
 	}{
 		Set: name, Delivery: d, Inline: d == Inline,
 		OpenTag: s.openTag, Slugs: Slugs(), Glyphs: s.glyphs,
+		Credit: s.credit,
 	}
 	switch d {
 	case CDN:
@@ -288,7 +318,8 @@ package icons
 
 import "html/template"
 
-var icons = map[string]template.HTML{
+{{if .Credit}}{{comment .Credit}}
+{{end}}var icons = map[string]template.HTML{
 {{- range .Slugs}}{{$g := index $.Glyphs .}}
 	{{printf "%q" .}}: {{bt}}{{if $.Inline}}{{$.OpenTag}} viewBox="{{$g.ViewBox}}">{{$g.Body}}</svg>{{else}}{{$g.Element}}{{end}}{{bt}},
 {{- end}}

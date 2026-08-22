@@ -263,33 +263,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Visually hidden, but in the DOM and the tab order — and it un-hides on
-   keyboard focus, because a focused control a sighted keyboard user
-   cannot see is a trap. */
-.rst-sr-only {
-  clip-path: inset(50%);
-  block-size: 1px;
-  inline-size: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-}
-.rst-sr-only:focus-visible {
-  background: var(--rst-accent);
-  border: 0;
-  border-radius: var(--rst-radius-sm);
-  block-size: auto;
-  clip-path: none;
-  color: var(--rst-on-accent);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--rst-fs-sm);
-  inline-size: auto;
-  overflow: visible;
-  padding: 0.3rem 0.6rem;
-  position: static;
-  white-space: normal;
-}
 
 /* ── Buttons: page-header's primary action, empty-state's CTA. ────── */
 .rst-btn {
@@ -1009,3 +982,48 @@ body:has(.rst-backdrop) { overflow: hidden; }
 /* The committed option is marked in the accessibility tree by
    aria-selected; this is the matching visual, never the only signal. */
 .rst-combo__option[aria-selected="true"] { font-weight: 600; }
+
+/* ---------------------------------------------------------------------
+   Utilities, last on purpose.
+
+   .rst-sr-only competes with component rules of the same specificity —
+   both are single class selectors — so the cascade falls to source
+   order. Declared earlier it LOSES: .rst-input's width:100% beat its
+   inline-size:1px. Keep this block at the end of the file so the utility
+   wins wherever it is applied; a test asserts it stays here.
+
+   What that does NOT buy: a replaced element such as <select> has an
+   intrinsic minimum size, so inline-size:1px does not shrink it to 1px
+   whoever wins — measured at ~21px in Chromium. clip-path is what
+   actually hides these, and position:absolute is what keeps them out of
+   flow. Code that wants a genuinely minimal box (select.js does) should
+   drop the component class rather than rely on this.
+   --------------------------------------------------------------------- */
+
+/* Visually hidden, but in the DOM and the tab order — and it un-hides on
+   keyboard focus, because a focused control a sighted keyboard user
+   cannot see is a trap. */
+.rst-sr-only {
+  clip-path: inset(50%);
+  block-size: 1px;
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+.rst-sr-only:focus-visible {
+  background: var(--rst-accent);
+  border: 0;
+  border-radius: var(--rst-radius-sm);
+  block-size: auto;
+  clip-path: none;
+  color: var(--rst-on-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--rst-fs-sm);
+  inline-size: auto;
+  overflow: visible;
+  padding: 0.3rem 0.6rem;
+  position: static;
+  white-space: normal;
+}

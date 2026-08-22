@@ -64,8 +64,20 @@ the meantime. This list is their union. **Built:**
 
   Versions are pinned (`lucide@1.33.0`, `lucide-static@1.33.0`,
   `@fortawesome/fontawesome-free@7.3.1`) and nothing re-pins them
-  automatically; see the issue tracker for who owns the bump. A version
-  changed without its hash fails as an unstyled page, not an error.
+  automatically. A version changed without its hash fails as an unstyled
+  page rather than an error, so check both together with:
+
+  ```
+  go test -tags pins ./internal/iconsets/
+  ```
+
+  That verifies every pinned URL still hashes to the integrity value
+  shipped beside it — a mismatch means the bytes changed under a version
+  that is supposed to be immutable, which is serious — and separately
+  reports whether a newer release exists, which is only informational.
+  Build-tagged, so the ordinary suite and CI never depend on jsdelivr or
+  the npm registry being up: a check that fails when someone else's CDN
+  has a bad afternoon teaches people to ignore it. Run it at release.
 
   `rastrillo generate --check` fails when a template names an icon nothing
   answers — both `{{icon "x"}}` and the commoner form where the slug
