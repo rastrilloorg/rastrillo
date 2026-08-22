@@ -106,15 +106,40 @@ type driftChecker struct {
 	print   func(string)
 	reqCh   chan driftRequest
 	gen     atomic.Int64
+	// done closes when run() returns, i.e. once reqCh is closed and
+	// any request already dequeued has finished its compute/print.
+	// close() waits on it so shutdown can't outrun a mid-flight check.
+	done chan struct{}
+	// shutdownTimeout bounds how long close() waits on done. A field
+	// rather than a constant so a test can shrink it instead of
+	// waiting out the real value against a deliberately wedged check.
+	shutdownTimeout time.Duration
 }
 
+// driftCheckerShutdownTimeout is the production bound on close()'s
+// wait: generous next to computeDrift's normal ~1s `go run`, but
+// finite, so a wedged check (network hang, runaway build) can't hang
+// `rastrillo dev`'s own shutdown forever. It does not risk the
+// loaderDir leak close() exists to prevent — that cleanup is a
+// deferred RemoveAll inside the very call being waited on, so it
+// still runs whenever the stuck call eventually returns; the timeout
+// only bounds how long shutdown waits around for it.
+const driftCheckerShutdownTimeout = 5 * time.Second
+
 func newDriftChecker(compute func(dir string) string, print func(string)) *driftChecker {
-	d := &driftChecker{compute: compute, print: print, reqCh: make(chan driftRequest, 1)}
+	d := &driftChecker{
+		compute:         compute,
+		print:           print,
+		reqCh:           make(chan driftRequest, 1),
+		done:            make(chan struct{}),
+		shutdownTimeout: driftCheckerShutdownTimeout,
+	}
 	go d.run()
 	return d
 }
 
 func (d *driftChecker) run() {
+	defer close(d.done)
 	for req := range d.reqCh {
 		msg := d.compute(req.dir)
 		if req.gen != d.gen.Load() {
@@ -148,10 +173,24 @@ func (d *driftChecker) requestAfterRebuild(dir string) {
 	}
 }
 
-// close stops the worker goroutine. Safe to defer right after
-// construction; runDev only returns at shutdown.
+// close stops the worker and blocks until it's done — including a
+// check already mid-compute when close is called. Without that wait,
+// a `rastrillo dev` shutdown that doesn't outlive the in-flight `go
+// run` (a SIGTERM to just this process, not its group, never reaches
+// that child; Ctrl-C's 5s grace for the app only self-heals this by
+// coincidence) can leave loadPayload's throwaway loader directory
+// sitting in the user's own module — its cleanup is the deferred
+// RemoveAll inside the very call this wait is for. Bounded by
+// shutdownTimeout so this stays a shutdown-path wait, not a hang: it
+// runs once per `rastrillo dev` process, not once per save, so it
+// does not reintroduce the restart-waits-on-drift-check problem
+// requestAfterRebuild exists to avoid.
 func (d *driftChecker) close() {
 	close(d.reqCh)
+	select {
+	case <-d.done:
+	case <-time.After(d.shutdownTimeout):
+	}
 }
 
 // runDev implements `rastrillo dev [dir] [-- app args...]` (design doc

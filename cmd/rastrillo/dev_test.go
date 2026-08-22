@@ -326,3 +326,87 @@ func TestDevUsage(t *testing.T) {
 		t.Fatalf("usage should explain --, got: %s", got)
 	}
 }
+
+// TestDriftCheckerCloseWaitsForInFlightCheck guards the leftover-
+// directory risk close() exists to close off: loadPayload's throwaway
+// loader lives at a fixed path inside the app's own module and is
+// removed by a defer inside the very compute call in flight when
+// shutdown happens. If close() returned the moment the request
+// channel was closed, a `rastrillo dev` process that doesn't outlive
+// that in-flight `go run` (e.g. a bare SIGTERM to just this process,
+// not its process group) would leave that directory behind in the
+// user's repository.
+func TestDriftCheckerCloseWaitsForInFlightCheck(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	compute := func(dir string) string {
+		close(started)
+		<-release
+		return ""
+	}
+	dc := newDriftChecker(compute, func(string) {})
+
+	dc.requestAfterRebuild("d")
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("compute never started")
+	}
+
+	closeDone := make(chan struct{})
+	go func() {
+		dc.close()
+		close(closeDone)
+	}()
+
+	// The worker is still blocked inside compute; close() must not
+	// have returned yet.
+	select {
+	case <-closeDone:
+		t.Fatal("close returned before the in-flight compute finished")
+	case <-time.After(200 * time.Millisecond):
+	}
+
+	close(release)
+
+	select {
+	case <-closeDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("close never returned after the in-flight compute finished")
+	}
+}
+
+// TestDriftCheckerCloseTimesOutOnWedgedCheck is the other half: a
+// check that never returns (a hung `go run`) must not hang `rastrillo
+// dev`'s own shutdown forever. shutdownTimeout is a field precisely
+// so this test can shrink it instead of waiting out the real 5s
+// against a deliberately wedged worker.
+func TestDriftCheckerCloseTimesOutOnWedgedCheck(t *testing.T) {
+	block := make(chan struct{}) // never closed: a permanently wedged check
+	started := make(chan struct{})
+	compute := func(dir string) string {
+		close(started)
+		<-block
+		return ""
+	}
+	dc := newDriftChecker(compute, func(string) {})
+	dc.shutdownTimeout = 50 * time.Millisecond
+
+	dc.requestAfterRebuild("d")
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("compute never started")
+	}
+
+	done := make(chan struct{})
+	go func() {
+		dc.close()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		t.Fatal("close did not return within its bounded shutdown timeout")
+	}
+}
