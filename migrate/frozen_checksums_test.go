@@ -1,0 +1,77 @@
+package migrate_test
+
+import (
+	"testing"
+
+	"github.com/carlosframework/rastrillo/auth"
+	"github.com/carlosframework/rastrillo/blobs"
+	"github.com/carlosframework/rastrillo/eventlog"
+	"github.com/carlosframework/rastrillo/migrate"
+	"github.com/carlosframework/rastrillo/passkey"
+	"github.com/carlosframework/rastrillo/sessions"
+)
+
+// frozenChecksums is the migrate.Checksum of every migration this
+// framework ships, recorded the day each one shipped.
+//
+// ==> THESE CONSTANTS MAY NEVER BE UPDATED. <==
+//
+// A failure here does not mean the constant is stale. It means an edit
+// to a framework migration file changed its checksum, and that edit
+// must be reverted. Every deployed app has one of these checksums in
+// its ledger; Apply compares the two on every boot and refuses with
+// "was applied with different SQL than the file now contains". Change
+// one of these files and every app already running on rastrillo stops
+// booting — not on the next schema change, immediately, on the next
+// wake, with no recovery short of a hand-edited ledger row per
+// database.
+//
+// The immutability rule is documented for app authors, but the
+// framework's own migrations are equally frozen and nothing else in
+// the tree says so. The failure mode is silent by construction: adding
+// an explanatory comment to a .sql file changes the hash (Checksum
+// normalises whitespace, not comments), changes no DDL, and passes
+// every other test in the repo. This test is the only thing that can
+// catch it before release.
+//
+// The only legitimate way to change a shipped migration's effect is a
+// new migration file beside it, with a new ID and a new entry here.
+var frozenChecksums = map[string]string{
+	"sessions/0001_init":          "50bbfc92cfcc708b09b672b71f24da789ae6065f426c9db7af61befa90098bbb",
+	"auth/0001_init":              "3f6bf7e80d71e5d008fc56284e1342a28eecff1dc1da67cc5353bee4fd41a76a",
+	"auth/0002_sessions_backfill": "90798138a17a2f5d3f89ea4591985fdd53e9144c63040ae59d45ad6ca6a01a98",
+	"blobs/0001_init":             "005e7bef1f2007a3ac88c05944ceba3a3db9c39ba824f73af3d3e7d4140c2427",
+	"eventlog/0001_init":          "e53ae1c564ad157e764eb9b122c5abde2a09fe8d956c6b1892ada885f1b1eca5",
+	"passkey/0001_init":           "e4dfe21d1e23408aef63193125792dae0d80b6db1520ef60203c5026b1ce5bbf",
+}
+
+func TestFrameworkMigrationsAreFrozen(t *testing.T) {
+	seen := map[string]bool{}
+	for _, s := range []*migrate.Set{
+		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, passkey.Schema,
+	} {
+		for _, m := range s.All() {
+			seen[m.ID] = true
+			want, ok := frozenChecksums[m.ID]
+			if !ok {
+				t.Errorf("%s ships with no frozen checksum. If it is new, add its current "+
+					"migrate.Checksum to frozenChecksums; never edit an existing entry.", m.ID)
+				continue
+			}
+			if got := migrate.Checksum(m.SQL); got != want {
+				t.Errorf("%s: checksum is now %s, was %s.\n"+
+					"A shipped migration file was edited. Revert the edit — do NOT update the "+
+					"constant. Every deployed app has the old checksum in its ledger and will "+
+					"refuse to boot with \"applied with different SQL\". Comments count: Checksum "+
+					"normalises whitespace, not comments. To change what the schema becomes, add "+
+					"a new migration file instead.", m.ID, got, want)
+			}
+		}
+	}
+	for id := range frozenChecksums {
+		if !seen[id] {
+			t.Errorf("%s is pinned here but no longer shipped. Deleting a migration a deployed "+
+				"database has already applied is not a supported change.", id)
+		}
+	}
+}

@@ -130,6 +130,41 @@ func Merge(sets ...*Set) *Set {
 	return out
 }
 
+// Validate reports the problems a composed Set can carry that its
+// constructors cannot refuse. Merge takes *Set and returns *Set with
+// no error — that is what lets a call site read as plain apply order,
+// migrate.Merge(sessions.Schema, Schema) — so a composed set gets
+// checked here instead, and Apply calls this before it touches the
+// database.
+//
+// The problem worth failing a boot over is a repeated ID. The ledger
+// keys on ID alone, so to runOne's in-transaction re-check the second
+// migration carrying an ID is indistinguishable from one a racing
+// instance already applied: it is skipped, quietly, and Apply returns
+// success on a boot that created none of its tables. Failing before
+// any DDL runs is the only way that surfaces.
+func (s *Set) Validate() error {
+	seen := map[string]bool{}
+	for _, m := range s.All() {
+		if !seen[m.ID] {
+			seen[m.ID] = true
+			continue
+		}
+		ns, _, qualified := strings.Cut(m.ID, "/")
+		if !qualified {
+			return fmt.Errorf("migrate: duplicate migration id %q in this boot set: the ledger keys on "+
+				"id alone, so the second one would be recorded as already applied and never run", m.ID)
+		}
+		return fmt.Errorf("migrate: duplicate migration id %q in this boot set: two of the merged sets "+
+			"use the namespace %q, so the second %q would be recorded as already applied and never run — "+
+			"its tables would never be created and the boot would still report success. An app package "+
+			"named after a framework subsystem produces exactly this (`rastrillo new %s` gives the app "+
+			"the %q namespace too); rename the app's migrate namespace so the two do not collide",
+			m.ID, ns, m.ID, ns, ns)
+	}
+	return nil
+}
+
 // All returns the migrations in apply order, with namespace-qualified
 // IDs.
 func (s *Set) All() []Migration {

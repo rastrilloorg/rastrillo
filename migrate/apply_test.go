@@ -271,3 +271,46 @@ func TestApplyToleratesReformattedMigration(t *testing.T) {
 		t.Fatalf("reformatting tripped the checksum: %v", err)
 	}
 }
+
+// TestApplyRefusesDuplicateMigrationIDs reproduces the collision an
+// app hits by being named after a framework subsystem: `rastrillo new
+// sessions` scaffolds a package whose migrate namespace is
+// "sessions", so its own 0001_init and sessions.Schema's both become
+// "sessions/0001_init". Before this check, runOne's in-transaction
+// ledger re-check found the first one's row, returned (false, nil),
+// and Apply reported success on a boot that created none of the app's
+// tables.
+func TestApplyRefusesDuplicateMigrationIDs(t *testing.T) {
+	d := openDB(t)
+	subsystem := set("sessions", Migration{ID: "0001_init", SQL: "CREATE TABLE sessions (token_hash TEXT PRIMARY KEY);"})
+	theApp := set("sessions", Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY);"})
+
+	_, err := Apply(context.Background(), d, Merge(subsystem, theApp))
+	if err == nil {
+		t.Fatal("want an error: the app's migration would be silently skipped and its tables never created")
+	}
+	if !strings.Contains(err.Error(), "sessions/0001_init") {
+		t.Fatalf("error = %v, want it to name the colliding id", err)
+	}
+	var n int64
+	d.G.Raw("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'sessions'").Scan(&n)
+	if n != 0 {
+		t.Fatal("Apply must refuse before running any migration")
+	}
+}
+
+// TestApplyAcceptsTheSameIDInDifferentNamespaces is the other side:
+// every subsystem ships a 0001_init, and Merge qualifies them, so
+// those must stay legal.
+func TestApplyAcceptsTheSameIDInDifferentNamespaces(t *testing.T) {
+	d := openDB(t)
+	a := set("sessions", Migration{ID: "0001_init", SQL: "CREATE TABLE sessions (token_hash TEXT PRIMARY KEY);"})
+	b := set("notes", Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY);"})
+	r, err := Apply(context.Background(), d, Merge(a, b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r.Applied) != 2 {
+		t.Fatalf("Applied = %v, want both", r.Applied)
+	}
+}

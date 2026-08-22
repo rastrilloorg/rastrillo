@@ -64,6 +64,14 @@ func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error) {
 		return res, fmt.Errorf("migrate: create ledger: %w", err)
 	}
 
+	// Before any DDL: a repeated ID makes the second migration
+	// carrying it look, to runOne's ledger re-check, like one another
+	// instance already applied — skipped in silence, on a boot that
+	// reports success.
+	if err := s.Validate(); err != nil {
+		return res, err
+	}
+
 	migrations := s.All()
 	applied, err := readLedger(ctx, conn)
 	if err != nil {
