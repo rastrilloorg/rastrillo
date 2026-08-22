@@ -11,12 +11,12 @@ import (
 	"gorm.io/gorm"
 
 	"notes/gen"
-	bookmarksstore "notes/gen/store/bookmarks"
 
 	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/csrf"
 	"github.com/carlosframework/rastrillo/db"
 	"github.com/carlosframework/rastrillo/jobs"
+	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/password"
 	"github.com/carlosframework/rastrillo/sessions"
 	"github.com/carlosframework/rastrillo/ui"
@@ -30,17 +30,13 @@ import (
 // models.go and handlers.go are the only files this example asks a
 // reader to actually study; everything here is plumbing to get there.
 func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
-	if err := d.G.AutoMigrate(&User{}, &Note{}, &Export{}); err != nil {
+	// BootSchema (migrations.go) is this app's own Schema plus every
+	// framework subsystem's — sessions' shared core and the generated
+	// bookmarks store — merged in apply order. One call replaces what
+	// used to be AutoMigrate for the GORM models here plus a separate
+	// d.G.Exec loop for sessions' and the generated store's raw SQL.
+	if _, err := migrate.Apply(context.Background(), d, BootSchema); err != nil {
 		return nil, err
-	}
-	// sessions ships its schema as raw SQL, not a GORM model — it is
-	// meant to be applied like any other migration, not managed by
-	// AutoMigrate. The generated bookmarks store's migrations are the
-	// same shape: raw SQL from gen/, applied beside it.
-	for _, stmt := range append(append([]string{}, sessions.Migrations...), bookmarksstore.Migrations...) {
-		if err := d.G.Exec(stmt).Error; err != nil {
-			return nil, err
-		}
 	}
 
 	// sessions wants the writer *sql.DB directly: its statements are a

@@ -395,7 +395,9 @@ migrations, but the generated migration stays idempotent
 automatic manifest-diff ALTER emission). `examples/blog` shows the
 pattern: the generated `CREATE TABLE IF NOT EXISTS posts` runs first,
 then the app's own `ALTER TABLE posts ADD COLUMN published BOOLEAN`
-runs after.
+runs after. This is all specific to the legacy `Options.Migrations` +
+`OpenDB` path; an app on the GORM path (`db.Open`) manages schema
+through the `migrate` package instead — see SKILL.md.
 
 `store = "mergeable"` isn't built yet (`Validate` rejects it by name) —
 every other manifest flow described above, delete included, is
