@@ -158,7 +158,7 @@ of erroring.)
 `scope.Owned(g, owner int64)` adds `WHERE user_id = ?` — the convention column.
 `scope.OwnedBy(g, column string, owner any)` takes any owner column and
 **panics** unless the column is a plain `lower_snake` identifier: it is
-interpolated into SQL, so a bad one fails loudly instead of parsing as SQL.
+interpolated into SQL, so a bad one fails loudly.
 
 Scope the *write*, not just the read that loaded the row: the SQL then carries
 `WHERE user_id = ? AND id = ?` itself, so a later refactor cannot silently turn
@@ -179,8 +179,7 @@ A malformed `{id}` too: `strconv.ParseInt` failing returns
 `gorm.ErrRecordNotFound` and 404s.
 
 A join table is scoped through BOTH sides: a membership row needs the caller
-authorized on each side it links, checked explicitly — the stricter reading
-wins.
+authorized on each side it links, checked explicitly.
 
 Creating is the one place the owner comes from the session, not a filter:
 `n := Note{UserID: uid, Title: title, Body: body}`, `uid` from
@@ -216,7 +215,7 @@ rendering; the helper writes none.
 Money is `int64` cents: a `form.Money` field, read with `p.Cents`, parses via
 `form.ParseCents` — no `$` or sign, at most two decimals; `""` is zero. Seed
 with `form.FormatCentsPlain(cents)`; display with `form.FormatCents(cents)`,
-which adds the `$`.
+(adds the `$`).
 
 After a successful mutation: `flash.Set(w, "notice", "Note created.")` then
 `http.Redirect(w, r, "/notes/…", http.StatusSeeOther)`. The render helper calls
@@ -247,7 +246,7 @@ credential and calls `SignIn`; that call is the whole contract.
   the keymail warning below.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never a
   raw `return_to`: only a same-site absolute path (one leading `/`, no scheme
-  or backslash) passes; anything else gets the fallback.
+  or backslash) passes.
 - `s.Sweep(time.Now())` deletes expired rows.
 
 **Password plugin.** `password.New(password.Config{...})` needs `Sessions`,
@@ -293,7 +292,7 @@ set; mount them in the `sess.Require` group at `/jobs/{id}`,
 `/jobs/{id}/fragment` and `/jobs/{id}/events`. Handlers take
 `jobs.PageData{Job, FragmentPath, EventsPath, PollSeconds}`: Render draws a
 page,
-RenderFragment the partial *alone*, or the layout nests on the next poll.
+RenderFragment the partial *alone*.
 Done+Location 303s from StatusPage; Fragment answers 204 +
 `Rastrillo-Location`. **The page must work with scripts off:** emit a
 `<noscript>` meta refresh of `PollSeconds` *only* while Running, or a failed
@@ -310,16 +309,18 @@ disables its submit buttons, `data-busy-label` retitles them.
 ## 7. What NOT to do
 
 - **Manifests: declare what fits the vocabulary, hand-write the rest.** A
-  `manifest/*.toml` resource generates CRUD screens for one table, three field
-  kinds (text, textarea, money), no relations. `scope = "user"` owner-filters
-  generated queries by the session subject (someone else's row 404s); mount
-  those routes behind `sessions.Require`/`auth.RequireSession`.
+  `manifest/*.toml` resource generates CRUD screens — three field kinds
+  (text, textarea, money), no relations. `store = "exclusive"` (default) is
+  one SQL table; `store = "mergeable"` keeps each record as an `eventlog`
+  stream — derived reads, tombstone deletes.
+  `scope = "user"` owner-filters either store by the session subject
+  (someone else's row 404s); mount those routes behind
+  `sessions.Require`/`auth.RequireSession`.
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary with it and `rastrillo/gormlite`
-  panics at init.
-  `gorm.io/driver/sqlite` is the cgo one; `db.Open` wires `gormlite` over
-  modernc, so no driver import is ever needed.
+  panics at init. `gorm.io/driver/sqlite` is the cgo one; `db.Open`
+  already wires `gormlite` over modernc.
 - **Never bind a form onto a model, query an owned model unscoped, or answer
   403 where 404 is honest.** See §3 and §4.
 - **Never `git merge` to main**, not even locally: every change lands as a

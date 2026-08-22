@@ -244,15 +244,13 @@ the meantime. This list is their union. **Built:**
   `.amadan/ci` + `.amadan/ci.d/` steps delegating to it, an empty
   `manifest/` with a README, and a `CLAUDE.md` preload (§12).
 
-**Not built yet**, honestly: `WrapKey`/`UnwrapKey`/`DeriveInvite` in
-the crypto core (Eleven's invite wire is unconfirmed; guessing would
-mint a format three apps would have to migrate off); step-up auth
-(`prompt=login` — the session schema already records `auth_time` so it
-lands without a migration); the mergeable store's transport and its
-manifest wiring (edge sync is the platform's designed territory —
-`eventlog.Ingest` is the seam it will call; a `store = "mergeable"`
-manifest resource is declared vocabulary the generator does not yet
-compile); richer manifest kinds beyond text/textarea/money (Bool,
+**Not built yet**, honestly: the mergeable store's transport (edge
+sync is the platform's designed territory — `eventlog.Ingest` is the
+seam it will call, and until it lands, generated mergeable ids stay
+writer-local and every generated event's actor is `"app"`); automatic
+manifest-diff ALTER emission (generated stores emit only the initial
+`CREATE`; evolving a declared resource's schema is the app's own
+migration); richer manifest kinds beyond text/textarea/money (Bool,
 Time, Select and Blob arrive as manifest slices); and any LLM client
 (§8 leaves the provider per app).
 
@@ -410,9 +408,11 @@ pattern: the generated `CREATE TABLE IF NOT EXISTS posts` runs first,
 then the app's own `ALTER TABLE posts ADD COLUMN published BOOLEAN`
 runs after.
 
-`store = "mergeable"` isn't built yet (`Validate` rejects it by name) —
-every other manifest flow described above, delete included, is
-generated and shipped. `examples/blog` shows what an app adds by hand
+`store = "mergeable"` generates too (v0.16.0): the same screens over
+an `eventlog`-backed store — each record one stream, deletes appended
+as tombstones, reads derived by replaying the merged history —
+`examples/tickets`' `announcements` resource is the generated proof,
+tombstone test included. `examples/blog` shows what an app adds by hand
 to cover what a manifest doesn't generate; `examples/tickets` is the
 fully generated proof (one manifest resource, no hand actions or
 templates).
