@@ -141,11 +141,18 @@ migrations, or a manifest resource's `gen/store/<name>/migrations.go` (a
 raw `[]string`, wrapped into a `*migrate.Set` by hand — `examples/notes`)
 got reshaped after first boot, so its regenerated SQL no longer matches
 the ledger's recorded checksum (applied SQL is immutable to it). Either
-way: apply the missing/changed migration by hand, then
-`migration baseline --db <path> --through <id>` (stamps up to `<id>`
-only); the next boot runs the rest. Bare `baseline` stamps *everything*,
-silently skipping a pending data migration — full walkthrough in
-`auth/store.go`.
+way: `migration baseline --db <path> --through <id>` **first** (stamps up
+to `<id>` only), *then* apply the missing migration by hand; the next
+boot runs the rest. That order is load-bearing: stamping runs no DDL, and
+while the ledger is still empty any wake finds a matching schema and
+adopts it, recording every later migration as applied without running it.
+Bare `baseline` does exactly that on purpose, silently skipping a pending
+data migration — full walkthrough in `auth/store.go`.
+
+**The first deploy of a version with migrations must be schema-neutral.**
+Generate `0001_init` from the models *as already deployed* and ship it
+alone; change a model only in a later release. Otherwise boot refuses on
+the new column, and `baseline` there would strand it for good.
 
 ## 3. Scoping
 
