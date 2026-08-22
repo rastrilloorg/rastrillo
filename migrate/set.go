@@ -104,7 +104,9 @@ func Merge(sets ...*Set) *Set {
 			continue
 		}
 		for _, m := range s.migrations {
-			m.ID = s.namespace + "/" + m.ID
+			if s.namespace != "" {
+				m.ID = s.namespace + "/" + m.ID
+			}
 			out.migrations = append(out.migrations, m)
 		}
 	}

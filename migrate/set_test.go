@@ -51,3 +51,29 @@ func TestFromFSRejectsBadNameAndDuplicateID(t *testing.T) {
 		t.Fatal("want error for a .sql file that is neither NNNN_name.sql nor schema.sql")
 	}
 }
+
+func TestMergeComposesWithItself(t *testing.T) {
+	a := (&Set{namespace: "a"}).Add(Migration{ID: "0001_a", SQL: "SELECT 1;"})
+	b := (&Set{namespace: "b"}).Add(Migration{ID: "0001_b", SQL: "SELECT 2;"})
+	c := (&Set{namespace: "c"}).Add(Migration{ID: "0001_c", SQL: "SELECT 3;"})
+
+	inner := Merge(a, b)     // Result has empty namespace
+	outer := Merge(inner, c) // Merge with another namespaced set
+	got := outer.All()
+
+	// Check no ID has a leading slash (the bug would produce "/a/0001_a", "/b/0001_b")
+	if got[0].ID != "a/0001_a" {
+		t.Fatalf("got[0].ID = %q; want a/0001_a", got[0].ID)
+	}
+	if got[1].ID != "b/0001_b" {
+		t.Fatalf("got[1].ID = %q; want b/0001_b", got[1].ID)
+	}
+	if got[2].ID != "c/0001_c" {
+		t.Fatalf("got[2].ID = %q; want c/0001_c", got[2].ID)
+	}
+
+	// Verify argument order is preserved through nesting
+	if len(got) != 3 {
+		t.Fatalf("got %d migrations, want 3", len(got))
+	}
+}
