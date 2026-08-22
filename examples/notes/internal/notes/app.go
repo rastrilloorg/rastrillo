@@ -63,6 +63,12 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 
 	r := chi.NewRouter()
 	r.Use(csrf.Protect(origin))
+	// App-wide, not just the Require group: the signin/signup pages
+	// render the shared layout too, and its nav reads sessions.Current
+	// — without the resolve here a signed-in visitor loading /signin
+	// would see signed-out chrome. Require trusts this resolution, so
+	// the guarded group still costs one lookup per request.
+	r.Use(sess.Middleware)
 	r.Get("/signin", ph.SigninPage)
 	r.Post("/signin", ph.Signin)
 	r.Get("/signup", ph.SignupPage)

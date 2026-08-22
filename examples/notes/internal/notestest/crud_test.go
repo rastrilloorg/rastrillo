@@ -87,6 +87,64 @@ func TestValidationRerendersAt422(t *testing.T) {
 	}
 }
 
+// TestUpdateValidationRerendersAt422: the update path holds the same
+// contract create does — blank title 422s, the submitted body survives
+// into the re-rendered edit form, and the stored note is untouched.
+func TestUpdateValidationRerendersAt422(t *testing.T) {
+	ts := newApp(t)
+	cl := newClient(t, ts)
+	cl.signup("henry@example.com", "hunter2222").Body.Close()
+
+	create := cl.postForm("/notes", url.Values{"title": {"Keep me"}, "body": {"Original"}})
+	showPath := create.Header.Get("Location")
+	create.Body.Close()
+
+	resp := cl.postForm(showPath, url.Values{"title": {""}, "body": {"Edited but invalid"}})
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("update status = %d, want 422", resp.StatusCode)
+	}
+	b := body(t, resp)
+	if !strings.Contains(b, "Title is required") || !strings.Contains(b, "Edited but invalid") {
+		t.Fatalf("422 re-render missing error or preserved input; body=%s", b)
+	}
+
+	show := cl.get(showPath)
+	defer show.Body.Close()
+	if sb := body(t, show); !strings.Contains(sb, "Keep me") || !strings.Contains(sb, "Original") {
+		t.Fatalf("rejected update mutated the note; body=%s", sb)
+	}
+}
+
+// TestFlashClearedOn422: a 422 re-render consumes the pending flash
+// like any other render. The regression it pins: the clearing
+// Set-Cookie used to be added after WriteHeader(422) — silently
+// dropped — so the flash showed on the 422 page AND again on the next
+// page.
+func TestFlashClearedOn422(t *testing.T) {
+	ts := newApp(t)
+	cl := newClient(t, ts)
+	cl.signup("iris@example.com", "hunter2222").Body.Close()
+
+	create := cl.postForm("/notes", url.Values{"title": {"Note"}, "body": {"Body"}})
+	showPath := create.Header.Get("Location")
+	create.Body.Close()
+
+	// The flash is pending; spend it on a 422 re-render.
+	invalid := cl.postForm("/notes", url.Values{"title": {""}, "body": {"nope"}})
+	invalidBody := body(t, invalid)
+	invalid.Body.Close()
+	if strings.Count(invalidBody, "Note created.") != 1 {
+		t.Fatalf("422 render flash count = %d, want 1; body=%s", strings.Count(invalidBody, "Note created."), invalidBody)
+	}
+
+	after := cl.get(showPath)
+	defer after.Body.Close()
+	if ab := body(t, after); strings.Contains(ab, "Note created.") {
+		t.Fatalf("flash survived the 422 render — its clearing Set-Cookie was dropped; body=%s", ab)
+	}
+}
+
 // TestFlashShownOnce: the notice set on create appears exactly once,
 // on the very next render, and never again after.
 func TestFlashShownOnce(t *testing.T) {
