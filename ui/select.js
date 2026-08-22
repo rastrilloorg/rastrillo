@@ -81,11 +81,9 @@ function combo(native) {
   // name at all.
   var label = native.id && document.querySelector('label[for="' + native.id + '"]');
   if (label) label.setAttribute("for", input.id);
-  // Drop .rst-input as well as adding .rst-sr-only: both are single
-  // class selectors, so .rst-input's width:100% would win on source
-  // order and leave the hidden select a full-width absolutely-positioned
-  // box held out of sight by clip-path alone. A control nobody can see
-  // does not need input styling.
+  // Drop .rst-input too: both are single class selectors, so its
+  // width:100% wins on source order and would leave the hidden select a
+  // full-width box held out of sight by clip-path alone.
   native.classList.remove("rst-input");
   native.classList.add("rst-sr-only");
   native.setAttribute("tabindex", "-1");
@@ -156,11 +154,9 @@ function combo(native) {
 
   input.addEventListener("input", function () { draw(input.value); });
   input.addEventListener("focus", function () {
-    // Select the committed label so the first keystroke replaces it
-    // rather than appending to it. Without this, typing into a control
-    // that already holds "Option 1" filters for "Option 1Option 12" and
-    // silently matches nothing — the list looks empty for no stated
-    // reason and Enter commits whatever was already there.
+    // Select the committed label so the first keystroke replaces it.
+    // Otherwise typing into a box holding "Option 1" filters for
+    // "Option 1Option 12" and silently matches nothing.
     input.select();
     draw("");
   });
@@ -175,18 +171,26 @@ function combo(native) {
       case "Home": if (!list.hidden) { e.preventDefault(); active = -1; move(1); } break;
       case "End": if (!list.hidden) { e.preventDefault(); active = shown.length - 1; move(0); } break;
       case "Enter":
-        if (!list.hidden && active >= 0) { e.preventDefault(); commit(shown[active]); }
+        // Enter acts on the filter, never on the form: submitting
+        // mid-filter discards the edit and silently keeps the previous
+        // selection. Take the highlight, or the only match, or close.
+        e.preventDefault();
+        if (active >= 0) {
+          commit(shown[active]);
+        } else if (shown.length === 1) {
+          commit(shown[0]);
+        } else {
+          close();
+        }
         break;
       case "Escape": e.preventDefault(); close(); input.value = chosenLabel(); break;
     }
   });
 }
 
-// combo is idempotent (it flags the select), so re-scanning is safe —
-// which matters if a future change re-scans after the shim swaps a
-// polled fragment in. Today nothing does, so a select that arrives
-// inside a replaced fragment stays a plain native select: correct, just
-// not enhanced.
+// Idempotent, so re-scanning is safe if a future change re-scans after
+// the shim swaps in a polled fragment. Today nothing does: a select
+// arriving inside a replacement stays native — correct, not enhanced.
 function scan() {
   document.querySelectorAll("select[data-rst-select]").forEach(combo);
 }

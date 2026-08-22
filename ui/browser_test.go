@@ -15,6 +15,24 @@
 // unless RASTRILLO_BROWSER_OPTIONAL is set, which makes the skip a
 // deliberate visible choice rather than an accident.
 //
+// KNOWN LIMITATION, stated rather than discovered: this test is
+// timing-sensitive under machine load. On an idle box it passes in ~0.4s
+// and 20 consecutive runs are green. On a box at load ~9-14 it fails
+// roughly 1 run in 4, always the same way — a keystroke arrives while
+// focus has drifted, Enter reaches the document instead of the combobox,
+// the form submits, the execution context dies, and the next step hangs
+// until the deadline. The failure names the step it got to, so it is
+// legible rather than mysterious.
+//
+// It is build-tagged, so CI (which runs untagged) never sees this; the
+// cost falls on whoever runs it deliberately on a busy machine. Rerun
+// before believing a failure, and read the reported step: a real
+// regression fails at a specific assertion, load flake fails at a
+// deadline after "read-mirrored-value" or later. Fixing it properly
+// likely means driving the widget through synthesised events inside one
+// page evaluation, which trades away the fidelity of real CDP input —
+// not obviously the right trade, so it has not been made.
+//
 // One test, deliberately: a browser drive is expensive, so this one
 // drives the whole journey — render, enhance, filter, keyboard-select,
 // mirror, submit — and asserts the server received the value. Everything
@@ -169,11 +187,13 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 
 	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
-	// A healthy run takes well under a second. The budget is generous
-	// for a loaded CI box but far short of a default test timeout, so a
-	// regression that makes an element unreachable fails in seconds with
-	// a deadline rather than hanging the suite.
-	ctx, cancelTimeout := context.WithTimeout(ctx, 20*time.Second)
+	// A healthy run takes well under a second on an idle machine, but
+	// this is wall-clock against a real browser: on a loaded box it is
+	// slower by orders of magnitude, and a budget tuned to the idle case
+	// fails for no reason. 60s tolerates a busy CI runner while still
+	// failing far faster than Go's default test timeout, so a genuine
+	// regression surfaces as a deadline rather than a hung suite.
+	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
 	defer cancelTimeout()
 
 	var probs problems
@@ -186,10 +206,17 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		nativeHidden                          bool
 	)
 
+	// A bare "context deadline exceeded" tells whoever hits this in CI
+	// nothing at all. Record the last step that completed, and report it
+	// with the state gathered so far.
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(srv.URL),
+		chromedp.Navigate(srv.URL), at("navigated"),
 		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
-
+		at("combobox-visible"),
 		// The enhancement happened; the native control survived it.
 		chromedp.Evaluate(`document.querySelectorAll('input[role="combobox"]').length`, &comboCount),
 		chromedp.Evaluate(`document.querySelectorAll('select[name="author"]').length`, &nativeCount),
@@ -205,21 +232,38 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		//
 		// Filter, then pick with the keyboard only: a mouse-only
 		// combobox is a broken one.
-		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
-		chromedp.SendKeys(`input[role="combobox"]`, "Option 12", chromedp.ByQuery),
+		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
+		chromedp.SendKeys(`input[role="combobox"]`, "Option 12", chromedp.ByQuery), at("typed-filter"),
 		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &optionsShown),
 		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &filterText),
-		chromedp.KeyEvent(kb.ArrowDown),
-		chromedp.KeyEvent(kb.Enter),
+		// Synchronise on observable state rather than assuming a keystroke
+		// landed. Under load the arrow key can arrive before the filtered
+		// list is drawn, or while focus has drifted; then Enter reaches
+		// the document instead of the combobox, the form submits, the
+		// execution context dies and the next step hangs on a page that
+		// no longer exists. Waiting for the highlight turns that into a
+		// fast, legible failure at the exact step that did not happen.
+		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("list-drawn"),
+		chromedp.Focus(`input[role="combobox"]`, chromedp.ByQuery), at("focused"),
+		chromedp.KeyEvent(kb.ArrowDown), at("arrow-down"),
+		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("option-highlighted"),
+		chromedp.KeyEvent(kb.Enter), at("enter"),
 
 		// The mirror: what the form will actually submit.
-		chromedp.Evaluate(`document.querySelector('select[name="author"]')?.value ?? ''`, &nativeValue),
+		chromedp.Evaluate(`document.querySelector('select[name="author"]')?.value ?? ''`, &nativeValue), at("read-mirrored-value"),
 
-		chromedp.Click(`#go`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery),
+		// Submit rather than Click: what this test asserts is that the
+		// form posts the mirrored value, and chromedp.Click waits for the
+		// button to be actionable — a wait that intermittently never
+		// resolved here even with the value already correctly mirrored.
+		// Submitting the form exercises the thing under test without
+		// depending on hit-testing an overlay-adjacent button.
+		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
 		chromedp.Text(`body`, &pageText, chromedp.ByQuery),
 	); err != nil {
-		t.Fatalf("drive: %v", err)
+		t.Fatalf("drive failed after %q: %v\n  filterText=%q optionsShown=%d nativeValue=%q labelFor=%q",
+			reached, err, filterText, optionsShown, nativeValue, labelFor)
 	}
 
 	if comboCount != 1 {
