@@ -254,23 +254,26 @@ verifies a credential and calls `SignIn`; that one call is the whole contract.
 - `s.Middleware` is the softer variant: it resolves a session onto the request
   context when there is one and blocks nothing — for pages that merely look
   different when signed in.
+- `s.RequireFresh(maxAge)` is Require plus step-up: the credential must be
+  verified within maxAge; stale GET/HEAD goes to `SigninPath` with `reauth=1`,
+  and re-signing-in rotates fresh.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (the `Session`: Subject, Method, AuthTime, At). Past a `Require` boundary the
   `ok` is guaranteed only for a plugin whose Subject is a numeric user id, as
   password's is — see the keymail warning below.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never a
-  raw `return_to`. It accepts only a same-site absolute path (one leading `/`,
-  no scheme, no backslash) and returns the fallback otherwise.
-- `s.Sweep(time.Now())` deletes expired rows. Correctness never depends on it
-  (lookup checks expiry); call it from boot or a sidecar pass, or not at all.
+  raw `return_to`: only a same-site absolute path (one leading `/`, no scheme,
+  no backslash) passes; anything else gets the fallback.
+- `s.Sweep(time.Now())` deletes expired rows — optional; lookup checks
+  expiry itself.
 
 **Password plugin.** `password.New(password.Config{...})` needs `Sessions`,
 `Lookup`, and `RenderSignin`; `Create` is optional and disables signup when nil
 (SignupPage and Signup 404), and `RenderSignup` is **required whenever Create is
 set** — New returns an error otherwise. `Lookup(ctx, email) (id, hash, error)`
 returns `sql.ErrNoRows` for an unknown email, which Signin treats identically to
-a wrong password (one message, and a decoy hash is verified anyway so timing
-doesn't leak the difference). Any error from `Create(ctx, email, hash) (id,
+a wrong password (one message; a decoy hash keeps the timing flat). Any error
+from `Create(ctx, email, hash) (id,
 error)` is reported as a duplicate email. `Signin`, `Signup` and `Signout` are
 **POST-only** — they answer 405 to anything else — so mount `SigninPage`/
 `SignupPage` on GET and the rest on POST, exactly as in §1. The Render callbacks
@@ -280,10 +283,9 @@ not write one.
 
 **Rate limiting:** Signin throttles failed attempts per email — 10 failures in
 15 minutes answers 429 until the oldest ages out; success resets the budget.
-In-memory, keyed by email not IP — IP-level throttling (signup spam,
-distributed guessing) stays a deployment concern. The keymail plugin
-(`rastrillo/auth`) does rate-limit, through signin's `NewMemoryLimiter`, and is
-the family's choice for family apps: `auth.New(auth.Config{...})` with
+In-memory, per email; IP throttling stays a deployment concern.
+The keymail plugin (`rastrillo/auth`) — the family default: magic-link email
+auto-upgrading to keymail — rate-limits via signin: `auth.New(auth.Config{...})` with
 `Begin`/`Callback`/`Verify`/`Signout` handlers and `RequireSession`, over the
 same `sessions` core. **With keymail, do not use `sessions.UserID`.** Its
 Subject is the verified *email*, and `RequireSession` stores the `Identity`
