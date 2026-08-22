@@ -71,6 +71,10 @@ func runNew(args []string) error {
 		// never serves CSS at runtime; from here on this is an ordinary
 		// app-owned file that new/generate never touch again.
 		filepath.Join(appDir, "static", "tokens.css"): string(ui.TokensCSS()),
+		// The fragment shim, delivered once like tokens.css: app-owned
+		// from here on, loaded by the layout via the same fingerprinting
+		// {{asset ...}} helper.
+		filepath.Join(appDir, "static", "rastrillo.js"): string(ui.ShimJS()),
 		// The test harness, delivered once like tokens.css: app-owned
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
@@ -347,6 +351,7 @@ const layoutTemplate = `{{define "layout"}}<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<script defer src="{{asset "static/rastrillo.js"}}"></script>
 </head>
 <body>
 <main>
