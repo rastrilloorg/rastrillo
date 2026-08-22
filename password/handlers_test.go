@@ -528,6 +528,52 @@ func TestSigninRateLimitsPerEmail(t *testing.T) {
 	}
 }
 
+func TestSignupRateLimitsPerEmail(t *testing.T) {
+	env := newTestEnv(t, nil)
+	hash, err := password.Hash("s3cretpw")
+	if err != nil {
+		t.Fatalf("Hash: %v", err)
+	}
+	env.store.create(context.Background(), "taken@example.com", hash)
+
+	// Ten duplicate-email attempts: each an honest 422, each burning
+	// one unit of the same budget Signin spends.
+	for i := 0; i < 10; i++ {
+		w := httptest.NewRecorder()
+		env.h.Signup(w, signupRequest("taken@example.com", "anotherlongpw"))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("attempt %d: status = %d, want 422", i+1, w.Code)
+		}
+	}
+
+	// The 11th is blocked before any work — signup was the one
+	// endpoint that would confirm an address without ever touching
+	// the limiter.
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("taken@example.com", "anotherlongpw"))
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("blocked attempt: status = %d, want 429", w.Code)
+	}
+	if d, ok := env.signup.last(); !ok || !strings.Contains(d.Error, "Too many") {
+		t.Errorf("blocked attempt PageData.Error = %q, want a too-many-attempts message", d.Error)
+	}
+
+	// The budget is shared with Signin: the same probed email is
+	// blocked there too, so the two doors can't be alternated.
+	w2 := httptest.NewRecorder()
+	env.h.Signin(w2, signinRequest("taken@example.com", "s3cretpw", ""))
+	if w2.Code != http.StatusTooManyRequests {
+		t.Errorf("signin after signup probes: status = %d, want 429", w2.Code)
+	}
+
+	// An unrelated email's signup is untouched.
+	w3 := httptest.NewRecorder()
+	env.h.Signup(w3, signupRequest("fresh@example.com", "longenoughpw"))
+	if w3.Code != http.StatusSeeOther {
+		t.Errorf("unrelated email: status = %d, want 303", w3.Code)
+	}
+}
+
 func TestSigninSuccessResetsRateLimit(t *testing.T) {
 	env := newTestEnv(t, nil)
 	hash, err := password.Hash("s3cretpw")

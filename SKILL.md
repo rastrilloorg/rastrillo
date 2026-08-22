@@ -261,9 +261,9 @@ is set** — New errors otherwise. `Lookup(ctx, email) (id, hash, error)` return
 callbacks take `(w, r, password.PageData)` = `{Error, Email, ReturnTo}`;
 password writes the 422 itself before re-rendering, so the callback must not.
 
-**Rate limiting:** Signin throttles failures per email — 10 in 15 minutes
-answers 429 until one ages out; success resets it. In-memory; IP throttling is
-a deployment concern.
+**Rate limiting:** Signin and Signup share a per-email budget — 10 failures in
+15 minutes answers 429 until one ages out; success resets it. In-memory; IP
+throttling is a deployment concern.
 The keymail plugin (`rastrillo/auth`) — the family default: magic-link email
 auto-upgrading to keymail — rate-limits via `signin`:
 `auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout`
