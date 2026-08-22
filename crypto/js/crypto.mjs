@@ -10,6 +10,9 @@
 //   sealSym: iv(12) ‖ AES-256-GCM ct
 //   derive:  HKDF-SHA256, salt empty (≡ Go's nil salt: HMAC zero-pads
 //            either to the same block), info=context, 32 bytes
+//   invite:  id/wrapKey/claimSecret = derive(T, context+"-id"/"-wrap"/
+//            "-claim"); claimHash = hex SHA-256 of claimSecret;
+//            wrapKey/unwrapKey = sealSym/openSym in base64url
 //
 // All byte parameters and results are Uint8Array. A keypair is
 // {signPrivJwk, boxPrivJwk, signPub, boxPub} — JWKs for the private
@@ -174,4 +177,49 @@ export async function openSym(key, sealed) {
   const plain = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: sealed.slice(0, 12) }, aes, sealed.slice(12));
   return new Uint8Array(plain);
+}
+
+// unb64url decodes base64url with or without padding.
+function unb64url(s) {
+  let t = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (t.length % 4 !== 0) t += "=";
+  return unb64(t);
+}
+
+function hex(bytes) {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// newInviteSecret mints a fresh 128-bit invite secret T (base64url),
+// sized to ride a URL fragment — which never reaches the server.
+export function newInviteSecret() {
+  return b64url(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+// deriveInvite fans the secret T (base64url) into
+// {id, wrapKey, claimSecret, claimHash} — deterministic, HKDF-domain-
+// separated by context (infos context+"-id"/"-wrap"/"-claim"), matching
+// the Go package's DeriveInvite byte for byte. The server stores only
+// id and claimHash, so it can neither claim the invite nor unwrap what
+// travels under wrapKey.
+export async function deriveInvite(context, secret) {
+  const t = unb64url(secret);
+  const id = await derive(t, context + "-id");
+  const wrapKey = await derive(t, context + "-wrap");
+  const claim = await derive(t, context + "-claim");
+  const claimSecret = b64url(claim);
+  const digest = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", te.encode(claimSecret)));
+  return { id: b64url(id), wrapKey, claimSecret, claimHash: hex(digest) };
+}
+
+// wrapKey seals key under kek (sealSym) and returns base64url — the
+// encoding invite payloads travel in.
+export async function wrapKey(kek, key) {
+  return b64url(await sealSym(kek, key));
+}
+
+// unwrapKey reverses wrapKey.
+export async function unwrapKey(kek, wrapped) {
+  return openSym(kek, unb64url(wrapped));
 }

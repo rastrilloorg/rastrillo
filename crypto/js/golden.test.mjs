@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import {
   importKeypair, generate, seal, open, sign, verify,
   derive, sealSym, openSym, unb64, b64,
+  deriveInvite, newInviteSecret, wrapKey, unwrapKey, newKey,
 } from "./crypto.mjs";
 
 const golden = JSON.parse(
@@ -81,4 +82,38 @@ test("sealSym/openSym round trip with a fresh key", async () => {
   const plain = new TextEncoder().encode("symmetric");
   const got = await openSym(key, await sealSym(key, plain));
   assert.deepEqual(got, plain);
+});
+
+const invites = JSON.parse(
+  await readFile(fileURLToPath(new URL("../testdata/invites.json", import.meta.url)), "utf8"));
+
+// unb64url: the vectors carry unpadded base64url; unb64 wants standard.
+function unb64url(s) {
+  let t = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (t.length % 4 !== 0) t += "=";
+  return unb64(t);
+}
+
+test("deriveInvite replays eleven's pinned vectors", async () => {
+  for (const vec of invites.invites) {
+    const inv = await deriveInvite(invites.context, vec.t);
+    assert.equal(inv.id, vec.id);
+    assert.equal(inv.claimSecret, vec.claimSecret);
+    assert.equal(inv.claimHash, vec.claimHash);
+    // The pinned wrapped blob opens under the derived wrapKey to the
+    // pinned group key (wrap uses a random IV, so only unwrap replays).
+    const key = await unwrapKey(inv.wrapKey, vec.wrappedGroupKey);
+    assert.deepEqual(key, unb64url(vec.groupKey));
+  }
+});
+
+test("wrapKey/unwrapKey round trip, foreign context refused", async () => {
+  const secret = newInviteSecret();
+  const inv = await deriveInvite("app-invite", secret);
+  const key = newKey();
+  const wrapped = await wrapKey(inv.wrapKey, key);
+  assert.deepEqual(await unwrapKey(inv.wrapKey, wrapped), key);
+
+  const other = await deriveInvite("other-app", secret);
+  await assert.rejects(() => unwrapKey(other.wrapKey, wrapped));
 });

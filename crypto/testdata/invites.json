@@ -1,0 +1,30 @@
+{
+  "_provenance": "eleven messenger internal/e2ee/testdata/vectors.json (generated from its crypto.js by test/gen-e2ee-vectors.mjs); the invites array, verbatim. Context lchat-invite reproduces its lchat-invite-{id,wrap,claim} HKDF infos.",
+  "context": "lchat-invite",
+  "invites": [
+    {
+      "t": "hS6EyNbcM6POSiEOYRuJFA",
+      "id": "KgqVX31fib7027KBBgJKY4eUoVm7nNap63XLyM_GDVI",
+      "claimSecret": "uJW0bPRFhSEKd0kU938KKCdXqrRQNovfXGDEue0z4iA",
+      "claimHash": "591011e5599eaaac8cdb877aec36e18e4f5fb432f2508ee4bf49641c574d774a",
+      "groupKey": "aBitMsb8sOkylwr2oPdsSkOp_CG2poI7vpI0PEtmuKk",
+      "wrappedGroupKey": "lyJHrHC27-zEvR1Ov8bedGxjhTcsnTeElK-usIopI1v_9Xpax92-0ZQ1j9E_ubLcxxBPbUUPugjonPUE"
+    },
+    {
+      "t": "-3HX-UTD8zKlTDWypGm1wg",
+      "id": "yCZkZHqR1KKVnLBj0ZdFJAww60WEOy3a4OCc8xE8gfo",
+      "claimSecret": "EmN5ncEKbzSSrtr3HzQOgryf-mkrL9NH5U6IHoA_y40",
+      "claimHash": "ecaca3efb274d59dff7b6a9e4f2d856a68b901bab1f0eac1934d619e7e84e026",
+      "groupKey": "ua9-Afv3cc3WR9XRHmLRNUr0QKDt7GiiMa__l4U0T7s",
+      "wrappedGroupKey": "uSbyXzhEBXFxZ8qaVK32IVP8-XgaInhzlsoUhCb7yYTctwNqdUEPxrAbOxPfitETP6ICCVpjEuoAJyFy"
+    },
+    {
+      "t": "TVWQWhASPKpnVBSGXHOp4Q",
+      "id": "bGG9fhhf7iRmGhl18hSkyCfMYluVnktKHoEBx3G8DMs",
+      "claimSecret": "xm8xdTvB9pz3auRWgbKpu3EWcyDQ78vGKntN1rZT0xI",
+      "claimHash": "4f1a71ba97b3ebbe3282a85160dc4dfe7362da06c2b97fcd85281196251d7500",
+      "groupKey": "9YOBEM3fuECG0AQN54mtUMmKnHRUpisC-CkB8R5CdCo",
+      "wrappedGroupKey": "y8DtAKlLEbezlppBkFvZs-YxykF0_huMIQKM4-CONrAlC78R--IdYVZkHWWvHxs1JKaoWao5LSh3HJx3"
+    }
+  ]
+}
