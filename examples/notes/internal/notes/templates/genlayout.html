@@ -1,0 +1,36 @@
+{{/* genlayout — layout.html's generated-screen twin: the same chrome
+     (nav, flash, signed-in state), but "content" receives .Content
+     directly, because a generated screen's content template
+     (gen/templates/bookmarks/*.html) renders its own view model
+     (listView, formView, ...) and knows nothing about this app's page
+     struct — the hand screens' content templates read fields off the
+     whole page instead. The nav gains a Bookmarks link here and in
+     layout.html together; if the two chromes ever drift further
+     apart, collapse them the way the blog eventually did. */}}
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+</head>
+<body>
+<header>
+<nav>
+<a href="/">Notes</a>
+{{if .SignedIn}}
+<a href="/bookmarks">Bookmarks</a>
+<form method="post" action="/signout"><button type="submit">Sign out</button></form>
+{{else}}
+<a href="/signin">Sign in</a>
+<a href="/signup">Sign up</a>
+{{end}}
+</nav>
+</header>
+{{if .HasFlash}}<p role="status" class="flash flash-{{.Flash.Kind}}">{{.Flash.Message}}</p>{{end}}
+<main>
+{{template "content" .Content}}
+</main>
+</body>
+</html>
+{{end}}

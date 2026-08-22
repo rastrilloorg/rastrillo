@@ -10,6 +10,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 
+	"notes/gen"
+	bookmarksstore "notes/gen/store/bookmarks"
+
+	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/csrf"
 	"github.com/carlosframework/rastrillo/db"
 	"github.com/carlosframework/rastrillo/password"
@@ -29,8 +33,9 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	}
 	// sessions ships its schema as raw SQL, not a GORM model — it is
 	// meant to be applied like any other migration, not managed by
-	// AutoMigrate.
-	for _, stmt := range sessions.Migrations {
+	// AutoMigrate. The generated bookmarks store's migrations are the
+	// same shape: raw SQL from gen/, applied beside it.
+	for _, stmt := range append(append([]string{}, sessions.Migrations...), bookmarksstore.Migrations...) {
 		if err := d.G.Exec(stmt).Error; err != nil {
 			return nil, err
 		}
@@ -74,6 +79,19 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	r.Get("/signup", ph.SignupPage)
 	r.Post("/signup", ph.Signup)
 	r.Post("/signout", ph.Signout)
+	// The declarative half: manifest/bookmarks.toml's generated router,
+	// mounted inside the same Require group as the hand-written notes
+	// CRUD — one app, both paths, chosen per resource. The manifest
+	// declares scope = "user", so every generated query filters by the
+	// session subject (sessions.Current, which Require stashes); the
+	// ctx factory runs per request, which is what lets Render be a
+	// closure over r (GenRender's doc). chi's Handle (not Mount, which
+	// strips the prefix) passes the full path through to the generated
+	// Go 1.22 mux patterns.
+	gmux := gen.Router(func(r *http.Request) *rastrillo.Ctx {
+		return &rastrillo.Ctx{DB: writer, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: GenRender(r)}
+	})
+
 	r.Group(func(r chi.Router) {
 		r.Use(sess.Require)
 		r.Get("/", a.listNotes)
@@ -83,6 +101,8 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		r.Get("/notes/{id}/edit", a.editNote)
 		r.Post("/notes/{id}", a.updateNote)
 		r.Post("/notes/{id}/delete", a.deleteNote)
+		r.Handle("/bookmarks", gmux)
+		r.Handle("/bookmarks/*", gmux)
 	})
 
 	mux := http.NewServeMux()

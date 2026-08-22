@@ -2,6 +2,12 @@
 // owner-scoped note CRUD on the middle layer (db, sessions, password,
 // csrf, flash, scope). See internal/notes for the ~150-line domain
 // surface this whole app exists to keep small.
+//
+// It is also the mixed-paths example: manifest/bookmarks.toml declares
+// a second, user-scoped resource on the declarative path — generated
+// into gen/, mounted beside the hand-written notes CRUD inside the
+// same signed-in group. Both halves enforce the same owner rule, and
+// internal/notestest proves it for both with the same two-user suite.
 package main
 
 import (

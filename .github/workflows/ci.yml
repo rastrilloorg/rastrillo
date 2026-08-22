@@ -70,10 +70,11 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
-      # notes carries no `go tool` directive (no sqlc, no generate
-      # step below) — it's the hand-written middle-layer example, so
-      # its sweep is build+vet+test only. CGO_ENABLED=0 comes from the
-      # job env now.
+      # notes is the mixed example: the hand-written middle-layer half
+      # plus one declared, user-scoped manifest resource (bookmarks) —
+      # so it carries the sqlc tool directive too, and joins the
+      # generate --check step below. CGO_ENABLED=0 comes from the job
+      # env now.
       - name: examples/notes ./... sweep
         working-directory: examples/notes
         run: |
@@ -87,9 +88,11 @@ jobs:
           /tmp/rastrillo generate --check examples/helloworld
           /tmp/rastrillo generate --check examples/blog
           /tmp/rastrillo generate --check examples/tickets
+          /tmp/rastrillo generate --check examples/notes
           /tmp/rastrillo generate examples/helloworld
           /tmp/rastrillo generate examples/blog
           /tmp/rastrillo generate examples/tickets
+          /tmp/rastrillo generate examples/notes
           # Committed gen/ must match what today's generator writes.
           git diff --exit-code
 
