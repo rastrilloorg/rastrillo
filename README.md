@@ -165,13 +165,15 @@ the meantime. This list is their union. **Built:**
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail
   flow honors, leaving storage, rendering, and CSRF to the app.
-- **`rastrillo/auth`** — the keymail identity plugin on the sessions
-  core: magic-link email sign-in wrapping `keymaildev/signin` the way
-  seapointish's reviewed integration does, with an explicit rate
-  limiter, single-use links via `DELETE … RETURNING`, real session
-  revocation, `__Host-` cookies on https origins, same-origin CSRF on
-  every state-changing handler, an `Authorize` admission hook, and the
-  classifier fix for signin v0.1.0's wrong lookup path.
+- **`rastrillo/auth`** — the family-default identity plugin on the
+  sessions core: magic-link email sign-in that auto-upgrades to the
+  keymail ceremony when the address has a claimed inbox (classification
+  fails open, so every address always works), wrapping
+  `keymaildev/signin` the way seapointish's reviewed integration does —
+  explicit rate limiter, single-use links via `DELETE … RETURNING`,
+  real session revocation, same-origin CSRF on every state-changing
+  handler, an `Authorize` admission hook, and `RequireFreshSession`
+  for step-up on sensitive routes.
 - **`rastrillo/webauthn`** — the passkey identity half, lifted from
   kass tests-and-all: ES256 only, no attestation checking, the CBOR
   subset reader, `LegacyRPID` for hostname moves, plus the `authtest`

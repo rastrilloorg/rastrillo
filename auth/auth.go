@@ -1,9 +1,11 @@
-// Package auth is the framework's turnkey sign-in: keymail-first with a
-// magic-link email fallback, wrapped around github.com/keymaildev/signin
+// Package auth is the framework's turnkey sign-in and the family
+// default: a magic-link email that works for every address,
+// auto-upgrading to the keymail ceremony when the address resolves to
+// a claimed keymail inbox. It wraps github.com/keymaildev/signin
 // (which owns the ceremony) the way seapointish's reviewed integration
 // wires it — the deliberate holes signin leaves (link storage, mailer,
-// cookies, sessions, CSRF, admission) filled once, here, instead of once
-// per app.
+// cookies, sessions, CSRF, admission) filled once, here, instead of
+// once per app.
 //
 // The shape: an app builds one *Auth at boot (New), appends
 // auth.Migrations to its Options.Migrations, and mounts four handlers —
@@ -20,10 +22,17 @@
 // emailed; ?err=rate|address|expired|keymail; ?force=1 — offer the
 // plain-email escape hatch after a failed keymail approval).
 //
-// In this flow the magic link IS the email fallback: keymail-OAuth is
-// the primary path for addresses that resolve to a claimed keymail
-// inbox, and every other address — and every classification failure,
-// which fails open by design — gets a signed link by email instead.
+// The decision tree: every submitted address is classified; a claimed
+// keymail inbox gets the keymail-OAuth ceremony (the upgrade), and
+// every other address — and every classification failure, which fails
+// open by design — gets a signed link by email. Nobody is ever locked
+// out by the upgrade path existing.
+//
+// Hardening beyond the default is step-up, not a different plugin:
+// RequireFreshSession demands a recently-verified credential for
+// sensitive routes (keymail deployments advertising reauth get a real
+// prompt=login ceremony), and a passkey second factor on top of it is
+// the rastrillo/webauthn package's territory.
 package auth
 
 import (
