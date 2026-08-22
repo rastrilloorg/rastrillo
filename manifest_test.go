@@ -29,6 +29,14 @@ func TestValidateAcceptsTheFixture(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsUserScope(t *testing.T) {
+	r := validResource()
+	r.Scope = UserScoped
+	if err := r.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+}
+
 func TestValidateRejections(t *testing.T) {
 	cases := []struct {
 		name string
@@ -59,6 +67,12 @@ func TestValidateRejections(t *testing.T) {
 		{"reserved column name Id", func(r *Resource) { r.List.Columns[1].Field = "Id" }, "reserved"},
 		{"reserved field name CreatedAt", func(r *Resource) { r.Form.Basics[0].Name = "CreatedAt" }, "reserved"},
 		{"reserved field name is case-insensitive", func(r *Resource) { r.Form.Advanced[0].Name = "updatedat" }, "reserved"},
+		{"unknown scope", func(r *Resource) { r.Scope = "team" }, "scope"},
+		// Owner is reserved even UNSCOPED (see isReservedColumnName's
+		// doc: flipping scope = "user" on later must never invalidate a
+		// manifest that was valid before), so this case deliberately
+		// leaves r.Scope at its zero value.
+		{"reserved field name Owner", func(r *Resource) { r.Form.Basics[0].Name = "Owner" }, "reserved"},
 		{"two filters", func(r *Resource) {
 			r.List.Filters = []Filter{{Field: "Title", Values: []string{"a"}}, {Field: "Price", Values: []string{"b"}}}
 		}, "one filter"},

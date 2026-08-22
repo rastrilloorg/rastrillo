@@ -41,6 +41,26 @@ const (
 	Mergeable StoreKind = "mergeable"
 )
 
+// ScopeKind categorizes who a resource's rows belong to.
+type ScopeKind string
+
+const (
+	// Unscoped rows belong to the app: one shared table, no owner
+	// column — the right shape for admin-style resources.
+	Unscoped ScopeKind = ""
+
+	// UserScoped rows belong to whoever created them: the generated
+	// store adds an `owner` column holding the session Subject
+	// (sessions.Session.Subject — a TEXT value, so keymail's email
+	// subjects and password's numeric-string subjects both fit), every
+	// generated query filters by it, and a row that isn't yours
+	// answers 404 — the scope package's discipline, declared instead
+	// of hand-written. Generated actions read the subject via
+	// sessions.Current, so scoped routes must mount behind
+	// sessions.Require / sessions.Middleware / auth.RequireSession.
+	UserScoped ScopeKind = "user"
+)
+
 // Filter specifies a column and a set of values for filtering a list.
 type Filter struct {
 	Field  string   `json:"field" toml:"field"`
@@ -56,6 +76,7 @@ type Resource struct {
 	Name  string    `json:"name" toml:"name"`
 	Route string    `json:"route" toml:"route"`
 	Store StoreKind `json:"store" toml:"store"`
+	Scope ScopeKind `json:"scope,omitempty" toml:"scope"` // omitempty: an unscoped resource's manifest.json stays byte-identical to pre-Scope artifacts
 	List  List      `json:"list" toml:"list"`
 	Form  Form      `json:"form" toml:"form"`
 }
@@ -145,6 +166,10 @@ func (r *Resource) Validate() error {
 	}
 	if r.Store != Exclusive && r.Store != Mergeable {
 		return fmt.Errorf("store: unknown value %q", r.Store)
+	}
+
+	if r.Scope != Unscoped && r.Scope != UserScoped {
+		return fmt.Errorf("scope: unknown value %q", r.Scope)
 	}
 
 	for _, col := range r.List.Columns {
@@ -295,10 +320,13 @@ func (r *Resource) Validate() error {
 
 // isReservedColumnName reports whether name collides case-insensitively
 // with one of the fixed columns every generated store table carries
-// unconditionally (id, created_at, updated_at).
+// unconditionally (id, created_at, updated_at) — or with owner, the
+// column a scope = "user" store emits. Owner is reserved even for an
+// unscoped resource, deliberately: flipping scope on later must never
+// invalidate a manifest that was valid before.
 func isReservedColumnName(name string) bool {
 	switch strings.ToLower(name) {
-	case "id", "createdat", "updatedat":
+	case "id", "createdat", "updatedat", "owner":
 		return true
 	default:
 		return false
