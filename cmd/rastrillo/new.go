@@ -108,10 +108,11 @@ func runNew(args []string) error {
 	// non-executable job "skipped" with only a hint — the known silent
 	// failure mode, closed at scaffold time.
 	ciScripts := map[string]string{
-		filepath.Join(name, ".amadan", "ci"):              amadanCI,
-		filepath.Join(name, ".amadan", "ci.d", "10-vet"):  amadanStep("vet"),
-		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):  amadanStep("fmt-check"),
-		filepath.Join(name, ".amadan", "ci.d", "30-test"): amadanStep("test"),
+		filepath.Join(name, ".amadan", "ci"):                         amadanCI,
+		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
+		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
+		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
+		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
 	}
 	for path, content := range ciScripts {
 		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -124,7 +125,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box)\n", pkg)
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + test, the one gate definition)")
+	fmt.Println("  Makefile             (make ci = vet + fmt + test + migration check, the one gate definition)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
 	fmt.Println("  CLAUDE.md")
 
@@ -361,7 +362,7 @@ var BootSchema = migrate.Merge(Schema)
 // strings.TrimSpace(sql) + "\n\n" per statement.
 const initMigrationTemplate = "CREATE TABLE `notes` (`id` integer PRIMARY KEY AUTOINCREMENT,`title` text,`body` text,`created_at` datetime,`updated_at` datetime);\n\n"
 
-// schemaSQLTemplate is the snapshot ` + "`rastrillo migration generate`" + `
+// schemaSQLTemplate is the snapshot `rastrillo migration generate`
 // would write alongside 0001_init.sql above — the schema every
 // migration in the directory adds up to. Kept in the same format
 // migrate.SchemaSQL produces so a diff against a real regeneration is
@@ -634,7 +635,7 @@ path under actions/ — the generator skips that one from then on.
 
 // makefileTemplate is the one gate definition: CI steps exec these
 // targets, never their own copies of the commands (amadan's own rule).
-const makefileTemplate = `.PHONY: build test vet fmt-check ci
+const makefileTemplate = `.PHONY: build test vet fmt-check migration-check ci
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -648,14 +649,20 @@ vet:
 fmt-check:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
+# A step of its own, not folded into another target's recipe: ci.d/
+# steps each exec one make target, so migration-check needs its own
+# name to get its own reported step on a runner with step support.
+migration-check:
+	rastrillo migration check
+
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
-# target when .amadan/ci is absent. rastrillo migration check fails
-# the build the moment models.go and migrations/ disagree, instead of
-# at boot on whatever machine notices next. If the app declares
-# manifest resources, also add: rastrillo generate --check
-ci: vet fmt-check test
-	rastrillo migration check
+# target when .amadan/ci is absent; ci.d/ carries the same targets,
+# reported one by one, for a runner with step support. migration-check
+# fails the build the moment models.go and migrations/ disagree,
+# instead of at boot on whatever machine notices next. If the app
+# declares manifest resources, also add: rastrillo generate --check
+ci: vet fmt-check test migration-check
 `
 
 const amadanCI = `#!/bin/sh

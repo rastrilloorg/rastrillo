@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 // TestNewScaffoldsCIAndManifest covers the host-awareness half of the
@@ -122,6 +125,26 @@ func TestNewScaffoldsStaticMigrationFiles(t *testing.T) {
 	}
 }
 
+// schemaSQLTemplate is a static snapshot of what 0001_init.sql adds up
+// to, and nothing recomputes it at scaffold time (Amendment 1) or at
+// check time (migration check diffs Models against a replay of
+// Schema, never reads schema.sql at all) — so a future hand-edit to
+// initMigrationTemplate that forgets schema.sql would otherwise go
+// unnoticed by every test and by CI. This test ties the two together
+// through the same function `rastrillo migration generate` itself
+// calls to write schema.sql, so they cannot silently drift apart.
+func TestNewScaffoldsSchemaSQLMatchesInitMigration(t *testing.T) {
+	got, err := migrate.SchemaSQL(context.Background(), []migrate.Migration{
+		{ID: "0001_init", SQL: initMigrationTemplate},
+	})
+	if err != nil {
+		t.Fatalf("migrate.SchemaSQL: %v", err)
+	}
+	if got != schemaSQLTemplate {
+		t.Errorf("schemaSQLTemplate is stale relative to initMigrationTemplate.\ngot:\n%s\nwant:\n%s", got, schemaSQLTemplate)
+	}
+}
+
 // models.go must declare a real Note struct and the Models slice the
 // generator reads — not a struct shown only in a comment, which gives
 // the generator nothing to work with.
@@ -207,16 +230,7 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 	}
 	setSandboxGoEnv(t)
 	root := repoRoot(t)
-
-	dir := t.TempDir()
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Chdir(cwd) })
-	if err := os.Chdir(dir); err != nil {
-		t.Fatal(err)
-	}
+	t.Chdir(t.TempDir())
 
 	if err := runNew([]string{"freshapp"}); err != nil {
 		t.Fatal(err)
