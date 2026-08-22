@@ -1,8 +1,10 @@
 package notes
 
 import (
+	"bytes"
 	"embed"
 	"html/template"
+	"log/slog"
 	"net/http"
 
 	"github.com/carlosframework/rastrillo/flash"
@@ -50,17 +52,33 @@ type (
 	}
 )
 
-// renderContent takes the flash exactly once, resolves whether a
-// session is current (for layout's nav), and executes name's layout.
-// It writes no status of its own: callers that need one write it
-// first, matching password.go's own convention for its 422 re-render.
-func renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {
+// renderStatus takes the flash exactly once, resolves whether a
+// session is current (for layout's nav), and executes name's layout
+// into a buffer before anything touches the wire. The buffer matters
+// twice: a template error becomes a clean 500 instead of garbage
+// appended to a half-written page, and flash.Take's clearing
+// Set-Cookie lands before the status line — headers added after
+// WriteHeader are silently dropped, which is exactly how a 422
+// re-render used to show the same flash twice. status 0 means let the
+// first body write imply 200.
+func renderStatus(w http.ResponseWriter, r *http.Request, status int, name string, content any) {
 	fl, ok := flash.Take(w, r)
 	_, signedIn := sessions.Current(r)
 	data := page{Flash: fl, HasFlash: ok, SignedIn: signedIn, Content: content}
-	if err := pages[name].ExecuteTemplate(w, "layout", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	var buf bytes.Buffer
+	if err := pages[name].ExecuteTemplate(&buf, "layout", data); err != nil {
+		slog.Default().Error("notes: render "+name, "err", err)
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
 	}
+	if status != 0 {
+		w.WriteHeader(status)
+	}
+	buf.WriteTo(w)
+}
+
+func renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {
+	renderStatus(w, r, 0, name, content)
 }
 
 // renderSignin and renderSignup are password.Config's RenderSignin/

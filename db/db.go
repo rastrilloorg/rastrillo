@@ -86,9 +86,15 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 		LogLevel:                  logger.Warn,
 		IgnoreRecordNotFoundError: true,
 	})
+	// TranslateError turns the driver's constraint errors into GORM's
+	// portable sentinels — errors.Is(err, gorm.ErrDuplicatedKey) is
+	// the idiom every GORM app (and every model that has seen one)
+	// writes, and without this flag GORM never calls the dialector's
+	// Translate at all.
 	g, err := gorm.Open(gormlite.Dialector{Conn: w}, &gorm.Config{
-		Logger:  gl,
-		NowFunc: func() time.Time { return time.Now().UTC() },
+		Logger:         gl,
+		NowFunc:        func() time.Time { return time.Now().UTC() },
+		TranslateError: true,
 	})
 	if err != nil {
 		w.Close()

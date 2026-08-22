@@ -4,11 +4,11 @@
 <h1>{{.Note.Title}}</h1>
 <p>{{.Note.Body}}</p>
 </article>
-<p>
+<nav>
 <a href="/notes/{{.Note.ID}}/edit">Edit</a>
 <form method="post" action="/notes/{{.Note.ID}}/delete" style="display:inline">
 <button type="submit">Delete</button>
 </form>
-</p>
+</nav>
 {{end}}
 {{end}}

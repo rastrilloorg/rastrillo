@@ -146,7 +146,7 @@ the meantime. This list is their union. **Built:**
   reader pool, routed transparently by `dbresolver`.
 - **`rastrillo/sessions`** — the SQLite-backed session core: signed-in
   sessions as real rows (sign-out and admin revocation both work),
-  `__Host-` cookies, and the request-context surface (`Current`,
+  `__Host-` cookies on https origins, and the request-context surface (`Current`,
   `UserID`) every identity plugin calls `SignIn` into.
 - **`rastrillo/csrf`** — `Protect`, a same-origin middleware for
   state-changing requests, checked in order of evidence quality:

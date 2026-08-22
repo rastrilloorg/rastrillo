@@ -20,6 +20,9 @@ func TestSameOrigin(t *testing.T) {
 		{"origin mismatch", map[string]string{"Origin": "https://evil.example"}, false},
 		{"referer same origin", map[string]string{"Referer": origin + "/form"}, true},
 		{"referer other origin", map[string]string{"Referer": "https://evil.example/form"}, false},
+		{"referer same host wrong scheme", map[string]string{"Referer": "http://app.example.com/form"}, false},
+		{"referer unparseable", map[string]string{"Referer": "://not-a-url"}, false},
+		{"referer bad escape", map[string]string{"Referer": "https://evil.example/%zz"}, false},
 		{"no evidence refused", map[string]string{}, false},
 	}
 	for _, c := range cases {

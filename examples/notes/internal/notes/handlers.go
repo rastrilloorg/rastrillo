@@ -45,7 +45,10 @@ func (a *app) find(r *http.Request) (Note, error) {
 
 func (a *app) listNotes(w http.ResponseWriter, r *http.Request) {
 	var notes []Note
-	a.owned(r).Order("created_at desc").Find(&notes)
+	if err := a.owned(r).Order("created_at desc").Find(&notes).Error; err != nil {
+		http.Error(w, "could not load notes", http.StatusInternalServerError)
+		return
+	}
 	renderContent(w, r, "index", indexView{Notes: notes})
 }
 
@@ -57,8 +60,7 @@ func (a *app) createNote(w http.ResponseWriter, r *http.Request) {
 	uid, _ := sessions.UserID(r)
 	title, body := r.PostFormValue("title"), r.PostFormValue("body")
 	if title == "" {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		renderContent(w, r, "new", formView{
+		renderStatus(w, r, http.StatusUnprocessableEntity, "new", formView{
 			Note:   Note{Title: title, Body: body},
 			Errors: form.Errors{"Title": "Title is required"},
 		})
@@ -100,8 +102,7 @@ func (a *app) updateNote(w http.ResponseWriter, r *http.Request) {
 	title, body := r.PostFormValue("title"), r.PostFormValue("body")
 	if title == "" {
 		n.Title, n.Body = title, body
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		renderContent(w, r, "edit", formView{Note: n, Errors: form.Errors{"Title": "Title is required"}})
+		renderStatus(w, r, http.StatusUnprocessableEntity, "edit", formView{Note: n, Errors: form.Errors{"Title": "Title is required"}})
 		return
 	}
 	// Never bind a request onto a GORM model: Title/Body came from
