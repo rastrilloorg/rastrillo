@@ -196,8 +196,8 @@ func (s *Sessions) revoke(hash string) error {
 }
 
 // SignIn mints a fresh session for sess and sets the cookie. If the
-// request already carries a valid session cookie, that row is revoked
-// first — SignIn doubles as re-authentication (a privilege change, a
+// request already carries a session cookie, the row for its hash is
+// revoked first — SignIn doubles as re-authentication (a privilege change, a
 // password reset survivor kicking out the old token), and rotation
 // means the old token can never be replayed after a fresh SignIn.
 func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) error {
