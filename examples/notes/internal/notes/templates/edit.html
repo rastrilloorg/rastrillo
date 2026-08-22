@@ -1,0 +1,15 @@
+{{define "content"}}
+<h1>Edit note</h1>
+{{with .Content}}
+{{if .Errors.Any}}<p role="alert" class="error">{{index .Errors "Title"}}</p>{{end}}
+<form method="post" action="/notes/{{.Note.ID}}">
+<label>Title
+<input type="text" name="title" value="{{.Note.Title}}" required autofocus>
+</label>
+<label>Body
+<textarea name="body">{{.Note.Body}}</textarea>
+</label>
+<button type="submit">Save</button>
+</form>
+{{end}}
+{{end}}
