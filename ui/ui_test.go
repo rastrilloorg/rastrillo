@@ -1781,3 +1781,37 @@ func TestJobStatusPollsWhileRunningAndStopsWhenDone(t *testing.T) {
 		t.Errorf("a done job must not carry the spinner: %s", done)
 	}
 }
+
+// PushURL is the partial's opt-in server-push key: set, a running job
+// carries data-poll-push beside data-poll; unset, the markup is
+// byte-for-byte today's polling; and a job that stopped running
+// carries neither — the shim's signal to stop everything.
+func TestJobStatusPushURLIsOptIn(t *testing.T) {
+	pushed := render(t, "job-status", map[string]any{
+		"Name": "Export", "Status": "running",
+		"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
+		"PushURL": "/jobs/1/events",
+	})
+	for _, want := range []string{
+		`data-poll="/jobs/1/fragment"`, `data-poll-push="/jobs/1/events"`,
+	} {
+		if !strings.Contains(pushed, want) {
+			t.Errorf("missing %q: %s", want, pushed)
+		}
+	}
+
+	polled := render(t, "job-status", map[string]any{
+		"Name": "Export", "Status": "running",
+		"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
+	})
+	if strings.Contains(polled, "data-poll-push") {
+		t.Errorf("data-poll-push rendered without PushURL: %s", polled)
+	}
+
+	done := render(t, "job-status", map[string]any{
+		"Name": "Export", "Status": "done", "PushURL": "/jobs/1/events",
+	})
+	if strings.Contains(done, "data-poll-push") {
+		t.Errorf("a done job must not carry data-poll-push: %s", done)
+	}
+}

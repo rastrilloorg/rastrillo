@@ -14,7 +14,8 @@ import (
 func TestShimContract(t *testing.T) {
 	js := string(ShimJS())
 	for _, want := range []string{
-		"data-poll", "data-poll-every", "data-busy", "data-busy-label",
+		"data-poll", "data-poll-every", "data-poll-push", "data-busy", "data-busy-label",
+		"EventSource",
 		"Rastrillo-Fragment", "Rastrillo-Location",
 		// Behavior a Go test can still hold cheaply: the terminal
 		// statuses that end a poll, the local-path guard on the
