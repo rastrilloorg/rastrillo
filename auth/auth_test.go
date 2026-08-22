@@ -14,7 +14,8 @@ import (
 
 	"github.com/keymaildev/signin"
 
-	rastrillo "github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/sessions"
 )
 
@@ -28,14 +29,17 @@ func (m *captureMailer) Send(_ context.Context, to, subject, body string) error 
 
 func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
 	t.Helper()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "auth.db"), Migrations)
+	d, err := db.Open(filepath.Join(t.TempDir(), "auth.db"), nil)
 	if err != nil {
-		t.Fatalf("OpenDB: %v", err)
+		t.Fatalf("db.Open: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema)); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
 	m := &captureMailer{}
 	cfg := Config{
-		DB:          db,
+		DB:          d.Writer(),
 		Origin:      "http://app.test",
 		InstanceKey: "test-instance-key",
 		Mailer:      m,
@@ -51,15 +55,22 @@ func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
 }
 
 func TestNewValidatesConfig(t *testing.T) {
-	db, _ := rastrillo.OpenDB(filepath.Join(t.TempDir(), "v.db"), Migrations)
-	defer db.Close()
+	d, err := db.Open(filepath.Join(t.TempDir(), "v.db"), nil)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	defer d.Close()
+	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema)); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
+	sqlDB := d.Writer()
 	cases := []struct {
 		name string
 		cfg  Config
 	}{
-		{"empty origin", Config{DB: db, InstanceKey: "k"}},
-		{"relative origin", Config{DB: db, InstanceKey: "k", Origin: "app.test"}},
-		{"empty instance key", Config{DB: db, Origin: "https://app.test"}},
+		{"empty origin", Config{DB: sqlDB, InstanceKey: "k"}},
+		{"relative origin", Config{DB: sqlDB, InstanceKey: "k", Origin: "app.test"}},
+		{"empty instance key", Config{DB: sqlDB, Origin: "https://app.test"}},
 		{"nil db", Config{Origin: "https://app.test", InstanceKey: "k"}},
 	}
 	for _, c := range cases {
@@ -422,71 +433,135 @@ var legacyMigrations = []string{
 	);`,
 }
 
-// TestUpgradeCopiesLiveAuthSessionsThenSelfHeals pins the upgrade path
-// end to end: a session minted under the pre-sessions-core schema still
-// admits after the app upgrades to auth.Migrations (the copy), and —
-// the resurrection fix — a session revoked post-upgrade stays revoked
-// even after the migrations run again on a later boot (auth_sessions
-// having been emptied means there is nothing left to re-copy).
-func TestUpgradeCopiesLiveAuthSessionsThenSelfHeals(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "upgrade.db")
-	db, err := rastrillo.OpenDB(path, legacyMigrations)
+// TestUpgradeFromLegacyAuthSessionsRefusesAutomaticAdoption covers the
+// pre-sessions-core upgrade: a database with rows in auth_sessions and
+// no sessions table. Automatic Apply must refuse it, not silently
+// backfill it.
+//
+// This is NOT a transcription slip in auth's SQL: adopt() (migrate
+// design spec §7) is deliberately all-or-nothing — a non-empty,
+// ledger-less database either matches the full replayed set exactly
+// (stamp everything, run zero DDL) or refuses to boot. A pre-
+// sessions-core database is missing the `sessions` table, so it can
+// never structurally match a merged (sessions.Schema, auth.Schema)
+// set, and automatic Apply correctly refuses it rather than guessing.
+// This is also why the backfill cannot run via adoption even when the
+// database DOES structurally match (a crash between the old
+// Migrations' CREATE TABLE and its backfill, say): adopt() stamps
+// 0002 as applied without executing it, same as every other migration
+// in a matching set. The documented recovery (spec §7's escape hatch)
+// is operator-driven: create the missing table for real, then
+// `rastrillo migration baseline --through <last-non-backfill-id>` so
+// the next boot's normal Apply loop actually runs 0002.
+func TestUpgradeFromLegacyAuthSessionsRefusesAutomaticAdoption(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "legacy.db")
+	d, err := db.Open(path, nil)
 	if err != nil {
-		t.Fatalf("OpenDB (legacy): %v", err)
+		t.Fatal(err)
 	}
-
-	token, hash, err := NewToken()
-	if err != nil {
-		t.Fatalf("NewToken: %v", err)
-	}
-	now := time.Now().UTC()
-	if _, err := db.Exec(`INSERT INTO auth_sessions (token_hash, address, method, auth_time, created_at, expires_at)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		hash, "old@example.com", "magiclink", "",
-		now.Format(time.RFC3339), now.Add(time.Hour).Format(time.RFC3339)); err != nil {
-		t.Fatalf("seed auth_sessions: %v", err)
-	}
-	db.Close()
-
-	// Re-open with the real Migrations — the upgrade boot.
-	db, err = rastrillo.OpenDB(path, Migrations)
-	if err != nil {
-		t.Fatalf("OpenDB (upgrade): %v", err)
-	}
-	defer db.Close()
-
-	a, err := New(Config{DB: db, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}})
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
-
-	cookie := &http.Cookie{Name: a.SessionCookie(), Value: token}
-	r := httptest.NewRequest("GET", "http://app.test/", nil)
-	r.AddCookie(cookie)
-	if id, ok := a.SessionFrom(r); !ok || id.Address != "old@example.com" {
-		t.Fatalf("SessionFrom after upgrade = %+v, ok=%v, want the copied pre-upgrade session admitted", id, ok)
-	}
-
-	// Sign out — revokes the copied row in `sessions`.
-	signout := httptest.NewRequest("POST", "http://app.test/signout", nil)
-	signout.Header.Set("Sec-Fetch-Site", "same-origin")
-	signout.AddCookie(cookie)
-	a.Signout(httptest.NewRecorder(), signout)
-
-	// Simulate a restart: re-run the migration statements again.
-	// Without emptying auth_sessions, the still-populated row would be
-	// re-copied by INSERT OR IGNORE (its PK now absent from `sessions`
-	// post-signout) and the revoked token would work again.
-	for _, stmt := range Migrations {
-		if _, err := db.Exec(stmt); err != nil {
-			t.Fatalf("re-run migration %q: %v", stmt, err)
+	defer d.Close()
+	for _, stmt := range legacyMigrations {
+		if err := d.G.Exec(stmt).Error; err != nil {
+			t.Fatal(err)
 		}
 	}
+	if err := d.G.Exec(`INSERT INTO auth_sessions
+	  (token_hash, address, method, auth_time, created_at, expires_at)
+	  VALUES ('h1','a@example.com','link','','now','2099-01-01T00:00:00Z')`).Error; err != nil {
+		t.Fatal(err)
+	}
 
-	r2 := httptest.NewRequest("GET", "http://app.test/", nil)
-	r2.AddCookie(cookie)
-	if _, ok := a.SessionFrom(r2); ok {
-		t.Fatal("SessionFrom admitted a revoked session resurrected by re-running the migrations")
+	full := migrate.Merge(sessions.Schema, Schema)
+	_, err = migrate.Apply(context.Background(), d, full)
+	if err == nil {
+		t.Fatal("Apply admitted a pre-sessions-core database with no `sessions` table; " +
+			"adoption is structural-match-or-refuse, so this must fail loudly, not guess")
+	}
+	if !strings.Contains(err.Error(), "missing table sessions") {
+		t.Fatalf("error = %v, want it to name the missing sessions table", err)
+	}
+}
+
+// TestBackfillRunsOnceViaOperatorBaseline exercises the documented
+// recovery path from the test above: an operator brings the database's
+// structure in line with the full migration set by hand (the missing
+// `sessions` table), then baselines the ledger through auth's own
+// schema migration — leaving the backfill (0002) unstamped so the next
+// Apply actually runs it. That run must happen exactly once: a session
+// revoked after the backfill must not be resurrected by a later boot.
+func TestBackfillRunsOnceViaOperatorBaseline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "recovered.db")
+	d, err := db.Open(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	for _, stmt := range legacyMigrations {
+		if err := d.G.Exec(stmt).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := d.G.Exec(`INSERT INTO auth_sessions
+	  (token_hash, address, method, auth_time, created_at, expires_at)
+	  VALUES ('h1','a@example.com','link','','now','2099-01-01T00:00:00Z')`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	// The operator's manual half: create the table migrate's own
+	// sessions/0001_init would have, then baseline through auth's own
+	// schema migration (not its backfill).
+	for _, m := range sessions.Schema.All() {
+		if err := d.G.Exec(m.SQL).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := d.G.Exec(migrate.LedgerDDL).Error; err != nil {
+		t.Fatal(err)
+	}
+	full := migrate.Merge(sessions.Schema, Schema)
+	ctx := context.Background()
+	conn, err := d.Writer().Conn(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := migrate.Stamp(ctx, conn, full.All(), "auth/0001_init"); err != nil {
+		t.Fatal(err)
+	}
+	conn.Close()
+
+	// The ledger now has everything through auth/0001_init stamped;
+	// 0002 is not. This boot must run it for real.
+	if _, err := migrate.Apply(ctx, d, full); err != nil {
+		t.Fatal(err)
+	}
+	var n int64
+	d.G.Raw("SELECT count(*) FROM sessions WHERE token_hash = 'h1'").Scan(&n)
+	if n != 1 {
+		t.Fatalf("backfilled sessions rows = %d, want 1", n)
+	}
+
+	// Revoke, then boot again. The backfill must not resurrect it.
+	if err := d.G.Exec("DELETE FROM sessions WHERE token_hash = 'h1'").Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := migrate.Apply(ctx, d, full); err != nil {
+		t.Fatal(err)
+	}
+	d.G.Raw("SELECT count(*) FROM sessions WHERE token_hash = 'h1'").Scan(&n)
+	if n != 0 {
+		t.Fatal("a second boot resurrected a revoked session — the backfill re-ran")
+	}
+}
+
+// TestAuthSchemaDoesNotEmbedSessions guards the requirement moving
+// from a prose comment into the type system: auth.Schema must not
+// contain the sessions table, so ordering is expressed at the call
+// site via migrate.Merge(sessions.Schema, auth.Schema).
+func TestAuthSchemaDoesNotEmbedSessions(t *testing.T) {
+	for _, m := range Schema.All() {
+		if strings.Contains(m.SQL, "CREATE TABLE IF NOT EXISTS sessions") {
+			t.Fatalf("%s embeds the sessions table; callers must Merge(sessions.Schema, auth.Schema)", m.ID)
+		}
 	}
 }
 

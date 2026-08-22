@@ -3,65 +3,43 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
-// Migrations is the package's schema — additive and idempotent, meant to
-// be appended to an app's Options.Migrations. Tokens never touch any of
-// these tables: all store SHA-256 hashes only.
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is auth's own migrations, and only its own — it does not
+// embed sessions.Schema. The backfill in 0002 reads the sessions
+// table, so a caller must order the sets:
+//
+//	migrate.Apply(ctx, d, migrate.Merge(sessions.Schema, auth.Schema))
+//
+// Merge's argument order is apply order, which is how that
+// requirement is now stated at the call site — it used to be a
+// comment here and an append() that embedded sessions.Migrations into
+// this package's own list.
 //
 // auth_sessions is no longer written to (session storage moved to the
 // shared sessions package), but the CREATE TABLE stays: the table is
-// additive-only and abandoned in place, per the migration rule. The
-// last two statements are a one-shot upgrade, run every boot (there is
-// no migration-version table) but only doing real work once:
+// additive-only and abandoned in place, per the migration rule. 0002
+// is a one-shot upgrade — under the ledger it runs exactly once, where
+// the old Migrations []string re-ran it every boot and relied on its
+// own DELETE leaving nothing to copy the second time:
 //
 //  1. copy any live auth_sessions rows into the shared sessions table —
 //     additive and idempotent (OR IGNORE) — so an app upgrading from a
 //     pre-sessions-core auth does not sign its family out;
 //  2. empty auth_sessions.
 //
-// Emptying the source table is what makes the copy one-shot: after the
-// first post-upgrade boot auth_sessions has nothing left to copy, so a
-// later boot — after a user has since signed out and their sessions row
-// was deleted — finds no source row to resurrect it from. Without step
-// 2 the INSERT OR IGNORE would re-run against the same still-populated
-// auth_sessions on every boot (this platform restarts routinely —
-// hibernation/reactivation) and revive any session already revoked via
-// SignOut, since OR IGNORE only skips rows whose token_hash is already
-// present, not rows that were deliberately deleted. If a boot crashes
-// between the two statements, the next boot just re-copies (harmlessly,
-// via OR IGNORE) and deletes again.
-//
 // Accepted cost: rolling back to a pre-sessions-core rastrillo after
 // this migration has run finds auth_sessions empty, forcing everyone to
 // sign in again on the old code path. One forced re-sign-in on rollback
 // beats a revoked session silently coming back to life on every restart.
-//
-// Both statements must come after sessions.Migrations so the sessions
-// table already exists when the copy runs.
-var Migrations = append(append([]string{
-	`CREATE TABLE IF NOT EXISTS auth_links (
-	  hash       TEXT PRIMARY KEY,
-	  address    TEXT NOT NULL,
-	  purpose    TEXT NOT NULL,
-	  expires_at TEXT NOT NULL
-	);`,
-	`CREATE TABLE IF NOT EXISTS auth_sessions (
-	  token_hash TEXT PRIMARY KEY,
-	  address    TEXT NOT NULL,
-	  method     TEXT NOT NULL,
-	  auth_time  TEXT NOT NULL DEFAULT '',
-	  created_at TEXT NOT NULL,
-	  expires_at TEXT NOT NULL
-	);`,
-}, sessions.Migrations...),
-	`INSERT OR IGNORE INTO sessions (token_hash, subject, method, auth_time, created_at, expires_at)
-	   SELECT token_hash, address, method, auth_time, created_at, expires_at FROM auth_sessions;`,
-	`DELETE FROM auth_sessions;`,
-)
+var Schema = migrate.MustFromFS(migrationFS, "auth")
 
 // linkStore implements signin.LinkStore over the app database.
 type linkStore struct{ db *sql.DB }

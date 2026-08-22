@@ -7,8 +7,10 @@
 // cookies, sessions, CSRF, admission) filled once, here, instead of
 // once per app.
 //
-// The shape: an app builds one *Auth at boot (New), appends
-// auth.Migrations to its Options.Migrations, and mounts four handlers —
+// The shape: an app builds one *Auth at boot (New), merges auth.Schema
+// into its migrate.Set — migrate.Merge(sessions.Schema, auth.Schema),
+// since auth's backfill migration reads the sessions table — and
+// mounts four handlers —
 //
 //	POST /signin         → a.Begin
 //	GET  /auth/callback  → a.Callback   (the keymail OAuth return)
@@ -72,8 +74,9 @@ const pendingTTL = 10 * time.Minute
 // Config configures New. Origin and InstanceKey are required; everything
 // else has a serviceable default.
 type Config struct {
-	// DB is the app's database. auth.Migrations must be in the app's
-	// Options.Migrations (or otherwise applied) before any handler runs.
+	// DB is the app's database. migrate.Merge(sessions.Schema,
+	// auth.Schema) must be applied (via migrate.Apply) before any
+	// handler runs.
 	DB *sql.DB
 
 	// Origin is the app's external origin, scheme included —
