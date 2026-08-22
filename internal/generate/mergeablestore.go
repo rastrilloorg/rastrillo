@@ -1,0 +1,667 @@
+// Package generate's mergeable store emitter (this file) renders the
+// second store shape a manifest resource can declare (store =
+// "mergeable", spec 2026-08-22): gen/store/<name>/store.go +
+// migrations.go, template-rendered Go over the eventlog package — no
+// sqlc involvement at all. The emitted package satisfies the SAME
+// method surface the sqlc-generated exclusive stores expose
+// (List/Count/Get/Create/UpdateBasics/UpdateAdvanced/Delete, the same
+// Params struct spellings, sql.ErrNoRows on a miss), so the generated
+// actions, templates, locales and router ship unchanged. The one
+// behavioral difference is the §9 ruling: Delete appends a tombstone
+// event rather than a DELETE, and derive skips dead ids.
+//
+// Observable semantics deliberately mirrored from the exclusive
+// emitters (store.go's whereClauses/queriesSQL/recordKey):
+//   - the always-on owner clause for a scoped resource (no
+//     empty-disables-it escape), and id-AND-owner keying on every
+//     per-record read/write — a foreign row is sql.ErrNoRows, the
+//     404-not-403 discipline for free;
+//   - search as a case-insensitive substring over the text/textarea
+//     list columns, empty search matching everything;
+//   - one exact-match clause per filter field, empty value disabling
+//     it;
+//   - List's ORDER BY created_at DESC, id DESC and LIMIT/OFFSET
+//     window;
+//   - sqlc's own argument conventions: a Params struct at two or more
+//     bind parameters, the one value passed bare at exactly one, no
+//     argument at zero (see actionIndexGET's countBinds switch).
+package generate
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/carlosframework/rastrillo"
+)
+
+// mergeableGoType maps a manifest Kind to the generated model/param
+// field type — the same mapping sqlc derives from kindSQLType's
+// columns (money is INTEGER, so int64; everything else TEXT).
+func mergeableGoType(k rastrillo.Kind) string {
+	if k == rastrillo.Money {
+		return "int64"
+	}
+	return "string"
+}
+
+// mergeableCountBinds counts a resource's Count bind parameters —
+// exactly actionIndexGET's countBinds arithmetic, so the emitted
+// signature and the generated action's call site cannot drift.
+func mergeableCountBinds(r rastrillo.Resource) int {
+	binds := len(filterVars(r))
+	if r.List.Search && len(searchColumns(r)) > 0 {
+		binds++
+	}
+	if scoped(r) {
+		binds++
+	}
+	return binds
+}
+
+// wrapComment word-wraps text into "// " comment lines at the width
+// the committed goldens pin.
+func wrapComment(text string) string {
+	const width = 70
+	var lines []string
+	line := ""
+	for _, word := range strings.Fields(text) {
+		switch {
+		case line == "":
+			line = word
+		case len([]rune(line))+1+len([]rune(word)) <= width:
+			line += " " + word
+		default:
+			lines = append(lines, line)
+			line = word
+		}
+	}
+	if line != "" {
+		lines = append(lines, line)
+	}
+	var b strings.Builder
+	for _, l := range lines {
+		b.WriteString("// " + l + "\n")
+	}
+	return b.String()
+}
+
+// mergeableMatchesDoc builds the matches doc comment from the clauses
+// the resource actually declares, mirroring whereClauses' own order.
+func mergeableMatchesDoc(r rastrillo.Resource, searchBind bool) string {
+	var parts []string
+	if scoped(r) {
+		parts = append(parts, "the always-on owner clause leads (a scoped list that forgot its owner would be everyone's list)")
+	}
+	if searchBind {
+		parts = append(parts, "an empty search matches everything, otherwise a case-insensitive substring over the searchable list columns (SQLite LIKE's own ASCII fold)")
+	}
+	if len(filterVars(r)) > 0 {
+		parts = append(parts, "each declared filter is an exact-match clause an empty value disables")
+	}
+	return wrapComment("matches mirrors the exclusive store's WHERE clauses: " + strings.Join(parts, "; ") + ".")
+}
+
+// mergeableStoreGo renders gen/store/<name>/store.go for a mergeable
+// resource. Unformatted; EmitStore runs it through format.Source.
+func mergeableStoreGo(r rastrillo.Resource) []byte {
+	model := singularPascal(r.Name)
+	plural := pascalCase(r.Name)
+	pkg := r.Name + "store"
+	cols := columns(r)
+	fvars := filterVars(r)
+	searchBind := r.List.Search && len(searchColumns(r)) > 0
+	hasClauses := scoped(r) || searchBind || len(fvars) > 0
+
+	// matchesParams / matchesArgs are the clause bind parameters in
+	// whereClauses order (owner, search, filters); Args is the
+	// arg.-qualified spelling a Params-struct call site uses.
+	var matchesParams, matchesArgs []string
+	if scoped(r) {
+		matchesParams = append(matchesParams, "owner")
+		matchesArgs = append(matchesArgs, "arg.Owner")
+	}
+	if searchBind {
+		matchesParams = append(matchesParams, "search")
+		matchesArgs = append(matchesArgs, "arg.Search")
+	}
+	for _, fv := range fvars {
+		matchesParams = append(matchesParams, fv.Var)
+		matchesArgs = append(matchesArgs, "arg."+fv.Param)
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, `// Code generated by rastrillo generate; DO NOT EDIT.
+
+// Package %[2]s is the mergeable store for the
+// %[1]s resource: the exclusive (sqlc) stores' exact method
+// surface, implemented over the eventlog package. Every record is one
+// event stream ("%[1]s/<id>"); a create/update appends an
+// event, a delete appends a tombstone, and every read derives live
+// state by replaying the merged history — no table of this resource's
+// own, no materialized cache (replay is cheap until proven otherwise).
+//
+// Two recorded caveats, both deliberate:
+//   - Every event's actor is stamped "app"; threading Ctx.Actor into
+//     store mutations is an additive follow-up (today every generated
+//     mutation is consent-gated upstream).
+//   - Record ids are writer-local: Create allocates max(existing)+1,
+//     race-free under the single-writer SQLite pool both db paths
+//     enforce. Cross-writer id namespacing belongs to the platform
+//     transport design; this allocator is the first thing it replaces.
+package %[2]s
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/carlosframework/rastrillo/eventlog"
+)
+
+// streamPrefix namespaces this resource's streams in the shared
+// eventlog table: record <id> lives at "%[1]s/<id>".
+const streamPrefix = "%[1]s/"
+
+// actor is stamped on every event this store appends — see the
+// package doc's Ctx.Actor caveat.
+const actor = "app"
+
+`, r.Name, pkg)
+
+	// The model struct — the same shape sqlc generates.
+	fmt.Fprintf(&b, "// %s is the derived read model — the same shape sqlc\n// generates for an exclusive resource.\n", model)
+	fmt.Fprintf(&b, "type %s struct {\n", model)
+	b.WriteString("ID int64\n")
+	if scoped(r) {
+		b.WriteString("Owner string\n")
+	}
+	for _, c := range cols {
+		fmt.Fprintf(&b, "%s %s\n", c.Name, mergeableGoType(c.Kind))
+	}
+	b.WriteString("CreatedAt string\nUpdatedAt string\n}\n\n")
+
+	b.WriteString(`type Queries struct {
+	db *sql.DB
+}
+
+func New(db *sql.DB) *Queries {
+	return &Queries{db: db}
+}
+
+// open resolves the database's durable writer identity (lazily, per
+// call — a one-row SELECT) and binds an eventlog.Log to it.
+func (q *Queries) open(ctx context.Context) (*eventlog.Log, error) {
+	writer, err := eventlog.LocalWriter(ctx, q.db)
+	if err != nil {
+		return nil, err
+	}
+	return eventlog.Open(q.db, writer)
+}
+
+// payload is the JSON shape of every created/updated event: pointer
+// fields, omitted when nil, so a created event carries every field and
+// an updated event only its own group's — an absent field leaves the
+// derived value untouched.
+type payload struct {
+`)
+	if scoped(r) {
+		b.WriteString("Owner *string `json:\"owner,omitempty\"`\n")
+	}
+	for _, c := range cols {
+		fmt.Fprintf(&b, "%s *%s `json:%q`\n", c.Name, mergeableGoType(c.Kind), c.SQL+",omitempty")
+	}
+	b.WriteString("CreatedAt *string `json:\"created_at,omitempty\"`\nUpdatedAt *string `json:\"updated_at,omitempty\"`\n}\n\n")
+
+	fmt.Fprintf(&b, `// state is the fold state for one stream: the derived row, whether a
+// tombstone was seen, and the first decode error (which poisons the
+// fold rather than deriving half a record).
+type state struct {
+	row  %s
+	dead bool
+	err  error
+}
+
+// reduce is the pure fold eventlog.Derive runs: created/updated apply
+// their payload's present fields ("created" also seeds updated_at from
+// created_at, the same both-timestamps-at-once rule the exclusive
+// INSERT uses); "deleted" is a tombstone, and dead stays dead.
+func reduce(s state, ev eventlog.Event) state {
+	if s.err != nil || s.dead {
+		return s
+	}
+	switch ev.Kind {
+	case "created", "updated":
+		var p payload
+		if err := json.Unmarshal(ev.Payload, &p); err != nil {
+			s.err = fmt.Errorf("%s: decode %%s event on %%s: %%w", ev.Kind, ev.Stream, err)
+			return s
+		}
+`, model, pkg)
+	if scoped(r) {
+		b.WriteString("if p.Owner != nil {\ns.row.Owner = *p.Owner\n}\n")
+	}
+	for _, c := range cols {
+		fmt.Fprintf(&b, "if p.%[1]s != nil {\ns.row.%[1]s = *p.%[1]s\n}\n", c.Name)
+	}
+	b.WriteString(`if p.CreatedAt != nil {
+s.row.CreatedAt = *p.CreatedAt
+s.row.UpdatedAt = *p.CreatedAt
+}
+if p.UpdatedAt != nil {
+s.row.UpdatedAt = *p.UpdatedAt
+}
+	case "deleted":
+		s.dead = true
+	}
+	return s
+}
+
+`)
+
+	fmt.Fprintf(&b, `// derive folds one stream's merged history into its live row; ok is
+// false for an empty or tombstoned stream.
+func derive(id int64, events []eventlog.Event) (%[1]s, bool, error) {
+	if len(events) == 0 {
+		return %[1]s{}, false, nil
+	}
+	s := eventlog.Derive(events, reduce)
+	if s.err != nil {
+		return %[1]s{}, false, s.err
+	}
+	if s.dead {
+		return %[1]s{}, false, nil
+	}
+	s.row.ID = id
+	return s.row, true, nil
+}
+
+// streamID parses the record id out of a stream name.
+func streamID(stream string) (int64, error) {
+	id, err := strconv.ParseInt(strings.TrimPrefix(stream, streamPrefix), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%[2]s: bad stream %%q: %%w", stream, err)
+	}
+	return id, nil
+}
+
+// live derives every live record, sorted the way the exclusive List
+// orders rows (created_at DESC, id DESC — RFC3339 strings compare
+// correctly as text, exactly as they do in SQLite).
+func (q *Queries) live(ctx context.Context) ([]%[1]s, error) {
+	log, err := q.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	events, err := log.EventsByPrefix(ctx, streamPrefix)
+	if err != nil {
+		return nil, err
+	}
+	byID := map[int64][]eventlog.Event{}
+	var ids []int64
+	for _, ev := range events {
+		id, err := streamID(ev.Stream)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := byID[id]; !ok {
+			ids = append(ids, id)
+		}
+		byID[id] = append(byID[id], ev)
+	}
+	var rows []%[1]s
+	for _, id := range ids {
+		row, ok, err := derive(id, byID[id])
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			rows = append(rows, row)
+		}
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].CreatedAt != rows[j].CreatedAt {
+			return rows[i].CreatedAt > rows[j].CreatedAt
+		}
+		return rows[i].ID > rows[j].ID
+	})
+	return rows, nil
+}
+
+`, model, pkg)
+
+	if hasClauses {
+		b.WriteString(mergeableMatchesDoc(r, searchBind))
+		fmt.Fprintf(&b, "func matches(n %s, %s string) bool {\n", model, strings.Join(matchesParams, ", "))
+		if scoped(r) {
+			b.WriteString("if n.Owner != owner {\nreturn false\n}\n")
+		}
+		if searchBind {
+			b.WriteString("if search != \"\" {\ns := strings.ToLower(search)\n")
+			var terms []string
+			for _, c := range searchColumns(r) {
+				terms = append(terms, fmt.Sprintf("strings.Contains(strings.ToLower(n.%s), s)", c.Name))
+			}
+			if len(terms) == 1 {
+				fmt.Fprintf(&b, "if !%s {\nreturn false\n}\n", terms[0])
+			} else {
+				fmt.Fprintf(&b, "if !(%s) {\nreturn false\n}\n", strings.Join(terms, " || "))
+			}
+			b.WriteString("}\n")
+		}
+		for _, fv := range fvars {
+			fmt.Fprintf(&b, "if %[1]s != \"\" && n.%[2]s != %[1]s {\nreturn false\n}\n", fv.Var, fv.Field)
+		}
+		b.WriteString("return true\n}\n\n")
+	}
+
+	fmt.Fprintf(&b, `// pageWindow applies the SQL LIMIT/OFFSET page window.
+func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
+	if offset < 0 {
+		offset = 0
+	}
+	if offset >= int64(len(rows)) {
+		return nil
+	}
+	rows = rows[offset:]
+	if limit >= 0 && limit < int64(len(rows)) {
+		rows = rows[:limit]
+	}
+	return rows
+}
+
+`, model)
+
+	// ── List ───────────────────────────────────────────────────────────
+	fmt.Fprintf(&b, "type List%sParams struct {\n", plural)
+	if scoped(r) {
+		b.WriteString("Owner string\n")
+	}
+	if searchBind {
+		b.WriteString("Search string\n")
+	}
+	for _, fv := range fvars {
+		fmt.Fprintf(&b, "%s string\n", fv.Param)
+	}
+	b.WriteString("PageOffset int64\nPageLimit int64\n}\n\n")
+
+	fmt.Fprintf(&b, "func (q *Queries) List%[1]s(ctx context.Context, arg List%[1]sParams) ([]%[2]s, error) {\n", plural, model)
+	b.WriteString("rows, err := q.live(ctx)\nif err != nil {\nreturn nil, err\n}\n")
+	if hasClauses {
+		fmt.Fprintf(&b, "var out []%s\nfor _, n := range rows {\nif matches(n, %s) {\nout = append(out, n)\n}\n}\n", model, strings.Join(matchesArgs, ", "))
+		b.WriteString("return pageWindow(out, arg.PageOffset, arg.PageLimit), nil\n}\n\n")
+	} else {
+		b.WriteString("return pageWindow(rows, arg.PageOffset, arg.PageLimit), nil\n}\n\n")
+	}
+
+	// ── Count ──────────────────────────────────────────────────────────
+	switch binds := mergeableCountBinds(r); {
+	case binds == 0:
+		fmt.Fprintf(&b, "func (q *Queries) Count%s(ctx context.Context) (int64, error) {\n", plural)
+		b.WriteString("rows, err := q.live(ctx)\nif err != nil {\nreturn 0, err\n}\nreturn int64(len(rows)), nil\n}\n\n")
+	case binds == 1:
+		// sqlc's one-bind convention: the value passed bare, never a
+		// one-field Params struct (see actionIndexGET's countBinds doc).
+		fmt.Fprintf(&b, "func (q *Queries) Count%s(ctx context.Context, %s string) (int64, error) {\n", plural, matchesParams[0])
+		b.WriteString("rows, err := q.live(ctx)\nif err != nil {\nreturn 0, err\n}\n")
+		fmt.Fprintf(&b, "var total int64\nfor _, n := range rows {\nif matches(n, %s) {\ntotal++\n}\n}\nreturn total, nil\n}\n\n", matchesParams[0])
+	default:
+		fmt.Fprintf(&b, "type Count%sParams struct {\n", plural)
+		if scoped(r) {
+			b.WriteString("Owner string\n")
+		}
+		if searchBind {
+			b.WriteString("Search string\n")
+		}
+		for _, fv := range fvars {
+			fmt.Fprintf(&b, "%s string\n", fv.Param)
+		}
+		b.WriteString("}\n\n")
+		fmt.Fprintf(&b, "func (q *Queries) Count%[1]s(ctx context.Context, arg Count%[1]sParams) (int64, error) {\n", plural)
+		b.WriteString("rows, err := q.live(ctx)\nif err != nil {\nreturn 0, err\n}\n")
+		fmt.Fprintf(&b, "var total int64\nfor _, n := range rows {\nif matches(n, %s) {\ntotal++\n}\n}\nreturn total, nil\n}\n\n", strings.Join(matchesArgs, ", "))
+	}
+
+	// ── Get ────────────────────────────────────────────────────────────
+	if scoped(r) {
+		fmt.Fprintf(&b, "type Get%sParams struct {\nID int64\nOwner string\n}\n\n", model)
+		fmt.Fprintf(&b, `func (q *Queries) Get%[1]s(ctx context.Context, arg Get%[1]sParams) (%[1]s, error) {
+	log, err := q.open(ctx)
+	if err != nil {
+		return %[1]s{}, err
+	}
+	events, err := log.Events(ctx, streamPrefix+strconv.FormatInt(arg.ID, 10))
+	if err != nil {
+		return %[1]s{}, err
+	}
+	row, ok, err := derive(arg.ID, events)
+	if err != nil {
+		return %[1]s{}, err
+	}
+	if !ok || row.Owner != arg.Owner {
+		// A foreign row answers exactly like a missing one — the scope
+		// package's 404-not-403 discipline.
+		return %[1]s{}, sql.ErrNoRows
+	}
+	return row, nil
+}
+
+`, model)
+	} else {
+		fmt.Fprintf(&b, `func (q *Queries) Get%[1]s(ctx context.Context, id int64) (%[1]s, error) {
+	log, err := q.open(ctx)
+	if err != nil {
+		return %[1]s{}, err
+	}
+	events, err := log.Events(ctx, streamPrefix+strconv.FormatInt(id, 10))
+	if err != nil {
+		return %[1]s{}, err
+	}
+	row, ok, err := derive(id, events)
+	if err != nil {
+		return %[1]s{}, err
+	}
+	if !ok {
+		return %[1]s{}, sql.ErrNoRows
+	}
+	return row, nil
+}
+
+`, model)
+	}
+
+	// ── Create ─────────────────────────────────────────────────────────
+	fmt.Fprintf(&b, "type Create%sParams struct {\n", model)
+	if scoped(r) {
+		b.WriteString("Owner string\n")
+	}
+	for _, c := range cols {
+		fmt.Fprintf(&b, "%s %s\n", c.Name, mergeableGoType(c.Kind))
+	}
+	b.WriteString("Now string\n}\n\n")
+
+	fmt.Fprintf(&b, `func (q *Queries) Create%[1]s(ctx context.Context, arg Create%[1]sParams) (int64, error) {
+	log, err := q.open(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// Writer-local id allocation (see the package doc's caveat):
+	// max(existing id in this resource's streams)+1, race-free under
+	// the single-writer SQLite pool.
+	events, err := log.EventsByPrefix(ctx, streamPrefix)
+	if err != nil {
+		return 0, err
+	}
+	var id int64
+	for _, ev := range events {
+		evID, err := streamID(ev.Stream)
+		if err != nil {
+			return 0, err
+		}
+		if evID > id {
+			id = evID
+		}
+	}
+	id++
+	p := payload{
+`, model)
+	if scoped(r) {
+		b.WriteString("Owner: &arg.Owner,\n")
+	}
+	for _, c := range cols {
+		fmt.Fprintf(&b, "%[1]s: &arg.%[1]s,\n", c.Name)
+	}
+	b.WriteString(`CreatedAt: &arg.Now,
+	}
+	if _, err := log.Append(ctx, streamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+`)
+
+	// ── Updates ────────────────────────────────────────────────────────
+	b.WriteString(mergeableUpdateGo(r, model, r.Form.Basics, "Basics"))
+	if len(r.Form.Advanced) > 0 {
+		b.WriteString(mergeableUpdateGo(r, model, r.Form.Advanced, "Advanced"))
+	}
+
+	// ── Delete ─────────────────────────────────────────────────────────
+	if scoped(r) {
+		fmt.Fprintf(&b, "type Delete%sParams struct {\nID int64\nOwner string\n}\n\n", model)
+		fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, arg Delete%[1]sParams) error {
+	log, err := q.open(ctx)
+	if err != nil {
+		return err
+	}
+	stream := streamPrefix + strconv.FormatInt(arg.ID, 10)
+	events, err := log.Events(ctx, stream)
+	if err != nil {
+		return err
+	}
+	row, ok, err := derive(arg.ID, events)
+	if err != nil {
+		return err
+	}
+	if !ok || row.Owner != arg.Owner {
+		return nil
+	}
+	// Delete appends a tombstone event rather than a DELETE; derive
+	// skips dead ids from here on.
+	_, err = log.Append(ctx, stream, "deleted", actor, struct{}{})
+	return err
+}
+`, model)
+	} else {
+		fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, id int64) error {
+	log, err := q.open(ctx)
+	if err != nil {
+		return err
+	}
+	stream := streamPrefix + strconv.FormatInt(id, 10)
+	events, err := log.Events(ctx, stream)
+	if err != nil {
+		return err
+	}
+	_, ok, err := derive(id, events)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+	// Delete appends a tombstone event rather than a DELETE; derive
+	// skips dead ids from here on.
+	_, err = log.Append(ctx, stream, "deleted", actor, struct{}{})
+	return err
+}
+`, model)
+	}
+
+	return []byte(b.String())
+}
+
+// mergeableUpdateGo renders one Update<Singular><Group> method: the
+// exclusive UPDATE's shape (only this group's fields plus the
+// updated_at bump, keyed on id — and owner for a scoped resource, so a
+// missing or foreign record is a no-op the same way the SQL UPDATE
+// affects zero rows).
+func mergeableUpdateGo(r rastrillo.Resource, model string, group []rastrillo.Field, groupName string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "type Update%s%sParams struct {\n", model, groupName)
+	for _, f := range group {
+		fmt.Fprintf(&b, "%s %s\n", f.Name, mergeableGoType(f.Kind))
+	}
+	b.WriteString("Now string\nID int64\n")
+	if scoped(r) {
+		b.WriteString("Owner string\n")
+	}
+	b.WriteString("}\n\n")
+
+	fmt.Fprintf(&b, `func (q *Queries) Update%[1]s%[2]s(ctx context.Context, arg Update%[1]s%[2]sParams) error {
+	log, err := q.open(ctx)
+	if err != nil {
+		return err
+	}
+	stream := streamPrefix + strconv.FormatInt(arg.ID, 10)
+	events, err := log.Events(ctx, stream)
+	if err != nil {
+		return err
+	}
+`, model, groupName)
+	if scoped(r) {
+		b.WriteString(`row, ok, err := derive(arg.ID, events)
+	if err != nil {
+		return err
+	}
+	if !ok || row.Owner != arg.Owner {
+		// Mirror the exclusive UPDATE: a missing or foreign record is a
+		// no-op, never an appended event on a stream with no live record.
+		return nil
+	}
+`)
+	} else {
+		b.WriteString(`_, ok, err := derive(arg.ID, events)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		// Mirror the exclusive UPDATE: a missing record is a no-op,
+		// never an appended event on a stream with no live record.
+		return nil
+	}
+`)
+	}
+	b.WriteString("p := payload{\n")
+	for _, f := range group {
+		fmt.Fprintf(&b, "%[1]s: &arg.%[1]s,\n", f.Name)
+	}
+	b.WriteString(`UpdatedAt: &arg.Now,
+	}
+	_, err = log.Append(ctx, stream, "updated", actor, p)
+	return err
+}
+
+`)
+	return b.String()
+}
+
+// mergeableMigrationsGo renders gen/store/<name>/migrations.go for a
+// mergeable resource: the eventlog schema re-exported — the resource
+// has no table of its own.
+func mergeableMigrationsGo(r rastrillo.Resource) []byte {
+	var b strings.Builder
+	b.WriteString("// Code generated by rastrillo generate; DO NOT EDIT.\n")
+	fmt.Fprintf(&b, "package %sstore\n\n", r.Name)
+	b.WriteString("import \"github.com/carlosframework/rastrillo/eventlog\"\n\n")
+	b.WriteString("// Migrations re-exports the eventlog schema for Options.Migrations: a\n")
+	b.WriteString("// mergeable resource has no table of its own — every record is an\n")
+	b.WriteString("// eventlog stream. Idempotent, so two mergeable resources appending it\n")
+	b.WriteString("// twice is harmless.\n")
+	b.WriteString("var Migrations = eventlog.Migrations\n")
+	return []byte(b.String())
+}
