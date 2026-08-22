@@ -20,6 +20,10 @@ func main() {
 	origin := os.Getenv("NOTES_ORIGIN")
 	if origin == "" {
 		origin = "http://localhost:8080"
+		// Loud on purpose: origin decides Secure/__Host- cookies and
+		// the CSRF origin check, so silently defaulting it in a real
+		// deployment would mean http-grade cookies on an https app.
+		logger.Warn("NOTES_ORIGIN not set; defaulting", "origin", origin)
 	}
 
 	// Resolve the platform's activation argv/env ourselves (Resolve's
