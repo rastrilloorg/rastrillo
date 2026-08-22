@@ -36,9 +36,10 @@ type fakeUser struct {
 // userStore is a minimal in-memory stand-in for the app's real user
 // table, keyed by lowercased email.
 type userStore struct {
-	mu     sync.Mutex
-	nextID int64
-	byMail map[string]fakeUser
+	mu          sync.Mutex
+	nextID      int64
+	byMail      map[string]fakeUser
+	createCalls int
 }
 
 func newUserStore() *userStore {
@@ -58,6 +59,7 @@ func (s *userStore) lookup(_ context.Context, email string) (int64, string, erro
 func (s *userStore) create(_ context.Context, email, hash string) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.createCalls++
 	if _, exists := s.byMail[email]; exists {
 		return 0, errDuplicateEmail
 	}
@@ -65,6 +67,12 @@ func (s *userStore) create(_ context.Context, email, hash string) (int64, error)
 	s.nextID++
 	s.byMail[email] = fakeUser{id: id, hash: hash}
 	return id, nil
+}
+
+func (s *userStore) createCallCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.createCalls
 }
 
 // recordedPage is one call to a Render* callback.
@@ -440,12 +448,12 @@ func TestSignoutRevokes(t *testing.T) {
 	}
 }
 
-// TestMutatingHandlersRejectNonPost: Signin and Signout are POST-only
-// — a GET must be rejected with 405 before any side effect (no
-// cookie set, no re-render call, no session revoked), since a GET
-// route would put a plaintext password in the URL/referrer/logs
-// (Signin) or escape the app-wide CSRF guard, which only gates
-// POST/PUT/PATCH/DELETE (Signout).
+// TestMutatingHandlersRejectNonPost: Signin, Signup, and Signout are
+// POST-only — a GET must be rejected with 405 before any side effect
+// (no cookie set, no re-render call, no store write, no session
+// revoked), since a GET route would put a plaintext password in the
+// URL/referrer/logs (Signin, Signup) or escape the app-wide CSRF
+// guard, which only gates POST/PUT/PATCH/DELETE (Signout).
 func TestMutatingHandlersRejectNonPost(t *testing.T) {
 	env := newTestEnv(t, nil)
 	hash, _ := password.Hash("s3cretpw")
@@ -462,6 +470,25 @@ func TestMutatingHandlersRejectNonPost(t *testing.T) {
 	}
 	if env.signin.count() != 0 {
 		t.Errorf("GET Signin called RenderSignin %d times, want 0", env.signin.count())
+	}
+
+	// GET Signup, on a config with Create wired: 405, no cookies,
+	// Create never invoked, RenderSignup never invoked.
+	beforeCreates := env.store.createCallCount()
+	w3 := httptest.NewRecorder()
+	getSignup := httptest.NewRequest("GET", "http://app.test/signup?email=fresh@example.com&password=longenoughpw", nil)
+	env.h.Signup(w3, getSignup)
+	if w3.Code != http.StatusMethodNotAllowed {
+		t.Errorf("GET Signup status = %d, want 405", w3.Code)
+	}
+	if len(w3.Result().Cookies()) != 0 {
+		t.Errorf("GET Signup set cookies: %v", w3.Result().Cookies())
+	}
+	if got := env.store.createCallCount(); got != beforeCreates {
+		t.Errorf("GET Signup called Create %d times, want %d (unchanged)", got, beforeCreates)
+	}
+	if env.signup.count() != 0 {
+		t.Errorf("GET Signup called RenderSignup %d times, want 0", env.signup.count())
 	}
 
 	// A live session must survive a GET-mounted Signout attempt: sign
