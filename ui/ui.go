@@ -30,7 +30,12 @@
 // Styling comes from tokens.css, which rastrillo new writes once into a
 // new app's static/ directory. rastrillo.Serve never serves it: from the
 // moment it is scaffolded it is an ordinary app-owned static file the app
-// is free to edit in place.
+// is free to edit in place. rastrillo.js, the fragment shim behind
+// data-poll and data-busy, ships the same way, landing beside it. It
+// never replaces a native idiom — every "no JavaScript" idiom above
+// still works with scripts disabled; the shim exists only for the one
+// kind of work a native idiom cannot do, work that finishes after the
+// response has already been sent, such as a background job's progress.
 //
 // Errors follow ordinary html/template semantics (nothing is
 // special-cased). With dict-built map data a key the caller forgot to set
@@ -151,6 +156,9 @@ var partialsFS embed.FS
 //go:embed tokens.css
 var tokensCSS []byte
 
+//go:embed rastrillo.js
+var shimJS []byte
+
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
 // layout:
@@ -169,3 +177,10 @@ func Templates() fs.FS {
 // step to write into a new app's static directory. The stylesheet is
 // delivered once, at scaffold time, and is app-owned from then on.
 func TokensCSS() []byte { return tokensCSS }
+
+// ShimJS returns rastrillo.js's raw bytes — the fragment shim — for
+// rastrillo new's scaffold step to write into a new app's static
+// directory beside tokens.css. Like the stylesheet, it is delivered
+// once and app-owned from then on. The file's own header comment is
+// its contract; TestShimContract holds the two honest.
+func ShimJS() []byte { return shimJS }

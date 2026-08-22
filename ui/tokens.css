@@ -979,3 +979,21 @@ body:has(.rst-backdrop) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .rst-tip::after { transition: none; }
 }
+
+/* rst-spin — the working indicator a status page or busy button wears.
+   Pure CSS; reduced-motion users get a steady dimmed ring instead of
+   rotation. */
+.rst-spin {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: rst-spin 0.8s linear infinite;
+}
+@keyframes rst-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .rst-spin { animation: none; opacity: 0.5; }
+}
