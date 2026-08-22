@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"errors"
 	"log/slog"
 	"path/filepath"
 	"strings"
@@ -85,6 +86,36 @@ func TestRecordNotFoundNotLogged(t *testing.T) {
 	}
 	if !strings.Contains(buf.String(), "no_such_table") {
 		t.Errorf("real error missing from log output: %q", buf.String())
+	}
+}
+
+// TestConstraintErrorsTranslate pins TranslateError + the fork's
+// Translate: a UNIQUE violation surfaces as gorm.ErrDuplicatedKey and
+// an FK violation as gorm.ErrForeignKeyViolated — the sentinels GORM
+// apps test against with errors.Is.
+func TestConstraintErrorsTranslate(t *testing.T) {
+	d, err := Open(filepath.Join(t.TempDir(), "app.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	for _, stmt := range []string{
+		"CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT UNIQUE)",
+		"CREATE TABLE notes (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id))",
+		"INSERT INTO users (id, email) VALUES (1, 'a@example.com')",
+	} {
+		if err := d.G.Exec(stmt).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err = d.G.Exec("INSERT INTO users (id, email) VALUES (2, 'a@example.com')").Error
+	if !errors.Is(err, gorm.ErrDuplicatedKey) {
+		t.Errorf("duplicate email: err = %v, want gorm.ErrDuplicatedKey", err)
+	}
+	err = d.G.Exec("INSERT INTO notes (user_id) VALUES (99)").Error
+	if !errors.Is(err, gorm.ErrForeignKeyViolated) {
+		t.Errorf("dangling user_id: err = %v, want gorm.ErrForeignKeyViolated", err)
 	}
 }
 
