@@ -256,7 +256,7 @@ verifies a credential and calls `SignIn`; that one call is the whole contract.
   different when signed in.
 - `s.RequireFresh(maxAge)` is Require plus step-up: the credential must be
   verified within maxAge; stale GET/HEAD goes to `SigninPath` with `reauth=1`,
-  and re-signing-in rotates fresh.
+  and re-signing-in or a `passkey` assertion rotates fresh.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (the `Session`: Subject, Method, AuthTime, At). Past a `Require` boundary the
   `ok` is guaranteed only for a plugin whose Subject is a numeric user id, as
@@ -264,8 +264,8 @@ verifies a credential and calls `SignIn`; that one call is the whole contract.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never a
   raw `return_to`: only a same-site absolute path (one leading `/`, no scheme,
   no backslash) passes; anything else gets the fallback.
-- `s.Sweep(time.Now())` deletes expired rows — optional; lookup checks
-  expiry itself.
+- `s.Sweep(time.Now())` deletes expired rows (optional; lookup checks
+  expiry).
 
 **Password plugin.** `password.New(password.Config{...})` needs `Sessions`,
 `Lookup`, and `RenderSignin`; `Create` is optional and disables signup when nil
@@ -282,7 +282,7 @@ password writes the 422 status itself before re-rendering, so the callback must
 not write one.
 
 **Rate limiting:** Signin throttles failed attempts per email — 10 failures in
-15 minutes answers 429 until the oldest ages out; success resets the budget.
+15 minutes answers 429 until one ages out; success resets it.
 In-memory, per email; IP throttling stays a deployment concern.
 The keymail plugin (`rastrillo/auth`) — the family default: magic-link email
 auto-upgrading to keymail — rate-limits via signin: `auth.New(auth.Config{...})` with

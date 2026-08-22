@@ -31,8 +31,9 @@
 // Hardening beyond the default is step-up, not a different plugin:
 // RequireFreshSession demands a recently-verified credential for
 // sensitive routes (keymail deployments advertising reauth get a real
-// prompt=login ceremony), and a passkey second factor on top of it is
-// the rastrillo/webauthn package's territory.
+// prompt=login ceremony), and the passkey package wires a WebAuthn
+// second factor onto that same seam — enroll while signed in, then
+// satisfy step-up with an assertion instead of a full re-sign-in.
 package auth
 
 import (
