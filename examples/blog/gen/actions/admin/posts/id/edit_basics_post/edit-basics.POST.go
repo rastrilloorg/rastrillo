@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	postsstore "blog/gen/store/posts"
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/form"
 	"github.com/carlosframework/rastrillo/view"
 )
 
@@ -38,25 +38,23 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vTitle := strings.TrimSpace(r.PostFormValue("Title"))
-	vBody := r.PostFormValue("Body")
+	p := form.Parse(r,
+		form.Field{Name: "Title", Required: true},
+		form.Field{Name: "Body", Kind: form.Textarea},
+	)
 
-	errs := map[string]string{}
-	if vTitle == "" {
-		errs["Title"] = "Title is required"
-	}
-
-	if len(errs) > 0 {
+	if !p.OK() {
 		fields := map[string]string{
 			"Title": n.Title,
 			"Body":  n.Body,
 		}
-		fields["Title"] = vTitle
-		fields["Body"] = vBody
+		for k, v := range p.Echo() {
+			fields[k] = v
+		}
 		view.Render(ctx, w, "posts/form", http.StatusBadRequest, formView{
 			IsNew:        false,
 			Fields:       fields,
-			Errors:       errs,
+			Errors:       p.Errors(),
 			BasicsAction: fmt.Sprintf("/admin/posts/%d/edit-basics", id),
 		})
 		return
@@ -64,8 +62,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	if err := store.UpdatePostBasics(r.Context(), postsstore.UpdatePostBasicsParams{
-		Title: vTitle,
-		Body:  vBody,
+		Title: p.String("Title"),
+		Body:  p.String("Body"),
 		Now:   now,
 		ID:    id,
 	}); err != nil {

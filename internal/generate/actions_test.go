@@ -185,10 +185,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/form"
 	"github.com/carlosframework/rastrillo/view"
 	notesstore "scratch/gen/store/notes"
 )
@@ -216,13 +216,15 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vTitle := strings.TrimSpace(r.PostFormValue("Title"))
-	vBody := r.PostFormValue("Body")
+	p := form.Parse(r,
+		form.Field{Name: "Title"},
+		form.Field{Name: "Body", Kind: form.Textarea},
+	)
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	if err := store.UpdateNoteBasics(r.Context(), notesstore.UpdateNoteBasicsParams{
-		Title: vTitle,
-		Body:  vBody,
+		Title: p.String("Title"),
+		Body:  p.String("Body"),
 		Now:   now,
 		ID:    id,
 	}); err != nil {
@@ -345,25 +347,23 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vPriceRaw := r.PostFormValue("Price")
-	vPrice, errPrice := form.ParseCents(vPriceRaw)
+	p := form.Parse(r,
+		form.Field{Name: "Price", Kind: form.Money},
+	)
 
-	errs := map[string]string{}
-	if errPrice != nil {
-		errs["Price"] = errPrice.Error()
-	}
-
-	if len(errs) > 0 {
+	if !p.OK() {
 		fields := map[string]string{
 			"Title": n.Title,
 			"Price": form.FormatCentsPlain(n.Price),
 			"Body":  n.Body,
 		}
-		fields["Price"] = vPriceRaw
+		for k, v := range p.Echo() {
+			fields[k] = v
+		}
 		view.Render(ctx, w, "notes/form", http.StatusBadRequest, formView{
 			IsNew:          false,
 			Fields:         fields,
-			Errors:         errs,
+			Errors:         p.Errors(),
 			BasicsAction:   fmt.Sprintf("/admin/notes/%d/edit-basics", id),
 			AdvancedAction: fmt.Sprintf("/admin/notes/%d/edit-advanced", id),
 		})
@@ -372,7 +372,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	if err := store.UpdateNoteAdvanced(r.Context(), notesstore.UpdateNoteAdvancedParams{
-		Price: vPrice,
+		Price: p.Cents("Price"),
 		Now:   now,
 		ID:    id,
 	}); err != nil {
@@ -646,10 +646,10 @@ package act_admin_events_index_post
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/form"
 	"github.com/carlosframework/rastrillo/view"
 	eventsstore "scratch/gen/store/events"
 )
@@ -662,22 +662,15 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vTitle := strings.TrimSpace(r.PostFormValue("Title"))
-	vStatus := strings.TrimSpace(r.PostFormValue("Status"))
-
-	errs := map[string]string{}
-	if vTitle == "" {
-		errs["Title"] = "Title is required"
-	}
-
-	if len(errs) > 0 {
+	p := form.Parse(r,
+		form.Field{Name: "Title", Required: true},
+		form.Field{Name: "Status"},
+	)
+	if !p.OK() {
 		view.Render(ctx, w, "events/form", http.StatusBadRequest, formView{
-			IsNew: true,
-			Fields: map[string]string{
-				"Title":  vTitle,
-				"Status": vStatus,
-			},
-			Errors: errs,
+			IsNew:  true,
+			Fields: p.Echo(),
+			Errors: p.Errors(),
 		})
 		return
 	}
@@ -685,8 +678,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	store := eventsstore.New(ctx.DB)
 	id, err := store.CreateEvent(r.Context(), eventsstore.CreateEventParams{
-		Title:  vTitle,
-		Status: vStatus,
+		Title:  p.String("Title"),
+		Status: p.String("Status"),
 		Now:    now,
 	})
 	if err != nil {
@@ -749,10 +742,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/form"
 	"github.com/carlosframework/rastrillo/view"
 	eventsstore "scratch/gen/store/events"
 )
@@ -780,25 +773,23 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vTitle := strings.TrimSpace(r.PostFormValue("Title"))
-	vStatus := strings.TrimSpace(r.PostFormValue("Status"))
+	p := form.Parse(r,
+		form.Field{Name: "Title", Required: true},
+		form.Field{Name: "Status"},
+	)
 
-	errs := map[string]string{}
-	if vTitle == "" {
-		errs["Title"] = "Title is required"
-	}
-
-	if len(errs) > 0 {
+	if !p.OK() {
 		fields := map[string]string{
 			"Title":  n.Title,
 			"Status": n.Status,
 		}
-		fields["Title"] = vTitle
-		fields["Status"] = vStatus
+		for k, v := range p.Echo() {
+			fields[k] = v
+		}
 		view.Render(ctx, w, "events/form", http.StatusBadRequest, formView{
 			IsNew:        false,
 			Fields:       fields,
-			Errors:       errs,
+			Errors:       p.Errors(),
 			BasicsAction: fmt.Sprintf("/admin/events/%d/edit-basics", id),
 		})
 		return
@@ -806,8 +797,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	if err := store.UpdateEventBasics(r.Context(), eventsstore.UpdateEventBasicsParams{
-		Title:  vTitle,
-		Status: vStatus,
+		Title:  p.String("Title"),
+		Status: p.String("Status"),
 		Now:    now,
 		ID:     id,
 	}); err != nil {

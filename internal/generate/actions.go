@@ -86,10 +86,11 @@
 //     field; a Money field's value is parsed as decimal dollars via
 //     form.ParseCents, which rejects more than two decimal places, and any
 //     field (Text, Textarea or Money) the manifest marks Required is
-//     checked for blankness — Text/Textarea via strings.TrimSpace,
-//     Money via its RAW submitted text (so "0"/"0.00" is a valid
-//     required value; only an empty input trips the required check —
-//     see parseField). Any parse failure or required-blank failure
+//     checked for blankness — Text/Textarea trimmed, Money via its
+//     RAW submitted text (so "0"/"0.00" is a valid required value;
+//     only an empty input trips the required check). All of that is
+//     one form.Parse call now — form.Field's kinds carry the rules,
+//     documented on the helper itself. Any failure
 //     re-renders "<name>/form" (IsNew: true) at 400 with the field's
 //     message in Errors and every field's raw submitted text preserved
 //     in Fields — never reformatted, so a typo stays exactly as typed
@@ -97,7 +98,7 @@
 //     would otherwise fail to parse (it never does — "" parses to zero,
 //     see form.ParseCents) only ever reports the required message, never
 //     both; a present-but-invalid Money value reports the parse error,
-//     never the required one — see parseField's Money case. Success
+//     never the required one — see form.Parse's Money rules. Success
 //     stamps both timestamps with the same UTC RFC3339 "now" and
 //     redirects 303 to Show.
 //   - [id]/index.GET (show): Get-or-404, then every declared field
@@ -410,37 +411,6 @@ func actionImportLines(needsForm bool) string {
 func hasMoneyColumn(cols []column) bool {
 	for _, c := range cols {
 		if c.Kind == rastrillo.Money {
-			return true
-		}
-	}
-	return false
-}
-
-// fieldsHaveMoney reports whether any of fields is a Money field.
-func fieldsHaveMoney(fields []rastrillo.Field) bool {
-	for _, f := range fields {
-		if f.Kind == rastrillo.Money {
-			return true
-		}
-	}
-	return false
-}
-
-// fieldsNeedStrings reports whether parsing fields needs the strings
-// package in the generated file: a Text field's Decls always trims via
-// strings.TrimSpace, and a Required Textarea field's ErrCheck trims
-// the raw submitted value before checking blankness (see parseField).
-// A group with neither has no strings usage of its own now that the
-// stamped parseCents/formatCents/parseID helpers (which always used
-// strings/strconv, making them safe to import unconditionally) are
-// gone — see actionImportLines' own doc for the same reasoning applied
-// to form/view.
-func fieldsNeedStrings(fields []rastrillo.Field) bool {
-	for _, f := range fields {
-		if f.Kind == rastrillo.Text {
-			return true
-		}
-		if f.Kind == rastrillo.Textarea && f.Required {
 			return true
 		}
 	}
@@ -866,30 +836,18 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 
-	byName := map[string]parsedField{}
-	var decls []string
 	var order []rastrillo.Field
 	order = append(order, r.Form.Basics...)
 	order = append(order, r.Form.Advanced...)
+	byName := map[string]rastrillo.Field{}
 	for _, f := range order {
-		pf := parseField(f)
-		byName[f.Name] = pf
-		decls = append(decls, pf.Decls)
-	}
-
-	var errChecks []string
-	for _, f := range order {
-		if ec := byName[f.Name].ErrCheck; ec != "" {
-			errChecks = append(errChecks, ec)
-		}
+		byName[f.Name] = f
 	}
 
 	var paramLines []string
-	var rawFieldLines []string
 	for _, c := range columns(r) {
-		if pf, ok := byName[c.Name]; ok {
-			paramLines = append(paramLines, pf.ParamLine)
-			rawFieldLines = append(rawFieldLines, fmt.Sprintf("%q: %s,\n", c.Name, pf.RawExpr))
+		if f, ok := byName[c.Name]; ok {
+			paramLines = append(paramLines, storeParamLine(f))
 			continue
 		}
 		// A List-only column with no matching Form field: Create has
@@ -901,20 +859,16 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 			zero = "0"
 		}
 		paramLines = append(paramLines, fmt.Sprintf("%s: %s,\n", c.Name, zero))
-		rawFieldLines = append(rawFieldLines, fmt.Sprintf("%q: \"\",\n", c.Name))
 	}
 
-	needsForm := fieldsHaveMoney(order)
+	canFail := fieldsCanFail(order)
 
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
-	if fieldsNeedStrings(order) {
-		b.WriteString("\t\"strings\"\n")
-	}
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString(actionImportLines(needsForm))
+	b.WriteString(actionImportLines(len(order) > 0))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -927,22 +881,14 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	}
 
 `)
-	for _, d := range decls {
-		b.WriteString(d)
+	if len(order) > 0 {
+		b.WriteString(parseCall(order))
 	}
 
-	if len(errChecks) > 0 {
-		b.WriteString("\nerrs := map[string]string{}\n")
-		for _, ec := range errChecks {
-			b.WriteString(ec)
-		}
-		b.WriteString("\nif len(errs) > 0 {\n")
+	if canFail {
+		b.WriteString("if !p.OK() {\n")
 		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
-		b.WriteString("IsNew: true,\nFields: map[string]string{\n")
-		for _, l := range rawFieldLines {
-			b.WriteString(l)
-		}
-		b.WriteString("},\nErrors: errs,\n})\nreturn\n}\n")
+		b.WriteString("IsNew: true,\nFields: p.Echo(),\nErrors: p.Errors(),\n})\nreturn\n}\n")
 	}
 
 	b.WriteString("\nnow := time.Now().UTC().Format(time.RFC3339)\n")
@@ -1089,34 +1035,21 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	singular := singularPascal(r.Name)
 	hasAdvanced := len(r.Form.Advanced) > 0
 
-	byName := map[string]parsedField{}
-	var decls []string
-	for _, f := range group {
-		pf := parseField(f)
-		byName[f.Name] = pf
-		decls = append(decls, pf.Decls)
-	}
-	var errChecks []string
-	for _, f := range group {
-		if ec := byName[f.Name].ErrCheck; ec != "" {
-			errChecks = append(errChecks, ec)
-		}
-	}
 	// groupHasValidation is true when ANY field in this group can fail
 	// validation — a Money parse (any Money field) or a Required-blank
 	// check (any Required Text/Textarea/Money field). A group with
-	// neither has no way to fail, so no validation branch, no `errs`
-	// map, and no `n` (the fetched record) is needed at all — Get-or-404
-	// still runs (404 must win over a validation failure), its result
-	// just discarded.
-	groupHasValidation := len(errChecks) > 0
+	// neither has no way to fail, so no validation branch and no `n`
+	// (the fetched record) is needed at all — Get-or-404 still runs
+	// (404 must win over a validation failure), its result just
+	// discarded.
+	groupHasValidation := fieldsCanFail(group)
 
 	var paramLines []string
 	for _, f := range group {
-		paramLines = append(paramLines, byName[f.Name].ParamLine)
+		paramLines = append(paramLines, storeParamLine(f))
 	}
 
-	needsForm := groupHasValidation && hasMoneyColumn(columns(r))
+	needsForm := len(group) > 0 || (groupHasValidation && hasMoneyColumn(columns(r)))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
@@ -1124,9 +1057,6 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
-	if fieldsNeedStrings(group) {
-		b.WriteString("\t\"strings\"\n")
-	}
 	b.WriteString("\t\"time\"\n\n")
 	b.WriteString(actionImportLines(needsForm))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
@@ -1159,22 +1089,16 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 `)
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n\n", failWhat(r, "loading "+r.Name))
 
-	for _, d := range decls {
-		b.WriteString(d)
+	if len(group) > 0 {
+		b.WriteString(parseCall(group))
 	}
 
 	if groupHasValidation {
-		b.WriteString("\nerrs := map[string]string{}\n")
-		for _, ec := range errChecks {
-			b.WriteString(ec)
-		}
-		b.WriteString("\nif len(errs) > 0 {\n")
+		b.WriteString("\nif !p.OK() {\n")
 		b.WriteString("fields := " + fieldsMapLiteral(r, "n", "form.FormatCentsPlain") + "\n")
-		for _, f := range group {
-			fmt.Fprintf(&b, "fields[%q] = %s\n", f.Name, byName[f.Name].RawExpr)
-		}
+		b.WriteString("for k, v := range p.Echo() {\nfields[k] = v\n}\n")
 		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
-		b.WriteString("IsNew: false,\nFields: fields,\nErrors: errs,\n")
+		b.WriteString("IsNew: false,\nFields: fields,\nErrors: p.Errors(),\n")
 		fmt.Fprintf(&b, "BasicsAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-basics")
 		if hasAdvanced {
 			fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
@@ -1209,85 +1133,48 @@ func actionEditAdvancedPOST(r rastrillo.Resource, module string) string {
 
 // ── field parsing shared by Create and both Update actions ─────────
 
-// parsedField is one Basics/Advanced field's generated parsing code.
-type parsedField struct {
-	Decls     string // Go statements assigning its local variable(s)
-	ParamLine string // e.g. "Price: vPrice,\n" — a store Params field
-	RawExpr   string // the just-submitted value, for a 400 re-render's Fields override
-	ErrCheck  string // "" or an `if ... { errs["Price"] = ... }` block (a parse failure, a Required-blank failure, or both in sequence — see the Money case)
+// parseCall emits the one form.Parse call a POST action opens with —
+// the same documented helper a hand-written app uses (form.Field's
+// kinds carry the parse/trim/echo rules that used to be stamped here
+// as per-field statements).
+func parseCall(fields []rastrillo.Field) string {
+	var b strings.Builder
+	b.WriteString("p := form.Parse(r,\n")
+	for _, f := range fields {
+		parts := []string{fmt.Sprintf("Name: %q", f.Name)}
+		switch f.Kind {
+		case rastrillo.Textarea:
+			parts = append(parts, "Kind: form.Textarea")
+		case rastrillo.Money:
+			parts = append(parts, "Kind: form.Money")
+		}
+		if f.Required {
+			parts = append(parts, "Required: true")
+		}
+		b.WriteString("form.Field{" + strings.Join(parts, ", ") + "},\n")
+	}
+	b.WriteString(")\n")
+	return b.String()
 }
 
-// requiredMessage renders f's required-field error text: literal
-// English containing "required", reusing manifestlocales.go's titleCase
-// so the field name reads the same human way its own form label does
-// ("Title" -> "Title is required", "MaxPerOrder" -> "Max per order is
-// required") without needing a locale catalog lookup — this string
-// isn't translated, it's a plain server-side validation message.
-func requiredMessage(f rastrillo.Field) string {
-	return titleCase(f.Name) + " is required"
+// storeParamLine is one store-Params field fed from the Parse result.
+func storeParamLine(f rastrillo.Field) string {
+	if f.Kind == rastrillo.Money {
+		return fmt.Sprintf("%s: p.Cents(%q),\n", f.Name, f.Name)
+	}
+	return fmt.Sprintf("%s: p.String(%q),\n", f.Name, f.Name)
 }
 
-func parseField(f rastrillo.Field) parsedField {
-	v := "v" + f.Name
-	switch f.Kind {
-	case rastrillo.Textarea:
-		var errCheck string
-		if f.Required {
-			// Textarea's Decls (unlike Text's) keeps the raw submitted
-			// value untrimmed — RawExpr must preserve exactly what was
-			// typed for the 400 re-render's Fields override — so the
-			// required check trims here, not at Decls.
-			errCheck = fmt.Sprintf("if strings.TrimSpace(%s) == \"\" {\nerrs[%q] = %q\n}\n", v, f.Name, requiredMessage(f))
-		}
-		return parsedField{
-			Decls:     fmt.Sprintf("%s := r.PostFormValue(%q)\n", v, f.Name),
-			ParamLine: fmt.Sprintf("%s: %s,\n", f.Name, v),
-			RawExpr:   v,
-			ErrCheck:  errCheck,
-		}
-	case rastrillo.Money:
-		raw := v + "Raw"
-		errVar := "err" + f.Name
-		var errCheck string
-		if f.Required {
-			// Required-ness is checked against the RAW submitted text,
-			// not the parsed cents value: form.ParseCents("") succeeds
-			// with 0 (see its own doc), so an empty input never trips
-			// errVar != nil on its own — only the raw == "" branch
-			// below catches it. "0"/"0.00" is a non-empty raw string
-			// that parses cleanly, so it lands in neither branch and is
-			// accepted, matching the brief's "0 is a valid required
-			// Money value". A present-but-invalid value (raw != "")
-			// falls to the else-if and reports the parse error, never
-			// the required one.
-			errCheck = fmt.Sprintf("if %s == \"\" {\nerrs[%q] = %q\n} else if %s != nil {\nerrs[%q] = %s.Error()\n}\n",
-				raw, f.Name, requiredMessage(f), errVar, f.Name, errVar)
-		} else {
-			errCheck = fmt.Sprintf("if %s != nil {\nerrs[%q] = %s.Error()\n}\n", errVar, f.Name, errVar)
-		}
-		return parsedField{
-			Decls: fmt.Sprintf("%s := r.PostFormValue(%q)\n%s, %s := form.ParseCents(%s)\n",
-				raw, f.Name, v, errVar, raw),
-			ParamLine: fmt.Sprintf("%s: %s,\n", f.Name, v),
-			RawExpr:   raw,
-			ErrCheck:  errCheck,
-		}
-	default: // Text
-		var errCheck string
-		if f.Required {
-			// Decls already trims (strings.TrimSpace, below), so v
-			// itself is the value to check — no second TrimSpace needed
-			// here (contrast the Textarea case, whose Decls does NOT
-			// trim, for RawExpr's sake).
-			errCheck = fmt.Sprintf("if %s == \"\" {\nerrs[%q] = %q\n}\n", v, f.Name, requiredMessage(f))
-		}
-		return parsedField{
-			Decls:     fmt.Sprintf("%s := strings.TrimSpace(r.PostFormValue(%q))\n", v, f.Name),
-			ParamLine: fmt.Sprintf("%s: %s,\n", f.Name, v),
-			RawExpr:   v,
-			ErrCheck:  errCheck,
+// fieldsCanFail reports whether any field can fail validation — a
+// Money parse, or a Required-blank check — i.e. whether the action
+// needs the !p.OK() re-render branch at all.
+func fieldsCanFail(fields []rastrillo.Field) bool {
+	for _, f := range fields {
+		if f.Required || f.Kind == rastrillo.Money {
+			return true
 		}
 	}
+	return false
 }
 
 // ── [id]/delete.GET (Confirm) ───────────────────────────────────────
