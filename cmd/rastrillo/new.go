@@ -112,10 +112,14 @@ func runNew(args []string) error {
 		// tests pass on a fresh scaffold and pin the out-of-the-box
 		// asset-fingerprinting behavior.
 		filepath.Join(name, "internal", pkg+"test", "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
-		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
-		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name),
-		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
+		// The pin that makes the vendored bytes above verifiable: a
+		// reviewer runs the suite and knows static/'s ~56KB is the
+		// library's, not app diff to read line by line.
+		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg),
+		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg),
+		filepath.Join(name, "manifest", "README.md"):                    fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "Makefile"):                                 fmt.Sprintf(makefileTemplate, name),
+		filepath.Join(name, ".gitignore"):                               fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
 		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
@@ -534,6 +538,47 @@ func post(t *testing.T, h http.Handler, target string, form url.Values) *httptes
 // first `go test`, and pinning the out-of-the-box asset story — the
 // index page links a fingerprinted stylesheet, that URL is immutable,
 // the bare name stays fresh.
+// vendoredTestTemplate pins the scaffold-delivered static files
+// byte-identical to the library copies they came from — the same pin
+// examples/blog carries for tokens.css. Vendored-then-forgotten is the
+// known failure (tickets' stylesheet drifted for months), and without
+// the pin a reviewer meets ~56KB of static assets as unverifiable app
+// diff.
+const vendoredTestTemplate = `package %[1]stest
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/carlosframework/rastrillo/ui"
+)
+
+// The scaffold delivered these files once; they are app-owned from
+// then on. This test pins each vendored copy byte-identical to the
+// library it came from: a reviewer runs the suite instead of reading
+// ~56KB of assets as app diff, and a framework upgrade that forgets
+// to re-copy is caught instead of drifting silently. If you edit one
+// DELIBERATELY, delete its line below — the file is yours.
+func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
+	for name, lib := range map[string][]byte{
+		"tokens.css":   ui.TokensCSS(),
+		"rastrillo.js": ui.ShimJS(),
+		"select.js":    ui.SelectJS(),
+	} {
+		vendored, err := os.ReadFile(filepath.Join("..", "%[1]s", "static", name))
+		if err != nil {
+			t.Errorf("read vendored %%s: %%v", name, err)
+			continue
+		}
+		if !bytes.Equal(vendored, lib) {
+			t.Errorf("static/%%s differs from the library copy; re-copy it (or delete its pin if the edit was deliberate)", name)
+		}
+	}
+}
+`
+
 const indexTestTemplate = `package %[2]stest
 
 import (
