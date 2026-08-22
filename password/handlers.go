@@ -201,6 +201,16 @@ func (h *Handlers) rerenderSignin(w http.ResponseWriter, r *http.Request, email 
 // Signup is POST /signup: validate, hash, store, and sign in — or 404
 // if Config.Create is nil (signup disabled).
 //
+// Signup shares Signin's per-email limiter, so probing an address
+// through either door spends the same budget and blocks both. What
+// remains open by design: the duplicate-email answer below is an
+// honest account-existence oracle, because a password form has no
+// out-of-band channel to defer the answer to. The enumeration-free
+// alternative is the keymail plugin, whose email loop answers every
+// address identically; and a sweep across many addresses — which
+// per-email limiting cannot see — stays the deployment concern
+// limit.go documents.
+//
 // POST only: same plaintext-password-in-URL reasoning as Signin.
 func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -217,6 +227,19 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	email := normalizeEmail(r.FormValue("email"))
 	submitted := r.FormValue("password")
+
+	// The gate runs before validation and Hash, mirroring Signin: a
+	// blocked attempt costs no PBKDF2 work and hears only the volume
+	// message.
+	if h.limit.blocked(email, time.Now()) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		h.cfg.RenderSignup(w, r, PageData{
+			Error:    tooManyAttempts,
+			Email:    email,
+			ReturnTo: r.FormValue("return_to"),
+		})
+		return
+	}
 
 	if email == "" || !strings.Contains(email, "@") {
 		h.rerenderSignup(w, r, "Enter a valid email address.", email)
@@ -242,10 +265,15 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 		// a DB outage should not vanish silently just because it looks
 		// like a duplicate-email case to the caller.
 		h.cfg.Logger.Error("rastrillo/password: create", "err", err)
+		// The honest answer is also the oracle (see the doc comment),
+		// so it costs a limiter unit: ten confirmations of one address
+		// inside the window and both doors block.
+		h.limit.fail(email, time.Now())
 		h.rerenderSignup(w, r, "That email is already registered.", email)
 		return
 	}
 
+	h.limit.clear(email)
 	h.signInAndRedirect(w, r, id)
 }
 
