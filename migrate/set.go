@@ -41,7 +41,17 @@ type Migration struct {
 	// builds it a *gorm.DB backed by that one *sql.Conn rather than
 	// the app's pool, so a failure rolls Fn's writes back with the
 	// ledger row, same as a SQL migration.
-	Fn func(*gorm.DB) error
+	//
+	// json:"-": encoding/json refuses to marshal any struct with a
+	// func-typed field, even one left nil, so a Migration carrying Fn
+	// cannot cross the dump package's process boundary at all unless
+	// this is excluded. That's the right shape anyway — a Go
+	// migration's behaviour is a closure over app code the CLI binary
+	// never links against, so only its identity (ID, and SQL when it
+	// has any) can cross; the identity is also all the ledger ever
+	// records, since Stamp and Apply both key on ID and checksum the
+	// SQL, never the function itself.
+	Fn func(*gorm.DB) error `json:"-"`
 }
 
 // Set is an ordered list of migrations sharing one namespace.

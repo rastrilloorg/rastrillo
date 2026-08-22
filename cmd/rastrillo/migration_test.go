@@ -176,6 +176,55 @@ import (
 var migrationFS embed.FS
 
 var Schema = migrate.MustFromFS(migrationFS, "app")
+
+// BootSchema mirrors new.go's scaffold: a fresh app with no
+// subsystem composed in is just its own Schema. The loader's
+// dump.Main call reads app.BootSchema.All() unconditionally, so every
+// fixture needs this var even when there is nothing to merge.
+var BootSchema = migrate.Merge(Schema)
+`
+
+// fixtureSubsystemGo stands in for a framework subsystem package
+// (sessions, auth, ...): a top-level package, not under internal/ —
+// appPackage requires exactly one non-test directory under internal/,
+// so a second one there would break it, same as it would for a real
+// app that put a subsystem inside internal/ by mistake.
+const fixtureSubsystemGo = `package subsystem
+
+import (
+	"embed"
+
+	"github.com/carlosframework/rastrillo/migrate"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+var Schema = migrate.MustFromFS(migrationFS, "subsystem")
+`
+
+// fixtureMigrationsGoWithSubsystem composes a framework subsystem's
+// Schema ahead of the app's own — migrate.Merge(subsystem.Schema,
+// Schema), same shape and order as sessions/auth's real
+// var BootSchema = migrate.Merge(sessions.Schema, Schema) — so
+// BootSchema's ID space includes an ID no on-disk read of
+// internal/app/migrations could ever produce.
+const fixtureMigrationsGoWithSubsystem = `package app
+
+import (
+	"embed"
+
+	"github.com/carlosframework/rastrillo/migrate"
+
+	"fixtureapp/subsystem"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+var Schema = migrate.MustFromFS(migrationFS, "app")
+
+var BootSchema = migrate.Merge(subsystem.Schema, Schema)
 `
 
 const fixtureGoModTemplate = `module fixtureapp
@@ -220,24 +269,20 @@ func setSandboxGoEnv(t *testing.T) {
 // newFixtureApp builds a minimal app module under t.TempDir(): a
 // go.mod replacing rastrillo with this checkout, internal/app/models.go
 // declaring Models, internal/app/migrations.go embedding migrations/,
-// and whatever *.sql files extraMigrations names. It runs `go mod
-// tidy` and returns the app's directory (an absolute path, so callers
-// need not chdir). Same replace-and-tidy shape as
-// TestScaffoldedAppTestsPass (new_test.go) — the working example this
-// task's brief points at.
-func newFixtureApp(t *testing.T, modelsGo string, extraMigrations map[string]string) string {
+// and whatever *.sql files extraMigrations names. extraFiles, if
+// given, are additional appDir-relative path -> content pairs written
+// (and overriding anything already staged at that path) after the
+// base set — the boot-set tests use this to drop in a top-level
+// subsystem package plus a migrations.go that composes it, without a
+// second fixture builder. It runs `go mod tidy` and returns the app's
+// directory (an absolute path, so callers need not chdir). Same
+// replace-and-tidy shape as TestScaffoldedAppTestsPass (new_test.go)
+// — the working example this task's brief points at.
+func newFixtureApp(t *testing.T, modelsGo string, extraMigrations map[string]string, extraFiles ...map[string]string) string {
 	t.Helper()
 	setSandboxGoEnv(t)
 	root := t.TempDir()
 	appDir := filepath.Join(root, "app")
-	dirs := []string{
-		filepath.Join(appDir, "internal", "app", "migrations"),
-	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0o755); err != nil {
-			t.Fatal(err)
-		}
-	}
 	files := map[string]string{
 		filepath.Join(appDir, "go.mod"):                           fmt.Sprintf(fixtureGoModTemplate, repoRoot(t)),
 		filepath.Join(appDir, "internal", "app", "models.go"):     modelsGo,
@@ -245,6 +290,26 @@ func newFixtureApp(t *testing.T, modelsGo string, extraMigrations map[string]str
 	}
 	for path, content := range extraMigrations {
 		files[filepath.Join(appDir, "internal", "app", "migrations", path)] = content
+	}
+	for _, fm := range extraFiles {
+		for path, content := range fm {
+			files[filepath.Join(appDir, path)] = content
+		}
+	}
+	// Directories are derived from the final file set, not a fixed
+	// list, so an extraFiles entry naming a new directory (e.g. a
+	// top-level subsystem/migrations/) doesn't need its own mkdir call
+	// here too.
+	madeDirs := map[string]bool{}
+	for path := range files {
+		dir := filepath.Dir(path)
+		if madeDirs[dir] {
+			continue
+		}
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		madeDirs[dir] = true
 	}
 	for path, content := range files {
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
@@ -653,36 +718,20 @@ func TestMigrationStatusDoesNotSwallowGenuineLedgerError(t *testing.T) {
 	}
 }
 
-// --- migration baseline: reads migrations off disk directly, no
-// go run compile needed, so this fixture is built by hand without
-// newFixtureApp/go mod tidy. ---
-
-// baselineFixture writes just enough of an app module for appPackage
-// and migrationsDir to work: a go.mod with a module line, and
-// internal/app/migrations holding the given files. baseline never
-// compiles the app, so no models.go, no go.sum, no `go mod tidy`.
-func baselineFixture(t *testing.T, files map[string]string) string {
-	t.Helper()
-	root := t.TempDir()
-	appDir := filepath.Join(root, "app")
-	mdir := filepath.Join(appDir, "internal", "app", "migrations")
-	if err := os.MkdirAll(mdir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(appDir, "go.mod"),
-		[]byte("module fixtureapp\n\ngo 1.24\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	for name, body := range files {
-		if err := os.WriteFile(filepath.Join(mdir, name), []byte(body), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return appDir
-}
+// --- migration baseline: now goes through the same go run loader as
+// generate/check (loadPayload), because appSet's on-disk read of
+// internal/<app>/migrations could only ever see the app's own
+// namespace — never a framework subsystem's migrate.Set, which is
+// knowable only from the app's own Go source (its migrate.Merge call
+// in BootSchema). That means every baseline test now needs a fixture
+// that actually compiles, same as the check/generate fixtures above,
+// so these skip under -short too.
 
 func TestMigrationBaselineStampsOnlyThroughGivenID(t *testing.T) {
-	appDir := baselineFixture(t, map[string]string{
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
 		"0001_init.sql":     "CREATE TABLE notes (id INTEGER PRIMARY KEY);",
 		"0002_add_body.sql": "ALTER TABLE notes ADD body TEXT;",
 		"0003_add_flag.sql": "ALTER TABLE notes ADD flag INTEGER;",
@@ -725,7 +774,10 @@ func TestMigrationBaselineStampsOnlyThroughGivenID(t *testing.T) {
 // falling through to migrate.Stamp's "stamp everything" behavior
 // instead of stopping at a real ID.
 func TestMigrationBaselineRejectsUnknownThroughID(t *testing.T) {
-	appDir := baselineFixture(t, map[string]string{
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
 		"0001_init.sql": "CREATE TABLE notes (id INTEGER PRIMARY KEY);",
 	})
 	dbPath := filepath.Join(t.TempDir(), "app.db")
@@ -748,7 +800,10 @@ func TestMigrationBaselineRejectsUnknownThroughID(t *testing.T) {
 }
 
 func TestMigrationBaselineWithoutThroughStampsEverything(t *testing.T) {
-	appDir := baselineFixture(t, map[string]string{
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
 		"0001_init.sql":     "CREATE TABLE notes (id INTEGER PRIMARY KEY);",
 		"0002_add_body.sql": "ALTER TABLE notes ADD body TEXT;",
 	})
@@ -774,5 +829,62 @@ func TestMigrationBaselineWithoutThroughStampsEverything(t *testing.T) {
 	}
 	if n != 2 {
 		t.Fatalf("stamped %d migrations, want 2 (no --through means stamp everything)", n)
+	}
+}
+
+// TestMigrationBaselineThroughSubsystemMigration is the end-to-end
+// case this task exists for: an app's BootSchema composes a framework
+// subsystem's Schema ahead of its own (the same shape as the real
+// var BootSchema = migrate.Merge(sessions.Schema, Schema), and the
+// auth/store.go recovery procedure's
+// `baseline --through sessions/0001_init`). Before this task,
+// --through couldn't see subsystem/0001_init at all — appSet only
+// ever read the app's own migrations/ directory — and this failed
+// with "not a known migration id".
+//
+// The assertion that matters is what is *not* stamped: only checking
+// a zero exit code would still pass if baseline fell back to stamping
+// everything, which is the exact silent-sign-out failure --through
+// validation exists to prevent.
+func TestMigrationBaselineThroughSubsystemMigration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
+		"0001_init.sql": genesisSQL(t, &Note{}),
+	}, map[string]string{
+		filepath.Join("subsystem", "subsystem.go"):                fixtureSubsystemGo,
+		filepath.Join("subsystem", "migrations", "0001_init.sql"): "CREATE TABLE subsystem_widgets (id INTEGER PRIMARY KEY);\n",
+		filepath.Join("internal", "app", "migrations.go"):         fixtureMigrationsGoWithSubsystem,
+	})
+	dbPath := filepath.Join(t.TempDir(), "app.db")
+
+	if err := runMigration([]string{
+		"baseline", "--db", dbPath, "--through", "subsystem/0001_init", appDir,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	d, err := db.Open(dbPath, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	rows, err := d.Writer().Query("SELECT id FROM rastrillo_migrations ORDER BY id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, id)
+	}
+	want := []string{"subsystem/0001_init"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("stamped ids = %v, want exactly %v — app/0001_init must NOT be stamped", got, want)
 	}
 }

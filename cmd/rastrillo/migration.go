@@ -88,7 +88,7 @@ import (
 	"github.com/carlosframework/rastrillo/migrate/dump"
 )
 
-func main() { dump.Main(app.Schema.All(), app.Models) }
+func main() { dump.Main(app.Schema.All(), app.BootSchema.All(), app.Models) }
 `
 
 // loadPayload compiles and runs a throwaway program inside the app
@@ -445,43 +445,81 @@ func migrationStatus(args []string) error {
 	return rows.Err()
 }
 
-// appSet reads the app's migration files straight off disk. baseline
-// does not need the models, so it skips the go run loader entirely.
-//
-// This only covers the app's own migrations, namespaced under its own
-// package name — it does not know about, and cannot discover, the
-// migrate.Set values a framework subsystem package (sessions, auth,
-// passkey, blobs, eventlog) exports, because which of those an app
-// composes, and in what order, is a decision made in the app's own Go
-// source via migrate.Merge, not something recoverable by reading
-// directories on disk.
-func appSet(dir string) ([]migrate.Migration, error) {
-	mdir, err := migrationsDir(dir)
-	if err != nil {
-		return nil, err
+// throughHint is a best-effort suggestion for the likely typo of
+// leaving off the namespace — "0001_init" instead of
+// "sessions/0001_init" — plausible from an operator at 3am reading
+// auth/store.go's recovery steps, which name the bare migration
+// filename in prose before giving the fully-qualified --through
+// value. IDs are namespace-qualified and case is never normalised: a
+// bare suffix can match more than one namespace (an app's own
+// 0001_init and a subsystem's both exist in most boot sets), and
+// guessing wrong here would stamp the wrong prefix — the precise harm
+// --through validation exists to prevent — so this only ever adds a
+// sentence to the error, it never changes what gets matched or
+// stamped.
+func throughHint(through string, set []migrate.Migration) string {
+	var matches []string
+	for _, m := range set {
+		if strings.HasSuffix(m.ID, "/"+through) {
+			matches = append(matches, m.ID)
+		}
 	}
-	_, pkg, err := appPackage(dir)
-	if err != nil {
-		return nil, err
+	switch len(matches) {
+	case 0:
+		return ""
+	case 1:
+		return fmt.Sprintf(" (--through must be namespace-qualified — did you mean %q?)", matches[0])
+	default:
+		return fmt.Sprintf(" (--through must be namespace-qualified — %s all end in \"/%s\", so name one of them)",
+			strings.Join(matches, ", "), through)
 	}
-	s, err := migrate.FromFS(os.DirFS(filepath.Dir(mdir)), pkg)
-	if err != nil {
-		return nil, err
-	}
-	return s.All(), nil
 }
 
 // migrationBaseline stamps a database's ledger by hand, without
 // running anything — the one recovery path for a deployed schema
-// Apply refused to adopt because it doesn't match the migration set.
+// Apply refused to adopt because it doesn't match the migration set,
+// and the procedure auth/store.go's doc comment documents for
+// recovering a database that predates the sessions core:
 //
-// --through is validated against the set before anything is written:
-// migrate.Stamp itself does not check through against the migration
-// list, so an ID that matches nothing would silently fall through to
-// stamping every migration — for the documented sessions/auth
-// recovery, that means the auth backfill in auth/0002 never runs and
-// looks like it already did, signing out every user. Failing loudly
-// here, before the database is even opened, is cheaper than that.
+//	rastrillo migration baseline --db <path> --through sessions/0001_init
+//
+// That ID is not in this app's own namespace, so baseline goes
+// through the same go run loader generate and check use (loadPayload)
+// to get app.BootSchema.All() — the composed, ordered set the app
+// actually applies at boot — rather than reading the app's own
+// migrations/ directory off disk the way an earlier version of this
+// command did. Two things were tried and rejected instead:
+//
+//   - Reading the disk directory only ever sees the app's own
+//     namespace. It cannot discover a framework subsystem's
+//     migrate.Set at all — sessions/0001_init doesn't exist as a
+//     file anywhere reachable from the app's migrations directory —
+//     so the documented recovery above errored with "not a known
+//     migration id" no matter what.
+//   - Having this CLI import sessions/auth/etc. directly instead
+//     doesn't fix that: cmd/rastrillo is in the same module and
+//     could, but migrate.Stamp walks a single ordered list and stops
+//     after --through, and the CLI has no way to know the *order* an
+//     app composed those packages in (migrate.Merge's argument order,
+//     chosen in the app's own Go source, e.g.
+//     migrate.Merge(sessions.Schema, auth.Schema)). Guessing that
+//     order and stamping the wrong prefix is exactly the harm
+//     --through validation exists to prevent — for the sessions/auth
+//     recovery specifically, it would mean auth's backfill migration
+//     never runs and looks like it already did, signing out every
+//     user.
+//
+// The cost is that baseline now requires the app to compile, which it
+// didn't before. That's the right trade: the alternative is stamping
+// the wrong prefix, and an operator reaching for baseline is
+// recovering a *database* — the binary that refused to boot compiled
+// fine.
+//
+// --through is validated against BootSchema before anything is
+// written: migrate.Stamp itself does not check through against the
+// migration list, so an ID that matches nothing would silently fall
+// through to stamping every migration. Failing loudly here, before
+// the database is even opened, is cheaper than that.
 func migrationBaseline(args []string) error {
 	fs := flag.NewFlagSet("baseline", flag.ContinueOnError)
 	dbPath := fs.String("db", "", "path to the app's SQLite database")
@@ -494,10 +532,11 @@ func migrationBaseline(args []string) error {
 	}
 	dir := dirArg(fs.Args())
 
-	set, err := appSet(dir)
+	p, err := loadPayload(dir)
 	if err != nil {
 		return err
 	}
+	set := p.Boot
 	if *through != "" {
 		found := false
 		ids := make([]string, 0, len(set))
@@ -509,9 +548,10 @@ func migrationBaseline(args []string) error {
 		}
 		if !found {
 			return fmt.Errorf(
-				"--through %q does not name a migration in this app's set; "+
+				"--through %q does not name a migration in this app's boot set%s; "+
 					"stamping would otherwise silently fall through to every migration instead of "+
-					"stopping partway. Known ids:\n  %s", *through, strings.Join(ids, "\n  "))
+					"stopping partway. Known ids:\n  %s",
+				*through, throughHint(*through, set), strings.Join(ids, "\n  "))
 		}
 	}
 
