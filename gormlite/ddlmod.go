@@ -280,13 +280,19 @@ func (d *ddl) removeColumn(name string) bool {
 	// unquoted field (e.g. "id INTEGER") begins with the identifier
 	// itself and has no leading quote or space. The previous pattern
 	// required one, so it never matched and DropColumn silently kept the
-	// column. The leading delimiter is now optional, but the identifier
-	// must still be delimited on both sides (an optional quote, then
-	// whitespace or end-of-string) so a same-prefixed identifier like
-	// "idx_name" or "identifier" is never mistaken for "id", and the
-	// anchor keeps table-level clauses (PRIMARY KEY (...), CONSTRAINT
-	// ... FOREIGN KEY (...)) from matching at all.
-	reg := regexp.MustCompile("^\\s*(`|'|\")?" + regexp.QuoteMeta(name) + "(`|'|\")?(\\s|$)")
+	// column.
+	//
+	// The quote pair must be matched explicitly per alternative rather
+	// than as two independently-optional groups: an independently
+	// optional closing quote stops looking for a delimiter as soon as it
+	// sees whitespace, including whitespace that is still inside an
+	// unclosed quoted identifier (e.g. "`id x` INTEGER" would wrongly
+	// match name "id"). A quoted identifier containing whitespace is
+	// legal SQLite and legally requires quoting, so that false match
+	// would delete the wrong column. RE2 (Go's regexp) has no
+	// backreferences to pair an opening quote with its close, so the
+	// pairing is done via alternation instead.
+	reg := regexp.MustCompile("^\\s*(`" + regexp.QuoteMeta(name) + "`|'" + regexp.QuoteMeta(name) + "'|\"" + regexp.QuoteMeta(name) + "\"|" + regexp.QuoteMeta(name) + ")(\\s|$)")
 
 	for i := 0; i < len(d.fields); i++ {
 		if reg.MatchString(d.fields[i]) {

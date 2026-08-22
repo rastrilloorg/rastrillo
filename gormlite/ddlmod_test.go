@@ -437,6 +437,14 @@ func TestRemoveColumn(t *testing.T) {
 		{"prefix_collision_identifier", "CREATE TABLE t (identifier TEXT)", "id", false},
 		{"table_constraint_primary_key", "CREATE TABLE t (name TEXT, PRIMARY KEY (id, seq))", "id", false},
 		{"table_constraint_foreign_key", "CREATE TABLE t (name TEXT, CONSTRAINT fk_id FOREIGN KEY (id) REFERENCES t(id))", "id", false},
+		// A quoted identifier that itself contains whitespace is legal SQLite
+		// and legally requires quoting. The closing-quote group must not be
+		// independently optional, or a delimiter search that starts matching
+		// inside an unclosed quoted identifier can stop at the whitespace
+		// that is part of the name, deleting the wrong field.
+		{"quoted_identifier_with_space_not_dropped_name", "CREATE TABLE t (`id x` INTEGER)", "id", false},
+		{"quoted_identifier_with_space_prefix_of_dropped_name", "CREATE TABLE t (`full name` TEXT)", "full", false},
+		{"quoted_identifier_with_space_dropped_by_full_name", "CREATE TABLE t (`id x` INTEGER)", "id x", true},
 	}
 
 	for _, p := range params {
