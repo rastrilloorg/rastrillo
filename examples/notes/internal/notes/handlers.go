@@ -106,9 +106,13 @@ func (a *app) updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 	// Never bind a request onto a GORM model: Title/Body came from
 	// PostFormValue above, and only those two columns (plus the
-	// timestamp GORM's own hook stamps) are ever written back.
+	// timestamp GORM's own hook stamps) are ever written back. The
+	// write goes through the owner scope too, not just the read that
+	// loaded n above — the SQL itself carries WHERE user_id = ? AND
+	// id = ?, so a future refactor of find can never turn this into
+	// an IDOR by accident.
 	update := map[string]any{"Title": title, "Body": body}
-	if err := a.db.Model(&n).Select("Title", "Body", "UpdatedAt").Updates(update).Error; err != nil {
+	if err := a.owned(r).Model(&n).Select("Title", "Body", "UpdatedAt").Updates(update).Error; err != nil {
 		http.Error(w, "could not save note", http.StatusInternalServerError)
 		return
 	}
@@ -122,7 +126,10 @@ func (a *app) deleteNote(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	if err := a.db.Delete(&n).Error; err != nil {
+	// Scoped delete for the same reason the update above is: the write
+	// carries WHERE user_id = ? AND id = ? at the SQL level, not just
+	// at the read that found n.
+	if err := a.owned(r).Delete(&n).Error; err != nil {
 		http.Error(w, "could not delete note", http.StatusInternalServerError)
 		return
 	}

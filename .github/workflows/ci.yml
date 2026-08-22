@@ -65,6 +65,19 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
+      # notes carries no `go tool` directive (no sqlc, no generate
+      # step below) — it's the hand-written middle-layer example, so
+      # its sweep is build+vet+test only. CGO_ENABLED=0 matches the
+      # module's own constraint (see examples/notes' task brief).
+      - name: examples/notes ./... sweep
+        working-directory: examples/notes
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go build ./...
+          go vet ./...
+          go test ./... -count=1
+
       - name: generate --check and gen/ drift
         run: |
           go build -o /tmp/rastrillo ./cmd/rastrillo
