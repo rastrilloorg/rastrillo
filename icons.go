@@ -5,11 +5,15 @@
 // html/template output via {{icon "slug"}} (register with
 // template.FuncMap{"icon": rastrillo.Icon}).
 //
-// Vendored, never a CDN: a rastrillo app that ships this promises the
-// same thing the platform's own console does -- no build step, no
+// Vendored by default, and this file is that default: no build step, no
 // second origin a browser fetches from and the app can't vouch for or
-// serve when offline. Inlining the paths is the only option, so the
-// paths live here.
+// serve when offline. That is why the paths live here rather than
+// behind a <link>.
+//
+// It is a default, not a guarantee. An app scaffolded with
+// --icon-delivery=cdn or =js loads its icons from a second origin
+// instead, by the operator's explicit choice; see internal/iconsets. The
+// framework recommends inline and supports all three.
 //
 // Icons are vendored from Lucide -- https://lucide.dev -- used under the
 // ISC licence:
@@ -43,7 +47,10 @@
 
 package rastrillo
 
-import "html/template"
+import (
+	"html/template"
+	"sort"
+)
 
 // template.HTML is used HERE AND ONLY HERE in this package, for the same
 // reason it's safe in the console: every string in this file is a
@@ -117,3 +124,22 @@ var icons = map[string]template.HTML{
 // An unknown slug renders nothing rather than panicking a page
 // mid-response -- a typo must cost a missing icon, not a crash.
 func Icon(slug string) template.HTML { return icons[slug] }
+
+// IconSlugs lists every slug Icon answers, sorted.
+//
+// These names are rastrillo's own vocabulary, not any vendor's: most
+// match Lucide, but "kebab" is Lucide's ellipsis-vertical and Lucide v1
+// renamed several others. An app scaffolded with a different set answers
+// exactly this list too, which is what lets {{icon "search"}} mean the
+// same thing everywhere and keeps the shipped ui/ partials set-agnostic.
+//
+// Exported so tooling can check the two stay in step —
+// internal/iconsets asserts every scaffoldable set covers all of it.
+func IconSlugs() []string {
+	out := make([]string, 0, len(icons))
+	for slug := range icons {
+		out = append(out, slug)
+	}
+	sort.Strings(out)
+	return out
+}
