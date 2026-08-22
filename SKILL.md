@@ -210,8 +210,7 @@ if !p.OK() {
 }
 ```
 
-`p.Echo()` is the seed-back map for map-shaped views; hand-rolling with
-`PostFormValue` + a `form.Errors` map is fine too. Write the status before
+`p.Echo()` is the seed-back map for map-shaped views. Write the status before
 rendering; the helper writes none.
 
 Money is `int64` cents: a `form.Money` field, read with `p.Cents`, parses via
@@ -227,7 +226,7 @@ After a successful mutation: `flash.Set(w, "notice", "Note created.")` then
 
 `sessions` owns the signed-in state: SQLite-backed rows (so sign-out and
 revocation are real), `__Host-` cookies on https origins, 30-day default TTL.
-It does not know how a session is *earned* — an identity plugin verifies a
+An identity plugin verifies a
 credential and calls `SignIn`; that call is the whole contract.
 
 - `csrf.Protect(origin)` mounts app-wide (`r.Use`). It refuses cross-origin
@@ -277,10 +276,12 @@ before scoping.
 
 ## 6. Background work
 
-`jobs` runs observable goroutines, in-memory: a restart kills them, so keep
-long jobs idempotent. `j := jobs.New(logger)` once, then
+`jobs` runs observable goroutines, in-memory: a restart kills them, and fn's
+ctx expires at 15 min (the job turns Failed) — keep jobs idempotent and honor
+ctx. `j := jobs.New(logger)` once, then
 `j.Start(owner, name, location, fn)` runs `fn(ctx, progress func(string))
-error` and returns a `Job` at once; 303 the caller to `/jobs/`+job.ID. Owner is
+error`, returning `(Job, error)`: `ErrOwnerBusy` past 4 Running jobs per owner
+— flash your own copy. 303 the caller to `/jobs/`+job.ID. Owner is
 the session **Subject**, not `sessions.UserID` — key rows the job writes the
 same way; fn's error text reaches the owner. `j.Get(id, owner)` answers only
 the owner, so foreign/unknown ids 404.
@@ -308,8 +309,7 @@ disables its submit buttons, `data-busy-label` retitles them.
   `manifest/*.toml` resource generates CRUD screens for one table, three field
   kinds (text, textarea, money), no relations. `scope = "user"` owner-filters
   generated queries by the session subject (someone else's row 404s); mount
-  those routes behind `sessions.Require`/`auth.RequireSession`. Mix declared
-  and hand-written freely.
+  those routes behind `sessions.Require`/`auth.RequireSession`.
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary with it and `rastrillo/gormlite`

@@ -173,7 +173,10 @@ the meantime. This list is their union. **Built:**
   answers 303 (the fragment's equivalent is 204 plus a
   `Rastrillo-Location` header). The registry is in-memory on purpose — a
   restart kills the goroutine, so a stored row would only persist a lie;
-  work that must survive one belongs in `eventlog`. The only JavaScript
+  work that must survive one belongs in `eventlog`. It is bounded, too:
+  an owner holds at most four running jobs (`Start` answers
+  `ErrOwnerBusy` past that), and a job still running after fifteen
+  minutes is marked failed, its context expired. The only JavaScript
   in the framework is `static/rastrillo.js`, a ~130-line app-owned shim
   `rastrillo new` writes beside `tokens.css`: it replaces an element
   carrying `data-poll` with the HTML fragment it fetches and stops when
