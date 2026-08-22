@@ -19,7 +19,7 @@ func TestNewScaffoldsTokensCSS(t *testing.T) {
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	got, err := os.ReadFile(filepath.Join("blogapp", "static", "tokens.css"))
+	got, err := os.ReadFile(filepath.Join("blogapp", "internal", "blogapp", "static", "tokens.css"))
 	if err != nil {
 		t.Fatalf("expected a scaffolded stylesheet: %v", err)
 	}
@@ -28,12 +28,11 @@ func TestNewScaffoldsTokensCSS(t *testing.T) {
 	}
 }
 
-// The scaffolded go.mod must pin the version of the rastrillo module
-// that actually built this CLI, not a hardcoded constant that goes
-// stale every release: a hardcoded v0.1.0 predates rastrillo.Run
-// entirely, so every fresh scaffold failed `go build` with "undefined:
-// rastrillo.Run" against a v0.5.0-or-later CLI.
-func TestNewPinsCLIsOwnRastrilloVersion(t *testing.T) {
+// The scaffolded go.mod must pin the versions this CLI was actually
+// built against — rastrillo via its build-info version (see
+// version.go), chi and gorm via the CLI's own dependency list — not
+// hardcoded constants that go stale every release.
+func TestNewPinsCLIsOwnVersions(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
@@ -42,31 +41,58 @@ func TestNewPinsCLIsOwnRastrilloVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected a scaffolded go.mod: %v", err)
 	}
-	if strings.Contains(string(got), "v0.1.0") {
-		t.Errorf("go.mod still pins the stale hardcoded v0.1.0:\n%s", got)
-	}
 	// go test binaries report "(devel)" from runtime/debug.ReadBuildInfo
 	// (a local checkout, not a `go install ...@vX.Y.Z`), so
 	// rastrilloVersion falls back to rastrilloFallbackVersion here —
 	// see version_test.go for the fallback logic itself.
-	want := "require github.com/carlosframework/rastrillo " + rastrilloFallbackVersion
-	if !strings.Contains(string(got), want) {
-		t.Errorf("go.mod does not pin the fallback rastrillo version:\ngot:\n%s\nwant substring %q", got, want)
+	for _, want := range []string{
+		"github.com/carlosframework/rastrillo " + rastrilloFallbackVersion,
+		"github.com/go-chi/chi/v5 " + chiPinnedVersion,
+		"gorm.io/gorm " + gormPinnedVersion,
+	} {
+		if !strings.Contains(string(got), want) {
+			t.Errorf("go.mod missing %q:\n%s", want, got)
+		}
 	}
 }
 
-// The scaffolded app still builds the same way it did before: go.mod,
-// the starter action, main.go, and a generated router.
-func TestNewStillScaffoldsTheRestOfTheApp(t *testing.T) {
+// The chi/gorm pin constants must match the rastrillo module's own
+// go.mod — the versions this suite actually ran against. A drifted
+// constant would scaffold apps onto versions the framework never
+// tested with.
+func TestScaffoldDepPinsMatchRootModule(t *testing.T) {
+	root := repoRoot(t)
+	gomod, err := os.ReadFile(filepath.Join(root, "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"github.com/go-chi/chi/v5 " + chiPinnedVersion,
+		"gorm.io/gorm " + gormPinnedVersion,
+	} {
+		if !strings.Contains(string(gomod), want+"\n") && !strings.Contains(string(gomod), want+" ") {
+			t.Errorf("root go.mod does not pin %q — bump the scaffold constant in new.go alongside the module", want)
+		}
+	}
+}
+
+// The scaffold is SKILL.md's five-file shape plus templates, the
+// harness, and the manifest landing spot.
+func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
 	for _, rel := range []string{
 		"go.mod",
-		filepath.Join("actions", "index.GET.go"),
 		filepath.Join("cmd", "blogapp", "main.go"),
-		filepath.Join("gen", "router.go"),
+		filepath.Join("internal", "blogapp", "app.go"),
+		filepath.Join("internal", "blogapp", "models.go"),
+		filepath.Join("internal", "blogapp", "handlers.go"),
+		filepath.Join("internal", "blogapp", "render.go"),
+		filepath.Join("internal", "blogapp", "templates", "layout.html"),
+		filepath.Join("internal", "blogapp", "templates", "index.html"),
+		filepath.Join("manifest", "README.md"),
 	} {
 		if _, err := os.Stat(filepath.Join("blogapp", rel)); err != nil {
 			t.Errorf("missing scaffolded file %s: %v", rel, err)
@@ -74,62 +100,46 @@ func TestNewStillScaffoldsTheRestOfTheApp(t *testing.T) {
 	}
 }
 
-// The generated app serves its own static directory, fingerprinted:
-// rastrillo.Serve never serves CSS — that is the app's job, in the
-// app's own code — and the scaffold wires rastrillo.Assets so those
-// files are immutable-cacheable from day one.
-func TestMainTemplateServesFingerprintedStatic(t *testing.T) {
-	src := fmt.Sprintf(mainTemplate, "blogapp")
+// main.go wires the app the way SKILL.md §1 teaches: Resolve (not Run
+// — the app owns its DB handle via db.Open), then Serve with DBPath
+// cleared so Serve doesn't double-open the same file.
+func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
+	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp")
 	for _, want := range []string{
-		`assets := rastrillo.NewAssets(app.StaticFS)`,
-		`mux.Handle("GET /static/", assets.Handler())`,
-		`Assets: assets`,
+		"rastrillo.Resolve(rastrillo.Options{",
+		"db.Open(opts.DBPath, logger)",
+		"blogapp.App(d, logger)",
+		"opts.DBPath = \"\"",
+		"rastrillo.Serve(opts)",
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("main.go template missing %q:\n%s", want, src)
 		}
 	}
-	// The mount has to come after the router exists, or it has nothing
-	// to attach to.
-	if strings.Index(src, "gen.Router(") > strings.Index(src, `assets.Handler()`) {
-		t.Error("the static handler is registered before gen.Router builds the mux")
+	if strings.Index(src, `opts.DBPath = ""`) < strings.Index(src, "db.Open(") {
+		t.Error("DBPath must be cleared only after db.Open used it")
 	}
 }
 
-// The starter action is a real HTML page linking the stylesheet by its
-// content-hashed URL — the scaffold demonstrating its own asset story.
-func TestActionTemplateLinksFingerprintedStylesheet(t *testing.T) {
+// The manifest README carries the equal-path framing and a real
+// mounting recipe, not a dustbin note.
+func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
+	src := fmt.Sprintf(manifestReadme, "blogapp", "blogapp")
 	for _, want := range []string{
-		`ctx.Assets.Path("static/tokens.css")`,
-		`<h1>Hello, World — this is a rastrillo app.</h1>`,
-		`text/html; charset=utf-8`,
+		"equal, optional paths",
+		"rastrillo generate",
+		"gen.Router(",
+		"Render: render",
+		"unscoped tables",
 	} {
-		if !strings.Contains(actionTemplate, want) {
-			t.Errorf("action template missing %q", want)
-		}
-	}
-}
-
-// The scaffolded app embeds static/ — the platform deploys the binary
-// alone, so a loose static directory would not travel with it (F8).
-func TestNewScaffoldsEmbeddedStatic(t *testing.T) {
-	t.Chdir(t.TempDir())
-	if err := runNew([]string{"blogapp"}); err != nil {
-		t.Fatalf("runNew: %v", err)
-	}
-	src, err := os.ReadFile(filepath.Join("blogapp", "assets.go"))
-	if err != nil {
-		t.Fatalf("expected a scaffolded assets.go: %v", err)
-	}
-	for _, want := range []string{"//go:embed static", "var StaticFS embed.FS", "package blogapp"} {
-		if !strings.Contains(string(src), want) {
-			t.Errorf("assets.go missing %q:\n%s", want, src)
+		if !strings.Contains(src, want) {
+			t.Errorf("manifest README missing %q", want)
 		}
 	}
 }
 
 // packageName derives a Go identifier from the app name for the
-// scaffolded root package, since the name is also the module path
+// scaffolded app package, since the name is also the module path
 // where hyphens (and other non-identifier characters) are legal.
 func TestPackageName(t *testing.T) {
 	cases := []struct{ name, want string }{
@@ -152,34 +162,33 @@ func TestPackageName(t *testing.T) {
 }
 
 // Regression pin for the packageName sanitizer wiring: a hyphenated
-// app name must still scaffold a compilable assets.go package clause,
-// while cmd/<name>/main.go keeps importing the app under its real,
-// hyphenated name (the module path, not the sanitized identifier).
+// app name must still scaffold compilable package clauses, while
+// cmd/<name>/main.go keeps importing the app under its real,
+// hyphenated module path.
 func TestNewSanitizesHyphenatedAppName(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"my-blog"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	assets, err := os.ReadFile(filepath.Join("my-blog", "assets.go"))
+	appSrc, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblog", "app.go"))
 	if err != nil {
-		t.Fatalf("expected a scaffolded assets.go: %v", err)
+		t.Fatalf("expected a scaffolded app.go: %v", err)
 	}
-	if !strings.Contains(string(assets), "package myblog") {
-		t.Errorf("assets.go does not have the sanitized package clause:\n%s", assets)
+	if !strings.Contains(string(appSrc), "package myblog") {
+		t.Errorf("app.go does not have the sanitized package clause:\n%s", appSrc)
 	}
-	main, err := os.ReadFile(filepath.Join("my-blog", "cmd", "my-blog", "main.go"))
+	mainSrc, err := os.ReadFile(filepath.Join("my-blog", "cmd", "my-blog", "main.go"))
 	if err != nil {
 		t.Fatalf("expected a scaffolded main.go: %v", err)
 	}
-	if !strings.Contains(string(main), `app "my-blog"`) {
-		t.Errorf("main.go does not import the app under its hyphenated name:\n%s", main)
+	if !strings.Contains(string(mainSrc), `myblog "my-blog/internal/myblog"`) {
+		t.Errorf("main.go does not import the app package from the hyphenated module path:\n%s", mainSrc)
 	}
 }
 
 // Out of the box you get a tested app: rastrillo new scaffolds a
-// harness (the blog example's blogtest pattern, delivered as
-// app-owned files) plus example tests that pass immediately and pin
-// the asset-fingerprinting behavior.
+// harness plus example tests that pass immediately and pin the
+// asset-fingerprinting behavior.
 func TestNewScaffoldsTestHarness(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"my-blog"}); err != nil {
@@ -192,9 +201,9 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 	for _, want := range []string{
 		"package myblogtest",
 		"func newApp(t *testing.T) http.Handler",
-		`app "my-blog"`,
-		"rastrillo.NewAssets(app.StaticFS)",
-		"rastrillo.OpenDB",
+		`myblog "my-blog/internal/myblog"`,
+		"db.Open(filepath.Join(t.TempDir()",
+		"myblog.App(d, logger)",
 	} {
 		if !strings.Contains(string(harness), want) {
 			t.Errorf("harness_test.go missing %q:\n%s", want, harness)
@@ -235,36 +244,15 @@ func TestScaffoldedAppTestsPass(t *testing.T) {
 	}
 	f.Close()
 
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = "blogapp"
+	if out, err := tidy.CombinedOutput(); err != nil {
+		t.Fatalf("go mod tidy on the scaffold fails:\n%s", out)
+	}
 	cmd := exec.Command("go", "test", "./...")
 	cmd.Dir = "blogapp"
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("scaffolded app's tests fail:\n%s", out)
-	}
-}
-
-// F9 end to end: a fresh scaffold's action file carries the build
-// constraint, the gen copy doesn't, and --check passes as scaffolded.
-func TestNewScaffoldsTaggedActions(t *testing.T) {
-	t.Chdir(t.TempDir())
-	if err := runNew([]string{"tagapp"}); err != nil {
-		t.Fatalf("runNew: %v", err)
-	}
-	src, err := os.ReadFile(filepath.Join("tagapp", "actions", "index.GET.go"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(src), "//go:build rastrillo_actions") {
-		t.Errorf("scaffolded action lacks the build constraint:\n%s", src)
-	}
-	gen, err := os.ReadFile(filepath.Join("tagapp", "gen", "actions", "index_get", "index.GET.go"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(gen), "//go:build") {
-		t.Errorf("gen copy kept the build constraint:\n%s", gen)
-	}
-	if err := runGenerate([]string{"--check", "tagapp"}); err != nil {
-		t.Errorf("--check must pass on a fresh scaffold: %v", err)
 	}
 }

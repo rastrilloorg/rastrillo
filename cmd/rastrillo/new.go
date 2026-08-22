@@ -12,22 +12,23 @@ import (
 	"github.com/carlosframework/rastrillo/ui"
 )
 
-// runNew implements `rastrillo new <name>`: go.mod, one starter action,
-// a main.go wiring Run to the (not-yet-generated) router, then runs
-// generate once so `go build` works immediately (design doc §11).
+// runNew implements `rastrillo new <name>`: the middle-layer app shape
+// (SKILL.md §1) — GORM models, a chi router, embedded templates, and a
+// main.go wiring Resolve → db.Open → App → Serve — plus a passing test
+// harness, so the first `go test ./...` is green before the developer
+// writes a line.
 //
-// The starter is a plain hand-written action, not a Resource/TOML
-// manifest: manifests are optional per route (design doc §3), and a
-// hello-world has nothing to administer. manifest/ is scaffolded empty
-// with a README instead, so the first admin screen is one TOML file
-// away.
+// The declarative path stays one TOML file away: manifest/ is
+// scaffolded empty with a README carrying the mounting recipe.
+// Manifest-driven and code-driven are equal, optional paths — an app
+// uses either or both, per resource.
 //
 // The scaffold also makes the app a good citizen of the family's two
 // hosts: a Makefile whose `ci` target is the one local/CI gate
 // definition, and .amadan/ci + .amadan/ci.d/ steps that exec those
 // targets — amadan's runner convention, where the steps must be
 // executable or the job silently resolves "skipped". CARLOS stays the
-// golden deployment target, not a requirement: Run speaks the
+// golden deployment target, not a requirement: Resolve/Serve speak the
 // activation contract, and `./app -addr :8080` works anywhere.
 func runNew(args []string) error {
 	if len(args) != 1 {
@@ -41,10 +42,11 @@ func runNew(args []string) error {
 	pkg := packageName(name)
 	dirs := []string{
 		name,
-		filepath.Join(name, "actions"),
 		filepath.Join(name, "cmd", name),
 		filepath.Join(name, "manifest"),
-		filepath.Join(name, "static"),
+		filepath.Join(name, "internal", pkg),
+		filepath.Join(name, "internal", pkg, "static"),
+		filepath.Join(name, "internal", pkg, "templates"),
 		filepath.Join(name, "internal", pkg+"test"),
 		filepath.Join(name, ".amadan", "ci.d"),
 	}
@@ -54,22 +56,28 @@ func runNew(args []string) error {
 		}
 	}
 
+	appDir := filepath.Join(name, "internal", pkg)
 	files := map[string]string{
-		filepath.Join(name, "go.mod"):                  fmt.Sprintf(goModTemplate, name, rastrilloVersion()),
-		filepath.Join(name, "actions", "index.GET.go"): actionTemplate,
-		filepath.Join(name, "cmd", name, "main.go"):    fmt.Sprintf(mainTemplate, name),
-		filepath.Join(name, "assets.go"):               fmt.Sprintf(assetsTemplate, pkg),
+		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
+			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
+		filepath.Join(name, "cmd", name, "main.go"):       fmt.Sprintf(mainTemplate, name, pkg),
+		filepath.Join(appDir, "app.go"):                   fmt.Sprintf(appTemplate, pkg),
+		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
+		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
+		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, pkg),
+		filepath.Join(appDir, "templates", "layout.html"): layoutTemplate,
+		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
 		// The design-token stylesheet, delivered once. rastrillo.Serve
 		// never serves CSS at runtime; from here on this is an ordinary
 		// app-owned file that new/generate never touch again.
-		filepath.Join(name, "static", "tokens.css"): string(ui.TokensCSS()),
+		filepath.Join(appDir, "static", "tokens.css"): string(ui.TokensCSS()),
 		// The test harness, delivered once like tokens.css: app-owned
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
 		// asset-fingerprinting behavior.
 		filepath.Join(name, "internal", pkg+"test", "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
-		filepath.Join(name, "manifest", "README.md"):                   manifestReadme,
+		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
 		filepath.Join(name, "Makefile"):                                makefileTemplate,
 		filepath.Join(name, "CLAUDE.md"):                               fmt.Sprintf(claudeMDTemplate, name),
 	}
@@ -95,30 +103,23 @@ func runNew(args []string) error {
 	}
 
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
-	fmt.Println("  go.mod")
-	fmt.Println("  actions/index.GET.go")
-	fmt.Printf("  cmd/%s/main.go\n", name)
-	fmt.Println("  assets.go")
-	fmt.Println("  static/tokens.css")
-	fmt.Printf("  internal/%stest/harness_test.go\n", pkg)
-	fmt.Printf("  internal/%stest/index_test.go\n", pkg)
-	fmt.Println("  manifest/            (drop a <name>.toml here for a whole admin screen set)")
+	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
+	fmt.Printf("  internal/%s/         (models, app, handlers, render, templates, static)\n", pkg)
+	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box)\n", pkg)
+	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + test, the one gate definition)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
 	fmt.Println("  CLAUDE.md")
 
-	if err := runGenerate([]string{name}); err != nil {
-		return fmt.Errorf("initial generate: %w", err)
-	}
 	// The scaffold ships with passing tests (the harness above), so the
 	// first suggested command is running them: the TDD loop starts from
 	// green, not from "figure out how to test this at all".
-	fmt.Printf("\ncd %s && go test ./...\n", name)
+	fmt.Printf("\ncd %s && go mod tidy && go test ./...\n", name)
 	return nil
 }
 
 // packageName derives a valid Go identifier from the app name for the
-// scaffolded root package: name also serves as the module path, where
+// scaffolded app package: name also serves as the module path, where
 // hyphens (and other punctuation) are legal, but a package clause
 // needs an identifier. Non-identifier runes are dropped rather than
 // rejected, so every name rastrillo new already accepts keeps working.
@@ -140,78 +141,239 @@ func packageName(name string) string {
 	return out
 }
 
+// The scaffold's chi and gorm pins. The CLI's own build info can't
+// supply these (cmd/rastrillo imports neither), so they are constants
+// — kept honest by a test that compares them against the rastrillo
+// module's own go.mod, the versions the framework's suite actually ran
+// with. Bump them together with the root go.mod, like
+// rastrilloFallbackVersion is bumped per release.
+const (
+	chiPinnedVersion  = "v5.3.2"
+	gormPinnedVersion = "v1.31.2"
+)
+
 const goModTemplate = `module %s
 
-go 1.22
+go 1.24
 
-require github.com/carlosframework/rastrillo %s
+require (
+	github.com/carlosframework/rastrillo %s
+	github.com/go-chi/chi/v5 %s
+	gorm.io/gorm %s
+)
 `
 
-const actionTemplate = `// actions/ is generator input, never compiled in place: rastrillo
-// generate copies each file under gen/ (stripping this constraint).
-// The tag keeps ` + "`go build ./...`" + ` and friends off the originals.
-//go:build rastrillo_actions
-
-package actions
+const mainTemplate = `// Command %[1]s wires the app: resolve the platform's activation
+// argv, open the database, build the app, serve.
+package main
 
 import (
-	"fmt"
+	"log/slog"
+	"os"
+
+	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/db"
+
+	%[2]s "%[1]s/internal/%[2]s"
+)
+
+func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+
+	// Resolve, not Run: this app opens its own database handle via
+	// db.Open — a *gorm.DB with a split reader/writer pool, not the
+	// bare *sql.DB Options.Router would hand back — so Options.DBPath
+	// must be empty again by the Serve call below, or Serve would open
+	// a second, unused connection to the same file.
+	opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "%[1]s.db", Logger: logger})
+	if err != nil {
+		logger.Error("resolve activation", "err", err)
+		os.Exit(1)
+	}
+
+	d, err := db.Open(opts.DBPath, logger)
+	if err != nil {
+		logger.Error("open database", "err", err)
+		os.Exit(1)
+	}
+	defer d.Close()
+
+	mux, err := %[2]s.App(d, logger)
+	if err != nil {
+		logger.Error("build app", "err", err)
+		os.Exit(1)
+	}
+
+	opts.Mux = mux
+	opts.DBPath = ""
+	if err := rastrillo.Serve(opts); err != nil {
+		logger.Error("serve failed", "err", err)
+		os.Exit(1)
+	}
+}
+`
+
+const appTemplate = `package %[1]s
+
+import (
+	"log/slog"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/carlosframework/rastrillo/db"
+)
+
+// App wires the whole app: schema, router, static files. It returns a
+// *http.ServeMux because rastrillo.Options.Mux is typed that way — the
+// chi router mounts inside it.
+//
+// Growing the app is SKILL.md's five-file shape: models in models.go,
+// handlers in handlers.go, and — for a multi-user app — the sessions
+// core plus an identity plugin wired right here (examples/notes in the
+// rastrillo repo is the worked example to copy).
+func App(d *db.DB, logger *slog.Logger) (*http.ServeMux, error) {
+	// AutoMigrate every model in models.go, additive-only.
+	if err := d.G.AutoMigrate(); err != nil {
+		return nil, err
+	}
+
+	a := &app{db: d, logger: logger}
+
+	r := chi.NewRouter()
+	r.Get("/", a.index)
+
+	mux := http.NewServeMux()
+	// The app serves its own static files — the framework never does.
+	// They are embedded (render.go) and fingerprinted: templates link
+	// them via {{asset ...}}, which returns a content-hashed URL the
+	// handler serves cacheable-forever.
+	mux.Handle("GET /static/", assets.Handler())
+	mux.Handle("/", r)
+	return mux, nil
+}
+`
+
+const modelsTemplate = `package %[1]s
+
+// Models are plain GORM structs, AutoMigrated in app.go — for example:
+//
+//	type Note struct {
+//		ID        int64
+//		UserID    int64 ` + "`gorm:\"index\"`" + `
+//		Title     string
+//		Body      string
+//		CreatedAt time.Time
+//		UpdatedAt time.Time
+//	}
+//
+// Rules that keep them safe (SKILL.md): every query touching
+// user-owned rows goes through scope.Owned — reads AND writes — and a
+// request body is never bound onto a model (explicit map[string]any +
+// .Select allowlist).
+`
+
+const handlersTemplate = `package %[1]s
+
+import (
+	"log/slog"
+	"net/http"
+
+	"github.com/carlosframework/rastrillo/db"
+)
+
+// app holds what every handler needs. When the app grows accounts,
+// this is where the sessions handle lands too.
+type app struct {
+	db     *db.DB
+	logger *slog.Logger
+}
+
+func (a *app) index(w http.ResponseWriter, r *http.Request) {
+	render(w, "index", nil)
+}
+`
+
+const renderTemplate = `package %[1]s
+
+import (
+	"bytes"
+	"embed"
+	"html/template"
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
 )
 
-func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, page, ctx.Assets.Path("static/tokens.css"))
+//go:embed templates static
+var appFS embed.FS
+
+// assets fingerprints static/: {{asset "static/tokens.css"}} in a
+// template returns a content-hashed URL, served immutable-cacheable by
+// the handler App mounts.
+var assets = rastrillo.NewAssets(appFS)
+
+// pages is one *template.Template per page, each combining layout.html
+// with that page's own file — kept separate so every page can define a
+// template named "content" without colliding with the others.
+var pages = map[string]*template.Template{}
+
+func init() {
+	for _, name := range []string{"index"} {
+		pages[name] = template.Must(template.New("layout").
+			Funcs(template.FuncMap{"asset": assets.Path}).
+			ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
+	}
 }
 
-// page links the design-token stylesheet by its content-hashed URL:
-// cacheable forever, and a brand-new URL the moment the file changes.
-const page = ` + "`" + `<!doctype html>
+// render executes name's layout into a buffer before anything touches
+// the wire: a template error becomes a clean 500 instead of garbage
+// appended to a half-written page, and headers (flash cookies, say)
+// stay settable until the status line is written.
+func render(w http.ResponseWriter, name string, data any) {
+	var buf bytes.Buffer
+	if err := pages[name].ExecuteTemplate(&buf, "layout", data); err != nil {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
+	buf.WriteTo(w)
+}
+`
+
+const layoutTemplate = `{{define "layout"}}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hello, World</title>
-<link rel="stylesheet" href="%s">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
 </head>
 <body>
 <main>
-<h1>Hello, World — this is a rastrillo app.</h1>
+{{template "content" .}}
 </main>
 </body>
 </html>
-` + "`" + `
+{{end}}
 `
 
-// assetsTemplate is the scaffolded assets.go: static/ compiled into
-// the binary, because the platform deploys the binary alone and a
-// cwd-relative static directory would not travel with it (F8).
-const assetsTemplate = `// The app's static files, compiled into the binary: the platform
-// deploys the binary alone, so a loose static/ directory would not
-// travel with it.
-package %[1]s
-
-import "embed"
-
-//go:embed static
-var StaticFS embed.FS
+const indexTemplate = `{{define "content"}}
+<h1>Hello, World — this is a rastrillo app.</h1>
+{{end}}
 `
 
-// harnessTemplate is the scaffolded test harness: the blog example's
-// blogtest pattern, delivered once as app-owned files. It builds the
-// whole app exactly as cmd/<name>/main.go does, so a test exercises
-// the real generated router, the real Ctx wiring, the real asset
-// handler — not a parallel universe.
+// harnessTemplate is the scaffolded test harness, delivered once as
+// app-owned files: it builds the whole app exactly as
+// cmd/<name>/main.go does — a real temp-file database through db.Open
+// (the split-pool configuration under test, never :memory:), the real
+// router, the real asset handler — so a test exercises the app, not a
+// parallel universe.
 const harnessTemplate = `// Package %[2]stest tests the app from the outside: real HTTP
-// requests against the real generated router, wired exactly as
+// requests against the real router, wired exactly as
 // cmd/%[1]s/main.go wires it.
 //
-// The TDD loop: write a failing test here, make it pass in actions/
-// (or internal/), repeat. Tests import gen, so after editing actions/
-// run ` + "`rastrillo generate`" + ` before ` + "`go test ./...`" + ` — or leave
-// ` + "`rastrillo dev`" + ` running, which regenerates on save.
+// The TDD loop: write a failing test here, make it pass in
+// internal/%[2]s, repeat.
 package %[2]stest
 
 import (
@@ -220,32 +382,29 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/db"
 
-	app "%[1]s"
-	"%[1]s/gen"
+	%[2]s "%[1]s/internal/%[2]s"
 )
 
-// newApp builds the whole app per test, exactly as main.go does. When
-// the app grows a database, open a fresh one here per test — a real
-// temp file, not :memory:, because SetMaxOpenConns(1)+WAL is the
-// configuration under test:
-//
-//	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "app.db"), migrations)
-//	t.Cleanup(func() { db.Close() })
-//
-// and put it on the Ctx below, mirroring main.go's move from
-// Options.Mux to Options.Router.
+// newApp builds the whole app per test over a fresh temp database,
+// exactly as main.go does.
 func newApp(t *testing.T) http.Handler {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	assets := rastrillo.NewAssets(app.StaticFS)
-	ctx := &rastrillo.Ctx{Logger: logger, Assets: assets}
-	mux := gen.Router(func(*http.Request) *rastrillo.Ctx { return ctx })
-	mux.Handle("GET /static/", assets.Handler())
+	d, err := db.Open(filepath.Join(t.TempDir(), "app.db"), logger)
+	if err != nil {
+		t.Fatalf("db.Open: %%v", err)
+	}
+	t.Cleanup(func() { d.Close() })
+	mux, err := %[2]s.App(d, logger)
+	if err != nil {
+		t.Fatalf("App: %%v", err)
+	}
 	return mux
 }
 
@@ -321,57 +480,13 @@ func TestBareAssetNameStaysFresh(t *testing.T) {
 }
 `
 
-const mainTemplate = `package main
+const manifestReadme = `# manifest/ — the declarative path
 
-import (
-	"log/slog"
-	"net/http"
-	"os"
-
-	"github.com/carlosframework/rastrillo"
-
-	app "%[1]s"
-	"%[1]s/gen"
-)
-
-func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-
-	// The app's static files, embedded (see assets.go) and
-	// content-fingerprinted: ctx.Assets.Path("static/tokens.css")
-	// returns a URL carrying the file's hash, and the handler below
-	// serves that URL cacheable-forever. Edit static/ and rebuild —
-	// rastrillo dev does that on save — and the hash (so the URL)
-	// changes, which is why a plain reload always sees fresh assets.
-	assets := rastrillo.NewAssets(app.StaticFS)
-
-	// A single shared Ctx for now: this app has no per-request state
-	// yet (no DB, no locale, no scope). Once it needs a database,
-	// switch Options.Mux for Options.Router and build the mux from
-	// the *sql.DB Serve hands back.
-	ctx := &rastrillo.Ctx{Logger: logger, Assets: assets}
-	mux := gen.Router(func(*http.Request) *rastrillo.Ctx { return ctx })
-
-	// The app serves its own static files — the framework never does.
-	mux.Handle("GET /static/", assets.Handler())
-
-	// Run speaks the platform's activation contract: -socket/-addr/-db
-	// flags for agent exec children, or a bare "serve" subcommand for
-	// carlos-app@ unit tenants (see rastrillo.Run).
-	if err := rastrillo.Run(rastrillo.Options{
-		Mux:    mux,
-		Logger: logger,
-	}); err != nil {
-		logger.Error("serve failed", "err", err)
-		os.Exit(1)
-	}
-}
-`
-const manifestReadme = `# manifest/
-
-Manifests live here (design doc §3). One TOML file declares a whole
-admin screen set — List → Show → Edit/New plus the confirm-page delete
-flow — generated as real actions under gen/ by ` + "`rastrillo generate`" + `:
+Manifest-driven and code-driven are equal, optional paths: declare the
+resources that are pure CRUD, hand-write the ones that aren't, per
+resource, in one app. One TOML file here declares a whole screen set —
+List → Show → Edit/New plus the confirm-page delete flow — generated
+as real committed code under gen/ by ` + "`rastrillo generate`" + `:
 
     name  = "ticket_types"
     route = "/admin/ticket_types"
@@ -383,8 +498,28 @@ flow — generated as real actions under gen/ by ` + "`rastrillo generate`" + `:
     [form]
     basics = [{ name = "Name", required = true }, { name = "Price", kind = "money" }]
 
-Wire the generated migrations in cmd/<app>/main.go:
-` + "`Migrations: genmanifest.Migrations()`" + ` (import <module>/gen/manifest).
+The vocabulary today covers standalone, unscoped tables (no per-user
+scoping yet) — anything a user owns stays on the code path.
+
+Adding the first manifest to this app:
+
+1. ` + "`go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc`" + ` (once — the
+   generated store is sqlc input).
+2. ` + "`rastrillo generate`" + ` writes gen/ — committed, never hand-edited.
+3. Mount the generated router beside the chi router in
+   internal/%[2]s/app.go, and wire its Ctx (the generated actions
+   render through Ctx.Render — examples/blog's internal/blog/genrender.go
+   in the rastrillo repo is the adapter to copy):
+
+       gmux := gen.Router(func(*http.Request) *rastrillo.Ctx {
+           writer, _ := d.G.DB()
+           return &rastrillo.Ctx{DB: writer, Logger: logger,
+               Actor: rastrillo.Actor{Human: true}, Render: render}
+       })
+       mux.Handle("/admin/", gmux)
+
+4. Append the generated migrations to the schema step, and add
+   ` + "`rastrillo generate --check`" + ` to the Makefile's ci target.
 
 Drop to a .go manifest in this directory (package manifest, a
 ` + "`var X = rastrillo.Resource{...}`" + `) the moment you need a function
@@ -395,13 +530,10 @@ path under actions/ — the generator skips that one from then on.
 
 // makefileTemplate is the one gate definition: CI steps exec these
 // targets, never their own copies of the commands (amadan's own rule).
-const makefileTemplate = `.PHONY: build test vet fmt-check generate ci
+const makefileTemplate = `.PHONY: build test vet fmt-check ci
 
-build: generate
-	go build ./...
-
-generate:
-	rastrillo generate
+build:
+	CGO_ENABLED=0 go build ./...
 
 test:
 	go test ./...
@@ -414,7 +546,8 @@ fmt-check:
 
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
-# target when .amadan/ci is absent.
+# target when .amadan/ci is absent. If the app declares manifest
+# resources, add: rastrillo generate --check
 ci: vet fmt-check test
 `
 
@@ -434,40 +567,47 @@ func amadanStep(target string) string {
 
 const claudeMDTemplate = `# %s
 
-A [rastrillo](https://github.com/carlosframework/rastrillo) app. The
-conventions below are load-bearing; the framework enforces most of them
+A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. Read the
+framework's own SKILL.md (repo root, or in the module cache) before
+writing app code — it is the whole app story in ~15KB. The conventions
+below are load-bearing; the framework enforces most of them
 mechanically.
 
 ## Layout
 
-- ` + "`actions/`" + ` — one file per route (` + "`<name>.<VERB>.go`" + `, bracket dirs
-  for params: ` + "`orders/[id]/cancel.POST.go`" + `). Files carry
-  ` + "`//go:build rastrillo_actions`" + ` and are never compiled in place —
-  ` + "`rastrillo generate`" + ` copies them under ` + "`gen/`" + `. actions/ cannot
-  hold shared code: put it in an ordinary package (` + "`internal/...`" + `)
-  and import it.
-- ` + "`manifest/`" + ` — TOML or .go Resource manifests; each generates a full
-  screen set. A hand-written action file at a generated path takes that
-  screen over, silently, by existence.
-- ` + "`gen/`" + ` — generated; never edit. Regenerate with ` + "`rastrillo generate`" + `
-  (or let ` + "`rastrillo dev`" + ` watch and do it).
+- ` + "`internal/<app>/`" + ` — the app: ` + "`models.go`" + ` (plain GORM structs),
+  ` + "`app.go`" + ` (AutoMigrate + chi router), ` + "`handlers.go`" + `,
+  ` + "`render.go`" + ` + ` + "`templates/`" + `. This is SKILL.md's five-file shape.
+- ` + "`manifest/`" + ` — the declarative path, optional and equal: TOML or .go
+  Resource manifests, each generating a full screen set under ` + "`gen/`" + `
+  (see manifest/README.md for the mounting recipe). A hand-written
+  action file at a generated path (carrying ` + "`//go:build rastrillo_actions`" + `)
+  takes that one screen over, by existence.
+- ` + "`gen/`" + ` — generated when manifests are used; never edit. Regenerate
+  with ` + "`rastrillo generate`" + `.
 
 ## Rules the family holds hard
 
-- Migrations are additive and idempotent, applied at boot via
-  ` + "`rastrillo.Options.Migrations`" + `. Never rewrite one that shipped.
+- Every query touching user-owned rows goes through ` + "`scope.Owned`" + ` —
+  reads AND writes, transactions included. A row that isn't yours 404s,
+  never 403s.
+- Never bind a request body onto a GORM model: explicit
+  ` + "`map[string]any`" + ` + ` + "`.Select`" + ` allowlist.
+- Migrations are additive-only, applied at boot. Never rewrite one that
+  shipped.
 - Money is integer cents. A float never touches a value a person will
   be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
 - The gate is ` + "`make ci`" + ` (vet + gofmt + tests) — the same definition
-  CI runs. Run it before every push.
+  CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the
+  stack is cgo-free by design.
 
 ## Serving
 
-` + "`rastrillo.Run`" + ` speaks the CARLOS activation contract (socket/addr/db
-argv, LISTEN_FDS, $STATE_DIRECTORY, ` + "`sidecar run`" + `) — the golden
-deployment target, not a requirement: ` + "`./app -addr :8080`" + ` serves
-anywhere. ` + "`GET /healthz`" + ` and ` + "`GET /api/version`" + ` are answered by the
-framework.
+` + "`rastrillo.Resolve`" + ` + ` + "`Serve`" + ` speak the CARLOS activation contract
+(socket/addr/db argv, LISTEN_FDS, $STATE_DIRECTORY, ` + "`sidecar run`" + `) —
+the golden deployment target, not a requirement: ` + "`./app -addr :8080`" + `
+serves anywhere. ` + "`GET /healthz`" + ` and ` + "`GET /api/version`" + ` are answered
+by the framework, outside app middleware.
 `
