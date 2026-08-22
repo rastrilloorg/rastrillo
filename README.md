@@ -513,7 +513,18 @@ A scaffolded app's `Makefile` has two build targets, doing different jobs:
   one package matched discards its output, so this catches a broken
   package without producing an artifact.
 - **`make release`** — what ships: `-ldflags="-s -w"`, dropping the
-  symbol table and DWARF.
+  symbol table and DWARF, into `releases/<app>-<goos>-<goarch>`.
+
+`release` cross-compiles for **linux/arm64 by default**, not for your own
+machine, because that is what `carlos ship -target` defaults to. Building
+a release on an amd64 laptop and shipping it is a silent architecture
+mismatch — the upload succeeds and the binary fails to exec on the
+instance. Override for a one-off with `make release RELEASE_GOARCH=amd64`.
+The artifact is named for its architecture, and `make release` prints the
+matching `carlos ship` command.
+
+`releases/` is in the scaffolded `.gitignore`, along with the local
+SQLite database the app creates when you run it and its write-ahead log.
 
 Stripping is worth having because the compressed artifact is what gets
 transferred. Measured across this family's own apps (titogo, amadan,

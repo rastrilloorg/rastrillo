@@ -483,8 +483,28 @@ func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
 	}
 	got := string(mk)
 
-	if !strings.Contains(got, `go build -ldflags="-s -w" -o relapp ./cmd/relapp`) {
-		t.Errorf("no stripped release target for this app:\n%s", got)
+	if !strings.Contains(got, `go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)`) {
+		t.Errorf("no stripped release build:\n%s", got)
+	}
+	// The deployment target, not the host. carlos ship defaults to
+	// -target linux-arm64; a release built for the developer's own
+	// machine uploads fine and then fails to exec on the instance.
+	if !strings.Contains(got, "RELEASE_GOOS   ?= linux") || !strings.Contains(got, "RELEASE_GOARCH ?= arm64") {
+		t.Errorf("release does not default to the platform's architecture:\n%s", got)
+	}
+	if !strings.Contains(got, "releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)") {
+		t.Errorf("release artifact is not named for its architecture:\n%s", got)
+	}
+	// The output directory has to be ignored, or every release leaves the
+	// tree dirty.
+	gi, err := os.ReadFile(filepath.Join("relapp", ".gitignore"))
+	if err != nil {
+		t.Fatalf("no scaffolded .gitignore: %v", err)
+	}
+	for _, want := range []string{"/releases/", "/relapp.db", "/relapp.db-wal"} {
+		if !strings.Contains(string(gi), want) {
+			t.Errorf(".gitignore is missing %q:\n%s", want, gi)
+		}
 	}
 	// build stays the plain compile check — it must not quietly become a
 	// release build, or a local binary someone wants to debug is stripped.

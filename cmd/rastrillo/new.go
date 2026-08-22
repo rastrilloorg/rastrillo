@@ -115,6 +115,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
 		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
 		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name),
+		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
 		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
@@ -159,6 +160,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box)\n", pkg)
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + test; make release = the stripped binary)")
+	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
 	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
@@ -615,7 +617,18 @@ path under actions/ — the generator skips that one from then on.
 
 // makefileTemplate is the one gate definition: CI steps exec these
 // targets, never their own copies of the commands (amadan's own rule).
-const makefileTemplate = `.PHONY: build release test vet fmt-check ci
+const makefileTemplate = `APP := %[1]s
+
+# What ` + "`carlos ship -target`" + ` defaults to, and therefore what a release
+# must be built for. Building for your own machine and shipping that is a
+# silent architecture mismatch: the binary uploads fine and fails to exec
+# on the instance. Override for a one-off:
+#   make release RELEASE_GOARCH=amd64
+RELEASE_GOOS   ?= linux
+RELEASE_GOARCH ?= arm64
+RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
+
+.PHONY: build release test vet fmt-check ci
 
 # build is the compile check: with more than one package matched, go
 # build discards the output, so this catches a broken package without
@@ -624,8 +637,8 @@ build:
 	CGO_ENABLED=0 go build ./...
 
 # release is what ships. -s -w drops the symbol table and DWARF, which on
-# the family's own apps is 23-31%% off the binary and 45-53%% off the
-# compressed artifact — and the compressed size is what actually gets
+# this family's apps is 23-31%% off the binary and 45-53%% off the
+# compressed artifact — and compressed size is what actually gets
 # transferred. carlos is built the same way (see platform's Makefile).
 #
 # What survives: panic traces keep their function names AND line numbers
@@ -634,7 +647,13 @@ build:
 # source-level debugging with delve or gdb — build without the flags for
 # that. rastrillo dev never strips, for the same reason.
 release:
-	CGO_ENABLED=0 go build -ldflags="-s -w" -o %[1]s ./cmd/%[1]s
+	@mkdir -p releases
+	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
+		go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)
+	@echo
+	@echo "built $(RELEASE_BIN)"
+	@echo "ship it with:"
+	@echo "  carlos ship -app $(APP) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
 
 test:
 	go test ./...
@@ -650,6 +669,16 @@ fmt-check:
 # target when .amadan/ci is absent. If the app declares manifest
 # resources, add: rastrillo generate --check
 ci: vet fmt-check test
+`
+
+const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
+/releases/
+
+# The local SQLite database the app creates when you run it, and its
+# write-ahead log. Real data lives on the platform, never in the repo.
+/%[1]s.db
+/%[1]s.db-wal
+/%[1]s.db-shm
 `
 
 const amadanCI = `#!/bin/sh
