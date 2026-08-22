@@ -94,8 +94,10 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	r.Group(func(r chi.Router) {
 		r.Use(sess.Require)
 		r.Get("/", a.listNotes)
+		r.Get("/notes/new", a.newNote)
 		r.Post("/notes", a.createNote)
 		r.Get("/notes/{id}", a.showNote)
+		r.Get("/notes/{id}/edit", a.editNote)
 		r.Post("/notes/{id}", a.updateNote)
 		r.Post("/notes/{id}/delete", a.deleteNote)
 	})
@@ -163,6 +165,10 @@ owned model without the owner filter — including inside transactions: a
 `d.G.Transaction` callback must apply `scope.Owned` to every statement in it,
 the same as outside.
 
+(Inside the callback, scope the callback's `tx` — `scope.Owned(tx, uid)` —
+never `d.G`: a `d.G` statement runs outside the transaction, and the writer
+pool's one connection is already held by it, so it hangs instead of erroring.)
+
 `scope.Owned(g, owner int64)` adds `WHERE user_id = ?` — the convention column.
 `scope.OwnedBy(g, column string, owner any)` takes any owner column and
 **panics** if the column is not a plain `lower_snake` identifier (it is
@@ -177,6 +183,7 @@ cannot silently turn an update into an IDOR.
 n, err := a.find(r)                     // find() = a.owned(r).First(&n, id)
 if err != nil { http.NotFound(w, r); return }
 ...
+update := map[string]any{"Title": title, "Body": body}
 a.owned(r).Model(&n).Select("Title", "Body", "UpdatedAt").Updates(update)
 a.owned(r).Delete(&n)
 ```
@@ -184,8 +191,7 @@ a.owned(r).Delete(&n)
 A row that isn't yours is a row that doesn't exist: answer 404, never 403.
 
 That covers a malformed `{id}` too — a URL that was never yours was never a
-URL, so `strconv.ParseInt` failing returns `gorm.ErrRecordNotFound` and the
-handler 404s, indistinguishable from probing someone else's row.
+URL, so `strconv.ParseInt` failing returns `gorm.ErrRecordNotFound` and 404s.
 
 A join table is scoped through BOTH sides: reading or writing a membership row
 requires the caller to be authorized on each side it links, checked explicitly
@@ -241,8 +247,8 @@ It deliberately does not know how a session is *earned* — an identity plugin
 verifies a credential and calls `SignIn`; that one call is the whole contract.
 
 - `csrf.Protect(origin)` mounts app-wide (`r.Use`). It refuses cross-origin
-  POST/PUT/PATCH/DELETE by checking `Sec-Fetch-Site`/`Origin` — no tokens to
-  mint, store, or forget. GET/HEAD/OPTIONS pass untouched.
+  POST/PUT/PATCH/DELETE by checking `Sec-Fetch-Site`/`Origin`; there are no
+  tokens to mint. GET/HEAD/OPTIONS pass untouched.
 - Guard signed-in routes with a chi `Group` + `s.Require`: signed-out GET/HEAD
   redirects to `SigninPath` with a same-site `return_to`, anything else is 403.
 - `s.Middleware` is the softer variant: it resolves a session onto the request
@@ -250,7 +256,8 @@ verifies a credential and calls `SignIn`; that one call is the whole contract.
   different when signed in.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (the `Session`: Subject, Method, AuthTime, At). Past a `Require` boundary the
-  `ok` is guaranteed.
+  `ok` is guaranteed only for a plugin whose Subject is a numeric user id, as
+  password's is — see the keymail warning below.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never a
   raw `return_to`. It accepts only a same-site absolute path (one leading `/`,
   no scheme, no backslash) and returns the fallback otherwise.
@@ -278,7 +285,12 @@ it today, put a limiter in front of `POST /signin` yourself. The keymail plugin
 (`rastrillo/auth`) does rate-limit, through signin's `NewMemoryLimiter`, and is
 the family's choice for family apps: `auth.New(auth.Config{...})` with
 `Begin`/`Callback`/`Verify`/`Signout` handlers and `RequireSession`, over the
-same `sessions` core.
+same `sessions` core. **With keymail, do not use `sessions.UserID`.** Its
+Subject is the verified *email*, and `RequireSession` stores the `Identity`
+under auth's own context key — so `sessions.UserID(r)` returns `(0, false)`
+there, and the §3 seam, which drops that `ok`, would scope every query to
+`user_id = 0`: everyone reading everyone. Read the viewer with `auth.From(r)`
+and map `Identity.Address` to your user row's id before scoping.
 
 ## 6. What NOT to do
 
