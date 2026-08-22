@@ -264,6 +264,89 @@ func TestMiddlewareStashesButNeverBlocks(t *testing.T) {
 	}
 }
 
+// clearedCookie reports whether the response carries a clearing
+// Set-Cookie (MaxAge < 0) for name.
+func clearedCookie(w *httptest.ResponseRecorder, name string) bool {
+	for _, c := range w.Result().Cookies() {
+		if c.Name == name && c.MaxAge < 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func TestStaleCookieClearedButErrorIsNot(t *testing.T) {
+	s, db := newTestSessions(t, nil)
+	w := httptest.NewRecorder()
+	signInReq := httptest.NewRequest("POST", "http://app.test/signin", nil)
+	if err := s.SignIn(w, signInReq, sessions.Session{Subject: "42"}); err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+	cookie := cookieFrom(t, w, s.CookieName())
+	if _, err := db.Exec(`DELETE FROM sessions`); err != nil {
+		t.Fatalf("revoke all: %v", err)
+	}
+
+	// Revoked row + surviving cookie: both middlewares clear it.
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	for name, h := range map[string]http.Handler{"Require": s.Require(next), "Middleware": s.Middleware(next)} {
+		r := httptest.NewRequest("GET", "http://app.test/", nil)
+		r.AddCookie(cookie)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		if !clearedCookie(rec, s.CookieName()) {
+			t.Errorf("%s: stale cookie not cleared", name)
+		}
+	}
+
+	// A lookup ERROR is not staleness: closing the DB makes every
+	// lookup fail, and a transient failure must never cost the visitor
+	// their (possibly live) cookie.
+	db.Close()
+	r := httptest.NewRequest("GET", "http://app.test/", nil)
+	r.AddCookie(cookie)
+	rec := httptest.NewRecorder()
+	s.Require(next).ServeHTTP(rec, r)
+	if clearedCookie(rec, s.CookieName()) {
+		t.Errorf("cookie cleared on lookup error — only a definitive miss may clear")
+	}
+}
+
+func TestRequireTrustsMiddlewareResolution(t *testing.T) {
+	s, db := newTestSessions(t, nil)
+	w := httptest.NewRecorder()
+	signInReq := httptest.NewRequest("POST", "http://app.test/signin", nil)
+	if err := s.SignIn(w, signInReq, sessions.Session{Subject: "42"}); err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+	cookie := cookieFrom(t, w, s.CookieName())
+
+	// Capture the request exactly as Middleware hands it downstream —
+	// session already resolved and stashed in the context.
+	var stashed *http.Request
+	capture := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { stashed = r })
+	r := httptest.NewRequest("GET", "http://app.test/", nil)
+	r.AddCookie(cookie)
+	s.Middleware(capture).ServeHTTP(httptest.NewRecorder(), r)
+	if stashed == nil {
+		t.Fatalf("Middleware never called next")
+	}
+
+	// Close the DB: from here, any lookup fails. If Require re-queried
+	// instead of trusting the stash, it would refuse this request.
+	db.Close()
+	var gotSubject string
+	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sess, _ := sessions.Current(r)
+		gotSubject = sess.Subject
+	})
+	rec := httptest.NewRecorder()
+	s.Require(inner).ServeHTTP(rec, stashed)
+	if gotSubject != "42" {
+		t.Errorf("Require behind Middleware re-resolved (Subject = %q, status = %d) — the stash must be trusted, one lookup per request", gotSubject, rec.Code)
+	}
+}
+
 func TestRequireRedirectsWithReturnTo(t *testing.T) {
 	s, _ := newTestSessions(t, nil)
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

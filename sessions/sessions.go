@@ -236,16 +236,26 @@ func (s *Sessions) SignOut(w http.ResponseWriter, r *http.Request) {
 // direct lookup, for handlers outside Require that want to know who
 // (a public page with a signed-in header, say).
 func (s *Sessions) From(r *http.Request) (Session, bool) {
+	sess, ok, _ := s.resolve(r)
+	return sess, ok
+}
+
+// resolve is From plus one more bit: stale means the request presented
+// a cookie that definitively resolved to no session (missing row or
+// expired) — as opposed to no cookie at all, or a lookup error, which
+// is logged and reported not-stale so a transient DB failure never
+// gets a live cookie cleared.
+func (s *Sessions) resolve(r *http.Request) (sess Session, ok, stale bool) {
 	c, err := r.Cookie(s.CookieName())
 	if err != nil {
-		return Session{}, false
+		return Session{}, false, false
 	}
-	sess, ok, err := s.lookup(HashToken(c.Value), time.Now())
+	sess, ok, err = s.lookup(HashToken(c.Value), time.Now())
 	if err != nil {
 		s.cfg.Logger.Error("rastrillo/sessions: session lookup", "err", err)
-		return Session{}, false
+		return Session{}, false, false
 	}
-	return sess, ok
+	return sess, ok, !ok
 }
 
 type ctxKey struct{}
@@ -253,10 +263,16 @@ type ctxKey struct{}
 // Middleware resolves the request's session once and stashes it in the
 // context for Current/UserID, then always calls next — unlike Require,
 // a signed-out request is not blocked (for routes that behave
-// differently when signed in without requiring it).
+// differently when signed in without requiring it). A cookie that
+// definitively resolves to nothing (revoked or expired row) is cleared
+// on the way through, so a dead cookie stops riding every request.
 func (s *Sessions) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if sess, ok := s.From(r); ok {
+		sess, ok, stale := s.resolve(r)
+		if stale {
+			s.clearCookie(w)
+		}
+		if ok {
 			r = r.WithContext(context.WithValue(r.Context(), ctxKey{}, sess))
 		}
 		next.ServeHTTP(w, r)
@@ -266,10 +282,19 @@ func (s *Sessions) Middleware(next http.Handler) http.Handler {
 // Require guards a handler: no valid session sends a page request
 // (GET/HEAD) to SigninPath with a same-site return_to, and answers
 // anything else 403; a valid session rides the request context for
-// Current/UserID.
+// Current/UserID. A session Middleware already stashed is trusted
+// as-is — stacking Require inside Middleware costs one lookup, not
+// two — and, like Middleware, a definitively-stale cookie is cleared.
 func (s *Sessions) Require(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sess, ok := s.From(r)
+		sess, ok := Current(r)
+		if !ok {
+			var stale bool
+			sess, ok, stale = s.resolve(r)
+			if stale {
+				s.clearCookie(w)
+			}
+		}
 		if !ok {
 			if r.Method == http.MethodGet || r.Method == http.MethodHead {
 				to := s.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
