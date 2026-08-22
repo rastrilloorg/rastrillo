@@ -584,3 +584,27 @@ func readScaffold(t *testing.T, parts ...string) string {
 	}
 	return string(b)
 }
+
+// The scaffold ships the vendored-asset pin test — the review's point:
+// examples/blog had the answer, but a fresh app didn't, so an auditor
+// couldn't cheaply verify "skip these 56KB, they're the library's".
+func TestNewScaffoldsVendoredPinTest(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	src := readScaffold(t, "blogapp", "internal", "blogapptest", "vendored_test.go")
+	for _, want := range []string{
+		"ui.TokensCSS()",
+		"ui.ShimJS()",
+		"ui.SelectJS()",
+		`filepath.Join("..", "blogapp", "static", name)`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("scaffolded vendored_test.go does not contain %q", want)
+		}
+	}
+	if _, err := parser.ParseFile(token.NewFileSet(), "vendored_test.go", src, 0); err != nil {
+		t.Errorf("scaffolded vendored_test.go does not parse: %v", err)
+	}
+}

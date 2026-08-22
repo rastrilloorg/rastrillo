@@ -263,33 +263,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Visually hidden, but in the DOM and the tab order — and it un-hides on
-   keyboard focus, because a focused control a sighted keyboard user
-   cannot see is a trap. */
-.rst-sr-only {
-  clip-path: inset(50%);
-  block-size: 1px;
-  inline-size: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-}
-.rst-sr-only:focus-visible {
-  background: var(--rst-accent);
-  border: 0;
-  border-radius: var(--rst-radius-sm);
-  block-size: auto;
-  clip-path: none;
-  color: var(--rst-on-accent);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--rst-fs-sm);
-  inline-size: auto;
-  overflow: visible;
-  padding: 0.3rem 0.6rem;
-  position: static;
-  white-space: normal;
-}
 
 /* ── Buttons: page-header's primary action, empty-state's CTA. ────── */
 .rst-btn {
@@ -868,7 +841,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-switch { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input { height: 1px; opacity: 0; position: absolute; width: 1px; }
 .rst-switch__track { background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; transition: background 0.15s; width: 34px; }
-.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); width: 15px; }
+.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
 .rst-switch:has(input:checked) .rst-switch__track { background: var(--rst-accent); }
 .rst-switch:has(input:checked) .rst-switch__track::after { transform: translateX(15px); }
 .rst-switch:has(input:focus-visible) .rst-switch__track { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
@@ -978,4 +951,79 @@ body:has(.rst-backdrop) { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .rst-tip::after { transition: none; }
+}
+
+/* rst-spin — the working indicator a status page or busy button wears.
+   Pure CSS; reduced-motion users get a steady dimmed ring instead of
+   rotation. */
+.rst-spin {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: rst-spin 0.8s linear infinite;
+}
+@keyframes rst-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .rst-spin { animation: none; opacity: 0.5; }
+}
+
+/* field-select's combobox, built by rastrillo.js past ten options. The
+   popup deliberately borrows .rst-dropdown__menu's shape so the two
+   overlays read as one system. Nothing here styles the native <select>:
+   it keeps .rst-input and is simply moved out of sight by .rst-sr-only. */
+.rst-combo { position: relative; }
+.rst-combo__list { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-top: 4px; max-block-size: 15rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
+.rst-combo__option { border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; }
+.rst-combo__option:hover, .rst-combo__option.is-active { background: var(--rst-accent-soft); }
+/* The committed option is marked in the accessibility tree by
+   aria-selected; this is the matching visual, never the only signal. */
+.rst-combo__option[aria-selected="true"] { font-weight: 600; }
+
+/* ---------------------------------------------------------------------
+   Utilities, last on purpose.
+
+   .rst-sr-only competes with component rules of the same specificity —
+   both are single class selectors — so the cascade falls to source
+   order. Declared earlier it LOSES: .rst-input's width:100% beat its
+   inline-size:1px. Keep this block at the end of the file so the utility
+   wins wherever it is applied; a test asserts it stays here.
+
+   What that does NOT buy: a replaced element such as <select> has an
+   intrinsic minimum size, so inline-size:1px does not shrink it to 1px
+   whoever wins — measured at ~21px in Chromium. clip-path is what
+   actually hides these, and position:absolute is what keeps them out of
+   flow. Code that wants a genuinely minimal box (select.js does) should
+   drop the component class rather than rely on this.
+   --------------------------------------------------------------------- */
+
+/* Visually hidden, but in the DOM and the tab order — and it un-hides on
+   keyboard focus, because a focused control a sighted keyboard user
+   cannot see is a trap. */
+.rst-sr-only {
+  clip-path: inset(50%);
+  block-size: 1px;
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+.rst-sr-only:focus-visible {
+  background: var(--rst-accent);
+  border: 0;
+  border-radius: var(--rst-radius-sm);
+  block-size: auto;
+  clip-path: none;
+  color: var(--rst-on-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--rst-fs-sm);
+  inline-size: auto;
+  overflow: visible;
+  padding: 0.3rem 0.6rem;
+  position: static;
+  white-space: normal;
 }
