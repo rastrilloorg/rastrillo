@@ -502,7 +502,7 @@ func TestSweepDeletesExpiredKeepsLive(t *testing.T) {
 	}
 }
 
-func TestSafeReturnRejectsAbsoluteAndSchemeless(t *testing.T) {
+func TestSafeReturnRejectsAbsoluteSchemelessAndControlChars(t *testing.T) {
 	const fallback = "/"
 	cases := []struct {
 		returnTo string
@@ -513,6 +513,13 @@ func TestSafeReturnRejectsAbsoluteAndSchemeless(t *testing.T) {
 		{"//evil.example", fallback},
 		{"/ok\\evil", fallback},
 		{"", fallback},
+		// Browsers strip tab/CR/LF from URLs before parsing, so
+		// "/\t/evil.example" navigates scheme-relative to evil.example
+		// — the one-character-deeper version of the "//" case.
+		{"/\t/evil.example", fallback},
+		{"/\n/evil.example", fallback},
+		{"/\r/evil.example", fallback},
+		{"/notes/7\x7f", fallback},
 	}
 	for _, c := range cases {
 		u := "http://app.test/signin?return_to=" + url.QueryEscape(c.returnTo)

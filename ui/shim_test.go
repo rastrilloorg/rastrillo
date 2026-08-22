@@ -22,6 +22,10 @@ func TestShimContract(t *testing.T) {
 		// header-driven navigation, and the bfcache restore that
 		// re-enables a busy form.
 		"403", "404", "localPath", "pageshow",
+		// The local-path guard must reject control characters —
+		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
+		// resolves scheme-relative — mirroring sessions.SafeReturn.
+		"\\u0000-\\u001f\\u007f",
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("shim does not mention %q", want)

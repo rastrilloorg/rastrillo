@@ -272,17 +272,17 @@ email.
 rest on POST. Render callbacks take `(w, r, password.PageData)`;
 password writes the 422 itself, so the callback must not.
 
-**Rate limiting:** Signin throttles failures per email — 10 in 15 minutes
-answers 429 until one ages out, success resets it, in-memory (IP
-throttling is deployment's job). The keymail plugin (`rastrillo/auth`, the
-family default: magic-link auto-upgrading to keymail) rate-limits the same
-way: `auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout` and
+**Rate limiting:** Signin and Signup share a per-email budget — 10 failures in
+15 minutes answers 429 until one ages out, success resets it, in-memory (IP
+throttling is deployment's). The keymail plugin (`rastrillo/auth`, the family
+default: magic-link auto-upgrading to keymail) rate-limits likewise:
+`auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout` and
 `RequireSession`, over the same `sessions` core. **With keymail, do not use
 `sessions.UserID`:** its Subject is the verified *email*, so it returns
-`(0, false)`, and the §3 seam would scope every query to `user_id = 0`.
-Read the viewer with `auth.From(r)` or
-`sessions.Current(r)` (`RequireSession` stashes both) and map the address
-to your user row's id before scoping.
+`(0, false)`, and the §3 seam, dropping that `ok`, would scope every query to
+`user_id = 0`. Read the viewer with `auth.From(r)` or `sessions.Current(r)`
+(`RequireSession` stashes both) and map the address to your user row's id
+before scoping.
 
 ## 6. Background work
 

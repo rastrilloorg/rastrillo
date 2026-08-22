@@ -5,16 +5,16 @@ import (
 	"time"
 )
 
-// tooManyAttempts is the message a rate-limited sign-in renders. It is
-// deliberately distinct from wrongCredentials: the limit trips on
-// attempt volume alone, before the email is ever looked up, so the
-// message reveals nothing about whether the account exists.
-const tooManyAttempts = "Too many sign-in attempts. Try again in a few minutes."
+// tooManyAttempts is the message a rate-limited sign-in or sign-up
+// renders. It is deliberately distinct from wrongCredentials: the
+// limit trips on attempt volume alone, before the email is ever looked
+// up, so the message reveals nothing about whether the account exists.
+const tooManyAttempts = "Too many attempts. Try again in a few minutes."
 
-// The sign-in limiter's policy, fixed rather than configurable until a
-// real deployment needs otherwise: maxFailures failed attempts against
-// one email inside failureWindow block further attempts until the
-// oldest failure ages out. 15 minutes matches the window auth's keymail
+// The limiter's policy — one budget shared by Signin and Signup, fixed
+// rather than configurable until a real deployment needs otherwise:
+// maxFailures failed attempts against one email inside failureWindow
+// block further attempts until the oldest failure ages out. 15 minutes matches the window auth's keymail
 // flow gets from signin.NewMemoryLimiter.
 //
 // Keying by email (not client IP) is the deliberate trade-off: it is

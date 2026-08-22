@@ -20,7 +20,18 @@ import (
 // enforcement, the keymail viewer alternative, and the jobs
 // Render/RenderFragment warning were all dropped to fit 15_000, then
 // restored here). Trim before raising again.
-const skillBudget = 16_000
+//
+// Raised again, 16_000 to 17_000, at the merge with main for v0.17.0.
+// The previous raise sized its headroom for the migrations content
+// alone; main independently grew the file by ~1_057 bytes over the
+// same window (SSE push, icon sets and delivery modes, mergeable
+// stores, the tenancy ruling, the stripped release target), so two
+// releases' worth of new surface arrived against one ceiling. The
+// merge was trimmed first — the rate-limiting paragraph absorbed
+// main's two new facts in 13 fewer bytes than either side spent — and
+// a duplication sweep found none, so the remainder is real growth,
+// not slack. Trim first, still.
+const skillBudget = 17_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance
