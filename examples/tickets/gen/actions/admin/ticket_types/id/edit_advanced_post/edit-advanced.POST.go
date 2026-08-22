@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/form"
 	"github.com/carlosframework/rastrillo/view"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 )
@@ -38,11 +38,13 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vMaxPerOrder := strings.TrimSpace(r.PostFormValue("MaxPerOrder"))
+	p := form.Parse(r,
+		form.Field{Name: "MaxPerOrder"},
+	)
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	if err := store.UpdateTicketTypeAdvanced(r.Context(), ticket_typesstore.UpdateTicketTypeAdvancedParams{
-		MaxPerOrder: vMaxPerOrder,
+		MaxPerOrder: p.String("MaxPerOrder"),
 		Now:         now,
 		ID:          id,
 	}); err != nil {

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo"
@@ -39,35 +38,26 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vName := strings.TrimSpace(r.PostFormValue("Name"))
-	vPriceRaw := r.PostFormValue("Price")
-	vPrice, errPrice := form.ParseCents(vPriceRaw)
-	vStatus := strings.TrimSpace(r.PostFormValue("Status"))
+	p := form.Parse(r,
+		form.Field{Name: "Name", Required: true},
+		form.Field{Name: "Price", Kind: form.Money, Required: true},
+		form.Field{Name: "Status"},
+	)
 
-	errs := map[string]string{}
-	if vName == "" {
-		errs["Name"] = "Name is required"
-	}
-	if vPriceRaw == "" {
-		errs["Price"] = "Price is required"
-	} else if errPrice != nil {
-		errs["Price"] = errPrice.Error()
-	}
-
-	if len(errs) > 0 {
+	if !p.OK() {
 		fields := map[string]string{
 			"Name":        n.Name,
 			"Price":       form.FormatCentsPlain(n.Price),
 			"Status":      n.Status,
 			"MaxPerOrder": n.MaxPerOrder,
 		}
-		fields["Name"] = vName
-		fields["Price"] = vPriceRaw
-		fields["Status"] = vStatus
+		for k, v := range p.Echo() {
+			fields[k] = v
+		}
 		view.Render(ctx, w, "ticket_types/form", http.StatusBadRequest, formView{
 			IsNew:          false,
 			Fields:         fields,
-			Errors:         errs,
+			Errors:         p.Errors(),
 			BasicsAction:   fmt.Sprintf("/admin/ticket_types/%d/edit-basics", id),
 			AdvancedAction: fmt.Sprintf("/admin/ticket_types/%d/edit-advanced", id),
 		})
@@ -76,9 +66,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	if err := store.UpdateTicketTypeBasics(r.Context(), ticket_typesstore.UpdateTicketTypeBasicsParams{
-		Name:   vName,
-		Price:  vPrice,
-		Status: vStatus,
+		Name:   p.String("Name"),
+		Price:  p.Cents("Price"),
+		Status: p.String("Status"),
 		Now:    now,
 		ID:     id,
 	}); err != nil {

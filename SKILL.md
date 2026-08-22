@@ -212,28 +212,31 @@ unexpected form field can never reach a column.
 inputs are `title`/`body`. The strings in `Select` are GORM field names, and
 they are the allowlist that matters.)
 
-Validate by hand, collect a `form.Errors` (a `map[string]string`, with
-`.Any()`), re-render at 422 with the submitted values seeded back so nothing is
-retyped:
+Validate with `form.Parse` — one declaration per field, the same helper
+generated actions compose — and re-render at 422 with the submitted values
+seeded back so nothing is retyped:
 
 ```go
-title, body := r.PostFormValue("title"), r.PostFormValue("body")
-if title == "" {
+p := form.Parse(r, form.Field{Name: "title", Required: true},
+	form.Field{Name: "body", Kind: form.Textarea})
+if !p.OK() {
 	w.WriteHeader(http.StatusUnprocessableEntity)
 	renderContent(w, r, "new", formView{
-		Note:   Note{Title: title, Body: body},
-		Errors: form.Errors{"Title": "Title is required"},
+		Note:   Note{Title: p.String("title"), Body: p.String("body")},
+		Errors: p.Errors(),
 	})
 	return
 }
 ```
 
-Write the status before rendering; the render helper writes none of its own.
+`p.Echo()` is the seed-back map for map-shaped views. Hand-rolling with
+`PostFormValue` + a `form.Errors` map is equally legitimate. Write the status
+before rendering; the render helper writes none of its own.
 
-Money is stored as `int64` cents. Parse with `form.ParseCents(s)` (rejects more
-than two decimals, a leading `$`, or any sign; `""` parses to zero). Seed a form
-field with `form.FormatCentsPlain(cents)` — exactly what ParseCents accepts back
-— and display with `form.FormatCents(cents)`, which adds the `$`.
+Money is `int64` cents: a `form.Money` field (read with `p.Cents`) parses via
+`form.ParseCents` — no `$`, no sign, at most two decimals; `""` is zero. Seed
+a form field with `form.FormatCentsPlain(cents)`; display with
+`form.FormatCents(cents)`, which adds the `$`.
 
 After a successful mutation: `flash.Set(w, "notice", "Note created.")` then
 `http.Redirect(w, r, "/notes/…", http.StatusSeeOther)`. The render helper calls
@@ -301,16 +304,14 @@ and map `Identity.Address` to your user row's id before scoping.
   field kinds (text, textarea, money), no relations, **no per-user scoping
   yet**. Manifests are an equal, optional path — mix declared and hand-written
   resources freely — but anything a user owns gets hand-written handlers. (The
-  `view` package — `view.Render`, `view.Fail`, `view.ParseID` — is the helper
-  set for those *generated* actions, which run against a `*rastrillo.Ctx`; a
-  hand-written app like `examples/notes` uses its own render helper instead.)
+  `view` helpers serve those generated actions; a hand-written app uses its
+  own render helper.)
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary holding it and `rastrillo/gormlite`
   panics at init — `sql: Register called twice for driver sqlite`.
-  `gorm.io/driver/sqlite` is the cgo one (mattn), which loses the pure-Go build
-  and puts a second, differently-configured SQLite in the process. `db.Open`
-  already wires `gormlite` over modernc; you should not need a driver import.
+  `gorm.io/driver/sqlite` is the cgo one. `db.Open` already wires `gormlite`
+  over modernc; you never need a driver import.
 - **Never bind a form onto a model, never query an owned model unscoped, never
   answer 403 where 404 is the honest answer.** See §3 and §4.
 - **Never `git merge` to main** — not even locally. Every change lands as a pull

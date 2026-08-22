@@ -5,11 +5,11 @@ package act_admin_posts_index_post
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	postsstore "blog/gen/store/posts"
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/form"
 	"github.com/carlosframework/rastrillo/view"
 )
 
@@ -21,22 +21,15 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vTitle := strings.TrimSpace(r.PostFormValue("Title"))
-	vBody := r.PostFormValue("Body")
-
-	errs := map[string]string{}
-	if vTitle == "" {
-		errs["Title"] = "Title is required"
-	}
-
-	if len(errs) > 0 {
+	p := form.Parse(r,
+		form.Field{Name: "Title", Required: true},
+		form.Field{Name: "Body", Kind: form.Textarea},
+	)
+	if !p.OK() {
 		view.Render(ctx, w, "posts/form", http.StatusBadRequest, formView{
-			IsNew: true,
-			Fields: map[string]string{
-				"Title": vTitle,
-				"Body":  vBody,
-			},
-			Errors: errs,
+			IsNew:  true,
+			Fields: p.Echo(),
+			Errors: p.Errors(),
 		})
 		return
 	}
@@ -44,8 +37,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	store := postsstore.New(ctx.DB)
 	id, err := store.CreatePost(r.Context(), postsstore.CreatePostParams{
-		Title: vTitle,
-		Body:  vBody,
+		Title: p.String("Title"),
+		Body:  p.String("Body"),
 		Now:   now,
 	})
 	if err != nil {

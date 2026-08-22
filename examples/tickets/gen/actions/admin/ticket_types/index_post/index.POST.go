@@ -5,7 +5,6 @@ package act_admin_ticket_types_index_post
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo"
@@ -22,32 +21,17 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vName := strings.TrimSpace(r.PostFormValue("Name"))
-	vPriceRaw := r.PostFormValue("Price")
-	vPrice, errPrice := form.ParseCents(vPriceRaw)
-	vStatus := strings.TrimSpace(r.PostFormValue("Status"))
-	vMaxPerOrder := strings.TrimSpace(r.PostFormValue("MaxPerOrder"))
-
-	errs := map[string]string{}
-	if vName == "" {
-		errs["Name"] = "Name is required"
-	}
-	if vPriceRaw == "" {
-		errs["Price"] = "Price is required"
-	} else if errPrice != nil {
-		errs["Price"] = errPrice.Error()
-	}
-
-	if len(errs) > 0 {
+	p := form.Parse(r,
+		form.Field{Name: "Name", Required: true},
+		form.Field{Name: "Price", Kind: form.Money, Required: true},
+		form.Field{Name: "Status"},
+		form.Field{Name: "MaxPerOrder"},
+	)
+	if !p.OK() {
 		view.Render(ctx, w, "ticket_types/form", http.StatusBadRequest, formView{
-			IsNew: true,
-			Fields: map[string]string{
-				"Name":        vName,
-				"Price":       vPriceRaw,
-				"Status":      vStatus,
-				"MaxPerOrder": vMaxPerOrder,
-			},
-			Errors: errs,
+			IsNew:  true,
+			Fields: p.Echo(),
+			Errors: p.Errors(),
 		})
 		return
 	}
@@ -55,10 +39,10 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	store := ticket_typesstore.New(ctx.DB)
 	id, err := store.CreateTicketType(r.Context(), ticket_typesstore.CreateTicketTypeParams{
-		Name:        vName,
-		Price:       vPrice,
-		Status:      vStatus,
-		MaxPerOrder: vMaxPerOrder,
+		Name:        p.String("Name"),
+		Price:       p.Cents("Price"),
+		Status:      p.String("Status"),
+		MaxPerOrder: p.String("MaxPerOrder"),
 		Now:         now,
 	})
 	if err != nil {
