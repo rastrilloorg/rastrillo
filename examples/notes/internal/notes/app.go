@@ -16,8 +16,10 @@ import (
 	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/csrf"
 	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/jobs"
 	"github.com/carlosframework/rastrillo/password"
 	"github.com/carlosframework/rastrillo/sessions"
+	"github.com/carlosframework/rastrillo/ui"
 )
 
 // App wires the example: schema, the shared session core, the
@@ -28,7 +30,7 @@ import (
 // models.go and handlers.go are the only files this example asks a
 // reader to actually study; everything here is plumbing to get there.
 func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
-	if err := d.G.AutoMigrate(&User{}, &Note{}); err != nil {
+	if err := d.G.AutoMigrate(&User{}, &Note{}, &Export{}); err != nil {
 		return nil, err
 	}
 	// sessions ships its schema as raw SQL, not a GORM model — it is
@@ -53,7 +55,16 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		return nil, err
 	}
 
-	a := &app{db: d.G}
+	a := &app{db: d.G, jobs: jobs.New(logger)}
+
+	jh, err := jobs.NewHandlers(jobs.Config{
+		Jobs:           a.jobs,
+		Render:         a.renderJobPage,
+		RenderFragment: a.renderJobFragment,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	ph, err := password.New(password.Config{
 		Sessions:     sess,
@@ -103,6 +114,25 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		r.Post("/notes/{id}/delete", a.deleteNote)
 		r.Handle("/bookmarks", gmux)
 		r.Handle("/bookmarks/*", gmux)
+		// The jobs demo: startExport mints the Export row's id and
+		// starts the background job; the status page and its fragment
+		// are jobs.Handlers' own — this app only supplies Render and
+		// RenderFragment (render.go) above.
+		r.Post("/export", a.startExport)
+		r.Get("/exports/{id}", a.showExport)
+		r.Get("/jobs/{id}", jh.StatusPage)
+		r.Get("/jobs/{id}/fragment", jh.Fragment)
+	})
+
+	// The fragment shim, outside Require: it is a static asset, not a
+	// protected route, the same way a scaffolded app's static/
+	// rastrillo.js is served by the platform rather than a handler. A
+	// generated app owns its own copy on disk from rastrillo new;
+	// this hand-wired example just serves ui's embedded bytes directly
+	// so there is one fewer file for the demo to keep in sync.
+	r.Get("/static/rastrillo.js", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Write(ui.ShimJS())
 	})
 
 	mux := http.NewServeMux()

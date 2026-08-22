@@ -22,3 +22,17 @@ type Note struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+// Export is a finished "Export notes" document. Its ID is a random
+// token minted before the job starts (startExport), so the job's
+// Location is known up front. Owner is the session Subject — the same
+// string jobs.Jobs keys job ownership by — not Note's numeric UserID:
+// an Export lives beside its Job, not beside a Note, and showExport
+// keys on both ID and Owner the same way jobs.Get does, so Bob
+// fetching Alice's export is a 404, same as the notes.
+type Export struct {
+	ID        string `gorm:"primaryKey"`
+	Owner     string `gorm:"index"`
+	Content   string
+	CreatedAt time.Time
+}

@@ -1,6 +1,9 @@
 {{define "content"}}
 <h1>Notes</h1>
 <p><a href="/notes/new">New note</a></p>
+<form method="post" action="/export" data-busy data-busy-label="Exporting…">
+<button type="submit">Export notes</button>
+</form>
 {{with .Content}}
 {{if .Notes}}
 <ul>

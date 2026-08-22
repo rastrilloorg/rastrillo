@@ -1,24 +1,32 @@
 package notes
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 
 	"github.com/carlosframework/rastrillo/flash"
 	"github.com/carlosframework/rastrillo/form"
+	"github.com/carlosframework/rastrillo/jobs"
 	"github.com/carlosframework/rastrillo/scope"
 	"github.com/carlosframework/rastrillo/sessions"
 )
 
-// app holds the one dependency every handler below needs. sess.Require
+// app holds the dependencies every handler below needs. sess.Require
 // (app.go) guarantees a session on every route mounted through it, so
 // UserID's ok is never checked past that group boundary.
 type app struct {
-	db *gorm.DB
+	db   *gorm.DB
+	jobs *jobs.Jobs
 }
 
 // owned scopes a.db to the signed-in caller — the single seam every
@@ -136,4 +144,82 @@ func (a *app) deleteNote(w http.ResponseWriter, r *http.Request) {
 	}
 	flash.Set(w, "notice", "Note deleted.")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// startExport kicks off the background export and 303s to the status
+// page — the loading state the button's data-busy was missing before
+// the job even reaches the server. The export's ID is minted here, not
+// inside the job, so the job's Location (and this handler's redirect)
+// are known before the goroutine starts.
+//
+// The notes read inside the job scopes by uid (Note.UserID, resolved
+// from the session up front, same as every other handler's a.owned)
+// because that is the notes' own owner column; the job itself, and the
+// Export row it writes, are keyed by sess.Subject instead, because
+// that is what jobs.Jobs and jobs.Handlers key ownership by. Both
+// forms name the same signed-in caller — they just speak the two
+// different owner vocabularies this app happens to mix.
+func (a *app) startExport(w http.ResponseWriter, r *http.Request) {
+	sess, _ := sessions.Current(r)
+	uid, _ := sessions.UserID(r)
+	owner := sess.Subject
+	exportID := newToken()
+	g := a.db
+	job := a.jobs.Start(owner, "Export notes", "/exports/"+exportID,
+		func(ctx context.Context, progress func(string)) error {
+			var notes []Note
+			if err := scope.Owned(g.WithContext(ctx), uid).Order("id").Find(&notes).Error; err != nil {
+				return errors.New("could not read your notes")
+			}
+			var b strings.Builder
+			b.WriteString("# Notes export\n")
+			for i, n := range notes {
+				// Simulated pace so a demo's status page is actually
+				// visible mid-run — a real export would just be fast,
+				// and this sleep would not exist.
+				time.Sleep(300 * time.Millisecond)
+				progress(fmt.Sprintf("%d of %d", i+1, len(notes)))
+				fmt.Fprintf(&b, "\n## %s\n\n%s\n", n.Title, n.Body)
+			}
+			exp := Export{ID: exportID, Owner: owner, Content: b.String()}
+			if err := g.WithContext(ctx).Create(&exp).Error; err != nil {
+				return errors.New("could not write the export")
+			}
+			return nil
+		})
+	http.Redirect(w, r, "/jobs/"+job.ID, http.StatusSeeOther)
+}
+
+// showExport serves the finished document as markdown, keyed on id AND
+// Owner — the same someone-else's-row-is-a-404 rule as the notes
+// themselves, and as jobs.Handlers.lookup applies to the job that
+// wrote this row.
+func (a *app) showExport(w http.ResponseWriter, r *http.Request) {
+	sess, _ := sessions.Current(r)
+	var exp Export
+	err := a.db.WithContext(r.Context()).
+		Where("id = ? AND owner = ?", chi.URLParam(r, "id"), sess.Subject).
+		First(&exp).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Write([]byte(exp.Content))
+}
+
+// newToken is an Export's ID: the same crypto/rand + base64url idiom
+// jobs.newID uses (16 random bytes), reimplemented here rather than
+// exported from jobs, which has no reason to expose an ID-minting
+// helper beyond its own Start.
+func newToken() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		panic(err) // crypto/rand does not fail on supported platforms
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
 }
