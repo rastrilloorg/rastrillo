@@ -232,20 +232,25 @@ rather than rushed — see `internal/generate/generate.go`'s package doc.
 
 ## Manifests
 
-Manifests are the admin-panel generator, honestly scoped: one flat
-resource, three field kinds (text, textarea, money), no relations
-between resources, and no per-user scoping — the shape of a standalone
-admin table, not of a multi-user app's own screens. Design doc §9's
-`Resource` sugar declares that entity once and `rastrillo generate`
-builds its store, its screens, and their locale keys — a CRUD interface
-for a fraction of the cost of writing each of those by hand.
+Manifests are the declarative path — an optional, equal alternative to
+hand-written handlers, not a requirement and not a legacy mode. The
+two paths live side by side in one app, per resource: declare the
+screens that are pure CRUD, hand-write the ones that aren't, and move
+a resource between the paths whenever its needs change (eject one
+generated file, or delete your hand files and re-declare). Design doc
+§9's `Resource` sugar declares an entity once and `rastrillo generate`
+builds its store, its screens, and their locale keys — a CRUD surface
+for a fraction of the cost of writing each of those by hand, as
+readable committed code that composes the same `form`/`view` helpers a
+hand-written app uses.
 
-The app story for a real multi-user app — sign-in, sessions, CSRF,
-per-user ownership, hand-written screens over the primitive packages
-above — isn't a manifest at all; it's `SKILL.md` at the repo root plus
-`examples/notes`, the worked example that follows it end to end. Drop
-a manifest in `manifest/posts.toml` when what you actually want is an
-admin table:
+Its vocabulary today is honestly scoped: one flat resource, three
+field kinds (text, textarea, money), no relations, and no per-user
+scoping yet — so anything a *user owns* still takes the code path
+(`SKILL.md` plus `examples/notes`, the worked example). That boundary
+is where the generator currently stops, not where it is fated to stop.
+Drop a manifest in `manifest/posts.toml` when a resource fits the
+declared shape:
 
 ```toml
 name  = "posts"
@@ -393,21 +398,17 @@ PLATFORM_REPO=/path/to/carlosframework/platform hack/local-deploy-demo.sh
 
 ## Live
 
-[`https://helloworld.dev.oncarlos.com`](https://helloworld.dev.oncarlos.com) —
-the v1 walking skeleton's hello world, deployed for real on the
-platform-dev environment: a real S3-backed deployment bucket, a real
-`carlos edge`, a real Let's Encrypt certificate — not the local-directory
-demo above. See `carlosframework/platform`'s
-`docs/superpowers/specs/2026-08-02-platform-dev-environment-design.md`.
-Routed as a plain always-on instance via a hand-written systemd unit
-(matching the flagship's `console.service` precedent): `rastrillo.Run`
-and its hibernate/unit-tenant support landed 2026-08-03, after this
-deploy, so the live instance still runs the older hand-wired
-`-socket`/`-addr` `main.go`, not `Run`. App hostnames
-live under `oncarlos.com`, not `carlosframework.com` — that's reserved
-for platform surfaces, e.g. the dev console itself at
-[`https://platform.dev.carlosframework.com`](https://platform.dev.carlosframework.com)
-(sign in with Keymail to see it and every other app on this deployment).
+[`https://hello.bdf.oncarlos.com`](https://hello.bdf.oncarlos.com) —
+`examples/helloworld`, deployed for real on the CARLOS flagship: a
+real S3-backed deployment bucket, a real `carlos edge`, a real Let's
+Encrypt certificate — not the local-directory demo above. It runs as a
+hibernating instance (`rastrillo.Run` speaking the activation
+contract), wakes on the first request, and `/api/version` reports the
+exact rastrillo commit it was built from. The old
+`helloworld.dev.oncarlos.com` host belonged to the retired platform-dev
+environment and no longer resolves to a registered route. App
+hostnames live under `oncarlos.com`; `carlosframework.com` is reserved
+for platform surfaces.
 
 ## See also
 

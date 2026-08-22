@@ -296,11 +296,11 @@ and map `Identity.Address` to your user row's id before scoping.
 
 ## 6. What NOT to do
 
-- **Do not use the manifest generator for user-owned data.** `rastrillo
-  generate` compiles `manifest/` resources into CRUD screens for *standalone
-  admin tables only*: one table per resource, three field kinds (text, textarea,
-  money), no relations between resources, and **no per-user scoping at all**.
-  Anything a user owns gets hand-written handlers over the packages above. (The
+- **Do not use the manifest generator for user-owned data.** It builds CRUD
+  screens for *standalone, unscoped tables*: one table per resource, three
+  field kinds (text, textarea, money), no relations, **no per-user scoping
+  yet**. Manifests are an equal, optional path — mix declared and hand-written
+  resources freely — but anything a user owns gets hand-written handlers. (The
   `view` package — `view.Render`, `view.Fail`, `view.ParseID` — is the helper
   set for those *generated* actions, which run against a `*rastrillo.Ctx`; a
   hand-written app like `examples/notes` uses its own render helper instead.)
