@@ -203,7 +203,12 @@ the meantime. This list is their union. **Built:**
   pending half-session that only an assertion completes — the session
   it mints names both factors, `"magiclink+passkey"`). Single-use
   server-side challenges and half-sessions, subject-bound, over
-  `rastrillo/webauthn`'s ceremonies and browser module.
+  `rastrillo/webauthn`'s ceremonies and browser module. And the escape
+  hatch: ten single-use recovery codes, minted behind `RequireFresh`
+  and shown once, redeem at the gate by plain form POST — no
+  JavaScript, because a lost passkey is exactly when WebAuthn isn't
+  working — minting `"magiclink+recovery"` so the app can nudge
+  re-enrollment. Sign-in only: step-up still takes a real assertion.
 - **`rastrillo/webauthn`** — the passkey identity half, lifted from
   kass tests-and-all: ES256 only, no attestation checking, the CBOR
   subset reader, `LegacyRPID` for hostname moves, plus the `authtest`

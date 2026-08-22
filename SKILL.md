@@ -125,7 +125,7 @@ type Note struct {
 
 `db.Open(path, logger)` returns a `*db.DB` whose `G` is the `*gorm.DB`, wired
 for SQLite: one file, a one-connection writer pool, a reader pool of several,
-routed per statement by `dbresolver` — app code never picks a pool. The DSN
+routed per statement by `dbresolver`. The DSN
 sets `busy_timeout` before `journal_mode=WAL` (the reverse order crashes on
 concurrent open) plus `foreign_keys(1)`. `d.Close()` closes both
 pools; `d.G.DB()` returns the writer `*sql.DB` for database/sql packages like
@@ -235,11 +235,13 @@ credential and calls `SignIn`; that call is the whole contract.
 - Guard signed-in routes with a chi `Group` + `s.Require`: signed-out GET/HEAD
   redirects to `SigninPath` with a same-site `return_to`; anything else 403s.
 - `s.Middleware` is softer: resolves a session when there is one, blocks
-  nothing — for pages that merely look different signed in.
+  nothing.
 - `s.RequireFresh(maxAge)` is Require plus step-up: the credential must be
   verified within maxAge; stale GET/HEAD goes to `SigninPath` with `reauth=1`;
   re-signing-in or a `passkey` assertion rotates fresh. Sign-in-time
-  2FA: the plugin's `Config.SecondFactor` takes `passkey`'s `Gate`.
+  2FA: the plugin's `Config.SecondFactor` takes `passkey`'s `Gate`. Lost
+  passkey: a recovery code redeems at POST `/passkey/signin/recovery`;
+  mint via `RegenerateRecoveryCodes` behind `RequireFresh`.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (the `Session`: Subject, Method, AuthTime, At). Past `Require` the `ok` holds
   only for a plugin whose Subject is a numeric user id, as password's is — see
@@ -247,7 +249,7 @@ credential and calls `SignIn`; that call is the whole contract.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never a
   raw `return_to`: only a same-site absolute path (one leading `/`, no scheme
   or backslash) passes; anything else gets the fallback.
-- `s.Sweep(time.Now())` deletes expired rows; lookup checks expiry anyway.
+- `s.Sweep(time.Now())` deletes expired rows.
 
 **Password plugin.** `password.New(password.Config{...})` needs `Sessions`,
 `Lookup`, `RenderSignin`; `Create` is optional and disables signup when nil
