@@ -19,8 +19,8 @@ import (
 	"github.com/carlosframework/rastrillo/gormlite"
 )
 
-// LedgerDDL is exported so Task 10's baseline command can create the
-// ledger table without duplicating its shape.
+// LedgerDDL is exported so `rastrillo migration baseline` can create
+// the ledger table without duplicating its shape.
 const LedgerDDL = `CREATE TABLE IF NOT EXISTS rastrillo_migrations (
   id         TEXT PRIMARY KEY,
   applied_at TEXT NOT NULL,
@@ -162,11 +162,26 @@ func readLedger(ctx context.Context, conn *sql.Conn) (map[string]string, error) 
 // needsRebuild reports whether a migration performs SQLite's
 // twelve-step table rebuild, which must run with foreign keys off and
 // a foreign_key_check before commit.
+//
+// It is a text match, so it is a heuristic — but not a lossy one for
+// the shape that matters. SQLite offers no way to finish a rebuild
+// except by renaming the replacement table into place, so every
+// rebuild ends in "ALTER TABLE ... RENAME TO ...", gormlite's
+// included. "DROP COLUMN" is here for a hand-written migration using
+// SQLite's own newer syntax, which rebuilds internally.
+//
+// A third clause matched "__TEMP__" and could never fire: gormlite
+// names the table "<table>__temp", which uppercases to "..._TEMP"
+// with no trailing underscores. It was removed rather than corrected
+// to "__TEMP", because RENAME TO already covers every rebuild and
+// widening the match would only add false positives — and a false
+// positive is not free, since it runs foreign_key_check over the
+// whole database and can fail a boot on a pre-existing violation the
+// migration had nothing to do with.
 func needsRebuild(sql string) bool {
 	u := strings.ToUpper(sql)
 	return strings.Contains(u, "DROP COLUMN") ||
-		strings.Contains(u, "RENAME TO") ||
-		strings.Contains(u, "__TEMP__")
+		strings.Contains(u, "RENAME TO")
 }
 
 // evict marks conn unusable so the pool discards it instead of

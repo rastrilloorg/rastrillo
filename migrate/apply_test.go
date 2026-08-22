@@ -314,3 +314,22 @@ func TestApplyAcceptsTheSameIDInDifferentNamespaces(t *testing.T) {
 		t.Fatalf("Applied = %v, want both", r.Applied)
 	}
 }
+
+// TestNeedsRebuildRecognisesGormlitesOwnRebuild pins the heuristic
+// against the statements gormlite actually emits, rather than against
+// what a reader assumes it emits. A dead third clause matched
+// "__TEMP__" for a table gormlite in fact names "<table>__temp"; the
+// check has always worked through RENAME TO alone, and this is what
+// says so.
+func TestNeedsRebuildRecognisesGormlitesOwnRebuild(t *testing.T) {
+	rebuild := "CREATE TABLE `notes__temp`  (`id` integer PRIMARY KEY AUTOINCREMENT,`title` text);\n" +
+		"INSERT INTO `notes__temp`(`id`,`title`) SELECT `id`,`title` FROM `notes`;\n" +
+		"DROP TABLE `notes`;\n" +
+		"ALTER TABLE `notes__temp` RENAME TO `notes`;\n"
+	if !needsRebuild(rebuild) {
+		t.Fatal("gormlite's rebuild must run with foreign keys off and a foreign_key_check before commit")
+	}
+	if needsRebuild("ALTER TABLE notes ADD archived numeric;") {
+		t.Fatal("an additive migration must not pay for foreign_key_check over the whole database")
+	}
+}

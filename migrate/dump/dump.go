@@ -22,7 +22,6 @@ import (
 type Payload struct {
 	Changes []migrate.Change `json:"changes"`
 	Schema  string           `json:"schema"`
-	Diff    []string         `json:"diff"`
 
 	// Boot is the app's composed boot set (migrate.Merge of every
 	// framework subsystem plus the app's own Schema, in apply order)
@@ -30,7 +29,9 @@ type Payload struct {
 	// migration's SQL, not just its ID: baseline's --through hands
 	// this straight to migrate.Stamp, which writes a checksum computed
 	// from the SQL, and a ledger row with the wrong checksum makes the
-	// next real boot refuse with "applied with different SQL".
+	// next real boot refuse with "applied with different SQL". `status`
+	// reads it for the same reason — recomputing each checksum is how
+	// it reports the mismatch that is stopping an app booting.
 	//
 	// This is the only way the CLI can learn the order an app composes
 	// its subsystems in — rastrillo could import sessions/auth/etc.
@@ -59,9 +60,6 @@ func Compute(ms []migrate.Migration, boot []migrate.Migration, models []any) (Pa
 	}
 	if p.Schema, err = migrate.SchemaSQL(ctx, ms); err != nil {
 		return p, err
-	}
-	for _, c := range p.Changes {
-		p.Diff = append(p.Diff, c.SQL)
 	}
 	p.Boot = boot
 	return p, nil

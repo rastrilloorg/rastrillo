@@ -116,8 +116,26 @@ func FromFS(fsys fs.FS, namespace string) (*Set, error)
 func MustFromFS(fsys fs.FS, namespace string) *Set
 func (s *Set) Add(m Migration) *Set
 func Merge(sets ...*Set) *Set
-func Apply(g *gorm.DB, s *Set) (Result, error)
+func (s *Set) Validate() error
+func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error)
 ```
+
+`Apply` takes a `*db.DB` and a `ctx`, not the `*gorm.DB` this section
+first proposed. The whole run has to happen on one pinned
+`*sql.Conn`: `PRAGMA foreign_keys` is per-connection state and
+SQLite's twelve-step rebuild must toggle it outside the transaction,
+so a pooled handle would be a correctness bug rather than a slow path
+— and only `*db.DB` can hand out that connection. The `ctx` carries
+the boot deadline down into a Go migration's own GORM calls, which
+would otherwise run against `context.Background()`. `apply.go` argues
+both at length.
+
+`Validate` reports a repeated ID. `Merge` returns a `*Set` and no
+error, which is what lets a call site read as plain apply order, so a
+composed set is checked here instead; `Apply` calls it before running
+anything. A duplicate would otherwise be skipped in silence — the
+ledger keys on ID alone, so the second migration carrying one looks
+exactly like a migration another instance already applied.
 
 `Result` reports what the call did — migrations applied, migrations
 already present, and whether it took the adoption path (§7) — so an
@@ -152,9 +170,11 @@ false alarm.
 The two-mechanism boot collapses to one call:
 
 ```go
-if err := migrate.Apply(d.G, migrate.Merge(sessions.Schema, auth.Schema, notes.Schema)); err != nil {
+r, err := migrate.Apply(ctx, d, migrate.Merge(sessions.Schema, auth.Schema, notes.Schema))
+if err != nil {
 	return nil, err
 }
+logger.Info("migrate", "applied", r.Applied, "skipped", r.Skipped, "adopted", r.Adopted)
 ```
 
 Each subsystem package replaces its `Migrations []string` with a

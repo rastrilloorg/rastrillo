@@ -42,6 +42,12 @@ type Migration struct {
 	// the app's pool, so a failure rolls Fn's writes back with the
 	// ledger row, same as a SQL migration.
 	//
+	// That transaction is also the limit of what Fn can do: it cannot
+	// perform SQLite's twelve-step table rebuild. A rebuild has to
+	// toggle PRAGMA foreign_keys, which SQLite silently ignores inside
+	// a transaction, and Apply can only do that around a migration it
+	// recognises as a rebuild from its SQL. Write a rebuild as SQL.
+	//
 	// json:"-": encoding/json refuses to marshal any struct with a
 	// func-typed field, even one left nil, so a Migration carrying Fn
 	// cannot cross the dump package's process boundary at all unless
