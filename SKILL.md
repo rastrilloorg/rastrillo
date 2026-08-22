@@ -53,11 +53,13 @@ if err := rastrillo.Serve(opts); err != nil { logger.Error("serve", "err", err);
 **Use `rastrillo.Resolve` + `rastrillo.Serve`, not `rastrillo.Run`, whenever
 the app opens its own database.** `Run` re-parses argv and repopulates
 `Options.DBPath`, so `Serve` opens a second connection to the file `db.Open`
-already owns; `Resolve` applies the same activation argv/$STATE_DIRECTORY
-resolution with `DBPath` blank, and `db.Open`'s eager ping satisfies the
-boot materialization duty. The platform contract — activation argv,
-LISTEN_FDS, $STATE_DIRECTORY, /healthz, /api/version, SIGTERM drain —
-comes from Resolve/Serve; never hand-roll any of it.
+owns. `Resolve` applies the same activation argv and `$STATE_DIRECTORY`
+resolution.
+
+The platform contract — activation argv, LISTEN_FDS, $STATE_DIRECTORY,
+/healthz, /api/version, SIGTERM drain, baseline security headers (CSP
+et al; your own Set wins) — comes from Resolve/Serve; never hand-roll any
+of it.
 
 `app.go` — the whole wiring, in order:
 

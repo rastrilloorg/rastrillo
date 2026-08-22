@@ -255,3 +255,71 @@ func TestBuildHandlerPropagatesLocaleErrors(t *testing.T) {
 		t.Errorf("error %q has %d \"rastrillo:\" prefixes, want exactly 1", err.Error(), n)
 	}
 }
+
+// The baseline security headers ride every response — the app's routes
+// and the framework's own endpoints alike — because the wrapper is the
+// outermost layer of the assembly.
+func TestBuildHandlerSetsSecurityHeaders(t *testing.T) {
+	h, err := buildHandler(Options{Mux: helloMux(&captured{})})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+	for _, path := range []string{"/hello", "/healthz"} {
+		rec := get(h, path, "")
+		hd := rec.Header()
+		if got := hd.Get("Content-Security-Policy"); !strings.Contains(got, "default-src 'self'") {
+			t.Errorf("%s: Content-Security-Policy = %q, want the default-src 'self' policy", path, got)
+		}
+		if got := hd.Get("X-Content-Type-Options"); got != "nosniff" {
+			t.Errorf("%s: X-Content-Type-Options = %q, want nosniff", path, got)
+		}
+		if got := hd.Get("X-Frame-Options"); got != "DENY" {
+			t.Errorf("%s: X-Frame-Options = %q, want DENY", path, got)
+		}
+		if got := hd.Get("Referrer-Policy"); got != "strict-origin-when-cross-origin" {
+			t.Errorf("%s: Referrer-Policy = %q, want strict-origin-when-cross-origin", path, got)
+		}
+	}
+}
+
+// Options.CSP replaces the policy string wholesale; the other headers
+// stay.
+func TestBuildHandlerCSPOverride(t *testing.T) {
+	h, err := buildHandler(Options{Mux: helloMux(&captured{}), CSP: "default-src 'none'"})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+	rec := get(h, "/hello", "")
+	if got := rec.Header().Get("Content-Security-Policy"); got != "default-src 'none'" {
+		t.Errorf("Content-Security-Policy = %q, want the override verbatim", got)
+	}
+	if got := rec.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Errorf("X-Content-Type-Options = %q, want nosniff (override must not clear it)", got)
+	}
+}
+
+// The wrapper sets headers before the app runs, so an app that sets its
+// own value — here through Options.Wrap, the documented middleware seam
+// — simply wins. No off-switch needed.
+func TestBuildHandlerAppHeaderWins(t *testing.T) {
+	h, err := buildHandler(Options{
+		Mux: helloMux(&captured{}),
+		Wrap: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src *")
+				w.Header().Del("X-Frame-Options")
+				next.ServeHTTP(w, r)
+			})
+		},
+	})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+	rec := get(h, "/hello", "")
+	if got := rec.Header().Get("Content-Security-Policy"); got != "default-src 'self'; img-src *" {
+		t.Errorf("Content-Security-Policy = %q, want the app's own value", got)
+	}
+	if got := rec.Header().Get("X-Frame-Options"); got != "" {
+		t.Errorf("X-Frame-Options = %q, want removed by the app", got)
+	}
+}
