@@ -21,6 +21,11 @@
                            buttons and set aria-busy="true"
      data-busy-label="…"   optional button text while busy
 
+   select.js is a sibling file following exactly these rules, kept
+   separate so this one stays small enough to read in one sitting. It
+   answers data-rst-select on a <select>, which field-select emits past
+   ten options.
+
    Every poll carries the request header Rastrillo-Fragment: 1, which
    marks the request as a shim poll so a handler can tell it apart from
    direct navigation. Reserved: the framework's own handlers do not

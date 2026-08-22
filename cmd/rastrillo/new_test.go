@@ -448,3 +448,22 @@ func TestScaffoldedLayoutCallsIconAssets(t *testing.T) {
 		t.Error("render.go does not register the icon seam")
 	}
 }
+
+// select.js is delivered once, verbatim, on the same terms as the shim,
+// and the layout loads it.
+func TestNewScaffoldsSelectJS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"selapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("selapp", "internal", "selapp", "static", "select.js"))
+	if err != nil {
+		t.Fatalf("select.js not scaffolded: %v", err)
+	}
+	if !bytes.Equal(got, ui.SelectJS()) {
+		t.Error("scaffolded select.js is not ui.SelectJS() verbatim")
+	}
+	if !strings.Contains(layoutTemplate, `static/select.js`) {
+		t.Error("the layout never loads select.js, so the enhancement can never run")
+	}
+}

@@ -102,6 +102,11 @@ func runNew(args []string) error {
 		// from here on, loaded by the layout via the same fingerprinting
 		// {{asset ...}} helper.
 		filepath.Join(appDir, "static", "rastrillo.js"): string(ui.ShimJS()),
+		// field-select's searchable enhancement, on the same terms.
+		// Inert until a select opts in with data-rst-select, which
+		// field-select emits past ten options — so an app that never has
+		// a select that big can delete this and its script tag.
+		filepath.Join(appDir, "static", "select.js"): string(ui.SelectJS()),
 		// The test harness, delivered once like tokens.css: app-owned
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
@@ -420,6 +425,7 @@ const layoutTemplate = `{{define "layout"}}<!doctype html>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
 <script defer src="{{asset "static/rastrillo.js"}}"></script>
 {{iconAssets}}
+<script defer src="{{asset "static/select.js"}}"></script>
 </head>
 <body>
 <main>
