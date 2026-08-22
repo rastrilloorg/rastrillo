@@ -100,6 +100,13 @@ var Migrations = []string{
 	  return_to  TEXT NOT NULL DEFAULT '',
 	  expires_at TEXT NOT NULL
 	);`,
+	`CREATE TABLE IF NOT EXISTS passkey_recovery_codes (
+	  code_hash  TEXT PRIMARY KEY,
+	  subject    TEXT NOT NULL,
+	  created_at TEXT NOT NULL
+	);`,
+	`CREATE INDEX IF NOT EXISTS passkey_recovery_codes_subject
+	  ON passkey_recovery_codes (subject);`,
 }
 
 // Config configures New. Sessions, DB and Origin are required.
