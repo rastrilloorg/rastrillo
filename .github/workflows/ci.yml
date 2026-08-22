@@ -20,6 +20,11 @@ jobs:
     # -mod=readonly fails every nested go build on a fresh runner.
     env:
       GOFLAGS: -mod=mod
+      # The spec's acceptance criterion is CGO_ENABLED=0 across the
+      # tree (static binaries; gormlite must never pull in a cgo
+      # driver) — pinned job-wide so a runner image with a C toolchain
+      # can't quietly satisfy a build that would fail without one.
+      CGO_ENABLED: 0
     steps:
       - uses: actions/checkout@v4
 
@@ -67,12 +72,10 @@ jobs:
 
       # notes carries no `go tool` directive (no sqlc, no generate
       # step below) — it's the hand-written middle-layer example, so
-      # its sweep is build+vet+test only. CGO_ENABLED=0 matches the
-      # module's own constraint (see examples/notes' task brief).
+      # its sweep is build+vet+test only. CGO_ENABLED=0 comes from the
+      # job env now.
       - name: examples/notes ./... sweep
         working-directory: examples/notes
-        env:
-          CGO_ENABLED: 0
         run: |
           go build ./...
           go vet ./...

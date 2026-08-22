@@ -278,10 +278,10 @@ take `(w, r, password.PageData)` where PageData is `{Error, Email, ReturnTo}`;
 password writes the 422 status itself before re-rendering, so the callback must
 not write one.
 
-**Known gap:** the password plugin has **no rate limiting and no lockout** —
-nothing throttles repeated sign-in attempts against one account or from one IP.
-This is a known follow-up, not a design decision; if an app is exposed and needs
-it today, put a limiter in front of `POST /signin` yourself. The keymail plugin
+**Rate limiting:** Signin throttles failed attempts per email — 10 failures in
+15 minutes answers 429 until the oldest ages out; success resets the budget.
+In-memory, keyed by email not IP — IP-level throttling (signup spam,
+distributed guessing) stays a deployment concern. The keymail plugin
 (`rastrillo/auth`) does rate-limit, through signin's `NewMemoryLimiter`, and is
 the family's choice for family apps: `auth.New(auth.Config{...})` with
 `Begin`/`Callback`/`Verify`/`Signout` handlers and `RequireSession`, over the

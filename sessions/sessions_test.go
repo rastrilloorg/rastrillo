@@ -186,6 +186,84 @@ func TestHostPrefixOnHTTPS(t *testing.T) {
 	}
 }
 
+func TestSecureAttributeFollowsOrigin(t *testing.T) {
+	https, _ := newTestSessions(t, func(cfg *sessions.Config) { cfg.Origin = "https://app.example.com" })
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("POST", "https://app.example.com/signin", nil)
+	if err := https.SignIn(w, r, sessions.Session{Subject: "42"}); err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+	if c := cookieFrom(t, w, https.CookieName()); !c.Secure {
+		t.Errorf("https origin: cookie Secure = false, want true (__Host- requires it)")
+	}
+
+	plain, _ := newTestSessions(t, nil)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest("POST", "http://app.test/signin", nil)
+	if err := plain.SignIn(w, r, sessions.Session{Subject: "42"}); err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+	if c := cookieFrom(t, w, plain.CookieName()); c.Secure {
+		t.Errorf("http origin: cookie Secure = true — browsers drop Secure cookies set over plain http")
+	}
+}
+
+func TestNewValidatesConfig(t *testing.T) {
+	if _, err := sessions.New(sessions.Config{Origin: "http://app.test"}); err == nil {
+		t.Errorf("New with nil DB: err = nil, want error")
+	}
+
+	db, err := sql.Open("sqlite", "file:"+filepath.Join(t.TempDir(), "v.db"))
+	if err != nil {
+		t.Fatalf("sql.Open: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+	for _, origin := range []string{"", "app.example.com", "ftp://app.example.com"} {
+		if _, err := sessions.New(sessions.Config{DB: db, Origin: origin}); err == nil {
+			t.Errorf("New with Origin %q: err = nil, want error", origin)
+		}
+	}
+}
+
+func TestMiddlewareStashesButNeverBlocks(t *testing.T) {
+	s, _ := newTestSessions(t, nil)
+	w := httptest.NewRecorder()
+	signInReq := httptest.NewRequest("POST", "http://app.test/signin", nil)
+	if err := s.SignIn(w, signInReq, sessions.Session{Subject: "42", Method: "password"}); err != nil {
+		t.Fatalf("SignIn: %v", err)
+	}
+	cookie := cookieFrom(t, w, s.CookieName())
+
+	var called, gotOK bool
+	var gotSubject string
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		var sess sessions.Session
+		sess, gotOK = sessions.Current(r)
+		gotSubject = sess.Subject
+	})
+	h := s.Middleware(next)
+
+	r := httptest.NewRequest("GET", "http://app.test/", nil)
+	r.AddCookie(cookie)
+	h.ServeHTTP(httptest.NewRecorder(), r)
+	if !called {
+		t.Fatalf("signed-in: next not called")
+	}
+	if !gotOK || gotSubject != "42" {
+		t.Errorf("signed-in: Current = (%q, %v), want (42, true)", gotSubject, gotOK)
+	}
+
+	called, gotOK = false, false
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "http://app.test/", nil))
+	if !called {
+		t.Fatalf("signed-out: next not called — Middleware must never block")
+	}
+	if gotOK {
+		t.Errorf("signed-out: Current ok = true, want false")
+	}
+}
+
 func TestRequireRedirectsWithReturnTo(t *testing.T) {
 	s, _ := newTestSessions(t, nil)
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

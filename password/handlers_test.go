@@ -1,9 +1,11 @@
 package password_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -454,6 +456,95 @@ func TestSignoutRevokes(t *testing.T) {
 // revoked), since a GET route would put a plaintext password in the
 // URL/referrer/logs (Signin, Signup) or escape the app-wide CSRF
 // guard, which only gates POST/PUT/PATCH/DELETE (Signout).
+func TestSigninRateLimitsPerEmail(t *testing.T) {
+	env := newTestEnv(t, nil)
+	hash, err := password.Hash("s3cretpw")
+	if err != nil {
+		t.Fatalf("Hash: %v", err)
+	}
+	env.store.create(context.Background(), "user@example.com", hash)
+
+	for i := 0; i < 10; i++ {
+		w := httptest.NewRecorder()
+		env.h.Signin(w, signinRequest("user@example.com", "wrong-guess", ""))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("attempt %d: status = %d, want 422", i+1, w.Code)
+		}
+	}
+
+	// The 11th attempt is blocked even with the CORRECT password — the
+	// gate runs before verification, so a guesser's budget can't be
+	// stretched by finally guessing right.
+	w := httptest.NewRecorder()
+	env.h.Signin(w, signinRequest("user@example.com", "s3cretpw", ""))
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("blocked attempt: status = %d, want 429", w.Code)
+	}
+	if d, ok := env.signin.last(); !ok || !strings.Contains(d.Error, "Too many") {
+		t.Errorf("blocked attempt PageData.Error = %q, want a too-many-attempts message", d.Error)
+	}
+
+	// Another email's budget is untouched.
+	hash2, _ := password.Hash("s3cretpw")
+	env.store.create(context.Background(), "other@example.com", hash2)
+	w2 := httptest.NewRecorder()
+	env.h.Signin(w2, signinRequest("other@example.com", "s3cretpw", ""))
+	if w2.Code != http.StatusSeeOther {
+		t.Errorf("unrelated email: status = %d, want 303", w2.Code)
+	}
+}
+
+func TestSigninSuccessResetsRateLimit(t *testing.T) {
+	env := newTestEnv(t, nil)
+	hash, err := password.Hash("s3cretpw")
+	if err != nil {
+		t.Fatalf("Hash: %v", err)
+	}
+	env.store.create(context.Background(), "user@example.com", hash)
+
+	for i := 0; i < 9; i++ {
+		w := httptest.NewRecorder()
+		env.h.Signin(w, signinRequest("user@example.com", "wrong-guess", ""))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("attempt %d: status = %d, want 422", i+1, w.Code)
+		}
+	}
+	w := httptest.NewRecorder()
+	env.h.Signin(w, signinRequest("user@example.com", "s3cretpw", ""))
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("success under budget: status = %d, want 303", w.Code)
+	}
+
+	// The success cleared the count: nine fresh typos fit again.
+	for i := 0; i < 9; i++ {
+		w := httptest.NewRecorder()
+		env.h.Signin(w, signinRequest("user@example.com", "wrong-guess", ""))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("post-reset attempt %d: status = %d, want 422 (not blocked)", i+1, w.Code)
+		}
+	}
+}
+
+func TestConfiguredLoggerReceivesErrors(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+	env := newTestEnv(t, func(cfg *password.Config) {
+		cfg.Logger = logger
+		cfg.Lookup = func(context.Context, string) (int64, string, error) {
+			return 0, "", errors.New("db is on fire")
+		}
+	})
+
+	w := httptest.NewRecorder()
+	env.h.Signin(w, signinRequest("a@example.com", "whatever0", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", w.Code)
+	}
+	if !strings.Contains(buf.String(), "db is on fire") {
+		t.Errorf("configured logger did not receive the lookup error; log output: %q", buf.String())
+	}
+}
+
 func TestMutatingHandlersRejectNonPost(t *testing.T) {
 	env := newTestEnv(t, nil)
 	hash, _ := password.Hash("s3cretpw")

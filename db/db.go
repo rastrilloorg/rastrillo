@@ -29,6 +29,16 @@ import (
 	"github.com/carlosframework/rastrillo/gormlite"
 )
 
+// slogWriter adapts the app's *slog.Logger to GORM's logger.Writer.
+// Everything GORM emits at the configured level (warnings, slow
+// queries, real errors) lands in the app's own log stream instead of
+// a second stdout format.
+type slogWriter struct{ log *slog.Logger }
+
+func (w slogWriter) Printf(format string, args ...any) {
+	w.log.Warn(fmt.Sprintf(format, args...))
+}
+
 type DB struct {
 	G *gorm.DB
 
@@ -68,8 +78,16 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 		return nil, fmt.Errorf("rastrillo/db: ping reader %s: %w", path, err)
 	}
 
+	// IgnoreRecordNotFoundError: a scoped by-ID miss (the 404-not-403
+	// contract) surfaces as ErrRecordNotFound on every not-yours URL —
+	// routine control flow, not an error worth a log line per hit.
+	gl := logger.New(slogWriter{log}, logger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logger.Warn,
+		IgnoreRecordNotFoundError: true,
+	})
 	g, err := gorm.Open(gormlite.Dialector{Conn: w}, &gorm.Config{
-		Logger:  logger.Default.LogMode(logger.Warn),
+		Logger:  gl,
 		NowFunc: func() time.Time { return time.Now().UTC() },
 	})
 	if err != nil {

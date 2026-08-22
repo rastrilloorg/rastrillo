@@ -60,12 +60,18 @@ type Config struct {
 	// RenderSignup renders the signup page/form the same way
 	// RenderSignin does for sign-in. Required only when Create is set.
 	RenderSignup func(w http.ResponseWriter, r *http.Request, d PageData)
+
+	Logger *slog.Logger
 }
 
 // Handlers is the wired plugin: an app builds one at boot (New) and
-// mounts its methods.
+// mounts its methods. Build exactly one per process and share it — the
+// sign-in rate limiter's state lives on the value, so a Handlers per
+// request would get fresh empty budgets every time (the same reasoning
+// as auth.Auth's one-Flow rule).
 type Handlers struct {
-	cfg Config
+	cfg   Config
+	limit *limiter
 }
 
 // New validates cfg and returns a ready *Handlers.
@@ -85,7 +91,10 @@ func New(cfg Config) (*Handlers, error) {
 	if cfg.SignedInPath == "" {
 		cfg.SignedInPath = "/"
 	}
-	return &Handlers{cfg: cfg}, nil
+	if cfg.Logger == nil {
+		cfg.Logger = slog.Default()
+	}
+	return &Handlers{cfg: cfg, limit: newLimiter()}, nil
 }
 
 // SigninPage renders the sign-in form: GET, no state change.
@@ -110,6 +119,10 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 // (against the package decoyHash) before failing, so the wall-clock
 // cost doesn't leak which case happened.
 //
+// Failed attempts are rate-limited per email (see limit.go for the
+// policy and its trade-offs); a blocked attempt re-renders at 429
+// without touching Lookup or PBKDF2.
+//
 // POST only: a GET-mounted Signin would put the plaintext password
 // into the URL, browser history, referrers, and access logs.
 func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +137,20 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 	email := normalizeEmail(r.FormValue("email"))
 	submitted := r.FormValue("password")
 
+	// The limit gate runs before Lookup and Verify: a blocked attempt
+	// costs no PBKDF2 work (that CPU amplification is half of what the
+	// limiter is for) and learns nothing about the account, because the
+	// gate sees only the attempt count.
+	if h.limit.blocked(email, time.Now()) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		h.cfg.RenderSignin(w, r, PageData{
+			Error:    tooManyAttempts,
+			Email:    email,
+			ReturnTo: r.FormValue("return_to"),
+		})
+		return
+	}
+
 	id, hash, err := h.cfg.Lookup(r.Context(), email)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -131,19 +158,22 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 		// this branch costs the same wall-clock as a found-but-wrong
 		// password below — no timing oracle for account enumeration.
 		Verify(decoyHash, submitted)
+		h.limit.fail(email, time.Now())
 		h.rerenderSignin(w, r, email)
 		return
 	case err != nil:
-		slog.Default().Error("rastrillo/password: lookup", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: lookup", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
 
 	if !Verify(hash, submitted) {
+		h.limit.fail(email, time.Now())
 		h.rerenderSignin(w, r, email)
 		return
 	}
 
+	h.limit.clear(email)
 	h.signInAndRedirect(w, r, id)
 }
 
@@ -190,7 +220,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := Hash(submitted)
 	if err != nil {
-		slog.Default().Error("rastrillo/password: hash", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: hash", "err", err)
 		http.Error(w, "sign-up failed", http.StatusInternalServerError)
 		return
 	}
@@ -202,7 +232,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 		// rather than leaking storage details, but it's still logged —
 		// a DB outage should not vanish silently just because it looks
 		// like a duplicate-email case to the caller.
-		slog.Default().Error("rastrillo/password: create", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: create", "err", err)
 		h.rerenderSignup(w, r, "That email is already registered.", email)
 		return
 	}
@@ -228,7 +258,7 @@ func (h *Handlers) signInAndRedirect(w http.ResponseWriter, r *http.Request, id 
 		AuthTime: time.Now(),
 	})
 	if err != nil {
-		slog.Default().Error("rastrillo/password: sign in", "err", err)
+		h.cfg.Logger.Error("rastrillo/password: sign in", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
