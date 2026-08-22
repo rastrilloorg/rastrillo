@@ -72,6 +72,12 @@ func TestRecordNotFoundNotLogged(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// The assertion is about the by-ID miss below, not the setup: a
+	// slow CI runner can trip the 200ms SLOW SQL warning on the CREATE
+	// TABLE itself (observed at 452ms on a GitHub runner), so start
+	// measuring from here.
+	buf.Reset()
+
 	var got struct{ ID int64 }
 	err = d.G.Table("notes").Where("id = ?", 99).Take(&got).Error
 	if err != gorm.ErrRecordNotFound {

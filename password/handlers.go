@@ -52,6 +52,15 @@ type Config struct {
 	// return_to. Default "/".
 	SignedInPath string
 
+	// SecondFactor is the sign-in-time 2FA seam: called at the exact
+	// point a verified password would mint the session, with the
+	// session that WOULD be minted. done=true means the hook took over
+	// the response (stored a pending half-session and redirected —
+	// passkey.Handlers.Gate is the shipped implementation); done=false
+	// means no second factor applies and sign-in proceeds unchanged.
+	// Nil is exactly today's behavior.
+	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
+
 	// RenderSignin renders the sign-in page/form, called both for a
 	// plain page load (SigninPage) and to re-render after a failed
 	// attempt (Signin), with an appropriate status already written.
@@ -249,15 +258,28 @@ func (h *Handlers) rerenderSignup(w http.ResponseWriter, r *http.Request, msg, e
 	})
 }
 
-// signInAndRedirect mints the session and sends the 303 both Signin
+// signInAndRedirect offers the would-be session to the SecondFactor
+// hook (which may trade it for a pending half-session and take over
+// the response), and otherwise mints it and sends the 303 both Signin
 // and Signup finish with.
 func (h *Handlers) signInAndRedirect(w http.ResponseWriter, r *http.Request, id int64) {
-	err := h.cfg.Sessions.SignIn(w, r, sessions.Session{
+	sess := sessions.Session{
 		Subject:  strconv.FormatInt(id, 10),
 		Method:   "password",
 		AuthTime: time.Now(),
-	})
-	if err != nil {
+	}
+	if h.cfg.SecondFactor != nil {
+		done, err := h.cfg.SecondFactor(w, r, sess)
+		if err != nil {
+			h.cfg.Logger.Error("rastrillo/password: second factor", "err", err)
+			http.Error(w, "sign-in failed", http.StatusInternalServerError)
+			return
+		}
+		if done {
+			return
+		}
+	}
+	if err := h.cfg.Sessions.SignIn(w, r, sess); err != nil {
 		h.cfg.Logger.Error("rastrillo/password: sign in", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return

@@ -174,12 +174,15 @@ the meantime. This list is their union. **Built:**
   real session revocation, same-origin CSRF on every state-changing
   handler, an `Authorize` admission hook, and `RequireFreshSession`
   for step-up on sensitive routes.
-- **`rastrillo/passkey`** — the WebAuthn second factor on the step-up
-  seam: a signed-in user enrolls a passkey, and a valid-but-stale
-  session (refused by `sessions.RequireFresh`) is made fresh again by
-  an assertion ceremony instead of a full re-sign-in. Single-use
-  server-side challenges, subject-bound, over `rastrillo/webauthn`'s
-  ceremonies and browser module.
+- **`rastrillo/passkey`** — the WebAuthn second factor, both places it
+  belongs: on the step-up seam (a signed-in user enrolls, and a
+  valid-but-stale session is made fresh again by an assertion instead
+  of a full re-sign-in) and at first sign-in (`Gate`, wired into a
+  plugin's `SecondFactor` hook: a verified first factor becomes a
+  pending half-session that only an assertion completes — the session
+  it mints names both factors, `"magiclink+passkey"`). Single-use
+  server-side challenges and half-sessions, subject-bound, over
+  `rastrillo/webauthn`'s ceremonies and browser module.
 - **`rastrillo/webauthn`** — the passkey identity half, lifted from
   kass tests-and-all: ES256 only, no attestation checking, the CBOR
   subset reader, `LegacyRPID` for hostname moves, plus the `authtest`

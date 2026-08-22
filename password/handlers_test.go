@@ -240,6 +240,40 @@ func TestSigninSuccessMintsSession(t *testing.T) {
 	}
 }
 
+// TestSigninSecondFactorIntercepts pins the 2FA seam: a SecondFactor
+// hook that reports done gets the response — no session is minted, no
+// redirect to SignedInPath happens — and the hook sees the exact
+// session that would have been minted. (passkey.Handlers.Gate is the
+// shipped implementation; here a recorder stands in, since the seam —
+// not the ceremony — is this package's contract.)
+func TestSigninSecondFactorIntercepts(t *testing.T) {
+	var saw sessions.Session
+	env := newTestEnv(t, func(cfg *password.Config) {
+		cfg.SecondFactor = func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) {
+			saw = sess
+			http.Redirect(w, r, "/passkey/confirm", http.StatusSeeOther)
+			return true, nil
+		}
+	})
+	hash, _ := password.Hash("s3cretpw")
+	wantID, _ := env.store.create(context.Background(), "user@example.com", hash)
+
+	w := httptest.NewRecorder()
+	env.h.Signin(w, signinRequest("user@example.com", "s3cretpw", ""))
+
+	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/passkey/confirm" {
+		t.Fatalf("gated signin: %d -> %q, want 303 -> /passkey/confirm", w.Code, w.Header().Get("Location"))
+	}
+	if saw.Subject != strconv.FormatInt(wantID, 10) || saw.Method != "password" {
+		t.Errorf("hook saw %+v, want the would-be password session", saw)
+	}
+	for _, c := range w.Result().Cookies() {
+		if c.Name == env.sess.CookieName() {
+			t.Fatal("gated signin minted a session cookie anyway")
+		}
+	}
+}
+
 func TestSigninHonorsReturnTo(t *testing.T) {
 	env := newTestEnv(t, nil)
 	hash, _ := password.Hash("s3cretpw")

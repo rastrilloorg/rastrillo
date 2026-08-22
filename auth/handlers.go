@@ -124,17 +124,31 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 	a.redirect(w, r, a.cfg.SigninPath)
 }
 
-// admit runs the admission gate and mints the session.
+// admit runs the admission gate, offers the session to the
+// SecondFactor hook (which may trade it for a pending half-session
+// and take over the response), and otherwise mints it.
 func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
 	}
-	if err := a.sessions.SignIn(w, r, sessions.Session{
+	sess := sessions.Session{
 		Subject:  id.Address,
 		Method:   string(id.Method),
 		AuthTime: id.AuthTime,
-	}); err != nil {
+	}
+	if a.cfg.SecondFactor != nil {
+		done, err := a.cfg.SecondFactor(w, r, sess)
+		if err != nil {
+			a.cfg.Logger.Error("rastrillo/auth: second factor", "err", err)
+			http.Error(w, "sign-in failed", http.StatusInternalServerError)
+			return
+		}
+		if done {
+			return
+		}
+	}
+	if err := a.sessions.SignIn(w, r, sess); err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: store session", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return

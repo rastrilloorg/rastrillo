@@ -28,12 +28,18 @@
 // open by design — gets a signed link by email. Nobody is ever locked
 // out by the upgrade path existing.
 //
-// Hardening beyond the default is step-up, not a different plugin:
-// RequireFreshSession demands a recently-verified credential for
-// sensitive routes (keymail deployments advertising reauth get a real
-// prompt=login ceremony), and the passkey package wires a WebAuthn
-// second factor onto that same seam — enroll while signed in, then
-// satisfy step-up with an assertion instead of a full re-sign-in.
+// Hardening beyond the default is a seam, not a different plugin.
+// Step-up: RequireFreshSession demands a recently-verified credential
+// for sensitive routes (keymail deployments advertising reauth get a
+// real prompt=login ceremony), and the passkey package wires a
+// WebAuthn second factor onto that seam — enroll while signed in,
+// then satisfy step-up with an assertion instead of a full
+// re-sign-in. Sign-in-time 2FA: Config.SecondFactor, called where a
+// verified first factor would mint the session — wire
+// passkey.Handlers.Gate there and an enrolled account must assert
+// before any session exists (the pending half-session; see the
+// passkey package doc). Accounts with nothing enrolled sign in
+// exactly as before either way.
 package auth
 
 import (
@@ -95,6 +101,17 @@ type Config struct {
 	// models (tables, roles, admin bootstrap) are app policy layered on
 	// this hook.
 	Authorize func(address string) bool
+
+	// SecondFactor is the sign-in-time 2FA seam: called at the exact
+	// point a verified first factor would mint the session, with the
+	// session that WOULD be minted. done=true means the hook took over
+	// the response (stored a pending half-session and redirected —
+	// passkey.Handlers.Gate is the shipped implementation); done=false
+	// means no second factor applies and sign-in proceeds unchanged.
+	// Nil is exactly today's behavior. The hook keeps this plugin
+	// ignorant of any particular factor — anything with this signature
+	// can gate.
+	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 
 	// SigninPath is the app's sign-in page, the target of outcome
 	// redirects. Default "/signin".
