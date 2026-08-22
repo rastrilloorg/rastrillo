@@ -34,11 +34,6 @@ type Result struct {
 	Adopted bool
 }
 
-// adopt is Task 4's deliverable: the three first-boot branches for a
-// database that predates the ledger. Until then an empty ledger always
-// takes the normal apply path.
-func adopt(ctx context.Context, conn *sql.Conn, ms []Migration) (bool, error) { return false, nil }
-
 // Apply runs every migration in s that the ledger does not already
 // record, in order, each in its own BEGIN IMMEDIATE transaction with
 // its ledger row written inside that same transaction.
