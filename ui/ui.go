@@ -169,6 +169,9 @@ var tokensCSS []byte
 //go:embed rastrillo.js
 var shimJS []byte
 
+//go:embed select.js
+var selectJS []byte
+
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
 // layout:
@@ -194,3 +197,13 @@ func TokensCSS() []byte { return tokensCSS }
 // once and app-owned from then on. The file's own header comment is
 // its contract; TestShimContract holds the two honest.
 func ShimJS() []byte { return shimJS }
+
+// SelectJS returns select.js — field-select's searchable enhancement,
+// on exactly the same terms as ShimJS: delivered once by rastrillo new,
+// app-owned from then on, inert until a <select> opts in with
+// data-rst-select.
+//
+// A sibling file rather than more of rastrillo.js so both stay small
+// enough to read in one sitting. An app that never renders a select past
+// ten options can delete it and the script tag; nothing else changes.
+func SelectJS() []byte { return selectJS }

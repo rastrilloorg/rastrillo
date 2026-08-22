@@ -46,3 +46,51 @@ func TestShimIsSmall(t *testing.T) {
 		t.Error("shim uses two-space indentation, not tabs")
 	}
 }
+
+// select.js holds to the same contract as the shim, and to the same
+// reason for existing: small enough that the app owner who now owns it
+// can read the whole thing.
+func TestSelectContract(t *testing.T) {
+	js := string(SelectJS())
+	for _, want := range []string{
+		"data-rst-select", "data-rst-select-filter",
+		"data-rst-select-results", "data-rst-select-result-one",
+		// The convention, pinned: an ARIA combobox that mirrors rather
+		// than replaces, announced to assistive tech.
+		"combobox", "aria-activedescendant", "aria-expanded", "aria-live",
+		"rst-sr-only",
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("select.js does not mention %q", want)
+		}
+	}
+	// The whole point: the native control survives enhancement, because
+	// it is what the form submits.
+	for _, bad := range []string{".remove()", "removeChild", "outerHTML ="} {
+		if strings.Contains(js, bad) {
+			t.Errorf("select.js destroys DOM (%q); the native select must survive", bad)
+		}
+	}
+	// Inert by default, and re-scannable.
+	if !strings.Contains(js, "rstEnhanced") {
+		t.Error("select.js is not idempotent; re-scanning would double-enhance")
+	}
+	if n := len(SelectJS()); n > 8*1024 {
+		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
+	}
+	if bytes.Contains(SelectJS(), []byte("\t")) {
+		t.Error("select.js uses two-space indentation, not tabs")
+	}
+}
+
+// Neither file may reach off-origin: both are vendored, first-party and
+// dependency-free.
+func TestScriptsAreSelfContained(t *testing.T) {
+	for name, js := range map[string]string{"rastrillo.js": string(ShimJS()), "select.js": string(SelectJS())} {
+		for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
+			if strings.Contains(js, bad) {
+				t.Errorf("%s reaches outside the page (%q)", name, bad)
+			}
+		}
+	}
+}

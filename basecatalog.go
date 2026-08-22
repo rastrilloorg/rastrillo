@@ -18,6 +18,15 @@ var baseCatalog = Catalog{
 	"rastrillo.ui.search_submit": "Search",
 	"rastrillo.ui.cancel":        "Cancel",
 	"rastrillo.ui.done":          "Done selecting",
+
+	// field-select's progressive enhancement. The combobox is built in
+	// the browser, so its strings cannot come from a partial at render
+	// time — they ride out on data attributes instead. Keys, not
+	// hardcoded English in the script: this is the one part of the
+	// control a screen-reader user actually hears.
+	"rastrillo.ui.select_filter":     "Type to filter",
+	"rastrillo.ui.select_results":    "{n} results",
+	"rastrillo.ui.select_result_one": "1 result",
 }
 
 // BaseCatalog returns a copy of the framework's base strings, so a
