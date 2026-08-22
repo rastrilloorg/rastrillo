@@ -11,6 +11,10 @@
 // password subjects are numeric strings). Get answers only the owner:
 // a wrong owner and an unknown ID are indistinguishable, the same
 // someone-else's-row-is-a-404 rule the scope package enforces.
+//
+// The registry trusts its signed-in callers: there is no per-owner cap
+// on how many jobs one of them may start, and a fn that never finishes
+// leaks its goroutine and its map entry for the life of the process.
 package jobs
 
 import (
@@ -34,7 +38,8 @@ const (
 
 // doneTTL is how long a finished job stays answerable after
 // FinishedAt — long enough for a status page mid-poll and a curious
-// back-button, short enough that the map never grows without bound.
+// back-button, short enough that finished jobs do not pile up. It
+// bounds finished jobs only: a Running one is never swept.
 const doneTTL = 10 * time.Minute
 
 // Job is a point-in-time snapshot. Start and Get return copies, never
@@ -73,6 +78,8 @@ func New(logger *slog.Logger) *Jobs {
 // the job's Progress text; call it as often as you like. fn's context
 // is Background: jobs outlive their request by definition, and tying
 // them to server shutdown waits for a real graceful-drain story.
+// location must be a path your own code built, never anything a user
+// supplied — a finished job hands it to the shim, which navigates.
 func (j *Jobs) Start(owner, name, location string, fn func(ctx context.Context, progress func(string)) error) Job {
 	job := &Job{
 		ID:        newID(),

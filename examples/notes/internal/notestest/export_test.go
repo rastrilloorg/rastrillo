@@ -45,6 +45,15 @@ func pollJobDone(t *testing.T, cl *client, jobPath string) *http.Response {
 	}
 }
 
+// exportTitles seeds the two tests that have to observe an export
+// mid-flight. The export handler sleeps 300ms per note purely so a
+// demo's status page is visible, which makes note count the length of
+// the running window: five notes buy ~1.5s, and the assertions here
+// have to land inside it.
+var exportTitles = []string{
+	"First note", "Second note", "Third note", "Fourth note", "Fifth note",
+}
+
 // TestExportRoundTrip drives the whole background-export flow through
 // the real forms: the button's POST starts the job and 303s to its
 // status page (which polls-ready markup while running), the status
@@ -54,8 +63,13 @@ func TestExportRoundTrip(t *testing.T) {
 	ts := newApp(t)
 	cl := newClient(t, ts)
 	cl.signup("alice@example.com", "hunter2222").Body.Close()
-	cl.postForm("/notes", url.Values{"title": {"First note"}, "body": {"One"}}).Body.Close()
-	cl.postForm("/notes", url.Values{"title": {"Second note"}, "body": {"Two"}}).Body.Close()
+	// Five notes, not two: the export sleeps 300ms per note, so this is
+	// a ~1.5s running window. The status page has to still be running
+	// when the assertions below read it, and a loaded runner eats a
+	// 600ms window whole.
+	for _, title := range exportTitles {
+		cl.postForm("/notes", url.Values{"title": {title}, "body": {"Body of " + title}}).Body.Close()
+	}
 
 	start := cl.postForm("/export", url.Values{})
 	if start.StatusCode != http.StatusSeeOther {
@@ -95,8 +109,10 @@ func TestExportRoundTrip(t *testing.T) {
 		t.Fatalf("export Content-Type = %q, want text/markdown", ct)
 	}
 	expBody := body(t, exp)
-	if !strings.Contains(expBody, "First note") || !strings.Contains(expBody, "Second note") {
-		t.Fatalf("export body missing note titles; body=%s", expBody)
+	for _, title := range exportTitles {
+		if !strings.Contains(expBody, title) {
+			t.Fatalf("export body missing note title %q; body=%s", title, expBody)
+		}
 	}
 }
 
@@ -130,13 +146,15 @@ func TestExportFragmentSignalsDone(t *testing.T) {
 // TestExportFragmentWhileRunning: polling the fragment endpoint before
 // the job finishes renders the "job-status" partial (200, data-poll
 // present) instead of the 204-signals-done branch — the other half of
-// Fragment's two outcomes. One note's 300ms simulated pace gives this
-// a running window to observe before the job completes.
+// Fragment's two outcomes. Five notes' 300ms-apiece simulated pace
+// gives this a ~1.5s window to observe before the job completes.
 func TestExportFragmentWhileRunning(t *testing.T) {
 	ts := newApp(t)
 	cl := newClient(t, ts)
 	cl.signup("cara@example.com", "hunter2222").Body.Close()
-	cl.postForm("/notes", url.Values{"title": {"Only note"}, "body": {"Body"}}).Body.Close()
+	for _, title := range exportTitles {
+		cl.postForm("/notes", url.Values{"title": {title}, "body": {"Body of " + title}}).Body.Close()
+	}
 
 	start := cl.postForm("/export", url.Values{})
 	jobPath := start.Header.Get("Location")

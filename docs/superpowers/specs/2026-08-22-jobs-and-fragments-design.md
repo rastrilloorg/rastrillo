@@ -151,15 +151,18 @@ Vocabulary (all opt-in):
 
 - `data-poll="URL"` + optional `data-poll-every="2"` (seconds,
   default 2): fetch URL with `Rastrillo-Fragment: 1` request header,
-  expect an HTML fragment, replace the element's **outerHTML**, rescan
-  the replacement. outerHTML is the stop condition: a fragment rendered
+  expect an HTML fragment, replace the element's **outerHTML**, then
+  re-check the replacement element's own `data-poll`. outerHTML is the
+  stop condition: a fragment rendered
   for a finished job simply omits `data-poll` and polling ends. A
   fetch error backs off (double the interval, cap 30s) and keeps
   trying — transient network blips must not strand a status page.
 - A polled response carrying a `Rastrillo-Location` header navigates:
-  `window.location.assign(value)`. (Same-origin responses only — the
-  fetch uses default same-origin mode, so a cross-origin value never
-  reaches the handler.)
+  `window.location.assign(value)` — but only for a local path (starts
+  with one `/`, never `//`, no backslash), the same rule
+  `sessions.SafeReturn` applies to `return_to`. Anything else stops the
+  poll without navigating. The guard is the shim's own; nothing about
+  the fetch prevents a handler from setting an off-site value.
 - `data-busy` on a `<form>`: on submit, disable its submit buttons and
   set `aria-busy="true"` on the form — instant feedback plus
   double-submit protection. Optional `data-busy-label="Exporting…"`
@@ -215,8 +218,10 @@ see Alice's job — 404 on her /jobs/{id} — nor her export).
   found); progress updates visible across Get calls; Failed captures
   the error text; panic in fn → Failed + logged, process alive; sweep
   removes finished jobs after TTL (injectable clock, same pattern as
-  sessions/passkey tests); concurrent Start/Get race test (`go test
-  -race` already runs in CI).
+  sessions/passkey tests); concurrent Start/Get race test, run under
+  the detector by a dedicated CI step (`go test -race ./jobs/
+  ./sessions/`, the one step that overrides the job-wide
+  `CGO_ENABLED=0`).
 - handlers: running → 200 + Render called with FragmentPath;
   done-with-Location → 303; fragment done-with-Location → 204 +
   Rastrillo-Location; foreign id → 404; signed out → 403.

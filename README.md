@@ -174,7 +174,7 @@ the meantime. This list is their union. **Built:**
   `Rastrillo-Location` header). The registry is in-memory on purpose — a
   restart kills the goroutine, so a stored row would only persist a lie;
   work that must survive one belongs in `eventlog`. The only JavaScript
-  in the framework is `static/rastrillo.js`, an 85-line app-owned shim
+  in the framework is `static/rastrillo.js`, a ~120-line app-owned shim
   `rastrillo new` writes beside `tokens.css`: it replaces an element
   carrying `data-poll` with the HTML fragment it fetches and stops when
   the new fragment stops asking, and marks a submitting `data-busy` form

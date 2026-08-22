@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"strings"
@@ -11,24 +12,35 @@ import (
 	"time"
 )
 
-// wait polls Get until the job leaves Running or the deadline passes.
-// Jobs run on real goroutines; tests observe completion the same way a
-// status page does, by polling the snapshot.
-func wait(t *testing.T, j *Jobs, id, owner string) Job {
-	t.Helper()
+// waitFor polls Get until the job leaves Running or the deadline
+// passes. Jobs run on real goroutines; tests observe completion the
+// same way a status page does, by polling the snapshot. It reports
+// trouble as an error rather than failing the test itself, so a
+// spawned goroutine can call it too — t.Fatalf's FailNow is only legal
+// on the test's own goroutine.
+func waitFor(j *Jobs, id, owner string) (Job, error) {
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		job, ok := j.Get(id, owner)
 		if !ok {
-			t.Fatalf("job %s vanished while waiting", id)
+			return Job{}, fmt.Errorf("job %s vanished while waiting", id)
 		}
 		if job.Status != Running {
-			return job
+			return job, nil
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	t.Fatalf("job %s still running after 5s", id)
-	return Job{}
+	return Job{}, fmt.Errorf("job %s still running after 5s", id)
+}
+
+// wait is waitFor on the test goroutine, where failing fast is legal.
+func wait(t *testing.T, j *Jobs, id, owner string) Job {
+	t.Helper()
+	job, err := waitFor(j, id, owner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return job
 }
 
 func TestStartGetRoundTrip(t *testing.T) {
@@ -122,7 +134,12 @@ func TestConcurrentStartAndGet(t *testing.T) {
 				progress("working")
 				return nil
 			})
-			wait(t, j, job.ID, "alice")
+			// waitFor, not wait: this is a spawned goroutine, and
+			// t.Fatalf there would call FailNow off the test goroutine.
+			if _, err := waitFor(j, job.ID, "alice"); err != nil {
+				t.Errorf("concurrent start: %v", err)
+				return
+			}
 		}()
 	}
 	wg.Wait()

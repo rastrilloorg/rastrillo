@@ -1558,6 +1558,23 @@ func TestRoutesFamilyPartialClassesAreStyled(t *testing.T) {
 	}
 }
 
+// The same drift check once more, for the jobs task's one partial.
+// job-status emits exactly two classes and only one of them belongs
+// here: rst-spin is real styling (the working indicator, checked
+// against tokens.css below), while rst-job is a deliberate exception —
+// a semantic hook the shim finds by data-poll and an app can key its
+// own CSS off, never a class tokens.css styles. Recording that here in
+// a comment, the way reducedMotionAllowlist records its exceptions, so
+// a future reader does not "fix" it by inventing a rule for it.
+func TestJobStatusPartialClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{"rst-spin"} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
+	}
+}
+
 // The dropdown's exclusivity between siblings (only one open at a time)
 // is the native <details name> attribute, not JavaScript — this pins
 // both halves of that promise.

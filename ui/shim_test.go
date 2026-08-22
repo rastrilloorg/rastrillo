@@ -16,6 +16,11 @@ func TestShimContract(t *testing.T) {
 	for _, want := range []string{
 		"data-poll", "data-poll-every", "data-busy", "data-busy-label",
 		"Rastrillo-Fragment", "Rastrillo-Location",
+		// Behavior a Go test can still hold cheaply: the terminal
+		// statuses that end a poll, the local-path guard on the
+		// header-driven navigation, and the bfcache restore that
+		// re-enables a busy form.
+		"403", "404", "localPath", "pageshow",
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("shim does not mention %q", want)
