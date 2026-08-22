@@ -116,7 +116,7 @@ the meantime. This list is their union. **Built:**
   `generate --check` names any file missing the constraint.
 - **`rastrillo dev [dir] [-- app args]`** — the development watch loop
   (design doc §11): watches `app/`, `actions/`, `manifest/`, `cmd/`,
-  `locales/`, and `templates/` by polling. On any change, reruns `rastrillo
+  `internal/`, `locales/`, `templates/`, and `static/` by polling. On any change, reruns `rastrillo
   generate`, builds the app's `./cmd/<name>` package to a temporary binary
   (cleaned up on exit), and restarts the running process (graceful
   SIGTERM). A failed generate or rebuild keeps the previous build serving;
@@ -124,7 +124,16 @@ the meantime. This list is their union. **Built:**
   retries. Expects the `rastrillo new` layout: exactly one directory under
   `cmd/`. Useful for rapid iteration: edits to `actions/` require
   regeneration (the binary uses generated code under `gen/`), and `dev`
-  does that automatically.
+  does that automatically. It also warns — never generates — when an
+  app's models have outrun its migrations.
+- **`rastrillo migration <cmd> [dir]`** — schema changes on the GORM
+  path: `generate` diffs `models.go` against the migrations and writes
+  the delta, `check` is the CI gate that fails when the two disagree,
+  `new` stubs a hand-written migration, `status --db` reports what a
+  real database has applied, and `baseline --db` is the operator's
+  escape hatch for a deployed database `Apply` refused to adopt.
+  `generate` and `check` need no database at all — both sides of the
+  diff are computed in memory.
 - **`rastrillo.Run`** — the process entrypoint the scaffold wires up: it
   resolves whichever of the platform's two activation argv shapes the
   binary was invoked with — `-socket`/`-addr`/`-db` flags for an agent
@@ -232,6 +241,16 @@ the meantime. This list is their union. **Built:**
   `*gorm.DB` with the pragma order `OpenDB` already got right, split
   into a writer pool capped at one connection and a multi-connection
   reader pool, routed transparently by `dbresolver`.
+- **`rastrillo/migrate`** — one ledgered schema mechanism for the GORM
+  path, replacing `AutoMigrate` plus per-package raw SQL: ordered,
+  namespaced `Set`s applied once each at boot, each inside its own
+  `BEGIN IMMEDIATE` with its ledger row, on a pinned connection so a
+  table rebuild can bracket `PRAGMA foreign_keys`. A database that
+  predates the ledger is adopted — stamped, zero DDL run — or refused
+  loudly with a structural diff; it is never silently migrated.
+  Migrations are immutable once applied and forward-only: production
+  rollback here is the platform restoring the SQLite file, not a `Down`
+  function.
 - **`rastrillo/sessions`** — the SQLite-backed session core: signed-in
   sessions as real rows (sign-out and admin revocation both work),
   `__Host-` cookies on https origins, and the request-context surface (`Current`,
@@ -338,7 +357,9 @@ seam it will call, and until it lands, generated mergeable ids stay
 writer-local and every generated event's actor is `"app"`); automatic
 manifest-diff ALTER emission (generated stores emit only the initial
 `CREATE`; evolving a declared resource's schema is the app's own
-migration); richer manifest kinds beyond text/textarea/money (Bool,
+`rastrillo migration new` — and on the GORM path, reshaping a manifest
+after an app's first boot trips the ledger's immutability guard, which
+`migration baseline` is the way out of); richer manifest kinds beyond text/textarea/money (Bool,
 Time, Select and Blob arrive as manifest slices); and any LLM client
 (§8 leaves the provider per app).
 
