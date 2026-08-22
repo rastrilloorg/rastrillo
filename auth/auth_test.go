@@ -7,9 +7,12 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/keymaildev/signin"
 
 	rastrillo "github.com/carlosframework/rastrillo"
 )
@@ -269,29 +272,36 @@ func TestLinkStoreSingleUseAndExpiry(t *testing.T) {
 	}
 }
 
-func TestClassifierLookupPathFix(t *testing.T) {
-	var gotPath, gotQuery string
+// TestClassifierProbesFederationLookup pins the reason the local
+// RoundTripper workaround could be deleted: signin v0.1.1's stock
+// classifier probes keymail's real /api/federation/lookup route. If a
+// signin upgrade ever regresses to the old /api/lookup, this catches
+// it here rather than in production (where classification fails open
+// and the miss is silent).
+func TestClassifierProbesFederationLookup(t *testing.T) {
+	var paths []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/.well-known/keymail" {
+			w.Write([]byte(`{"version":"1","host":"x"}`))
+			return
+		}
+		w.Write([]byte(`{}`))
 	}))
 	defer srv.Close()
+	host := strings.TrimPrefix(srv.URL, "http://")
 
-	c := &http.Client{Transport: lookupPathFix{next: http.DefaultTransport}}
-	if _, err := c.Get(srv.URL + "/api/lookup?addr=p%40x"); err != nil {
-		t.Fatalf("get: %v", err)
+	c := &signin.Classifier{
+		Scheme:    "http",
+		LookupTXT: func(context.Context, string) ([]string, error) { return []string{"v=1 host=" + host}, nil },
 	}
-	if gotPath != "/api/federation/lookup" {
-		t.Fatalf("probe path = %q, want the rewritten /api/federation/lookup (keymail's real route)", gotPath)
+	got := c.Classify(context.Background(), "p@"+host)
+	if !got.Keymail {
+		t.Fatalf("Classify = %+v, want Keymail=true from a 200 probe", got)
 	}
-	if gotQuery != "addr=p%40x" {
-		t.Fatalf("query = %q, want preserved", gotQuery)
-	}
-
-	if _, err := c.Get(srv.URL + "/.well-known/keymail"); err != nil {
-		t.Fatalf("get: %v", err)
-	}
-	if gotPath != "/.well-known/keymail" {
-		t.Fatalf("well-known path = %q, must pass through untouched", gotPath)
+	want := []string{"/.well-known/keymail", "/api/federation/lookup"}
+	if !slices.Equal(paths, want) {
+		t.Fatalf("probe paths = %v, want %v", paths, want)
 	}
 }
 
