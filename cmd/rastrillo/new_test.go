@@ -132,11 +132,11 @@ func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 // — the app owns its DB handle via db.Open), then Serve with DBPath
 // cleared so Serve doesn't double-open the same file.
 func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
-	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp")
+	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
 	for _, want := range []string{
 		"rastrillo.Resolve(rastrillo.Options{",
 		"db.Open(opts.DBPath, logger)",
-		"blogapp.App(d, logger)",
+		"blogapp.App(d, origin, logger)",
 		"opts.DBPath = \"\"",
 		"rastrillo.Serve(opts)",
 	} {
@@ -231,7 +231,7 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 		"func newApp(t *testing.T) http.Handler",
 		`myblog "my-blog/internal/myblog"`,
 		"db.Open(filepath.Join(t.TempDir()",
-		"myblog.App(d, logger)",
+		"myblog.App(d, testOrigin, logger)",
 	} {
 		if !strings.Contains(string(harness), want) {
 			t.Errorf("harness_test.go missing %q:\n%s", want, harness)
@@ -531,4 +531,56 @@ func TestDevLoopDoesNotStrip(t *testing.T) {
 	if strings.Contains(string(src), "-s -w") || strings.Contains(string(src), "ldflags") {
 		t.Error("rastrillo dev passes link flags; the dev binary must stay debuggable")
 	}
+}
+
+// The scaffolded router carries csrf.Protect from day one — the
+// re-review's point: SKILL.md's checklist said it, but the scaffold's
+// router had no r.Use at all, so a builder had to remember. Now every
+// state-changing route an app grows is born covered, the origin rides
+// in from <APP>_ORIGIN with the loud dev default, and the scaffolded
+// test harness presents the same-origin evidence its POSTs need.
+func TestNewWiresCSRFProtection(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	appGo := readScaffold(t, "blogapp", "internal", "blogapp", "app.go")
+	for _, want := range []string{
+		"github.com/carlosframework/rastrillo/csrf",
+		"r.Use(csrf.Protect(origin))",
+		"origin string",
+	} {
+		if !strings.Contains(appGo, want) {
+			t.Errorf("scaffolded app.go does not contain %q", want)
+		}
+	}
+	mainGo := readScaffold(t, "blogapp", "cmd", "blogapp", "main.go")
+	for _, want := range []string{
+		`os.Getenv("BLOGAPP_ORIGIN")`,
+		`origin = "http://localhost:8080"`,
+		"App(d, origin, logger)",
+	} {
+		if !strings.Contains(mainGo, want) {
+			t.Errorf("scaffolded main.go does not contain %q", want)
+		}
+	}
+	harness := readScaffold(t, "blogapp", "internal", "blogapptest", "harness_test.go")
+	for _, want := range []string{
+		`req.Header.Set("Origin", testOrigin)`,
+		"App(d, testOrigin, logger)",
+	} {
+		if !strings.Contains(harness, want) {
+			t.Errorf("scaffolded harness_test.go does not contain %q", want)
+		}
+	}
+}
+
+// readScaffold reads one scaffolded file or fails the test.
+func readScaffold(t *testing.T, parts ...string) string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join(parts...))
+	if err != nil {
+		t.Fatalf("read %v: %v", parts, err)
+	}
+	return string(b)
 }

@@ -87,7 +87,7 @@ func runNew(args []string) error {
 	files := map[string]string{
 		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
 			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
-		filepath.Join(name, "cmd", name, "main.go"):       fmt.Sprintf(mainTemplate, name, pkg),
+		filepath.Join(name, "cmd", name, "main.go"):       fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
 		filepath.Join(appDir, "app.go"):                   fmt.Sprintf(appTemplate, pkg),
 		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
 		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
@@ -265,7 +265,17 @@ func main() {
 	}
 	defer d.Close()
 
-	mux, err := %[2]s.App(d, logger)
+	// Origin decides the CSRF same-origin check (and, when the app
+	// grows accounts, the Secure/__Host- cookie attributes) — so
+	// defaulting it silently in production would be a real bug. Loud
+	// on purpose, harmless in local dev.
+	origin := os.Getenv("%[3]s_ORIGIN")
+	if origin == "" {
+		origin = "http://localhost:8080"
+		logger.Warn("%[3]s_ORIGIN not set; defaulting", "origin", origin)
+	}
+
+	mux, err := %[2]s.App(d, origin, logger)
 	if err != nil {
 		logger.Error("build app", "err", err)
 		os.Exit(1)
@@ -288,18 +298,21 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/carlosframework/rastrillo/csrf"
 	"github.com/carlosframework/rastrillo/db"
 )
 
 // App wires the whole app: schema, router, static files. It returns a
 // *http.ServeMux because rastrillo.Options.Mux is typed that way — the
-// chi router mounts inside it.
+// chi router mounts inside it. origin is the app's external origin
+// ("https://app.example.com") — the CSRF check's yardstick, and, once
+// the app grows accounts, sessions.Config.Origin too.
 //
 // Growing the app is SKILL.md's five-file shape: models in models.go,
 // handlers in handlers.go, and — for a multi-user app — the sessions
 // core plus an identity plugin wired right here (examples/notes in the
 // rastrillo repo is the worked example to copy).
-func App(d *db.DB, logger *slog.Logger) (*http.ServeMux, error) {
+func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	// AutoMigrate every model in models.go, additive-only.
 	if err := d.G.AutoMigrate(); err != nil {
 		return nil, err
@@ -308,6 +321,10 @@ func App(d *db.DB, logger *slog.Logger) (*http.ServeMux, error) {
 	a := &app{db: d, logger: logger}
 
 	r := chi.NewRouter()
+	// App-wide, from day one: every state-changing route added below
+	// is born covered. Origin-checking, not tokens — nothing to mint
+	// or forget in a form.
+	r.Use(csrf.Protect(origin))
 	r.Get("/", a.index)
 
 	mux := http.NewServeMux()
@@ -472,6 +489,10 @@ import (
 	%[2]s "%[1]s/internal/%[2]s"
 )
 
+// testOrigin is the origin newApp wires and post presents as its
+// same-origin evidence — the pair a browser form submission would be.
+const testOrigin = "http://app.test"
+
 // newApp builds the whole app per test over a fresh temp database,
 // exactly as main.go does.
 func newApp(t *testing.T) http.Handler {
@@ -482,7 +503,7 @@ func newApp(t *testing.T) http.Handler {
 		t.Fatalf("db.Open: %%v", err)
 	}
 	t.Cleanup(func() { d.Close() })
-	mux, err := %[2]s.App(d, logger)
+	mux, err := %[2]s.App(d, testOrigin, logger)
 	if err != nil {
 		t.Fatalf("App: %%v", err)
 	}
@@ -500,6 +521,9 @@ func post(t *testing.T, h http.Handler, target string, form url.Values) *httptes
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// The same-origin evidence csrf.Protect requires — every current
+	// browser sends it on a form POST; a test client must too.
+	req.Header.Set("Origin", testOrigin)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
