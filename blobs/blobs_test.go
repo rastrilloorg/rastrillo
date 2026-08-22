@@ -14,21 +14,25 @@ import (
 	"testing"
 	"time"
 
-	rastrillo "github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 func testStores(t *testing.T) map[string]Store {
 	t.Helper()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "blobs.db"), Migrations)
+	d, err := db.Open(filepath.Join(t.TempDir(), "blobs.db"), nil)
 	if err != nil {
-		t.Fatalf("OpenDB: %v", err)
+		t.Fatalf("db.Open: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
 	dir, err := Dir(t.TempDir())
 	if err != nil {
 		t.Fatalf("Dir: %v", err)
 	}
-	return map[string]Store{"inline": Inline(db), "dir": dir}
+	return map[string]Store{"inline": Inline(d.Writer()), "dir": dir}
 }
 
 func TestStoreRoundTrip(t *testing.T) {

@@ -11,17 +11,21 @@ import (
 	"testing"
 	"time"
 
-	rastrillo "github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 func openLog(t *testing.T, writer string) *Log {
 	t.Helper()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), writer+".db"), Migrations)
+	d, err := db.Open(filepath.Join(t.TempDir(), writer+".db"), nil)
 	if err != nil {
-		t.Fatalf("OpenDB: %v", err)
+		t.Fatalf("db.Open: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
-	l, err := Open(db, writer)
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
+	l, err := Open(d.Writer(), writer)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}

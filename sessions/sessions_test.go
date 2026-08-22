@@ -1,6 +1,7 @@
 package sessions_test
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
@@ -9,27 +10,24 @@ import (
 	"testing"
 	"time"
 
-	_ "modernc.org/sqlite"
-
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/sessions"
 )
 
-// newTestSessions is the shared helper: temp DB, Migrations applied,
+// newTestSessions is the shared helper: temp DB, Schema applied,
 // New(Config{DB: db, Origin: origin}). Origin defaults "http://app.test".
 func newTestSessions(t *testing.T, mut func(*sessions.Config)) (*sessions.Sessions, *sql.DB) {
 	t.Helper()
-	dsn := "file:" + filepath.Join(t.TempDir(), "s.db") + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
-	db, err := sql.Open("sqlite", dsn)
+	d, err := db.Open(filepath.Join(t.TempDir(), "s.db"), nil)
 	if err != nil {
-		t.Fatalf("sql.Open: %v", err)
+		t.Fatalf("db.Open: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
-	for _, stmt := range sessions.Migrations {
-		if _, err := db.Exec(stmt); err != nil {
-			t.Fatalf("migration %q: %v", stmt, err)
-		}
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, sessions.Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
 	}
-	cfg := sessions.Config{DB: db, Origin: "http://app.test"}
+	cfg := sessions.Config{DB: d.Writer(), Origin: "http://app.test"}
 	if mut != nil {
 		mut(&cfg)
 	}
@@ -37,7 +35,7 @@ func newTestSessions(t *testing.T, mut func(*sessions.Config)) (*sessions.Sessio
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	return s, db
+	return s, d.Writer()
 }
 
 // cookieFrom extracts the named cookie from a recorder's response, or

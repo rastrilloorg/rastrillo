@@ -12,6 +12,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
+	"embed"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -21,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 // Session is a signed-in identity as resolved from a session cookie.
@@ -66,19 +69,15 @@ type Sessions struct {
 	cfg Config
 }
 
-// Migrations is the package's schema — additive and idempotent, meant
-// to be appended to an app's own migration list. Tokens never touch
-// this table: only their SHA-256 hash is stored.
-var Migrations = []string{
-	`CREATE TABLE IF NOT EXISTS sessions (
-	  token_hash TEXT PRIMARY KEY,
-	  subject    TEXT NOT NULL,
-	  method     TEXT NOT NULL DEFAULT '',
-	  auth_time  TEXT NOT NULL DEFAULT '',
-	  created_at TEXT NOT NULL,
-	  expires_at TEXT NOT NULL
-	);`,
-}
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is the package's migration set, applied with migrate.Apply
+// alongside the app's own. It replaces the exported Migrations
+// []string: the ledger records what ran, so these statements are no
+// longer re-executed on every boot. Tokens never touch this table:
+// only their SHA-256 hash is stored.
+var Schema = migrate.MustFromFS(migrationFS, "sessions")
 
 // New validates cfg and returns a ready *Sessions.
 func New(cfg Config) (*Sessions, error) {
