@@ -580,3 +580,128 @@ func TestSweep(t *testing.T) {
 	}
 	_ = m
 }
+
+// TestRecoveryStampsBeforeCreatingTheTable pins the order of steps 2
+// and 3 in store.go's recovery procedure, and the reason for it.
+//
+// Creating the sessions table first leaves the database structurally
+// matching the full set with an empty ledger — exactly the state
+// adopt() stamps wholesale. On a hibernating platform a single inbound
+// request in that window adopts, records auth/0002 as applied without
+// running it, and strands every auth_sessions row. Stamping first
+// makes the ledger non-empty, so adoption can never fire; a wake
+// before the table exists then fails loudly instead, and the backfill
+// still runs once the operator finishes.
+func TestRecoveryStampsBeforeCreatingTheTable(t *testing.T) {
+	d, err := db.Open(filepath.Join(t.TempDir(), "recovered.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	for _, stmt := range legacyMigrations {
+		if err := d.G.Exec(stmt).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := d.G.Exec(`INSERT INTO auth_sessions
+	  (token_hash, address, method, auth_time, created_at, expires_at)
+	  VALUES ('h1','a@example.com','link','','now','2099-01-01T00:00:00Z')`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	full := migrate.Merge(sessions.Schema, Schema)
+	ctx := context.Background()
+
+	// Step 2, before the table exists: what `rastrillo migration
+	// baseline --db <path> --through sessions/0001_init` does.
+	if err := d.G.Exec(migrate.LedgerDDL).Error; err != nil {
+		t.Fatal(err)
+	}
+	conn, err := d.Writer().Conn(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := migrate.Stamp(ctx, conn, full.All(), "sessions/0001_init"); err != nil {
+		t.Fatalf("Stamp runs no DDL, so it must not need the sessions table: %v", err)
+	}
+	conn.Close()
+
+	// A wake in the window between steps 2 and 3. It must fail —
+	// loudly — and it must not record the backfill.
+	if _, err := migrate.Apply(ctx, d, full); err == nil {
+		t.Fatal("a wake before the sessions table exists must refuse, not adopt")
+	}
+	var stamped int64
+	d.G.Raw("SELECT count(*) FROM rastrillo_migrations WHERE id = 'auth/0002_sessions_backfill'").Scan(&stamped)
+	if stamped != 0 {
+		t.Fatal("auth/0002 was recorded without running: the backfill is stranded and every user is signed out")
+	}
+
+	// Step 3, then step 4.
+	for _, m := range sessions.Schema.All() {
+		if err := d.G.Exec(m.SQL).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := migrate.Apply(ctx, d, full); err != nil {
+		t.Fatal(err)
+	}
+	var n int64
+	d.G.Raw("SELECT count(*) FROM sessions WHERE token_hash = 'h1'").Scan(&n)
+	if n != 1 {
+		t.Fatalf("backfilled sessions rows = %d, want 1 — the recovery must still sign nobody out", n)
+	}
+}
+
+// TestCreatingTheTableFirstStrandsTheBackfill is the evidence for the
+// order pinned above: it performs step 3 before step 2 and shows the
+// harm. With the table created and the ledger still empty the database
+// structurally matches the full set, so Apply adopts — recording
+// auth/0002 as applied without running it. The auth_sessions rows are
+// then stranded permanently and every signed-in user is signed out.
+//
+// It asserts adoption's own documented behaviour (all-or-nothing
+// stamping), not a bug. If adoption ever learns to run data migrations
+// this test is the one that should fail, and store.go's step order can
+// be revisited then.
+func TestCreatingTheTableFirstStrandsTheBackfill(t *testing.T) {
+	d, err := db.Open(filepath.Join(t.TempDir(), "wrong-order.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	for _, stmt := range legacyMigrations {
+		if err := d.G.Exec(stmt).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := d.G.Exec(`INSERT INTO auth_sessions
+	  (token_hash, address, method, auth_time, created_at, expires_at)
+	  VALUES ('h1','a@example.com','link','','now','2099-01-01T00:00:00Z')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range sessions.Schema.All() {
+		if err := d.G.Exec(m.SQL).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The wake the operator does not control, landing before baseline.
+	r, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema))
+	if err != nil {
+		t.Fatalf("the database matches the set, so this wake adopts rather than refusing: %v", err)
+	}
+	if !r.Adopted {
+		t.Fatalf("Result = %+v, want Adopted — that is the window the recovery order closes", r)
+	}
+	var stamped int64
+	d.G.Raw("SELECT count(*) FROM rastrillo_migrations WHERE id = 'auth/0002_sessions_backfill'").Scan(&stamped)
+	if stamped != 1 {
+		t.Fatal("expected adoption to stamp the backfill without running it")
+	}
+	var n int64
+	d.G.Raw("SELECT count(*) FROM sessions WHERE token_hash = 'h1'").Scan(&n)
+	if n != 0 {
+		t.Fatal("expected the backfill never to have run — this is the stranding the order exists to prevent")
+	}
+}

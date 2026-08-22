@@ -48,16 +48,55 @@ func adopt(ctx context.Context, conn *sql.Conn, ms []Migration) (bool, error) {
 		return false, err
 	}
 
-	if diff := live.Diff(want); len(diff) > 0 {
+	if lines := live.diffLines(want); len(lines) > 0 {
+		texts := make([]string, 0, len(lines))
+		strands := false
+		for _, l := range lines {
+			texts = append(texts, l.text)
+			if !l.extra {
+				strands = true
+			}
+		}
 		return false, fmt.Errorf(
 			"migrate: this database has tables but no migration ledger, and its schema does not match "+
 				"the migration set, so it cannot be adopted safely. Below, \"missing X\" means this "+
 				"database lacks X and the migration set has it; \"extra X\" means this database has X "+
-				"and no migration defines it:\n  %s\n"+
-				"Read the differences, then stamp the ledger with: rastrillo migration baseline --db <path>",
-			strings.Join(diff, "\n  "))
+				"and no migration defines it:\n  %s\n%s",
+			strings.Join(texts, "\n  "), recovery(strands))
 	}
 	return true, Stamp(ctx, conn, ms, "")
+}
+
+// recovery is the second half of the refusal: what to actually do.
+// It has to branch, because the two halves of a diff need opposite
+// advice and getting it wrong is worse than saying nothing.
+//
+// `baseline` writes ledger rows and runs no DDL. That is exactly right
+// when every difference is an "extra" — the migration set would create
+// nothing this database lacks, so recording the set as applied leaves
+// nothing uncreated. It is exactly wrong the moment one line is a
+// "missing" or a "differs": the operator would stamp a migration as
+// applied that has never run, the object it was supposed to create is
+// then stranded forever (nothing will ever run that migration again),
+// and the app boots green and fails at runtime on the first request
+// that touches it. The unqualified "then stamp the ledger with:
+// baseline" this used to print handed an operator that outcome as the
+// recommended next step.
+func recovery(strands bool) string {
+	if !strands {
+		return "Every difference above is something this database has that no migration defines, so " +
+			"stamping the set as applied leaves nothing uncreated. Stamp the ledger with:\n" +
+			"  rastrillo migration baseline --db <path>"
+	}
+	return "Do NOT run `rastrillo migration baseline --db <path>` here. Bare baseline records every " +
+		"migration as applied without running any of them, so each \"missing\" above would never be " +
+		"created — this app would boot green and then fail at runtime on the first request that " +
+		"touches it.\nBring the schema into line first: apply the missing DDL by hand, then " +
+		"`baseline --db <path> --through <last id that genuinely ran>` so the rest still runs. Or " +
+		"split the release, so the deploy that introduces migrations changes no schema.\n" +
+		"The first deploy on a rastrillo with migrations must be schema-neutral: generate 0001_init " +
+		"from the models exactly as they are already deployed, ship that alone, and change a model " +
+		"only in a later release."
 }
 
 // isEmpty reports whether the database has no user tables. The ledger

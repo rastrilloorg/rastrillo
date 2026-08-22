@@ -48,11 +48,27 @@ var migrationFS embed.FS
 // adopts cleanly. Recovery when it happens:
 //
 //  1. Boot refuses, printing "missing table sessions".
-//  2. Apply sessions/0001_init by hand (it's just CREATE TABLE IF NOT
+//  2. rastrillo migration baseline --db <path> --through sessions/0001_init
+//  3. Apply sessions/0001_init by hand (it's just CREATE TABLE IF NOT
 //     EXISTS, so this is safe even if it partly ran already).
-//  3. rastrillo migration baseline --db <path> --through sessions/0001_init
 //  4. Reboot: auth/0001 no-ops (IF NOT EXISTS), auth/0002 runs the
 //     backfill for real. Nobody gets signed out.
+//
+// Steps 2 and 3 are in that order deliberately; do not "tidy" them
+// back. Stamp runs no DDL, so baseline does not need the sessions
+// table to exist yet — but between creating the table and stamping,
+// the database structurally matches the full set with an empty ledger,
+// and that is precisely the state Apply adopts (apply.go gates
+// adoption on len(applied) == 0). On a hibernating platform the
+// operator does not choose when the app wakes: one inbound request in
+// that window adopts, stamps auth/0002 without running it, and strands
+// every row in auth_sessions for good. Stamping first makes the ledger
+// non-empty, which closes that window permanently. The worst case then
+// becomes a wake between steps 2 and 3, where auth/0002 fails loudly
+// with "no such table: sessions" and rolls back — auth/0001's ledger
+// row having committed in its own transaction — and the reboot in
+// step 4 still runs the backfill. A loud refusal beats a silent
+// stranding.
 //
 // The trap is baseline with no --through: it stamps every migration,
 // including 0002, so the backfill never runs and the rows in

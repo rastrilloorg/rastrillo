@@ -178,61 +178,89 @@ func indexColumns(ctx context.Context, q Querier, index string) ([]string, error
 
 func (s Snapshot) Equal(other Snapshot) bool { return len(s.Diff(other)) == 0 }
 
+// diffLine is one Diff entry plus the one fact the rendered text does
+// not carry in a form anything should depend on: which direction the
+// difference points.
+//
+// adopt needs that to choose which recovery it prints, and re-deriving
+// it by matching on the wording below would put a second, silent
+// parser of these strings in the tree — reword a line and adopt would
+// quietly start recommending the recovery that strands a schema
+// change.
+type diffLine struct {
+	text string
+	// extra is true when this database has something the migration
+	// set does not define. Those are the only differences `baseline`
+	// can safely stamp over: the set would create nothing new, so
+	// recording it as applied leaves nothing uncreated. Every other
+	// direction — missing, or differing — means baseline would record
+	// work that never ran.
+	extra bool
+}
+
 // Diff reports, in human-readable lines, what other has that s lacks
 // and vice versa. It is both the check failure message and the input
 // to Generate's destructive pass.
 func (s Snapshot) Diff(other Snapshot) []string {
 	var out []string
+	for _, l := range s.diffLines(other) {
+		out = append(out, l.text)
+	}
+	return out
+}
+
+func (s Snapshot) diffLines(other Snapshot) []diffLine {
+	var out []diffLine
 	mine, theirs := index(s), index(other)
 	for name, t := range theirs {
 		m, ok := mine[name]
 		if !ok {
-			out = append(out, "missing table "+name)
+			out = append(out, diffLine{text: "missing table " + name})
 			continue
 		}
 		out = append(out, diffTable(m, t)...)
 	}
 	for name := range mine {
 		if _, ok := theirs[name]; !ok {
-			out = append(out, "extra table "+name)
+			out = append(out, diffLine{text: "extra table " + name, extra: true})
 		}
 	}
-	sort.Strings(out)
+	sort.Slice(out, func(i, j int) bool { return out[i].text < out[j].text })
 	return out
 }
 
-func diffTable(mine, theirs Table) []string {
-	var out []string
+func diffTable(mine, theirs Table) []diffLine {
+	var out []diffLine
 	mc, tc := cols(mine), cols(theirs)
 	for name, c := range tc {
 		m, ok := mc[name]
 		if !ok {
-			out = append(out, fmt.Sprintf("%s: missing column %s", mine.Name, name))
+			out = append(out, diffLine{text: fmt.Sprintf("%s: missing column %s", mine.Name, name)})
 			continue
 		}
 		if m != c {
-			out = append(out, fmt.Sprintf("%s: column %s differs (%+v vs %+v)", mine.Name, name, m, c))
+			out = append(out, diffLine{text: fmt.Sprintf("%s: column %s differs (%+v vs %+v)", mine.Name, name, m, c)})
 		}
 	}
 	for name := range mc {
 		if _, ok := tc[name]; !ok {
-			out = append(out, fmt.Sprintf("%s: extra column %s", mine.Name, name))
+			out = append(out, diffLine{text: fmt.Sprintf("%s: extra column %s", mine.Name, name), extra: true})
 		}
 	}
 	mi, ti := idxs(mine), idxs(theirs)
 	for name, i := range ti {
 		m, ok := mi[name]
 		if !ok {
-			out = append(out, fmt.Sprintf("%s: missing index %s", mine.Name, name))
+			out = append(out, diffLine{text: fmt.Sprintf("%s: missing index %s", mine.Name, name)})
 			continue
 		}
 		if m.Unique != i.Unique || strings.Join(m.Columns, ",") != strings.Join(i.Columns, ",") {
-			out = append(out, fmt.Sprintf("%s: index %s differs", mine.Name, name))
+			out = append(out, diffLine{text: fmt.Sprintf("%s: index %s differs", mine.Name, name)})
 		}
 	}
 	for name := range mi {
 		if _, ok := ti[name]; !ok {
-			out = append(out, fmt.Sprintf("%s: extra index %s", mine.Name, name))
+			out = append(out, diffLine{text: fmt.Sprintf("%s: extra index %s", mine.Name, name), extra: true})
 		}
 	}
 	return out
