@@ -183,6 +183,13 @@ func TestNewScaffoldsMakefileMigrationCheck(t *testing.T) {
 	if !strings.Contains(string(mk), "rastrillo migration check") {
 		t.Errorf("Makefile's ci target is missing rastrillo migration check:\n%s", mk)
 	}
+	// Before this branch, `make ci` needed only the Go toolchain. A
+	// bare `rastrillo migration check` broke that on the first CI run
+	// of a fresh clone — "make: rastrillo: Command not found", with
+	// nothing in the scaffold naming what to install.
+	if !strings.Contains(string(mk), "go run github.com/carlosframework/rastrillo/cmd/rastrillo migration check") {
+		t.Errorf("migration-check must go through `go run` so the gate stays toolchain-only:\n%s", mk)
+	}
 }
 
 // CLAUDE.md must teach the schema-change rules an app author needs:
@@ -279,5 +286,24 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 
 	if err := runMigration([]string{"check", "freshapp"}); err != nil {
 		t.Fatalf("a fresh scaffold must pass check: %v", err)
+	}
+
+	// And the same check through the scaffold's own gate, with no
+	// rastrillo binary on PATH. Before this branch `make ci` needed
+	// only the Go toolchain; the migration-check step must not have
+	// quietly added a second install step that a fresh clone's first
+	// CI run discovers as "make: rastrillo: Command not found".
+	mk := exec.Command("make", "migration-check")
+	mk.Dir = "freshapp"
+	// A PATH holding the toolchain and the usual system directories,
+	// and demonstrably no rastrillo: this is a CI runner that cloned
+	// the app and nothing else.
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mk.Env = append(os.Environ(), "PATH="+filepath.Dir(goBin)+":/usr/bin:/bin")
+	if out, err := mk.CombinedOutput(); err != nil {
+		t.Fatalf("make migration-check must pass with only the Go toolchain on PATH:\n%s", out)
 	}
 }

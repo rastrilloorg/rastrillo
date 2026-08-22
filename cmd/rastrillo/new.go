@@ -260,9 +260,16 @@ func App(d *db.DB, logger *slog.Logger) (*http.ServeMux, error) {
 	// while Schema (migrations.go) stays just this app's own so the
 	// generator and its check never see a subsystem's tables and try
 	// to drop them.
-	if _, err := migrate.Apply(context.Background(), d, BootSchema); err != nil {
+	migrated, err := migrate.Apply(context.Background(), d, BootSchema)
+	if err != nil {
 		return nil, err
 	}
+	// One line per boot. Result exists so this can be logged, and
+	// until something does, a fleet-wide adoption — every database
+	// stamped, no DDL run, exactly once, never again — produces no
+	// output at all, which is the last event you want to be silent.
+	logger.Info("migrate", "applied", migrated.Applied,
+		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
 
 	a := &app{db: d, logger: logger}
 
@@ -652,8 +659,14 @@ fmt-check:
 # A step of its own, not folded into another target's recipe: ci.d/
 # steps each exec one make target, so migration-check needs its own
 # name to get its own reported step on a runner with step support.
+#
+# go run, not a bare "rastrillo": go.mod already requires rastrillo, so
+# this needs nothing on PATH but the Go toolchain, and works offline
+# after go mod download. A bare "rastrillo migration check" failed a
+# fresh clone's very first CI run with "make: rastrillo: Command not
+# found", and nothing in the scaffold said what to install.
 migration-check:
-	rastrillo migration check
+	go run github.com/carlosframework/rastrillo/cmd/rastrillo migration check
 
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
@@ -708,10 +721,10 @@ mechanically.
   never 403s.
 - Never bind a request body onto a GORM model: explicit
   ` + "`map[string]any`" + ` + ` + "`.Select`" + ` allowlist.
-- Migrations are additive-only, applied at boot. Never rewrite one that
-  shipped.
+- Migrations apply at boot, once each, and are never re-run or reversed.
 - Schema changes: edit models.go, then run ` + "`rastrillo migration generate`" + `
-  and read the SQL it writes. Never edit a migration that has shipped.
+  and read the SQL it writes — it may be a full table rebuild, not just
+  an ` + "`ADD COLUMN`" + `. Never edit a migration that has shipped.
   Renames are hand-written (` + "`rastrillo migration new rename_x`" + `) because
   a rename is indistinguishable from a drop plus an add.
 - Money is integer cents. A float never touches a value a person will
