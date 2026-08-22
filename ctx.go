@@ -23,11 +23,12 @@ func (a Actor) String() string {
 	return "agent:" + a.Name
 }
 
-// Ctx is passed to every action. It is the one extension point for
-// per-request state a manifest or middleware needs to add. Per-request
-// identity lives in sessions.Current(r) / sessions.UserID(r), not on
-// Ctx; locale is rastrillo.LocaleFrom(r), read straight from the
-// request rather than staged onto Ctx.
+// Ctx is passed to every action: the app's own wiring — its database,
+// logger, asset registry, and the Render seam generated actions call
+// through — built once by the app's ctxFactory. Per-request state
+// doesn't live here: identity lives in sessions.Current(r) /
+// sessions.UserID(r), and locale is rastrillo.LocaleFrom(r), both read
+// straight off the request rather than staged onto Ctx.
 type Ctx struct {
 	DB     *sql.DB
 	Logger *slog.Logger
