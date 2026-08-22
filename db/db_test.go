@@ -1,8 +1,13 @@
 package db
 
 import (
+	"bytes"
+	"log/slog"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"gorm.io/gorm"
 )
 
 func TestOpenWALAndPing(t *testing.T) {
@@ -48,6 +53,38 @@ func TestReadDuringOpenRows(t *testing.T) {
 	}
 	if n != 2 {
 		t.Fatalf("count = %d, want 2", n)
+	}
+}
+
+// TestRecordNotFoundNotLogged pins IgnoreRecordNotFoundError: a scoped
+// by-ID miss is the 404 contract's routine outcome and must not spam
+// the log, while real errors still land there.
+func TestRecordNotFoundNotLogged(t *testing.T) {
+	var buf bytes.Buffer
+	log := slog.New(slog.NewTextHandler(&buf, nil))
+	d, err := Open(filepath.Join(t.TempDir(), "app.db"), log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err := d.G.Exec("CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT)").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	var got struct{ ID int64 }
+	err = d.G.Table("notes").Where("id = ?", 99).Take(&got).Error
+	if err != gorm.ErrRecordNotFound {
+		t.Fatalf("err = %v, want ErrRecordNotFound", err)
+	}
+	if s := buf.String(); s != "" {
+		t.Errorf("record-not-found produced log output: %q", s)
+	}
+
+	if err := d.G.Exec("SELECT * FROM no_such_table").Error; err == nil {
+		t.Fatal("bad SQL did not error")
+	}
+	if !strings.Contains(buf.String(), "no_such_table") {
+		t.Errorf("real error missing from log output: %q", buf.String())
 	}
 }
 
