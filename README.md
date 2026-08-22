@@ -137,10 +137,38 @@ the meantime. This list is their union. **Built:**
   WebCrypto JS twin (`crypto.JS()`), all proven against amadan's pinned
   golden vectors — the compatibility contract that lets amadan,
   seapointish and keymail delete their local copies.
-- **`rastrillo/auth`** — keymail sign-in with the magic-link email
-  fallback, wrapping `keymaildev/signin` the way seapointish's reviewed
-  integration does: one long-lived flow with an explicit rate limiter,
-  single-use links via `DELETE … RETURNING`, sessions with real
+- **`rastrillo/gormlite`** — a GORM SQLite dialector over
+  `modernc.org/sqlite`, a minimal fork of `glebarez/sqlite` that keeps
+  Rastrillo on current modernc without a double driver registration.
+- **`rastrillo/db`** — opens the app's SQLite database as one
+  `*gorm.DB` with the pragma order `OpenDB` already got right, split
+  into a writer pool capped at one connection and a multi-connection
+  reader pool, routed transparently by `dbresolver`.
+- **`rastrillo/sessions`** — the SQLite-backed session core: signed-in
+  sessions as real rows (sign-out and admin revocation both work),
+  `__Host-` cookies, and the request-context surface (`Current`,
+  `UserID`) every identity plugin calls `SignIn` into.
+- **`rastrillo/csrf`** — `Protect`, a same-origin middleware for
+  state-changing requests, checked in order of evidence quality:
+  `Sec-Fetch-Site`, then `Origin`, then `Referer`.
+- **`rastrillo/flash`** — one-shot notice messages carried in an HTTP
+  cookie and cleared once read; display state, not a record.
+- **`rastrillo/form`** — the framework-independent form helpers a
+  generated handler needs: money parsing/formatting and a field error
+  map, shared by generated and hand-written handlers alike.
+- **`rastrillo/view`** — the plain HTTP-response helpers a generated
+  action needs against a `*rastrillo.Ctx`: `Render`, `Fail` (safe
+  500s, logged), and `ParseID` for the `{id}` path value.
+- **`rastrillo/scope`** — `Owned`/`OwnedBy`, the GORM query scopes that
+  make per-user ownership the short query: a row that isn't yours is a
+  row that doesn't exist, so handlers answer 404, never 403.
+- **`rastrillo/password`** — an email+password identity plugin on the
+  sessions core, the same one-call `SignIn` contract auth's keymail
+  flow honors, leaving storage, rendering, and CSRF to the app.
+- **`rastrillo/auth`** — the keymail identity plugin on the sessions
+  core: magic-link email sign-in wrapping `keymaildev/signin` the way
+  seapointish's reviewed integration does, with an explicit rate
+  limiter, single-use links via `DELETE … RETURNING`, real session
   revocation, `__Host-` cookies on https origins, same-origin CSRF on
   every state-changing handler, an `Authorize` admission hook, and the
   classifier fix for signin v0.1.0's wrong lookup path.
@@ -202,10 +230,20 @@ rather than rushed — see `internal/generate/generate.go`'s package doc.
 
 ## Manifests
 
-Design doc §9's `Resource` sugar: declare a data entity once and
-`rastrillo generate` builds its store, its screens, and their locale
-keys — a CRUD interface for a fraction of the cost of writing each of
-those by hand. Drop this in `manifest/posts.toml`:
+Manifests are the admin-panel generator, honestly scoped: one flat
+resource, three field kinds (text, textarea, money), no relations
+between resources, and no per-user scoping — the shape of a standalone
+admin table, not of a multi-user app's own screens. Design doc §9's
+`Resource` sugar declares that entity once and `rastrillo generate`
+builds its store, its screens, and their locale keys — a CRUD interface
+for a fraction of the cost of writing each of those by hand.
+
+The app story for a real multi-user app — sign-in, sessions, CSRF,
+per-user ownership, hand-written screens over the primitive packages
+above — isn't a manifest at all; it's `SKILL.md` at the repo root plus
+`examples/notes`, the worked example that follows it end to end. Drop
+a manifest in `manifest/posts.toml` when what you actually want is an
+admin table:
 
 ```toml
 name  = "posts"
@@ -322,11 +360,12 @@ pattern: the generated `CREATE TABLE IF NOT EXISTS posts` runs first,
 then the app's own `ALTER TABLE posts ADD COLUMN published BOOLEAN`
 runs after.
 
-Generates no delete action; `store = "mergeable"` isn't built yet
-either (`Validate` rejects it by name). `examples/blog` shows what an
-app adds by hand to cover what a manifest doesn't generate;
-`examples/tickets` is the fully generated proof (one manifest resource,
-no hand actions or templates).
+`store = "mergeable"` isn't built yet (`Validate` rejects it by name) —
+every other manifest flow described above, delete included, is
+generated and shipped. `examples/blog` shows what an app adds by hand
+to cover what a manifest doesn't generate; `examples/tickets` is the
+fully generated proof (one manifest resource, no hand actions or
+templates).
 
 ## Try it
 
