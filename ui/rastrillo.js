@@ -86,7 +86,13 @@
           b.disabled = true;
           var label = form.getAttribute("data-busy-label");
           if (label) {
-            if (b.tagName === "INPUT") { b.value = label; } else { b.textContent = label; }
+            if (b.tagName === "INPUT") {
+              b.setAttribute("data-idle-label", b.value);
+              b.value = label;
+            } else {
+              b.setAttribute("data-idle-label", b.textContent);
+              b.textContent = label;
+            }
           }
         });
       }, 0);
@@ -94,12 +100,20 @@
   }
 
   // The back/forward cache restores a page's DOM exactly as it was left
-  // — busy buttons still disabled — so a visitor who navigates back
-  // finds a dead form. Re-enable them and clear the busy flag.
+  // — busy buttons still disabled, still wearing the busy label — so a
+  // visitor who navigates back finds a dead form. Re-enable the buttons,
+  // put their idle labels back, and clear the busy flag.
   function unbusy() {
     document.querySelectorAll("form[data-busy]").forEach(function (form) {
       form.removeAttribute("aria-busy");
-      form.querySelectorAll(SUBMITS).forEach(function (b) { b.disabled = false; });
+      form.querySelectorAll(SUBMITS).forEach(function (b) {
+        b.disabled = false;
+        var idle = b.getAttribute("data-idle-label");
+        if (idle !== null) {
+          if (b.tagName === "INPUT") { b.value = idle; } else { b.textContent = idle; }
+          b.removeAttribute("data-idle-label");
+        }
+      });
     });
   }
 
