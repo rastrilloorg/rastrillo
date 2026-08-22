@@ -5,8 +5,149 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 )
+
+func TestWatchDirsIncludesInternal(t *testing.T) {
+	var found bool
+	for _, d := range watchDirs {
+		if d == "internal" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("watchDirs must include internal/: since the middle-layer pivot, models, handlers and migrations all live there")
+	}
+}
+
+func TestDriftMessageNamesTheCommand(t *testing.T) {
+	msg := driftMessage([]string{"ALTER TABLE notes ADD COLUMN archived numeric;"})
+	if !strings.Contains(msg, "rastrillo migration generate") {
+		t.Fatalf("drift message = %q, want it to name the fix", msg)
+	}
+	if !strings.Contains(msg, "archived") {
+		t.Fatalf("drift message = %q, want it to show what changed", msg)
+	}
+}
+
+// --- driftChecker: the background scheduler that keeps warnOnDrift's
+// slow `go run` off the rebuild/restart path. These tests drive it
+// with a fake compute function so they don't need a real fixture app
+// — the property under test is the scheduling, not loadPayload. ---
+
+// TestDriftCheckerNeverOverlaps guards the reason a single worker
+// goroutine (rather than one goroutine per request) exists at all:
+// loadPayload writes into a fixed directory name inside the app
+// module (rastrillo_migration_dump) and removes it when done, so two
+// concurrent computations for the same app would race on that
+// directory. If a future edit changed driftChecker to spawn a
+// goroutine per request, this test would catch the regression even
+// though the race itself is too timing-dependent to catch directly.
+func TestDriftCheckerNeverOverlaps(t *testing.T) {
+	started := make(chan struct{}, 10)
+	proceed := make(chan struct{})
+	var running int32
+	var mu sync.Mutex
+	var overlapped bool
+	compute := func(dir string) string {
+		mu.Lock()
+		running++
+		if running > 1 {
+			overlapped = true
+		}
+		mu.Unlock()
+		started <- struct{}{}
+		<-proceed
+		mu.Lock()
+		running--
+		mu.Unlock()
+		return ""
+	}
+	dc := newDriftChecker(compute, func(string) {})
+	defer dc.close()
+
+	dc.requestAfterRebuild("d")
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("first compute never started")
+	}
+	// Queued while the first request is still blocked in compute — a
+	// stand-in for a developer saving again before the previous drift
+	// check finished.
+	dc.requestAfterRebuild("d")
+	dc.requestAfterRebuild("d")
+	close(proceed)
+
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("second compute never ran")
+	}
+	if overlapped {
+		t.Fatal("two drift computations ran concurrently")
+	}
+}
+
+// TestDriftCheckerDropsStalePrint verifies the other half of the
+// safety property: a slow check for a build that has since been
+// superseded by a newer rebuild must never print, even though it was
+// already running when the newer request arrived. Printing it would
+// show a developer a diagnosis of a build that no longer exists.
+func TestDriftCheckerDropsStalePrint(t *testing.T) {
+	firstStarted := make(chan struct{})
+	unblockFirst := make(chan struct{})
+	compute := func(dir string) string {
+		if dir == "first" {
+			close(firstStarted)
+			<-unblockFirst
+			return "STALE MESSAGE"
+		}
+		return "FRESH MESSAGE"
+	}
+	var mu sync.Mutex
+	var printed []string
+	dc := newDriftChecker(compute, func(msg string) {
+		mu.Lock()
+		printed = append(printed, msg)
+		mu.Unlock()
+	})
+	defer dc.close()
+
+	dc.requestAfterRebuild("first")
+	select {
+	case <-firstStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("first compute never started")
+	}
+	// A newer build lands and requests its own check before the first
+	// one has finished computing.
+	dc.requestAfterRebuild("second")
+	close(unblockFirst)
+
+	deadline := time.After(2 * time.Second)
+	for {
+		mu.Lock()
+		n := len(printed)
+		mu.Unlock()
+		if n >= 1 {
+			break
+		}
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for a print")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(printed) != 1 || printed[0] != "FRESH MESSAGE" {
+		t.Fatalf("printed = %v, want only [FRESH MESSAGE] — the stale check must never print", printed)
+	}
+}
 
 func TestFindAppPkg(t *testing.T) {
 	dir := t.TempDir()

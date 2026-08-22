@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -18,11 +19,140 @@ import (
 // cmd/<name>/main.go, and a dev loop that ignores edits to it surprises
 // people — plus locales/, templates/, and static/, which the app embeds into its
 // binary (§9, §10, §8): without a rebuild, a saved catalog, template,
-// or static asset keeps serving the copy compiled in at the last build. gen/ is
+// or static asset keeps serving the copy compiled in at the last build.
+// internal/ joined after the middle-layer pivot moved an app's own
+// models.go, handlers.go and render.go under internal/<pkg>/ — until
+// this was added, dev never rebuilt on edits to any of them. That
+// matters doubly for the drift warning below: migrations/ lives under
+// internal/<pkg>/ too, so a model gaining a field has no rebuild to
+// hang the check off unless this directory is watched. gen/ is
 // deliberately absent: it is the generator's output.
-var watchDirs = []string{"actions", "app", "manifest", "cmd", "locales", "templates", "static"}
+var watchDirs = []string{"actions", "app", "manifest", "cmd", "internal", "locales", "templates", "static"}
 
 const pollInterval = 250 * time.Millisecond
+
+// driftMessage renders the warning dev prints when an app's models
+// have outrun its migrations. Generating a migration is a decision,
+// not a save-side-effect, so dev only ever says so.
+func driftMessage(sqls []string) string {
+	var b strings.Builder
+	b.WriteString("rastrillo dev: models and migrations disagree:\n")
+	for _, s := range sqls {
+		b.WriteString("  " + strings.TrimSpace(s) + "\n")
+	}
+	b.WriteString("  run: rastrillo migration generate\n")
+	return b.String()
+}
+
+// computeDrift is warnOnDrift's non-printing half: it runs the same
+// `go run` loadPayload always has, and reports what to say, or ""
+// when there's nothing to say. Splitting the compute from the print
+// lets driftChecker hold the generation check until the moment it's
+// about to print, closing the window in which a stale result could
+// still slip out — see driftChecker's doc comment.
+//
+// It is best-effort: a compile error already surfaces through the
+// rebuild that triggered it, and a drift check that failed the loop
+// would make the dev experience worse than the problem it reports.
+func computeDrift(dir string) string {
+	p, err := loadPayload(dir)
+	if err != nil {
+		return ""
+	}
+	if len(p.Changes) == 0 {
+		return ""
+	}
+	sqls := make([]string, 0, len(p.Changes))
+	for _, c := range p.Changes {
+		sqls = append(sqls, c.SQL)
+	}
+	return driftMessage(sqls)
+}
+
+// driftRequest names the build a queued drift check belongs to.
+type driftRequest struct {
+	dir string
+	gen int64
+}
+
+// driftChecker runs computeDrift off the rebuild/restart path: dev's
+// loop rebuilds on every save (poll pollInterval), and computeDrift
+// shells out to `go run` — roughly a second. Calling it inline would
+// double a developer's edit-to-serving turnaround on every save,
+// forever, to report something that is not urgent enough to justify
+// that (a compile error already blocks the rebuild itself; drift
+// doesn't). So requestAfterRebuild only ever enqueues; a single
+// background goroutine does the actual work and prints the result.
+//
+// One worker, not one goroutine per request, for a concrete reason:
+// loadPayload writes its throwaway loader into a fixed directory name
+// inside the app module (rastrillo_migration_dump) and removes it
+// when done. Two concurrent loadPayload calls for the same app would
+// race on that directory — one's RemoveAll could delete the other's
+// loader mid-`go run`. Serializing through one worker makes that
+// structurally impossible rather than merely unlikely.
+//
+// Rapid saves must not queue up a backlog of stale checks the worker
+// slowly works through while the developer watches old news scroll
+// by. requestAfterRebuild keeps only the newest request pending — an
+// older queued-but-not-yet-started request is dropped in favor of a
+// newer one — and gen lets the worker recognize a request that was
+// already in flight when a newer one arrived: it checks gen again
+// immediately before printing, and stays silent if a newer build has
+// since landed. Printing a diagnosis of a build that no longer exists
+// would be actively misleading, not just late.
+type driftChecker struct {
+	compute func(dir string) string
+	print   func(string)
+	reqCh   chan driftRequest
+	gen     atomic.Int64
+}
+
+func newDriftChecker(compute func(dir string) string, print func(string)) *driftChecker {
+	d := &driftChecker{compute: compute, print: print, reqCh: make(chan driftRequest, 1)}
+	go d.run()
+	return d
+}
+
+func (d *driftChecker) run() {
+	for req := range d.reqCh {
+		msg := d.compute(req.dir)
+		if req.gen != d.gen.Load() {
+			// A newer build has already landed and superseded this
+			// request; whatever this one found is stale.
+			continue
+		}
+		if msg != "" {
+			d.print(msg)
+		}
+	}
+}
+
+// requestAfterRebuild schedules a drift check for the build that just
+// started serving. It never blocks: enqueueing is either an
+// immediate send into the channel's one free slot, or, if that slot
+// is already occupied by an older unstarted request, a swap that
+// drops that older request in favor of this one.
+func (d *driftChecker) requestAfterRebuild(dir string) {
+	req := driftRequest{dir: dir, gen: d.gen.Add(1)}
+	for {
+		select {
+		case d.reqCh <- req:
+			return
+		default:
+			select {
+			case <-d.reqCh:
+			default:
+			}
+		}
+	}
+}
+
+// close stops the worker goroutine. Safe to defer right after
+// construction; runDev only returns at shutdown.
+func (d *driftChecker) close() {
+	close(d.reqCh)
+}
 
 // runDev implements `rastrillo dev [dir] [-- app args...]` (design doc
 // §11): watch, and on any change regenerate → rebuild → restart. It
@@ -123,6 +253,15 @@ func runDev(args []string) error {
 	}
 	defer stop()
 
+	// Drift checks run in the background, never on the rebuild/restart
+	// path — see driftChecker's doc comment. Requesting one here too,
+	// not only after later rebuilds, means a developer who starts `dev`
+	// on an app that already has drift sees the warning without having
+	// to touch a file first.
+	drift := newDriftChecker(computeDrift, func(msg string) { fmt.Fprint(os.Stderr, msg) })
+	defer drift.close()
+	drift.requestAfterRebuild(dir)
+
 	fmt.Printf("rastrillo dev: watching %s (poll %s)\n", strings.Join(watchDirs, ", "), pollInterval)
 
 	sigCh := make(chan os.Signal, 1)
@@ -173,6 +312,10 @@ func runDev(args []string) error {
 				fmt.Fprintf(os.Stderr, "rastrillo dev: start: %v — will retry on next change\n", err)
 				continue
 			}
+			// Enqueue and move on immediately — the app is already
+			// serving the new build, and the loop must keep polling
+			// rather than wait on a `go run`.
+			drift.requestAfterRebuild(dir)
 		}
 	}
 }
@@ -218,10 +361,11 @@ func parseDevArgs(args []string) (dir string, appArgs []string, help bool, err e
 func devUsage() {
 	fmt.Print(`usage: rastrillo dev [dir] [-- app args...]
 
-Watches actions/, app/, manifest/, cmd/, locales/, templates/, and static/
-(default dir: .); on any change it regenerates, rebuilds, and restarts
-the app. Everything after "--" is passed to the app verbatim (e.g.
-rastrillo dev . -- -addr :9000).
+Watches actions/, app/, manifest/, cmd/, internal/, locales/, templates/,
+and static/ (default dir: .); on any change it regenerates, rebuilds,
+and restarts the app, and warns — without ever writing one — when the
+app's models have outrun its migrations. Everything after "--" is
+passed to the app verbatim (e.g. rastrillo dev . -- -addr :9000).
 `)
 }
 
