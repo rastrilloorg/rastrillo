@@ -51,7 +51,9 @@ func adopt(ctx context.Context, conn *sql.Conn, ms []Migration) (bool, error) {
 	if diff := live.Diff(want); len(diff) > 0 {
 		return false, fmt.Errorf(
 			"migrate: this database has tables but no migration ledger, and its schema does not match "+
-				"the migration set, so it cannot be adopted safely:\n  %s\n"+
+				"the migration set, so it cannot be adopted safely. Below, \"missing X\" means this "+
+				"database lacks X and the migration set has it; \"extra X\" means this database has X "+
+				"and no migration defines it:\n  %s\n"+
 				"Read the differences, then stamp the ledger with: rastrillo migration baseline --db <path>",
 			strings.Join(diff, "\n  "))
 	}
