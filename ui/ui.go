@@ -10,6 +10,16 @@
 //
 //	tmpl := template.Must(template.New("").Funcs(ui.Funcs()).
 //	        ParseFS(ui.Templates(), "*.html"))
+//
+// An app that scaffolded its own icon set points both icon seams at it:
+//
+//	tmpl := template.Must(template.New("").
+//	        Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
+//	        ParseFS(ui.Templates(), "*.html"))
+//
+// {{iconAssets}} goes in the layout's <head>. It renders empty for the
+// vendored-inline default, so it is safe to call unconditionally.
+//
 //	tmpl = template.Must(tmpl.ParseFS(appTemplateFS, "templates/*.html"))
 //
 // The partial set spans list screens plus the display, form and route

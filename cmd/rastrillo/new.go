@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/token"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/carlosframework/rastrillo/internal/iconsets"
 	"github.com/carlosframework/rastrillo/ui"
 )
 
@@ -31,12 +33,36 @@ import (
 // golden deployment target, not a requirement: Resolve/Serve speak the
 // activation contract, and `./app -addr :8080` works anywhere.
 func runNew(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("usage: rastrillo new <name>")
+	fset := flag.NewFlagSet("new", flag.ContinueOnError)
+	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
+	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
+	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
+	if err := fset.Parse(args); err != nil {
+		return err
 	}
-	name := args[0]
+	rest := fset.Args()
+	if len(rest) != 1 {
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] <name>",
+			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
+			strings.Join(profileNames(), "|"))
+	}
+	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
 		return fmt.Errorf("%s already exists", name)
+	}
+
+	// Resolve every choice before creating anything: an unknown set,
+	// delivery or profile must fail while the working directory is still
+	// clean, never halfway through a scaffold.
+	rendered, err := iconsets.Render(*iconSet, iconsets.Delivery(*iconDelivery))
+	if err != nil {
+		return err
+	}
+	// The conventions record the RESOLVED choices, not the profile's
+	// defaults: the flag wins, and the file says what actually happened.
+	conventions, err := conventionsSection(*uxProfile, *iconSet, *iconDelivery)
+	if err != nil {
+		return err
 	}
 
 	pkg := packageName(name)
@@ -47,6 +73,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg),
 		filepath.Join(name, "internal", pkg, "static"),
 		filepath.Join(name, "internal", pkg, "templates"),
+		filepath.Join(name, "internal", pkg, "icons"),
 		filepath.Join(name, "internal", pkg+"test"),
 		filepath.Join(name, ".amadan", "ci.d"),
 	}
@@ -64,7 +91,7 @@ func runNew(args []string) error {
 		filepath.Join(appDir, "app.go"):                   fmt.Sprintf(appTemplate, pkg),
 		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
 		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
-		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, pkg),
+		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, name, pkg),
 		filepath.Join(appDir, "templates", "layout.html"): layoutTemplate,
 		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
 		// The design-token stylesheet, delivered once. rastrillo.Serve
@@ -83,7 +110,14 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
 		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
 		filepath.Join(name, "Makefile"):                                makefileTemplate,
-		filepath.Join(name, "CLAUDE.md"):                               fmt.Sprintf(claudeMDTemplate, name),
+		// The app's icon set, on the same terms as tokens.css and
+		// rastrillo.js: delivered once, app-owned from here on.
+		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
+		// AGENTS.md carries the instructions — it is the cross-agent
+		// file, so they reach whatever agent someone uses. CLAUDE.md is
+		// an @AGENTS.md import and nothing else.
+		filepath.Join(name, "AGENTS.md"): fmt.Sprintf(agentsMDTemplate, name) + string(conventions),
+		filepath.Join(name, "CLAUDE.md"): claudeMDPointer,
 	}
 	for path, content := range files {
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
@@ -106,6 +140,14 @@ func runNew(args []string) error {
 		}
 	}
 
+	// Some licences oblige the app, not the framework. Writing the file
+	// is the only way that obligation travels with the code.
+	if rendered.AttribName != "" {
+		if err := os.WriteFile(filepath.Join(name, rendered.AttribName), rendered.Attribution, 0o644); err != nil {
+			return err
+		}
+	}
+
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
 	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
 	fmt.Printf("  internal/%s/         (models, app, handlers, render, templates, static)\n", pkg)
@@ -113,7 +155,21 @@ func runNew(args []string) error {
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + test, the one gate definition)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
-	fmt.Println("  CLAUDE.md")
+	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
+	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
+	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
+	if rendered.AttribName != "" {
+		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, *iconSet)
+	}
+
+	// Informed consent, stated once. A supported choice that nags on
+	// every build is not really supported.
+	if rendered.Notice != "" {
+		fmt.Printf("\nnote: --icon-delivery=%s\n", *iconDelivery)
+		for _, line := range strings.Split(strings.TrimRight(rendered.Notice, "\n"), "\n") {
+			fmt.Println("  " + line)
+		}
+	}
 
 	// The scaffold ships with passing tests (the harness above), so the
 	// first suggested command is running them: the TDD loop starts from
@@ -298,7 +354,7 @@ func (a *app) index(w http.ResponseWriter, r *http.Request) {
 }
 `
 
-const renderTemplate = `package %[1]s
+const renderTemplate = `package %[2]s
 
 import (
 	"bytes"
@@ -307,6 +363,8 @@ import (
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
+
+	"%[1]s/internal/%[2]s/icons"
 )
 
 //go:embed templates static
@@ -325,7 +383,16 @@ var pages = map[string]*template.Template{}
 func init() {
 	for _, name := range []string{"index"} {
 		pages[name] = template.Must(template.New("layout").
-			Funcs(template.FuncMap{"asset": assets.Path}).
+			Funcs(template.FuncMap{
+				"asset": assets.Path,
+				// The app's own icon set (internal/%[2]s/icons), scaffolded
+				// by rastrillo new. iconAssets is whatever <head> markup the
+				// chosen delivery needs — empty for the vendored-inline
+				// default, so the layout calls it unconditionally and
+				// switching delivery later needs no template edit.
+				"icon":       icons.Icon,
+				"iconAssets": icons.Assets,
+			}).
 			ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
 	}
 }
@@ -352,6 +419,7 @@ const layoutTemplate = `{{define "layout"}}<!doctype html>
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
 <script defer src="{{asset "static/rastrillo.js"}}"></script>
+{{iconAssets}}
 </head>
 <body>
 <main>
@@ -576,7 +644,7 @@ func amadanStep(target string) string {
 	return "#!/bin/sh\nexec make " + target + "\n"
 }
 
-const claudeMDTemplate = `# %s
+const agentsMDTemplate = `# %s
 
 A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. Read the
 framework's own SKILL.md (repo root, or in the module cache) before
