@@ -127,6 +127,34 @@ func TestExportFragmentSignalsDone(t *testing.T) {
 	}
 }
 
+// TestExportFragmentWhileRunning: polling the fragment endpoint before
+// the job finishes renders the "job-status" partial (200, data-poll
+// present) instead of the 204-signals-done branch — the other half of
+// Fragment's two outcomes. One note's 300ms simulated pace gives this
+// a running window to observe before the job completes.
+func TestExportFragmentWhileRunning(t *testing.T) {
+	ts := newApp(t)
+	cl := newClient(t, ts)
+	cl.signup("cara@example.com", "hunter2222").Body.Close()
+	cl.postForm("/notes", url.Values{"title": {"Only note"}, "body": {"Body"}}).Body.Close()
+
+	start := cl.postForm("/export", url.Values{})
+	jobPath := start.Header.Get("Location")
+	start.Body.Close()
+
+	frag := cl.get(jobPath + "/fragment")
+	defer frag.Body.Close()
+	fragBody := body(t, frag)
+	if frag.StatusCode != http.StatusOK {
+		t.Fatalf("fragment status = %d, want 200; body=%s", frag.StatusCode, fragBody)
+	}
+	if !strings.Contains(fragBody, "data-poll") {
+		t.Fatalf("running fragment missing data-poll; body=%s", fragBody)
+	}
+
+	pollJobDone(t, cl, jobPath).Body.Close()
+}
+
 // TestExportIsolation: Bob probing Alice's finished job or export gets
 // the same 404 the notes themselves give — a row that isn't yours is a
 // row that doesn't exist, jobs and exports included.
@@ -154,6 +182,11 @@ func TestExportIsolation(t *testing.T) {
 	}
 	if resp := bob.get(exportPath); resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("Bob GET %s = %d, want 404", exportPath, resp.StatusCode)
+	} else {
+		resp.Body.Close()
+	}
+	if resp := bob.getNoRedirect(jobPath + "/fragment"); resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("Bob GET %s = %d, want 404", jobPath+"/fragment", resp.StatusCode)
 	} else {
 		resp.Body.Close()
 	}
