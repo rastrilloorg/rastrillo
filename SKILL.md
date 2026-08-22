@@ -133,7 +133,7 @@ sessions.
 
 AutoMigrate changes are additive-only: never rename or drop a column — add a
 new one and migrate data in code. `sessions.Migrations` is raw SQL for
-`d.G.Exec` beside that call, never a GORM model.
+`d.G.Exec` beside that call, never a GORM model — keep it out of AutoMigrate.
 
 ## 3. Scoping
 
@@ -196,9 +196,8 @@ field can never reach a column.
 (`PostFormValue` takes the HTML input's name, `title`/`body` here; `Select`'s
 strings are GORM field names — the allowlist that matters.)
 
-Validate with `form.Parse` — one declaration per field, the helper generated
-actions compose — and re-render at 422 with values seeded back so nothing is
-retyped:
+Validate with `form.Parse` — one declaration per field — and re-render at 422
+with values seeded back so nothing is retyped:
 
 ```go
 p := form.Parse(r, form.Field{Name: "title", Required: true},
@@ -222,7 +221,7 @@ which adds the `$`.
 
 After a successful mutation: `flash.Set(w, "notice", "Note created.")` then
 `http.Redirect(w, r, "/notes/…", http.StatusSeeOther)`. The render helper calls
-`flash.Take(w, r)` once per page and the layout renders it.
+`flash.Take(w, r)` exactly once per page and the layout renders it.
 
 ## 5. Sessions and identity
 
@@ -267,9 +266,9 @@ password writes the 422 itself before re-rendering, so the callback must not.
 answers 429 until one ages out; success resets it. In-memory; IP throttling is
 a deployment concern.
 The keymail plugin (`rastrillo/auth`) — the family default: magic-link email
-auto-upgrading to keymail — throttles alike: `auth.New(auth.Config{...})`
-with `Begin`/`Callback`/`Verify`/`Signout` handlers and `RequireSession`, over
-the same `sessions` core. **With keymail, do not use `sessions.UserID`.** Its
+auto-upgrading to keymail — rate-limits via `signin`:
+`auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout`
+handlers and `RequireSession`, over the same `sessions` core. **With keymail, do not use `sessions.UserID`.** Its
 Subject is the verified *email*, so it returns `(0, false)` — and the §3 seam,
 which drops that `ok`, would scope every query to `user_id = 0`: everyone
 reading everyone. Read the viewer with `auth.From(r)` or `sessions.Current(r)`
@@ -287,8 +286,8 @@ same way; fn's error text reaches the owner. `j.Get(id, owner)` answers only
 the owner, so foreign/unknown ids 404.
 
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage` and `Fragment`; mount both in the `sess.Require` group at
-`/jobs/{id}` and `/jobs/{id}/fragment`. Both take
+`StatusPage` and `Fragment`, erroring unless all three are set; mount both in
+the `sess.Require` group at `/jobs/{id}` and `/jobs/{id}/fragment`. Both take
 `jobs.PageData{Job, FragmentPath, PollSeconds}`: Render draws a whole page,
 RenderFragment the partial *alone*, or the layout nests on the next poll.
 Done+Location 303s from StatusPage; Fragment answers 204 +
@@ -310,7 +309,7 @@ disables its submit buttons, `data-busy-label` retitles them.
   kinds (text, textarea, money), no relations. `scope = "user"` owner-filters
   generated queries by the session subject (someone else's row 404s); mount
   those routes behind `sessions.Require`/`auth.RequireSession`. Mix declared
-  and hand-written freely; relations or custom flows are hand-written.
+  and hand-written freely.
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary with it and `rastrillo/gormlite`
