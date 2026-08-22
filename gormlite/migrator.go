@@ -160,7 +160,13 @@ func (m Migrator) DropColumn(value interface{}, name string) error {
 			name = field.DBName
 		}
 
-		ddl.removeColumn(name)
+		// A migration that claims success while changing nothing is worse
+		// than one that fails loudly: without this check, a column absent
+		// from the table's stored DDL (already dropped, misnamed, or a
+		// removeColumn miss) rebuilt the table unchanged and returned nil.
+		if !ddl.removeColumn(name) {
+			return nil, nil, fmt.Errorf("gormlite: column %q not found in stored definition of table %q; nothing was dropped", name, stmt.Table)
+		}
 		return ddl, nil, nil
 	})
 }

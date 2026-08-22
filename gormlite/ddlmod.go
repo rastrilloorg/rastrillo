@@ -276,7 +276,17 @@ func (d *ddl) getColumns() []string {
 }
 
 func (d *ddl) removeColumn(name string) bool {
-	reg := regexp.MustCompile("^(`|'|\"| )" + regexp.QuoteMeta(name) + "(`|'|\"| ) .*?$")
+	// parseDDL stores each field via strings.TrimSpace, so a hand-written,
+	// unquoted field (e.g. "id INTEGER") begins with the identifier
+	// itself and has no leading quote or space. The previous pattern
+	// required one, so it never matched and DropColumn silently kept the
+	// column. The leading delimiter is now optional, but the identifier
+	// must still be delimited on both sides (an optional quote, then
+	// whitespace or end-of-string) so a same-prefixed identifier like
+	// "idx_name" or "identifier" is never mistaken for "id", and the
+	// anchor keeps table-level clauses (PRIMARY KEY (...), CONSTRAINT
+	// ... FOREIGN KEY (...)) from matching at all.
+	reg := regexp.MustCompile("^\\s*(`|'|\")?" + regexp.QuoteMeta(name) + "(`|'|\")?(\\s|$)")
 
 	for i := 0; i < len(d.fields); i++ {
 		if reg.MatchString(d.fields[i]) {
