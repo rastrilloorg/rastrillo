@@ -81,6 +81,12 @@ function combo(native) {
   // name at all.
   var label = native.id && document.querySelector('label[for="' + native.id + '"]');
   if (label) label.setAttribute("for", input.id);
+  // Drop .rst-input as well as adding .rst-sr-only: both are single
+  // class selectors, so .rst-input's width:100% would win on source
+  // order and leave the hidden select a full-width absolutely-positioned
+  // box held out of sight by clip-path alone. A control nobody can see
+  // does not need input styling.
+  native.classList.remove("rst-input");
   native.classList.add("rst-sr-only");
   native.setAttribute("tabindex", "-1");
   native.setAttribute("aria-hidden", "true");
@@ -149,7 +155,15 @@ function combo(native) {
   }
 
   input.addEventListener("input", function () { draw(input.value); });
-  input.addEventListener("focus", function () { draw(""); });
+  input.addEventListener("focus", function () {
+    // Select the committed label so the first keystroke replaces it
+    // rather than appending to it. Without this, typing into a control
+    // that already holds "Option 1" filters for "Option 1Option 12" and
+    // silently matches nothing — the list looks empty for no stated
+    // reason and Enter commits whatever was already there.
+    input.select();
+    draw("");
+  });
   input.addEventListener("blur", function () {
     // A half-typed filter is not a value: restore what is committed.
     window.setTimeout(function () { input.value = chosenLabel(); close(); }, 0);
