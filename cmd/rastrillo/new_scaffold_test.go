@@ -51,7 +51,9 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 		t.Fatalf("steps must exec Makefile targets, never their own commands:\n%s", step)
 	}
 	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
-	if !strings.Contains(string(claude), "integer cents") || !strings.Contains(string(claude), "rastrillo_actions") {
-		t.Fatalf("CLAUDE.md preload must carry the family conventions:\n%s", claude)
+	for _, want := range []string{"integer cents", "scope.Owned", "SKILL.md", "CGO_ENABLED=0"} {
+		if !strings.Contains(string(claude), want) {
+			t.Fatalf("CLAUDE.md preload missing %q:\n%s", want, claude)
+		}
 	}
 }
