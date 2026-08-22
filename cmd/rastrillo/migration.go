@@ -9,15 +9,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/carlosframework/rastrillo/db"
 	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/migrate/dump"
 )
@@ -32,13 +36,14 @@ func runMigration(args []string) error {
 		return migrationGenerate(rest)
 	case "check":
 		return migrationCheck(rest)
+	case "new":
+		return migrationNew(rest)
+	case "status":
+		return migrationStatus(rest)
+	case "baseline":
+		return migrationBaseline(rest)
 	default:
-		// "new", "status" and "baseline" are the rest of the group —
-		// they land in a follow-up change. Naming them here (rather
-		// than a bare "unknown subcommand") tells a developer who
-		// reads the usage text and tries one that it is coming, not
-		// a typo.
-		return fmt.Errorf("unknown migration subcommand %q (generate, check are available; new, status, baseline land in a follow-up)", sub)
+		return fmt.Errorf("unknown migration subcommand %q (generate, check, new, status, baseline are available)", sub)
 	}
 }
 
@@ -320,4 +325,213 @@ func nextMigrationName(mdir, label string) (string, error) {
 		}
 	}
 	return fmt.Sprintf("%04d_%s.sql", n+1, label), nil
+}
+
+// migrationNameOK matches the same shape FromFS requires of a
+// migration file's stem (migrate/set.go's fileName), so a name
+// `migration new` accepts is never one FromFS then refuses to load.
+var migrationNameOK = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+// migrationNew writes a numbered stub for a hand-written migration —
+// the case `generate` cannot cover because a rename is
+// indistinguishable, at the SQL-diff level, from a drop plus an add.
+func migrationNew(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: rastrillo migration new <name> [dir]")
+	}
+	name := args[0]
+	if !migrationNameOK.MatchString(name) {
+		return fmt.Errorf("migration name %q must be lowercase letters, digits and underscores", name)
+	}
+	dir := dirArg(args[1:])
+	mdir, err := migrationsDir(dir)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(mdir, 0o755); err != nil {
+		return err
+	}
+	file, err := nextMigrationName(mdir, name)
+	if err != nil {
+		return err
+	}
+	stub := `-- ` + name + `
+--
+-- Write the SQL this migration should run. It applies once, at boot,
+-- inside its own transaction, and is never re-run or reversed.
+--
+-- Renames belong here rather than in a generated migration, because a
+-- rename is indistinguishable from a drop plus an add:
+--   ALTER TABLE notes RENAME COLUMN title TO heading;
+`
+	path := filepath.Join(mdir, file)
+	if err := os.WriteFile(path, []byte(stub), 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("rastrillo migration new: wrote %s\n", path)
+	return nil
+}
+
+// migrationStatus reports what a real database's ledger contains, and
+// separately, whether the models and migrations on disk still agree —
+// the same drift `check` reports, so an operator staring at a
+// production database doesn't have to run a second command to learn
+// there is a pending change to generate.
+func migrationStatus(args []string) error {
+	fs := flag.NewFlagSet("status", flag.ContinueOnError)
+	dbPath := fs.String("db", "", "path to the app's SQLite database")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *dbPath == "" {
+		return errors.New("rastrillo migration status needs --db <path>: it reports what a real database has applied")
+	}
+	dir := dirArg(fs.Args())
+	p, err := loadPayload(dir)
+	if err != nil {
+		return err
+	}
+
+	d, err := db.Open(*dbPath, nil)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	ctx := context.Background()
+	conn, err := d.Writer().Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// A missing ledger table is the ordinary "never booted this
+	// version yet" case and gets a friendly line instead of an error.
+	// Checked by name against sqlite_master rather than by running the
+	// SELECT below and treating any failure as "no ledger" — that
+	// would just as happily swallow a real problem (a corrupt file, a
+	// ledger whose columns don't match what this binary expects) and
+	// report success on a database nobody should trust.
+	var ledgerExists int
+	if err := conn.QueryRowContext(ctx,
+		"SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'rastrillo_migrations'",
+	).Scan(&ledgerExists); err != nil {
+		return err
+	}
+	if ledgerExists == 0 {
+		fmt.Println("no migration ledger in this database — it has never been booted with this version")
+		return nil
+	}
+
+	rows, err := conn.QueryContext(ctx,
+		"SELECT id, applied_at FROM rastrillo_migrations ORDER BY id")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	fmt.Println("applied:")
+	for rows.Next() {
+		var id, at string
+		if err := rows.Scan(&id, &at); err != nil {
+			return err
+		}
+		fmt.Printf("  %-40s %s\n", id, at)
+	}
+	if len(p.Changes) > 0 {
+		fmt.Println("\npending (models and migrations disagree — run rastrillo migration generate):")
+		for _, c := range p.Changes {
+			fmt.Printf("  %s\n", strings.TrimSpace(c.SQL))
+		}
+	}
+	return rows.Err()
+}
+
+// appSet reads the app's migration files straight off disk. baseline
+// does not need the models, so it skips the go run loader entirely.
+//
+// This only covers the app's own migrations, namespaced under its own
+// package name — it does not know about, and cannot discover, the
+// migrate.Set values a framework subsystem package (sessions, auth,
+// passkey, blobs, eventlog) exports, because which of those an app
+// composes, and in what order, is a decision made in the app's own Go
+// source via migrate.Merge, not something recoverable by reading
+// directories on disk.
+func appSet(dir string) ([]migrate.Migration, error) {
+	mdir, err := migrationsDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	_, pkg, err := appPackage(dir)
+	if err != nil {
+		return nil, err
+	}
+	s, err := migrate.FromFS(os.DirFS(filepath.Dir(mdir)), pkg)
+	if err != nil {
+		return nil, err
+	}
+	return s.All(), nil
+}
+
+// migrationBaseline stamps a database's ledger by hand, without
+// running anything — the one recovery path for a deployed schema
+// Apply refused to adopt because it doesn't match the migration set.
+//
+// --through is validated against the set before anything is written:
+// migrate.Stamp itself does not check through against the migration
+// list, so an ID that matches nothing would silently fall through to
+// stamping every migration — for the documented sessions/auth
+// recovery, that means the auth backfill in auth/0002 never runs and
+// looks like it already did, signing out every user. Failing loudly
+// here, before the database is even opened, is cheaper than that.
+func migrationBaseline(args []string) error {
+	fs := flag.NewFlagSet("baseline", flag.ContinueOnError)
+	dbPath := fs.String("db", "", "path to the app's SQLite database")
+	through := fs.String("through", "", "stop stamping after this migration ID")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *dbPath == "" {
+		return errors.New("rastrillo migration baseline needs --db <path>")
+	}
+	dir := dirArg(fs.Args())
+
+	set, err := appSet(dir)
+	if err != nil {
+		return err
+	}
+	if *through != "" {
+		found := false
+		ids := make([]string, 0, len(set))
+		for _, m := range set {
+			ids = append(ids, m.ID)
+			if m.ID == *through {
+				found = true
+			}
+		}
+		if !found {
+			return fmt.Errorf(
+				"--through %q does not name a migration in this app's set; "+
+					"stamping would otherwise silently fall through to every migration instead of "+
+					"stopping partway. Known ids:\n  %s", *through, strings.Join(ids, "\n  "))
+		}
+	}
+
+	d, err := db.Open(*dbPath, nil)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	ctx := context.Background()
+	conn, err := d.Writer().Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, migrate.LedgerDDL); err != nil {
+		return err
+	}
+	if err := migrate.Stamp(ctx, conn, set, *through); err != nil {
+		return err
+	}
+	fmt.Printf("rastrillo migration baseline: stamped %s\n", *dbPath)
+	return nil
 }

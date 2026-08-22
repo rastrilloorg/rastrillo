@@ -50,5 +50,8 @@ Usage:
   rastrillo migration <cmd> [dir]                schema changes (generate, new, status, check, baseline)
        generate [--allow-destructive]            diff models against migrations, write the delta
        check                                     CI gate: models and migrations agree (no database)
+       new <name>                                write a numbered stub migration (for a hand-written change, e.g. a rename)
+       status --db <path>                        what a real database's ledger has applied, plus pending drift
+       baseline --db <path> [--through <id>]      stamp a ledger by hand after boot refuses to adopt (manual by design)
 `)
 }
