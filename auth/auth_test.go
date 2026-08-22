@@ -163,6 +163,43 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 	}
 }
 
+// TestVerifySecondFactorIntercepts pins the 2FA seam on the
+// magic-link path: a SecondFactor hook that reports done gets the
+// response — no session cookie, no SignedInPath redirect — and sees
+// the exact session admit would have minted. (passkey.Handlers.Gate
+// is the shipped implementation; a recorder stands in here, since the
+// seam — not the ceremony — is this plugin's contract.)
+func TestVerifySecondFactorIntercepts(t *testing.T) {
+	var saw sessions.Session
+	a, m := newTestAuth(t, func(cfg *Config) {
+		cfg.SecondFactor = func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) {
+			saw = sess
+			http.Redirect(w, r, "/passkey/confirm", http.StatusSeeOther)
+			return true, nil
+		}
+	})
+
+	beginSignin(t, a, "person@example.com")
+	link := linkRE.FindString(m.body)
+	if link == "" {
+		t.Fatalf("no verify link in mail body:\n%s", m.body)
+	}
+	w := httptest.NewRecorder()
+	a.Verify(w, httptest.NewRequest("GET", link, nil))
+
+	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/passkey/confirm" {
+		t.Fatalf("gated verify: %d -> %q, want 303 -> /passkey/confirm", w.Code, w.Header().Get("Location"))
+	}
+	if saw.Subject != "person@example.com" || saw.Method != "magiclink" {
+		t.Errorf("hook saw %+v, want the would-be magiclink session", saw)
+	}
+	for _, c := range w.Result().Cookies() {
+		if c.Name == a.SessionCookie() && c.Value != "" {
+			t.Fatal("gated verify minted a session cookie anyway")
+		}
+	}
+}
+
 func TestRequireFreshSessionStepUp(t *testing.T) {
 	a, m := newTestAuth(t, nil)
 	beginSignin(t, a, "person@example.com")

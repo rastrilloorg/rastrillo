@@ -259,7 +259,8 @@ verifies a credential and calls `SignIn`; that one call is the whole contract.
   different when signed in.
 - `s.RequireFresh(maxAge)` is Require plus step-up: the credential must be
   verified within maxAge; stale GET/HEAD goes to `SigninPath` with `reauth=1`,
-  and re-signing-in or a `passkey` assertion rotates fresh.
+  and re-signing-in or a `passkey` assertion rotates fresh. Sign-in-time
+  2FA: the plugin's `Config.SecondFactor` takes `passkey`'s `Gate`.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (the `Session`: Subject, Method, AuthTime, At). Past a `Require` boundary the
   `ok` is guaranteed only for a plugin whose Subject is a numeric user id, as
@@ -303,10 +304,10 @@ to your user row's id before scoping.
   `manifest/*.toml` resource generates CRUD screens for one table, three field
   kinds (text, textarea, money), no relations. `scope = "user"` makes every
   generated query owner-filtered by the session subject (someone else's row
-  answers 404) — so user-owned CRUD fits too; mount those routes behind
-  `sessions.Require` or `auth.RequireSession`. Mix declared and hand-written
-  resources freely — `examples/notes` does both. Relations or a custom flow:
-  hand-write the handlers.
+  404s) — so user-owned CRUD fits too; mount those routes behind
+  `sessions.Require`/`auth.RequireSession`. Mix declared and hand-written
+  resources freely — `examples/notes` does both. Relations or custom flows:
+  hand-write.
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary holding it and `rastrillo/gormlite`
