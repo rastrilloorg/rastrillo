@@ -415,12 +415,16 @@ func (s *Sessions) Sweep(now time.Time) error {
 
 // SafeReturn returns r.FormValue("return_to") when it is a same-site
 // absolute path — starts with exactly one "/", no scheme, no
-// backslash — and fallback otherwise. Anything laxer is an open
-// redirect on a sign-in endpoint.
+// backslash, no control characters — and fallback otherwise. Anything
+// laxer is an open redirect on a sign-in endpoint. Control characters
+// matter because browsers strip tab/CR/LF from a URL before parsing
+// it: "/\t/evil.example" would pass a bare "//" check and still
+// navigate scheme-relative off-site.
 func SafeReturn(r *http.Request, fallback string) string {
 	to := r.FormValue("return_to")
 	if to == "" || !strings.HasPrefix(to, "/") ||
-		strings.HasPrefix(to, "//") || strings.ContainsAny(to, "\\") {
+		strings.HasPrefix(to, "//") || strings.ContainsAny(to, "\\") ||
+		strings.ContainsFunc(to, func(c rune) bool { return c < 0x20 || c == 0x7f }) {
 		return fallback
 	}
 	return to

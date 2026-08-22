@@ -43,10 +43,13 @@
 
   // The same rule sessions.SafeReturn enforces server-side: a same-site
   // absolute path — starts with exactly one "/", no scheme, no
-  // backslash. Anything laxer is an open redirect, here driven by a
-  // response header instead of a form field.
+  // backslash, no control characters (browsers strip tab/CR/LF before
+  // parsing, so "/\t/evil.example" would resolve scheme-relative).
+  // Anything laxer is an open redirect, here driven by a response
+  // header instead of a form field.
   function localPath(to) {
-    return to.charAt(0) === "/" && to.charAt(1) !== "/" && to.indexOf("\\") === -1;
+    return to.charAt(0) === "/" && to.charAt(1) !== "/" &&
+      to.indexOf("\\") === -1 && !/[\u0000-\u001f\u007f]/.test(to);
   }
 
   function poll(el) {
