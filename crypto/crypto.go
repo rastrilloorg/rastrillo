@@ -12,6 +12,8 @@
 //	Sign/Verify:     ECDSA P-256 over SHA-256(context ‖ 0x00 ‖ msg), raw r‖s (32+32, zero-padded)
 //	SealSym/OpenSym: iv(12) ‖ AES-256-GCM ciphertext
 //	Derive:          HKDF-SHA256, salt=nil, info=context, 32 bytes
+//	DeriveInvite:    id/wrapKey/claimSecret = Derive(T, context+"-id"/"-wrap"/"-claim"),
+//	                 claimHash = hex SHA-256(claimSecret); WrapKey/UnwrapKey = SealSym in base64url
 //
 // testdata/golden.json is amadan's pinned cross-implementation fixture
 // (see amadan docs/superpowers/specs/2026-08-03-rastrillo-crypto-prompt.md);
@@ -19,10 +21,11 @@
 // any consumer replacing a local copy with this package keeps its own
 // vectors as the proof of interchangeability.
 //
-// Deliberately not here yet: WrapKey/UnwrapKey and DeriveInvite from the
-// design doc's sketch. Eleven's real invite shape is unconfirmed against
-// that sketch, and a guessed wire format would be one three apps had to
-// migrate off. They land when a consumer pins their contract.
+// WrapKey/UnwrapKey and DeriveInvite (invite.go) waited until a
+// consumer pinned their contract; eleven's messenger did
+// (internal/e2ee, crypto.js deriveInvite), and testdata/invites.json
+// carries its vectors verbatim — context "lchat-invite" reproduces its
+// wire format byte for byte.
 package crypto
 
 import (
