@@ -291,21 +291,22 @@ The keymail plugin (`rastrillo/auth`) — the family default: magic-link email
 auto-upgrading to keymail — rate-limits via signin: `auth.New(auth.Config{...})` with
 `Begin`/`Callback`/`Verify`/`Signout` handlers and `RequireSession`, over the
 same `sessions` core. **With keymail, do not use `sessions.UserID`.** Its
-Subject is the verified *email*, and `RequireSession` stores the `Identity`
-under auth's own context key — so `sessions.UserID(r)` returns `(0, false)`
-there, and the §3 seam, which drops that `ok`, would scope every query to
+Subject is the verified *email*, so `sessions.UserID(r)` returns `(0, false)`
+— and the §3 seam, which drops that `ok`, would scope every query to
 `user_id = 0`: everyone reading everyone. Read the viewer with `auth.From(r)`
-and map `Identity.Address` to your user row's id before scoping.
+or `sessions.Current(r)` (`RequireSession` stashes both) and map the address
+to your user row's id before scoping.
 
 ## 6. What NOT to do
 
-- **Do not use the manifest generator for user-owned data.** It builds CRUD
-  screens for *standalone, unscoped tables*: one table per resource, three
-  field kinds (text, textarea, money), no relations, **no per-user scoping
-  yet**. Manifests are an equal, optional path — mix declared and hand-written
-  resources freely — but anything a user owns gets hand-written handlers. (The
-  `view` helpers serve those generated actions; a hand-written app uses its
-  own render helper.)
+- **Manifests: declare what fits the vocabulary, hand-write the rest.** A
+  `manifest/*.toml` resource generates CRUD screens for one table, three field
+  kinds (text, textarea, money), no relations. `scope = "user"` makes every
+  generated query owner-filtered by the session subject (someone else's row
+  answers 404) — so user-owned CRUD fits too; mount those routes behind
+  `sessions.Require` or `auth.RequireSession`. Mix declared and hand-written
+  resources freely — `examples/notes` does both. Relations or a custom flow:
+  hand-write the handlers.
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary holding it and `rastrillo/gormlite`
