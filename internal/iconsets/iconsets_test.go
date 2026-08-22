@@ -41,13 +41,28 @@ func TestEveryCombinationIsAriaHidden(t *testing.T) {
 	}
 }
 
+// codeOnly drops comment lines, so a licence URL in an attribution
+// comment is not mistaken for markup that reaches off-origin. What
+// matters is the icon markup a browser is handed, not what the file says
+// about itself.
+func codeOnly(src []byte) string {
+	var b strings.Builder
+	for _, line := range strings.Split(string(src), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "//") {
+			continue
+		}
+		b.WriteString(line + "\n")
+	}
+	return b.String()
+}
+
 // Inline delivery reaches nothing outside the page — the original
 // icons.go promise, kept as the default's behaviour.
 func TestInlineDeliveryIsSelfContained(t *testing.T) {
 	for _, name := range Names() {
 		got, _ := Render(name, Inline)
 		for _, bad := range []string{"http://", "https://", "<script", "<link ", "url("} {
-			if strings.Contains(string(got.Source), bad) {
+			if strings.Contains(codeOnly(got.Source), bad) {
 				t.Errorf("inline %q reaches outside the page (%q)", name, bad)
 			}
 		}
@@ -154,5 +169,32 @@ func TestSlugsMatchTheFrameworkVocabulary(t *testing.T) {
 		if got[i] != want[i] {
 			t.Errorf("slug %d: iconsets has %q, the framework has %q", i, got[i], want[i])
 		}
+	}
+}
+
+// Font Awesome's licence asks that the attribution comments in its
+// distributed files not be removed. Transcribing path data into Go drops
+// them, so the generated source carries one back, next to the data.
+func TestFontAwesomeCreditTravelsWithTheSource(t *testing.T) {
+	for _, d := range []Delivery{Inline, CDN, JS} {
+		got, err := Render("font-awesome", d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		src := string(got.Source)
+		for _, want := range []string{
+			"Font Awesome Free 7.3.1 by @fontawesome",
+			"https://fontawesome.com/license/free",
+			"CC BY 4.0",
+		} {
+			if !strings.Contains(src, want) {
+				t.Errorf("font-awesome/%s generated source lost %q", d, want)
+			}
+		}
+	}
+	// Lucide is ISC and asks for nothing extra in the source.
+	got, _ := Render("lucide", Inline)
+	if strings.Contains(string(got.Source), "fontawesome") {
+		t.Error("lucide source mentions font-awesome")
 	}
 }
