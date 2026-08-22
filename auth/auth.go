@@ -120,8 +120,9 @@ var ErrEmptyInstanceKey = errors.New("rastrillo/auth: Config.InstanceKey must no
 
 // New wires the one long-lived flow: explicit in-memory rate limiter,
 // derived pending key, the keymail client bound to Origin, the link
-// store over cfg.DB, and the classifier carrying the lookup-path
-// rewrite (see classifier.go).
+// store over cfg.DB, and a stock classifier (signin v0.1.1 probes
+// keymail's real /api/federation/lookup route, so the RoundTripper
+// rewrite this package carried since v0.6.0 is gone).
 func New(cfg Config) (*Auth, error) {
 	if cfg.Origin == "" || (!strings.HasPrefix(cfg.Origin, "https://") && !strings.HasPrefix(cfg.Origin, "http://")) {
 		return nil, errors.New("rastrillo/auth: Config.Origin must be an absolute origin like https://app.example.com")
@@ -165,7 +166,7 @@ func New(cfg Config) (*Auth, error) {
 
 	a := &Auth{cfg: cfg, sessions: sess}
 	a.flow = &signin.Flow{
-		Classifier: newClassifier(),
+		Classifier: &signin.Classifier{},
 		Keymail: func(server string) *signin.Keymail {
 			return &signin.Keymail{Base: "https://" + server, Origin: cfg.Origin}
 		},
