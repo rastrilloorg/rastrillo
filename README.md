@@ -181,7 +181,12 @@ the meantime. This list is their union. **Built:**
   `rastrillo new` writes beside `tokens.css`: it replaces an element
   carrying `data-poll` with the HTML fragment it fetches and stops when
   the new fragment stops asking, and marks a submitting `data-busy` form
-  busy. htmx remains a choice, not a dependency — `examples/notes`
+  busy. Status pages poll, or ride Server-Sent Events where the browser
+  supports them: `Events` streams at `/jobs/{id}/events` (heartbeats,
+  per-write deadlines, a bounded stream lifetime — the serve.go
+  streaming recipe), and the shim's `data-poll-push` upgrades to an
+  EventSource that falls back to plain polling on its own. htmx remains
+  a choice, not a dependency — `examples/notes`
   demonstrates the whole loop with an Export flow.
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail

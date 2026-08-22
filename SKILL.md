@@ -193,7 +193,7 @@ PostForm loops. Read each permitted field by name (`r.PostFormValue("Title")`)
 and write through `.Select("Title", "Body").Updates(...)` so an unexpected
 field can never reach a column.
 
-(`PostFormValue` takes the HTML input's name, `title`/`body` here; `Select`'s
+(`PostFormValue` takes the input's name; `Select`'s
 strings are GORM field names — the allowlist that matters.)
 
 Validate with `form.Parse` — one declaration per field — and re-render at 422
@@ -231,7 +231,6 @@ credential and calls `SignIn`; that call is the whole contract.
 
 - `csrf.Protect(origin)` mounts app-wide (`r.Use`). It refuses cross-origin
   POST/PUT/PATCH/DELETE via `Sec-Fetch-Site`/`Origin`; no tokens to mint.
-  GET/HEAD/OPTIONS pass untouched.
 - Guard signed-in routes with a chi `Group` + `s.Require`: signed-out GET/HEAD
   redirects to `SigninPath` with a same-site `return_to`; anything else 403s.
 - `s.Middleware` is softer: resolves a session when there is one, blocks
@@ -271,8 +270,8 @@ auto-upgrading to keymail — rate-limits via `signin`:
 `auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout`
 handlers and `RequireSession`, over the same `sessions` core. **With keymail, do not use `sessions.UserID`.** Its
 Subject is the verified *email*, so it returns `(0, false)` — and the §3 seam,
-which drops that `ok`, would scope every query to `user_id = 0`: everyone
-reading everyone. Read the viewer with `auth.From(r)` or `sessions.Current(r)`
+which drops that `ok`, would scope every query to `user_id = 0`.
+Read the viewer with `auth.From(r)` or `sessions.Current(r)`
 (`RequireSession` stashes both) and map the address to your user row's id
 before scoping.
 
@@ -289,20 +288,23 @@ same way; fn's error text reaches the owner. `j.Get(id, owner)` answers only
 the owner, so foreign/unknown ids 404.
 
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage` and `Fragment`, erroring unless all three are set; mount both in
-the `sess.Require` group at `/jobs/{id}` and `/jobs/{id}/fragment`. Both take
-`jobs.PageData{Job, FragmentPath, PollSeconds}`: Render draws a whole page,
+`StatusPage`, `Fragment` and `Events` (SSE), erroring unless all three are
+set; mount them in the `sess.Require` group at `/jobs/{id}`,
+`/jobs/{id}/fragment` and `/jobs/{id}/events`. Handlers take
+`jobs.PageData{Job, FragmentPath, EventsPath, PollSeconds}`: Render draws a
+page,
 RenderFragment the partial *alone*, or the layout nests on the next poll.
 Done+Location 303s from StatusPage; Fragment answers 204 +
 `Rastrillo-Location`. **The page must work with scripts off:** emit a
 `<noscript>` meta refresh of `PollSeconds` *only* while Running, or a failed
 page refreshes forever.
 
-The only JavaScript is `static/rastrillo.js` — app-owned, scaffolded beside
-`tokens.css`, inert until markup opts in: `data-poll="URL"` +
+The only JavaScript is `static/rastrillo.js` — app-owned, scaffolded, inert
+until markup opts in: `data-poll="URL"` +
 `data-poll-every="2"` swap the element for the fetched fragment and repeat
 while the *new* fragment still carries `data-poll`; ui's `job-status` partial
-emits it only while running, which is how polling stops. `data-busy` on a form
+emits it only while running, which is how polling stops. The partial's `PushURL` (= `EventsPath`) emits `data-poll-push`: the shim
+rides SSE, falling back to polling itself. `data-busy` on a form
 disables its submit buttons, `data-busy-label` retitles them.
 
 ## 7. What NOT to do
@@ -315,7 +317,7 @@ disables its submit buttons, `data-busy-label` retitles them.
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the same driver name `sqlite` that
   `modernc.org/sqlite` does, so a binary with it and `rastrillo/gormlite`
-  panics at init — `sql: Register called twice for driver sqlite`.
+  panics at init.
   `gorm.io/driver/sqlite` is the cgo one; `db.Open` wires `gormlite` over
   modernc, so no driver import is ever needed.
 - **Never bind a form onto a model, query an owned model unscoped, or answer

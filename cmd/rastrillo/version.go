@@ -7,7 +7,7 @@ import "runtime/debug"
 // plain `go build`/`go test` in a local checkout, which runtime/debug
 // reports as "(devel)". Bump this on every release tag; better still,
 // find a way to derive it so this constant needs no maintenance at all.
-const rastrilloFallbackVersion = "v0.14.0"
+const rastrilloFallbackVersion = "v0.15.0"
 
 // rastrilloVersion reports the version of github.com/carlosframework/rastrillo
 // that built this CLI binary, so `rastrillo new` can pin the scaffolded
