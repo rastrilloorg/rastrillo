@@ -136,6 +136,24 @@ func loadPayload(dir string) (dump.Payload, error) {
 	return p, nil
 }
 
+// openExistingDB opens a database that must already be there.
+//
+// db.Open creates the file when it is absent, and for these two
+// commands that is never what the operator meant: a typo'd path had
+// baseline print "stamped" over a brand-new empty database while the
+// real one carried on refusing to boot, and had status report a tidy,
+// empty ledger for a database it had never opened. Both are commands
+// you reach for while recovering, when a reassuring wrong answer is
+// the most expensive kind.
+func openExistingDB(path string) (*db.DB, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, fmt.Errorf("no database at %q: %w\n"+
+			"baseline and status both read a database that already exists — neither creates one. "+
+			"Check the path.", path, err)
+	}
+	return db.Open(path, nil)
+}
+
 func migrationsDir(dir string) (string, error) {
 	_, pkg, err := appPackage(dir)
 	if err != nil {
@@ -173,13 +191,19 @@ func migrationCheck(args []string) error {
 }
 
 func migrationGenerate(args []string) error {
-	dir := dirArg(args)
-	allowDestructive := false
-	for _, a := range args {
-		if a == "--allow-destructive" {
-			allowDestructive = true
-		}
+	// A FlagSet, like every other subcommand here. The hand-rolled
+	// scan this replaced compared each argument to the exact string
+	// "--allow-destructive", so the single-dash spelling `flag` itself
+	// accepts everywhere else in this CLI was read as a directory name
+	// and silently ignored — generate then refused the change and gave
+	// the user no way to see why.
+	fs := flag.NewFlagSet("generate", flag.ContinueOnError)
+	allowDestructive := fs.Bool("allow-destructive", false,
+		"write the migration even though it drops data")
+	if err := fs.Parse(args); err != nil {
+		return err
 	}
+	dir := dirArg(fs.Args())
 	p, err := loadPayload(dir)
 	if err != nil {
 		return err
@@ -195,7 +219,7 @@ func migrationGenerate(args []string) error {
 			destructive = append(destructive, strings.TrimSpace(c.SQL))
 		}
 	}
-	if len(destructive) > 0 && !allowDestructive {
+	if len(destructive) > 0 && !*allowDestructive {
 		return fmt.Errorf(
 			"this change drops data:\n  %s\n\n"+
 				"Re-run with --allow-destructive if that is what you want.\n"+
@@ -372,11 +396,16 @@ func migrationNew(args []string) error {
 	return nil
 }
 
-// migrationStatus reports what a real database's ledger contains, and
-// separately, whether the models and migrations on disk still agree —
-// the same drift `check` reports, so an operator staring at a
-// production database doesn't have to run a second command to learn
-// there is a pending change to generate.
+// migrationStatus answers, for one real database, the three questions
+// design §9 asks of it: what the ledger has recorded, whether any
+// recorded migration's checksum differs from the file it came from
+// (the reason a boot refuses), and what is still waiting — both senses
+// of waiting, a migration in BootSchema the ledger has never seen, and
+// a model change nobody has generated a migration for yet.
+//
+// All three come from data status already holds: the ledger it just
+// read, and p.Boot, which carries each boot migration's SQL precisely
+// so a checksum can be computed from it.
 func migrationStatus(args []string) error {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
 	dbPath := fs.String("db", "", "path to the app's SQLite database")
@@ -392,7 +421,7 @@ func migrationStatus(args []string) error {
 		return err
 	}
 
-	d, err := db.Open(*dbPath, nil)
+	d, err := openExistingDB(*dbPath)
 	if err != nil {
 		return err
 	}
@@ -422,27 +451,83 @@ func migrationStatus(args []string) error {
 		return nil
 	}
 
+	// checksum, not just id and applied_at: design §9 puts "does any
+	// applied migration's checksum differ from its file?" among the
+	// questions status answers, and it is the one an operator is most
+	// likely to be asking. An app that has started refusing to boot on
+	// an edited migration used to run status, see a tidy list and no
+	// complaint, and conclude the database was fine.
 	rows, err := conn.QueryContext(ctx,
-		"SELECT id, applied_at FROM rastrillo_migrations ORDER BY id")
+		"SELECT id, applied_at, checksum FROM rastrillo_migrations ORDER BY id")
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-	fmt.Println("applied:")
+	type row struct{ at, sum string }
+	ledger := map[string]row{}
+	var ids []string
 	for rows.Next() {
-		var id, at string
-		if err := rows.Scan(&id, &at); err != nil {
+		var id string
+		var r row
+		if err := rows.Scan(&id, &r.at, &r.sum); err != nil {
+			rows.Close()
 			return err
 		}
-		fmt.Printf("  %-40s %s\n", id, at)
+		ids = append(ids, id)
+		ledger[id] = r
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	rows.Close()
+
+	fmt.Println("applied:")
+	for _, id := range ids {
+		fmt.Printf("  %-40s %s\n", id, ledger[id].at)
+	}
+
+	// p.Boot is the app's composed boot set and carries each
+	// migration's SQL, not just its ID — it is there so baseline can
+	// checksum what it stamps, and it is exactly what both of the
+	// answers below need. Nothing here reads the database a second
+	// time.
+	var edited, pending []string
+	for _, m := range p.Boot {
+		l, ok := ledger[m.ID]
+		if !ok {
+			pending = append(pending, m.ID)
+			continue
+		}
+		// Same condition Apply refuses on. A Go migration (SQL == "")
+		// is stamped with the checksum of an empty string, so there is
+		// nothing to compare.
+		if m.SQL != "" && l.sum != migrate.Checksum(m.SQL) {
+			edited = append(edited, m.ID)
+		}
+	}
+	if len(edited) > 0 {
+		fmt.Println("\nEDITED AFTER APPLYING — this app will refuse to boot against this database:")
+		for _, id := range edited {
+			fmt.Printf("  %s\n", id)
+		}
+		fmt.Println("  The file's SQL no longer matches what the ledger recorded. Restore the file: " +
+			"a migration is immutable once applied. If the change is wanted, add a new migration.")
+	}
+	if len(pending) > 0 {
+		fmt.Println("\npending (in BootSchema, not in this ledger — the next boot applies these):")
+		for _, id := range pending {
+			fmt.Printf("  %s\n", id)
+		}
+	}
+	// A second, unrelated sense of "pending": not a migration waiting
+	// to be applied, but one that has not been written yet.
 	if len(p.Changes) > 0 {
-		fmt.Println("\npending (models and migrations disagree — run rastrillo migration generate):")
+		fmt.Println("\nnot yet generated (models and migrations disagree — run rastrillo migration generate):")
 		for _, c := range p.Changes {
 			fmt.Printf("  %s\n", strings.TrimSpace(c.SQL))
 		}
 	}
-	return rows.Err()
+	return nil
 }
 
 // throughHint is a best-effort suggestion for the likely typo of
@@ -555,7 +640,7 @@ func migrationBaseline(args []string) error {
 		}
 	}
 
-	d, err := db.Open(*dbPath, nil)
+	d, err := openExistingDB(*dbPath)
 	if err != nil {
 		return err
 	}

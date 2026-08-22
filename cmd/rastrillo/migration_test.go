@@ -38,6 +38,23 @@ func captureStdout(t *testing.T, fn func()) string {
 	return buf.String()
 }
 
+// touchDB creates an empty database file at path and returns it.
+// baseline and status both refuse a path that does not exist now
+// (openExistingDB), because db.Open would otherwise happily create one
+// and report success against a typo. An operator running either
+// command always has a real database; these tests have to make one.
+func touchDB(t *testing.T, path string) string {
+	t.Helper()
+	d, err := db.Open(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 // --- unit tests for describe/tableIn/renamedTable: no compilation of
 // a fixture app, so these run even under -short. ---
 
@@ -631,7 +648,7 @@ func TestMigrationStatusReportsNoLedgerOnFreshDatabase(t *testing.T) {
 	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
 		"0001_init.sql": genesisSQL(t, &Note{}),
 	})
-	dbPath := filepath.Join(t.TempDir(), "app.db")
+	dbPath := touchDB(t, filepath.Join(t.TempDir(), "app.db"))
 
 	var runErr error
 	out := captureStdout(t, func() {
@@ -645,34 +662,39 @@ func TestMigrationStatusReportsNoLedgerOnFreshDatabase(t *testing.T) {
 	}
 }
 
-func TestMigrationStatusListsAppliedMigrations(t *testing.T) {
-	if testing.Short() {
-		t.Skip("compiles a fixture app")
-	}
-	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
-		"0001_init.sql": genesisSQL(t, &Note{}),
-	})
-	dbPath := filepath.Join(t.TempDir(), "app.db")
-
+// stampLedger writes one ledger row by hand, standing in for a boot
+// that applied the migration.
+func stampLedger(t *testing.T, dbPath, id, checksum string) {
+	t.Helper()
 	d, err := db.Open(dbPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer d.Close()
 	ctx := context.Background()
 	conn, err := d.Writer().Conn(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer conn.Close()
 	if _, err := conn.ExecContext(ctx, migrate.LedgerDDL); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := conn.ExecContext(ctx,
 		"INSERT INTO rastrillo_migrations (id, applied_at, checksum) VALUES (?, ?, ?)",
-		"app/0001_init", "2026-01-01T00:00:00Z", "deadbeef"); err != nil {
+		id, "2026-01-01T00:00:00Z", checksum); err != nil {
 		t.Fatal(err)
 	}
-	conn.Close()
-	d.Close()
+}
+
+func TestMigrationStatusListsAppliedMigrations(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	genesis := genesisSQL(t, &Note{})
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{"0001_init.sql": genesis})
+	dbPath := filepath.Join(t.TempDir(), "app.db")
+	stampLedger(t, dbPath, "app/0001_init", migrate.Checksum(genesis))
 
 	var runErr error
 	out := captureStdout(t, func() {
@@ -683,6 +705,106 @@ func TestMigrationStatusListsAppliedMigrations(t *testing.T) {
 	}
 	if !strings.Contains(out, "app/0001_init") {
 		t.Fatalf("output = %q, want it to list the applied migration id", out)
+	}
+	// The ledger matches the file and covers the whole boot set, so
+	// status must report nothing else.
+	if strings.Contains(out, "EDITED") || strings.Contains(out, "pending") {
+		t.Fatalf("output = %q, want no complaints about a database that is fully up to date", out)
+	}
+}
+
+// TestMigrationStatusReportsChecksumMismatch is design §9's "does any
+// applied migration's checksum differ from its file?".
+//
+// This is the state of a database whose app has *already started
+// refusing to boot*. Before this, status selected only id and
+// applied_at: the operator saw a tidy list, no complaint, and
+// concluded the database was fine while the app kept refusing.
+func TestMigrationStatusReportsChecksumMismatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
+		"0001_init.sql": genesisSQL(t, &Note{}),
+	})
+	dbPath := filepath.Join(t.TempDir(), "app.db")
+	// Recorded by a boot that ran a since-edited version of the file.
+	stampLedger(t, dbPath, "app/0001_init", migrate.Checksum("CREATE TABLE notes (id INTEGER PRIMARY KEY);"))
+
+	var runErr error
+	out := captureStdout(t, func() {
+		runErr = runMigration([]string{"status", "--db", dbPath, appDir})
+	})
+	if runErr != nil {
+		t.Fatal(runErr)
+	}
+	if !strings.Contains(out, "EDITED AFTER APPLYING") || !strings.Contains(out, "app/0001_init") {
+		t.Fatalf("output = %q, want it to report the checksum mismatch that is stopping this app booting", out)
+	}
+}
+
+// TestMigrationStatusListsPendingMigrations is design §6's "applied vs
+// pending". The only pending status used to print was model↔migration
+// drift — never a migration that is in BootSchema and simply has not
+// been applied to this database yet.
+func TestMigrationStatusListsPendingMigrations(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
+		"0001_init.sql":     genesisSQL(t, &Note{}),
+		"0002_add_flag.sql": "ALTER TABLE notes ADD flag INTEGER;",
+	})
+	dbPath := filepath.Join(t.TempDir(), "app.db")
+	stampLedger(t, dbPath, "app/0001_init", migrate.Checksum(genesisSQL(t, &Note{})))
+
+	var runErr error
+	out := captureStdout(t, func() {
+		runErr = runMigration([]string{"status", "--db", dbPath, appDir})
+	})
+	if runErr != nil {
+		t.Fatal(runErr)
+	}
+	if !strings.Contains(out, "pending") || !strings.Contains(out, "app/0002_add_flag") {
+		t.Fatalf("output = %q, want app/0002_add_flag listed as pending", out)
+	}
+}
+
+// TestMigrationStatusRefusesAPathThatIsNotThere: db.Open creates the
+// file, so a typo'd path used to produce a clean, entirely fictional
+// report about a database that had just been conjured into existence.
+func TestMigrationStatusRefusesAPathThatIsNotThere(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
+		"0001_init.sql": genesisSQL(t, &Note{}),
+	})
+	missing := filepath.Join(t.TempDir(), "typo.db")
+	if err := runMigration([]string{"status", "--db", missing, appDir}); err == nil {
+		t.Fatal("want an error for a database path that does not exist")
+	}
+	if _, err := os.Stat(missing); err == nil {
+		t.Fatal("status must not create the database it was pointed at")
+	}
+}
+
+// TestMigrationBaselineRefusesAPathThatIsNotThere is the same hazard
+// with teeth: baseline would print "stamped" over a brand-new empty
+// database while the real one carried on refusing to boot.
+func TestMigrationBaselineRefusesAPathThatIsNotThere(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles a fixture app")
+	}
+	appDir := newFixtureApp(t, fixtureModelsGo, map[string]string{
+		"0001_init.sql": genesisSQL(t, &Note{}),
+	})
+	missing := filepath.Join(t.TempDir(), "typo.db")
+	if err := runMigration([]string{"baseline", "--db", missing, appDir}); err == nil {
+		t.Fatal("want an error for a database path that does not exist")
+	}
+	if _, err := os.Stat(missing); err == nil {
+		t.Fatal("baseline must not create the database it was pointed at")
 	}
 }
 
@@ -736,7 +858,7 @@ func TestMigrationBaselineStampsOnlyThroughGivenID(t *testing.T) {
 		"0002_add_body.sql": "ALTER TABLE notes ADD body TEXT;",
 		"0003_add_flag.sql": "ALTER TABLE notes ADD flag INTEGER;",
 	})
-	dbPath := filepath.Join(t.TempDir(), "app.db")
+	dbPath := touchDB(t, filepath.Join(t.TempDir(), "app.db"))
 
 	if err := runMigration([]string{
 		"baseline", "--db", dbPath, "--through", "app/0002_add_body", appDir,
@@ -807,7 +929,7 @@ func TestMigrationBaselineWithoutThroughStampsEverything(t *testing.T) {
 		"0001_init.sql":     "CREATE TABLE notes (id INTEGER PRIMARY KEY);",
 		"0002_add_body.sql": "ALTER TABLE notes ADD body TEXT;",
 	})
-	dbPath := filepath.Join(t.TempDir(), "app.db")
+	dbPath := touchDB(t, filepath.Join(t.TempDir(), "app.db"))
 
 	out := captureStdout(t, func() {
 		if err := runMigration([]string{"baseline", "--db", dbPath, appDir}); err != nil {
@@ -857,7 +979,7 @@ func TestMigrationBaselineThroughSubsystemMigration(t *testing.T) {
 		filepath.Join("subsystem", "migrations", "0001_init.sql"): "CREATE TABLE subsystem_widgets (id INTEGER PRIMARY KEY);\n",
 		filepath.Join("internal", "app", "migrations.go"):         fixtureMigrationsGoWithSubsystem,
 	})
-	dbPath := filepath.Join(t.TempDir(), "app.db")
+	dbPath := touchDB(t, filepath.Join(t.TempDir(), "app.db"))
 
 	if err := runMigration([]string{
 		"baseline", "--db", dbPath, "--through", "subsystem/0001_init", appDir,
