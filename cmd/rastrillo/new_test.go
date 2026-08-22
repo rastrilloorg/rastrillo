@@ -467,3 +467,68 @@ func TestNewScaffoldsSelectJS(t *testing.T) {
 		t.Error("the layout never loads select.js, so the enhancement can never run")
 	}
 }
+
+// The shipped binary is stripped; the dev loop's is not. Both halves
+// matter: -s -w roughly halves the compressed artifact carlos transfers,
+// and stripping the dev build would take away the debuggability the dev
+// loop exists to provide.
+func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"relapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	mk, err := os.ReadFile(filepath.Join("relapp", "Makefile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(mk)
+
+	if !strings.Contains(got, `go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)`) {
+		t.Errorf("no stripped release build:\n%s", got)
+	}
+	// The deployment target, not the host. carlos ship defaults to
+	// -target linux-arm64; a release built for the developer's own
+	// machine uploads fine and then fails to exec on the instance.
+	if !strings.Contains(got, "RELEASE_GOOS   ?= linux") || !strings.Contains(got, "RELEASE_GOARCH ?= arm64") {
+		t.Errorf("release does not default to the platform's architecture:\n%s", got)
+	}
+	if !strings.Contains(got, "releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)") {
+		t.Errorf("release artifact is not named for its architecture:\n%s", got)
+	}
+	// The output directory has to be ignored, or every release leaves the
+	// tree dirty.
+	gi, err := os.ReadFile(filepath.Join("relapp", ".gitignore"))
+	if err != nil {
+		t.Fatalf("no scaffolded .gitignore: %v", err)
+	}
+	for _, want := range []string{"/releases/", "/relapp.db", "/relapp.db-wal"} {
+		if !strings.Contains(string(gi), want) {
+			t.Errorf(".gitignore is missing %q:\n%s", want, gi)
+		}
+	}
+	// build stays the plain compile check — it must not quietly become a
+	// release build, or a local binary someone wants to debug is stripped.
+	buildAt := strings.Index(got, "\nbuild:\n")
+	releaseAt := strings.Index(got, "\nrelease:\n")
+	if buildAt < 0 || releaseAt < 0 {
+		t.Fatalf("expected separate build and release targets:\n%s", got)
+	}
+	if strings.Contains(got[buildAt:releaseAt], "ldflags") {
+		t.Error("the compile-check target strips; that belongs to release only")
+	}
+	if !strings.Contains(got, ".PHONY: build release") {
+		t.Error("release is not declared .PHONY")
+	}
+}
+
+// rastrillo dev must never strip: the whole point of the loop is a
+// binary you can debug.
+func TestDevLoopDoesNotStrip(t *testing.T) {
+	src, err := os.ReadFile("dev.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(src), "-s -w") || strings.Contains(string(src), "ldflags") {
+		t.Error("rastrillo dev passes link flags; the dev binary must stay debuggable")
+	}
+}

@@ -505,6 +505,48 @@ to cover what a manifest doesn't generate; `examples/tickets` is the
 fully generated proof (one manifest resource, no hand actions or
 templates).
 
+## Release builds
+
+A scaffolded app's `Makefile` has two build targets, doing different jobs:
+
+- **`make build`** — the compile check. `go build ./...` with more than
+  one package matched discards its output, so this catches a broken
+  package without producing an artifact.
+- **`make release`** — what ships: `-ldflags="-s -w"`, dropping the
+  symbol table and DWARF, into `releases/<app>-<goos>-<goarch>`.
+
+`release` cross-compiles for **linux/arm64 by default**, not for your own
+machine, because that is what `carlos ship -target` defaults to. Building
+a release on an amd64 laptop and shipping it is a silent architecture
+mismatch — the upload succeeds and the binary fails to exec on the
+instance. Override for a one-off with `make release RELEASE_GOARCH=amd64`.
+The artifact is named for its architecture, and `make release` prints the
+matching `carlos ship` command.
+
+`releases/` is in the scaffolded `.gitignore`, along with the local
+SQLite database the app creates when you run it and its write-ahead log.
+
+Stripping is worth having because the compressed artifact is what gets
+transferred. Measured across this family's own apps (titogo, amadan,
+platform, slopbox, keymail, and a fresh scaffold): **23-31% off the raw
+binary, and 45-53% off it after `zstd -19`**. A fresh scaffold goes
+21.3MB → 14.7MB raw, 10.6MB → 5.1MB compressed.
+
+What survives stripping, checked rather than assumed:
+
+- **Panic traces are byte-identical**, function names and line numbers
+  included — Go's `pclntab` is not touched by these flags.
+- `debug.ReadBuildInfo()` works.
+- `go version -m` still reports module metadata.
+
+What you lose is source-level debugging with delve or gdb. Build without
+the flags when you need that.
+
+**`rastrillo dev` never strips**, deliberately: a debuggable binary is
+what the dev loop is for. `carlos` itself is built the same way — see
+`carlosframework/platform`'s own `Makefile` — so this closes a gap rather
+than setting a new policy.
+
 ## Browser tests
 
 Almost everything here is covered by ordinary Go tests. One thing is not:
