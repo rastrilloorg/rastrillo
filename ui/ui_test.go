@@ -966,15 +966,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"list-row-action", "status-pill", "empty-state", "pagination",
 		"badge", "meter", "person", "callout", "detail-list", "dropdown",
 		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
-		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar",
+		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 27 {
-		t.Fatalf("the shipped set is 27 partials, this list has %d", len(want))
+	if len(want) != 28 {
+		t.Fatalf("the shipped set is 28 partials, this list has %d", len(want))
 	}
 }
 
@@ -1558,6 +1558,23 @@ func TestRoutesFamilyPartialClassesAreStyled(t *testing.T) {
 	}
 }
 
+// The same drift check once more, for the jobs task's one partial.
+// job-status emits exactly two classes and only one of them belongs
+// here: rst-spin is real styling (the working indicator, checked
+// against tokens.css below), while rst-job is a deliberate exception —
+// a semantic hook the shim finds by data-poll and an app can key its
+// own CSS off, never a class tokens.css styles. Recording that here in
+// a comment, the way reducedMotionAllowlist records its exceptions, so
+// a future reader does not "fix" it by inventing a rule for it.
+func TestJobStatusPartialClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{"rst-spin"} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
+	}
+}
+
 // The dropdown's exclusivity between siblings (only one open at a time)
 // is the native <details name> attribute, not JavaScript — this pins
 // both halves of that promise.
@@ -1737,5 +1754,30 @@ func TestDetailListEmptyItemsRendersEmptyList(t *testing.T) {
 	got := render(t, "detail-list", map[string]any{"Items": []any{}})
 	if !strings.Contains(got, `<dl class="rst-detail">`) || strings.Contains(got, "<dt>") {
 		t.Errorf("empty detail-list wrong: %s", got)
+	}
+}
+
+// job-status emits data-poll (and its spinner) only while running — that
+// attribute's presence is how the shim knows to keep polling, and its
+// absence is how the shim stops. A done job must never carry it.
+func TestJobStatusPollsWhileRunningAndStopsWhenDone(t *testing.T) {
+	running := render(t, "job-status", map[string]any{
+		"Name": "Export", "Status": "running", "Progress": "42%",
+		"PollURL": "/jobs/1/status", "PollSeconds": 2,
+	})
+	for _, want := range []string{
+		`data-poll="/jobs/1/status"`, `data-poll-every="2"`, "rst-spin",
+	} {
+		if !strings.Contains(running, want) {
+			t.Errorf("missing %q: %s", want, running)
+		}
+	}
+
+	done := render(t, "job-status", map[string]any{"Name": "Export", "Status": "done"})
+	if strings.Contains(done, "data-poll") {
+		t.Errorf("a done job must not carry data-poll: %s", done)
+	}
+	if strings.Contains(done, "rst-spin") {
+		t.Errorf("a done job must not carry the spinner: %s", done)
 	}
 }

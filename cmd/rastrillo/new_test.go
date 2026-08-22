@@ -28,6 +28,32 @@ func TestNewScaffoldsTokensCSS(t *testing.T) {
 	}
 }
 
+// rastrillo new writes the fragment shim into the new app's static
+// tree, once, the same way it writes tokens.css. From then on it is an
+// ordinary app-owned file.
+func TestNewScaffoldsRastrilloJS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("blogapp", "internal", "blogapp", "static", "rastrillo.js"))
+	if err != nil {
+		t.Fatalf("expected a scaffolded rastrillo.js: %v", err)
+	}
+	if !bytes.Equal(got, ui.ShimJS()) {
+		t.Errorf("scaffolded rastrillo.js is not ui.ShimJS() verbatim (%d bytes vs %d)", len(got), len(ui.ShimJS()))
+	}
+}
+
+// The scaffolded layout must load the shim the same way it links
+// tokens.css: through the fingerprinting {{asset ...}} helper, deferred
+// so it never blocks first paint.
+func TestLayoutTemplateLoadsRastrilloJS(t *testing.T) {
+	if !strings.Contains(layoutTemplate, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
+		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layoutTemplate)
+	}
+}
+
 // The scaffolded go.mod must pin the versions this CLI was actually
 // built against — rastrillo via its build-info version (see
 // version.go), chi and gorm via the CLI's own dependency list — not

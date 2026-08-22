@@ -45,6 +45,16 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
+      # The race detector needs cgo, so this one step overrides the
+      # job-wide CGO_ENABLED=0 — the static-binary criterion is about
+      # what ships, not about what a detector build links. Scoped to the
+      # two packages whose tests are actually concurrent: jobs (Start
+      # spawns a goroutine per job, Get reads the same map) and sessions.
+      - name: race detector
+        env:
+          CGO_ENABLED: 1
+        run: go test -race -count=1 ./jobs/ ./sessions/
+
       - name: examples/helloworld ./... sweep
         working-directory: examples/helloworld
         run: |

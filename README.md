@@ -162,6 +162,24 @@ the meantime. This list is their union. **Built:**
 - **`rastrillo/scope`** — `Owned`/`OwnedBy`, the GORM query scopes that
   make per-user ownership the short query: a row that isn't yours is a
   row that doesn't exist, so handlers answer 404, never 403.
+- **`rastrillo/jobs`** — background work you can watch: `Start` runs a
+  function in a goroutine and hands back an id, and `NewHandlers` turns
+  that id into two routes the app mounts behind `sessions.Require` and
+  renders with its own callbacks — a status page at `/jobs/{id}` and the
+  fragment it polls at `/jobs/{id}/fragment`. Ownership is the session
+  subject, so someone else's job, like someone else's row, 404s. The
+  status page works with scripts off: while the job runs it carries a
+  `<noscript>` meta refresh, and a finished job with somewhere to go
+  answers 303 (the fragment's equivalent is 204 plus a
+  `Rastrillo-Location` header). The registry is in-memory on purpose — a
+  restart kills the goroutine, so a stored row would only persist a lie;
+  work that must survive one belongs in `eventlog`. The only JavaScript
+  in the framework is `static/rastrillo.js`, a ~130-line app-owned shim
+  `rastrillo new` writes beside `tokens.css`: it replaces an element
+  carrying `data-poll` with the HTML fragment it fetches and stops when
+  the new fragment stops asking, and marks a submitting `data-busy` form
+  busy. htmx remains a choice, not a dependency — `examples/notes`
+  demonstrates the whole loop with an Export flow.
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail
   flow honors, leaving storage, rendering, and CSRF to the app.
