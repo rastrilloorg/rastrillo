@@ -56,8 +56,9 @@ owns. `Resolve` applies the same activation argv and `$STATE_DIRECTORY`
 resolution.
 
 The platform contract — activation argv, LISTEN_FDS, $STATE_DIRECTORY,
-/healthz, /api/version, SIGTERM drain — comes from Resolve/Serve; never
-hand-roll any of it.
+/healthz, /api/version, SIGTERM drain, baseline security headers (CSP
+et al; your own Set wins) — comes from Resolve/Serve; never hand-roll any
+of it.
 
 `app.go` — the whole wiring, in order:
 

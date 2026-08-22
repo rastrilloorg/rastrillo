@@ -121,6 +121,17 @@ type Options struct {
 	// startup error, not a silent serve.
 	Sidecar func(ctx context.Context) (time.Time, error)
 
+	// CSP replaces the value of the Content-Security-Policy header the
+	// framework sets on every response (see the package's default
+	// below: same-origin everything, inline styles allowed because
+	// ui's partials carry style attributes, framing denied). Empty
+	// keeps the default. The other baseline headers have no Options
+	// field on purpose: all of them — this one included — are set
+	// before any app code runs, so an app that wants different values
+	// sets (or deletes) its own in a handler or Options.Wrap middleware
+	// and simply wins.
+	CSP string
+
 	// Locales declares the app's locale codes (design doc §10) — the
 	// catalogs LocaleFS carries as locales/<code>.toml. Empty means a
 	// monolingual app: no locale middleware is installed and requests
@@ -342,11 +353,41 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 	return handler, closeDB, nil
 }
 
+// defaultCSP is the Content-Security-Policy every rastrillo response
+// carries unless Options.CSP replaces it: same-origin scripts, styles,
+// images, fetches and form targets; inline STYLES allowed because ui's
+// partials set style attributes (meter's fill percentage) — inline
+// scripts are not, which is why the shim ships as a file; data: images
+// allowed for embedded favicons; framing denied.
+const defaultCSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+// securityHeaders is the outermost layer of the serving handler: the
+// baseline headers a security audit expects on every response, set
+// BEFORE anything else runs so that any header an app sets itself —
+// in a handler or Options.Wrap middleware — replaces the default, and
+// a Del removes it. Framework-owned for the same reason csrf is:
+// hand-rolled per-app hygiene is where apps ship gaps.
+func securityHeaders(csp string, next http.Handler) http.Handler {
+	if csp == "" {
+		csp = defaultCSP
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Content-Security-Policy", csp)
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // buildHandler assembles the serving handler: the framework's own
 // endpoints, the app mux (wrapped by Options.Wrap when set), and
 // — when Options.Locales is set — the locale middleware wrapped around
 // the whole thing, so a locale prefix strips before routing and the
-// translator rides the request context (§10). Split from Handler so the
+// translator rides the request context (§10). The security-header
+// wrapper goes around all of it last. Split from Handler so the
 // assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
@@ -368,7 +409,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	mux.Handle("/", app)
 
 	if len(opts.Locales) == 0 {
-		return mux, nil
+		return securityHeaders(opts.CSP, mux), nil
 	}
 	def := opts.DefaultLocale
 	if def == "" {
@@ -390,7 +431,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return loc.Middleware(mux), nil
+	return securityHeaders(opts.CSP, loc.Middleware(mux)), nil
 }
 
 // buildMux resolves the Mux/Router choice. Router runs after the
