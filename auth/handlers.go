@@ -142,6 +142,17 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 	a.redirect(w, r, a.cfg.SignedInPath)
 }
 
+// identityFrom converts a resolved sessions.Session to this plugin's
+// Identity view of it.
+func identityFrom(s sessions.Session) Identity {
+	return Identity{
+		Address:  s.Subject,
+		Method:   signin.Method(s.Method),
+		AuthTime: s.AuthTime,
+		At:       s.At,
+	}
+}
+
 // SessionFrom resolves the request's session cookie to its identity —
 // the direct lookup, for handlers outside RequireSession that want to
 // know who (a public page with a signed-in header, say).
@@ -150,27 +161,28 @@ func (a *Auth) SessionFrom(r *http.Request) (Identity, bool) {
 	if !ok {
 		return Identity{}, false
 	}
-	return Identity{
-		Address:  s.Subject,
-		Method:   signin.Method(s.Method),
-		AuthTime: s.AuthTime,
-		At:       s.At,
-	}, true
+	return identityFrom(s), true
 }
 
 type identityCtxKey struct{}
 
 // RequireSession guards a handler: no valid session sends a page
 // request to the sign-in page and answers anything else 403; a valid
-// one rides the request context for From.
+// one rides the request context for From — and for sessions.Current,
+// which this middleware stashes too (sessions.WithSession), so code
+// that reads identity through the sessions package alone — generated
+// scoped actions in particular — agrees with From about who is signed
+// in. (Before this stash, sessions.Current behind RequireSession
+// answered nothing at all — the uid-0 trap's uglier sibling.)
 func (a *Auth) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id, ok := a.SessionFrom(r)
+		s, ok := a.sessions.From(r)
 		if !ok {
 			a.refuseSession(w, r, "")
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityCtxKey{}, id)))
+		r = sessions.WithSession(r, s)
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityCtxKey{}, identityFrom(s))))
 	})
 }
 
@@ -186,16 +198,17 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			id, ok := a.SessionFrom(r)
+			s, ok := a.sessions.From(r)
 			if !ok {
 				a.refuseSession(w, r, "")
 				return
 			}
-			if !sessions.Fresh(sessions.Session{AuthTime: id.AuthTime, At: id.At}, maxAge, time.Now()) {
+			if !sessions.Fresh(s, maxAge, time.Now()) {
 				a.refuseSession(w, r, "?reauth=1")
 				return
 			}
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityCtxKey{}, id)))
+			r = sessions.WithSession(r, s)
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityCtxKey{}, identityFrom(s))))
 		})
 	}
 }

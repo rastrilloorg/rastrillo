@@ -15,6 +15,7 @@ import (
 	"github.com/keymaildev/signin"
 
 	rastrillo "github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/sessions"
 )
 
 // captureMailer records the last message instead of sending it.
@@ -126,16 +127,25 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 		t.Fatalf("second Verify: %q, want /signin?err=expired", w.Header().Get("Location"))
 	}
 
-	// RequireSession admits the cookie and exposes the identity.
+	// RequireSession admits the cookie and exposes the identity — to
+	// From AND to sessions.Current (the WithSession stash), so code
+	// that reads identity through the sessions package alone (generated
+	// scoped actions) agrees with From about who is signed in.
 	var got Identity
+	var gotSess sessions.Session
+	var gotSessOK bool
 	protected := a.RequireSession(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got, _ = From(r)
+		gotSess, gotSessOK = sessions.Current(r)
 	}))
 	r = httptest.NewRequest("GET", "http://app.test/private", nil)
 	r.AddCookie(session)
 	protected.ServeHTTP(httptest.NewRecorder(), r)
 	if got.Address != "person@example.com" || got.Method != "magiclink" {
 		t.Fatalf("From = %+v", got)
+	}
+	if !gotSessOK || gotSess.Subject != "person@example.com" {
+		t.Fatalf("sessions.Current behind RequireSession = %+v, %v; want the same subject From sees", gotSess, gotSessOK)
 	}
 
 	// Signout revokes for real: the same cookie no longer admits.

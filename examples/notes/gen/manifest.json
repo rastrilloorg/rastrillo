@@ -1,0 +1,44 @@
+[
+  {
+    "name": "bookmarks",
+    "route": "/bookmarks",
+    "store": "exclusive",
+    "scope": "user",
+    "list": {
+      "columns": [
+        {
+          "field": "Title",
+          "kind": "text"
+        },
+        {
+          "field": "Link",
+          "kind": "text"
+        }
+      ],
+      "search": true,
+      "filter": null,
+      "filters": null
+    },
+    "form": {
+      "basics": [
+        {
+          "name": "Title",
+          "kind": "text",
+          "required": true
+        },
+        {
+          "name": "Link",
+          "kind": "text",
+          "required": false
+        }
+      ],
+      "advanced": [
+        {
+          "name": "Notes",
+          "kind": "textarea",
+          "required": false
+        }
+      ]
+    }
+  }
+]

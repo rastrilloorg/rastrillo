@@ -498,8 +498,11 @@ as real committed code under gen/ by ` + "`rastrillo generate`" + `:
     [form]
     basics = [{ name = "Name", required = true }, { name = "Price", kind = "money" }]
 
-The vocabulary today covers standalone, unscoped tables (no per-user
-scoping yet) — anything a user owns stays on the code path.
+The vocabulary covers one flat table per resource, three field kinds,
+no relations. Add ` + "`scope = \"user\"`" + ` and every generated query is
+owner-filtered by the session subject — someone else's row answers
+404 — for resources a user owns; mount those routes behind
+` + "`sessions.Require`" + `. Relations or a custom flow: hand-write it.
 
 Adding the first manifest to this app:
 

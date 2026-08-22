@@ -1,0 +1,19 @@
+# The declarative half of this example: one user-scoped resource,
+# declared here and generated into gen/ — mounted beside the
+# hand-written notes CRUD (internal/notes) inside the same signed-in
+# group. scope = "user" is what makes every generated query filter by
+# the session subject: Bob's list never shows Alice's bookmark, and
+# his GET/edit/delete of her id answer 404 (see
+# internal/notestest/isolation_test.go, which proves it for both
+# halves of the app).
+name  = "bookmarks"
+route = "/bookmarks"
+scope = "user"
+
+[list]
+columns = [{ field = "Title" }, { field = "Link" }]
+search  = true
+
+[form]
+basics   = [{ name = "Title", required = true }, { name = "Link" }]
+advanced = [{ name = "Notes", kind = "textarea" }]

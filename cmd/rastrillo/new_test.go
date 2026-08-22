@@ -130,7 +130,7 @@ func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 		"rastrillo generate",
 		"gen.Router(",
 		"Render: render",
-		"unscoped tables",
+		`scope = "user"`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("manifest README missing %q", want)

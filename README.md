@@ -251,12 +251,15 @@ readable committed code that composes the same `form`/`view` helpers a
 hand-written app uses.
 
 Its vocabulary today is honestly scoped: one flat resource, three
-field kinds (text, textarea, money), no relations, and no per-user
-scoping yet — so anything a *user owns* still takes the code path
-(`SKILL.md` plus `examples/notes`, the worked example). That boundary
-is where the generator currently stops, not where it is fated to stop.
-Drop a manifest in `manifest/posts.toml` when a resource fits the
-declared shape:
+field kinds (text, textarea, money), no relations. It reaches where
+the code path does on ownership: `scope = "user"` makes every
+generated query owner-filtered by the session subject — someone
+else's row answers 404, the `scope` package's discipline, declared
+instead of hand-written (`examples/notes` runs both halves side by
+side and proves them with one two-user suite). Relations and custom
+flows still take the code path; that boundary is where the generator
+currently stops, not where it is fated to stop. Drop a manifest in
+`manifest/posts.toml` when a resource fits the declared shape:
 
 ```toml
 name  = "posts"

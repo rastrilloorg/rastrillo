@@ -107,7 +107,16 @@ func TestRunSqlcGeneratesCompilingStore(t *testing.T) {
 	notes := fixtureResource()
 	widgets := noAdvancedFixtureResource()
 	articles := searchOnlyFixtureResource()
-	if _, err := EmitStore(genDir, []rastrillo.Resource{notes, widgets, articles}); err != nil {
+	// The two scoped fixtures are the fourth and fifth corners: real
+	// sqlc must generate the exact shapes the scoped action emitter
+	// binds against — GetBookmarkParams{ID, Owner}/DeleteBookmarkParams
+	// (two binds -> struct), Owner fields on List/Count/Create/Update
+	// Params, and journals' one-bind CountJournals taking the owner
+	// bare. TestEmitActionsCompile's stubs encode the same assumption;
+	// this run is what keeps the stubs honest.
+	bookmarks := scopedFixtureResource()
+	journals := scopedPlainFixtureResource()
+	if _, err := EmitStore(genDir, []rastrillo.Resource{notes, widgets, articles, bookmarks, journals}); err != nil {
 		t.Fatalf("EmitStore: %v", err)
 	}
 
@@ -123,6 +132,12 @@ func TestRunSqlcGeneratesCompilingStore(t *testing.T) {
 	}
 	if _, _, err := EmitActions(root, genDir, articles); err != nil {
 		t.Fatalf("EmitActions(articles): %v", err)
+	}
+	if _, _, err := EmitActions(root, genDir, bookmarks); err != nil {
+		t.Fatalf("EmitActions(bookmarks): %v", err)
+	}
+	if _, _, err := EmitActions(root, genDir, journals); err != nil {
+		t.Fatalf("EmitActions(journals): %v", err)
 	}
 
 	// The point of this test over EmitStore/EmitActions' own golden

@@ -377,6 +377,17 @@ func Current(r *http.Request) (Session, bool) {
 	return sess, ok
 }
 
+// WithSession returns a request whose context carries sess for
+// Current/UserID — the stash half of Middleware/Require, exported for
+// middleware OUTSIDE this package that resolves a session itself
+// (auth.RequireSession, say) and must keep sessions.Current in
+// agreement: code downstream of any session-guarding middleware —
+// generated scoped actions in particular — reads identity through
+// sessions.Current alone, whichever plugin did the guarding.
+func WithSession(r *http.Request, sess Session) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), ctxKey{}, sess))
+}
+
 // UserID is Current's Subject parsed as a numeric ID, for apps whose
 // subject is a database row ID. ok is false when there is no current
 // session or its Subject isn't an integer (a plugin using non-numeric

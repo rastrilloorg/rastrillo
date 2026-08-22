@@ -118,6 +118,18 @@
 //     time already knows no check here can fail, so none is emitted
 //     (the same "bake what the manifest already decided" discipline
 //     templates.go uses for the Advanced-form and Search gates).
+//   - scope = "user" (rastrillo.UserScoped): every action except
+//     new.GET (which touches no data) opens by resolving the session
+//     (sessions.Current — so scoped routes mount behind
+//     sessions.Require / sessions.Middleware / auth.RequireSession)
+//     and answers 403 signed out; every store call binds
+//     Owner: sess.Subject. List/Count carry the always-on owner
+//     clause, Create stamps the owner, and every per-record query
+//     keys on id AND owner (store.go's recordKey) — so someone else's
+//     id is sql.ErrNoRows and answers the same 404 a missing row
+//     does, the scope package's 404-not-403 discipline. An unscoped
+//     resource's output is byte-identical to before Scope existed
+//     (the fixture goldens pin this).
 package generate
 
 import (
@@ -391,20 +403,70 @@ func failWhat(r rastrillo.Resource, what string) string {
 
 // actionImportLines renders the module import lines every generated
 // action needs (rastrillo, always; view, always — every one of the
-// seven/eight files calls at least one of view.Fail/view.Render/
+// eight/nine files calls at least one of view.Fail/view.Render/
 // view.ParseID unconditionally) plus form when needsForm — an action
 // with no Money field anywhere it reads/writes must not import form
-// unused (go vet would reject it). Line order within the block doesn't
+// unused (go vet would reject it) — plus sessions when the resource is
+// scoped AND this action resolves the owner (needsSession: every
+// scoped action except new.GET, which touches no data and so emits no
+// sessionStmts to use the import). Line order within the block doesn't
 // matter: go/format sorts import specs within a contiguous group
 // alphabetically, same as gofmt.
-func actionImportLines(needsForm bool) string {
+func actionImportLines(r rastrillo.Resource, needsForm, needsSession bool) string {
 	var b strings.Builder
 	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
 	if needsForm {
 		b.WriteString("\t\"github.com/carlosframework/rastrillo/form\"\n")
 	}
+	if scoped(r) && needsSession {
+		b.WriteString("\t\"github.com/carlosframework/rastrillo/sessions\"\n")
+	}
 	b.WriteString("\t\"github.com/carlosframework/rastrillo/view\"\n")
 	return b.String()
+}
+
+// ── owner scoping (scope = "user") plumbing, shared by every action ──
+
+// sessionStmts renders the statements a scoped Handle opens with:
+// resolve the session, refuse a signed-out caller. 403 rather than a
+// redirect — the mounting contract (SKILL.md, manifest/README) puts
+// scoped routes behind sessions.Require / auth.RequireSession, which
+// already redirect page requests; this refusal is the defense-in-depth
+// backstop for an app that forgot, matching sessions' own answer for
+// a non-page request. Empty for an unscoped resource.
+func sessionStmts(r rastrillo.Resource) string {
+	if !scoped(r) {
+		return ""
+	}
+	return `sess, ok := sessions.Current(r)
+	if !ok {
+		http.Error(w, "signed out", http.StatusForbidden)
+		return
+	}
+`
+}
+
+// ownerParamLine is the Owner bind a scoped store call carries; empty
+// for an unscoped resource, so call sites splice it unconditionally.
+func ownerParamLine(r rastrillo.Resource) string {
+	if !scoped(r) {
+		return ""
+	}
+	return "Owner: sess.Subject,\n"
+}
+
+// recordArg renders the argument a per-record query (Get<Singular>,
+// Delete<Singular>) takes: the bare id for an unscoped resource — one
+// bind parameter, passed bare under sqlc's convention (see the
+// countBinds comment in actionIndexGET) — or the two-field Params
+// struct for a scoped one, whose id-AND-owner WHERE (store.go's
+// recordKey) is what turns someone else's row into sql.ErrNoRows and
+// so into the same 404 a missing row answers.
+func recordArg(r rastrillo.Resource, alias, query, singular string) string {
+	if scoped(r) {
+		return fmt.Sprintf("%s.%s%sParams{ID: id, Owner: sess.Subject}", alias, query, singular)
+	}
+	return "id"
 }
 
 // hasMoneyColumn reports whether any of cols is a Money column.
@@ -535,12 +597,13 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"net/url\"\n")
 	b.WriteString("\t\"strconv\"\n")
 	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString(actionImportLines(needsForm))
+	b.WriteString(actionImportLines(r, needsForm, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s.\n", r.Route)
 	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
+	b.WriteString(sessionStmts(r))
 
 	searchExpr := `""`
 	if searchDeclared {
@@ -598,19 +661,26 @@ offset := (page - 1) * pageSize
 	if searchParam {
 		countBinds++
 	}
+	if scoped(r) {
+		countBinds++ // the always-on owner clause (store.go's whereClauses)
+	}
 	switch {
 	case countBinds == 0:
 		b.WriteString("total, err := store.Count" + plural + "(r.Context())\n")
 	case countBinds == 1:
 		var arg string
-		if searchParam {
+		switch {
+		case scoped(r):
+			arg = "sess.Subject"
+		case searchParam:
 			arg = searchExpr
-		} else {
+		default:
 			arg = fvars[0].Var
 		}
 		b.WriteString("total, err := store.Count" + plural + "(r.Context(), " + arg + ")\n")
 	default:
 		b.WriteString("total, err := store.Count" + plural + "(r.Context(), " + alias + ".Count" + plural + "Params{\n")
+		b.WriteString(ownerParamLine(r))
 		if searchParam {
 			b.WriteString("Search: " + searchExpr + ",\n")
 		}
@@ -622,6 +692,7 @@ offset := (page - 1) * pageSize
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "counting "+r.Name))
 
 	b.WriteString("rows, err := store.List" + plural + "(r.Context(), " + alias + ".List" + plural + "Params{\n")
+	b.WriteString(ownerParamLine(r))
 	if searchParam {
 		b.WriteString("Search: " + searchExpr + ",\n")
 	}
@@ -868,7 +939,7 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString(actionImportLines(len(order) > 0))
+	b.WriteString(actionImportLines(r, len(order) > 0, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -881,6 +952,7 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	}
 
 `)
+	b.WriteString(sessionStmts(r))
 	if len(order) > 0 {
 		b.WriteString(parseCall(order))
 	}
@@ -894,6 +966,7 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	b.WriteString("\nnow := time.Now().UTC().Format(time.RFC3339)\n")
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "id, err := store.Create%s(r.Context(), %s.Create%sParams{\n", singular, alias, singular)
+	b.WriteString(ownerParamLine(r))
 	for _, l := range paramLines {
 		b.WriteString(l)
 	}
@@ -912,7 +985,7 @@ func actionNewGET(r rastrillo.Resource, module string) string {
 	var b strings.Builder
 	b.WriteString("import (\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(false))
+	b.WriteString(actionImportLines(r, false, false))
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/new.\n", r.Route)
@@ -939,7 +1012,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(needsForm))
+	b.WriteString(actionImportLines(r, needsForm, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -951,8 +1024,9 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
+	b.WriteString(sessionStmts(r))
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), id)\n", singular)
+	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -987,7 +1061,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(needsForm))
+	b.WriteString(actionImportLines(r, needsForm, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -999,8 +1073,9 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
+	b.WriteString(sessionStmts(r))
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), id)\n", singular)
+	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -1058,7 +1133,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString(actionImportLines(needsForm))
+	b.WriteString(actionImportLines(r, needsForm, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1075,12 +1150,13 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		return
 	}
 `)
+	b.WriteString(sessionStmts(r))
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 
 	if groupHasValidation {
-		fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), id)\n", singular)
+		fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	} else {
-		fmt.Fprintf(&b, "_, err := store.Get%s(r.Context(), id)\n", singular)
+		fmt.Fprintf(&b, "_, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	}
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
@@ -1112,7 +1188,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	for _, l := range paramLines {
 		b.WriteString(l)
 	}
-	b.WriteString("Now: now,\nID: id,\n")
+	b.WriteString(ownerParamLine(r) + "Now: now,\nID: id,\n")
 	b.WriteString("}); err != nil {\n")
 	fmt.Fprintf(&b, "view.Fail(ctx, w, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
@@ -1196,7 +1272,7 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(needsForm))
+	b.WriteString(actionImportLines(r, needsForm, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1209,8 +1285,9 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
+	b.WriteString(sessionStmts(r))
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), id)\n", singular)
+	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -1253,7 +1330,7 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(false))
+	b.WriteString(actionImportLines(r, false, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1265,11 +1342,12 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
+	b.WriteString(sessionStmts(r))
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), id); errors.Is(err, sql.ErrNoRows) {\n", singular)
+	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), %s); errors.Is(err, sql.ErrNoRows) {\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString("\thttp.NotFound(w, r)\n\treturn\n")
 	fmt.Fprintf(&b, "} else if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
-	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), id); err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", singular, failWhat(r, "deleting "+r.Name))
+	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), %s); err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", singular, recordArg(r, alias, "Delete", singular), failWhat(r, "deleting "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, %q, http.StatusSeeOther)\n}\n", r.Route)
 
 	return b.String()
