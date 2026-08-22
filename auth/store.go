@@ -39,6 +39,24 @@ var migrationFS embed.FS
 // this migration has run finds auth_sessions empty, forcing everyone to
 // sign in again on the old code path. One forced re-sign-in on rollback
 // beats a revoked session silently coming back to life on every restart.
+//
+// Only a database that predates the sessions core (no `sessions` table
+// yet) hits this: migrate.Apply refuses it outright, since a non-empty,
+// ledger-less database that doesn't fully match the replayed set can't
+// be adopted automatically — Adoption cannot guess which migrations
+// already ran. An app on any recent version already has `sessions` and
+// adopts cleanly. Recovery when it happens:
+//
+//  1. Boot refuses, printing "missing table sessions".
+//  2. Apply sessions/0001_init by hand (it's just CREATE TABLE IF NOT
+//     EXISTS, so this is safe even if it partly ran already).
+//  3. rastrillo migration baseline --db <path> --through sessions/0001_init
+//  4. Reboot: auth/0001 no-ops (IF NOT EXISTS), auth/0002 runs the
+//     backfill for real. Nobody gets signed out.
+//
+// The trap is baseline with no --through: it stamps every migration,
+// including 0002, so the backfill never runs and the rows in
+// auth_sessions are stranded — silently signing everyone out.
 var Schema = migrate.MustFromFS(migrationFS, "auth")
 
 // linkStore implements signin.LinkStore over the app database.
