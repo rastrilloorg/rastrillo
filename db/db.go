@@ -111,6 +111,13 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 	return &DB{G: g, writer: w, reader: r}, nil
 }
 
+// Writer is the write pool: one connection, because SQLite allows one
+// writer. migrate.Apply needs it directly rather than through the
+// resolver, because it pins a single connection for the whole run —
+// PRAGMA foreign_keys is per-connection and a table rebuild must
+// toggle it outside the transaction.
+func (d *DB) Writer() *sql.DB { return d.writer }
+
 func (d *DB) Close() error {
 	rerr := d.reader.Close()
 	if werr := d.writer.Close(); werr != nil {

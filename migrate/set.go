@@ -36,7 +36,12 @@ import (
 type Migration struct {
 	ID  string
 	SQL string
-	Fn  func(*gorm.DB) error
+	// Fn runs on the same pinned connection, inside the same
+	// BEGIN IMMEDIATE transaction, as its own ledger row — Apply
+	// builds it a *gorm.DB backed by that one *sql.Conn rather than
+	// the app's pool, so a failure rolls Fn's writes back with the
+	// ledger row, same as a SQL migration.
+	Fn func(*gorm.DB) error
 }
 
 // Set is an ordered list of migrations sharing one namespace.
@@ -128,11 +133,23 @@ func (s *Set) All() []Migration {
 	return out
 }
 
+// wsAroundPunct drops whitespace adjacent to punctuation that SQL
+// formatters routinely move onto its own line — "(", ")", ",", ";" —
+// after whitespace runs have already been collapsed. Without this, a
+// token glued to punctuation with no space in one formatting (e.g.
+// "(id") tokenises differently than the same spot after a newline is
+// inserted there (e.g. "(\n  id"), and Checksum would wrongly treat
+// reformatting as an edit.
+var wsAroundPunct = regexp.MustCompile(`\s*([(),;])\s*`)
+
 // Checksum detects a migration edited after it was applied. Whitespace
-// is normalised so reformatting does not raise a false alarm; the cost
-// is that a change confined to whitespace inside a string literal goes
+// is normalised — runs collapsed, then dropped around "(", ")", ",",
+// ";" — so reformatting does not raise a false alarm; the cost is that
+// a change confined to whitespace inside a string literal goes
 // unnoticed, which is an acceptable trade for a change-detector.
 func Checksum(sql string) string {
-	sum := sha256.Sum256([]byte(strings.Join(strings.Fields(sql), " ")))
+	s := strings.Join(strings.Fields(sql), " ")
+	s = wsAroundPunct.ReplaceAllString(s, "$1")
+	sum := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(sum[:])
 }

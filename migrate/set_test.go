@@ -38,6 +38,14 @@ func TestChecksumIgnoresWhitespace(t *testing.T) {
 	if Checksum("CREATE  TABLE\n a (n INTEGER);") != Checksum("CREATE TABLE a (n INTEGER);") {
 		t.Fatal("checksum changed on reformatting")
 	}
+	// A reformat that puts a newline and indentation immediately after
+	// an opening paren glues "(id" into one token in the original but
+	// splits it into "(" and "id" once reformatted; wsAroundPunct must
+	// still treat these as identical.
+	if Checksum("CREATE TABLE notes (id INTEGER PRIMARY KEY);") !=
+		Checksum("CREATE TABLE notes (\n  id INTEGER PRIMARY KEY\n);") {
+		t.Fatal("checksum changed when a paren moved onto its own line")
+	}
 	if Checksum("CREATE TABLE a (n INTEGER);") == Checksum("CREATE TABLE b (n INTEGER);") {
 		t.Fatal("checksum collided on different SQL")
 	}
