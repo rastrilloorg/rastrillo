@@ -92,6 +92,25 @@ func Verify(encoded, password string) bool {
 	return subtle.ConstantTimeCompare(gotDK, wantDK) == 1
 }
 
+// NeedsRehash reports whether encoded was made with weaker parameters
+// than the package currently uses — an older iteration count, or a
+// format this package no longer produces. The parameters are pinned in
+// each hash (see Hash), so old hashes keep verifying forever; this is
+// how an app notices them and upgrades opportunistically, at the one
+// moment it holds the plaintext:
+//
+//	if Verify(stored, submitted) && NeedsRehash(stored) {
+//	    if h, err := Hash(submitted); err == nil { /* store h */ }
+//	}
+func NeedsRehash(encoded string) bool {
+	parts := strings.Split(encoded, "$")
+	if len(parts) != 5 || parts[0] != "pbkdf2" || parts[1] != "sha256" {
+		return true
+	}
+	iter, err := strconv.Atoi(parts[2])
+	return err != nil || iter < iterations
+}
+
 // decoyHash is verified against when Lookup finds no user, so an
 // unknown email costs the same wall-clock as a wrong password — no
 // enumeration oracle by timing.

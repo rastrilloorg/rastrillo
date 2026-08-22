@@ -70,3 +70,23 @@ func TestDecoyHashInitialized(t *testing.T) {
 		t.Errorf("decoyHash = %q, want prefix %q", decoyHash, "pbkdf2$sha256$600000$")
 	}
 }
+
+func TestNeedsRehash(t *testing.T) {
+	current, err := Hash("some-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if NeedsRehash(current) {
+		t.Errorf("a hash this package just made must not need a rehash")
+	}
+
+	old := "pbkdf2$sha256$100000$deadbeefdeadbeefdeadbeefdeadbeef$" + strings.Repeat("ab", 32)
+	if !NeedsRehash(old) {
+		t.Errorf("100k iterations is below the current floor — must need a rehash")
+	}
+	for _, garbage := range []string{"", "bcrypt$whatever", "pbkdf2$sha256$notanumber$aa$bb"} {
+		if !NeedsRehash(garbage) {
+			t.Errorf("NeedsRehash(%q) = false, want true for any format we no longer produce", garbage)
+		}
+	}
+}
