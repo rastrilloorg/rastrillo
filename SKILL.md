@@ -9,7 +9,7 @@ The CARLOS web framework. This file is the app story: read it instead of the
 source. Module `github.com/carlosframework/rastrillo`; the worked
 reference is `examples/notes`.
 
-Rastrillo is a middle layer, not a full-stack framework. You write GORM models,
+A middle layer, not a full-stack framework: you write GORM models,
 `net/http` handlers on a chi router, and `html/template` pages. It supplies
 what is hard to get right twice: the database opener, session store, identity
 plugins, CSRF, owner scoping, form helpers.
@@ -53,8 +53,7 @@ if err := rastrillo.Serve(opts); err != nil { logger.Error("serve", "err", err);
 app opens its own database.** `Run` re-parses argv and repopulates
 `Options.DBPath`, so `Serve` opens a second connection to the file `db.Open`
 owns. `Resolve` applies the same activation argv and `$STATE_DIRECTORY`
-resolution; blank `DBPath`, and `db.Open`'s eager ping satisfies the boot
-materialization duty.
+resolution.
 
 The platform contract — activation argv, LISTEN_FDS, $STATE_DIRECTORY,
 /healthz, /api/version, SIGTERM drain — comes from Resolve/Serve; never
@@ -124,18 +123,20 @@ type Note struct {
 ```
 
 `db.Open(path, logger)` returns a `*db.DB` whose `G` is the `*gorm.DB`, wired
-for SQLite: one file, a one-connection writer pool, a reader pool of several,
-routed per statement by `dbresolver`. The DSN
-sets `busy_timeout` before `journal_mode=WAL` (the reverse order crashes on
-concurrent open) plus `foreign_keys(1)`. `d.Close()` closes both
-pools; `d.G.DB()` returns the writer `*sql.DB` for database/sql packages like
-sessions.
+for SQLite: one file, WAL, a one-connection writer pool, a reader pool of
+several, routed per statement. `d.Close()` closes both pools; `d.G.DB()`
+returns the writer `*sql.DB` for database/sql packages like sessions.
 
 AutoMigrate changes are additive-only: never rename or drop a column — add a
 new one and migrate data in code. `sessions.Migrations` is raw SQL for
 `d.G.Exec` beside that call, never a GORM model — keep it out of AutoMigrate.
 
 ## 3. Scoping
+
+Scoping separates *users* within one instance, never tenants: a CARLOS app
+serves one team. A product with many teams gives each team its own instance
+(instances hibernate — idle ones cost nothing); isolation is the platform's
+process-and-file boundary, not a WHERE clause.
 
 One seam, for every read and write:
 
@@ -147,13 +148,13 @@ func (a *app) owned(r *http.Request) *gorm.DB {
 ```
 
 Every query on an owned model goes through `scope.Owned(d.G, uid)` (or
-`scope.OwnedBy` for team-owned rows): never First/Find/Update/Delete without
+`scope.OwnedBy` for another owner column): never First/Find/Update/Delete without
 the owner filter — including inside transactions, where a `d.G.Transaction`
-callback applies `scope.Owned` to every statement, the same as outside.
+callback applies `scope.Owned` to every statement.
 
 (Scope the callback's `tx`, never `d.G`: a `d.G` statement runs outside the
 transaction, whose one writer connection it already holds, so it hangs instead
-of erroring.)
+of erroring)
 
 `scope.Owned(g, owner int64)` adds `WHERE user_id = ?` — the convention column.
 `scope.OwnedBy(g, column string, owner any)` takes any owner column and
@@ -192,8 +193,7 @@ PostForm loops. Read each permitted field by name (`r.PostFormValue("Title")`)
 and write through `.Select("Title", "Body").Updates(...)` so an unexpected
 field can never reach a column.
 
-(`PostFormValue` takes the input's name; `Select`'s
-strings are GORM field names — the allowlist that matters.)
+(`PostFormValue` takes the input's name; `Select` takes GORM field names.)
 
 Validate with `form.Parse` — one declaration per field — and re-render at 422
 with values seeded back so nothing is retyped:
@@ -242,8 +242,8 @@ credential and calls `SignIn`; that call is the whole contract.
   mint via `RegenerateRecoveryCodes` behind `RequireFresh`.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (the `Session`: Subject, Method, AuthTime, At). Past `Require` the `ok` holds
-  only for a plugin whose Subject is a numeric user id, as password's is — see
-  the keymail warning below.
+  only for a plugin whose Subject is a numeric user id — see the keymail
+  warning below.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never a
   raw `return_to`: only a same-site absolute path (one leading `/`, no scheme
   or backslash) passes.
@@ -257,7 +257,7 @@ is set** — New errors otherwise. `Lookup(ctx, email) (id, hash, error)` return
 (one message; a decoy hash flattens timing). Any error from
 `Create(ctx, email, hash) (id, error)` reads as a duplicate email. `Signin`,
 `Signup`, `Signout` are **POST-only** — 405 to anything else — so mount
-`SigninPage`/`SignupPage` on GET and the rest on POST, as in §1. Render
+`SigninPage`/`SignupPage` on GET and the rest on POST. Render
 callbacks take `(w, r, password.PageData)` = `{Error, Email, ReturnTo}`;
 password writes the 422 itself before re-rendering, so the callback must not.
 
@@ -302,7 +302,7 @@ The only JavaScript is `static/rastrillo.js` — app-owned, scaffolded, inert
 until markup opts in: `data-poll="URL"` +
 `data-poll-every="2"` swap the element for the fetched fragment and repeat
 while the *new* fragment still carries `data-poll`; ui's `job-status` partial
-emits it only while running, which is how polling stops. The partial's `PushURL` (= `EventsPath`) emits `data-poll-push`: the shim
+emits it only while running. The partial's `PushURL` (= `EventsPath`) emits `data-poll-push`: the shim
 rides SSE, falling back to polling itself. `data-busy` on a form
 disables its submit buttons, `data-busy-label` retitles them.
 
