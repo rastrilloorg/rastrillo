@@ -109,3 +109,64 @@ func allSQL(cs []Change) string {
 	}
 	return b.String()
 }
+
+type genNoteIndexed struct {
+	ID     int64
+	UserID int64 `gorm:"index:idx_gen_notes_user_id"`
+	Title  string
+}
+
+func (genNoteIndexed) TableName() string { return "gen_notes" }
+
+// indexedWithDroppedColumn is a table carrying a separately-declared
+// index plus a column the model no longer wants. Dropping the column
+// means SQLite's twelve-step rebuild, and gormlite reconstructs the
+// table from the type='table' row of sqlite_master alone — the index
+// is not in that row, so the rebuild silently loses it.
+var indexedWithDroppedColumn = []Migration{{ID: "0001_init", SQL: `
+	CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT, gone TEXT);
+	CREATE INDEX idx_gen_notes_user_id ON gen_notes(user_id);`}}
+
+// TestGenerateRecreatesIndexesLostToARebuild covers the deploy hazard
+// in the gap: without the recreate, schema.sql is refreshed without
+// the index, the very next `migration check` fails, and — worse for a
+// uniqueIndex — the constraint is absent between the rebuild and
+// whatever migration eventually restores it, so a SIGKILLed wake can
+// leave the app serving unconstrained, after which CREATE UNIQUE INDEX
+// may fail permanently on a duplicate that got in.
+func TestGenerateRecreatesIndexesLostToARebuild(t *testing.T) {
+	changes, err := Generate(context.Background(), indexedWithDroppedColumn, []any{&genNoteIndexed{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := allSQL(changes)
+	if !strings.Contains(strings.ToUpper(joined), "RENAME TO") {
+		t.Fatalf("changes = %q, want the rebuild that drops the column", joined)
+	}
+	if !strings.Contains(joined, "CREATE INDEX") || !strings.Contains(joined, "idx_gen_notes_user_id") {
+		t.Fatalf("changes = %q, want the rebuild to be followed by a recreate of idx_gen_notes_user_id", joined)
+	}
+	// Order matters: recreating before the rebuild would be undone by it.
+	if strings.Index(strings.ToUpper(joined), "RENAME TO") > strings.Index(joined, "CREATE INDEX") {
+		t.Fatalf("changes = %q, want the index recreated after the rebuild, not before", joined)
+	}
+}
+
+// TestGenerateConvergesInOnePassAfterARebuild is the developer-facing
+// half: a generated migration must leave `rastrillo migration check`
+// clean immediately, not on a second `generate` nobody was told to run.
+func TestGenerateConvergesInOnePassAfterARebuild(t *testing.T) {
+	changes, err := Generate(context.Background(), indexedWithDroppedColumn, []any{&genNoteIndexed{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	next := append(append([]Migration{}, indexedWithDroppedColumn...),
+		Migration{ID: "0002_drop_column_gen_notes", SQL: allSQL(changes)})
+	again, err := Generate(context.Background(), next, []any{&genNoteIndexed{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(again) != 0 {
+		t.Fatalf("a second generate still wants %q — check would fail right after generate", allSQL(again))
+	}
+}

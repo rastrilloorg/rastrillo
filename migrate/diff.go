@@ -63,7 +63,9 @@ func gormOn(d *sql.DB) (*gorm.DB, *recorder, error) {
 // structurally compares that result against a clean AutoMigrate of
 // models alone — AutoMigrate never drops, so anything left over is a
 // column, index or table the models no longer declare — and emits the
-// drops through the migrator, also captured.
+// drops through the migrator, also captured. A final additive pass
+// then puts back what a rebuild took with it (see below), so the one
+// migration this returns leaves `migration check` clean.
 func Generate(ctx context.Context, ms []Migration, models []any) ([]Change, error) {
 	current, err := Replay(ctx, ms)
 	if err != nil {
@@ -111,7 +113,35 @@ func Generate(ctx context.Context, ms []Migration, models []any) ([]Change, erro
 	if err != nil {
 		return nil, err
 	}
-	return append(out, drops...), nil
+	out = append(out, drops...)
+
+	// A drop that needs SQLite's twelve-step rebuild takes every
+	// separately-declared index on that table with it: gormlite
+	// reconstructs the table from sqlite_master's type='table' row
+	// alone, and an index is not in that row, so DROP TABLE quietly
+	// removes indexes nobody asked to remove.
+	//
+	// Re-running the additive pass over the now-rebuilt database
+	// recovers them. AutoMigrate is idempotent, so it emits only what
+	// is genuinely absent — the recreations — and it recreates only
+	// indexes models still declares, so a deliberately dropped index
+	// does not come back.
+	//
+	// Without this the generated migration ships the table without its
+	// index: schema.sql is refreshed without it and the very next
+	// `migration check` fails, which converges on a second `generate`
+	// nobody told the developer to run. Worse for a uniqueIndex — the
+	// constraint would be absent for the whole gap between the two
+	// migrations, so a wake SIGKILLed in between leaves the app
+	// serving unconstrained, after which CREATE UNIQUE INDEX can fail
+	// permanently on a duplicate that got in.
+	if len(drops) > 0 {
+		if err := g.AutoMigrate(models...); err != nil {
+			return nil, fmt.Errorf("migrate: recreating what the rebuild dropped: %w", err)
+		}
+		out = append(out, recorded(rec, false)...)
+	}
+	return out, nil
 }
 
 // dropChanges emits, through the migrator so the SQL is gormlite's own,
