@@ -1,0 +1,15 @@
+{{define "content"}}
+<h1>Notes</h1>
+<p><a href="/notes/new">New note</a></p>
+{{with .Content}}
+{{if .Notes}}
+<ul>
+{{range .Notes}}
+<li><a href="/notes/{{.ID}}">{{.Title}}</a></li>
+{{end}}
+</ul>
+{{else}}
+<p>No notes yet.</p>
+{{end}}
+{{end}}
+{{end}}

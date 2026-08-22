@@ -5,13 +5,44 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/keymaildev/signin"
+	"github.com/carlosframework/rastrillo/sessions"
 )
 
 // Migrations is the package's schema — additive and idempotent, meant to
-// be appended to an app's Options.Migrations. Tokens never touch either
-// table: both store SHA-256 hashes only.
-var Migrations = []string{
+// be appended to an app's Options.Migrations. Tokens never touch any of
+// these tables: all store SHA-256 hashes only.
+//
+// auth_sessions is no longer written to (session storage moved to the
+// shared sessions package), but the CREATE TABLE stays: the table is
+// additive-only and abandoned in place, per the migration rule. The
+// last two statements are a one-shot upgrade, run every boot (there is
+// no migration-version table) but only doing real work once:
+//
+//  1. copy any live auth_sessions rows into the shared sessions table —
+//     additive and idempotent (OR IGNORE) — so an app upgrading from a
+//     pre-sessions-core auth does not sign its family out;
+//  2. empty auth_sessions.
+//
+// Emptying the source table is what makes the copy one-shot: after the
+// first post-upgrade boot auth_sessions has nothing left to copy, so a
+// later boot — after a user has since signed out and their sessions row
+// was deleted — finds no source row to resurrect it from. Without step
+// 2 the INSERT OR IGNORE would re-run against the same still-populated
+// auth_sessions on every boot (this platform restarts routinely —
+// hibernation/reactivation) and revive any session already revoked via
+// SignOut, since OR IGNORE only skips rows whose token_hash is already
+// present, not rows that were deliberately deleted. If a boot crashes
+// between the two statements, the next boot just re-copies (harmlessly,
+// via OR IGNORE) and deletes again.
+//
+// Accepted cost: rolling back to a pre-sessions-core rastrillo after
+// this migration has run finds auth_sessions empty, forcing everyone to
+// sign in again on the old code path. One forced re-sign-in on rollback
+// beats a revoked session silently coming back to life on every restart.
+//
+// Both statements must come after sessions.Migrations so the sessions
+// table already exists when the copy runs.
+var Migrations = append(append([]string{
 	`CREATE TABLE IF NOT EXISTS auth_links (
 	  hash       TEXT PRIMARY KEY,
 	  address    TEXT NOT NULL,
@@ -26,7 +57,11 @@ var Migrations = []string{
 	  created_at TEXT NOT NULL,
 	  expires_at TEXT NOT NULL
 	);`,
-}
+}, sessions.Migrations...),
+	`INSERT OR IGNORE INTO sessions (token_hash, subject, method, auth_time, created_at, expires_at)
+	   SELECT token_hash, address, method, auth_time, created_at, expires_at FROM auth_sessions;`,
+	`DELETE FROM auth_sessions;`,
+)
 
 // linkStore implements signin.LinkStore over the app database.
 type linkStore struct{ db *sql.DB }
@@ -61,65 +96,16 @@ func (l *linkStore) TakeLink(ctx context.Context, hash, purpose string) (string,
 	return address, true, nil
 }
 
-// createSession stores a fresh session row for a verified identity.
-func (a *Auth) createSession(hash string, id Identity, now time.Time) error {
-	authTime := ""
-	if !id.AuthTime.IsZero() {
-		authTime = id.AuthTime.UTC().Format(time.RFC3339)
-	}
-	_, err := a.cfg.DB.Exec(`INSERT INTO auth_sessions (token_hash, address, method, auth_time, created_at, expires_at)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		hash, id.Address, string(id.Method), authTime,
-		now.UTC().Format(time.RFC3339), now.Add(a.cfg.SessionTTL).UTC().Format(time.RFC3339))
-	return err
-}
-
-// lookupSession resolves a token hash to its identity, expiry-checked.
-func (a *Auth) lookupSession(hash string, now time.Time) (Identity, bool, error) {
-	var id Identity
-	var method, authTime, created, expires string
-	err := a.cfg.DB.QueryRow(`SELECT address, method, auth_time, created_at, expires_at
-		FROM auth_sessions WHERE token_hash = ?`, hash).
-		Scan(&id.Address, &method, &authTime, &created, &expires)
-	if err == sql.ErrNoRows {
-		return Identity{}, false, nil
-	}
-	if err != nil {
-		return Identity{}, false, err
-	}
-	exp, err := time.Parse(time.RFC3339, expires)
-	if err != nil || now.After(exp) {
-		return Identity{}, false, nil
-	}
-	id.Method = signin.Method(method)
-	if at, err := time.Parse(time.RFC3339, created); err == nil {
-		id.At = at
-	}
-	if authTime != "" {
-		if at, err := time.Parse(time.RFC3339, authTime); err == nil {
-			id.AuthTime = at
-		}
-	}
-	return id, true, nil
-}
-
-// deleteSession revokes one session row — real revocation, not just a
-// cleared cookie.
-func (a *Auth) deleteSession(hash string) error {
-	_, err := a.cfg.DB.Exec(`DELETE FROM auth_sessions WHERE token_hash = ?`, hash)
-	return err
-}
-
 // Sweep deletes expired links and sessions. Correctness never depends
-// on it — TakeLink and lookupSession check expiry themselves — its job
-// is keeping unclicked links and abandoned sessions from accumulating
-// for the life of the instance. Call it from boot, a sidecar pass, or
-// not at all.
+// on it — TakeLink and the sessions core's own expiry check handle it
+// themselves — its job is keeping unclicked links and abandoned
+// sessions from accumulating for the life of the instance. Call it from
+// boot, a sidecar pass, or not at all. Session rows are the sessions
+// core's own table now, so sweeping them is delegated there.
 func (a *Auth) Sweep(now time.Time) error {
 	cutoff := now.UTC().Format(time.RFC3339)
 	if _, err := a.cfg.DB.Exec(`DELETE FROM auth_links WHERE expires_at < ?`, cutoff); err != nil {
 		return err
 	}
-	_, err := a.cfg.DB.Exec(`DELETE FROM auth_sessions WHERE expires_at < ?`, cutoff)
-	return err
+	return a.sessions.Sweep(now)
 }

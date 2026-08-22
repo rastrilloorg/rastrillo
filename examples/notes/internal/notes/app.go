@@ -1,0 +1,115 @@
+package notes
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"log/slog"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
+
+	"github.com/carlosframework/rastrillo/csrf"
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/password"
+	"github.com/carlosframework/rastrillo/sessions"
+)
+
+// App wires the example: schema, the shared session core, the
+// password identity plugin, and the chi router. It returns a
+// *http.ServeMux because rastrillo.Options.Mux is typed that way —
+// the chi router mounts inside it rather than being served directly.
+//
+// models.go and handlers.go are the only files this example asks a
+// reader to actually study; everything here is plumbing to get there.
+func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
+	if err := d.G.AutoMigrate(&User{}, &Note{}); err != nil {
+		return nil, err
+	}
+	// sessions ships its schema as raw SQL, not a GORM model — it is
+	// meant to be applied like any other migration, not managed by
+	// AutoMigrate.
+	for _, stmt := range sessions.Migrations {
+		if err := d.G.Exec(stmt).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// sessions wants the writer *sql.DB directly: its statements are a
+	// mix of reads and writes, and dbresolver's Get() on the top-level
+	// handle returns the source (writer) pool.
+	writer, err := d.G.DB()
+	if err != nil {
+		return nil, err
+	}
+	sess, err := sessions.New(sessions.Config{DB: writer, Origin: origin, Logger: logger})
+	if err != nil {
+		return nil, err
+	}
+
+	a := &app{db: d.G}
+
+	ph, err := password.New(password.Config{
+		Sessions:     sess,
+		Lookup:       lookupUser(d.G),
+		Create:       createUser(d.G),
+		RenderSignin: renderSignin,
+		RenderSignup: renderSignup,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r := chi.NewRouter()
+	r.Use(csrf.Protect(origin))
+	r.Get("/signin", ph.SigninPage)
+	r.Post("/signin", ph.Signin)
+	r.Get("/signup", ph.SignupPage)
+	r.Post("/signup", ph.Signup)
+	r.Post("/signout", ph.Signout)
+	r.Group(func(r chi.Router) {
+		r.Use(sess.Require)
+		r.Get("/", a.listNotes)
+		r.Get("/notes/new", a.newNote)
+		r.Post("/notes", a.createNote)
+		r.Get("/notes/{id}", a.showNote)
+		r.Get("/notes/{id}/edit", a.editNote)
+		r.Post("/notes/{id}", a.updateNote)
+		r.Post("/notes/{id}/delete", a.deleteNote)
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle("/", r)
+	return mux, nil
+}
+
+// lookupUser is password.Config.Lookup: scope-free by design — a
+// visitor signing in isn't owned by anyone yet, so there is nothing
+// to scope.Owned against.
+func lookupUser(g *gorm.DB) func(context.Context, string) (int64, string, error) {
+	return func(ctx context.Context, email string) (int64, string, error) {
+		var u User
+		err := g.WithContext(ctx).Where("email = ?", email).First(&u).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, "", sql.ErrNoRows
+		}
+		if err != nil {
+			return 0, "", err
+		}
+		return u.ID, u.PasswordHash, nil
+	}
+}
+
+// createUser is password.Config.Create. Any error it returns (a
+// UNIQUE violation on Email, in practice) is treated by password.go
+// as a duplicate-email failure and reported to the visitor that way.
+func createUser(g *gorm.DB) func(context.Context, string, string) (int64, error) {
+	return func(ctx context.Context, email, hash string) (int64, error) {
+		u := User{Email: email, PasswordHash: hash}
+		if err := g.WithContext(ctx).Create(&u).Error; err != nil {
+			return 0, err
+		}
+		return u.ID, nil
+	}
+}

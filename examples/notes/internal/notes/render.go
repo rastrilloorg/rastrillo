@@ -1,0 +1,76 @@
+package notes
+
+import (
+	"embed"
+	"html/template"
+	"net/http"
+
+	"github.com/carlosframework/rastrillo/flash"
+	"github.com/carlosframework/rastrillo/form"
+	"github.com/carlosframework/rastrillo/password"
+	"github.com/carlosframework/rastrillo/sessions"
+)
+
+//go:embed templates
+var templatesFS embed.FS
+
+// pages is one *template.Template per page, each combining layout.html
+// with that page's own file — kept separate so every page can define
+// a template named "content" without colliding with the others (a
+// single shared tree parsed from all files at once would let the last
+// "content" definition silently win over the rest).
+var pages = map[string]*template.Template{}
+
+func init() {
+	for _, name := range []string{"signin", "signup", "index", "show", "new", "edit"} {
+		pages[name] = template.Must(template.New("layout").ParseFS(templatesFS,
+			"templates/layout.html", "templates/"+name+".html"))
+	}
+}
+
+// page is the data every template renders against: layout.html reads
+// Flash/HasFlash/SignedIn for its chrome, and each page's own content
+// block reads Content, cast back to its own view type.
+type page struct {
+	Flash    flash.Flash
+	HasFlash bool
+	SignedIn bool
+	Content  any
+}
+
+// indexView, noteView and formView are the per-page Content types.
+// formView serves both new (a blank Note, no Errors) and edit/the
+// 422 re-render (a Note carrying the submitted values, Errors set).
+type (
+	indexView struct{ Notes []Note }
+	noteView  struct{ Note Note }
+	formView  struct {
+		Note   Note
+		Errors form.Errors
+	}
+)
+
+// renderContent takes the flash exactly once, resolves whether a
+// session is current (for layout's nav), and executes name's layout.
+// It writes no status of its own: callers that need one write it
+// first, matching password.go's own convention for its 422 re-render.
+func renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {
+	fl, ok := flash.Take(w, r)
+	_, signedIn := sessions.Current(r)
+	data := page{Flash: fl, HasFlash: ok, SignedIn: signedIn, Content: content}
+	if err := pages[name].ExecuteTemplate(w, "layout", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// renderSignin and renderSignup are password.Config's RenderSignin/
+// RenderSignup: password.go already writes the 422 status itself
+// before calling either on a failed attempt, so these never touch the
+// status line.
+func renderSignin(w http.ResponseWriter, r *http.Request, d password.PageData) {
+	renderContent(w, r, "signin", d)
+}
+
+func renderSignup(w http.ResponseWriter, r *http.Request, d password.PageData) {
+	renderContent(w, r, "signup", d)
+}

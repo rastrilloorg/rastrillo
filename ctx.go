@@ -23,8 +23,12 @@ func (a Actor) String() string {
 	return "agent:" + a.Name
 }
 
-// Ctx is passed to every action. It is the one extension point for
-// per-request state a manifest or middleware needs to add — see Scope.
+// Ctx is passed to every action: the app's own wiring — its database,
+// logger, asset registry, and the Render seam generated actions call
+// through — built once by the app's ctxFactory. Per-request state
+// doesn't live here: identity lives in sessions.Current(r) /
+// sessions.UserID(r), and locale is rastrillo.LocaleFrom(r), both read
+// straight off the request rather than staged onto Ctx.
 type Ctx struct {
 	DB     *sql.DB
 	Logger *slog.Logger
@@ -36,22 +40,8 @@ type Ctx struct {
 	// serves assets some other way — the same contract as DB.
 	Assets *Assets
 
-	// Locale is the resolved locale for this request (design doc §10).
-	// The v1 request-scoped surface for localization is
-	// rastrillo.LocaleFrom(r) / rastrillo.T(r, ...) / rastrillo.Tf(r,
-	// ...), which every action already has via r; this field stays
-	// empty because the generated router's default ctxFactory doesn't
-	// look at the request at all. An app can populate it by supplying
-	// its own per-request Ctx factory (the seam the generated router
-	// leaves open) that sets Locale from rastrillo.LocaleFrom(r).
-	Locale string
-
 	// Actor records who is calling this action (design doc §8).
 	Actor Actor
-
-	// Scope is resolved by app-level middleware (_middleware.go, design
-	// doc §4) and type-asserted by the handler. Rastrillo never reads it.
-	Scope any
 
 	// Render is the manifest system's seam (design doc's manifest
 	// slice): generated actions cannot call an app-private helper like

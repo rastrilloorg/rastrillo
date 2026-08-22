@@ -5,9 +5,10 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/keymaildev/signin"
+
+	"github.com/carlosframework/rastrillo/sessions"
 )
 
 // Begin is POST /signin: classify the submitted address and start
@@ -118,12 +119,7 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
 	}
-	if c, err := r.Cookie(a.SessionCookie()); err == nil {
-		if err := a.deleteSession(HashToken(c.Value)); err != nil {
-			a.cfg.Logger.Error("rastrillo/auth: signout", "err", err)
-		}
-	}
-	a.clearCookie(w, a.SessionCookie())
+	a.sessions.SignOut(w, r)
 	a.redirect(w, r, a.cfg.SigninPath)
 }
 
@@ -133,18 +129,15 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
 	}
-	token, hash, err := NewToken()
-	if err != nil {
-		a.cfg.Logger.Error("rastrillo/auth: mint session token", "err", err)
-		http.Error(w, "sign-in failed", http.StatusInternalServerError)
-		return
-	}
-	if err := a.createSession(hash, id, time.Now()); err != nil {
+	if err := a.sessions.SignIn(w, r, sessions.Session{
+		Subject:  id.Address,
+		Method:   string(id.Method),
+		AuthTime: id.AuthTime,
+	}); err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: store session", "err", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
-	a.setCookie(w, a.SessionCookie(), token, int(a.cfg.SessionTTL.Seconds()))
 	a.redirect(w, r, a.cfg.SignedInPath)
 }
 
@@ -152,16 +145,16 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 // the direct lookup, for handlers outside RequireSession that want to
 // know who (a public page with a signed-in header, say).
 func (a *Auth) SessionFrom(r *http.Request) (Identity, bool) {
-	c, err := r.Cookie(a.SessionCookie())
-	if err != nil {
+	s, ok := a.sessions.From(r)
+	if !ok {
 		return Identity{}, false
 	}
-	id, ok, err := a.lookupSession(HashToken(c.Value), time.Now())
-	if err != nil {
-		a.cfg.Logger.Error("rastrillo/auth: session lookup", "err", err)
-		return Identity{}, false
-	}
-	return id, ok
+	return Identity{
+		Address:  s.Subject,
+		Method:   signin.Method(s.Method),
+		AuthTime: s.AuthTime,
+		At:       s.At,
+	}, true
 }
 
 type identityCtxKey struct{}
