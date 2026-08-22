@@ -1,12 +1,20 @@
 # examples/tickets — the fully generated proof
 
-One manifest resource (`manifest/ticket_types.toml`), zero hand
+Two manifest resources (`manifest/ticket_types.toml` on the exclusive
+store, `manifest/announcements.toml` on the mergeable one), zero hand
 actions, zero ejected templates. Everything under
-`/admin/ticket_types` — the store, all seven actions, all three
-screens, every locale key — is exactly what `rastrillo generate`
-produced. There is no `actions/` directory and no `templates/`
-directory in this app at all: manifest-only apps are legal (§9), and
-this is what shipping one looks like.
+`/admin/ticket_types` and `/admin/announcements` — the stores, every
+action, all the screens, every locale key — is exactly what
+`rastrillo generate` produced. There is no `actions/` directory and no
+`templates/` directory in this app at all: manifest-only apps are
+legal (§9), and this is what shipping one looks like.
+
+The announcements resource is the `store = "mergeable"` regression
+host: the same generated actions and templates as the exclusive
+resource, backed by eventlog streams instead of a sqlc table — its
+delete flow appends a tombstone event the suite proves is still in the
+log after the record vanishes from every screen
+(`internal/ticketstest/announcements_test.go`).
 
 `examples/blog` shows a manifest resource adopted *alongside* hand
 actions and ejected templates — coexistence. This shows the other end:

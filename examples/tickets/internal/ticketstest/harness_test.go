@@ -16,6 +16,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/carlosframework/rastrillo"
 
 	"tickets/gen"
+	announcementsstore "tickets/gen/store/announcements"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/tickets"
 )
@@ -30,12 +32,15 @@ import (
 // newApp builds a whole app per test: a fresh file-backed SQLite
 // database (matching main.go's SetMaxOpenConns(1)+WAL configuration —
 // see rastrillo.OpenDB) and the real generated router, wired exactly
-// as cmd/tickets/main.go wires it. Migrations is the generated store's
-// own var, unaltered — this app has no additive column of its own
-// (contrast the blog's newApp/blog.Open, which layers on `published`).
+// as cmd/tickets/main.go wires it. Migrations is the two generated
+// stores' own vars concatenated, unaltered — the exclusive table plus
+// the mergeable resource's eventlog schema; this app has no additive
+// column of its own (contrast the blog's newApp/blog.Open, which
+// layers on `published`).
 func newApp(t *testing.T) (http.Handler, *sql.DB) {
 	t.Helper()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "tickets.db"), ticket_typesstore.Migrations)
+	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "tickets.db"),
+		slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations))
 	if err != nil {
 		t.Fatalf("open database: %v", err)
 	}

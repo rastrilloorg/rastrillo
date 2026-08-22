@@ -1,0 +1,10 @@
+name  = "announcements"
+route = "/admin/announcements"
+store = "mergeable"
+
+[list]
+columns = [{ field = "Title" }]
+search  = true
+
+[form]
+basics = [{ name = "Title", required = true }, { name = "Body", kind = "textarea" }]

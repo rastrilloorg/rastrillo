@@ -507,7 +507,10 @@ The vocabulary covers one flat table per resource, three field kinds,
 no relations. Add ` + "`scope = \"user\"`" + ` and every generated query is
 owner-filtered by the session subject — someone else's row answers
 404 — for resources a user owns; mount those routes behind
-` + "`sessions.Require`" + `. Relations or a custom flow: hand-write it.
+` + "`sessions.Require`" + `. Add ` + "`store = \"mergeable\"`" + ` and the resource lives as
+event-log streams (tombstone deletes, derive-on-read) instead of a
+sqlc table — it needs no sqlc tool. Relations or a custom flow:
+hand-write it.
 
 Adding the first manifest to this app:
 

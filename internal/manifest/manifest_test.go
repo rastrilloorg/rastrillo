@@ -144,7 +144,7 @@ func TestLoadValidates(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "notes.toml", `name  = "notes"
 route = "/admin/notes"
-store = "mergeable"
+store = "weird"
 
 [list]
 columns = [{ field = "Title" }]
@@ -152,10 +152,31 @@ columns = [{ field = "Title" }]
 
 	_, err := Load("", dir)
 	if err == nil {
-		t.Fatal("Load accepted a mergeable store")
+		t.Fatal("Load accepted an unknown store")
 	}
-	if !strings.Contains(err.Error(), "not yet built") {
-		t.Errorf("error %q missing %q", err, "not yet built")
+	if !strings.Contains(err.Error(), "store") {
+		t.Errorf("error %q missing %q", err, "store")
+	}
+}
+
+// TestLoadAcceptsMergeable: store = "mergeable" loads now (the
+// 2026-08-22 mergeable-manifests spec removed the Validate refusal).
+func TestLoadAcceptsMergeable(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "notes.toml", `name  = "notes"
+route = "/admin/notes"
+store = "mergeable"
+
+[list]
+columns = [{ field = "Title" }]
+`)
+
+	rs, err := Load("", dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(rs) != 1 || rs[0].Store != rastrillo.Mergeable {
+		t.Fatalf("Load = %+v, want one mergeable resource", rs)
 	}
 }
 

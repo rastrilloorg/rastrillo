@@ -395,3 +395,54 @@ func TestEmitPipelineCatchesTheSanitizeIdentPathCollision(t *testing.T) {
 		t.Errorf("error should name both colliding resources: %v", err)
 	}
 }
+
+// announcementsManifestTOML is the spec §5 mergeable resource —
+// examples/tickets declares the same one.
+const announcementsManifestTOML = `name  = "announcements"
+route = "/admin/announcements"
+store = "mergeable"
+
+[list]
+columns = [{ field = "Title" }]
+search  = true
+
+[form]
+basics = [{ name = "Title", required = true }, { name = "Body", kind = "textarea" }]
+`
+
+// TestGenerateManifestsMergeableOnlyNeedsNoSqlcTool: a module whose
+// only manifest resource is mergeable runs the full pipeline without
+// the sqlc tool directive — no sqlc.yaml is written and RunSqlc is
+// never reached (spec §2/§4: RunSqlc runs only when at least one
+// exclusive resource exists).
+func TestGenerateManifestsMergeableOnlyNeedsNoSqlcTool(t *testing.T) {
+	root := newScratchModule(t, false) // no sqlc tool directive on purpose
+
+	if err := os.MkdirAll(filepath.Join(root, "manifest"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "manifest", "announcements.toml"), []byte(announcementsManifestTOML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	genDir := filepath.Join(root, "gen")
+	if err := GenerateManifests(root, genDir, false); err != nil {
+		t.Fatalf("GenerateManifests: %v", err)
+	}
+
+	for _, f := range []string{
+		filepath.Join(genDir, "manifest.json"),
+		filepath.Join(genDir, "store", "announcements", "store.go"),
+		filepath.Join(genDir, "store", "announcements", "migrations.go"),
+		filepath.Join(genDir, "templates", "announcements", "list.html"),
+		filepath.Join(genDir, "actions", "admin", "announcements", "index_get", "index.GET.go"),
+		filepath.Join(genDir, "locales", "en.toml"),
+	} {
+		if _, err := os.Stat(f); err != nil {
+			t.Errorf("expected %s to exist: %v", f, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(genDir, "store", "sqlc.yaml")); !os.IsNotExist(err) {
+		t.Errorf("sqlc.yaml written for a mergeable-only module (stat err = %v)", err)
+	}
+}

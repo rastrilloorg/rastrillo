@@ -24,26 +24,62 @@ import (
 	"github.com/carlosframework/rastrillo"
 )
 
-// EmitStore writes gen/store/sqlc.yaml (one config covering every
-// resource) and per resource gen/store/<name>/{schema.sql,queries.sql,
-// migrations.go}. Returns the emitted file paths (for idempotency and
-// skip accounting). Pure text generation — running sqlc is a later
-// step.
+// EmitStore writes per resource either the sqlc inputs (exclusive:
+// gen/store/<name>/{schema.sql,queries.sql,migrations.go}) or the
+// template-rendered eventlog store (mergeable:
+// gen/store/<name>/{store.go,migrations.go} — see mergeablestore.go),
+// plus gen/store/sqlc.yaml covering the exclusive resources — written
+// only when at least one exists, since a module of only-mergeable
+// resources needs no sqlc tool at all. Returns the emitted file paths
+// (for idempotency and skip accounting). Pure text generation —
+// running sqlc is a later step.
 func EmitStore(genDir string, rs []rastrillo.Resource) ([]string, error) {
 	sorted := append([]rastrillo.Resource(nil), rs...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
 
+	var exclusive []rastrillo.Resource
+	for _, r := range sorted {
+		if r.Store != rastrillo.Mergeable {
+			exclusive = append(exclusive, r)
+		}
+	}
+
 	storeDir := filepath.Join(genDir, "store")
 	var paths []string
 
-	yamlPath := filepath.Join(storeDir, "sqlc.yaml")
-	if err := writeFileIfChanged(yamlPath, sqlcYAML(sorted)); err != nil {
-		return nil, fmt.Errorf("sqlc.yaml: %w", err)
+	if len(exclusive) > 0 {
+		yamlPath := filepath.Join(storeDir, "sqlc.yaml")
+		if err := writeFileIfChanged(yamlPath, sqlcYAML(exclusive)); err != nil {
+			return nil, fmt.Errorf("sqlc.yaml: %w", err)
+		}
+		paths = append(paths, yamlPath)
 	}
-	paths = append(paths, yamlPath)
 
 	for _, r := range sorted {
 		resDir := filepath.Join(storeDir, r.Name)
+
+		if r.Store == rastrillo.Mergeable {
+			storeSrc, err := format.Source(mergeableStoreGo(r))
+			if err != nil {
+				return nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
+			}
+			storePath := filepath.Join(resDir, "store.go")
+			if err := writeFileIfChanged(storePath, storeSrc); err != nil {
+				return nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
+			}
+			paths = append(paths, storePath)
+
+			migSrc, err := format.Source(mergeableMigrationsGo(r))
+			if err != nil {
+				return nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+			}
+			migPath := filepath.Join(resDir, "migrations.go")
+			if err := writeFileIfChanged(migPath, migSrc); err != nil {
+				return nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+			}
+			paths = append(paths, migPath)
+			continue
+		}
 
 		schemaPath := filepath.Join(resDir, "schema.sql")
 		if err := writeFileIfChanged(schemaPath, schemaSQL(r)); err != nil {
