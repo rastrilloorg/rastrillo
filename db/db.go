@@ -69,7 +69,7 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 	}
 
 	g, err := gorm.Open(gormlite.Dialector{Conn: w}, &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger:  logger.Default.LogMode(logger.Warn),
 		NowFunc: func() time.Time { return time.Now().UTC() },
 	})
 	if err != nil {

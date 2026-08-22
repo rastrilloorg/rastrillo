@@ -7,8 +7,8 @@ import (
 
 	// Upstream aliased this import as "sqlite" (not "gosqlite" as in
 	// sqlite.go); kept as-is since it only names the package locally.
-	sqlite "modernc.org/sqlite"
 	"gorm.io/gorm"
+	sqlite "modernc.org/sqlite"
 )
 
 func TestDialector(t *testing.T) {

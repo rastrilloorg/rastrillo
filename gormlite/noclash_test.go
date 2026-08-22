@@ -3,8 +3,8 @@ package gormlite
 import (
 	"testing"
 
-	_ "modernc.org/sqlite" // must coexist with this package's driver use
 	"gorm.io/gorm"
+	_ "modernc.org/sqlite" // must coexist with this package's driver use
 )
 
 // TestNoDriverClash proves a binary can import modernc.org/sqlite (as
