@@ -61,7 +61,7 @@ func TestRenderWired(t *testing.T) {
 	if !ok || got["k"] != "v" {
 		t.Errorf("data = %#v, want %#v", gotData, data)
 	}
-	if w.Code != http.StatusOK && w.Body.Len() != 0 {
+	if w.Code != http.StatusOK || w.Body.Len() != 0 {
 		t.Errorf("Render wrote to w itself instead of delegating: code=%d body=%q", w.Code, w.Body.String())
 	}
 }
