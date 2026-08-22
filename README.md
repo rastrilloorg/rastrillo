@@ -16,9 +16,85 @@ fingerprinted assets and the scaffolded harness on main; the other
 subsystem packages against what the family's apps had hand-rolled in
 the meantime. This list is their union. **Built:**
 
-- **`rastrillo new <name>`** — scaffolds a Go app: `go.mod`, one starter
-  action, a `main.go` wiring `rastrillo.Run`. Runs generate once so
-  `go build` works immediately.
+- **`rastrillo new [flags] <name>`** — scaffolds a Go app: `go.mod`, one
+  starter action, a `main.go` wiring `rastrillo.Run`. Runs generate once
+  so `go build` works immediately. Takes `--icons`, `--icon-delivery` and
+  `--ux` — see **Icons and UX conventions** below.
+
+- **Icons and UX conventions** — `--icons` (`lucide`, the default, or
+  `font-awesome`), `--icon-delivery` (`inline`, the default, or `cdn` or
+  `js`), and `--ux` (`considered`, the default, or `standard`). All six
+  set × delivery combinations scaffold, compile and pass `--check`.
+
+  The chosen set is written into the app as an ordinary app-owned
+  `internal/<app>/icons` package — the same terms as `tokens.css` and
+  `rastrillo.js`: delivered once, yours from then on. Its map is keyed by
+  **rastrillo's slugs whatever the set**, so `{{icon "search"}}` means the
+  same thing in every app and the shipped `ui/` partials never change when
+  the set does. The scaffold wires both seams into the generated
+  `render.go` and puts `{{iconAssets}}` in the layout's `<head>`; that
+  renders empty for the inline default, so switching delivery later needs
+  no template edit.
+
+  Those slugs are rastrillo's own vocabulary, not a vendor's, and that is
+  load-bearing rather than pedantic: five of the eleven differ from
+  Lucide's canonical names (`kebab` is Lucide's `ellipsis-vertical`, and
+  v1 renamed `check-circle`, `alert-triangle`, `x-circle` and
+  `help-circle`), so even the Lucide set carries a translation table.
+  `rastrillo.IconSlugs` is the list, and `internal/iconsets` asserts every
+  scaffoldable set covers all of it — an icon added to `icons.go` that a
+  set cannot answer would otherwise vanish the moment someone passed
+  `--icons`.
+
+  Inline vendoring stays the default and the recommendation — no build
+  step, no second origin, works offline, which is what `icons.go` has
+  always been for. `cdn` and `js` are fully supported rather than
+  discouraged: each prints its specific cost once at scaffold time,
+  records it as a comment in the generated package, and is never mentioned
+  again. The cost worth repeating is `js`'s — icons do not render at all
+  without JavaScript. Both remote modes pin exact versions with real SRI
+  hashes.
+
+  `--icons=font-awesome` means Font Awesome **Free**. Pro is a paid
+  product rastrillo cannot vendor or link on your behalf, so Pro-only
+  icons will not resolve; a Pro licensee wires their own kit through the
+  same seam, since the icons package is app-owned source. Choosing
+  `font-awesome` also writes the CC BY 4.0 attribution its licence
+  requires — that obligation is the app's, so it travels with the code.
+
+  Versions are pinned (`lucide@1.33.0`, `lucide-static@1.33.0`,
+  `@fortawesome/fontawesome-free@7.3.1`) and nothing re-pins them
+  automatically; see the issue tracker for who owns the bump. A version
+  changed without its hash fails as an unstyled page, not an error.
+
+  `rastrillo generate --check` fails when a template names an icon nothing
+  answers — both `{{icon "x"}}` and the commoner form where the slug
+  reaches a partial as data (`dict "ActionIcon" "plus"`). At run time an
+  unknown slug still renders nothing rather than crashing a response; this
+  is the pre-ship gate, the same posture as the i18n catalog check. A slug
+  computed at run time cannot be checked, as with any static gate.
+
+  `--ux` seeds a UX convention profile into the app's `AGENTS.md`, which
+  carries the app's instructions and is the source of truth from then on;
+  `CLAUDE.md` is a one-line `@AGENTS.md` import so the instructions reach
+  whatever agent someone uses rather than one of them. **The profile is a
+  seed, not a live binding.** The resolved list is written once, an
+  explicit flag beats the profile's default so the file never lies about
+  what the app does, and nothing re-reads the profile name afterwards —
+  which is what makes editing a line as valid as picking a profile, and
+  what stops a rastrillo upgrade changing a shipped app's UX. Conventions
+  marked `[x]` are enforced by a vendored component; `[ ]` ones an agent
+  applies by hand, and the gap between the two is kept visible rather than
+  blurred.
+
+  The conventions in `considered` are rastrillo's own, and the profile is
+  named for what it does rather than after anyone else's work. For wider
+  reading on interface quality,
+  [impeccable.style](https://impeccable.style/), the
+  [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/) and
+  [Inclusive Components](https://inclusive-components.design/) are all
+  worth your time — offered as reading, not as anything this framework
+  endorses or claims to implement.
 - **`rastrillo generate [dir]`** — the filesystem-routing generator
   (design doc §4): walks `actions/`, emits `gen/router.go` on a Go 1.22
   `http.ServeMux`. Fails loudly on route collisions. Action files carry
