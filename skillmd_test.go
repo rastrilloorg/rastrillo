@@ -10,7 +10,17 @@ import (
 // its value IS its smallness, so growth is paid for by trimming, never
 // by raising this number casually (that's a product decision, not a
 // convenience).
-const skillBudget = 15_000
+//
+// Raised from 15_000 to 16_000 when the migrations subsystem (Design:
+// 2026-08-22-migrations) landed its own §2 content — a genuinely new
+// surface (Schema/BootSchema, the immutability rule, baseline
+// recovery) that a trim-only budget could only have paid for by
+// cutting existing, load-bearing facts (see the task-13 fix-up: a
+// join-table tie-breaker, SafeReturn's path spec, RenderSignup's
+// enforcement, the keymail viewer alternative, and the jobs
+// Render/RenderFragment warning were all dropped to fit 15_000, then
+// restored here). Trim before raising again.
+const skillBudget = 16_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

@@ -38,7 +38,7 @@ logger := slog.Default()
 opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "notes.db", Logger: logger})
 if err != nil { logger.Error("resolve", "err", err); os.Exit(1) }
 
-d, err := db.Open(opts.DBPath, logger)   // *db.DB; d.G is the *gorm.DB
+d, err := db.Open(opts.DBPath, logger) // *db.DB (§2)
 if err != nil { logger.Error("open db", "err", err); os.Exit(1) }
 defer d.Close()
 
@@ -46,7 +46,7 @@ mux, err := notes.App(d, origin, logger)
 if err != nil { logger.Error("build", "err", err); os.Exit(1) }
 
 opts.Mux = mux
-opts.DBPath = ""                          // Serve must not open a second handle
+opts.DBPath = ""
 if err := rastrillo.Serve(opts); err != nil { logger.Error("serve", "err", err); os.Exit(1) }
 ```
 
@@ -184,7 +184,7 @@ A row that isn't yours is a row that doesn't exist: answer 404, never 403 —
 a malformed `{id}` too (`strconv.ParseInt` failing returns
 `gorm.ErrRecordNotFound`, also a 404). A join table is scoped through BOTH
 sides: a membership row needs the caller authorized on each side it links,
-checked explicitly.
+checked explicitly — the stricter reading wins.
 
 Creating is the one place the owner comes from the session, not a filter:
 `n := Note{UserID: uid, Title: title, Body: body}`, `uid` from
@@ -248,16 +248,17 @@ credential and calls `SignIn`; that call is the whole contract.
   `Require` the `ok` holds only for a plugin whose Subject is a numeric user
   id, as password's is — see the keymail warning below.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never
-  a raw `return_to`: only a same-site absolute path passes; anything else
-  gets the fallback.
+  a raw `return_to`: only a same-site absolute path (one leading `/`, no
+  scheme or backslash) passes; anything else gets the fallback.
 - `s.Sweep(time.Now())` deletes expired rows; lookup checks expiry anyway.
 
 **Password plugin.** `password.New(password.Config{...})` needs `Sessions`,
 `Lookup`, `RenderSignin`; `Create` disables signup when nil (SignupPage and
-Signup 404), and `RenderSignup` is **required whenever Create is set**.
-`Lookup(ctx, email) (id, hash, error)` returns `sql.ErrNoRows` for an
-unknown email, treated like a wrong password (a decoy hash flattens
-timing). Any error from `Create` reads as a duplicate email.
+Signup 404), and `RenderSignup` is **required whenever Create is set** — New
+errors otherwise. `Lookup(ctx, email) (id, hash, error)` returns
+`sql.ErrNoRows` for an unknown email, treated like a wrong password (a
+decoy hash flattens timing). Any error from `Create` reads as a duplicate
+email.
 `Signin`/`Signup`/`Signout` are **POST-only** — Page variants on GET, the
 rest on POST, as in §1. Render callbacks take `(w, r, password.PageData)`;
 password writes the 422 itself, so the callback must not.
@@ -271,8 +272,9 @@ way:
 `RequireSession`, over the same `sessions` core. **With keymail, do not use
 `sessions.UserID`:** its Subject is the verified *email*, so it returns
 `(0, false)`, and the §3 seam would scope every query to `user_id = 0` —
-everyone reading everyone. Read the viewer with `auth.From(r)` and map the
-address to your user row's id before scoping.
+everyone reading everyone. Read the viewer with `auth.From(r)` or
+`sessions.Current(r)` (`RequireSession` stashes both) and map the address
+to your user row's id before scoping.
 
 ## 6. Background work
 
@@ -286,10 +288,12 @@ text reaches the owner. `j.Get(id, owner)` 404s a foreign/unknown id.
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
 `StatusPage`/`Fragment` (errors unless all three set); mount both in the
 `sess.Require` group at `/jobs/{id}` and `/jobs/{id}/fragment`, each taking
-`jobs.PageData{Job, FragmentPath, PollSeconds}`. Done+Location 303s from
-StatusPage; Fragment answers 204 + `Rastrillo-Location`. **Must work with
-scripts off:** a `<noscript>` meta refresh of `PollSeconds`, only while
-Running, or a failed page refreshes forever.
+`jobs.PageData{Job, FragmentPath, PollSeconds}`: Render draws a whole page,
+RenderFragment the partial *alone*, or the layout nests on the next poll.
+Done+Location 303s from StatusPage; Fragment answers 204 +
+`Rastrillo-Location`. **Must work with scripts off:** a `<noscript>` meta
+refresh of `PollSeconds`, only while Running, or a failed page refreshes
+forever.
 
 The only JavaScript is app-owned `static/rastrillo.js`, inert until markup
 opts in: `data-poll="URL"` + `data-poll-every="2"` swap the element for the
