@@ -1,5 +1,36 @@
 [
   {
+    "name": "announcements",
+    "route": "/admin/announcements",
+    "store": "mergeable",
+    "list": {
+      "columns": [
+        {
+          "field": "Title",
+          "kind": "text"
+        }
+      ],
+      "search": true,
+      "filter": null,
+      "filters": null
+    },
+    "form": {
+      "basics": [
+        {
+          "name": "Title",
+          "kind": "text",
+          "required": true
+        },
+        {
+          "name": "Body",
+          "kind": "textarea",
+          "required": false
+        }
+      ],
+      "advanced": null
+    }
+  },
+  {
     "name": "ticket_types",
     "route": "/admin/ticket_types",
     "store": "exclusive",

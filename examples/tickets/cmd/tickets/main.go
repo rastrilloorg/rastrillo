@@ -1,6 +1,8 @@
-// Command tickets runs the fully generated example: one manifest
-// resource (manifest/ticket_types.toml), zero hand actions, zero
-// ejected templates. See the module README for what that proves.
+// Command tickets runs the fully generated example: two manifest
+// resources (manifest/ticket_types.toml on the exclusive store,
+// manifest/announcements.toml on the mergeable one), zero hand
+// actions, zero ejected templates. See the module README for what
+// that proves.
 //
 // Static assets are embedded (see the F8 note below), so the binary
 // runs the same from any starting directory:
@@ -13,12 +15,14 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 
 	"github.com/carlosframework/rastrillo"
 
 	ticketsassets "tickets"
 	"tickets/gen"
 	"tickets/gen/locales"
+	announcementsstore "tickets/gen/store/announcements"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/tickets"
 )
@@ -30,13 +34,15 @@ func main() {
 	// the database (pragmas, eager ping, the schema migration), and
 	// hands the *sql.DB back through Router — the F4 seam (see
 	// examples/blog/cmd/blog/main.go, the same wiring). Migrations is
-	// the generated store's own var, unaltered: this app adds no
-	// column of its own, unlike the blog's published (internal/blog/
-	// store.go) — there is nothing here but what the manifest
+	// the two generated stores' own vars concatenated, unaltered: the
+	// exclusive resource's table plus the mergeable resource's eventlog
+	// schema (announcementsstore.Migrations re-exports it) — this app
+	// adds no column of its own, unlike the blog's published (internal/
+	// blog/store.go); there is nothing here but what the manifests
 	// declared.
 	err := rastrillo.Run(rastrillo.Options{
 		DBPath:      "tickets.db",
-		Migrations:  ticket_typesstore.Migrations,
+		Migrations:  slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations),
 		BaseCatalog: locales.BaseCatalog,
 		Logger:      logger,
 		Router: func(db *sql.DB) (*http.ServeMux, error) {

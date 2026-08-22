@@ -5,6 +5,13 @@
 # BaseCatalog is what the app actually wires (Options.BaseCatalog);
 # this file exists for humans/translators to read and copy from —
 # both are emitted from one source map, so they cannot drift.
+resource.announcements.delete.confirm = "Delete this announcement? This cannot be undone."
+resource.announcements.delete.title = "Delete announcement"
+resource.announcements.empty.body = "Get started by creating your first one."
+resource.announcements.empty.title = "No announcements yet"
+resource.announcements.field.body = "Body"
+resource.announcements.field.title = "Title"
+resource.announcements.name = "Announcements"
 resource.ticket_types.delete.confirm = "Delete this ticket type? This cannot be undone."
 resource.ticket_types.delete.title = "Delete ticket type"
 resource.ticket_types.empty.body = "Get started by creating your first one."
