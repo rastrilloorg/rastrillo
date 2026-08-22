@@ -24,6 +24,10 @@ const (
 	iterations = 600_000
 	saltLen    = 16
 	keyLen     = 32
+
+	// maxIterations caps what Verify will accept from a stored hash's
+	// own iter field — see Verify's comment.
+	maxIterations = 10_000_000
 )
 
 // Hash derives a PBKDF2-SHA256 hash of password and encodes it as
@@ -58,7 +62,12 @@ func Verify(encoded, password string) bool {
 		return false
 	}
 	iter, err := strconv.Atoi(iterStr)
-	if err != nil || iter <= 0 {
+	// The upper bound isn't a real-world iteration count — it's a
+	// guard against a corrupted or hostile stored row (a huge iter
+	// pinning a request thread in PBKDF2 for an unbounded amount of
+	// time); maxIterations is far above any value this package would
+	// ever encode.
+	if err != nil || iter <= 0 || iter > maxIterations {
 		return false
 	}
 	salt, err := hex.DecodeString(saltHex)
@@ -67,6 +76,13 @@ func Verify(encoded, password string) bool {
 	}
 	wantDK, err := hex.DecodeString(dkHex)
 	if err != nil {
+		return false
+	}
+	if len(wantDK) == 0 {
+		// Belt-and-suspenders: an empty key would make pbkdf2.Key's
+		// keyLength argument 0, which happens to also be a non-match by
+		// construction — spelled out explicitly rather than relying on
+		// that stdlib behavior.
 		return false
 	}
 	gotDK, err := pbkdf2.Key(sha256.New, password, salt, iter, len(wantDK))

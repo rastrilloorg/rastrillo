@@ -1,6 +1,9 @@
 package password
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestHashVerifyRoundTrip(t *testing.T) {
 	enc, err := Hash("s3cret")
@@ -53,5 +56,17 @@ func TestParamsPinned(t *testing.T) {
 	const want = "pbkdf2$sha256$600000$"
 	if len(enc) < len(want) || enc[:len(want)] != want {
 		t.Errorf("Hash output = %q, want prefix %q", enc, want)
+	}
+}
+
+// TestDecoyHashInitialized guards the package-level decoyHash var:
+// Hash("rastrillo-password-decoy") is computed at init via `var
+// decoyHash, _ = Hash(...)`, silently discarding any error — this
+// test turns a broken decoy (e.g. a future refactor that changes
+// Hash's error behavior) into a red test instead of a silent timing
+// leak in Signin's unknown-email path.
+func TestDecoyHashInitialized(t *testing.T) {
+	if !strings.HasPrefix(decoyHash, "pbkdf2$sha256$600000$") {
+		t.Errorf("decoyHash = %q, want prefix %q", decoyHash, "pbkdf2$sha256$600000$")
 	}
 }

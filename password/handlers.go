@@ -109,7 +109,14 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 // wrongCredentials message, and an unknown email still runs Verify
 // (against the package decoyHash) before failing, so the wall-clock
 // cost doesn't leak which case happened.
+//
+// POST only: a GET-mounted Signin would put the plaintext password
+// into the URL, browser history, referrers, and access logs.
 func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad form", http.StatusBadRequest)
 		return
@@ -154,7 +161,13 @@ func (h *Handlers) rerenderSignin(w http.ResponseWriter, r *http.Request, email 
 
 // Signup is POST /signup: validate, hash, store, and sign in — or 404
 // if Config.Create is nil (signup disabled).
+//
+// POST only: same plaintext-password-in-URL reasoning as Signin.
 func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	if h.cfg.Create == nil {
 		http.NotFound(w, r)
 		return
@@ -185,8 +198,11 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	id, err := h.cfg.Create(r.Context(), email, hash)
 	if err != nil {
 		// Create's only realistic failure against a unique-email store
-		// is a duplicate; any error is reported that way rather than
-		// leaking storage details.
+		// is a duplicate; any error is reported that way to the visitor
+		// rather than leaking storage details, but it's still logged —
+		// a DB outage should not vanish silently just because it looks
+		// like a duplicate-email case to the caller.
+		slog.Default().Error("rastrillo/password: create", "err", err)
 		h.rerenderSignup(w, r, "That email is already registered.", email)
 		return
 	}
@@ -220,8 +236,15 @@ func (h *Handlers) signInAndRedirect(w http.ResponseWriter, r *http.Request, id 
 }
 
 // Signout is POST /signout: revoke the session and clear the cookie.
-// CSRF is not this package's job — csrf.Protect is mounted app-wide.
+// CSRF is not this package's job — csrf.Protect is mounted app-wide,
+// but it only gates POST/PUT/PATCH/DELETE, so a GET-mounted Signout
+// would escape it entirely; POST only, enforced here rather than by
+// mount-pattern convention.
 func (h *Handlers) Signout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	h.cfg.Sessions.SignOut(w, r)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

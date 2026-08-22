@@ -439,3 +439,51 @@ func TestSignoutRevokes(t *testing.T) {
 		t.Errorf("sess.From ok = true after Signout, want false (row must be revoked)")
 	}
 }
+
+// TestMutatingHandlersRejectNonPost: Signin and Signout are POST-only
+// — a GET must be rejected with 405 before any side effect (no
+// cookie set, no re-render call, no session revoked), since a GET
+// route would put a plaintext password in the URL/referrer/logs
+// (Signin) or escape the app-wide CSRF guard, which only gates
+// POST/PUT/PATCH/DELETE (Signout).
+func TestMutatingHandlersRejectNonPost(t *testing.T) {
+	env := newTestEnv(t, nil)
+	hash, _ := password.Hash("s3cretpw")
+	env.store.create(context.Background(), "user@example.com", hash)
+
+	w := httptest.NewRecorder()
+	getSignin := httptest.NewRequest("GET", "http://app.test/signin?email=user@example.com&password=s3cretpw", nil)
+	env.h.Signin(w, getSignin)
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("GET Signin status = %d, want 405", w.Code)
+	}
+	if len(w.Result().Cookies()) != 0 {
+		t.Errorf("GET Signin set cookies: %v", w.Result().Cookies())
+	}
+	if env.signin.count() != 0 {
+		t.Errorf("GET Signin called RenderSignin %d times, want 0", env.signin.count())
+	}
+
+	// A live session must survive a GET-mounted Signout attempt: sign
+	// in first, then confirm GET Signout doesn't revoke it.
+	signinW := httptest.NewRecorder()
+	env.h.Signin(signinW, signinRequest("user@example.com", "s3cretpw", ""))
+	cookie := cookieFrom(t, signinW, env.sess.CookieName())
+
+	w2 := httptest.NewRecorder()
+	getSignout := httptest.NewRequest("GET", "http://app.test/signout", nil)
+	getSignout.AddCookie(cookie)
+	env.h.Signout(w2, getSignout)
+	if w2.Code != http.StatusMethodNotAllowed {
+		t.Errorf("GET Signout status = %d, want 405", w2.Code)
+	}
+	if len(w2.Result().Cookies()) != 0 {
+		t.Errorf("GET Signout set/cleared cookies: %v", w2.Result().Cookies())
+	}
+
+	follow := httptest.NewRequest("GET", "http://app.test/", nil)
+	follow.AddCookie(cookie)
+	if _, ok := env.sess.From(follow); !ok {
+		t.Errorf("session revoked by a GET Signout attempt, want it to survive")
+	}
+}
