@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/keymaildev/signin"
 
@@ -166,15 +167,52 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id, ok := a.SessionFrom(r)
 		if !ok {
-			if r.Method == http.MethodGet || r.Method == http.MethodHead {
-				a.redirect(w, r, a.cfg.SigninPath)
-			} else {
-				http.Error(w, "signed out", http.StatusForbidden)
-			}
+			a.refuseSession(w, r, "")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityCtxKey{}, id)))
 	})
+}
+
+// RequireFreshSession is RequireSession plus step-up: the credential
+// must have been verified within maxAge (keymail's auth_time when the
+// deployment reports one, else the session's own minting time — see
+// sessions.Fresh). A stale-but-valid page request redirects to the
+// sign-in page with reauth=1 so it can say "confirm it's you";
+// re-verifying rotates the session fresh. Against a keymail deployment
+// that advertises reauth, signin sends prompt=login, so the ceremony
+// really re-authenticates rather than silently reusing the inbox
+// session.
+func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id, ok := a.SessionFrom(r)
+			if !ok {
+				a.refuseSession(w, r, "")
+				return
+			}
+			if !sessions.Fresh(sessions.Session{AuthTime: id.AuthTime, At: id.At}, maxAge, time.Now()) {
+				a.refuseSession(w, r, "?reauth=1")
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityCtxKey{}, id)))
+		})
+	}
+}
+
+// refuseSession sends a page request to the sign-in page (query names
+// why, when step-up rather than plain sign-in is wanted) and answers
+// anything else 403.
+func (a *Auth) refuseSession(w http.ResponseWriter, r *http.Request, query string) {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		a.redirect(w, r, a.cfg.SigninPath+query)
+		return
+	}
+	if query != "" {
+		http.Error(w, "re-authentication required", http.StatusForbidden)
+		return
+	}
+	http.Error(w, "signed out", http.StatusForbidden)
 }
 
 // From returns the identity RequireSession resolved for this request.
