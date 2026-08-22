@@ -404,6 +404,70 @@ func TestRequireStashesCurrent(t *testing.T) {
 	}
 }
 
+func TestRequireFreshStepUp(t *testing.T) {
+	s, db := newTestSessions(t, nil)
+	signIn := func(sess sessions.Session) *http.Cookie {
+		t.Helper()
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("POST", "http://app.test/signin", nil)
+		if err := s.SignIn(w, r, sess); err != nil {
+			t.Fatalf("SignIn: %v", err)
+		}
+		return cookieFrom(t, w, s.CookieName())
+	}
+	drive := func(cookie *http.Cookie, method string) (*httptest.ResponseRecorder, bool) {
+		var admitted bool
+		h := s.RequireFresh(5 * time.Minute)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			admitted = true
+		}))
+		r := httptest.NewRequest(method, "http://app.test/settings/keys", nil)
+		r.AddCookie(cookie)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w, admitted
+	}
+
+	// Fresh AuthTime: admitted.
+	fresh := signIn(sessions.Session{Subject: "42", AuthTime: time.Now()})
+	if _, admitted := drive(fresh, "GET"); !admitted {
+		t.Fatalf("fresh AuthTime refused")
+	}
+
+	// Stale AuthTime: GET redirects with return_to and reauth=1.
+	staleCookie := signIn(sessions.Session{Subject: "42", AuthTime: time.Now().Add(-time.Hour)})
+	w, admitted := drive(staleCookie, "GET")
+	if admitted {
+		t.Fatalf("hour-old AuthTime admitted past a 5m gate")
+	}
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("stale GET: code = %d, want 303", w.Code)
+	}
+	if loc := w.Header().Get("Location"); loc != "/signin?return_to=%2Fsettings%2Fkeys&reauth=1" {
+		t.Errorf("stale GET Location = %q, want return_to plus reauth=1", loc)
+	}
+
+	// Stale POST: 403, not a redirect.
+	if w, _ := drive(staleCookie, "POST"); w.Code != http.StatusForbidden {
+		t.Errorf("stale POST: code = %d, want 403", w.Code)
+	}
+
+	// Zero AuthTime (a magic-link plugin): the row's creation time
+	// stands in, so a just-minted session is fresh — no redirect loop.
+	zeroAuth := signIn(sessions.Session{Subject: "42"})
+	if _, admitted := drive(zeroAuth, "GET"); !admitted {
+		t.Fatalf("just-minted session with zero AuthTime refused — the At fallback must admit it")
+	}
+
+	// ...and once the row itself is old, it goes stale like any other.
+	old := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
+	if _, err := db.Exec(`UPDATE sessions SET created_at = ?`, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, admitted := drive(zeroAuth, "GET"); admitted {
+		t.Errorf("hour-old zero-AuthTime session admitted past a 5m gate")
+	}
+}
+
 func TestSweepDeletesExpiredKeepsLive(t *testing.T) {
 	s, db := newTestSessions(t, nil)
 	now := time.Now().UTC()

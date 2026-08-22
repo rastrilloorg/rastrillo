@@ -287,25 +287,87 @@ func (s *Sessions) Middleware(next http.Handler) http.Handler {
 // two — and, like Middleware, a definitively-stale cookie is cleared.
 func (s *Sessions) Require(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sess, ok := Current(r)
+		sess, ok := s.admitting(w, r)
 		if !ok {
-			var stale bool
-			sess, ok, stale = s.resolve(r)
-			if stale {
-				s.clearCookie(w)
-			}
-		}
-		if !ok {
-			if r.Method == http.MethodGet || r.Method == http.MethodHead {
-				to := s.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
-				http.Redirect(w, r, to, http.StatusSeeOther)
-			} else {
-				http.Error(w, "signed out", http.StatusForbidden)
-			}
+			s.refuse(w, r, false)
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, sess)))
 	})
+}
+
+// RequireFresh is Require plus step-up: the session must exist AND its
+// credential must have been verified within maxAge. The freshness
+// reference is AuthTime when the plugin recorded one (keymail's
+// auth_time), else the session row's own creation time — a session is
+// only ever minted at credential verification, so At is an honest
+// lower bound, and plugins that never set AuthTime (the magic link)
+// still converge instead of redirect-looping.
+//
+// A stale-but-valid GET/HEAD redirects to SigninPath with return_to
+// plus reauth=1, so the sign-in page can say "confirm it's you" —
+// re-verifying calls SignIn, which rotates the session with a fresh
+// AuthTime/At and satisfies the gate. Anything else answers 403.
+func (s *Sessions) RequireFresh(maxAge time.Duration) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			sess, ok := s.admitting(w, r)
+			if !ok {
+				s.refuse(w, r, false)
+				return
+			}
+			if !Fresh(sess, maxAge, time.Now()) {
+				s.refuse(w, r, true)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, sess)))
+		})
+	}
+}
+
+// Fresh reports whether sess's credential was verified within maxAge
+// of now — AuthTime when set, else At (see RequireFresh). Exposed for
+// handlers that step up conditionally rather than per-route.
+func Fresh(sess Session, maxAge time.Duration, now time.Time) bool {
+	verified := sess.AuthTime
+	if verified.IsZero() {
+		verified = sess.At
+	}
+	return !verified.IsZero() && now.Sub(verified) <= maxAge
+}
+
+// admitting is the shared front half of Require and RequireFresh:
+// trust Middleware's stash, else resolve (clearing a definitively
+// stale cookie on the way).
+func (s *Sessions) admitting(w http.ResponseWriter, r *http.Request) (Session, bool) {
+	sess, ok := Current(r)
+	if !ok {
+		var stale bool
+		sess, ok, stale = s.resolve(r)
+		if stale {
+			s.clearCookie(w)
+		}
+	}
+	return sess, ok
+}
+
+// refuse sends a page request (GET/HEAD) to SigninPath — with
+// reauth=1 when a valid-but-stale session needs step-up rather than a
+// plain sign-in — and answers anything else 403.
+func (s *Sessions) refuse(w http.ResponseWriter, r *http.Request, reauth bool) {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		to := s.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
+		if reauth {
+			to += "&reauth=1"
+		}
+		http.Redirect(w, r, to, http.StatusSeeOther)
+		return
+	}
+	if reauth {
+		http.Error(w, "re-authentication required", http.StatusForbidden)
+		return
+	}
+	http.Error(w, "signed out", http.StatusForbidden)
 }
 
 // Current returns the Session Middleware or Require resolved for this

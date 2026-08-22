@@ -153,6 +153,57 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 	}
 }
 
+func TestRequireFreshSessionStepUp(t *testing.T) {
+	a, m := newTestAuth(t, nil)
+	beginSignin(t, a, "person@example.com")
+	link := linkRE.FindString(m.body)
+	w := httptest.NewRecorder()
+	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	var session *http.Cookie
+	for _, c := range w.Result().Cookies() {
+		if c.Name == a.SessionCookie() && c.Value != "" {
+			session = c
+		}
+	}
+	if session == nil {
+		t.Fatal("no session cookie")
+	}
+
+	drive := func(method string) (*httptest.ResponseRecorder, bool) {
+		var admitted bool
+		h := a.RequireFreshSession(5 * time.Minute)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+			admitted = true
+		}))
+		r := httptest.NewRequest(method, "http://app.test/settings", nil)
+		r.AddCookie(session)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		return rec, admitted
+	}
+
+	// A magic-link session has no auth_time; its minting moment stands
+	// in, and it was minted just now.
+	if _, admitted := drive("GET"); !admitted {
+		t.Fatal("just-verified session refused by a 5m freshness gate")
+	}
+
+	// Backdate the row: the same session goes stale and step-up kicks in.
+	old := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
+	if _, err := a.cfg.DB.Exec(`UPDATE sessions SET created_at = ?`, old); err != nil {
+		t.Fatal(err)
+	}
+	rec, admitted := drive("GET")
+	if admitted {
+		t.Fatal("hour-old session admitted past a 5m gate")
+	}
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/signin?reauth=1" {
+		t.Fatalf("stale GET: %d → %q, want 303 → /signin?reauth=1", rec.Code, rec.Header().Get("Location"))
+	}
+	if rec, _ := drive("POST"); rec.Code != http.StatusForbidden {
+		t.Fatalf("stale POST: %d, want 403", rec.Code)
+	}
+}
+
 func TestRequireSessionWithoutSession(t *testing.T) {
 	a, _ := newTestAuth(t, nil)
 	protected := a.RequireSession(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
