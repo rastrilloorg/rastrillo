@@ -3,65 +3,77 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
-// Migrations is the package's schema — additive and idempotent, meant to
-// be appended to an app's Options.Migrations. Tokens never touch any of
-// these tables: all store SHA-256 hashes only.
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is auth's own migrations, and only its own — it does not
+// embed sessions.Schema. The backfill in 0002 reads the sessions
+// table, so a caller must order the sets:
+//
+//	migrate.Apply(ctx, d, migrate.Merge(sessions.Schema, auth.Schema))
+//
+// Merge's argument order is apply order, which is how that
+// requirement is now stated at the call site — it used to be a
+// comment here and an append() that embedded sessions.Migrations into
+// this package's own list.
 //
 // auth_sessions is no longer written to (session storage moved to the
 // shared sessions package), but the CREATE TABLE stays: the table is
-// additive-only and abandoned in place, per the migration rule. The
-// last two statements are a one-shot upgrade, run every boot (there is
-// no migration-version table) but only doing real work once:
+// additive-only and abandoned in place, per the migration rule. 0002
+// is a one-shot upgrade — under the ledger it runs exactly once, where
+// the old Migrations []string re-ran it every boot and relied on its
+// own DELETE leaving nothing to copy the second time:
 //
 //  1. copy any live auth_sessions rows into the shared sessions table —
 //     additive and idempotent (OR IGNORE) — so an app upgrading from a
 //     pre-sessions-core auth does not sign its family out;
 //  2. empty auth_sessions.
 //
-// Emptying the source table is what makes the copy one-shot: after the
-// first post-upgrade boot auth_sessions has nothing left to copy, so a
-// later boot — after a user has since signed out and their sessions row
-// was deleted — finds no source row to resurrect it from. Without step
-// 2 the INSERT OR IGNORE would re-run against the same still-populated
-// auth_sessions on every boot (this platform restarts routinely —
-// hibernation/reactivation) and revive any session already revoked via
-// SignOut, since OR IGNORE only skips rows whose token_hash is already
-// present, not rows that were deliberately deleted. If a boot crashes
-// between the two statements, the next boot just re-copies (harmlessly,
-// via OR IGNORE) and deletes again.
-//
 // Accepted cost: rolling back to a pre-sessions-core rastrillo after
 // this migration has run finds auth_sessions empty, forcing everyone to
 // sign in again on the old code path. One forced re-sign-in on rollback
 // beats a revoked session silently coming back to life on every restart.
 //
-// Both statements must come after sessions.Migrations so the sessions
-// table already exists when the copy runs.
-var Migrations = append(append([]string{
-	`CREATE TABLE IF NOT EXISTS auth_links (
-	  hash       TEXT PRIMARY KEY,
-	  address    TEXT NOT NULL,
-	  purpose    TEXT NOT NULL,
-	  expires_at TEXT NOT NULL
-	);`,
-	`CREATE TABLE IF NOT EXISTS auth_sessions (
-	  token_hash TEXT PRIMARY KEY,
-	  address    TEXT NOT NULL,
-	  method     TEXT NOT NULL,
-	  auth_time  TEXT NOT NULL DEFAULT '',
-	  created_at TEXT NOT NULL,
-	  expires_at TEXT NOT NULL
-	);`,
-}, sessions.Migrations...),
-	`INSERT OR IGNORE INTO sessions (token_hash, subject, method, auth_time, created_at, expires_at)
-	   SELECT token_hash, address, method, auth_time, created_at, expires_at FROM auth_sessions;`,
-	`DELETE FROM auth_sessions;`,
-)
+// Only a database that predates the sessions core (no `sessions` table
+// yet) hits this: migrate.Apply refuses it outright, since a non-empty,
+// ledger-less database that doesn't fully match the replayed set can't
+// be adopted automatically — Adoption cannot guess which migrations
+// already ran. An app on any recent version already has `sessions` and
+// adopts cleanly. Recovery when it happens:
+//
+//  1. Boot refuses, printing "missing table sessions".
+//  2. rastrillo migration baseline --db <path> --through sessions/0001_init
+//  3. Apply sessions/0001_init by hand (it's just CREATE TABLE IF NOT
+//     EXISTS, so this is safe even if it partly ran already).
+//  4. Reboot: auth/0001 no-ops (IF NOT EXISTS), auth/0002 runs the
+//     backfill for real. Nobody gets signed out.
+//
+// Steps 2 and 3 are in that order deliberately; do not "tidy" them
+// back. Stamp runs no DDL, so baseline does not need the sessions
+// table to exist yet — but between creating the table and stamping,
+// the database structurally matches the full set with an empty ledger,
+// and that is precisely the state Apply adopts (apply.go gates
+// adoption on len(applied) == 0). On a hibernating platform the
+// operator does not choose when the app wakes: one inbound request in
+// that window adopts, stamps auth/0002 without running it, and strands
+// every row in auth_sessions for good. Stamping first makes the ledger
+// non-empty, which closes that window permanently. The worst case then
+// becomes a wake between steps 2 and 3, where auth/0002 fails loudly
+// with "no such table: sessions" and rolls back — auth/0001's ledger
+// row having committed in its own transaction — and the reboot in
+// step 4 still runs the backfill. A loud refusal beats a silent
+// stranding.
+//
+// The trap is baseline with no --through: it stamps every migration,
+// including 0002, so the backfill never runs and the rows in
+// auth_sessions are stranded — silently signing everyone out.
+var Schema = migrate.MustFromFS(migrationFS, "auth")
 
 // linkStore implements signin.LinkStore over the app database.
 type linkStore struct{ db *sql.DB }

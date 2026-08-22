@@ -73,6 +73,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg),
 		filepath.Join(name, "internal", pkg, "static"),
 		filepath.Join(name, "internal", pkg, "templates"),
+		filepath.Join(name, "internal", pkg, "migrations"),
 		filepath.Join(name, "internal", pkg, "icons"),
 		filepath.Join(name, "internal", pkg+"test"),
 		filepath.Join(name, ".amadan", "ci.d"),
@@ -90,10 +91,22 @@ func runNew(args []string) error {
 		filepath.Join(name, "cmd", name, "main.go"):       fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
 		filepath.Join(appDir, "app.go"):                   fmt.Sprintf(appTemplate, pkg),
 		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
+		filepath.Join(appDir, "migrations.go"):            fmt.Sprintf(migrationsTemplate, pkg),
 		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
 		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, name, pkg),
 		filepath.Join(appDir, "templates", "layout.html"): layoutTemplate,
 		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
+		// The initial migration and the schema.sql snapshot it adds up
+		// to, both static: the scaffold's Note model is fixed and
+		// known at the time this template is written, so unlike a real
+		// app's later migrations, generating this one at `new` time
+		// would buy nothing but a network fetch and a full compile —
+		// exactly what `new` promises not to need. Produced once by
+		// hand (scaffold an app, run `rastrillo migration generate`
+		// against it, paste the result here); TestScaffoldMigratesAndPassesCheck
+		// is what keeps it from drifting off of modelsTemplate's Note.
+		filepath.Join(appDir, "migrations", "0001_init.sql"): initMigrationTemplate,
+		filepath.Join(appDir, "migrations", "schema.sql"):    schemaSQLTemplate,
 		// The design-token stylesheet, delivered once. rastrillo.Serve
 		// never serves CSS at runtime; from here on this is an ordinary
 		// app-owned file that new/generate never touch again.
@@ -139,10 +152,11 @@ func runNew(args []string) error {
 	// non-executable job "skipped" with only a hint — the known silent
 	// failure mode, closed at scaffold time.
 	ciScripts := map[string]string{
-		filepath.Join(name, ".amadan", "ci"):              amadanCI,
-		filepath.Join(name, ".amadan", "ci.d", "10-vet"):  amadanStep("vet"),
-		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):  amadanStep("fmt-check"),
-		filepath.Join(name, ".amadan", "ci.d", "30-test"): amadanStep("test"),
+		filepath.Join(name, ".amadan", "ci"):                         amadanCI,
+		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
+		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
+		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
+		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
 	}
 	for path, content := range ciScripts {
 		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -160,10 +174,11 @@ func runNew(args []string) error {
 
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
 	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
-	fmt.Printf("  internal/%s/         (models, app, handlers, render, templates, static)\n", pkg)
+	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box)\n", pkg)
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + test; make release = the stripped binary)")
+	fmt.Println("  Makefile             (make ci = vet + fmt + test + migration check, the one gate definition;")
+	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
 	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
@@ -297,6 +312,7 @@ func main() {
 const appTemplate = `package %[1]s
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -304,6 +320,7 @@ import (
 
 	"github.com/carlosframework/rastrillo/csrf"
 	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 // App wires the whole app: schema, router, static files. It returns a
@@ -315,12 +332,25 @@ import (
 // Growing the app is SKILL.md's five-file shape: models in models.go,
 // handlers in handlers.go, and — for a multi-user app — the sessions
 // core plus an identity plugin wired right here (examples/notes in the
-// rastrillo repo is the worked example to copy).
+// rastrillo repo is the worked example to copy). Adding a subsystem
+// also means adding its Schema to migrations.go's BootSchema — see
+// the comment there.
 func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
-	// AutoMigrate every model in models.go, additive-only.
-	if err := d.G.AutoMigrate(); err != nil {
+	// Apply BootSchema, not Schema: BootSchema is everything this
+	// app needs at boot (its own migrations plus any subsystem's),
+	// while Schema (migrations.go) stays just this app's own so the
+	// generator and its check never see a subsystem's tables and try
+	// to drop them.
+	migrated, err := migrate.Apply(context.Background(), d, BootSchema)
+	if err != nil {
 		return nil, err
 	}
+	// One line per boot. Result exists so this can be logged, and
+	// until something does, a fleet-wide adoption — every database
+	// stamped, no DDL run, exactly once, never again — produces no
+	// output at all, which is the last event you want to be silent.
+	logger.Info("migrate", "applied", migrated.Applied,
+		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
 
 	a := &app{db: d, logger: logger}
 
@@ -344,21 +374,96 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 
 const modelsTemplate = `package %[1]s
 
-// Models are plain GORM structs, AutoMigrated in app.go — for example:
+import "time"
+
+// Models is every model the schema generator manages. Keep it in step
+// with the structs below: ` + "`rastrillo migration generate`" + ` reads
+// it to work out what the database should look like, and
+// ` + "`rastrillo migration check`" + ` fails CI when it and the
+// migrations disagree.
+var Models = []any{
+	&Note{},
+}
+
+// Note is a starting example model — rename it, replace it, add more
+// beside it. Whatever it becomes, the rule stays the same: every query
+// touching user-owned rows goes through scope.Owned (SKILL.md) — reads
+// AND writes — and a request body is never bound onto a model directly
+// (explicit map[string]any + .Select allowlist).
+type Note struct {
+	ID        int64
+	Title     string
+	Body      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+`
+
+// migrationsTemplate declares the two schema variables an app needs,
+// and only two: see the doc comments below for why one is not enough.
+const migrationsTemplate = `package %[1]s
+
+import (
+	"embed"
+
+	"github.com/carlosframework/rastrillo/migrate"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is this app's own migrations, in order — nothing else. It is
+// what ` + "`rastrillo migration generate`" + ` and ` + "`rastrillo migration check`" + ` read
+// and write: both work by replaying a set into an in-memory database
+// and diffing the result against Models, so Schema must never carry a
+// framework subsystem's migrations too — mixed in, the diff would see
+// tables (sessions, auth_links, ...) that Models knows nothing about
+// and want to drop every one of them.
 //
-//	type Note struct {
-//		ID        int64
-//		UserID    int64 ` + "`gorm:\"index\"`" + `
-//		Title     string
-//		Body      string
-//		CreatedAt time.Time
-//		UpdatedAt time.Time
-//	}
+// Add to it with ` + "`rastrillo migration generate`" + ` after changing a
+// model, or ` + "`rastrillo migration new <name>`" + ` to write one by hand.
+// Migrations apply at boot and are never re-run or reversed: never
+// edit one that has shipped, add a new one instead.
+var Schema = migrate.MustFromFS(migrationFS, %[1]q)
+
+// BootSchema is everything applied at boot, in order — this app's own
+// Schema plus every framework subsystem's — and it is what App() below
+// hands to migrate.Apply. It is a separate variable from Schema for
+// the same reason Schema must stay narrow: generate and check would
+// misread a subsystem's tables as ones Models forgot.
 //
-// Rules that keep them safe (SKILL.md): every query touching
-// user-owned rows goes through scope.Owned — reads AND writes — and a
-// request body is never bound onto a model (explicit map[string]any +
-// .Select allowlist).
+// A fresh scaffold uses no subsystem yet, so today this is just
+// Schema. Adding one (say, sessions) means editing this line, not
+// Schema:
+//
+//	var BootSchema = migrate.Merge(sessions.Schema, Schema)
+//
+// Merge's argument order is apply order, so a subsystem whose
+// migrations another one reads (auth after sessions) goes first.
+// Get this line wrong and either boot silently skips a subsystem's
+// tables, or generate/check try to drop them.
+var BootSchema = migrate.Merge(Schema)
+`
+
+// initMigrationTemplate is the scaffold's first migration: static,
+// not generated at `new` time (see the files map's comment on why),
+// but produced the same way `rastrillo migration generate` would
+// produce it — by running the generator once, by hand, against the
+// Note model above, and pasting the result here. Written verbatim by
+// migrationGenerate's own body-building loop:
+// strings.TrimSpace(sql) + "\n\n" per statement.
+const initMigrationTemplate = "CREATE TABLE `notes` (`id` integer PRIMARY KEY AUTOINCREMENT,`title` text,`body` text,`created_at` datetime,`updated_at` datetime);\n\n"
+
+// schemaSQLTemplate is the snapshot `rastrillo migration generate`
+// would write alongside 0001_init.sql above — the schema every
+// migration in the directory adds up to. Kept in the same format
+// migrate.SchemaSQL produces so a diff against a real regeneration is
+// silent.
+const schemaSQLTemplate = `-- Generated by rastrillo migration generate; DO NOT EDIT.
+-- The schema every migration in this directory adds up to.
+
+CREATE TABLE ` + "`notes`" + ` (` + "`id`" + ` integer PRIMARY KEY AUTOINCREMENT,` + "`title`" + ` text,` + "`body`" + ` text,` + "`created_at`" + ` datetime,` + "`updated_at`" + ` datetime);
+
 `
 
 const handlersTemplate = `package %[1]s
@@ -697,7 +802,7 @@ RELEASE_GOOS   ?= linux
 RELEASE_GOARCH ?= arm64
 RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
 
-.PHONY: build release test vet fmt-check ci
+.PHONY: build release test vet fmt-check migration-check ci
 
 # build is the compile check: with more than one package matched, go
 # build discards the output, so this catches a broken package without
@@ -733,11 +838,26 @@ vet:
 fmt-check:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
+# A step of its own, not folded into another target's recipe: ci.d/
+# steps each exec one make target, so migration-check needs its own
+# name to get its own reported step on a runner with step support.
+#
+# go run, not a bare "rastrillo": go.mod already requires rastrillo, so
+# this needs nothing on PATH but the Go toolchain, and works offline
+# after go mod download. A bare "rastrillo migration check" failed a
+# fresh clone's very first CI run with "make: rastrillo: Command not
+# found", and nothing in the scaffold said what to install.
+migration-check:
+	go run github.com/carlosframework/rastrillo/cmd/rastrillo migration check
+
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
-# target when .amadan/ci is absent. If the app declares manifest
-# resources, add: rastrillo generate --check
-ci: vet fmt-check test
+# target when .amadan/ci is absent; ci.d/ carries the same targets,
+# reported one by one, for a runner with step support. migration-check
+# fails the build the moment models.go and migrations/ disagree,
+# instead of at boot on whatever machine notices next. If the app
+# declares manifest resources, also add: rastrillo generate --check
+ci: vet fmt-check test migration-check
 `
 
 const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
@@ -774,8 +894,9 @@ mechanically.
 
 ## Layout
 
-- ` + "`internal/<app>/`" + ` — the app: ` + "`models.go`" + ` (plain GORM structs),
-  ` + "`app.go`" + ` (AutoMigrate + chi router), ` + "`handlers.go`" + `,
+- ` + "`internal/<app>/`" + ` — the app: ` + "`models.go`" + ` (plain GORM structs
+  + Models), ` + "`migrations.go`" + ` + ` + "`migrations/`" + ` (Schema, BootSchema),
+  ` + "`app.go`" + ` (migrate.Apply + chi router), ` + "`handlers.go`" + `,
   ` + "`render.go`" + ` + ` + "`templates/`" + `. This is SKILL.md's five-file shape.
 - ` + "`manifest/`" + ` — the declarative path, optional and equal: TOML or .go
   Resource manifests, each generating a full screen set under ` + "`gen/`" + `
@@ -792,8 +913,12 @@ mechanically.
   never 403s.
 - Never bind a request body onto a GORM model: explicit
   ` + "`map[string]any`" + ` + ` + "`.Select`" + ` allowlist.
-- Migrations are additive-only, applied at boot. Never rewrite one that
-  shipped.
+- Migrations apply at boot, once each, and are never re-run or reversed.
+- Schema changes: edit models.go, then run ` + "`rastrillo migration generate`" + `
+  and read the SQL it writes — it may be a full table rebuild, not just
+  an ` + "`ADD COLUMN`" + `. Never edit a migration that has shipped.
+  Renames are hand-written (` + "`rastrillo migration new rename_x`" + `) because
+  a rename is indistinguishable from a drop plus an add.
 - Money is integer cents. A float never touches a value a person will
   be held to.
 - Screens work with JavaScript disabled; destructive actions get their

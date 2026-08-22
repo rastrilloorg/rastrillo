@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	_ "modernc.org/sqlite"
-
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/password"
 	"github.com/carlosframework/rastrillo/sessions"
 )
@@ -119,21 +119,18 @@ func (r *renderRecorder) count() int {
 }
 
 // newTestSessions mirrors sessions_test.go's helper: temp SQLite DB,
-// Migrations applied, a *sessions.Sessions over it.
+// Schema applied, a *sessions.Sessions over it.
 func newTestSessions(t *testing.T) *sessions.Sessions {
 	t.Helper()
-	dsn := "file:" + filepath.Join(t.TempDir(), "s.db") + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
-	db, err := sql.Open("sqlite", dsn)
+	d, err := db.Open(filepath.Join(t.TempDir(), "s.db"), nil)
 	if err != nil {
-		t.Fatalf("sql.Open: %v", err)
+		t.Fatalf("db.Open: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
-	for _, stmt := range sessions.Migrations {
-		if _, err := db.Exec(stmt); err != nil {
-			t.Fatalf("migration %q: %v", stmt, err)
-		}
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, sessions.Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
 	}
-	s, err := sessions.New(sessions.Config{DB: db, Origin: "http://app.test"})
+	s, err := sessions.New(sessions.Config{DB: d.Writer(), Origin: "http://app.test"})
 	if err != nil {
 		t.Fatalf("sessions.New: %v", err)
 	}

@@ -13,8 +13,8 @@
 // primary factor (magic link, keymail, password) stays the way an
 // account is entered.
 //
-// The shape: an app builds one *Handlers at boot (New), appends
-// passkey.Migrations to its migration list, serves webauthn.JS() as a
+// The shape: an app builds one *Handlers at boot (New), merges
+// passkey.Schema into its migrate.Set, serves webauthn.JS() as a
 // static asset for the browser half, and mounts the JSON endpoints —
 //
 //	POST /passkey/register/begin   -> {"challenge": ...}
@@ -66,6 +66,7 @@ package passkey
 
 import (
 	"database/sql"
+	"embed"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -76,6 +77,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/sessions"
 	"github.com/carlosframework/rastrillo/webauthn"
 )
@@ -91,41 +93,16 @@ const challengeTTL = 2 * time.Minute
 // abandoned half-session is not a standing invitation.
 const pendingTTL = 5 * time.Minute
 
-// Migrations is the package's schema — additive and idempotent, meant
-// to be appended to an app's migration list. Credentials are public
-// material (a public key verifies signatures and nothing else);
-// challenges are single-use rows consumed by DELETE ... RETURNING.
-var Migrations = []string{
-	`CREATE TABLE IF NOT EXISTS passkey_credentials (
-	  id         TEXT PRIMARY KEY,
-	  subject    TEXT NOT NULL,
-	  public_key BLOB NOT NULL,
-	  sign_count INTEGER NOT NULL DEFAULT 0,
-	  created_at TEXT NOT NULL
-	);`,
-	`CREATE INDEX IF NOT EXISTS passkey_credentials_subject
-	  ON passkey_credentials (subject);`,
-	`CREATE TABLE IF NOT EXISTS passkey_challenges (
-	  challenge  TEXT PRIMARY KEY,
-	  subject    TEXT NOT NULL,
-	  purpose    TEXT NOT NULL,
-	  expires_at TEXT NOT NULL
-	);`,
-	`CREATE TABLE IF NOT EXISTS passkey_pending (
-	  token_hash TEXT PRIMARY KEY,
-	  subject    TEXT NOT NULL,
-	  method     TEXT NOT NULL DEFAULT '',
-	  return_to  TEXT NOT NULL DEFAULT '',
-	  expires_at TEXT NOT NULL
-	);`,
-	`CREATE TABLE IF NOT EXISTS passkey_recovery_codes (
-	  code_hash  TEXT PRIMARY KEY,
-	  subject    TEXT NOT NULL,
-	  created_at TEXT NOT NULL
-	);`,
-	`CREATE INDEX IF NOT EXISTS passkey_recovery_codes_subject
-	  ON passkey_recovery_codes (subject);`,
-}
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is the package's migration set, applied with migrate.Apply
+// alongside the app's own. It replaces the exported Migrations
+// []string: the ledger records what ran, so these statements are no
+// longer re-executed on every boot. Credentials are public material (a
+// public key verifies signatures and nothing else); challenges are
+// single-use rows consumed by DELETE ... RETURNING.
+var Schema = migrate.MustFromFS(migrationFS, "passkey")
 
 // Config configures New. Sessions, DB and Origin are required.
 type Config struct {

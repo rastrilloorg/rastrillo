@@ -31,6 +31,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -40,6 +41,7 @@ import (
 	"strings"
 
 	"github.com/carlosframework/rastrillo/crypto"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 // InlineMax is the guidance threshold: blobs larger than this belong in
@@ -67,16 +69,14 @@ type Store interface {
 // ErrNotFound is a hash the store does not hold.
 var ErrNotFound = errors.New("rastrillo/blobs: no such blob")
 
-// Migrations is Inline's schema — additive, idempotent, for an app's
-// Options.Migrations.
-var Migrations = []string{
-	`CREATE TABLE IF NOT EXISTS blobs (
-	  hash         TEXT    PRIMARY KEY,
-	  content_type TEXT    NOT NULL,
-	  size         INTEGER NOT NULL,
-	  data         BLOB    NOT NULL
-	);`,
-}
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is Inline's migration set, applied with migrate.Apply
+// alongside the app's own. It replaces the exported Migrations
+// []string: the ledger records what ran, so these statements are no
+// longer re-executed on every boot.
+var Schema = migrate.MustFromFS(migrationFS, "blobs")
 
 func hashOf(b []byte) string {
 	sum := sha256.Sum256(b)

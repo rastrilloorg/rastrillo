@@ -413,3 +413,73 @@ func TestGetColumns(t *testing.T) {
 		})
 	}
 }
+
+// TestRemoveColumn covers removeColumn's match/no-match cases via a real
+// parseDDL pass, so each case exercises the same strings.TrimSpace path
+// that produced the bug: a hand-written, unquoted field like "id INTEGER"
+// is stored with no leading delimiter at all, which the original pattern
+// (requiring a leading quote or space) never matched.
+func TestRemoveColumn(t *testing.T) {
+	params := []struct {
+		name   string
+		ddl    string
+		column string
+		match  bool
+	}{
+		{"backtick_quoted", "CREATE TABLE t (`id` integer)", "id", true},
+		{"double_quoted", "CREATE TABLE t (\"id\" INTEGER)", "id", true},
+		{"single_quoted", "CREATE TABLE t ('id' INTEGER)", "id", true},
+		{"bare_unquoted", "CREATE TABLE t (id INTEGER)", "id", true},
+		{"bare_unquoted_with_constraint", "CREATE TABLE t (token_hash TEXT PRIMARY KEY)", "token_hash", true},
+		// A trimmed, unquoted field alongside a table-level PRIMARY KEY
+		// clause: only the column field must be removed, not the clause.
+		{"prefix_collision_idx_name", "CREATE TABLE t (idx_name TEXT)", "id", false},
+		{"prefix_collision_identifier", "CREATE TABLE t (identifier TEXT)", "id", false},
+		{"table_constraint_primary_key", "CREATE TABLE t (name TEXT, PRIMARY KEY (id, seq))", "id", false},
+		{"table_constraint_foreign_key", "CREATE TABLE t (name TEXT, CONSTRAINT fk_id FOREIGN KEY (id) REFERENCES t(id))", "id", false},
+		// A quoted identifier that itself contains whitespace is legal SQLite
+		// and legally requires quoting. The closing-quote group must not be
+		// independently optional, or a delimiter search that starts matching
+		// inside an unclosed quoted identifier can stop at the whitespace
+		// that is part of the name, deleting the wrong field.
+		{"quoted_identifier_with_space_not_dropped_name", "CREATE TABLE t (`id x` INTEGER)", "id", false},
+		{"quoted_identifier_with_space_prefix_of_dropped_name", "CREATE TABLE t (`full name` TEXT)", "full", false},
+		{"quoted_identifier_with_space_dropped_by_full_name", "CREATE TABLE t (`id x` INTEGER)", "id x", true},
+	}
+
+	for _, p := range params {
+		t.Run(p.name, func(t *testing.T) {
+			testDDL, err := parseDDL(p.ddl)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			before := append([]string(nil), testDDL.fields...)
+
+			match := testDDL.removeColumn(p.column)
+
+			tests.AssertEqual(t, p.match, match)
+			if p.match {
+				if len(testDDL.fields) != len(before)-1 {
+					t.Fatalf("expected one field removed, fields: before=%v after=%v", before, testDDL.fields)
+				}
+			} else {
+				tests.AssertEqual(t, before, testDDL.fields)
+			}
+		})
+	}
+
+	// parseDDL always trims each field via strings.TrimSpace, so a stored
+	// field can never actually start with a space. removeColumn's contract
+	// should still tolerate one if a field is ever appended by hand (as
+	// addConstraint does), so this case is built directly rather than
+	// through parseDDL.
+	t.Run("leading_space", func(t *testing.T) {
+		testDDL := ddl{fields: []string{" id INTEGER"}}
+
+		match := testDDL.removeColumn("id")
+
+		tests.AssertEqual(t, true, match)
+		tests.AssertEqual(t, []string{}, testDDL.fields)
+	})
+}

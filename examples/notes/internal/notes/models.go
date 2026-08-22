@@ -7,6 +7,12 @@ package notes
 
 import "time"
 
+// Models is every model the schema generator manages. Keep it in step
+// with the structs below: `rastrillo migration generate` reads it to
+// work out what the database should look like, and `rastrillo
+// migration check` fails CI when it and the migrations disagree.
+var Models = []any{&User{}, &Note{}, &Export{}}
+
 type User struct {
 	ID           int64
 	Email        string `gorm:"uniqueIndex"`

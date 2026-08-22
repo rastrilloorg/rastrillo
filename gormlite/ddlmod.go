@@ -276,7 +276,23 @@ func (d *ddl) getColumns() []string {
 }
 
 func (d *ddl) removeColumn(name string) bool {
-	reg := regexp.MustCompile("^(`|'|\"| )" + regexp.QuoteMeta(name) + "(`|'|\"| ) .*?$")
+	// parseDDL stores each field via strings.TrimSpace, so a hand-written,
+	// unquoted field (e.g. "id INTEGER") begins with the identifier
+	// itself and has no leading quote or space. The previous pattern
+	// required one, so it never matched and DropColumn silently kept the
+	// column.
+	//
+	// The quote pair must be matched explicitly per alternative rather
+	// than as two independently-optional groups: an independently
+	// optional closing quote stops looking for a delimiter as soon as it
+	// sees whitespace, including whitespace that is still inside an
+	// unclosed quoted identifier (e.g. "`id x` INTEGER" would wrongly
+	// match name "id"). A quoted identifier containing whitespace is
+	// legal SQLite and legally requires quoting, so that false match
+	// would delete the wrong column. RE2 (Go's regexp) has no
+	// backreferences to pair an opening quote with its close, so the
+	// pairing is done via alternation instead.
+	reg := regexp.MustCompile("^\\s*(`" + regexp.QuoteMeta(name) + "`|'" + regexp.QuoteMeta(name) + "'|\"" + regexp.QuoteMeta(name) + "\"|" + regexp.QuoteMeta(name) + ")(\\s|$)")
 
 	for i := 0; i < len(d.fields); i++ {
 		if reg.MatchString(d.fields[i]) {

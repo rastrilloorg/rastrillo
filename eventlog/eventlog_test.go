@@ -12,17 +12,21 @@ import (
 	"testing"
 	"time"
 
-	rastrillo "github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
 func openLog(t *testing.T, writer string) *Log {
 	t.Helper()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), writer+".db"), Migrations)
+	d, err := db.Open(filepath.Join(t.TempDir(), writer+".db"), nil)
 	if err != nil {
-		t.Fatalf("OpenDB: %v", err)
+		t.Fatalf("db.Open: %v", err)
 	}
-	t.Cleanup(func() { db.Close() })
-	l, err := Open(db, writer)
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
+	l, err := Open(d.Writer(), writer)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -328,20 +332,19 @@ func TestEventsByPrefixCustomOrder(t *testing.T) {
 // identities.
 func TestLocalWriter(t *testing.T) {
 	ctx := context.Background()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "a.db"), Migrations)
-	if err != nil {
-		t.Fatalf("OpenDB: %v", err)
-	}
-	defer db.Close()
+	// db.Open + migrate.Apply, not rastrillo.OpenDB + Migrations:
+	// eventlog ships a *migrate.Set now, and the raw []string this
+	// test was written against no longer exists.
+	sq1 := openWriterDB(t, "a")
 
-	w1, err := LocalWriter(ctx, db)
+	w1, err := LocalWriter(ctx, sq1)
 	if err != nil {
 		t.Fatalf("LocalWriter: %v", err)
 	}
 	if w1 == "" {
 		t.Fatal("LocalWriter minted an empty identity")
 	}
-	w2, err := LocalWriter(ctx, db)
+	w2, err := LocalWriter(ctx, sq1)
 	if err != nil {
 		t.Fatalf("LocalWriter (2nd): %v", err)
 	}
@@ -349,22 +352,34 @@ func TestLocalWriter(t *testing.T) {
 		t.Fatalf("LocalWriter unstable: %q then %q", w1, w2)
 	}
 	// Usable as a writer identity directly.
-	if _, err := Open(db, w1); err != nil {
+	if _, err := Open(sq1, w1); err != nil {
 		t.Fatalf("Open(LocalWriter): %v", err)
 	}
 
-	db2, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "b.db"), Migrations)
-	if err != nil {
-		t.Fatalf("OpenDB: %v", err)
-	}
-	defer db2.Close()
-	w3, err := LocalWriter(ctx, db2)
+	sq2 := openWriterDB(t, "b")
+	w3, err := LocalWriter(ctx, sq2)
 	if err != nil {
 		t.Fatalf("LocalWriter (db2): %v", err)
 	}
 	if w3 == w1 {
 		t.Fatalf("two databases share writer identity %q", w1)
 	}
+}
+
+// openWriterDB is openLog's first half: a migrated database handed
+// back as the writer *sql.DB, for the tests that want the handle
+// rather than a *Log.
+func openWriterDB(t *testing.T, name string) *sql.DB {
+	t.Helper()
+	d, err := db.Open(filepath.Join(t.TempDir(), name+".db"), nil)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
+	return d.Writer()
 }
 
 // TestMergeVectorsFileUntouched pins the vectors file byte-for-byte:

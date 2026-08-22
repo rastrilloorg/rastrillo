@@ -32,6 +32,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -39,29 +40,18 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/carlosframework/rastrillo/migrate"
 )
 
-// Migrations is the package's schema — additive and idempotent, meant
-// to be appended to an app's Options.Migrations.
-var Migrations = []string{
-	`CREATE TABLE IF NOT EXISTS eventlog (
-	  stream  TEXT    NOT NULL,
-	  writer  TEXT    NOT NULL,
-	  seq     INTEGER NOT NULL,
-	  lamport INTEGER NOT NULL,
-	  ts      TEXT    NOT NULL,
-	  actor   TEXT    NOT NULL,
-	  kind    TEXT    NOT NULL,
-	  payload TEXT    NOT NULL,
-	  PRIMARY KEY (stream, writer, seq)
-	);`,
-	`CREATE INDEX IF NOT EXISTS eventlog_merge_order
-	  ON eventlog (stream, lamport, ts, writer, seq);`,
-	`CREATE TABLE IF NOT EXISTS eventlog_writer (
-	  id     INTEGER PRIMARY KEY CHECK (id = 1),
-	  writer TEXT    NOT NULL
-	);`,
-}
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is the package's migration set, applied with migrate.Apply
+// alongside the app's own. It replaces the exported Migrations
+// []string: the ledger records what ran, so these statements are no
+// longer re-executed on every boot.
+var Schema = migrate.MustFromFS(migrationFS, "eventlog")
 
 // Event is one immutable entry in a stream.
 type Event struct {

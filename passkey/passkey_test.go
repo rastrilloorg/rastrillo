@@ -2,6 +2,7 @@ package passkey_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -11,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	_ "modernc.org/sqlite"
-
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/migrate"
 	"github.com/carlosframework/rastrillo/passkey"
 	"github.com/carlosframework/rastrillo/sessions"
 	"github.com/carlosframework/rastrillo/webauthn/authtest"
@@ -31,26 +32,25 @@ type env struct {
 
 func newEnv(t *testing.T) env {
 	t.Helper()
-	dsn := "file:" + filepath.Join(t.TempDir(), "p.db") + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
-	db, err := sql.Open("sqlite", dsn)
+	d, err := db.Open(filepath.Join(t.TempDir(), "p.db"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
-	for _, stmt := range append(append([]string{}, sessions.Migrations...), passkey.Migrations...) {
-		if _, err := db.Exec(stmt); err != nil {
-			t.Fatalf("migration: %v", err)
-		}
+	t.Cleanup(func() { d.Close() })
+	full := migrate.Merge(sessions.Schema, passkey.Schema)
+	if _, err := migrate.Apply(context.Background(), d, full); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
 	}
-	sess, err := sessions.New(sessions.Config{DB: db, Origin: testOrigin})
+	sqlDB := d.Writer()
+	sess, err := sessions.New(sessions.Config{DB: sqlDB, Origin: testOrigin})
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := passkey.New(passkey.Config{Sessions: sess, DB: db, Origin: testOrigin})
+	h, err := passkey.New(passkey.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return env{h: h, sess: sess, db: db}
+	return env{h: h, sess: sess, db: sqlDB}
 }
 
 // signIn mints a session and returns its cookie.

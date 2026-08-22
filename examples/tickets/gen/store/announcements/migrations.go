@@ -7,4 +7,22 @@ import "github.com/carlosframework/rastrillo/eventlog"
 // mergeable resource has no table of its own — every record is an
 // eventlog stream. Idempotent, so two mergeable resources appending it
 // twice is harmless.
-var Migrations = eventlog.Migrations
+//
+// The statements are read out of eventlog.Schema — the *migrate.Set
+// the package ships — rather than copied, so this file cannot drift
+// from the schema migrate.Apply installs for an app on the ledger.
+//
+// One element per migration FILE, not per statement, so keep each
+// file independently idempotent: OpenDB tolerates a duplicate-column
+// error by skipping the rest of that element, which with a
+// multi-statement file means skipping every statement after it and
+// still reporting success.
+var Migrations = eventlogSchemaSQL()
+
+func eventlogSchemaSQL() []string {
+	var out []string
+	for _, m := range eventlog.Schema.All() {
+		out = append(out, m.SQL)
+	}
+	return out
+}
