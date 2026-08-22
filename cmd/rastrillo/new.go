@@ -116,10 +116,10 @@ func runNew(args []string) error {
 		// reviewer runs the suite and knows static/'s ~56KB is the
 		// library's, not app diff to read line by line.
 		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg),
-		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
-		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name),
-		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
+		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg),
+		filepath.Join(name, "manifest", "README.md"):                    fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "Makefile"):                                 fmt.Sprintf(makefileTemplate, name),
+		filepath.Join(name, ".gitignore"):                               fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
 		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
