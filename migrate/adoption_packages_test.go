@@ -16,8 +16,14 @@ import (
 )
 
 // legacySQL is each package's schema exactly as it shipped before the
-// migrate conversion. A deployed database was built from these
+// migrate conversion — main's `Migrations []string` as of v0.16.0,
+// copied verbatim. A deployed database was built from these
 // statements, so adopting one must produce zero DDL.
+//
+// These lists track main, not history: when main adds a statement to a
+// package's Migrations (eventlog_writer, passkey_recovery_codes), it
+// lands here too, or the test proves adoption against a schema nobody
+// runs any more.
 var legacySQL = map[string][]string{
 	"sessions": {`CREATE TABLE IF NOT EXISTS sessions (
 	  token_hash TEXT PRIMARY KEY,
@@ -45,7 +51,11 @@ var legacySQL = map[string][]string{
 	  PRIMARY KEY (stream, writer, seq)
 	);`,
 		`CREATE INDEX IF NOT EXISTS eventlog_merge_order
-	  ON eventlog (stream, lamport, ts, writer, seq);`},
+	  ON eventlog (stream, lamport, ts, writer, seq);`,
+		`CREATE TABLE IF NOT EXISTS eventlog_writer (
+	  id     INTEGER PRIMARY KEY CHECK (id = 1),
+	  writer TEXT    NOT NULL
+	);`},
 	"passkey": {`CREATE TABLE IF NOT EXISTS passkey_credentials (
 	  id         TEXT PRIMARY KEY,
 	  subject    TEXT NOT NULL,
@@ -67,7 +77,14 @@ var legacySQL = map[string][]string{
 	  method     TEXT NOT NULL DEFAULT '',
 	  return_to  TEXT NOT NULL DEFAULT '',
 	  expires_at TEXT NOT NULL
-	);`},
+	);`,
+		`CREATE TABLE IF NOT EXISTS passkey_recovery_codes (
+	  code_hash  TEXT PRIMARY KEY,
+	  subject    TEXT NOT NULL,
+	  created_at TEXT NOT NULL
+	);`,
+		`CREATE INDEX IF NOT EXISTS passkey_recovery_codes_subject
+	  ON passkey_recovery_codes (subject);`},
 }
 
 // legacyAuthSQL is auth's pre-conversion Migrations. It gets its own

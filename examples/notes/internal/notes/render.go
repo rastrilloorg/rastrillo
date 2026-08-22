@@ -136,6 +136,7 @@ func statusView(d jobs.PageData) map[string]any {
 		"Name": d.Job.Name, "Status": string(d.Job.Status),
 		"Progress": d.Job.Progress, "Err": d.Job.Err,
 		"PollURL": d.FragmentPath, "PollSeconds": d.PollSeconds,
+		"PushURL": d.EventsPath,
 		"Running": d.Job.Status == jobs.Running,
 	}
 }

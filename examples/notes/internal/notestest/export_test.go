@@ -1,6 +1,7 @@
 package notestest
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -207,6 +208,49 @@ func TestExportIsolation(t *testing.T) {
 		t.Fatalf("Bob GET %s = %d, want 404", jobPath+"/fragment", resp.StatusCode)
 	} else {
 		resp.Body.Close()
+	}
+}
+
+// TestExportCapRefusesFifth: the jobs registry caps an owner at four
+// Running jobs, and the handler turns the refusal into a flash on the
+// notes list instead of a fifth status page. Ten notes' simulated pace
+// (300ms apiece) keeps all four exports running for ~3s — the window
+// the fifth POST and its assertions have to land in.
+func TestExportCapRefusesFifth(t *testing.T) {
+	ts := newApp(t)
+	cl := newClient(t, ts)
+	cl.signup("dora@example.com", "hunter2222").Body.Close()
+	for i := 0; i < 10; i++ {
+		cl.postForm("/notes", url.Values{"title": {fmt.Sprintf("Note %d", i)}, "body": {"Body"}}).Body.Close()
+	}
+
+	var jobPaths []string
+	for i := 0; i < 4; i++ {
+		start := cl.postForm("/export", url.Values{})
+		loc := start.Header.Get("Location")
+		start.Body.Close()
+		if !strings.HasPrefix(loc, "/jobs/") {
+			t.Fatalf("export %d redirect = %q, want /jobs/{id}", i, loc)
+		}
+		jobPaths = append(jobPaths, loc)
+	}
+
+	fifth := cl.postForm("/export", url.Values{})
+	loc := fifth.Header.Get("Location")
+	fifth.Body.Close()
+	if fifth.StatusCode != http.StatusSeeOther || loc != "/" {
+		t.Fatalf("fifth export = %d -> %q, want 303 -> /", fifth.StatusCode, loc)
+	}
+	home := cl.get("/")
+	homeBody := body(t, home)
+	if !strings.Contains(homeBody, "You already have exports running") {
+		t.Fatalf("refusal flash missing from /; body=%s", homeBody)
+	}
+
+	// Drain the four running exports so the test does not end with
+	// goroutines still writing into a closing app.
+	for _, jobPath := range jobPaths {
+		pollJobDone(t, cl, jobPath).Body.Close()
 	}
 }
 

@@ -9,7 +9,7 @@ The CARLOS web framework. This file is the app story: read it instead of the
 source. Module `github.com/carlosframework/rastrillo`; the worked
 reference is `examples/notes`.
 
-Rastrillo is a middle layer, not a full-stack framework. You write GORM models,
+A middle layer, not a full-stack framework: you write GORM models,
 `net/http` handlers on a chi router, and `html/template` pages. It supplies
 what is hard to get right twice: the database opener, session store, identity
 plugins, CSRF, owner scoping, form helpers.
@@ -114,12 +114,9 @@ type Note struct {
 ```
 
 `db.Open(path, logger)` returns a `*db.DB` whose `G` is the `*gorm.DB`, wired
-for SQLite: one file, a one-connection writer pool, a reader pool of several,
-routed per statement by `dbresolver` — app code never picks a pool. The DSN
-sets `busy_timeout` before `journal_mode=WAL` (the reverse order crashes on
-concurrent open) plus `foreign_keys(1)`. `d.Close()` closes both
-pools; `d.G.DB()` returns the writer `*sql.DB` for database/sql packages like
-sessions.
+for SQLite: one file, WAL, a one-connection writer pool, a reader pool of
+several, routed per statement. `d.Close()` closes both pools; `d.G.DB()`
+returns the writer `*sql.DB` for database/sql packages like sessions.
 
 Schema changes go through `rastrillo migration generate`: edit a model, run
 it, read the SQL before committing. Migrations apply once each, at boot,
@@ -132,7 +129,7 @@ apply order — everything `App()` applies. Add a subsystem to `BootSchema`,
 never `Schema`, or `check` proposes dropping a table `Models` doesn't know.
 Never edit a shipped migration; add a new one (`generate` may now emit a
 full rebuild, not just `ADD COLUMN`). Renames are hand-written
-(`rastrillo migration new rename_x`, indistinguishable from drop+add to any
+(`rastrillo migration new rename_x`; drop+add is indistinguishable to any
 tool); destructive changes need `--allow-destructive`.
 
 **Recovering an old database, and a generated store's ledger trap.** Boot
@@ -156,6 +153,11 @@ the new column, and `baseline` there would strand it for good.
 
 ## 3. Scoping
 
+Scoping separates *users* within one instance, never tenants: a CARLOS app
+serves one team. A product with many teams gives each team its own instance
+(instances hibernate — idle ones cost nothing); isolation is the platform's
+process-and-file boundary, not a WHERE clause.
+
 One seam, for every read and write:
 
 ```go
@@ -166,16 +168,16 @@ func (a *app) owned(r *http.Request) *gorm.DB {
 ```
 
 Every query on an owned model goes through `scope.Owned(d.G, uid)` (or
-`scope.OwnedBy` for team-owned rows): never First/Find/Update/Delete without
-the owner filter — including inside a `d.G.Transaction` callback, which must
-scope its own `tx`, never `d.G` (a `d.G` statement there runs outside the
-transaction, whose one writer connection it already holds, so it hangs
-instead of erroring).
+`scope.OwnedBy` for another owner column): never First/Find/Update/Delete
+without the owner filter — including inside a `d.G.Transaction` callback,
+which must scope its own `tx`, never `d.G` (a `d.G` statement there runs
+outside the transaction, whose one writer connection it already holds, so it
+hangs instead of erroring).
 
 `scope.Owned(g, owner int64)` adds `WHERE user_id = ?`. `scope.OwnedBy(g,
 column string, owner any)` takes any owner column and **panics** unless it's
 a plain `lower_snake` identifier — it's interpolated into SQL, so a bad one
-fails loudly instead of parsing as SQL.
+fails loudly.
 
 Scope the *write*, not just the read that loaded the row: the SQL then
 carries `WHERE user_id = ? AND id = ?` itself, so a later refactor cannot
@@ -219,8 +221,7 @@ if !p.OK() {
 }
 ```
 
-`p.Echo()` is the seed-back map for map-shaped views; hand-rolling with
-`PostFormValue` + a `form.Errors` map is fine too. Write the status before
+`p.Echo()` is the seed-back map for map-shaped views. Write the status before
 rendering; the helper writes none.
 
 Money is `int64` cents (`form.Money`, read with `p.Cents`, parsed via
@@ -235,29 +236,30 @@ calls `flash.Take(w, r)` once per page; the layout renders it.
 ## 5. Sessions and identity
 
 `sessions` owns the signed-in state: SQLite-backed rows (so sign-out and
-revocation are real), `__Host-` cookies on https origins, 30-day default TTL.
-It does not know how a session is *earned* — an identity plugin verifies a
-credential and calls `SignIn`; that call is the whole contract.
+revocation are real), `__Host-` cookies on https origins, 30-day default
+TTL. An identity plugin verifies a credential and calls `SignIn`; that call
+is the whole contract.
 
 - `csrf.Protect(origin)` mounts app-wide (`r.Use`): refuses cross-origin
-  POST/PUT/PATCH/DELETE via `Sec-Fetch-Site`/`Origin`, no tokens to mint;
-  GET/HEAD/OPTIONS pass untouched.
+  POST/PUT/PATCH/DELETE via `Sec-Fetch-Site`/`Origin`, no tokens to mint.
 - Guard signed-in routes with a chi `Group` + `s.Require`: signed-out
   GET/HEAD redirects to `SigninPath` with a same-site `return_to`; anything
   else 403s.
 - `s.Middleware` is softer: resolves a session when there is one, blocks
-  nothing — for pages that merely look different signed in.
+  nothing.
 - `s.RequireFresh(maxAge)` is Require plus step-up: past maxAge, GET/HEAD
   goes to `SigninPath?reauth=1`; re-signing-in or a `passkey` assertion
-  rotates fresh (2FA: `Config.SecondFactor` = `passkey`'s `Gate`).
+  rotates fresh (2FA: `Config.SecondFactor` = `passkey`'s `Gate`). Lost
+  passkey: a recovery code redeems at POST `/passkey/signin/recovery`,
+  minted by `RegenerateRecoveryCodes` behind `RequireFresh`.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or
   `sessions.Current(r)` (the `Session`: Subject, Method, AuthTime, At). Past
   `Require` the `ok` holds only for a plugin whose Subject is a numeric user
-  id, as password's is — see the keymail warning below.
+  id — see the keymail warning below.
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never
   a raw `return_to`: only a same-site absolute path (one leading `/`, no
-  scheme or backslash) passes; anything else gets the fallback.
-- `s.Sweep(time.Now())` deletes expired rows; lookup checks expiry anyway.
+  scheme or backslash) passes.
+- `s.Sweep(time.Now())` deletes expired rows.
 
 **Password plugin.** `password.New(password.Config{...})` needs `Sessions`,
 `Lookup`, `RenderSignin`; `Create` disables signup when nil (SignupPage and
@@ -267,36 +269,38 @@ errors otherwise. `Lookup(ctx, email) (id, hash, error)` returns
 decoy hash flattens timing). Any error from `Create` reads as a duplicate
 email.
 `Signin`/`Signup`/`Signout` are **POST-only** — Page variants on GET, the
-rest on POST, as in §1. Render callbacks take `(w, r, password.PageData)`;
+rest on POST. Render callbacks take `(w, r, password.PageData)`;
 password writes the 422 itself, so the callback must not.
 
 **Rate limiting:** Signin throttles failures per email — 10 in 15 minutes
 answers 429 until one ages out, success resets it, in-memory (IP
 throttling is deployment's job). The keymail plugin (`rastrillo/auth`, the
 family default: magic-link auto-upgrading to keymail) rate-limits the same
-way:
-`auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout` and
+way: `auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout` and
 `RequireSession`, over the same `sessions` core. **With keymail, do not use
 `sessions.UserID`:** its Subject is the verified *email*, so it returns
-`(0, false)`, and the §3 seam would scope every query to `user_id = 0` —
-everyone reading everyone. Read the viewer with `auth.From(r)` or
+`(0, false)`, and the §3 seam would scope every query to `user_id = 0`.
+Read the viewer with `auth.From(r)` or
 `sessions.Current(r)` (`RequireSession` stashes both) and map the address
 to your user row's id before scoping.
 
 ## 6. Background work
 
-`jobs` runs observable goroutines, in-memory: a restart kills them, so keep
-long jobs idempotent. `j := jobs.New(logger)` once; `j.Start(owner, name,
-location, fn)` runs `fn(ctx, progress func(string)) error`, returns a `Job`
-at once, 303 the caller to `/jobs/`+job.ID. Owner is the session
-**Subject**, not `sessions.UserID` — key job rows the same way; fn's error
-text reaches the owner. `j.Get(id, owner)` 404s a foreign/unknown id.
+`jobs` runs observable goroutines, in-memory: a restart kills them, and fn's
+ctx expires at 15 min (the job turns Failed) — keep jobs idempotent and
+honor ctx. `j := jobs.New(logger)` once; `j.Start(owner, name, location,
+fn)` runs `fn(ctx, progress func(string)) error`, returning `(Job, error)`:
+`ErrOwnerBusy` past 4 Running jobs per owner — flash your own copy. 303 the
+caller to `/jobs/`+job.ID. Owner is the session **Subject**, not
+`sessions.UserID` — key job rows the same way; fn's error text reaches the
+owner. `j.Get(id, owner)` 404s a foreign/unknown id.
 
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage`/`Fragment` (errors unless all three set); mount both in the
-`sess.Require` group at `/jobs/{id}` and `/jobs/{id}/fragment`, each taking
-`jobs.PageData{Job, FragmentPath, PollSeconds}`: Render draws a whole page,
-RenderFragment the partial *alone*, or the layout nests on the next poll.
+`StatusPage`/`Fragment`/`Events` (SSE), erroring unless all three set; mount
+them in the `sess.Require` group at `/jobs/{id}`, `/jobs/{id}/fragment` and
+`/jobs/{id}/events`, each taking `jobs.PageData{Job, FragmentPath,
+EventsPath, PollSeconds}`: Render draws a whole page, RenderFragment the
+partial *alone*, or the layout nests on the next poll.
 Done+Location 303s from StatusPage; Fragment answers 204 +
 `Rastrillo-Location`. **Must work with scripts off:** a `<noscript>` meta
 refresh of `PollSeconds`, only while Running, or a failed page refreshes
@@ -306,20 +310,25 @@ The only JavaScript is app-owned `static/rastrillo.js`, inert until markup
 opts in: `data-poll="URL"` + `data-poll-every="2"` swap the element for the
 fetched fragment and repeat while the new fragment still carries
 `data-poll` (ui's `job-status` partial drops it once done, stopping the
-loop); `data-busy`/`data-busy-label` disable/retitle a submit button.
+loop); the partial's `PushURL` (= `EventsPath`) emits `data-poll-push`, and
+the shim rides SSE, falling back to polling itself.
+`data-busy`/`data-busy-label` disable/retitle a submit button.
 
 ## 7. What NOT to do
 
 - **Manifests: declare what fits the vocabulary, hand-write the rest.** A
-  `manifest/*.toml` resource generates CRUD screens for one table, three
-  field kinds (text, textarea, money), no relations. `scope = "user"`
-  owner-filters generated queries by the session subject (someone else's
-  row 404s); mount behind `sessions.Require`/`auth.RequireSession`. Mix
-  declared and hand-written freely.
-- **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.** Both
-  register the driver name `sqlite`; either one beside `rastrillo/gormlite`
-  panics at init (`sql: Register called twice for driver sqlite`). `db.Open`
-  already wires `gormlite` over modernc — no driver import is ever needed.
+  `manifest/*.toml` resource generates CRUD screens — three field kinds
+  (text, textarea, money), no relations. `store = "exclusive"` (default) is
+  one SQL table; `store = "mergeable"` keeps each record as an `eventlog`
+  stream — derived reads, tombstone deletes. `scope = "user"` owner-filters
+  either store by the session subject (someone else's row 404s); mount
+  behind `sessions.Require`/`auth.RequireSession`. Mix declared and
+  hand-written freely.
+- **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
+  `glebarez/sqlite` registers the driver name `sqlite` that
+  `modernc.org/sqlite` already does, so a binary with it and
+  `rastrillo/gormlite` panics at init. `gorm.io/driver/sqlite` is the cgo
+  one; `db.Open` already wires `gormlite` over modernc.
 - **Never bind a form onto a model, query an owned model unscoped, or answer
   403 where 404 is honest.** See §3, §4.
 - **Never `git merge` to main**, not even locally: every change is a PR,

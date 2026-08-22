@@ -2,6 +2,7 @@ package eventlog
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -250,5 +251,147 @@ func TestCustomOrder(t *testing.T) {
 	}
 	if events[0].Seq != 2 {
 		t.Fatalf("custom order ignored: first event seq = %d", events[0].Seq)
+	}
+}
+
+// TestEventsByPrefix pins the prefix read the mergeable store's list
+// screens need: every event whose stream has the prefix, in the same
+// total order Events uses — and prefix isolation ("bookmarks/1" never
+// matches "bookmarksarchive/…", and a LIKE metacharacter in the prefix
+// matches only itself).
+func TestEventsByPrefix(t *testing.T) {
+	ctx := context.Background()
+	l := openLog(t, "edge-a")
+	l.Append(ctx, "bookmarks/1", "created", "human", map[string]int{"n": 1})
+	l.Append(ctx, "bookmarks/2", "created", "human", map[string]int{"n": 2})
+	l.Append(ctx, "bookmarks/1", "updated", "human", map[string]int{"n": 3})
+	l.Append(ctx, "bookmarksarchive/1", "created", "human", map[string]int{"n": 9})
+
+	events, err := l.EventsByPrefix(ctx, "bookmarks/")
+	if err != nil {
+		t.Fatalf("EventsByPrefix: %v", err)
+	}
+	if len(events) != 3 {
+		t.Fatalf("got %d events, want 3 (bookmarksarchive/* must not match)", len(events))
+	}
+	for _, ev := range events {
+		if ev.Stream != "bookmarks/1" && ev.Stream != "bookmarks/2" {
+			t.Errorf("stream %q matched prefix %q", ev.Stream, "bookmarks/")
+		}
+	}
+	// Same total order as Events: (lamport, ts, writer, seq) across the
+	// whole result. Each stream's lamports here are 1,1,2 in append
+	// order, so lamport must be non-decreasing in the merged read.
+	for i := 1; i < len(events); i++ {
+		if events[i].Lamport < events[i-1].Lamport {
+			t.Fatalf("events out of merge order at %d: lamport %d after %d",
+				i, events[i].Lamport, events[i-1].Lamport)
+		}
+	}
+
+	// A LIKE metacharacter in the prefix matches only itself.
+	l.Append(ctx, "a_b/1", "created", "human", nil)
+	l.Append(ctx, "axb/1", "created", "human", nil)
+	got, err := l.EventsByPrefix(ctx, "a_b/")
+	if err != nil {
+		t.Fatalf("EventsByPrefix: %v", err)
+	}
+	if len(got) != 1 || got[0].Stream != "a_b/1" {
+		t.Fatalf("prefix %q matched %v, want exactly a_b/1 (LIKE _ must be literal)", "a_b/", got)
+	}
+}
+
+// TestEventsByPrefixCustomOrder: Log.Order replaces the default
+// comparator per stream group, matching Events' own semantics — events
+// of one stream reorder among themselves, never across streams.
+func TestEventsByPrefixCustomOrder(t *testing.T) {
+	ctx := context.Background()
+	l := openLog(t, "edge-a")
+	l.Append(ctx, "notes/1", "k", "human", map[string]string{"v": "first"})
+	l.Append(ctx, "notes/1", "k", "human", map[string]string{"v": "second"})
+	l.Append(ctx, "notes/2", "k", "human", nil)
+
+	l.Order = func(a, b Event) int { return int(b.Seq - a.Seq) } // newest first
+	events, err := l.EventsByPrefix(ctx, "notes/")
+	if err != nil {
+		t.Fatalf("EventsByPrefix: %v", err)
+	}
+	var ones []Event
+	for _, ev := range events {
+		if ev.Stream == "notes/1" {
+			ones = append(ones, ev)
+		}
+	}
+	if len(ones) != 2 || ones[0].Seq != 2 || ones[1].Seq != 1 {
+		t.Fatalf("custom order not applied within the stream group: %v", ones)
+	}
+}
+
+// TestLocalWriter: one durable identity per database — minted once,
+// then read back stable forever; distinct databases mint distinct
+// identities.
+func TestLocalWriter(t *testing.T) {
+	ctx := context.Background()
+	// db.Open + migrate.Apply, not rastrillo.OpenDB + Migrations:
+	// eventlog ships a *migrate.Set now, and the raw []string this
+	// test was written against no longer exists.
+	sq1 := openWriterDB(t, "a")
+
+	w1, err := LocalWriter(ctx, sq1)
+	if err != nil {
+		t.Fatalf("LocalWriter: %v", err)
+	}
+	if w1 == "" {
+		t.Fatal("LocalWriter minted an empty identity")
+	}
+	w2, err := LocalWriter(ctx, sq1)
+	if err != nil {
+		t.Fatalf("LocalWriter (2nd): %v", err)
+	}
+	if w2 != w1 {
+		t.Fatalf("LocalWriter unstable: %q then %q", w1, w2)
+	}
+	// Usable as a writer identity directly.
+	if _, err := Open(sq1, w1); err != nil {
+		t.Fatalf("Open(LocalWriter): %v", err)
+	}
+
+	sq2 := openWriterDB(t, "b")
+	w3, err := LocalWriter(ctx, sq2)
+	if err != nil {
+		t.Fatalf("LocalWriter (db2): %v", err)
+	}
+	if w3 == w1 {
+		t.Fatalf("two databases share writer identity %q", w1)
+	}
+}
+
+// openWriterDB is openLog's first half: a migrated database handed
+// back as the writer *sql.DB, for the tests that want the handle
+// rather than a *Log.
+func openWriterDB(t *testing.T, name string) *sql.DB {
+	t.Helper()
+	d, err := db.Open(filepath.Join(t.TempDir(), name+".db"), nil)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, Schema); err != nil {
+		t.Fatalf("migrate.Apply: %v", err)
+	}
+	return d.Writer()
+}
+
+// TestMergeVectorsFileUntouched pins the vectors file byte-for-byte:
+// "Fix implementations, not vectors" — no change to this package may
+// rewrite the spec it is tested against.
+func TestMergeVectorsFileUntouched(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "merge-vectors.json"))
+	if err != nil {
+		t.Fatalf("read vectors: %v", err)
+	}
+	const want = "907bd5494d3a370e7cc40197439dbaa254525ffd973c68eadb83fa20a3ec4108"
+	if got := fmt.Sprintf("%x", sha256.Sum256(raw)); got != want {
+		t.Fatalf("merge-vectors.json changed (sha256 %s, want %s); fix implementations, not vectors", got, want)
 	}
 }

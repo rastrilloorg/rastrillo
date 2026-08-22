@@ -16,9 +16,97 @@ fingerprinted assets and the scaffolded harness on main; the other
 subsystem packages against what the family's apps had hand-rolled in
 the meantime. This list is their union. **Built:**
 
-- **`rastrillo new <name>`** — scaffolds a Go app: `go.mod`, one starter
-  action, a `main.go` wiring `rastrillo.Run`. Runs generate once so
-  `go build` works immediately.
+- **`rastrillo new [flags] <name>`** — scaffolds a Go app: `go.mod`, one
+  starter action, a `main.go` wiring `rastrillo.Run`. Runs generate once
+  so `go build` works immediately. Takes `--icons`, `--icon-delivery` and
+  `--ux` — see **Icons and UX conventions** below.
+
+- **Icons and UX conventions** — `--icons` (`lucide`, the default, or
+  `font-awesome`), `--icon-delivery` (`inline`, the default, or `cdn` or
+  `js`), and `--ux` (`considered`, the default, or `standard`). All six
+  set × delivery combinations scaffold, compile and pass `--check`.
+
+  The chosen set is written into the app as an ordinary app-owned
+  `internal/<app>/icons` package — the same terms as `tokens.css` and
+  `rastrillo.js`: delivered once, yours from then on. Its map is keyed by
+  **rastrillo's slugs whatever the set**, so `{{icon "search"}}` means the
+  same thing in every app and the shipped `ui/` partials never change when
+  the set does. The scaffold wires both seams into the generated
+  `render.go` and puts `{{iconAssets}}` in the layout's `<head>`; that
+  renders empty for the inline default, so switching delivery later needs
+  no template edit.
+
+  Those slugs are rastrillo's own vocabulary, not a vendor's, and that is
+  load-bearing rather than pedantic: five of the eleven differ from
+  Lucide's canonical names (`kebab` is Lucide's `ellipsis-vertical`, and
+  v1 renamed `check-circle`, `alert-triangle`, `x-circle` and
+  `help-circle`), so even the Lucide set carries a translation table.
+  `rastrillo.IconSlugs` is the list, and `internal/iconsets` asserts every
+  scaffoldable set covers all of it — an icon added to `icons.go` that a
+  set cannot answer would otherwise vanish the moment someone passed
+  `--icons`.
+
+  Inline vendoring stays the default and the recommendation — no build
+  step, no second origin, works offline, which is what `icons.go` has
+  always been for. `cdn` and `js` are fully supported rather than
+  discouraged: each prints its specific cost once at scaffold time,
+  records it as a comment in the generated package, and is never mentioned
+  again. The cost worth repeating is `js`'s — icons do not render at all
+  without JavaScript. Both remote modes pin exact versions with real SRI
+  hashes.
+
+  `--icons=font-awesome` means Font Awesome **Free**. Pro is a paid
+  product rastrillo cannot vendor or link on your behalf, so Pro-only
+  icons will not resolve; a Pro licensee wires their own kit through the
+  same seam, since the icons package is app-owned source. Choosing
+  `font-awesome` also writes the CC BY 4.0 attribution its licence
+  requires — that obligation is the app's, so it travels with the code.
+
+  Versions are pinned (`lucide@1.33.0`, `lucide-static@1.33.0`,
+  `@fortawesome/fontawesome-free@7.3.1`) and nothing re-pins them
+  automatically. A version changed without its hash fails as an unstyled
+  page rather than an error, so check both together with:
+
+  ```
+  go test -tags pins ./internal/iconsets/
+  ```
+
+  That verifies every pinned URL still hashes to the integrity value
+  shipped beside it — a mismatch means the bytes changed under a version
+  that is supposed to be immutable, which is serious — and separately
+  reports whether a newer release exists, which is only informational.
+  Build-tagged, so the ordinary suite and CI never depend on jsdelivr or
+  the npm registry being up: a check that fails when someone else's CDN
+  has a bad afternoon teaches people to ignore it. Run it at release.
+
+  `rastrillo generate --check` fails when a template names an icon nothing
+  answers — both `{{icon "x"}}` and the commoner form where the slug
+  reaches a partial as data (`dict "ActionIcon" "plus"`). At run time an
+  unknown slug still renders nothing rather than crashing a response; this
+  is the pre-ship gate, the same posture as the i18n catalog check. A slug
+  computed at run time cannot be checked, as with any static gate.
+
+  `--ux` seeds a UX convention profile into the app's `AGENTS.md`, which
+  carries the app's instructions and is the source of truth from then on;
+  `CLAUDE.md` is a one-line `@AGENTS.md` import so the instructions reach
+  whatever agent someone uses rather than one of them. **The profile is a
+  seed, not a live binding.** The resolved list is written once, an
+  explicit flag beats the profile's default so the file never lies about
+  what the app does, and nothing re-reads the profile name afterwards —
+  which is what makes editing a line as valid as picking a profile, and
+  what stops a rastrillo upgrade changing a shipped app's UX. Conventions
+  marked `[x]` are enforced by a vendored component; `[ ]` ones an agent
+  applies by hand, and the gap between the two is kept visible rather than
+  blurred.
+
+  The conventions in `considered` are rastrillo's own, and the profile is
+  named for what it does rather than after anyone else's work. For wider
+  reading on interface quality,
+  [impeccable.style](https://impeccable.style/), the
+  [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/) and
+  [Inclusive Components](https://inclusive-components.design/) are all
+  worth your time — offered as reading, not as anything this framework
+  endorses or claims to implement.
 - **`rastrillo generate [dir]`** — the filesystem-routing generator
   (design doc §4): walks `actions/`, emits `gen/router.go` on a Go 1.22
   `http.ServeMux`. Fails loudly on route collisions. Action files carry
@@ -173,12 +261,20 @@ the meantime. This list is their union. **Built:**
   answers 303 (the fragment's equivalent is 204 plus a
   `Rastrillo-Location` header). The registry is in-memory on purpose — a
   restart kills the goroutine, so a stored row would only persist a lie;
-  work that must survive one belongs in `eventlog`. The only JavaScript
+  work that must survive one belongs in `eventlog`. It is bounded, too:
+  an owner holds at most four running jobs (`Start` answers
+  `ErrOwnerBusy` past that), and a job still running after fifteen
+  minutes is marked failed, its context expired. The only JavaScript
   in the framework is `static/rastrillo.js`, a ~130-line app-owned shim
   `rastrillo new` writes beside `tokens.css`: it replaces an element
   carrying `data-poll` with the HTML fragment it fetches and stops when
   the new fragment stops asking, and marks a submitting `data-busy` form
-  busy. htmx remains a choice, not a dependency — `examples/notes`
+  busy. Status pages poll, or ride Server-Sent Events where the browser
+  supports them: `Events` streams at `/jobs/{id}/events` (heartbeats,
+  per-write deadlines, a bounded stream lifetime — the serve.go
+  streaming recipe), and the shim's `data-poll-push` upgrades to an
+  EventSource that falls back to plain polling on its own. htmx remains
+  a choice, not a dependency — `examples/notes`
   demonstrates the whole loop with an Export flow.
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail
@@ -200,7 +296,12 @@ the meantime. This list is their union. **Built:**
   pending half-session that only an assertion completes — the session
   it mints names both factors, `"magiclink+passkey"`). Single-use
   server-side challenges and half-sessions, subject-bound, over
-  `rastrillo/webauthn`'s ceremonies and browser module.
+  `rastrillo/webauthn`'s ceremonies and browser module. And the escape
+  hatch: ten single-use recovery codes, minted behind `RequireFresh`
+  and shown once, redeem at the gate by plain form POST — no
+  JavaScript, because a lost passkey is exactly when WebAuthn isn't
+  working — minting `"magiclink+recovery"` so the app can nudge
+  re-enrollment. Sign-in only: step-up still takes a real assertion.
 - **`rastrillo/webauthn`** — the passkey identity half, lifted from
   kass tests-and-all: ES256 only, no attestation checking, the CBOR
   subset reader, `LegacyRPID` for hostname moves, plus the `authtest`
@@ -231,15 +332,13 @@ the meantime. This list is their union. **Built:**
   `.amadan/ci` + `.amadan/ci.d/` steps delegating to it, an empty
   `manifest/` with a README, and a `CLAUDE.md` preload (§12).
 
-**Not built yet**, honestly: `WrapKey`/`UnwrapKey`/`DeriveInvite` in
-the crypto core (Eleven's invite wire is unconfirmed; guessing would
-mint a format three apps would have to migrate off); step-up auth
-(`prompt=login` — the session schema already records `auth_time` so it
-lands without a migration); the mergeable store's transport and its
-manifest wiring (edge sync is the platform's designed territory —
-`eventlog.Ingest` is the seam it will call; a `store = "mergeable"`
-manifest resource is declared vocabulary the generator does not yet
-compile); richer manifest kinds beyond text/textarea/money (Bool,
+**Not built yet**, honestly: the mergeable store's transport (edge
+sync is the platform's designed territory — `eventlog.Ingest` is the
+seam it will call, and until it lands, generated mergeable ids stay
+writer-local and every generated event's actor is `"app"`); automatic
+manifest-diff ALTER emission (generated stores emit only the initial
+`CREATE`; evolving a declared resource's schema is the app's own
+migration); richer manifest kinds beyond text/textarea/money (Bool,
 Time, Select and Blob arrive as manifest slices); and any LLM client
 (§8 leaves the provider per app).
 
@@ -399,12 +498,90 @@ runs after. This is all specific to the legacy `Options.Migrations` +
 `OpenDB` path; an app on the GORM path (`db.Open`) manages schema
 through the `migrate` package instead — see SKILL.md.
 
-`store = "mergeable"` isn't built yet (`Validate` rejects it by name) —
-every other manifest flow described above, delete included, is
-generated and shipped. `examples/blog` shows what an app adds by hand
+`store = "mergeable"` generates too (v0.16.0): the same screens over
+an `eventlog`-backed store — each record one stream, deletes appended
+as tombstones, reads derived by replaying the merged history —
+`examples/tickets`' `announcements` resource is the generated proof,
+tombstone test included. `examples/blog` shows what an app adds by hand
 to cover what a manifest doesn't generate; `examples/tickets` is the
 fully generated proof (one manifest resource, no hand actions or
 templates).
+
+## Release builds
+
+A scaffolded app's `Makefile` has two build targets, doing different jobs:
+
+- **`make build`** — the compile check. `go build ./...` with more than
+  one package matched discards its output, so this catches a broken
+  package without producing an artifact.
+- **`make release`** — what ships: `-ldflags="-s -w"`, dropping the
+  symbol table and DWARF, into `releases/<app>-<goos>-<goarch>`.
+
+`release` cross-compiles for **linux/arm64 by default**, not for your own
+machine, because that is what `carlos ship -target` defaults to. Building
+a release on an amd64 laptop and shipping it is a silent architecture
+mismatch — the upload succeeds and the binary fails to exec on the
+instance. Override for a one-off with `make release RELEASE_GOARCH=amd64`.
+The artifact is named for its architecture, and `make release` prints the
+matching `carlos ship` command.
+
+`releases/` is in the scaffolded `.gitignore`, along with the local
+SQLite database the app creates when you run it and its write-ahead log.
+
+Stripping is worth having because the compressed artifact is what gets
+transferred. Measured across this family's own apps (titogo, amadan,
+platform, slopbox, keymail, and a fresh scaffold): **23-31% off the raw
+binary, and 45-53% off it after `zstd -19`**. A fresh scaffold goes
+21.3MB → 14.7MB raw, 10.6MB → 5.1MB compressed.
+
+What survives stripping, checked rather than assumed:
+
+- **Panic traces are byte-identical**, function names and line numbers
+  included — Go's `pclntab` is not touched by these flags.
+- `debug.ReadBuildInfo()` works.
+- `go version -m` still reports module metadata.
+
+What you lose is source-level debugging with delve or gdb. Build without
+the flags when you need that.
+
+**`rastrillo dev` never strips**, deliberately: a debuggable binary is
+what the dev loop is for. `carlos` itself is built the same way — see
+`carlosframework/platform`'s own `Makefile` — so this closes a gap rather
+than setting a new policy.
+
+## Browser tests
+
+Almost everything here is covered by ordinary Go tests. One thing is not:
+`field-select`'s searchable enhancement needs a real JS engine, real
+focus and real keyboard handling, so it gets a single chromedp drive:
+
+```
+go test -tags browser ./ui/
+```
+
+Build-tagged, so a plain `go test ./...` never half-runs it and chromedp
+stays out of the ordinary build graph (`go list -deps ./...` pulls none
+of it). It finds a Chromium on `PATH`, via `RASTRILLO_CHROME`, or in a
+Playwright cache. **A skip is not a pass:** with no browser it fails,
+unless `RASTRILLO_BROWSER_OPTIONAL=1` makes the skip a deliberate,
+visible choice.
+
+It is one test on purpose. A browser drive is expensive, so that test
+drives the whole journey — render, enhance, filter, keyboard-select,
+mirror back, submit — and asserts the server received the value a user
+picked. It is loud about console errors and junk-scans the rendered text
+for `undefined`, `[object Object]` and `NaN`: the bug class that renders
+perfectly and says nothing.
+
+Its assertions are written as the bug classes they catch, and each was
+verified by breaking the script on purpose and watching the test fail —
+including the one that found a real bug during development, where the
+filter box kept the committed label so typing appended to it, matched
+nothing, and silently committed the pre-existing value.
+
+`chromedp` is pinned to v0.14.2 rather than the latest: newer releases
+require Go 1.26, and a test-only dependency should not raise the module's
+Go floor for everyone who imports rastrillo.
 
 ## Try it
 

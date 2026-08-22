@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -280,5 +282,253 @@ func TestScaffoldedAppTestsPass(t *testing.T) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("scaffolded app's tests fail:\n%s", out)
+	}
+}
+
+// The defaults are the recommendation: vendored Lucide, nothing remote.
+func TestNewDefaultsToInlineLucide(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"defapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	src, err := os.ReadFile(filepath.Join("defapp", "internal", "defapp", "icons", "icons.go"))
+	if err != nil {
+		t.Fatalf("no scaffolded icons package: %v", err)
+	}
+	got := string(src)
+	if !strings.Contains(got, "<svg") {
+		t.Error("default scaffold is not inline SVG")
+	}
+	for _, bad := range []string{"http://", "https://", "<link", "<script"} {
+		if strings.Contains(got, bad) {
+			t.Errorf("default scaffold reaches outside the page (%q)", bad)
+		}
+	}
+	if _, err := os.Stat(filepath.Join("defapp", "ICONS-LICENCE.md")); err == nil {
+		t.Error("lucide is ISC; no attribution file should be written")
+	}
+}
+
+func TestNewHonoursIconFlags(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--icons=font-awesome", "--icon-delivery=cdn", "faapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	src, err := os.ReadFile(filepath.Join("faapp", "internal", "faapp", "icons", "icons.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(src)
+	if !strings.Contains(got, "fa-magnifying-glass") {
+		t.Error("font-awesome glyphs not scaffolded")
+	}
+	if !strings.Contains(got, `"search":`) {
+		t.Error("glyph map is not keyed by the rastrillo slug")
+	}
+	if !strings.Contains(got, "integrity=") || !strings.Contains(got, `crossorigin="anonymous"`) {
+		t.Error("cdn delivery scaffolded without a usable SRI")
+	}
+}
+
+// CC BY 4.0 is not optional: choosing Font Awesome writes the attribution.
+func TestNewWritesFontAwesomeAttribution(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--icons=font-awesome", "faapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("faapp", "ICONS-LICENCE.md"))
+	if err != nil {
+		t.Fatalf("no attribution file: %v", err)
+	}
+	if !strings.Contains(string(got), "CC BY 4.0") {
+		t.Error("attribution does not name the licence")
+	}
+}
+
+// An unknown choice must fail while the working directory is still clean.
+func TestNewRejectsUnknownChoices(t *testing.T) {
+	t.Chdir(t.TempDir())
+	for _, args := range [][]string{
+		{"--icons=dingbats", "bad1"},
+		{"--icon-delivery=telepathy", "bad2"},
+		{"--ux=vibes", "bad3"},
+	} {
+		if err := runNew(args); err == nil {
+			t.Errorf("%v was accepted", args)
+		}
+		if _, err := os.Stat(args[len(args)-1]); err == nil {
+			t.Errorf("%v created a directory despite the error", args)
+		}
+	}
+}
+
+// The scaffolded package must parse — it is written into someone's repo.
+func TestScaffoldedIconsPackageParses(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--icons=font-awesome", "--icon-delivery=js", "jsapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	src, err := os.ReadFile(filepath.Join("jsapp", "internal", "jsapp", "icons", "icons.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := parser.ParseFile(token.NewFileSet(), "icons.go", src, parser.AllErrors); err != nil {
+		t.Errorf("scaffolded icons.go does not parse: %v", err)
+	}
+}
+
+// AGENTS.md carries the instructions and the conventions; CLAUDE.md
+// points at it and duplicates nothing, because two copies drift and the
+// drift is silent.
+func TestNewWritesAgentsMDWithClaudeMDPointingAtIt(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--icons=font-awesome", "conv"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	agents, err := os.ReadFile(filepath.Join("conv", "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("no AGENTS.md: %v", err)
+	}
+	a := string(agents)
+	for _, want := range []string{
+		"## UX conventions", "seeded from profile: considered",
+		"- [x] Icons — font-awesome, inline", // the flag's value, not the profile's default
+		"- [ ] ",                             // the honest gap stays visible
+		"source of truth",
+		"Rules the family holds hard", // main's own instructions survived the move
+	} {
+		if !strings.Contains(a, want) {
+			t.Errorf("AGENTS.md is missing %q", want)
+		}
+	}
+
+	claude, err := os.ReadFile(filepath.Join("conv", "CLAUDE.md"))
+	if err != nil {
+		t.Fatalf("no CLAUDE.md: %v", err)
+	}
+	c := string(claude)
+	if !strings.Contains(c, "@AGENTS.md") {
+		t.Errorf("CLAUDE.md does not import AGENTS.md:\n%s", c)
+	}
+	for _, dup := range []string{"## UX conventions", "Rules the family holds hard"} {
+		if strings.Contains(c, dup) {
+			t.Errorf("CLAUDE.md duplicates %q; AGENTS.md is the only source", dup)
+		}
+	}
+	if len(claude) >= len(agents) {
+		t.Errorf("CLAUDE.md (%d bytes) should be a pointer, not a copy of AGENTS.md (%d bytes)", len(claude), len(agents))
+	}
+}
+
+// standard is the opt-out: it still records the icon choice, because
+// that is a fact about the app, not a convention the profile chose.
+func TestStandardProfileAddsNoConventions(t *testing.T) {
+	got, err := conventionsSection("standard", "lucide", "inline")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(got)
+	if strings.Contains(s, "- [x] Fields") {
+		t.Error("standard should not opt the app into the field conventions")
+	}
+	if !strings.Contains(s, "lucide") {
+		t.Error("the resolved icon choice should still be recorded")
+	}
+}
+
+// The layout must call iconAssets, or a cdn/js choice is inert.
+func TestScaffoldedLayoutCallsIconAssets(t *testing.T) {
+	if !strings.Contains(layoutTemplate, "{{iconAssets}}") {
+		t.Error("layout.html never calls iconAssets; cdn and js delivery would render nothing")
+	}
+	if !strings.Contains(renderTemplate, `"iconAssets": icons.Assets`) {
+		t.Error("render.go does not register the iconAssets seam")
+	}
+	if !strings.Contains(renderTemplate, `"icon":       icons.Icon`) {
+		t.Error("render.go does not register the icon seam")
+	}
+}
+
+// select.js is delivered once, verbatim, on the same terms as the shim,
+// and the layout loads it.
+func TestNewScaffoldsSelectJS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"selapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("selapp", "internal", "selapp", "static", "select.js"))
+	if err != nil {
+		t.Fatalf("select.js not scaffolded: %v", err)
+	}
+	if !bytes.Equal(got, ui.SelectJS()) {
+		t.Error("scaffolded select.js is not ui.SelectJS() verbatim")
+	}
+	if !strings.Contains(layoutTemplate, `static/select.js`) {
+		t.Error("the layout never loads select.js, so the enhancement can never run")
+	}
+}
+
+// The shipped binary is stripped; the dev loop's is not. Both halves
+// matter: -s -w roughly halves the compressed artifact carlos transfers,
+// and stripping the dev build would take away the debuggability the dev
+// loop exists to provide.
+func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"relapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	mk, err := os.ReadFile(filepath.Join("relapp", "Makefile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(mk)
+
+	if !strings.Contains(got, `go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)`) {
+		t.Errorf("no stripped release build:\n%s", got)
+	}
+	// The deployment target, not the host. carlos ship defaults to
+	// -target linux-arm64; a release built for the developer's own
+	// machine uploads fine and then fails to exec on the instance.
+	if !strings.Contains(got, "RELEASE_GOOS   ?= linux") || !strings.Contains(got, "RELEASE_GOARCH ?= arm64") {
+		t.Errorf("release does not default to the platform's architecture:\n%s", got)
+	}
+	if !strings.Contains(got, "releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)") {
+		t.Errorf("release artifact is not named for its architecture:\n%s", got)
+	}
+	// The output directory has to be ignored, or every release leaves the
+	// tree dirty.
+	gi, err := os.ReadFile(filepath.Join("relapp", ".gitignore"))
+	if err != nil {
+		t.Fatalf("no scaffolded .gitignore: %v", err)
+	}
+	for _, want := range []string{"/releases/", "/relapp.db", "/relapp.db-wal"} {
+		if !strings.Contains(string(gi), want) {
+			t.Errorf(".gitignore is missing %q:\n%s", want, gi)
+		}
+	}
+	// build stays the plain compile check — it must not quietly become a
+	// release build, or a local binary someone wants to debug is stripped.
+	buildAt := strings.Index(got, "\nbuild:\n")
+	releaseAt := strings.Index(got, "\nrelease:\n")
+	if buildAt < 0 || releaseAt < 0 {
+		t.Fatalf("expected separate build and release targets:\n%s", got)
+	}
+	if strings.Contains(got[buildAt:releaseAt], "ldflags") {
+		t.Error("the compile-check target strips; that belongs to release only")
+	}
+	if !strings.Contains(got, ".PHONY: build release") {
+		t.Error("release is not declared .PHONY")
+	}
+}
+
+// rastrillo dev must never strip: the whole point of the loop is a
+// binary you can debug.
+func TestDevLoopDoesNotStrip(t *testing.T) {
+	src, err := os.ReadFile("dev.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(src), "-s -w") || strings.Contains(string(src), "ldflags") {
+		t.Error("rastrillo dev passes link flags; the dev binary must stay debuggable")
 	}
 }

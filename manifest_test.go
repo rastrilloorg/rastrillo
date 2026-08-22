@@ -37,6 +37,20 @@ func TestValidateAcceptsUserScope(t *testing.T) {
 	}
 }
 
+// TestValidateAcceptsMergeable: store = "mergeable" is real now (the
+// 2026-08-22 mergeable-manifests spec) — the vocabulary was mergeable-
+// ready from day one, and the refusal is gone.
+func TestValidateAcceptsMergeable(t *testing.T) {
+	r := validResource()
+	r.Store = Mergeable
+	if err := r.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if r.Store != Mergeable {
+		t.Fatalf("Store = %q after Validate, want %q", r.Store, Mergeable)
+	}
+}
+
 func TestValidateRejections(t *testing.T) {
 	cases := []struct {
 		name string
@@ -48,7 +62,6 @@ func TestValidateRejections(t *testing.T) {
 		{"empty route", func(r *Resource) { r.Route = "" }, "route"},
 		{"trailing slash", func(r *Resource) { r.Route = "/admin/notes/" }, "trailing"},
 		{"no leading slash", func(r *Resource) { r.Route = "admin/notes" }, "route"},
-		{"mergeable", func(r *Resource) { r.Store = Mergeable }, "not yet built"},
 		{"unknown store", func(r *Resource) { r.Store = "weird" }, "store"},
 		{"unknown kind", func(r *Resource) { r.List.Columns[0].Kind = "meter" }, "kind"},
 		{"filter not a column", func(r *Resource) { r.List.Filter = []string{"Status"} }, "filter"},

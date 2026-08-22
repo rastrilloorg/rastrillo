@@ -161,9 +161,6 @@ func (r *Resource) Validate() error {
 		}
 	}
 
-	if r.Store == Mergeable {
-		return fmt.Errorf("store: mergeable is not yet built")
-	}
 	if r.Store != Exclusive && r.Store != Mergeable {
 		return fmt.Errorf("store: unknown value %q", r.Store)
 	}

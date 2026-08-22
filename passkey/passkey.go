@@ -23,6 +23,7 @@
 //	POST /passkey/stepup/finish    <- authenticate()'s result
 //	POST /passkey/signin/begin     -> {"challenge": ...}   (Gate flow)
 //	POST /passkey/signin/finish    <- authenticate()'s result
+//	POST /passkey/signin/recovery  <- form field "code"    (Gate flow)
 //
 // — behind the app's csrf.Protect like every other mutating route.
 // A successful step-up calls sessions.SignIn, which rotates the
@@ -44,6 +45,23 @@
 // method plus "+passkey" ("magiclink+passkey", say) and AuthTime now.
 // An account with no passkey passes the Gate untouched: (false, nil),
 // and the plugin signs in exactly as it always did.
+//
+// # Recovery codes
+//
+// The Gate's escape hatch, for the account whose only passkey is lost:
+// RegenerateRecoveryCodes mints ten single-use codes (shown once, from
+// a page mounted behind sessions.RequireFresh), and SignInRecovery — a
+// plain form POST, no JavaScript, because recovery is exactly the
+// moment WebAuthn isn't working — redeems one against the pending
+// half-session where an assertion would have gone. The minted session
+// is the first-factor method plus "+recovery", a marker apps can use
+// to nudge enrolling a replacement passkey. Sign-in only, by design:
+// there is no recovery step-up, and RequireFresh stays satisfiable
+// only by an assertion or a full re-sign-in. There is deliberately no
+// attempt counter — redeeming requires a live half-session (the first
+// factor already verified) held for pendingTTL at most, and ten codes
+// at 2^-50 apiece leave brute force far below any practical odds
+// inside that window.
 package passkey
 
 import (

@@ -118,6 +118,7 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		r.Get("/exports/{id}", a.showExport)
 		r.Get("/jobs/{id}", jh.StatusPage)
 		r.Get("/jobs/{id}/fragment", jh.Fragment)
+		r.Get("/jobs/{id}/events", jh.Events)
 	})
 
 	// The fragment shim, outside Require: it is a static asset, not a

@@ -10,9 +10,21 @@
                            element with it, and keep going only if the
                            replacement element itself carries data-poll
      data-poll-every="2"   seconds between polls (default 2)
+     data-poll-push="URL"  optional, beside data-poll: open an
+                           EventSource to URL and re-fetch the fragment
+                           when the server says so, instead of on a
+                           timer. Any EventSource error downgrades this
+                           element to timer polling for good (once,
+                           no flapping); a browser without EventSource
+                           never leaves the timer path
      data-busy             on a <form>: on the way out, disable submit
                            buttons and set aria-busy="true"
      data-busy-label="…"   optional button text while busy
+
+   select.js is a sibling file following exactly these rules, kept
+   separate so this one stays small enough to read in one sitting. It
+   answers data-rst-select on a <select>, which field-select emits past
+   ten options.
 
    Every poll carries the request header Rastrillo-Fragment: 1, which
    marks the request as a shim poll so a handler can tell it apart from
@@ -40,7 +52,20 @@
   function poll(el) {
     var base = (parseFloat(el.getAttribute("data-poll-every")) || 2) * 1000;
     var wait = base;
+    var src = null; // open EventSource while pushing; null on the timer path
+    var busy = false; // a fetch is in flight
+    var queued = false; // an update landed mid-fetch; tick again after it
+    function stop() {
+      if (src) { src.close(); src = null; }
+    }
+    // One downgrade, never back: push hands this element to the timer.
+    function fallback() {
+      stop();
+      schedule();
+    }
     function tick() {
+      if (busy) { queued = true; return; }
+      busy = true;
       fetch(el.getAttribute("data-poll"), { headers: { "Rastrillo-Fragment": "1" } })
         .then(function (res) {
           // Terminal, not an error to retry: retrying a 404 forever is
@@ -56,26 +81,42 @@
           return res.text();
         })
         .then(function (html) {
-          if (html === null) return; // stopped
+          busy = false;
+          if (html === null) { stop(); return; } // stopped
           wait = base; // a healthy response resets the backoff
           var tpl = document.createElement("template");
           tpl.innerHTML = html;
           var next = tpl.content.firstElementChild;
-          if (!next) return; // fragment with no element: stop politely
+          if (!next) { stop(); return; } // fragment with no element: stop politely
           el.replaceWith(next);
           el = next;
-          if (el.hasAttribute("data-poll")) schedule();
+          if (!el.hasAttribute("data-poll")) { stop(); return; }
+          if (!src) { schedule(); return; }
+          // Pushing: a fragment that dropped data-poll-push falls back
+          // to the timer; otherwise catch up if an update was queued.
+          if (!el.hasAttribute("data-poll-push")) { fallback(); return; }
+          if (queued) { queued = false; tick(); }
         })
         .catch(function () {
+          busy = false;
           wait = Math.min(wait * 2, 30000);
-          schedule();
+          if (!src) schedule(); // pushing: the next event retries instead
         });
     }
     function schedule() { setTimeout(tick, wait); }
+    var push = el.getAttribute("data-poll-push");
+    if (push && window.EventSource) {
+      src = new EventSource(push);
+      src.addEventListener("update", function () { tick(); });
+      src.addEventListener("done", function () { stop(); tick(); });
+      src.addEventListener("gone", stop);
+      src.onerror = fallback;
+      return;
+    }
     schedule();
   }
 
-  function busy(form) {
+  function busyForm(form) {
     form.addEventListener("submit", function () {
       // Deferred a tick: disabling a submit button during the submit
       // event would drop its name/value from the submitted form data.
@@ -119,7 +160,7 @@
 
   function scan() {
     document.querySelectorAll("[data-poll]").forEach(poll);
-    document.querySelectorAll("form[data-busy]").forEach(busy);
+    document.querySelectorAll("form[data-busy]").forEach(busyForm);
   }
 
   window.addEventListener("pageshow", function (e) {

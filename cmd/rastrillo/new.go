@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/token"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/carlosframework/rastrillo/internal/iconsets"
 	"github.com/carlosframework/rastrillo/ui"
 )
 
@@ -31,12 +33,36 @@ import (
 // golden deployment target, not a requirement: Resolve/Serve speak the
 // activation contract, and `./app -addr :8080` works anywhere.
 func runNew(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("usage: rastrillo new <name>")
+	fset := flag.NewFlagSet("new", flag.ContinueOnError)
+	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
+	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
+	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
+	if err := fset.Parse(args); err != nil {
+		return err
 	}
-	name := args[0]
+	rest := fset.Args()
+	if len(rest) != 1 {
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] <name>",
+			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
+			strings.Join(profileNames(), "|"))
+	}
+	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
 		return fmt.Errorf("%s already exists", name)
+	}
+
+	// Resolve every choice before creating anything: an unknown set,
+	// delivery or profile must fail while the working directory is still
+	// clean, never halfway through a scaffold.
+	rendered, err := iconsets.Render(*iconSet, iconsets.Delivery(*iconDelivery))
+	if err != nil {
+		return err
+	}
+	// The conventions record the RESOLVED choices, not the profile's
+	// defaults: the flag wins, and the file says what actually happened.
+	conventions, err := conventionsSection(*uxProfile, *iconSet, *iconDelivery)
+	if err != nil {
+		return err
 	}
 
 	pkg := packageName(name)
@@ -48,6 +74,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg, "static"),
 		filepath.Join(name, "internal", pkg, "templates"),
 		filepath.Join(name, "internal", pkg, "migrations"),
+		filepath.Join(name, "internal", pkg, "icons"),
 		filepath.Join(name, "internal", pkg+"test"),
 		filepath.Join(name, ".amadan", "ci.d"),
 	}
@@ -66,7 +93,7 @@ func runNew(args []string) error {
 		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
 		filepath.Join(appDir, "migrations.go"):            fmt.Sprintf(migrationsTemplate, pkg),
 		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
-		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, pkg),
+		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, name, pkg),
 		filepath.Join(appDir, "templates", "layout.html"): layoutTemplate,
 		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
 		// The initial migration and the schema.sql snapshot it adds up
@@ -88,6 +115,11 @@ func runNew(args []string) error {
 		// from here on, loaded by the layout via the same fingerprinting
 		// {{asset ...}} helper.
 		filepath.Join(appDir, "static", "rastrillo.js"): string(ui.ShimJS()),
+		// field-select's searchable enhancement, on the same terms.
+		// Inert until a select opts in with data-rst-select, which
+		// field-select emits past ten options — so an app that never has
+		// a select that big can delete this and its script tag.
+		filepath.Join(appDir, "static", "select.js"): string(ui.SelectJS()),
 		// The test harness, delivered once like tokens.css: app-owned
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
@@ -95,8 +127,16 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg+"test", "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):   fmt.Sprintf(indexTestTemplate, name, pkg),
 		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                makefileTemplate,
-		filepath.Join(name, "CLAUDE.md"):                               fmt.Sprintf(claudeMDTemplate, name),
+		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name),
+		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
+		// The app's icon set, on the same terms as tokens.css and
+		// rastrillo.js: delivered once, app-owned from here on.
+		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
+		// AGENTS.md carries the instructions — it is the cross-agent
+		// file, so they reach whatever agent someone uses. CLAUDE.md is
+		// an @AGENTS.md import and nothing else.
+		filepath.Join(name, "AGENTS.md"): fmt.Sprintf(agentsMDTemplate, name) + string(conventions),
+		filepath.Join(name, "CLAUDE.md"): claudeMDPointer,
 	}
 	for path, content := range files {
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
@@ -120,14 +160,38 @@ func runNew(args []string) error {
 		}
 	}
 
+	// Some licences oblige the app, not the framework. Writing the file
+	// is the only way that obligation travels with the code.
+	if rendered.AttribName != "" {
+		if err := os.WriteFile(filepath.Join(name, rendered.AttribName), rendered.Attribution, 0o644); err != nil {
+			return err
+		}
+	}
+
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
 	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
 	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box)\n", pkg)
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + test + migration check, the one gate definition)")
+	fmt.Println("  Makefile             (make ci = vet + fmt + test + migration check, the one gate definition;")
+	fmt.Println("                        make release = the stripped binary)")
+	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
-	fmt.Println("  CLAUDE.md")
+	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
+	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
+	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
+	if rendered.AttribName != "" {
+		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, *iconSet)
+	}
+
+	// Informed consent, stated once. A supported choice that nags on
+	// every build is not really supported.
+	if rendered.Notice != "" {
+		fmt.Printf("\nnote: --icon-delivery=%s\n", *iconDelivery)
+		for _, line := range strings.Split(strings.TrimRight(rendered.Notice, "\n"), "\n") {
+			fmt.Println("  " + line)
+		}
+	}
 
 	// The scaffold ships with passing tests (the harness above), so the
 	// first suggested command is running them: the TDD loop starts from
@@ -402,7 +466,7 @@ func (a *app) index(w http.ResponseWriter, r *http.Request) {
 }
 `
 
-const renderTemplate = `package %[1]s
+const renderTemplate = `package %[2]s
 
 import (
 	"bytes"
@@ -411,6 +475,8 @@ import (
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
+
+	"%[1]s/internal/%[2]s/icons"
 )
 
 //go:embed templates static
@@ -429,7 +495,16 @@ var pages = map[string]*template.Template{}
 func init() {
 	for _, name := range []string{"index"} {
 		pages[name] = template.Must(template.New("layout").
-			Funcs(template.FuncMap{"asset": assets.Path}).
+			Funcs(template.FuncMap{
+				"asset": assets.Path,
+				// The app's own icon set (internal/%[2]s/icons), scaffolded
+				// by rastrillo new. iconAssets is whatever <head> markup the
+				// chosen delivery needs — empty for the vendored-inline
+				// default, so the layout calls it unconditionally and
+				// switching delivery later needs no template edit.
+				"icon":       icons.Icon,
+				"iconAssets": icons.Assets,
+			}).
 			ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
 	}
 }
@@ -456,6 +531,8 @@ const layoutTemplate = `{{define "layout"}}<!doctype html>
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
 <script defer src="{{asset "static/rastrillo.js"}}"></script>
+{{iconAssets}}
+<script defer src="{{asset "static/select.js"}}"></script>
 </head>
 <body>
 <main>
@@ -611,7 +688,10 @@ The vocabulary covers one flat table per resource, three field kinds,
 no relations. Add ` + "`scope = \"user\"`" + ` and every generated query is
 owner-filtered by the session subject — someone else's row answers
 404 — for resources a user owns; mount those routes behind
-` + "`sessions.Require`" + `. Relations or a custom flow: hand-write it.
+` + "`sessions.Require`" + `. Add ` + "`store = \"mergeable\"`" + ` and the resource lives as
+event-log streams (tombstone deletes, derive-on-read) instead of a
+sqlc table — it needs no sqlc tool. Relations or a custom flow:
+hand-write it.
 
 Adding the first manifest to this app:
 
@@ -642,10 +722,43 @@ path under actions/ — the generator skips that one from then on.
 
 // makefileTemplate is the one gate definition: CI steps exec these
 // targets, never their own copies of the commands (amadan's own rule).
-const makefileTemplate = `.PHONY: build test vet fmt-check migration-check ci
+const makefileTemplate = `APP := %[1]s
 
+# What ` + "`carlos ship -target`" + ` defaults to, and therefore what a release
+# must be built for. Building for your own machine and shipping that is a
+# silent architecture mismatch: the binary uploads fine and fails to exec
+# on the instance. Override for a one-off:
+#   make release RELEASE_GOARCH=amd64
+RELEASE_GOOS   ?= linux
+RELEASE_GOARCH ?= arm64
+RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
+
+.PHONY: build release test vet fmt-check migration-check ci
+
+# build is the compile check: with more than one package matched, go
+# build discards the output, so this catches a broken package without
+# producing an artifact.
 build:
 	CGO_ENABLED=0 go build ./...
+
+# release is what ships. -s -w drops the symbol table and DWARF, which on
+# this family's apps is 23-31%% off the binary and 45-53%% off the
+# compressed artifact — and compressed size is what actually gets
+# transferred. carlos is built the same way (see platform's Makefile).
+#
+# What survives: panic traces keep their function names AND line numbers
+# (Go's pclntab is untouched by these flags), debug.ReadBuildInfo works,
+# and go version -m still reports module metadata. What you lose is
+# source-level debugging with delve or gdb — build without the flags for
+# that. rastrillo dev never strips, for the same reason.
+release:
+	@mkdir -p releases
+	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
+		go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)
+	@echo
+	@echo "built $(RELEASE_BIN)"
+	@echo "ship it with:"
+	@echo "  carlos ship -app $(APP) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
 
 test:
 	go test ./...
@@ -678,6 +791,16 @@ migration-check:
 ci: vet fmt-check test migration-check
 `
 
+const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
+/releases/
+
+# The local SQLite database the app creates when you run it, and its
+# write-ahead log. Real data lives on the platform, never in the repo.
+/%[1]s.db
+/%[1]s.db-wal
+/%[1]s.db-shm
+`
+
 const amadanCI = `#!/bin/sh
 # amadan CI entry (single-script fallback for runners without step
 # support). The steps in ci.d/ are the same targets, reported one by
@@ -692,7 +815,7 @@ func amadanStep(target string) string {
 	return "#!/bin/sh\nexec make " + target + "\n"
 }
 
-const claudeMDTemplate = `# %s
+const agentsMDTemplate = `# %s
 
 A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. Read the
 framework's own SKILL.md (repo root, or in the module cache) before

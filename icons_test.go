@@ -101,3 +101,23 @@ func TestIconWorksAsTemplateFunc(t *testing.T) {
 		t.Errorf("rendered template output missing expected icon markup: %s", got)
 	}
 }
+
+// IconSlugs must describe the map exactly: it is what internal/iconsets
+// checks every scaffoldable set against, so a slug missing here is a set
+// that silently stops covering the framework's own vocabulary.
+func TestIconSlugsMatchesTheMap(t *testing.T) {
+	got := IconSlugs()
+	if len(got) != len(icons) {
+		t.Fatalf("IconSlugs() has %d entries, the map has %d", len(got), len(icons))
+	}
+	for _, slug := range got {
+		if Icon(slug) == "" {
+			t.Errorf("IconSlugs() lists %q, which Icon does not answer", slug)
+		}
+	}
+	for i := 1; i < len(got); i++ {
+		if got[i-1] >= got[i] {
+			t.Errorf("IconSlugs() is not sorted: %q before %q", got[i-1], got[i])
+		}
+	}
+}

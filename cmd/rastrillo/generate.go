@@ -148,7 +148,28 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d write tool(s) without consent sentences", len(unconfirmed))
 		}
 
-		fmt.Printf("rastrillo generate --check: %d route(s), %d tool(s), actions tagged, locale catalogs complete\n", len(actions), len(tools))
+		// A template naming an icon nothing answers renders a hole in the
+		// page. At run time that is deliberate — a typo must cost a
+		// missing icon, not a crashed response — so this is where it gets
+		// to be loud, the same posture as the catalog check above.
+		unknownIcons, err := generate.UnknownIconSlugs(dir)
+		if err != nil {
+			return fmt.Errorf("icon slug check: %w", err)
+		}
+		if len(unknownIcons) > 0 {
+			fmt.Fprintln(os.Stderr, "rastrillo generate: templates name icons nothing answers —")
+			for _, ref := range unknownIcons {
+				// Just the slug: it may have been written as {{icon "x"}}
+				// or passed to a partial as "ActionIcon" "x", and quoting
+				// back a form that is not on that line reads as a lie.
+				fmt.Fprintf(os.Stderr, "  %s:%d  %q\n", ref.File, ref.Line, ref.Slug)
+			}
+			fmt.Fprintln(os.Stderr, "add the slug to the app's icons package, or fix the spelling")
+			fmt.Fprintln(os.Stderr, "(at run time an unknown slug renders nothing on purpose; this is the pre-ship gate)")
+			return fmt.Errorf("%d unknown icon slug(s)", len(unknownIcons))
+		}
+
+		fmt.Printf("rastrillo generate --check: %d route(s), %d tool(s), actions tagged, locale catalogs complete, icon slugs resolve\n", len(actions), len(tools))
 		return nil
 	}
 

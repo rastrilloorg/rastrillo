@@ -93,7 +93,10 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, runSqlc bo
 	}
 	written = append(written, storePaths...)
 
-	if runSqlc {
+	// RunSqlc runs only when at least one exclusive resource exists: a
+	// module of only-mergeable resources has no sqlc.yaml (EmitStore
+	// skips it) and needs no sqlc tool at all.
+	if runSqlc && hasExclusiveStore(rs) {
 		if err := RunSqlc(moduleRoot); err != nil {
 			return nil, err
 		}
@@ -138,6 +141,18 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, runSqlc bo
 		filepath.Join(genDir, "locales", "locales.go"))
 
 	return written, nil
+}
+
+// hasExclusiveStore reports whether any resource uses the exclusive
+// (sqlc) store — the only case sqlc.yaml exists and RunSqlc has
+// anything to do.
+func hasExclusiveStore(rs []rastrillo.Resource) bool {
+	for _, r := range rs {
+		if r.Store != rastrillo.Mergeable {
+			return true
+		}
+	}
+	return false
 }
 
 // manifestRoute is one resource action spec's computed identity: the

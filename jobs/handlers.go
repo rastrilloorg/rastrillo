@@ -3,6 +3,7 @@ package jobs
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/carlosframework/rastrillo/sessions"
 )
@@ -26,13 +27,25 @@ type Config struct {
 // endpoint for this job; templates put it in data-poll. PollSeconds
 // feeds data-poll-every and the noscript meta — emit that meta only
 // while Job.Status is Running, or a failed page refreshes forever.
+// EventsPath is the SSE endpoint (Events); a template that puts it in
+// data-poll-push upgrades a supporting browser from timer polling to
+// server push, and apps that ignore it get today's polling exactly.
 type PageData struct {
 	Job          Job
 	FragmentPath string
+	EventsPath   string
 	PollSeconds  int
 }
 
-type Handlers struct{ cfg Config }
+// Handlers' tick, ttl and heartbeat mirror jobs.Jobs's now/timeout
+// test-injection seam: the stream constants, shortened by tests so a
+// stream's whole life fits inside a test's deadline.
+type Handlers struct {
+	cfg       Config
+	tick      time.Duration // streamTick
+	ttl       time.Duration // streamTTL
+	heartbeat time.Duration // streamHeartbeat
+}
 
 func NewHandlers(cfg Config) (*Handlers, error) {
 	if cfg.Jobs == nil {
@@ -44,7 +57,7 @@ func NewHandlers(cfg Config) (*Handlers, error) {
 	if cfg.RenderFragment == nil {
 		return nil, errors.New("jobs: Config.RenderFragment is required")
 	}
-	return &Handlers{cfg: cfg}, nil
+	return &Handlers{cfg: cfg, tick: streamTick, ttl: streamTTL, heartbeat: streamHeartbeat}, nil
 }
 
 // lookup resolves the request's job or writes the refusal itself. The
@@ -99,5 +112,10 @@ func (h *Handlers) Fragment(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageData(job Job) PageData {
-	return PageData{Job: job, FragmentPath: "/jobs/" + job.ID + "/fragment", PollSeconds: pollSeconds}
+	return PageData{
+		Job:          job,
+		FragmentPath: "/jobs/" + job.ID + "/fragment",
+		EventsPath:   "/jobs/" + job.ID + "/events",
+		PollSeconds:  pollSeconds,
+	}
 }

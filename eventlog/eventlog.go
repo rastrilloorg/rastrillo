@@ -30,12 +30,15 @@ package eventlog
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/carlosframework/rastrillo/migrate"
@@ -138,10 +141,66 @@ func (l *Log) Append(ctx context.Context, stream, kind, actor string, payload an
 // Events returns a stream's full merged history in the deterministic
 // merge order (or Log.Order when set).
 func (l *Log) Events(ctx context.Context, stream string) ([]Event, error) {
-	rows, err := l.db.QueryContext(ctx,
+	out, err := l.queryEvents(ctx,
 		`SELECT stream, writer, seq, lamport, ts, actor, kind, payload
 		 FROM eventlog WHERE stream = ?
 		 ORDER BY lamport, ts, writer, seq`, stream)
+	if err != nil {
+		return nil, err
+	}
+	if l.Order != nil {
+		slices.SortStableFunc(out, l.Order)
+	}
+	return out, nil
+}
+
+// EventsByPrefix returns every event whose stream name has the given
+// prefix — the read a mergeable store's list screens need, since only
+// this package owns the table. Events come back in the same total
+// order Events uses ((lamport, ts, writer, seq) across the whole
+// result); a set Log.Order is applied per stream group, matching
+// Events' own per-stream semantics — one stream's events reorder among
+// themselves, never across streams. The prefix matches literally:
+// LIKE's metacharacters (%, _) are escaped, so "a_b/" never matches
+// "axb/…", and "bookmarks/" never matches "bookmarksarchive/…".
+func (l *Log) EventsByPrefix(ctx context.Context, prefix string) ([]Event, error) {
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(prefix)
+	out, err := l.queryEvents(ctx,
+		`SELECT stream, writer, seq, lamport, ts, actor, kind, payload
+		 FROM eventlog WHERE stream LIKE ? ESCAPE '\'
+		 ORDER BY lamport, ts, writer, seq`, escaped+"%")
+	if err != nil {
+		return nil, err
+	}
+	if l.Order != nil {
+		// Stable-sort each stream's events in place: collect every
+		// stream's positions in the merged result, order that stream's
+		// events by the comparator, and write them back into the same
+		// positions — cross-stream interleaving is untouched, so the
+		// comparator is never asked to order two different streams.
+		positions := map[string][]int{}
+		for i, ev := range out {
+			positions[ev.Stream] = append(positions[ev.Stream], i)
+		}
+		for _, idxs := range positions {
+			group := make([]Event, len(idxs))
+			for i, idx := range idxs {
+				group[i] = out[idx]
+			}
+			slices.SortStableFunc(group, l.Order)
+			for i, idx := range idxs {
+				out[idx] = group[i]
+			}
+		}
+	}
+	return out, nil
+}
+
+// queryEvents runs one SELECT over the eventlog table and scans the
+// rows into Events — the shared read path under Events and
+// EventsByPrefix.
+func (l *Log) queryEvents(ctx context.Context, query string, args ...any) ([]Event, error) {
+	rows, err := l.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,10 +223,42 @@ func (l *Log) Events(ctx context.Context, stream string) ([]Event, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if l.Order != nil {
-		slices.SortStableFunc(out, l.Order)
-	}
 	return out, nil
+}
+
+// LocalWriter returns this database's durable writer identity, minting
+// and persisting one (16 random bytes, base64url) on first use — the
+// per-instance identity every mergeable store binds its appends to. A
+// hardcoded writer would poison history the first time two edges
+// merge; this one is stable for the database's whole life. Safe under
+// the single-writer SQLite pool both db paths enforce; a concurrent
+// mint from another connection loses the INSERT and reads back the
+// winner's identity.
+func LocalWriter(ctx context.Context, db *sql.DB) (string, error) {
+	var writer string
+	err := db.QueryRowContext(ctx, `SELECT writer FROM eventlog_writer WHERE id = 1`).Scan(&writer)
+	if err == nil {
+		return writer, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return "", fmt.Errorf("rastrillo/eventlog: read writer identity: %w", err)
+	}
+
+	var raw [16]byte
+	if _, err := rand.Read(raw[:]); err != nil {
+		return "", fmt.Errorf("rastrillo/eventlog: mint writer identity: %w", err)
+	}
+	minted := base64.RawURLEncoding.EncodeToString(raw[:])
+	if _, err := db.ExecContext(ctx,
+		`INSERT OR IGNORE INTO eventlog_writer (id, writer) VALUES (1, ?)`, minted); err != nil {
+		return "", fmt.Errorf("rastrillo/eventlog: persist writer identity: %w", err)
+	}
+	// Read back rather than returning minted: if another connection won
+	// the INSERT, its identity is the durable one.
+	if err := db.QueryRowContext(ctx, `SELECT writer FROM eventlog_writer WHERE id = 1`).Scan(&writer); err != nil {
+		return "", fmt.Errorf("rastrillo/eventlog: reread writer identity: %w", err)
+	}
+	return writer, nil
 }
 
 // ErrDiverged means Ingest met an event claiming a (stream, writer, seq)

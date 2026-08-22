@@ -65,15 +65,17 @@ func TestListWithNoItemsIsEmptyNotNil(t *testing.T) {
 	}
 }
 
-func TestFuncsRegistersDictListIconAndT(t *testing.T) {
+func TestFuncsRegistersDictListIconIconAssetsAndT(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "icon", "T"} {
+	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
-	if len(f) != 4 {
-		t.Errorf("Funcs() has %d entries, want exactly 4", len(f))
+	// Exactly these: an accidental extra is a helper the shipped partials
+	// do not document and an app cannot rely on.
+	if len(f) != 5 {
+		t.Errorf("Funcs() has %d entries, want exactly 5", len(f))
 	}
 }
 
@@ -132,13 +134,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyT(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "icon", "T"} {
+	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 4 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 4", len(f))
+	if len(f) != 5 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 5", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {
@@ -175,5 +177,92 @@ func TestDictErrorSurfacesAtExecute(t *testing.T) {
 	var buf strings.Builder
 	if err := tmpl.Execute(&buf, nil); err == nil {
 		t.Fatal("Execute returned no error for an odd-argument dict call")
+	}
+}
+
+// The seam exists even with no options, so a layout can call
+// {{iconAssets}} unconditionally and switching delivery later needs no
+// template change.
+func TestFuncsAlwaysRegistersIconAssets(t *testing.T) {
+	fn, ok := Funcs()["iconAssets"].(func() template.HTML)
+	if !ok {
+		t.Fatalf("iconAssets is %T, want func() template.HTML", Funcs()["iconAssets"])
+	}
+	if got := fn(); got != "" {
+		t.Errorf("default iconAssets() = %q, want empty (inline needs no head markup)", got)
+	}
+}
+
+func TestWithIconsOverridesBothSeams(t *testing.T) {
+	myIcon := func(slug string) template.HTML { return template.HTML(`<i data-slug="` + slug + `"></i>`) }
+	myAssets := func() template.HTML { return `<link rel="stylesheet" href="/x.css">` }
+	fm := Funcs(WithIcons(myIcon, myAssets))
+
+	if got := fm["icon"].(func(string) template.HTML)("plus"); !strings.Contains(string(got), `data-slug="plus"`) {
+		t.Errorf("icon seam not overridden: %s", got)
+	}
+	if got := fm["iconAssets"].(func() template.HTML)(); !strings.Contains(string(got), "/x.css") {
+		t.Errorf("iconAssets seam not overridden: %s", got)
+	}
+}
+
+// The point of the seam: shipped partials resolve through the app's own
+// icon package without any partial changing.
+func TestPartialsRenderThroughOverriddenIcons(t *testing.T) {
+	myIcon := func(slug string) template.HTML { return template.HTML(`<i data-slug="` + slug + `"></i>`) }
+	tmpl, err := template.New("").
+		Funcs(Funcs(WithIcons(myIcon, nil))).
+		ParseFS(Templates(), "*.html")
+	if err != nil {
+		t.Fatalf("ParseFS: %v", err)
+	}
+	var buf strings.Builder
+	if err := tmpl.ExecuteTemplate(&buf, "list-bar-search", map[string]any{"Action": "/posts"}); err != nil {
+		t.Fatalf("ExecuteTemplate: %v", err)
+	}
+	if !strings.Contains(buf.String(), `data-slug="search"`) {
+		t.Errorf("partial did not resolve through the overridden icon func: %s", buf.String())
+	}
+}
+
+// A nil for either seam leaves the framework default, rather than
+// installing a nil func that panics at render time.
+func TestWithIconsToleratesNil(t *testing.T) {
+	fm := Funcs(WithIcons(nil, nil))
+	if got := fm["icon"].(func(string) template.HTML)("check"); !strings.Contains(string(got), "<svg") {
+		t.Error("nil icon func should leave the framework default in place")
+	}
+	if got := fm["iconAssets"].(func() template.HTML)(); got != "" {
+		t.Errorf("nil assets func should leave the empty default, got %q", got)
+	}
+}
+
+// Both seams compose in one call — the form an app with its own icons
+// AND its own catalog must use on the per-request rebind.
+func TestOptionsCompose(t *testing.T) {
+	myIcon := func(slug string) template.HTML { return template.HTML("<i></i>") }
+	fm := Funcs(WithT(func(key string, _ ...any) string { return "translated:" + key }),
+		WithIcons(myIcon, nil))
+	if got := fm["T"].(func(string, ...any) string)("k"); got != "translated:k" {
+		t.Errorf("T not applied alongside WithIcons: %q", got)
+	}
+	if got := fm["icon"].(func(string) template.HTML)("check"); string(got) != "<i></i>" {
+		t.Errorf("WithIcons not applied alongside WithT: %s", got)
+	}
+}
+
+// The documented trap, pinned so it cannot regress into a surprise:
+// FuncsWith rebinds icon back to the framework default. An app with its
+// own icons must pass both options rather than reach for FuncsWith.
+func TestFuncsWithResetsTheIconSeam(t *testing.T) {
+	myIcon := func(slug string) template.HTML { return template.HTML("<i></i>") }
+	custom := Funcs(WithIcons(myIcon, nil))
+	if string(custom["icon"].(func(string) template.HTML)("check")) != "<i></i>" {
+		t.Fatal("precondition: WithIcons did not take effect")
+	}
+
+	reverted := FuncsWith(func(key string, _ ...any) string { return key })
+	if !strings.Contains(string(reverted["icon"].(func(string) template.HTML)("check")), "<svg") {
+		t.Error("FuncsWith no longer resets icon to the framework default; update its doc comment, which warns that it does")
 	}
 }

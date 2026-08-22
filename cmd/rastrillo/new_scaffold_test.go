@@ -54,11 +54,18 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	if !strings.Contains(string(step), "exec make vet") {
 		t.Fatalf("steps must exec Makefile targets, never their own commands:\n%s", step)
 	}
-	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
+	// The preload lives in AGENTS.md — the cross-agent file, so it reaches
+	// whatever agent someone uses. CLAUDE.md is an @AGENTS.md import and
+	// nothing else: two copies of this would drift, silently.
+	agents, _ := os.ReadFile(filepath.Join("demoapp", "AGENTS.md"))
 	for _, want := range []string{"integer cents", "scope.Owned", "SKILL.md", "CGO_ENABLED=0"} {
-		if !strings.Contains(string(claude), want) {
-			t.Fatalf("CLAUDE.md preload missing %q:\n%s", want, claude)
+		if !strings.Contains(string(agents), want) {
+			t.Fatalf("AGENTS.md preload missing %q:\n%s", want, agents)
 		}
+	}
+	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
+	if !strings.Contains(string(claude), "@AGENTS.md") {
+		t.Fatalf("CLAUDE.md must import AGENTS.md:\n%s", claude)
 	}
 }
 
@@ -192,16 +199,21 @@ func TestNewScaffoldsMakefileMigrationCheck(t *testing.T) {
 	}
 }
 
-// CLAUDE.md must teach the schema-change rules an app author needs:
-// edit models.go, regenerate, never touch a shipped migration, and
-// hand-write renames since a rename is indistinguishable from a drop
-// plus an add.
-func TestNewScaffoldsClaudeMDMigrationRules(t *testing.T) {
+// The scaffold's agent instructions must teach the schema-change rules
+// an app author needs: edit models.go, regenerate, never touch a
+// shipped migration, and hand-write renames since a rename is
+// indistinguishable from a drop plus an add.
+//
+// They live in AGENTS.md, not CLAUDE.md: main moved the instructions to
+// the cross-agent file and left CLAUDE.md an @AGENTS.md import with
+// nothing duplicated in it. Assert on the file that carries them, or
+// this passes on a pointer.
+func TestNewScaffoldsAgentsMDMigrationRules(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	c, err := os.ReadFile(filepath.Join("blogapp", "CLAUDE.md"))
+	c, err := os.ReadFile(filepath.Join("blogapp", "AGENTS.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +223,7 @@ func TestNewScaffoldsClaudeMDMigrationRules(t *testing.T) {
 		"rename",
 	} {
 		if !strings.Contains(string(c), want) {
-			t.Errorf("CLAUDE.md missing %q:\n%s", want, c)
+			t.Errorf("AGENTS.md missing %q:\n%s", want, c)
 		}
 	}
 }

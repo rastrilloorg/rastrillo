@@ -41,19 +41,23 @@ func get(h http.HandlerFunc, id, subject string) *httptest.ResponseRecorder {
 	return w
 }
 
-func startBlocked(j *Jobs, owner, location string) (Job, chan struct{}) {
+func startBlocked(t *testing.T, j *Jobs, owner, location string) (Job, chan struct{}) {
+	t.Helper()
 	release := make(chan struct{})
-	job := j.Start(owner, "Export notes", location, func(ctx context.Context, progress func(string)) error {
+	job, err := j.Start(owner, "Export notes", location, func(ctx context.Context, progress func(string)) error {
 		<-release
 		return nil
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	return job, release
 }
 
 func TestStatusPageRunning(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "/exports/x1")
+	job, release := startBlocked(t, j, "alice", "/exports/x1")
 	defer close(release)
 
 	w := get(h.StatusPage, job.ID, "alice")
@@ -72,7 +76,7 @@ func TestStatusPageRunning(t *testing.T) {
 func TestStatusPageDoneRedirects(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "/exports/x1")
+	job, release := startBlocked(t, j, "alice", "/exports/x1")
 	close(release)
 	wait(t, j, job.ID, "alice")
 
@@ -88,7 +92,7 @@ func TestStatusPageDoneRedirects(t *testing.T) {
 func TestStatusPageDoneWithoutLocationRenders(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "")
+	job, release := startBlocked(t, j, "alice", "")
 	close(release)
 	wait(t, j, job.ID, "alice")
 
@@ -105,9 +109,12 @@ func TestStatusPageDoneWithoutLocationRenders(t *testing.T) {
 func TestStatusPageFailedRenders(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job := j.Start("alice", "Export notes", "", func(ctx context.Context, progress func(string)) error {
+	job, err := j.Start("alice", "Export notes", "", func(ctx context.Context, progress func(string)) error {
 		return errors.New("export failed")
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	wait(t, j, job.ID, "alice")
 
 	w := get(h.StatusPage, job.ID, "alice")
@@ -123,7 +130,7 @@ func TestStatusPageFailedRenders(t *testing.T) {
 func TestFragmentRunning(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "/exports/x1")
+	job, release := startBlocked(t, j, "alice", "/exports/x1")
 	defer close(release)
 
 	w := get(h.Fragment, job.ID, "alice")
@@ -139,7 +146,7 @@ func TestFragmentRunning(t *testing.T) {
 func TestFragmentDoneSetsRastrilloLocation(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "/exports/x1")
+	job, release := startBlocked(t, j, "alice", "/exports/x1")
 	close(release)
 	wait(t, j, job.ID, "alice")
 
@@ -158,7 +165,7 @@ func TestFragmentDoneSetsRastrilloLocation(t *testing.T) {
 func TestForeignJobIs404(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "/exports/x1")
+	job, release := startBlocked(t, j, "alice", "/exports/x1")
 	defer close(release)
 
 	// Alice's job fetched with subject "bob"
@@ -184,7 +191,7 @@ func TestForeignJobIs404(t *testing.T) {
 func TestSignedOutIs403(t *testing.T) {
 	j := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	h := testHandlers(t, j)
-	job, release := startBlocked(j, "alice", "/exports/x1")
+	job, release := startBlocked(t, j, "alice", "/exports/x1")
 	defer close(release)
 
 	// StatusPage without session

@@ -12,3 +12,8 @@ CREATE TABLE IF NOT EXISTS eventlog (
 
 CREATE INDEX IF NOT EXISTS eventlog_merge_order
   ON eventlog (stream, lamport, ts, writer, seq);
+
+CREATE TABLE IF NOT EXISTS eventlog_writer (
+  id     INTEGER PRIMARY KEY CHECK (id = 1),
+  writer TEXT    NOT NULL
+);
