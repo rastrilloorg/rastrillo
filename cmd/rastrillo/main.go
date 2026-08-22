@@ -23,6 +23,8 @@ func main() {
 		err = runGenerate(os.Args[2:])
 	case "dev":
 		err = runDev(os.Args[2:])
+	case "migration":
+		err = runMigration(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -45,5 +47,8 @@ Usage:
   rastrillo generate [flags] [dir]              run the filesystem-routing generator (flags before dir; default dir: .)
        --check --default-locale <code>          verify only: route collisions, action build tags, i18n catalogs
   rastrillo dev [dir] [-- app args]             watch + regenerate + rebuild + restart (default dir: .)
+  rastrillo migration <cmd> [dir]                schema changes (generate, new, status, check, baseline)
+       generate [--allow-destructive]            diff models against migrations, write the delta
+       check                                     CI gate: models and migrations agree (no database)
 `)
 }
