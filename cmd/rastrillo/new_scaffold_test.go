@@ -50,10 +50,17 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	if !strings.Contains(string(step), "exec make vet") {
 		t.Fatalf("steps must exec Makefile targets, never their own commands:\n%s", step)
 	}
-	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
+	// The preload lives in AGENTS.md — the cross-agent file, so it reaches
+	// whatever agent someone uses. CLAUDE.md is an @AGENTS.md import and
+	// nothing else: two copies of this would drift, silently.
+	agents, _ := os.ReadFile(filepath.Join("demoapp", "AGENTS.md"))
 	for _, want := range []string{"integer cents", "scope.Owned", "SKILL.md", "CGO_ENABLED=0"} {
-		if !strings.Contains(string(claude), want) {
-			t.Fatalf("CLAUDE.md preload missing %q:\n%s", want, claude)
+		if !strings.Contains(string(agents), want) {
+			t.Fatalf("AGENTS.md preload missing %q:\n%s", want, agents)
 		}
+	}
+	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
+	if !strings.Contains(string(claude), "@AGENTS.md") {
+		t.Fatalf("CLAUDE.md must import AGENTS.md:\n%s", claude)
 	}
 }

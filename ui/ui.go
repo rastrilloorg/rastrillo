@@ -19,6 +19,7 @@
 //
 // {{iconAssets}} goes in the layout's <head>. It renders empty for the
 // vendored-inline default, so it is safe to call unconditionally.
+//
 //	tmpl = template.Must(tmpl.ParseFS(appTemplateFS, "templates/*.html"))
 //
 // The partial set spans list screens plus the display, form and route
