@@ -18,12 +18,13 @@
 // is pkcs8 bytes (Uint8Array) or a JWK object — the ECDH-only import
 // the app already holds.
 
-import { derive, sealSym, openSym, seal, open } from "./crypto.mjs";
+import { derive, sealSym, openSym, seal, open, newKey } from "./crypto.mjs";
 
 // newSeed mints a fresh 32-byte seed — the one per-person root every
-// content key derives from.
+// content key derives from. It rides crypto.mjs's newKey, as the Go
+// side rides crypto.NewKey: one primitive per side, no copies.
 export function newSeed() {
-  return crypto.getRandomValues(new Uint8Array(32));
+  return newKey();
 }
 
 // ring namespaces every keyring operation for one app; every context
