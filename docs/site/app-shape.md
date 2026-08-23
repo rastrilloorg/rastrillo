@@ -46,32 +46,29 @@ if err := rastrillo.Serve(opts); err != nil {
 }
 ```
 
-### Resolve and Serve, not Run
+Two lines there are easy to miss: set `opts.Mux` after `App` returns,
+and blank `opts.DBPath` so `Serve` does not open the database file a
+second time.
 
-`rastrillo.Run` exists and is the right call for an app that lets the
-framework own the database. **When your app opens its own database, use
-`Resolve` and `Serve` instead.**
+### Use Resolve and Serve, not Run
 
-`Run` re-parses argv and repopulates `Options.DBPath`, so `Serve` would
-open a second connection to the file `db.Open` already owns. `Resolve`
-performs exactly the same activation-argv and `$STATE_DIRECTORY`
-resolution without the serving, and hands you the resolved options.
+`rastrillo.Run` is the right call when you let the framework own the
+database. Your scaffolded app does not — it calls `db.Open` itself — so
+it uses `Resolve` and `Serve` instead.
 
-Note the two lines that matter after `App` returns: set `opts.Mux`, and
-blank `opts.DBPath` so `Serve` does not open the file again.
+The reason is small and annoying. `Run` re-parses argv and repopulates
+`Options.DBPath`, so `Serve` would open a second connection to the file
+`db.Open` already owns. `Resolve` does the same activation-argv and
+`$STATE_DIRECTORY` work without the serving, and hands you the resolved
+options.
 
-### What Resolve and Serve give you
+### What you get from Resolve and Serve
 
-The platform contract, in full, and none of it is yours to hand-roll:
-
-- activation argv in both shapes the platform uses — `-socket`/`-addr`/`-db`
-  flags for an agent exec child, a bare `serve` subcommand for a unit tenant
-- `LISTEN_FDS` socket activation
-- `$STATE_DIRECTORY` resolution for a relative database path
-- `GET /healthz` and `GET /api/version`
-- the SIGTERM drain
-- baseline security headers — CSP and the rest, framework-owned and
-  outermost, with your own `Set` winning
+The whole platform contract, and you should never hand-roll any of it:
+activation argv in both shapes the platform uses, `LISTEN_FDS` socket
+activation, `$STATE_DIRECTORY` resolution for a relative database path,
+`GET /healthz` and `GET /api/version`, the SIGTERM drain, and baseline
+security headers with your own `Set` winning.
 
 [Deploying](/docs/deploying) covers what the platform does with all of
 that.
@@ -120,18 +117,16 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 }
 ```
 
-Four things about that order:
+The order matters in a few places. `migrate.Apply` runs before anything
+reads a table — [Migrations](/docs/migrations) explains `BootSchema`.
+`csrf.Protect(origin)` goes on app-wide, above the route groups, so a
+route you add in six months is protected without you remembering
+anything. Signed-in routes live in a `chi.Group` with `sess.Require`,
+while sign-in and sign-up sit outside it, since a signed-out visitor has
+to be able to reach them.
 
-1. **`migrate.Apply` first**, before anything reads a table.
-   [Migrations](/docs/migrations) explains `BootSchema`.
-2. **`csrf.Protect(origin)` is mounted app-wide**, above the route
-   groups, so a route added later is protected by default rather than by
-   remembering. [Sessions](/docs/sessions) covers what it checks.
-3. **Signed-in routes live in a `chi.Group` with `sess.Require`.** Sign-in
-   and sign-up sit outside it, because a signed-out visitor has to reach
-   them.
-4. `App` returns a `*http.ServeMux` wrapping the chi router, which is
-   what `main.go` hands to `Serve` as `opts.Mux`.
+`App` returns the `*http.ServeMux` that `main.go` hands to `Serve` as
+`opts.Mux`.
 
 ## handlers.go
 
@@ -146,28 +141,28 @@ func (a *app) owned(r *http.Request) *gorm.DB {
 }
 ```
 
-That `owned(r)` seam is the single most important line in the app.
+That `owned(r)` method is the most important line in the app.
 [Scoping](/docs/scoping) explains what goes wrong without it, and the
-one case where dropping the `ok` is a bug.
+one identity plugin where dropping the `ok` is a bug.
 
 ## render.go
 
-One `*template.Template` per page — layout plus that page — rather than
-one tree containing everything. Two pages can then both define
-`"content"`, which they otherwise could not.
+Parse one `*template.Template` per page — layout plus that page —
+instead of one tree containing everything. Two pages can then both
+define `"content"`, which they otherwise could not.
 
-The render helper is also where `flash.Take(w, r)` is called, once per
-page, so the layout can render a notice. [Templates](/docs/templates)
-covers the component vocabulary available inside them.
+This is also where `flash.Take(w, r)` gets called, once per page, so the
+layout can render a notice. [Templates](/docs/templates) covers what is
+available inside them.
 
 ## Before you call it done
 
-1. Every handler on an owned model goes through the `owned(r)` seam.
+1. Every handler on an owned model goes through the `owned(r)` method.
 2. Every update names its columns in `.Select(...)`.
 3. `csrf.Protect(origin)` is mounted app-wide, above the route groups.
 4. Signed-in routes, jobs' included, are in a group with `sess.Require`.
 5. One `migrate.Apply` runs at boot, and `make ci` runs
    `rastrillo migration check`.
-6. `opts.DBPath` is blanked before `Serve` when the app opened its own
+6. `opts.DBPath` is blanked before `Serve` when your app opened its own
    handle.
 7. Not-found and not-yours both answer 404.

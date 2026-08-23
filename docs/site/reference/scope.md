@@ -2,15 +2,15 @@
 
 `github.com/carlosframework/rastrillo/scope`
 
-Owner-filtered GORM scopes. The package is two functions, and that is
-the whole of it: it exists to make one discipline the short path, so
-that every query on a model somebody owns carries its owner in the SQL
-and a handler cannot accidentally read or write another user's row.
+Owner-filtered GORM scopes. Two functions, and that is the whole
+package. It exists to make one discipline the short path, so every query
+on a model somebody owns carries its owner in the SQL and a handler
+cannot read or write another user's row by accident.
 
-Scoping separates *users* within one instance. It is not tenancy: a
-CARLOS app serves one team, and a product with many teams gives each
-team its own instance. [Scoping](/docs/scoping) has the reasoning and
-the handler patterns; this page is the surface.
+Scoping separates users within one instance. It is not tenancy: a CARLOS
+app serves one team, and a product with many teams gives each team its
+own instance. [Scoping](/docs/scoping) has the reasoning and the handler
+patterns; this page is the surface.
 
 ## Owned
 
@@ -19,7 +19,7 @@ func Owned(g *gorm.DB, owner int64) *gorm.DB
 ```
 
 Returns `g` with `WHERE user_id = ?` applied. This is the common case,
-and the one the `owned(r)` seam in most apps wraps:
+and the one most apps wrap in an `owned(r)` method:
 
 ```go
 func (a *app) owned(r *http.Request) *gorm.DB {
@@ -28,13 +28,12 @@ func (a *app) owned(r *http.Request) *gorm.DB {
 }
 ```
 
-Note what that seam drops. `sessions.UserID` returns `(id, ok)`, and
+Notice what that method drops. `sessions.UserID` returns `(id, ok)`, and
 `ok` is false for an identity plugin whose subject is not a numeric user
-id. Under the keymail plugin the subject is a verified email address, so
-`UserID` returns `(0, false)` and this seam would scope every query to
-`user_id = 0`. Read the viewer with `auth.From(r)` there and map the
-address to your user row first — [Magic links](/docs/magic-links)
-covers it.
+id. Under keymail the subject is a verified email address, so `UserID`
+returns `(0, false)` and this scopes every query to `user_id = 0`. Read
+the viewer with `auth.From(r)` there and map the address to your user
+row's id first — [Magic links](/docs/magic-links) covers it.
 
 ## OwnedBy
 
@@ -50,13 +49,12 @@ as an `int64` id.
 rows := scope.OwnedBy(a.db, "author_id", subject).Find(&posts)
 ```
 
-The column name is interpolated into the SQL rather than bound as a
-parameter, because a column name cannot be a placeholder. So `OwnedBy`
-**panics** unless the name matches `^[a-z][a-z0-9_]*$` — a lowercase
-letter followed by lowercase letters, digits and underscores.
+The column name is interpolated into the SQL rather than bound, because
+a column name cannot be a placeholder. So `OwnedBy` panics unless the
+name matches `^[a-z][a-z0-9_]*$`.
 
-The panic is the design, not a rough edge. A column name reaching this
-function from anywhere but a Go string literal is a bug, and crashing on
-the first call in development is louder than a subtly wrong query in
-production. There is no error-returning variant to reach for instead:
-if the name is not a constant in your source, the fix is to make it one.
+The panic is the design. A column name reaching this function from
+anywhere but a Go string literal is a bug, and crashing on the first
+call in development is louder than a subtly wrong query in production.
+There is no error-returning variant to reach for instead: if the name is
+not a constant in your source, make it one.

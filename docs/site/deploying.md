@@ -2,46 +2,40 @@
 
 Rastrillo builds apps; the CARLOS platform runs them. The contract
 between the two is what `rastrillo.Resolve` and `rastrillo.Serve`
-implement, and **none of it is yours to hand-roll**.
+implement, and none of it is yours to hand-roll.
 
 ## What the framework answers
 
-- **Activation argv, in both shapes.** `-socket`/`-addr`/`-db` flags for
-  an agent exec child (a hibernating route), or a bare `serve`
-  subcommand with no flags for a `carlos-app@.service` unit tenant.
-- **`LISTEN_FDS`** socket activation, before falling back to `Addr`.
-- **`$STATE_DIRECTORY`.** A relative `-db` or `Options.DBPath` is
-  resolved inside it when systemd provides one — a unit tenant's working
-  directory is not its state directory.
-- **`GET /healthz` and `GET /api/version`**, answered automatically.
-- **The SIGTERM drain**, which fits inside the activator's SIGKILL
-  budget.
-- **Baseline security headers** — CSP and the rest, framework-owned and
-  outermost. Your own `Set` or `Del` wins, and `Options.CSP` swaps the
-  policy wholesale.
+Activation argv in both shapes the platform uses: `-socket`/`-addr`/`-db`
+flags for an agent exec child on a hibernating route, or a bare `serve`
+subcommand for a `carlos-app@.service` unit tenant. `LISTEN_FDS` socket
+activation, before falling back to `Addr`. `$STATE_DIRECTORY`, so a
+relative `-db` resolves inside it when systemd provides one — a unit
+tenant's working directory is not its state directory. `GET /healthz`
+and `GET /api/version`. The SIGTERM drain, which fits inside the
+activator's SIGKILL budget. And baseline security headers, CSP included,
+framework-owned and outermost, with your own `Set` or `Del` winning and
+`Options.CSP` swapping the policy wholesale.
 
-Between `Serve` and `Run`, every route kind the platform runs — always-on
-instance, hibernating exec child, unit tenant — boots the same scaffolded
-app.
+Between `Serve` and `Run`, every route kind the platform runs —
+always-on instance, hibernating exec child, unit tenant — boots the same
+scaffolded app.
 
 ## Hibernation needs nothing from you
 
 The activator owns the restore/replicate cycle. Your app does not
-participate in it, does not know it is happening, and does not need a
-hook.
+participate in it, does not know it is happening, and needs no hook.
 
-Two things follow that are worth designing around:
-
-- **A wake can be cut short at any moment.** This is why
-  [migrations](/docs/migrations) apply one transaction at a time and why
-  a killed wake rolls back cleanly and retries.
-- **Background work does not survive.** A [job](/docs/jobs) is a
-  goroutine, and hibernation ends it. Keep jobs idempotent.
+Two consequences worth designing around. A wake can be cut short at any
+moment, which is why [migrations](/docs/migrations) apply one
+transaction at a time and a killed wake rolls back cleanly and retries.
+And background work does not survive: a [job](/docs/jobs) is a
+goroutine, and hibernation ends it, so keep jobs idempotent.
 
 ## The middleware seam
 
-`Options.Wrap` is the one place app middleware goes — sessions, CSRF,
-panic pages, authorization:
+`Options.Wrap` is where your app middleware goes — sessions, CSRF, panic
+pages, authorization:
 
 ```go
 opts.Wrap = func(next http.Handler) http.Handler {
@@ -49,25 +43,25 @@ opts.Wrap = func(next http.Handler) http.Handler {
 }
 ```
 
-It runs **inside** the framework's chrome. `GET /healthz` and
+It runs inside the framework's chrome. `GET /healthz` and
 `GET /api/version` are answered outside it, so platform probes never
-traverse app middleware and a broken authorization layer cannot make an
-app look dead. Locale-prefix stripping happens before it, so middleware
-sees the same paths routes match on.
+traverse your middleware and a broken authorization layer cannot make
+your app look dead. Locale-prefix stripping happens before it, so your
+middleware sees the same paths your routes match on.
 
 Returning nil from `Wrap` is a boot error, not a silent pass-through.
 
 `rastrillo.Handler` is `Serve` minus the listener, for test harnesses —
 see [Testing](/docs/testing).
 
-## The one deploy rule that will bite you
+## Your first deploy with migrations
 
-**The first deploy of a version with migrations must be
-schema-neutral.**
+It has to be schema-neutral, and this is the rule most likely to bite
+you.
 
 If your app is already deployed and you are introducing migrations for
-the first time, generate `0001_init` from the models *as already
-deployed* and ship it alone. Change a model only in a later release.
+the first time, generate `0001_init` from the models as already deployed
+and ship it alone. Change a model only in a later release.
 
 Otherwise boot refuses on the new column, and `baseline` — the tool you
 would reach for under pressure — would strand that migration for good.
@@ -77,10 +71,10 @@ has the detail.
 ## Shipping
 
 `examples/helloworld` is a real scaffolded app, checked in, proven to
-ship, promote and serve through the actual `carlos` binary —
+ship, promote and serve through the actual `carlos` binary.
 `hack/local-deploy-demo.sh` in the framework repo runs the sequence.
 
 The platform's own documentation owns the `ship`/`promote` commands and
 their flags. What matters from this side is that a Rastrillo binary is
-an ordinary CARLOS app: it needs no wrapper, no init container and no
+an ordinary CARLOS app: no wrapper, no init container, no
 platform-specific build.

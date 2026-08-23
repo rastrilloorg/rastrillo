@@ -6,7 +6,7 @@ A GORM SQLite dialector over `modernc.org/sqlite`. A minimal fork of
 `glebarez/sqlite` that keeps Rastrillo on current modernc without a
 double driver registration.
 
-**You should not need to name this package in an app.**
+You should not need to name this package in your app —
 [`db.Open`](/docs/reference/db) already wires it. It is documented
 because it is exported, because an error from it will name it, and
 because the reason it exists is a trap worth knowing.
@@ -14,14 +14,14 @@ because the reason it exists is a trap worth knowing.
 ## Why it exists
 
 `glebarez/sqlite` registers the driver name `sqlite`, which
-`modernc.org/sqlite` also registers. A binary containing both **panics
-at init** — before any of your code runs, with a duplicate-driver
-message that does not obviously point at either import.
+`modernc.org/sqlite` also registers. A binary containing both panics at
+init, before any of your code runs, with a duplicate-driver message that
+does not obviously point at either import.
 
 `gorm.io/driver/sqlite` is the cgo one, which defeats a pure-Go build.
 
-So: never import either. [Data](/docs/data) says the same thing where
-you are more likely to be reading.
+So never import either. [Data](/docs/data) says the same thing where you
+are more likely to be reading.
 
 ## Open and DriverName
 
@@ -49,13 +49,13 @@ Implements GORM's `Dialector`: `Dialector.Initialize`,
 `Dialector.SavePoint`, `Dialector.RollbackTo`, and
 `Dialector.Translate`.
 
-`Translate` is the one worth naming: it turns the driver's constraint
+`Translate` is the one worth naming. It turns the driver's constraint
 errors into GORM's portable sentinels, so `errors.Is(err,
-gorm.ErrDuplicatedKey)` works. GORM only calls it when the app opens
-with `TranslateError: true`, which `db.Open` does.
+gorm.ErrDuplicatedKey)` works. GORM only calls it when you open with
+`TranslateError: true`, which `db.Open` does.
 
-Passing a `Conn` uses an existing pool rather than opening a new one —
-that is how `db.Open` gives GORM the writer pool and the reader pool
+Passing a `Conn` uses an existing pool instead of opening a new one,
+which is how `db.Open` hands GORM the writer pool and the reader pool
 separately.
 
 ## Migrator
@@ -78,9 +78,9 @@ constraint surface: `Migrator.HasTable`, `Migrator.GetTables`,
 SQLite cannot perform in place. `Index` is the index shape
 `GetIndexes` returns.
 
-**A Rastrillo app does not use this migrator to change its schema.**
-Schema changes go through [`migrate`](/docs/reference/migrate), which
-applies numbered migrations once each and records them. GORM's migrator
-is here because the dialector interface requires it, and because
-`migrate`'s own diff engine drives it against an in-memory database to
-work out what a change would be.
+Do not use this migrator to change your schema. Schema changes go
+through [`migrate`](/docs/reference/migrate), which applies numbered
+migrations once each and records them. GORM's migrator is here because
+the dialector interface requires it, and because `migrate`'s diff engine
+drives it against an in-memory database to work out what a change would
+be.

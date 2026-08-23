@@ -2,20 +2,20 @@
 
 `github.com/carlosframework/rastrillo/webauthn`
 
-The passkey identity half: the two WebAuthn ceremonies, a CBOR subset
-reader, and the browser module. [`passkey`](/docs/reference/passkey) is
-what most apps mount; this is what it is built on, and what you reach
-for to build something else.
+The passkey identity half: the WebAuthn ceremonies, a CBOR subset
+reader, and the browser module. Most apps mount
+[`passkey`](/docs/reference/passkey) instead. This is what that is built
+on, and what you reach for to build something else.
 
-## Scope, stated plainly
+## What it does and does not check
 
-**ES256 only.** **No attestation checking.**
+ES256 only. No attestation checking.
 
-Not checking attestation is a decision rather than a gap. Attestation
-tells you which manufacturer made the authenticator, which matters for
-enterprise device policy and not for "is this the same key as last
-time". Verifying it means shipping and maintaining a root certificate
-store, and getting that wrong locks people out of their own accounts.
+Skipping attestation is a decision. Attestation tells you which
+manufacturer made the authenticator, which matters for enterprise device
+policy and not for "is this the same key as last time". Verifying it
+means shipping and maintaining a root certificate store, and getting
+that wrong locks people out of their own accounts.
 
 The CBOR reader implements the subset WebAuthn actually uses. It rejects
 anything outside it rather than attempting a general decode.
@@ -28,8 +28,8 @@ type Config struct{ /* RPID, Origin, LegacyRPID, ... */ }
 
 `LegacyRPID` accepts credentials minted under a previous hostname, so
 moving domains does not invalidate everybody's passkeys. A credential
-cannot be **minted** under the old name — only used — which is what
-keeps the escape hatch from becoming a second, permanent identity.
+cannot be minted under the old name, only used, which keeps the escape
+hatch from becoming a second permanent identity.
 
 ## Register
 
@@ -49,13 +49,13 @@ func (c Config) Verify(cred Credential, challenge, clientDataJSON, authData, sig
 
 Verifies an assertion and returns the new signature counter.
 
-A counter going **backwards** is refused — that is the cloned-
-authenticator signal the spec provides. An authenticator that never
-counts, reporting zero every time, is allowed, because many do.
+A counter going backwards is refused: that is the cloned-authenticator
+signal the spec provides. An authenticator that never counts, reporting
+zero every time, is allowed, because plenty do.
 
 ## The errors
 
-Each names one refusal, so a caller can tell them apart without matching
+Each names one refusal, so you can tell them apart without matching
 message text:
 
 | Error | Meaning |
@@ -73,9 +73,9 @@ message text:
 func NewChallenge() ([]byte, error)
 ```
 
-Fresh random challenge bytes. Store it server-side, single-use — the
-challenge is what makes an assertion un-replayable, so a challenge that
-outlives one ceremony is the whole protocol undone.
+Fresh random challenge bytes. Store it server-side and use it once. The
+challenge is what makes an assertion un-replayable, so one that outlives
+a single ceremony undoes the whole protocol.
 
 ## JS
 
@@ -83,8 +83,8 @@ outlives one ceremony is the whole protocol undone.
 func JS() []byte
 ```
 
-The browser half as an embedded ES module. Serve it as a static asset;
-it exposes `register()` and `authenticate()`, which produce exactly the
+The browser half as an embedded ES module. Serve it as a static asset.
+It exposes `register()` and `authenticate()`, which produce exactly the
 payloads `Register` and `Verify` expect.
 
 ## authtest

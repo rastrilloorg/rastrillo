@@ -6,9 +6,8 @@ The signed-in-state core: SQLite-backed session rows, `__Host-` cookies
 on https origins, and the request-context surface every identity plugin
 signs into.
 
-It deliberately does not know how a session is *earned*. A plugin
-verifies a credential and calls `SignIn`; that one call is the whole
-plugin contract.
+It does not know how a session is earned. A plugin verifies a credential
+and calls `SignIn`, and that call is the whole plugin contract.
 
 [Sessions](/docs/sessions) is the guide.
 
@@ -18,7 +17,7 @@ plugin contract.
 func New(cfg Config) (*Sessions, error)
 ```
 
-Build exactly one `*Sessions` per process and share it.
+Build one `*Sessions` per process and share it.
 
 ```go
 type Config struct {
@@ -30,9 +29,9 @@ type Config struct {
 }
 ```
 
-`DB` is the app's database, and `Schema`'s migrations must already have
-been applied. `Origin` is the external origin with scheme, and it
-decides the `Secure` and `__Host-` cookie attributes and nothing else —
+`DB` is your database, and `Schema`'s migrations must already have been
+applied. `Origin` is your external origin with scheme; it decides the
+`Secure` and `__Host-` cookie attributes and nothing else, since
 `sessions` never redirects off it. `TTL` defaults to 30 days,
 `SigninPath` to `/signin`.
 
@@ -57,12 +56,12 @@ type Session struct {
 }
 ```
 
-`Subject` is the app's own identifier for who is signed in, kept as a
-string so plugins never have to agree on a numeric type. `Method` names
-how the credential was verified, in the plugin's vocabulary —
-`"password"`, `"keymail"`, `"magiclink+passkey"`. `AuthTime` is when the
-credential was verified, zero if the plugin does not track it. `At` is
-when this row was created.
+`Subject` is your own identifier for who is signed in, kept as a string
+so plugins never have to agree on a numeric type. `Method` names how the
+credential was verified, in the plugin's vocabulary — `"password"`,
+`"keymail"`, `"magiclink+passkey"`. `AuthTime` is when the credential
+was verified, zero if the plugin does not track it. `At` is when this
+row was created.
 
 ## Signing in and out
 
@@ -71,7 +70,7 @@ func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) 
 func (s *Sessions) SignOut(w http.ResponseWriter, r *http.Request)
 ```
 
-`SignIn` mints a row and sets the cookie, rotating the token — which is
+`SignIn` mints a row and sets the cookie, rotating the token, which is
 also what makes it satisfy `RequireFresh`. `SignOut` deletes the row, so
 revocation is real: the cookie is dead even if it survives.
 
@@ -101,13 +100,14 @@ outside the middleware chain.
 func Fresh(sess Session, maxAge time.Duration, now time.Time) bool
 ```
 
-The predicate `RequireFresh` applies, for a handler stepping up
-conditionally rather than per route.
+The predicate `RequireFresh` applies, for a handler stepping up in code
+rather than per route.
 
 Freshness is measured from `AuthTime` when set and from `At` otherwise.
 A session is only ever minted at credential verification, so `At` is an
-honest lower bound — and the fallback is what stops a plugin that never
-sets `AuthTime`, like the magic link, from redirect-looping forever.
+honest lower bound, and the fallback is what stops a plugin that never
+sets `AuthTime` — the magic link, for one — from redirect-looping
+forever.
 
 ## Reading the viewer
 
@@ -117,15 +117,16 @@ func UserID(r *http.Request) (int64, bool)
 func WithSession(r *http.Request, sess Session) *http.Request
 ```
 
-`Current` returns the whole session. `UserID` parses `Subject` as an
-`int64`, and its `ok` holds **only** for a plugin whose subject is a
-numeric user id — not for keymail, whose subject is an email address.
-[Magic links](/docs/magic-links) has the mistake that follows from
-assuming otherwise.
+`Current` gives you the whole session. `UserID` parses `Subject` as an
+`int64`, and its `ok` holds only for a plugin whose subject is a numeric
+user id — not for keymail, whose subject is an email address.
+[Magic links](/docs/magic-links) has what follows from assuming
+otherwise.
 
 `WithSession` stashes a session on a request's context. Plugins use it
-after verifying; it is also what makes a session visible to code called
-outside the middleware, which is how a generated store sees the viewer.
+after verifying, and it is also what makes a session visible to code
+called outside the middleware, which is how a generated store sees the
+viewer.
 
 ## SafeReturn
 
@@ -138,9 +139,9 @@ leading `/`, no scheme, no backslash, no control characters — and the
 fallback otherwise. Anything laxer is an open redirect on a sign-in
 endpoint.
 
-Control characters matter because browsers strip tab, CR and LF from a
-URL before parsing it: `/\t/evil.example` passes a bare `//` check and
-still navigates scheme-relative off-site.
+Control characters are in that list because browsers strip tab, CR and
+LF from a URL before parsing it, so `/\t/evil.example` passes a bare
+`//` check and still navigates scheme-relative off-site.
 
 ## Tokens
 
@@ -150,8 +151,8 @@ func HashToken(token string) string
 ```
 
 Mint a token and its stored hash, or hash a presented one. Exported
-because plugins storing their own single-use credentials — a magic link,
-a recovery code — should hash them the same way rather than inventing a
+because a plugin storing its own single-use credentials — a magic link,
+a recovery code — should hash them the same way instead of inventing a
 second scheme.
 
 ## Sweep

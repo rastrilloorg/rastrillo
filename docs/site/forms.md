@@ -1,17 +1,16 @@
 # 🤖 Forms
 
-Reading user input in a Rastrillo app has one rule that outranks
-everything else on this page: **never bind a request body onto a
-model.**
+One rule outranks everything else on this page: never bind a request
+body onto a model.
 
-## Why not binding
+## Why not
 
 No reflection binding, no `PostForm` loop, nothing that walks the
-submitted keys and writes whatever it finds. A form is attacker-supplied
-and a model has fields the user must not choose — `UserID`, `Role`,
-`PriceCents`, `CreatedAt`.
+submitted keys and writes whatever it finds. A form is
+attacker-supplied, and your model has fields the user must not choose —
+`UserID`, `Role`, `PriceCents`, `CreatedAt`.
 
-Read each permitted field by name instead:
+Read each permitted field by name:
 
 ```go
 title := r.PostFormValue("Title")
@@ -30,7 +29,7 @@ because no code path exists that would carry it there.
 
 ## form.Parse
 
-Declare the fields once and validate them in one pass:
+Declare your fields once and validate them in one pass:
 
 ```go
 p := form.Parse(r,
@@ -46,15 +45,15 @@ if !p.OK() {
 }
 ```
 
-Write the status **before** rendering. The render helper writes none.
+Write the status before rendering. The render helper writes none.
 
-`p.Errors()` is a `form.Errors` — a `map[string]string` from field name
-to message, empty rather than nil when everything validated, which is
-the shape a template renders beside each input. `p.Echo()` is the whole
-seed-back map at once, for map-shaped views.
+`p.Errors()` is a `form.Errors` — a map from field name to message,
+empty rather than nil when everything validated, which is what a
+template renders beside each input. `p.Echo()` gives you the whole
+seed-back map at once if your view is map-shaped.
 
-Nothing here is retyped by the user on a validation failure. That is the
-entire point of the echo: a rejected form comes back populated.
+Nothing gets retyped on a validation failure. That is the point of the
+echo: a rejected form comes back populated.
 
 ## The three kinds
 
@@ -63,16 +62,16 @@ the common thing.
 
 | Kind | Read with | Behaviour |
 |---|---|---|
-| `Text` (zero value) | `p.String` | Trimmed on the way in — both the value and the echo are the trimmed text |
-| `Textarea` | `p.String` | Preserved exactly as typed, leading and trailing whitespace included; only the `Required` check trims |
+| `Text` (zero value) | `p.String` | Trimmed; value and echo are both the trimmed text |
+| `Textarea` | `p.String` | Kept exactly as typed, whitespace included; only the required check trims |
 | `Money` | `p.Cents` | Parsed to integer cents; the echo keeps the raw text |
 
-`Required` on a `Text` or `Textarea` that is blank reports
-`"<Field name> is required"`, humanized from the field name.
+`Required` on a blank `Text` or `Textarea` reports "<Field name> is
+required", humanized from the field name.
 
-`Required` on `Money` is checked against the **raw** text, so `""` is
+`Required` on `Money` is checked against the raw text, so `""` is
 required-blank while `"0"` is a present, valid zero. A present but
-unparseable value reports the parse error rather than the required
+unparseable value reports the parse error instead of the required
 message — telling someone a field is required when they filled it in
 would be a small lie the parser is in a position to avoid.
 
@@ -84,31 +83,31 @@ actions do.
 ## Money is int64 cents
 
 Never a float. `form.Money` parses through `form.ParseCents`, which is
-deliberately strict: at most two decimal places, no `$`, no sign
-character at all, both halves ASCII digits. `""` parses to zero rather
-than an error, because a `Required` money field has already rejected
-blankness on the raw text before `ParseCents` runs.
+strict on purpose: at most two decimal places, no `$`, no sign character
+at all, both halves ASCII digits. An empty string parses to zero,
+because a required money field has already rejected blankness on the raw
+text before `ParseCents` runs.
 
-The strictness is not fussiness. Handing each half to `strconv.ParseInt`
-directly accepts its own `+`/`-`, so `"12.-5"` would silently parse to a
-different magnitude than its digits suggest instead of being rejected as
-the not-a-dollar-amount it is.
+The strictness earns its keep. Handing each half to `strconv.ParseInt`
+accepts its own `+`/`-`, so `"12.-5"` would quietly parse to a different
+magnitude than its digits suggest instead of being rejected as the
+not-a-dollar-amount it is.
 
-Two formatters, and using the wrong one is a real bug:
+There are two formatters, and using the wrong one is a real bug:
 
-- `form.FormatCents(cents)` renders `"$12.34"` — for **display**.
-- `form.FormatCentsPlain(cents)` renders `"12.34"` — for **seeding a
-  form field**.
+```go
+form.FormatCents(cents)      // "$12.34" — for display
+form.FormatCentsPlain(cents) // "12.34"  — for seeding a form field
+```
 
 Seed with the plain one. A browser may resubmit an untouched field
 completely unchanged, so the seed has to be exactly what `ParseCents`
-accepts back — and `ParseCents` rejects a leading `$`. Seeding with
-`FormatCents` means resubmitting an unmodified money field always fails.
+accepts back, and `ParseCents` rejects a leading `$`. Seed with
+`FormatCents` and resubmitting an unmodified money field always fails.
 
-Both handle a negative value correctly, writing the sign once against
-the absolute value. Formatting a negative directly would mangle it into
-something like `"$-1.-50"`, since Go's `/` and `%` both truncate toward
-zero.
+Both handle negatives correctly, writing the sign once against the
+absolute value. Formatting a negative directly produces `"$-1.-50"`,
+since Go's `/` and `%` both truncate toward zero.
 
 ## After a successful write
 
@@ -117,7 +116,7 @@ flash.Set(w, "notice", "Note created.")
 http.Redirect(w, r, "/notes/"+id, http.StatusSeeOther)
 ```
 
-`flash.Set` writes a one-shot cookie; the render helper calls
+`flash.Set` writes a one-shot cookie; your render helper calls
 `flash.Take(w, r)` once per page and the layout renders it. A flash is
 display state, not a record — losing one to a cleared cookie costs a
 notice, not data.

@@ -14,9 +14,10 @@ stay with the app.
 func New(cfg Config) (*Handlers, error)
 ```
 
-`New` validates the configuration at boot rather than at request time.
-It errors when `Sessions`, `Lookup` or `RenderSignin` is missing, and —
-the one worth knowing — when `Create` is set without `RenderSignup`.
+`New` validates the configuration at boot, so you find out then rather
+than on the first request. It errors when `Sessions`, `Lookup` or
+`RenderSignin` is missing, and when `Create` is set without
+`RenderSignup`.
 
 ```go
 type Config struct {
@@ -35,9 +36,9 @@ type Config struct {
 `sql.ErrNoRows` for an unknown address — treated identically to a wrong
 password, verified against a decoy hash so the timing does not differ.
 
-`Create` stores a new user. **Any** error it returns reads as a
-duplicate email, the only realistic failure for a unique-email store.
-Nil disables signup entirely: `SignupPage` and `Signup` both 404.
+`Create` stores a new user. Any error it returns reads as a duplicate
+email, the only realistic failure for a unique-email store. Leave it nil
+and signup is disabled entirely: `SignupPage` and `Signup` both 404.
 
 `SignedInPath` is where a fresh session lands absent a same-site
 `return_to`; it defaults to `/`.
@@ -54,7 +55,7 @@ should proceed unchanged. Nil is the plain behaviour.
 type Handlers struct{ /* unexported */ }
 ```
 
-Five methods, and their verbs are enforced:
+The verbs are enforced:
 
 | Method | Verb | Notes |
 |---|---|---|
@@ -80,7 +81,7 @@ type PageData struct {
 What both render callbacks receive — enough to re-render the form with
 the address still filled in and the problem stated.
 
-**The callback must not write a status.** `password` has already written
+Your callback must not write a status. `password` has already written
 the 422 before calling it.
 
 ## Rate limiting
@@ -88,8 +89,8 @@ the 422 before calling it.
 Sign-in and sign-up share one per-email budget: 10 failures in 15
 minutes answers 429 until one ages out, and a success resets it.
 
-Sharing the budget is the point. Sign-up leaks the same fact sign-in
-does — whether an address is registered — so letting an attacker switch
+They share it on purpose. Sign-up leaks the same fact sign-in does,
+whether an address is registered, so letting an attacker switch
 endpoints for a fresh allowance would defeat the limit.
 
 It is in-memory, and so per-process. IP-level throttling belongs to the
@@ -103,11 +104,11 @@ func Verify(encoded, password string) bool
 func NeedsRehash(encoded string) bool
 ```
 
-`Hash` and `Verify` handle the encoding; the parameters are pinned and
-asserted by a test so they cannot drift quietly. `Verify` answers false
-for a garbage or truncated encoding rather than erroring — a corrupt
-stored hash must not be distinguishable from a wrong password.
+`Hash` and `Verify` handle the encoding, and the parameters are pinned
+by a test so they cannot drift quietly. `Verify` answers false for a
+garbage or truncated encoding instead of erroring, so a corrupt stored
+hash is indistinguishable from a wrong password.
 
-`NeedsRehash` reports whether a stored hash predates the current
+`NeedsRehash` tells you whether a stored hash predates the current
 parameters, so you can upgrade it transparently at the next successful
-sign-in — the only moment the plaintext is available.
+sign-in, the only moment you have the plaintext.
