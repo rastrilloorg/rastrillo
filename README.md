@@ -234,6 +234,23 @@ the meantime. This list is their union. **Built:**
   WebCrypto JS twin (`crypto.JS()`), all proven against amadan's pinned
   golden vectors — the compatibility contract that lets amadan,
   seapointish and keymail delete their local copies.
+- **`rastrillo/keyring`** — the E2EE seed lifecycle over `crypto`'s
+  primitives: one 32-byte seed per person, `Ring`-namespaced purpose
+  derivation (`ns/prf/v1`, `ns/content/v1`, `ns/wrap/v1`, `ns/grant/v1`
+  — `Ring{"kass"}` reproduces kass's bytes exactly), the seed wrapped
+  under a passkey's PRF output (`WrapSeed`/`UnwrapSeed`), content keys
+  granted to members' box keys (`Grant`/`OpenGrant`), the
+  last-wrap-is-unrevokable guard (`AddWrap`/`RemoveWrap`), and a
+  WebCrypto JS twin (`keyring.JS()`) that imports `./crypto.mjs` —
+  serve both as siblings. No storage and no new cryptography: tables
+  belong to the app, ciphers to `crypto`, and
+  `keyring/testdata/golden.json` is hash-pinned and replayed in both languages. The
+  app contract the package names but does not build: store a wrapped
+  seed keyed by credential ID, return it at sign-in, accept a new one
+  at enrol. An RPID move is a three-phase drill — old name; crossover
+  with `webauthn.Config.LegacyRPID` set while fresh sign-ins re-wrap
+  the same seed under new-RPID credentials; settled, `LegacyRPID`
+  removed — and `WrapSeed` is the whole mechanism.
 - **`rastrillo/gormlite`** — a GORM SQLite dialector over
   `modernc.org/sqlite`, a minimal fork of `glebarez/sqlite` that keeps
   Rastrillo on current modernc without a double driver registration.
