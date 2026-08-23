@@ -164,6 +164,11 @@
           "blurb": "Start, Get, the two bounds, and the three handlers."
         },
         {
+          "slug": "reference/keyring",
+          "label": "keyring",
+          "blurb": "One seed per person: purpose derivation, passkey wraps, member grants, and the last-wrap guard."
+        },
+        {
           "slug": "reference/mail",
           "label": "mail",
           "blurb": "One Sender interface, SMTP, and a logging fallback that warns."
