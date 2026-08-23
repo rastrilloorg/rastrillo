@@ -34,17 +34,17 @@ SQL rather than bound.
 After that, no query on an owned model gets written without it. Not
 `First`, not `Find`, not `Update`, not `Delete`.
 
-### The keymail exception
+### When the subject is not a user id
 
 `sessions.UserID` returns `(id, ok)`, and the method above drops `ok`.
 That is fine for a plugin whose subject is a numeric user id, which the
 password plugin's is.
 
-It is wrong for keymail, where the subject is a verified email address.
-`UserID` returns `(0, false)`, so this seam scopes every query in your
-app to `user_id = 0`. Read the viewer with `auth.From(r)` there and map
-the address to your user row's id before scoping.
-[Magic links](/docs/magic-links) has the detail.
+It is wrong for the [magic-link plugin](/docs/magic-links), whose
+subject is a verified email address. `UserID` returns `(0, false)`, so
+this seam scopes every query in your app to `user_id = 0`. Read the
+viewer with `auth.From(r)` there and map the address to your user row's
+id before scoping.
 
 ## Scope the write, not just the read
 

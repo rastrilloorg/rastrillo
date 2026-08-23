@@ -2,16 +2,19 @@
 
 `github.com/carlosframework/rastrillo/auth`
 
-The framework's turnkey sign-in and the family default: a magic-link
-email that works for every address, auto-upgrading to the keymail
-ceremony when the address resolves to a claimed keymail inbox.
-
-It wraps `github.com/keymaildev/signin`, filling the holes that package
+Passwordless sign-in by emailed link. It wraps
+`github.com/keymaildev/signin`, filling the holes that package
 deliberately leaves — link storage, mailer, cookies, sessions, CSRF,
 admission — once here instead of once per app.
 
-[Magic links and keymail](/docs/magic-links) is the guide, and it
-carries the one trap that costs you a working app.
+[Magic links](/docs/magic-links) is the guide, and it carries the one
+trap that costs you a working app.
+
+Addresses with a claimed keymail inbox upgrade to keymail's OAuth
+ceremony automatically. That is an aside rather than a feature you wire:
+same handlers, same session, same `Subject` either way. The guide's
+[keymail section](/docs/magic-links#aside-the-keymail-upgrade) has the
+details.
 
 ## New and Config
 
@@ -41,8 +44,9 @@ HMAC, and an empty input hashes to one fixed, publicly computable value
 would let an attacker forge a pending blob naming their own keymail
 server.
 
-`Origin` is the OAuth `client_id` keymail validates redirects against,
-the base of emailed links, and what decides the cookie attributes.
+`Origin` is the base of emailed links and what decides the cookie
+attributes. It doubles as the OAuth `client_id` keymail validates
+redirects against.
 
 `Mailer` is a [`mail.Sender`](/docs/reference/mail). Leave it nil and
 you get `mail.Logged` with a warning on every send: an emailed link is a
@@ -69,15 +73,15 @@ the sessions table, and `migrate.Merge`'s argument order is apply order.
 
 ```text
 POST /signin         -> Auth.Begin
+GET  /auth/verify    -> Auth.Verify     (the emailed link's landing)
 GET  /auth/callback  -> Auth.Callback   (the keymail OAuth return)
-GET  /auth/verify    -> Auth.Verify     (the magic-link landing)
 POST /signout        -> Auth.Signout
 ```
 
 The sign-in page stays yours. These handlers report outcomes by
-redirecting to `SigninPath` with a query your page renders: `?sent=1`,
-`?err=rate|address|expired|keymail`, and `?force=1` to offer the
-plain-email escape hatch after a failed keymail approval.
+redirecting to `SigninPath` with a query your page renders: `?sent=1`
+and `?err=rate|address|expired`, plus `?err=keymail` and `?force=1` on
+the keymail path.
 
 ## Guarding and reading
 
@@ -93,10 +97,10 @@ func (a *Auth) SessionFrom(r *http.Request) (Identity, bool)
 downstream.
 
 Do not use `sessions.UserID` under this plugin. The subject is a
-verified email address, so it returns `(0, false)`, and the ordinary
-scoping seam drops that `ok` and scopes every query in your app to
-`user_id = 0`. Read the viewer with `From` and map the address to your
-user row's id first.
+verified email address — on both the emailed-link and keymail paths —
+so it returns `(0, false)`, and the ordinary scoping seam drops that
+`ok` and scopes every query in your app to `user_id = 0`. Read the
+viewer with `From` and map the address to your user row's id first.
 
 `Identity` is an alias for `signin.Identity`, the same value the
 upstream ceremony produces, so it cannot drift from it.

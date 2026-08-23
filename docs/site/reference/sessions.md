@@ -59,7 +59,7 @@ type Session struct {
 `Subject` is your own identifier for who is signed in, kept as a string
 so plugins never have to agree on a numeric type. `Method` names how the
 credential was verified, in the plugin's vocabulary — `"password"`,
-`"keymail"`, `"magiclink+passkey"`. `AuthTime` is when the credential
+`"magiclink"`, `"magiclink+passkey"`. `AuthTime` is when the credential
 was verified, zero if the plugin does not track it. `At` is when this
 row was created.
 
@@ -119,9 +119,9 @@ func WithSession(r *http.Request, sess Session) *http.Request
 
 `Current` gives you the whole session. `UserID` parses `Subject` as an
 `int64`, and its `ok` holds only for a plugin whose subject is a numeric
-user id — not for keymail, whose subject is an email address.
-[Magic links](/docs/magic-links) has what follows from assuming
-otherwise.
+user id — not for the magic-link plugin, whose subject is an email
+address. [Magic links](/docs/magic-links) has what follows from
+assuming otherwise.
 
 `WithSession` stashes a session on a request's context. Plugins use it
 after verifying, and it is also what makes a session visible to code

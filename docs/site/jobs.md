@@ -33,8 +33,8 @@ http.Redirect(w, r, "/jobs/"+job.ID, http.StatusSeeOther)
 ```
 
 `owner` is the session `Subject`, not `sessions.UserID`. It is a string,
-because keymail subjects are email addresses and password subjects are
-numeric strings. Key your own job-related rows the same way.
+because magic-link subjects are email addresses and password subjects
+are numeric strings. Key your own job-related rows the same way.
 
 `location` is where the owner lands when the job finishes; `""` keeps
 them on the status page. `fn`'s error text reaches the owner, so write

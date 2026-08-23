@@ -50,8 +50,8 @@
         },
         {
           "slug": "magic-links",
-          "label": "Magic links & keymail",
-          "blurb": "The family default, and the sessions.UserID trap that comes with it."
+          "label": "Magic links",
+          "blurb": "Passwordless sign-in by emailed link, and the sessions.UserID trap that comes with it."
         },
         {
           "slug": "passkeys",
@@ -116,7 +116,7 @@
         {
           "slug": "reference/auth",
           "label": "auth",
-          "blurb": "The keymail/magic-link plugin, its four handlers, and its admission hook."
+          "blurb": "The magic-link plugin: its handlers, its admission hook, and its email subject."
         },
         {
           "slug": "reference/blobs",

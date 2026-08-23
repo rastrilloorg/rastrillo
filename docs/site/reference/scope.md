@@ -30,10 +30,11 @@ func (a *app) owned(r *http.Request) *gorm.DB {
 
 Notice what that method drops. `sessions.UserID` returns `(id, ok)`, and
 `ok` is false for an identity plugin whose subject is not a numeric user
-id. Under keymail the subject is a verified email address, so `UserID`
-returns `(0, false)` and this scopes every query to `user_id = 0`. Read
-the viewer with `auth.From(r)` there and map the address to your user
-row's id first — [Magic links](/docs/magic-links) covers it.
+id. The magic-link plugin's subject is a verified email address, so
+`UserID` returns `(0, false)` and this scopes every query to
+`user_id = 0`. Read the viewer with `auth.From(r)` there and map the
+address to your user row's id first —
+[Magic links](/docs/magic-links) covers it.
 
 ## OwnedBy
 

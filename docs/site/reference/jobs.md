@@ -24,8 +24,8 @@ func (j *Jobs) Get(id, owner string) (Job, bool)
 
 Build one at boot. The zero value is not usable.
 
-`owner` is the session `Subject`, a string, because keymail subjects are
-emails and password subjects are numeric strings. Key your own
+`owner` is the session `Subject`, a string, because magic-link subjects
+are emails and password subjects are numeric strings. Key your own
 job-related rows the same way.
 
 `fn`'s error text reaches the owner, so write it for them. A panic
