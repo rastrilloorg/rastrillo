@@ -244,7 +244,7 @@ the meantime. This list is their union. **Built:**
   WebCrypto JS twin (`keyring.JS()`) that imports `./crypto.mjs` —
   serve both as siblings. No storage and no new cryptography: tables
   belong to the app, ciphers to `crypto`, and
-  `keyring/testdata/golden.json` is hash-pinned in both languages. The
+  `keyring/testdata/golden.json` is hash-pinned and replayed in both languages. The
   app contract the package names but does not build: store a wrapped
   seed keyed by credential ID, return it at sign-in, accept a new one
   at enrol. An RPID move is a three-phase drill — old name; crossover
