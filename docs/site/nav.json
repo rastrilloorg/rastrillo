@@ -1,0 +1,224 @@
+{
+  "sections": [
+    {
+      "title": "Start here",
+      "pages": [
+        {
+          "slug": "getting-started",
+          "label": "Getting started",
+          "blurb": "Install the CLI, scaffold an app, and get it serving."
+        },
+        {
+          "slug": "app-shape",
+          "label": "The shape of an app",
+          "blurb": "Five files plus migrations.go, and why main.go calls Resolve rather than Run."
+        }
+      ]
+    },
+    {
+      "title": "Building an app",
+      "pages": [
+        {
+          "slug": "data",
+          "label": "Data",
+          "blurb": "GORM models, and the two-pool SQLite handle db.Open returns."
+        },
+        {
+          "slug": "migrations",
+          "label": "Migrations",
+          "blurb": "Numbered, applied once at boot, ledgered \u2014 and the two rules that cost data if you get them wrong."
+        },
+        {
+          "slug": "scoping",
+          "label": "Scoping",
+          "blurb": "The one seam every owned query goes through, and why a row that isn't yours answers 404."
+        },
+        {
+          "slug": "forms",
+          "label": "Forms",
+          "blurb": "Reading input without ever binding a request onto a model."
+        },
+        {
+          "slug": "sessions",
+          "label": "Sessions",
+          "blurb": "Signed-in state as real rows, CSRF without tokens, and step-up."
+        },
+        {
+          "slug": "passwords",
+          "label": "Passwords",
+          "blurb": "The email-and-password plugin: its two callbacks, and its shared rate limit."
+        },
+        {
+          "slug": "magic-links",
+          "label": "Magic links & keymail",
+          "blurb": "The family default, and the sessions.UserID trap that comes with it."
+        },
+        {
+          "slug": "passkeys",
+          "label": "Passkeys & 2FA",
+          "blurb": "A second factor at step-up and at sign-in, plus recovery codes that need no JavaScript."
+        },
+        {
+          "slug": "jobs",
+          "label": "Background jobs",
+          "blurb": "Observable goroutines, their two bounds, and a status page that works with scripts off."
+        },
+        {
+          "slug": "templates",
+          "label": "Templates & UI",
+          "blurb": "One template per page, twenty-four partials, and the tokens stylesheet you own."
+        },
+        {
+          "slug": "icons",
+          "label": "Icons",
+          "blurb": "Eleven slugs that mean the same thing in every app, three delivery modes, and pinned versions."
+        },
+        {
+          "slug": "localization",
+          "label": "Localization",
+          "blurb": "Locale resolution, catalogs, and the gate that runs under --check only."
+        },
+        {
+          "slug": "manifests",
+          "label": "Manifests",
+          "blurb": "The declarative path: two stores, three field kinds, and where it honestly stops."
+        },
+        {
+          "slug": "assets",
+          "label": "Assets",
+          "blurb": "Fingerprinted static files, and the three files delivered once and owned by you."
+        },
+        {
+          "slug": "agents",
+          "label": "Agents & tools",
+          "blurb": "Actions as agent-callable tools, the consent gate, and the sidecar loop."
+        },
+        {
+          "slug": "testing",
+          "label": "Testing",
+          "blurb": "The scaffolded harness, serving without a listener, and the one gate definition."
+        },
+        {
+          "slug": "deploying",
+          "label": "Deploying",
+          "blurb": "The platform contract Serve implements, hibernation, and the schema-neutral first deploy."
+        }
+      ]
+    },
+    {
+      "title": "Reference",
+      "pages": [
+        {
+          "slug": "cli",
+          "label": "The CLI",
+          "blurb": "Every rastrillo command and flag, and when you reach for it."
+        },
+        {
+          "slug": "reference/auth",
+          "label": "auth",
+          "blurb": "The keymail/magic-link plugin, its four handlers, and its admission hook."
+        },
+        {
+          "slug": "reference/blobs",
+          "label": "blobs",
+          "blurb": "Content-addressed bytes over S3, a directory, or a table."
+        },
+        {
+          "slug": "reference/crypto",
+          "label": "crypto",
+          "blurb": "The family envelope, its wire formats, and the golden vectors that pin them."
+        },
+        {
+          "slug": "reference/csrf",
+          "label": "csrf",
+          "blurb": "Same-origin enforcement for state-changing requests, with no tokens."
+        },
+        {
+          "slug": "reference/db",
+          "label": "db",
+          "blurb": "One SQLite file as two pools, and the pragma order that has to be right."
+        },
+        {
+          "slug": "reference/eventlog",
+          "label": "eventlog",
+          "blurb": "Append-only streams, a pure fold, and the deterministic merge order."
+        },
+        {
+          "slug": "reference/flash",
+          "label": "flash",
+          "blurb": "One-shot notices in a cookie: display state, not a record."
+        },
+        {
+          "slug": "reference/form",
+          "label": "form",
+          "blurb": "Field parsing, the error map, and money as int64 cents."
+        },
+        {
+          "slug": "reference/gormlite",
+          "label": "gormlite",
+          "blurb": "The SQLite dialector, and the double-registration panic it avoids."
+        },
+        {
+          "slug": "reference/jobs",
+          "label": "jobs",
+          "blurb": "Start, Get, the two bounds, and the three handlers."
+        },
+        {
+          "slug": "reference/mail",
+          "label": "mail",
+          "blurb": "One Sender interface, SMTP, and a logging fallback that warns."
+        },
+        {
+          "slug": "reference/migrate",
+          "label": "migrate",
+          "blurb": "Ordered, namespaced, ledgered migrations \u2014 and why there is no Down."
+        },
+        {
+          "slug": "reference/passkey",
+          "label": "passkey",
+          "blurb": "Step-up and sign-in WebAuthn, the Gate, and recovery codes."
+        },
+        {
+          "slug": "reference/password",
+          "label": "password",
+          "blurb": "The email-and-password plugin: config, handlers, hashing, rate limit."
+        },
+        {
+          "slug": "reference/rastrillo",
+          "label": "rastrillo",
+          "blurb": "The root package: entrypoints, Options, Ctx, locales, assets, icons, agents, manifest types."
+        },
+        {
+          "slug": "reference/scope",
+          "label": "scope",
+          "blurb": "Owner-filtered GORM scopes: the one seam every owned query goes through."
+        },
+        {
+          "slug": "reference/sessions",
+          "label": "sessions",
+          "blurb": "Session rows, cookies, the three middlewares, and SafeReturn."
+        },
+        {
+          "slug": "reference/tools",
+          "label": "tools",
+          "blurb": "Schemas, dispatch through your own mux, and the three refusals."
+        },
+        {
+          "slug": "reference/ui",
+          "label": "ui",
+          "blurb": "Partials, template funcs, and the three vendored assets you own."
+        },
+        {
+          "slug": "reference/view",
+          "label": "view",
+          "blurb": "Render, Fail and ParseID for a generated action."
+        },
+        {
+          "slug": "reference/webauthn",
+          "label": "webauthn",
+          "blurb": "The two ceremonies, the six refusals, and what is deliberately not checked."
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,12 @@ The CARLOS web framework. This file is the app story: read it instead of the
 source. Module `github.com/carlosframework/rastrillo`; the worked
 reference is `examples/notes`.
 
+This file covers the common path completely — build a standard app from it
+alone. Where a rare trap is compressed to a sentence here, a **Full
+treatment** line points at the page that unpacks it. Each page stands
+alone, so read only the one you need: `docs/site/<page>.md` in this repo,
+or `curl -s https://rastrillo.org/docs/<page>.md`.
+
 A middle layer, not a full-stack framework: you write GORM models,
 `net/http` handlers on a chi router, and `html/template` pages. It supplies
 what is hard to get right twice: the database opener, session store, identity
@@ -134,19 +140,14 @@ full rebuild, not just `ADD COLUMN`). Renames are hand-written
 (`rastrillo migration new rename_x`; drop+add is indistinguishable to any
 tool); destructive changes need `--allow-destructive`.
 
-**Recovering an old database, and a generated store's ledger trap.** Boot
-refuses on a structural diff: a real database predates a subsystem's
-migrations, or a manifest resource's `gen/store/<name>/migrations.go` (a
-raw `[]string`, wrapped into a `*migrate.Set` by hand — `examples/notes`)
-got reshaped after first boot, so its regenerated SQL no longer matches
-the ledger's recorded checksum (applied SQL is immutable to it). Either
-way: `migration baseline --db <path> --through <id>` **first** (stamps up
-to `<id>` only), *then* apply the missing migration by hand; the next
-boot runs the rest. That order is load-bearing: stamping runs no DDL, and
-while the ledger is still empty any wake finds a matching schema and
-adopts it, recording every later migration as applied without running it.
-Bare `baseline` does exactly that on purpose, silently skipping a pending
-data migration — full walkthrough in `auth/store.go`.
+**Recovering an old database.** Boot refuses on a structural diff (a
+database predating a subsystem's migrations; a manifest resource
+reshaped after first boot, so its regenerated SQL no longer matches the
+ledger's checksum). Recovery is `migration baseline --db <path> --through
+<id>` **first**, *then* the missing migration by hand — that order is
+load-bearing, and bare `baseline` silently strands a pending data
+migration.
+Full treatment: docs/site/migrations.md — rastrillo.org/docs/migrations
 
 **The first deploy of a version with migrations must be schema-neutral.**
 Generate `0001_init` from the models *as already deployed* and ship it
@@ -254,10 +255,12 @@ is the whole contract.
   rotates fresh (2FA: `Config.SecondFactor` = `passkey`'s `Gate`). Lost
   passkey: a recovery code redeems at POST `/passkey/signin/recovery`,
   minted by `RegenerateRecoveryCodes` behind `RequireFresh`.
+  Full treatment: docs/site/passkeys.md — rastrillo.org/docs/passkeys
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or
   `sessions.Current(r)` (the `Session`: Subject, Method, AuthTime, At). Past
   `Require` the `ok` holds only for a plugin whose Subject is a numeric user
   id — see the keymail warning below.
+  Full treatment: docs/site/magic-links.md — rastrillo.org/docs/magic-links
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never
   a raw `return_to`: only a same-site absolute path (one leading `/`, no
   scheme or backslash) passes.
@@ -322,11 +325,10 @@ the shim rides SSE, falling back to polling itself.
 - **Manifests: declare what fits the vocabulary, hand-write the rest.** A
   `manifest/*.toml` resource generates CRUD screens — three field kinds
   (text, textarea, money), no relations. `store = "exclusive"` (default) is
-  one SQL table; `store = "mergeable"` keeps each record as an `eventlog`
-  stream — derived reads, tombstone deletes. `scope = "user"` owner-filters
-  either store by the session subject (someone else's row 404s); mount
-  behind `sessions.Require`/`auth.RequireSession`. Mix declared and
-  hand-written freely.
+  one SQL table, `"mergeable"` an `eventlog` stream per record.
+  `scope = "user"` owner-filters either by session subject (someone else's
+  row 404s); mount behind `sessions.Require`/`auth.RequireSession`.
+  Full treatment: docs/site/manifests.md — rastrillo.org/docs/manifests
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the driver name `sqlite` that
   `modernc.org/sqlite` already does, so a binary with it and
