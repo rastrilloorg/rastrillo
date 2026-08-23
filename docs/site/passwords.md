@@ -41,11 +41,15 @@ like a wrong password, verifying against a decoy hash so the timing does
 not give it away either.
 
 `Create` stores a new user and returns the id. Any error it returns is
-read as a duplicate email, which is the only realistic failure for a
-unique-email store.
+read as a duplicate email, the only realistic failure for a
+unique-email store — unless it wraps `password.ErrRefused`, in which
+case `Signup` renders that error's message verbatim at 403 instead.
 
 Leave `Create` nil and signup is disabled entirely: `SignupPage` and
-`Signup` both answer 404. Handy for an invite-only app.
+`Signup` both answer 404. `password.Refuse` is the finer-grained tool
+for the same job: an invite-only app can keep `Create` wired up and
+refuse only the addresses that never got an invitation, rather than
+closing signup outright.
 
 `RenderSignup` is required whenever `Create` is set, and `New` returns
 an error rather than letting you discover it at request time.

@@ -24,8 +24,8 @@ import (
 // errDuplicateEmail is the fake store's stand-in for whatever
 // distinct error the app's real Create returns on a UNIQUE
 // constraint violation — handlers.go's contract is: any error from
-// Create re-renders the duplicate-email message, no sentinel type
-// required.
+// Create that does NOT wrap ErrRefused re-renders the duplicate-email
+// message, no sentinel type required for that path.
 var errDuplicateEmail = errors.New("email already exists")
 
 // fakeUser is one row of the in-memory user store the tests fake
@@ -418,6 +418,84 @@ func TestSignupDuplicateEmailRerenders(t *testing.T) {
 	}
 	if d.Error != "That email is already registered." {
 		t.Errorf("Error = %q, want %q", d.Error, "That email is already registered.")
+	}
+}
+
+func TestSignupRefusedRendersForbidden(t *testing.T) {
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Create = func(context.Context, string, string) (int64, error) {
+			return 0, password.Refuse("New accounts here are created from an invitation.")
+		}
+	})
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", w.Code)
+	}
+	d, ok := env.signup.last()
+	if !ok {
+		t.Fatalf("RenderSignup not called")
+	}
+	if d.Error != "New accounts here are created from an invitation." {
+		t.Errorf("Error = %q, want the refusal message verbatim", d.Error)
+	}
+	if d.Email != "stranger@example.com" {
+		t.Errorf("Email = %q, want the submitted address echoed back", d.Email)
+	}
+}
+
+func TestSignupRefusedIsNotTheDuplicateMessage(t *testing.T) {
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Create = func(context.Context, string, string) (int64, error) {
+			return 0, password.Refuse("By invitation only.")
+		}
+	})
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+
+	d, _ := env.signup.last()
+	if strings.Contains(d.Error, "already registered") {
+		t.Errorf("a refusal must not read as duplicate-email: %q", d.Error)
+	}
+}
+
+func TestSignupRefusedStillCostsALimiterUnit(t *testing.T) {
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Create = func(context.Context, string, string) (int64, error) {
+			return 0, password.Refuse("By invitation only.")
+		}
+	})
+
+	// Hash runs before Create, so an unbounded refusal path is a
+	// PBKDF2 burn vector. Ten refusals must close the door.
+	for i := 0; i < 10; i++ {
+		env.h.Signup(httptest.NewRecorder(), signupRequest("stranger@example.com", "longenoughpw"))
+	}
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+	if w.Code != http.StatusTooManyRequests {
+		t.Errorf("status after 10 refusals = %d, want 429", w.Code)
+	}
+}
+
+func TestSignupPlainErrorStillReadsAsDuplicate(t *testing.T) {
+	env := newTestEnv(t, nil)
+	hash, _ := password.Hash("s3cretpw")
+	env.store.create(context.Background(), "taken@example.com", hash)
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("taken@example.com", "anotherlongpw"))
+
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("status = %d, want 422 — a non-refusal error keeps the old contract", w.Code)
+	}
+	d, _ := env.signup.last()
+	if d.Error != "That email is already registered." {
+		t.Errorf("Error = %q, want the duplicate message", d.Error)
 	}
 }
 

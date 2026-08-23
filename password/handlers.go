@@ -18,6 +18,25 @@ import (
 // so the response is not an enumeration oracle.
 const wrongCredentials = "Wrong email or password."
 
+// ErrRefused marks a Create failure as a policy refusal rather than a
+// storage failure. Signup renders a wrapped error's message to the
+// visitor at 403 instead of the duplicate-email copy at 422.
+//
+// A membership layer is the motivating caller: refusing an uninvited
+// signup with the duplicate-email message is both false and an
+// enumeration oracle. Use Refuse to build one.
+var ErrRefused = errors.New("rastrillo/password: signup refused")
+
+// Refuse wraps a visitor-facing message as a signup refusal. The
+// message is rendered verbatim, so write it as visitor copy — sentence
+// case, ending in a full stop.
+func Refuse(msg string) error { return &refusal{msg: msg} }
+
+type refusal struct{ msg string }
+
+func (r *refusal) Error() string { return r.msg }
+func (r *refusal) Unwrap() error { return ErrRefused }
+
 // PageData is what a Render* callback renders: the current attempt's
 // error (empty on first load), the submitted email (so a re-rendered
 // form doesn't make the visitor retype it), and the return_to to
@@ -43,9 +62,10 @@ type Config struct {
 
 	// Create stores a new user's email and password hash, returning the
 	// new id. Nil disables signup entirely: SignupPage and Signup both
-	// answer 404. Any error Create returns is treated as a duplicate
-	// email (the only realistic failure mode for a unique-email store)
-	// and re-renders accordingly.
+	// answer 404. An error wrapping ErrRefused is a policy refusal and
+	// renders its own message at 403; any other error is treated as a
+	// duplicate email (the only realistic failure mode for a
+	// unique-email store) and re-renders accordingly.
 	Create func(ctx context.Context, email, hash string) (int64, error)
 
 	// SignedInPath is where a fresh session lands absent a same-site
@@ -258,6 +278,21 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, err := h.cfg.Create(r.Context(), email, hash)
+	if errors.Is(err, ErrRefused) {
+		// A refusal is policy, not storage: the visitor hears the
+		// plugin's own reason at 403. It still costs a limiter unit —
+		// Hash ran above, so an unbounded refusal path is a PBKDF2
+		// burn vector. Unlike the duplicate branch below, the message
+		// is identical for every refused address and leaks nothing.
+		h.limit.fail(email, time.Now())
+		w.WriteHeader(http.StatusForbidden)
+		h.cfg.RenderSignup(w, r, PageData{
+			Error:    err.Error(),
+			Email:    email,
+			ReturnTo: r.FormValue("return_to"),
+		})
+		return
+	}
 	if err != nil {
 		// Create's only realistic failure against a unique-email store
 		// is a duplicate; any error is reported that way to the visitor

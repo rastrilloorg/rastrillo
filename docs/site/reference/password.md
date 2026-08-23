@@ -36,9 +36,23 @@ type Config struct {
 `sql.ErrNoRows` for an unknown address — treated identically to a wrong
 password, verified against a decoy hash so the timing does not differ.
 
-`Create` stores a new user. Any error it returns reads as a duplicate
-email, the only realistic failure for a unique-email store. Leave it nil
-and signup is disabled entirely: `SignupPage` and `Signup` both 404.
+`Create` stores a new user. An error wrapping `ErrRefused` is a policy
+refusal: `Signup` renders that error's message verbatim at 403. Any other
+error reads as a duplicate email, the only realistic failure for a
+unique-email store. Leave it nil and signup is disabled entirely:
+`SignupPage` and `Signup` both 404.
+
+```go
+var ErrRefused = errors.New("rastrillo/password: signup refused")
+
+func Refuse(msg string) error
+```
+
+`Refuse` builds a refusal carrying visitor copy. A membership layer is
+the motivating caller — refusing an uninvited signup with the
+duplicate-email message is both false and an enumeration oracle. The
+refusal still costs a rate-limiter unit, because `Hash` runs before
+`Create`.
 
 `SignedInPath` is where a fresh session lands absent a same-site
 `return_to`; it defaults to `/`.

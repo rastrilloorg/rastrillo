@@ -272,7 +272,8 @@ Signup 404), and `RenderSignup` is **required whenever Create is set** — New
 errors otherwise. `Lookup(ctx, email) (id, hash, error)` returns
 `sql.ErrNoRows` for an unknown email, treated like a wrong password (a
 decoy hash flattens timing). Any error from `Create` reads as a duplicate
-email.
+email, unless it wraps `password.ErrRefused` (use `password.Refuse(msg)`),
+which renders that message at 403.
 `Signin`/`Signup`/`Signout` are **POST-only** — Page variants on GET, the
 rest on POST, 405 to anything else. Render callbacks take
 `(w, r, password.PageData)` = `{Error, Email, ReturnTo}`;
