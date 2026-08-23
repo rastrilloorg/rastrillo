@@ -161,6 +161,12 @@ serves one team. A product with many teams gives each team its own instance
 (instances hibernate — idle ones cost nothing); isolation is the platform's
 process-and-file boundary, not a WHERE clause.
 
+**Roles and membership are an addon, not core.** Rastrillo has no role
+concept: who is *in* this instance and at what rank is
+`amadan.net/rastrillo/idear` — Owner/Admin/Member, invitations, and the
+members UI, over `sessions` and either identity plugin.
+Full treatment: docs/site/addons.md — rastrillo.org/docs/addons
+
 One seam, for every read and write:
 
 ```go
