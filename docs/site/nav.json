@@ -159,6 +159,11 @@
           "blurb": "The SQLite dialector, and the double-registration panic it avoids."
         },
         {
+          "slug": "reference/harness",
+          "label": "harness",
+          "blurb": "A browser-drive rig: localhost origin, virtual authenticator, real Chromium."
+        },
+        {
           "slug": "reference/jobs",
           "label": "jobs",
           "blurb": "Start, Get, the two bounds, and the three handlers."
