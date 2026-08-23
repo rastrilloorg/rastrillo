@@ -3,7 +3,7 @@
 // `go test -tags browser ./...`.
 //
 // Every other file in this package is build-tagged `browser`. The
-// README promises, twice, that chromedp stays out of the ordinary
+// README promises that chromedp stays out of the ordinary
 // build graph (`go list -deps ./...` pulls none of it), and an
 // untagged package importing chromedp would make that sentence false
 // the day it landed. This doc file is what keeps a plain

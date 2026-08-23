@@ -45,8 +45,8 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
-      # The README promises, twice, that chromedp stays out of the
-      # ordinary build graph. This is that sentence, executable.
+      # The README promises that chromedp stays out of the ordinary
+      # build graph. This is that sentence, executable.
       - name: chromedp stays out of the ordinary build graph
         run: |
           if go list -deps ./... | grep -i chromedp; then
@@ -151,13 +151,17 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # A pinned Playwright pins the Chromium build it installs, and it
-      # lands in the cache path harness.ChromePath already globs — no
-      # RASTRILLO_CHROME needed. The runner's preinstalled Chrome
-      # floats with the image and apt's chromium is a snap shim, so
-      # this is the simplest honest pin. Bump it deliberately.
+      # A pinned Playwright pins the Chromium build it installs. The
+      # runner's preinstalled Chrome floats with the image and apt's
+      # chromium is a snap shim, so RASTRILLO_CHROME points the tests
+      # at the binary this step just installed — explicitly, because
+      # PATH discovery would find the floating Chrome first and the
+      # cache layout varies across Playwright versions. Bump the pin
+      # deliberately.
       - name: install pinned chromium
-        run: npx --yes playwright@1.54.1 install --with-deps chromium
+        run: |
+          npx --yes playwright@1.54.1 install --with-deps chromium
+          echo "RASTRILLO_CHROME=$(ls "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome | tail -1)" >> "$GITHUB_ENV"
 
       # Only the packages carrying browser-tagged tests: the plain
       # suite already ran in the test job, and -tags browser ./...
