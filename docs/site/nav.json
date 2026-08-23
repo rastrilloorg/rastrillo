@@ -7,6 +7,101 @@
           "slug": "getting-started",
           "label": "Getting started",
           "blurb": "Install the CLI, scaffold an app, and get it serving."
+        },
+        {
+          "slug": "app-shape",
+          "label": "The shape of an app",
+          "blurb": "Five files plus migrations.go, and why main.go calls Resolve rather than Run."
+        }
+      ]
+    },
+    {
+      "title": "Building an app",
+      "pages": [
+        {
+          "slug": "data",
+          "label": "Data",
+          "blurb": "GORM models, and the two-pool SQLite handle db.Open returns."
+        },
+        {
+          "slug": "migrations",
+          "label": "Migrations",
+          "blurb": "Numbered, applied once at boot, ledgered \u2014 and the two rules that cost data if you get them wrong."
+        },
+        {
+          "slug": "scoping",
+          "label": "Scoping",
+          "blurb": "The one seam every owned query goes through, and why a row that isn't yours answers 404."
+        },
+        {
+          "slug": "forms",
+          "label": "Forms",
+          "blurb": "Reading input without ever binding a request onto a model."
+        },
+        {
+          "slug": "sessions",
+          "label": "Sessions",
+          "blurb": "Signed-in state as real rows, CSRF without tokens, and step-up."
+        },
+        {
+          "slug": "passwords",
+          "label": "Passwords",
+          "blurb": "The email-and-password plugin: its two callbacks, and its shared rate limit."
+        },
+        {
+          "slug": "magic-links",
+          "label": "Magic links & keymail",
+          "blurb": "The family default, and the sessions.UserID trap that comes with it."
+        },
+        {
+          "slug": "passkeys",
+          "label": "Passkeys & 2FA",
+          "blurb": "A second factor at step-up and at sign-in, plus recovery codes that need no JavaScript."
+        },
+        {
+          "slug": "jobs",
+          "label": "Background jobs",
+          "blurb": "Observable goroutines, their two bounds, and a status page that works with scripts off."
+        },
+        {
+          "slug": "templates",
+          "label": "Templates & UI",
+          "blurb": "One template per page, twenty-four partials, and the tokens stylesheet you own."
+        },
+        {
+          "slug": "icons",
+          "label": "Icons",
+          "blurb": "Eleven slugs that mean the same thing in every app, three delivery modes, and pinned versions."
+        },
+        {
+          "slug": "localization",
+          "label": "Localization",
+          "blurb": "Locale resolution, catalogs, and the gate that runs under --check only."
+        },
+        {
+          "slug": "manifests",
+          "label": "Manifests",
+          "blurb": "The declarative path: two stores, three field kinds, and where it honestly stops."
+        },
+        {
+          "slug": "assets",
+          "label": "Assets",
+          "blurb": "Fingerprinted static files, and the three files delivered once and owned by you."
+        },
+        {
+          "slug": "agents",
+          "label": "Agents & tools",
+          "blurb": "Actions as agent-callable tools, the consent gate, and the sidecar loop."
+        },
+        {
+          "slug": "testing",
+          "label": "Testing",
+          "blurb": "The scaffolded harness, serving without a listener, and the one gate definition."
+        },
+        {
+          "slug": "deploying",
+          "label": "Deploying",
+          "blurb": "The platform contract Serve implements, hibernation, and the schema-neutral first deploy."
         }
       ]
     },

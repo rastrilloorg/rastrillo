@@ -42,7 +42,14 @@ func parseGoSnippet(src string) error {
 	// Declaration fragments (a lone type or func) parse as a file only
 	// with a package clause.
 	decls := "package p\n\n" + src
-	_, err := parser.ParseFile(token.NewFileSet(), "snippet.go", decls, parser.SkipObjectResolution)
+	if _, err := parser.ParseFile(token.NewFileSet(), "snippet.go", decls, parser.SkipObjectResolution); err == nil {
+		return nil
+	}
+	// Struct-field fragments: a reference page quoting two fields of a
+	// Config is the commonest shape in the corpus, and it is neither a
+	// statement list nor a declaration list.
+	fields := "package p\n\ntype _T struct {\n" + src + "\n}\n"
+	_, err := parser.ParseFile(token.NewFileSet(), "snippet.go", fields, parser.SkipObjectResolution)
 	return err
 }
 
