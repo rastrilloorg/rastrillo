@@ -156,11 +156,14 @@ jobs:
       # chromium is a snap shim, so RASTRILLO_CHROME points the tests
       # at the binary this step just installed — explicitly, because
       # PATH discovery would find the floating Chrome first and the
-      # cache layout varies across Playwright versions. Bump the pin
-      # deliberately.
+      # cache layout varies across Playwright versions. 1.62.1 pins
+      # chromium-1234 — the build the whole suite is green against;
+      # 1.54.1's chromium-1181 deterministically dropped the enhanced
+      # select's Enter commit. Bump the pin deliberately, and rerun the
+      # tagged suite against the new build when you do.
       - name: install pinned chromium
         run: |
-          npx --yes playwright@1.54.1 install --with-deps chromium
+          npx --yes playwright@1.62.1 install --with-deps chromium
           echo "RASTRILLO_CHROME=$(ls "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome | tail -1)" >> "$GITHUB_ENV"
 
       # Only the packages carrying browser-tagged tests: the plain
