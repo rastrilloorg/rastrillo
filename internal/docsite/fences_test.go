@@ -30,27 +30,34 @@ func TestGoFencesParse(t *testing.T) {
 	}
 }
 
+// parseGoSnippet tries the four shapes a docs fence legitimately takes:
+// a whole file, a statement list, a declaration list, and a run of
+// struct fields.
+//
+// The error it reports on total failure is the DECLARATION attempt's,
+// not whichever framing happened to be tried last. Reporting the last
+// one sent a reader chasing "expected '}', found 'type'" from the
+// struct framing when the actual mistake was an illustrative
+// `func(...)` that is not a parameter list.
 func parseGoSnippet(src string) error {
-	fset := token.NewFileSet()
-	if _, err := parser.ParseFile(fset, "snippet.go", src, parser.SkipObjectResolution); err == nil {
-		return nil
+	framings := []string{
+		src,
+		"package p\n\nfunc _snippet() {\n" + src + "\n}\n",
+		"package p\n\n" + src,
+		"package p\n\ntype _T struct {\n" + src + "\n}\n",
 	}
-	wrapped := "package p\n\nfunc _snippet() {\n" + src + "\n}\n"
-	if _, err := parser.ParseFile(fset, "snippet.go", wrapped, parser.SkipObjectResolution); err == nil {
-		return nil
+	const reported = 2 // the declaration framing
+	var reportedErr error
+	for i, framing := range framings {
+		_, err := parser.ParseFile(token.NewFileSet(), "snippet.go", framing, parser.SkipObjectResolution)
+		if err == nil {
+			return nil
+		}
+		if i == reported {
+			reportedErr = err
+		}
 	}
-	// Declaration fragments (a lone type or func) parse as a file only
-	// with a package clause.
-	decls := "package p\n\n" + src
-	if _, err := parser.ParseFile(token.NewFileSet(), "snippet.go", decls, parser.SkipObjectResolution); err == nil {
-		return nil
-	}
-	// Struct-field fragments: a reference page quoting two fields of a
-	// Config is the commonest shape in the corpus, and it is neither a
-	// statement list nor a declaration list.
-	fields := "package p\n\ntype _T struct {\n" + src + "\n}\n"
-	_, err := parser.ParseFile(token.NewFileSet(), "snippet.go", fields, parser.SkipObjectResolution)
-	return err
+	return reportedErr
 }
 
 // TestFenceLanguagesAreDeclared keeps Go snippets inside the gate above.

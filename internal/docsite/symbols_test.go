@@ -5,6 +5,9 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"path"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -21,7 +24,27 @@ import (
 // would let a package go undocumented by staying out of the map, and
 // the second would accept an empty page.
 var referencePages = map[string]string{
-	"scope": "reference/scope",
+	"scope":    "reference/scope",
+	"db":       "reference/db",
+	"migrate":  "reference/migrate",
+	"view":     "reference/view",
+	"form":     "reference/form",
+	"flash":    "reference/flash",
+	"csrf":     "reference/csrf",
+	"sessions": "reference/sessions",
+	"password": "reference/password",
+	"auth":     "reference/auth",
+	"passkey":  "reference/passkey",
+	"webauthn": "reference/webauthn",
+	"jobs":     "reference/jobs",
+	"ui":       "reference/ui",
+	"tools":    "reference/tools",
+	"crypto":   "reference/crypto",
+	"blobs":    "reference/blobs",
+	"eventlog": "reference/eventlog",
+	"mail":     "reference/mail",
+	"gormlite": "reference/gormlite",
+	".":        "reference/rastrillo",
 }
 
 // TestExportedSymbolsAreDocumented is the completeness gate.
@@ -72,7 +95,7 @@ func TestExportedSymbolsAreDocumented(t *testing.T) {
 				}
 				continue
 			}
-			if !mentions(page.Body, sym) {
+			if !documents(page.Body, sym) {
 				missing = append(missing, sym)
 			}
 		}
@@ -110,6 +133,32 @@ func TestIgnoreMarkersNameRealSymbols(t *testing.T) {
 			}
 		}
 	}
+}
+
+// documents reports whether a page documents a symbol.
+//
+// A plain symbol must appear as a whole word. A method — "Sessions.Require"
+// — is satisfied either by that qualified spelling in prose or by its Go
+// declaration with a matching receiver, since a page quoting
+//
+//	func (s *Sessions) Require(next http.Handler) http.Handler
+//
+// has plainly documented it. The receiver type has to match: accepting a
+// bare ") Require(" would let a method on one type satisfy the same name
+// on another, which is exactly the confusion a reference page exists to
+// prevent.
+func documents(body, symbol string) bool {
+	if mentions(body, symbol) {
+		return true
+	}
+	recv, method, isMethod := strings.Cut(symbol, ".")
+	if !isMethod {
+		return false
+	}
+	decl := regexp.MustCompile(
+		`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(recv) + `\s*\)\s*` +
+			regexp.QuoteMeta(method) + `\s*[(\[]`)
+	return decl.MatchString(body)
 }
 
 // mentions reports whether a page names a symbol as a whole word.
@@ -224,4 +273,69 @@ func receiverName(recv *ast.FieldList) string {
 		}
 	}
 	return ""
+}
+
+// coveredElsewhere lists importable packages that deliberately have no
+// reference page of their own, each with the page that covers them.
+//
+// Both are support packages for a parent whose page is the right place
+// to describe them: splitting them out would give a reader two pages to
+// hold in their head for one idea. The map exists so that decision is
+// recorded and reviewable rather than an omission nobody notices.
+var coveredElsewhere = map[string]string{
+	"webauthn/authtest": "reference/webauthn",
+	"migrate/dump":      "reference/migrate",
+}
+
+// TestEveryPackageHasAReferencePage is the other half of the
+// completeness claim.
+//
+// TestExportedSymbolsAreDocumented proves every symbol of a MAPPED
+// package appears on its page. On its own that is satisfiable by
+// leaving a package out of the map, so this test walks the repository
+// for importable packages and requires each to be either mapped or
+// explicitly covered elsewhere. Together the two mean: no package goes
+// undocumented, and no page is empty.
+func TestEveryPackageHasAReferencePage(t *testing.T) {
+	const repo = "../.."
+	skip := map[string]bool{"internal": true, "cmd": true, "examples": true, "hack": true, "docs": true}
+
+	err := filepath.WalkDir(repo, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, relErr := filepath.Rel(repo, p)
+		if relErr != nil {
+			return relErr
+		}
+		rel = filepath.ToSlash(rel)
+		if d.IsDir() {
+			base := d.Name()
+			if strings.HasPrefix(base, ".") && rel != "." {
+				return filepath.SkipDir
+			}
+			if skip[strings.SplitN(rel, "/", 2)[0]] && rel != "." {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
+			return nil
+		}
+		dir := path.Dir(rel)
+		if _, mapped := referencePages[dir]; mapped {
+			return nil
+		}
+		if page, covered := coveredElsewhere[dir]; covered {
+			if page == "" {
+				t.Errorf("package %s is listed as covered elsewhere but names no page", dir)
+			}
+			return nil
+		}
+		t.Errorf("package %s has no reference page: add it to referencePages, or to coveredElsewhere with the page that covers it", dir)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk: %v", err)
+	}
 }
