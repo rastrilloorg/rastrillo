@@ -59,3 +59,22 @@ set to the old one (assertions only); a fresh device signs in via the
 legacy fallback, unwraps the seed, and enrols a new-RPID credential —
 `WrapSeed`, same seed. Settled: `LegacyRPID` removed; only new-name
 credentials remain.
+
+## Grants
+
+```go
+func (r Ring) Grant(memberBoxPub, contentKey []byte) ([]byte, error)
+func (r Ring) OpenGrant(memberBoxPriv, sealed []byte) ([]byte, error)
+```
+
+A member is the box half of a keypair. `Grant` wraps a content key —
+one key, one instance, never the seed — with `crypto.Seal` under
+`ns/grant/v1`: `ephPub(65) ‖ iv(12) ‖ ciphertext`. `OpenGrant` takes
+the raw 32-byte box private scalar, not a full `crypto.Keypair`,
+because member identities are ECDH-only pairs; the JS twin accepts the
+pkcs8/JWK import the app already holds.
+
+Revocation is the server deleting the grant row — nothing
+cryptographic. Re-keying after revocation, where an app wants it, is
+mint a new content key and re-grant to the remaining members; the
+package adds no machinery for that ceremony.
