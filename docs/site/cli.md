@@ -50,7 +50,9 @@ locale keys. Fails loudly on route collisions.
 
 `--check` verifies without writing, and is the pre-ship gate. It checks
 route collisions, action build tags, icon slugs that nothing answers,
-and i18n catalog completeness. Only `--check` fails on an incomplete
+and i18n catalog completeness — and, when the app has a
+`cmd/genvectors`, it runs the parity-vectors gate too, so
+`vectors --check` never needs a separate CI step. Only `--check` fails on an incomplete
 catalog — plain `generate`, and so `dev` and `new`, never does. That
 split is deliberate: silent fallback while you iterate, loud failure
 before you ship.
@@ -177,3 +179,7 @@ suite is neither a Go package nor a static asset.
 |---|---|
 | `--init` | Scaffold `cmd/genvectors`, the test/ parity suite, and the go-test belt into an existing app (once) |
 | `--check` | Pre-ship gate: regenerate, byte-compare, then run the JS parity suite with `node --test test/parity.test.mjs` |
+
+`generate --check` runs this same gate automatically when
+`cmd/genvectors` exists — one gate before ship, not two to remember; CI
+that already runs `generate --check` needs no extra step.
