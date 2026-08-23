@@ -78,3 +78,28 @@ Revocation is the server deleting the grant row — nothing
 cryptographic. Re-keying after revocation, where an app wants it, is
 mint a new content key and re-grant to the remaining members; the
 package adds no machinery for that ceremony.
+
+## Wraps
+
+```go
+type Wrap struct {
+	ID, Kind, Label, UID string
+	CredentialID         []byte
+	Wrapped              []byte
+}
+
+func AddWrap(wraps []Wrap, w Wrap) []Wrap
+func RemoveWrap(wraps []Wrap, id string) ([]Wrap, error)
+```
+
+The one lifecycle rule enforced in code, because getting it wrong loses
+data forever: **the last wrap is unrevokable**. `RemoveWrap` returns
+`ErrLastWrap` rather than leave a seed with zero wraps — a seed no one
+can ever open again — and `ErrUnknownWrap` for an ID it cannot find.
+`AddWrap` dedupes by ID, replacing an existing wrap in place. Both are
+pure: the input slice is never mutated, and the app persists wraps
+wherever it likes.
+
+An event-sourced consumer folding untrusted input must treat
+`ErrLastWrap` as a no-op, not a crash — errors are for interactive
+callers.
