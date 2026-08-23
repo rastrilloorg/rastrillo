@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/webauthn"
 	"github.com/chromedp/chromedp"
 )
@@ -113,6 +114,14 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 	r.watch()
 
 	var boot []chromedp.Action
+	if cfg.withoutPRFAtCreation {
+		// Registered before Navigate ever runs, in the main world —
+		// see WithoutPRFAtCreation for why this exact shape.
+		boot = append(boot, chromedp.ActionFunc(func(ctx context.Context) error {
+			_, err := page.AddScriptToEvaluateOnNewDocument(prfShimJS).Do(ctx)
+			return err
+		}))
+	}
 	boot = append(boot, chromedp.ActionFunc(func(ctx context.Context) error {
 		if err := webauthn.Enable().Do(ctx); err != nil {
 			return err

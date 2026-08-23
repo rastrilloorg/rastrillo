@@ -288,3 +288,44 @@ func TestBrowserCeremoniesRoundTripWithPRF(t *testing.T) {
 	}
 	rig.Screen("#ready", "after both ceremonies")
 }
+
+// TestRegisterFallsBackToPRFByAssertion covers the branch that shipped
+// from kass untested: prfSalt requested, creation returns no PRF,
+// register() fetches it with an immediate assertion
+// (webauthn.mjs's prfByAssertion) — one test upstream, for every
+// consumer.
+func TestRegisterFallsBackToPRFByAssertion(t *testing.T) {
+	// The baseline first, unshimmed: create() DOES return PRF here.
+	// Without it the shim below proves nothing — an authenticator that
+	// never answered PRF at creation would take the fallback path
+	// whether or not the shim works.
+	base := harness.New(t, (&fixture{}).handler)
+	base.Run(chromedp.Navigate(base.Origin + "/"))
+	base.Screen("#ready", "baseline fixture booted")
+	if got := evalString(base, "driver.probeCreatePRF()"); len(got) != 64 {
+		t.Fatalf("unshimmed create returned PRF %q, want 32 bytes of hex — the virtual authenticator is not answering the extension at creation", got)
+	}
+
+	// Now the shimmed rig: creation PRF is withheld by an own-property
+	// override on the returned credential, so register() must take the
+	// assertion fallback — credentials.get is untouched and serves real
+	// PRF there.
+	f := &fixture{}
+	rig := harness.New(t, f.handler, harness.WithoutPRFAtCreation())
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	rig.Screen("#ready", "shimmed fixture booted")
+	if got := evalString(rig, "driver.probeCreatePRF()"); got != "" {
+		t.Fatalf("shimmed create still returned PRF %q — the shim is not holding, so register() would never fall back", got)
+	}
+	regPRF := evalString(rig, "driver.register()")
+	if len(regPRF) != 64 {
+		t.Fatalf("fallback registration PRF is %q, want 32 bytes of hex", regPRF)
+	}
+	// PRF (hmac-secret) is deterministic per credential+salt, so the
+	// bytes the fallback fetched must equal a straight assertion's.
+	authPRF := evalString(rig, "driver.authenticate()")
+	if authPRF != regPRF {
+		t.Fatalf("straight assertion PRF %q != fallback PRF %q — the fallback fetched something other than the credential's real PRF", authPRF, regPRF)
+	}
+	rig.Screen("#ready", "after the fallback ceremonies")
+}

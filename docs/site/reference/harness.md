@@ -48,11 +48,30 @@ server it was talking to.
 
 ```go
 type Option func(*config)
+
+func WithoutPRFAtCreation() Option
 ```
 
 `New` takes a variadic list of `Option` values to adjust what it builds.
-None are exported by this package yet — a later change adds the first
-one.
+
+`WithoutPRFAtCreation` rehearses the browsers that refuse to return PRF
+(hmac-secret) output during creation, forcing `webauthn.mjs`'s
+two-prompt fallback: `register()` gets an empty extension result from
+`create()` and runs an immediate assertion to fetch PRF instead. The
+CDP virtual authenticator can't withhold PRF at creation on its own —
+`HasPrf` is all-or-nothing — so the rig fakes the condition one level
+up: a script registered on new documents, in the main world, before
+`New` ever navigates, wraps `navigator.credentials.create` and defines
+an *own* property `getClientExtensionResults: () => ({})` on the
+credential it returns. `credentials.get` is left untouched, so the
+fallback assertion still gets real PRF from the authenticator.
+
+That own-property shape is deliberate, not incidental: patching
+`PublicKeyCredential.prototype.getClientExtensionResults` would strip
+PRF from the fallback's own assertion too, since assertions read the
+same prototype method, and wrapping the credential in a `Proxy` trips
+its brand-checked `response`/`rawId` getters with "Illegal
+invocation".
 
 ## Finding Chromium
 
