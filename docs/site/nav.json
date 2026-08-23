@@ -1,0 +1,29 @@
+{
+  "sections": [
+    {
+      "title": "Start here",
+      "pages": [
+        {
+          "slug": "getting-started",
+          "label": "Getting started",
+          "blurb": "Install the CLI, scaffold an app, and get it serving."
+        }
+      ]
+    },
+    {
+      "title": "Reference",
+      "pages": [
+        {
+          "slug": "cli",
+          "label": "The CLI",
+          "blurb": "Every rastrillo command and flag, and when you reach for it."
+        },
+        {
+          "slug": "reference/scope",
+          "label": "scope",
+          "blurb": "Owner-filtered GORM scopes: the one seam every owned query goes through."
+        }
+      ]
+    }
+  ]
+}
