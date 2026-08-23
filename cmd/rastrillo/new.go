@@ -130,9 +130,14 @@ func runNew(args []string) error {
 		// library's, not app diff to read line by line.
 		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg),
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg),
-		filepath.Join(name, "manifest", "README.md"):                    fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                 fmt.Sprintf(makefileTemplate, name),
-		filepath.Join(name, ".gitignore"):                               fmt.Sprintf(gitignoreTemplate, name),
+		// The browser drive, on the same delivered-once terms as the
+		// harness. browser_test.go, never harness_test.go: that name
+		// (and word) already belongs to the httptest HTTP harness.
+		filepath.Join(name, "internal", pkg+"test", "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
+		filepath.Join(name, "README.md"):                               fmt.Sprintf(readmeTemplate, name, pkg),
+		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name),
+		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
 		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
@@ -175,7 +180,8 @@ func runNew(args []string) error {
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
 	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
 	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
-	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box)\n", pkg)
+	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
+	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + test + migration check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
@@ -184,6 +190,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
+	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
 	if rendered.AttribName != "" {
 		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, *iconSet)
 	}
@@ -733,6 +740,95 @@ func TestBareAssetNameStaysFresh(t *testing.T) {
 		t.Errorf("Cache-Control = %%q, want no-cache", got)
 	}
 }
+`
+
+// browserTestTemplate is the scaffolded browser drive, delivered once
+// like the harness: app-owned from here on. The existing
+// harness_test.go is the httptest HTTP harness and keeps its name —
+// the browser rig takes a different one everywhere (file, tag,
+// invocation), because "harness" already means the HTTP one throughout
+// the scaffold's prose.
+const browserTestTemplate = `//go:build browser
+
+// The browser drive: the whole app in a real Chromium, wired exactly
+// as cmd/%[1]s/main.go wires it — loud on any console error, failed
+// request, 4xx/5xx, or JS value that leaked to the screen unrendered.
+// Not part of the plain suite:
+//
+//	go test -tags browser ./...
+//
+// It needs a Chromium: on PATH, via RASTRILLO_CHROME, or in a
+// Playwright cache. A skip is not a pass — with no browser this fails,
+// unless RASTRILLO_BROWSER_OPTIONAL is set, which makes the skip a
+// deliberate visible choice rather than an accident.
+package %[2]stest
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"path/filepath"
+	"testing"
+
+	"github.com/carlosframework/rastrillo/db"
+	"github.com/carlosframework/rastrillo/harness"
+	"github.com/chromedp/chromedp"
+
+	%[2]s "%[1]s/internal/%[2]s"
+)
+
+// TestBrowserWalk is the minimal loud walk: the home screen arrives
+// with nothing wrong anywhere the rig watches. Grow it with the app —
+// each screen a flow reaches earns a Screen() line, and an expected
+// probe (a signed-out 401, say) earns a rig.Allow.
+func TestBrowserWalk(t *testing.T) {
+	rig := harness.New(t, func(origin string) http.Handler {
+		// The scaffold's own wiring, origin included: the rig hands
+		// the app its localhost origin before serving — the same seam
+		// main.go fills from %[3]s_ORIGIN.
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		d, err := db.Open(filepath.Join(t.TempDir(), "app.db"), logger)
+		if err != nil {
+			t.Fatalf("db.Open: %%v", err)
+		}
+		t.Cleanup(func() { d.Close() })
+		mux, err := %[2]s.App(d, origin, logger)
+		if err != nil {
+			t.Fatalf("App: %%v", err)
+		}
+		return mux
+	})
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	rig.Screen("body", "home")
+}
+`
+
+// readmeTemplate is the scaffolded app README. Small on purpose:
+// AGENTS.md carries the conventions; this says what the app is and
+// how the browser drive runs — including that CI participation is the
+// app's own call.
+const readmeTemplate = `# %[1]s
+
+A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. ` + "`make ci`" + `
+is the gate — vet, gofmt, tests, migration check, one definition for
+CI and for you. AGENTS.md carries the working conventions.
+
+## Browser drive
+
+` + "`internal/%[2]stest/browser_test.go`" + ` walks the app in a real
+Chromium — loud on any console error, failed request, or JS value that
+leaked to the screen:
+
+` + "```sh" + `
+go test -tags browser ./...   # real browser, loud on any console error
+                              # — not part of the plain suite
+` + "```" + `
+
+It needs a Chromium: on PATH, via ` + "`RASTRILLO_CHROME`" + `, or in a
+Playwright cache. **A skip is not a pass:** with no browser it fails,
+unless ` + "`RASTRILLO_BROWSER_OPTIONAL=1`" + ` makes the skip a deliberate,
+visible choice. ` + "`make ci`" + ` runs the plain suite only — whether CI
+also runs the browser drive, and on what runner, is this app's call.
 `
 
 const manifestReadme = `# manifest/ — the declarative path

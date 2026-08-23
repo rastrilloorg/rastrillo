@@ -589,33 +589,54 @@ than setting a new policy.
 
 ## Browser tests
 
-Almost everything here is covered by ordinary Go tests. One thing is not:
-`field-select`'s searchable enhancement needs a real JS engine, real
-focus and real keyboard handling, so it gets a single chromedp drive:
+Almost everything here is covered by ordinary Go tests. What is not —
+a real JS engine, real focus, a real authenticator — runs under one
+build tag, framework and scaffolded apps alike:
 
 ```
-go test -tags browser ./ui/
+go test -tags browser ./...
 ```
 
-Build-tagged, so a plain `go test ./...` never half-runs it and chromedp
-stays out of the ordinary build graph (`go list -deps ./...` pulls none
-of it). It finds a Chromium on `PATH`, via `RASTRILLO_CHROME`, or in a
-Playwright cache. **A skip is not a pass:** with no browser it fails,
+Build-tagged, so a plain `go test ./...` never half-runs a browser and
+chromedp stays out of the ordinary build graph (`go list -deps ./...`
+pulls none of it — CI runs that sentence as a step). A Chromium is
+found on `PATH`, via `RASTRILLO_CHROME`, or in a Playwright cache.
+**A skip is not a pass:** with no browser the tagged tests fail,
 unless `RASTRILLO_BROWSER_OPTIONAL=1` makes the skip a deliberate,
-visible choice.
+visible choice. CI's `browser` job runs the harness and webauthn
+packages with a pinned Chromium on every PR; the ui select drive stays
+a deliberate local run while issue #86 (its Enter reaches the form on
+that runner, nowhere else) is open.
 
-It is one test on purpose. A browser drive is expensive, so that test
-drives the whole journey — render, enhance, filter, keyboard-select,
-mirror back, submit — and asserts the server received the value a user
-picked. It is loud about console errors and junk-scans the rendered text
-for `undefined`, `[object Object]` and `NaN`: the bug class that renders
-perfectly and says nothing.
+Three packages carry the tag:
 
-Its assertions are written as the bug classes they catch, and each was
-verified by breaking the script on purpose and watching the test fail —
-including the one that found a real bug during development, where the
-filter box kept the committed label so typing appended to it, matched
-nothing, and silently committed the pre-existing value.
+- `ui/` — `field-select`'s searchable enhancement gets a single
+  chromedp drive of the whole journey — render, enhance, filter,
+  keyboard-select, mirror back, submit — asserting the server received
+  the value a user picked. Its assertions are written as the bug
+  classes they catch, and each was verified by breaking the script on
+  purpose and watching the test fail — including the one that found a
+  real bug during development, where the filter box kept the committed
+  label so typing appended to it, matched nothing, and silently
+  committed the pre-existing value.
+- `harness/` — the browser rig itself, the library those drives are
+  built on: `harness.New` binds a localhost listener first, hands the
+  app its origin (`http://localhost:PORT` — an IP is not a WebAuthn RP
+  ID), then launches a Chromium with a CDP virtual authenticator, PRF
+  included. Watchers turn every console error, failed request and
+  4xx/5xx into a test failure (`rig.Allow` excuses expected probes);
+  `rig.Screen` gates each screen behind a junk scan of its text, input
+  values and aria-labels for `undefined`, `null`, `[object Object]`,
+  `NaN` — the bug class that renders perfectly and says nothing.
+- `webauthn/` — real ceremonies against the virtual authenticator:
+  enrolment, PRF at creation, sign-in, and the two-prompt
+  `prfByAssertion` fallback, forced by `harness.WithoutPRFAtCreation()`
+  because the CDP authenticator cannot withhold PRF at creation on its
+  own.
+
+`rastrillo new` scaffolds `internal/<pkg>test/browser_test.go` on the
+same tag — the minimal loud walk, boots the whole app through
+`harness.New` and grows with it.
 
 `chromedp` is pinned to v0.14.2 rather than the latest: newer releases
 require Go 1.26, and a test-only dependency should not raise the module's

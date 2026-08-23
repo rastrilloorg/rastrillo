@@ -45,6 +45,15 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
+      # The README promises that chromedp stays out of the ordinary
+      # build graph. This is that sentence, executable.
+      - name: chromedp stays out of the ordinary build graph
+        run: |
+          if go list -deps ./... | grep -i chromedp; then
+            echo "go list -deps ./... pulls chromedp — the README's promise is broken"
+            exit 1
+          fi
+
       # The race detector needs cgo, so this one step overrides the
       # job-wide CGO_ENABLED=0 — the static-binary criterion is about
       # what ships, not about what a detector build links. Scoped to the
@@ -124,3 +133,48 @@ jobs:
           done
           curl -sf http://127.0.0.1:8199/healthz
           kill %1
+
+  # The browser drive: rastrillo's own browser-tagged tests — the ui
+  # select journey, the harness's own checks, and webauthn's PRF
+  # ceremonies including the prfByAssertion fallback — on every PR.
+  # RASTRILLO_BROWSER_OPTIONAL stays unset on purpose: a skip is not a
+  # pass, so a runner that loses its browser fails loudly.
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=mod
+      CGO_ENABLED: 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # A pinned Playwright pins the Chromium build it installs. The
+      # runner's preinstalled Chrome floats with the image and apt's
+      # chromium is a snap shim, so RASTRILLO_CHROME points the tests
+      # at the binary this step just installed — explicitly, because
+      # PATH discovery would find the floating Chrome first and the
+      # cache layout varies across Playwright versions. 1.62.1 pins
+      # chromium-1234 — the build the whole suite is green against;
+      # 1.54.1's chromium-1181 deterministically dropped the enhanced
+      # select's Enter commit. Bump the pin deliberately, and rerun the
+      # tagged suite against the new build when you do.
+      - name: install pinned chromium
+        run: |
+          npx --yes playwright@1.62.1 install --with-deps chromium
+          echo "RASTRILLO_CHROME=$(ls "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome | tail -1)" >> "$GITHUB_ENV"
+
+      # Only the packages carrying browser-tagged tests: the plain
+      # suite already ran in the test job, and -tags browser ./...
+      # would rerun all of it here for nothing. -p 1 serialises the
+      # packages — parallel Chromium cold-starts contend for the
+      # runner. The ui select drive is deliberately absent: it is
+      # deterministic-green locally but 0-for-5 on this runner, where
+      # the Enter that commits the selection reaches the form instead
+      # and submits the page out from under the drive (issue #86 has
+      # the captured widget-state evidence). It stays a deliberate
+      # local run, as it was before this job existed.
+      - name: browser-tagged tests
+        run: go test -tags browser -p 1 ./harness/ ./webauthn/ -count=1
