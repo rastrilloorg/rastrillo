@@ -1,25 +1,15 @@
-# 🤖 Magic links and keymail
+# 🤖 Magic links
 
-`rastrillo/auth` is the framework's turnkey sign-in and the family
-default: a magic-link email that works for every address, which upgrades
-itself to the keymail ceremony when the address resolves to a claimed
-keymail inbox.
+`rastrillo/auth` signs people in by emailing them a link. No password to
+choose, store, or reset.
 
-It wraps `github.com/keymaildev/signin`, filling in the holes that
-package deliberately leaves — link storage, mailer, cookies, sessions,
-CSRF, admission — once here instead of once per app.
+It is the framework's turnkey option: you get the whole flow — link
+minting, single-use redemption, rate limiting, sessions, CSRF — and you
+keep your own sign-in page.
 
 If you read nothing else on this page, read
-[the trap](#the-trap-do-not-use-sessions-userid-here).
-
-## The decision tree
-
-Every submitted address gets classified. A claimed keymail inbox gets
-the keymail OAuth ceremony; every other address gets a signed link by
-email.
-
-Classification fails open. If the probe fails, the address gets a magic
-link. Nobody is ever locked out because a classifier was unreachable.
+[the trap](#the-trap-do-not-use-sessions-userid-here). It costs people
+a working app.
 
 ## Wiring it
 
@@ -63,19 +53,16 @@ see [Migrations](/docs/migrations).
 | `?err=rate` | rate limited |
 | `?err=address` | the address was rejected |
 | `?err=expired` | the link had expired |
-| `?err=keymail` | the keymail approval failed |
-| `?force=1` | offer the plain-email escape hatch after a failed keymail approval |
 
 ## Configuration worth understanding
 
 `InstanceKey` must not be empty, and `New` refuses an empty one. It
 seals the pending blob with an HMAC, and an empty input hashes to one
 fixed, publicly computable value — identical across every deployment
-that made the same mistake — which would let an attacker forge a pending
-blob naming their own keymail server.
+that made the same mistake.
 
-`Origin` is the OAuth `client_id` keymail validates redirects against,
-the base of emailed links, and what decides the cookie attributes.
+`Origin` is the base of emailed links, and what decides the cookie
+attributes.
 
 `Mailer` is a `mail.Sender`. Leave it nil and you get `mail.Logged` with
 a warning on every send, because an emailed link is a live credential
@@ -93,11 +80,11 @@ layered on this hook, not something the framework models for you.
 
 This is the most expensive mistake you can make with this plugin.
 
-Under keymail the session's `Subject` is the verified email address, not
-a numeric id. So:
+The session's `Subject` is the **verified email address**, not a numeric
+id. So:
 
 ```go
-uid, ok := sessions.UserID(r) // (0, false) — always, under keymail
+uid, ok := sessions.UserID(r) // (0, false) — always, under this plugin
 ```
 
 And the ordinary scoping seam drops that `ok`:
@@ -147,3 +134,31 @@ defeat single use.
 An unknown hash, a wrong purpose and an expired row all come back as the
 same "not ok"; telling them apart would be an oracle. The row is deleted
 even when expired, because a presented token is spent either way.
+
+## Rate limiting
+
+A per-address budget, the same shape the
+[password plugin](/docs/passwords) uses: repeated failures answer 429
+until one ages out, and a success resets it. In-memory, so per-process.
+IP-level throttling is the deployment's job.
+
+## Aside: the keymail upgrade
+
+`rastrillo/auth` wraps `github.com/keymaildev/signin`, and if a
+submitted address turns out to have a claimed
+[keymail](https://keymail.dev) inbox, sign-in upgrades itself to
+keymail's OAuth ceremony instead of emailing a link.
+
+You almost certainly do not need to think about this. Keymail has a
+small user base, the upgrade is automatic, and the plugin behaves
+identically either way from your app's side — same handlers, same
+session, same `Subject`.
+
+Two details if you do care. Classification **fails open**: if the probe
+fails, the address gets an ordinary magic link, so nobody is locked out
+by a classifier being unreachable. And two more outcome queries can
+reach your sign-in page — `?err=keymail` when an approval fails, and
+`?force=1` to offer the plain-email escape hatch after one.
+
+`Config.Origin` doubles as the OAuth `client_id` that keymail validates
+redirects against.

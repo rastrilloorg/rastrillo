@@ -259,7 +259,7 @@ is the whole contract.
 - Read the viewer with `sessions.UserID(r)` (int64, ok) or
   `sessions.Current(r)` (the `Session`: Subject, Method, AuthTime, At). Past
   `Require` the `ok` holds only for a plugin whose Subject is a numeric user
-  id — see the keymail warning below.
+  id — see the `auth` warning below.
   Full treatment: docs/site/magic-links.md — rastrillo.org/docs/magic-links
 - Sign-in redirect targets go through `sessions.SafeReturn(r, "/")` — never
   a raw `return_to`: only a same-site absolute path (one leading `/`, no
@@ -280,13 +280,13 @@ password writes the 422 itself, so the callback must not.
 
 **Rate limiting:** Signin and Signup share a per-email budget — 10 failures in
 15 minutes answers 429 until one ages out, success resets it, in-memory (IP
-throttling is deployment's). The keymail plugin (`rastrillo/auth`, the family
-default: magic-link auto-upgrading to keymail) rate-limits likewise:
-`auth.New(auth.Config{...})` with `Begin`/`Callback`/`Verify`/`Signout` and
-`RequireSession`, over the same `sessions` core. **With keymail, do not use
-`sessions.UserID`:** its Subject is the verified *email*, so it returns
-`(0, false)`, and the §3 seam, dropping that `ok`, would scope every query to
-`user_id = 0`. Read the viewer with `auth.From(r)` or `sessions.Current(r)`
+throttling is deployment's). The magic-link plugin (`rastrillo/auth`: sign-in
+by emailed link, upgrading itself to the keymail ceremony for the few
+addresses that have one) rate-limits likewise: `auth.New(auth.Config{...})`
+with `Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, over the same
+`sessions` core. **Under `auth`, do not use `sessions.UserID`:** its Subject
+is the verified *email* on both paths, so it returns `(0, false)`, and the §3
+seam, dropping that `ok`, would scope every query to `user_id = 0`. Read the viewer with `auth.From(r)` or `sessions.Current(r)`
 (`RequireSession` stashes both) and map the address to your user row's id
 before scoping.
 

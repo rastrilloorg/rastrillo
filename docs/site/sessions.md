@@ -5,9 +5,9 @@ earned: an identity plugin verifies a credential and calls `SignIn`, and
 that call is the whole plugin contract.
 
 Three plugins ship — [passwords](/docs/passwords),
-[magic links and keymail](/docs/magic-links), and
-[passkeys](/docs/passkeys) as a second factor — and you can write
-another without changing anything here.
+[magic links](/docs/magic-links), and [passkeys](/docs/passkeys) as a
+second factor — and you can write another without changing anything
+here.
 
 ## What a session is
 
@@ -108,12 +108,12 @@ sess, ok := sessions.Current(r)   // the whole Session
 `Session` carries `Subject`, `Method`, `AuthTime` and `At`. `Subject` is
 your own identifier for who is signed in, kept as a string so plugins
 never have to agree on a numeric type. `Method` names how the credential
-was verified, in the plugin's vocabulary: `"password"`, `"keymail"`,
+was verified, in the plugin's vocabulary: `"password"`, `"magiclink"`,
 `"magiclink+passkey"`.
 
 `UserID` parses `Subject` as an `int64`. Past `Require` its `ok` holds
-only for a plugin whose subject really is a numeric user id. It is not
-for keymail, whose subject is an email address — see
+only for a plugin whose subject really is a numeric user id, and the
+magic-link plugin's is an email address — see
 [Magic links](/docs/magic-links) for what follows from assuming
 otherwise.
 
