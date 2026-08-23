@@ -163,8 +163,11 @@ process-and-file boundary, not a WHERE clause.
 
 **Roles and membership are an addon, not core.** Rastrillo has no role
 concept: who is *in* this instance and at what rank is
-`amadan.net/rastrillo/idear` — Owner/Admin/Member, invitations, and the
-members UI, over `sessions` and either identity plugin.
+`amadan.net/rastrillo/idear` — Owner/Admin/Member, invitations and the
+membership gate (it renders no sign-in form and mints no session), over
+`sessions` and either identity plugin. Separate module and repo —
+never `github.com/carlosframework/idear`. **In development** — that path
+and its SKILL.md URL are the contract, and neither fetches yet.
 Full treatment: docs/site/addons.md — rastrillo.org/docs/addons
 
 One seam, for every read and write:
@@ -283,11 +286,12 @@ which renders that message at 403.
 `Signin`/`Signup`/`Signout` are **POST-only** — Page variants on GET, the
 rest on POST, 405 to anything else. Render callbacks take
 `(w, r, password.PageData)` = `{Error, Email, ReturnTo}`;
-password writes the 422 itself, so the callback must not.
+password writes the status itself (422/403/429), so the callback must not.
 
 **Rate limiting:** Signin and Signup share a per-email budget — 10 failures in
 15 minutes answers 429 until one ages out, success resets it, in-memory (IP
-throttling is deployment's). The magic-link plugin (`rastrillo/auth`: sign-in
+throttling is deployment's). A `Refuse` refusal meters on a
+second budget Signin never reads. The magic-link plugin (`rastrillo/auth`: sign-in
 by emailed link, upgrading itself to the keymail ceremony for the few
 addresses that have one) rate-limits likewise: `auth.New(auth.Config{...})`
 with `Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, over the same

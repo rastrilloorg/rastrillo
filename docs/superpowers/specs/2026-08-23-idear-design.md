@@ -317,12 +317,25 @@ over, because a reader will otherwise assume the guarantee is uniform:
 
 **Refusals need a channel.** `password.Config.Create`'s contract is that
 *any* error means duplicate-email, so an uninvited visitor would be told
-their address is already registered — false, and an enumeration oracle of
-exactly the kind PRs #69–#73 closed. This design therefore adds
-`password.ErrRefused` to the **core** package: `Signup` checks
-`errors.Is(err, password.ErrRefused)` and renders the plugin's message at
-403. That makes §8 more than the three files the first draft promised,
-and the seam is worth it — anything gating signup needs it.
+their address is already registered — which is simply false. This design
+therefore adds `password.ErrRefused` to the **core** package: `Signup`
+checks `errors.Is(err, password.ErrRefused)` and renders the refusal's
+own message at 403. That makes §8 more than the three files the first
+draft promised, and the seam is worth it — anything gating signup needs
+it.
+
+Be honest about the direction of the enumeration argument, because the
+tempting version of it is backwards. The old behaviour was *less*
+distinguishable, not more: an invite-only app answered 422 "already
+registered" both to a registered address and to an uninvited
+unregistered one, and a prober could not tell them apart. The 403
+**creates** that existence bit; it does not close one. The
+justification is that the duplicate message is false, and that a true
+answer someone can distinguish is worth more than a false answer they
+cannot. idear's refusal copy must therefore be one string for every
+refused address, never interpolating the address, or the 403 becomes a
+finer oracle than the outcome alone. Logging which address was refused
+is idear's job — the framework deliberately does not log refusals.
 
 **Deactivation is enforced per request, not at sign-in — under password.**
 `password.Signin` runs Lookup → Verify → mint with no idear involvement;

@@ -19,17 +19,34 @@ import (
 const wrongCredentials = "Wrong email or password."
 
 // ErrRefused marks a Create failure as a policy refusal rather than a
-// storage failure. Signup renders a wrapped error's message to the
+// storage failure. Signup renders a wrapped refusal's message to the
 // visitor at 403 instead of the duplicate-email copy at 422.
 //
-// A membership layer is the motivating caller: refusing an uninvited
-// signup with the duplicate-email message is both false and an
-// enumeration oracle. Use Refuse to build one.
+// A membership layer is the motivating caller: telling an uninvited
+// visitor that their address is already registered is simply false.
+// The 403 buys that honesty at a price — a refused address now looks
+// different from a registered one, where the duplicate message made
+// the two indistinguishable. That is an accepted trade, not an avoided
+// one; Signup's doc comment states the whole posture. Use Refuse to
+// build one.
 var ErrRefused = errors.New("rastrillo/password: signup refused")
+
+// refusedGeneric is what a refusal renders when it carries no message
+// of its own — a bare ErrRefused, or Refuse(""). The sentinel's own
+// text names the package and would read as an internal leak on a
+// public page, and a blank error would render a 403 with nothing on
+// it, so neither is ever shown.
+const refusedGeneric = "Sign-up is not open to that address."
 
 // Refuse wraps a visitor-facing message as a signup refusal. The
 // message is rendered verbatim, so write it as visitor copy — sentence
 // case, ending in a full stop.
+//
+// Write one message that fits every refused address, and never
+// interpolate the submitted address into it. Nothing here enforces
+// that: a message that varies by address turns the 403 from a single
+// outcome into a finer oracle than the status alone. An empty message
+// renders refusedGeneric rather than a blank page.
 func Refuse(msg string) error { return &refusal{msg: msg} }
 
 type refusal struct{ msg string }
@@ -101,6 +118,9 @@ type Config struct {
 type Handlers struct {
 	cfg   Config
 	limit *limiter
+	// refusals is a second budget, for Create's policy refusals only.
+	// It is deliberately not the one Signin consults — see limit.go.
+	refusals *limiter
 }
 
 // New validates cfg and returns a ready *Handlers.
@@ -123,7 +143,7 @@ func New(cfg Config) (*Handlers, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
-	return &Handlers{cfg: cfg, limit: newLimiter()}, nil
+	return &Handlers{cfg: cfg, limit: newLimiter(), refusals: newLimiter()}, nil
 }
 
 // SigninPage renders the sign-in form: GET, no state change.
@@ -221,15 +241,25 @@ func (h *Handlers) rerenderSignin(w http.ResponseWriter, r *http.Request, email 
 // Signup is POST /signup: validate, hash, store, and sign in — or 404
 // if Config.Create is nil (signup disabled).
 //
-// Signup shares Signin's per-email limiter, so probing an address
-// through either door spends the same budget and blocks both. What
-// remains open by design: the duplicate-email answer below is an
+// Signup shares Signin's per-email limiter for the failures both doors
+// can see, so probing an address through either spends the same budget
+// and blocks both. Policy refusals meter against a second budget of
+// their own, which Signin never consults (see limit.go).
+//
+// What remains open by design: the duplicate-email answer below is an
 // honest account-existence oracle, because a password form has no
-// out-of-band channel to defer the answer to. The enumeration-free
-// alternative is the keymail plugin, whose email loop answers every
-// address identically; and a sweep across many addresses — which
-// per-email limiting cannot see — stays the deployment concern
-// limit.go documents.
+// out-of-band channel to defer the answer to. A refusal widens that
+// rather than narrowing it — a 403 and a 422 are distinguishable, so
+// an app that refuses uninvited addresses tells a prober which
+// addresses it already knows, where the duplicate copy would have made
+// the two cases look the same. The trade is taken with open eyes: the
+// alternative is telling a stranger a false thing about their own
+// address, and a true distinguishable answer is worth more than a
+// false identical one. The enumeration-free alternative for the whole
+// flow is the keymail plugin, whose email loop answers every address
+// identically; and a sweep across many addresses — which per-email
+// limiting cannot see — stays the deployment concern limit.go
+// documents.
 //
 // POST only: same plaintext-password-in-URL reasoning as Signin.
 func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
@@ -250,8 +280,11 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 
 	// The gate runs before validation and Hash, mirroring Signin: a
 	// blocked attempt costs no PBKDF2 work and hears only the volume
-	// message.
-	if h.limit.blocked(email, time.Now()) {
+	// message. Both budgets are consulted here — the refusal budget is
+	// spent only by this handler, so nothing else would ever enforce
+	// it.
+	now := time.Now()
+	if h.limit.blocked(email, now) || h.refusals.blocked(email, now) {
 		w.WriteHeader(http.StatusTooManyRequests)
 		h.cfg.RenderSignup(w, r, PageData{
 			Error:    tooManyAttempts,
@@ -280,14 +313,22 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	id, err := h.cfg.Create(r.Context(), email, hash)
 	if errors.Is(err, ErrRefused) {
 		// A refusal is policy, not storage: the visitor hears the
-		// plugin's own reason at 403. It still costs a limiter unit —
-		// Hash ran above, so an unbounded refusal path is a PBKDF2
-		// burn vector. Unlike the duplicate branch below, the message
-		// is identical for every refused address and leaks nothing.
-		h.limit.fail(email, time.Now())
+		// caller's own reason at 403. It costs a unit of the refusal
+		// budget — Hash ran above, so an unmetered refusal path is a
+		// PBKDF2 burn vector — but not a unit of the shared budget
+		// Signin reads, or a stranger who knows an invitee's address
+		// could hold it at 429 on both doors indefinitely.
+		//
+		// The 403 is distinguishable from the 422 below, so it does
+		// carry an existence bit the duplicate copy hid; Signup's doc
+		// comment states why that trade is taken. errors.Is is the
+		// predicate but not the copy: the message comes off the
+		// *refusal itself, so a caller who wrapped the sentinel with
+		// their own context cannot put that context on a public page.
+		h.refusals.fail(email, time.Now())
 		w.WriteHeader(http.StatusForbidden)
 		h.cfg.RenderSignup(w, r, PageData{
-			Error:    err.Error(),
+			Error:    refusalMessage(err),
 			Email:    email,
 			ReturnTo: r.FormValue("return_to"),
 		})
@@ -309,7 +350,21 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.limit.clear(email)
+	h.refusals.clear(email)
 	h.signInAndRedirect(w, r, id)
+}
+
+// refusalMessage is the visitor copy for a refusal. errors.As, not
+// err.Error(): Error() on a wrapped refusal returns the wrapper's
+// message ("invitation lookup: rastrillo/password: signup refused"),
+// which is an internals leak on a public 403. A bare sentinel and an
+// empty Refuse("") both fall back to refusedGeneric.
+func refusalMessage(err error) string {
+	var ref *refusal
+	if errors.As(err, &ref) && ref.msg != "" {
+		return ref.msg
+	}
+	return refusedGeneric
 }
 
 func (h *Handlers) rerenderSignup(w http.ResponseWriter, r *http.Request, msg, email string) {

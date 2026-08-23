@@ -97,9 +97,9 @@ func renderContent(w http.ResponseWriter, r *http.Request, name string, content 
 }
 
 // renderSignin and renderSignup are password.Config's RenderSignin/
-// RenderSignup: password.go already writes the 422 status itself
-// before calling either on a failed attempt, so these never touch the
-// status line.
+// RenderSignup: password.go writes the status itself before calling
+// either — 422 for a failed attempt, 403 for a Create refusal, 429
+// when the rate limiter trips — so these never touch the status line.
 func renderSignin(w http.ResponseWriter, r *http.Request, d password.PageData) {
 	renderContent(w, r, "signin", d)
 }

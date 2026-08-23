@@ -34,8 +34,17 @@ fork wearing a smaller name.
 
 ### idear — accounts, roles, invitations
 
+**Status:** in development. The module path and the `SKILL.md` URL below
+are the contract it ships against, not addresses that resolve today;
+neither will fetch until idear is announced.
+
 **Module:** `amadan.net/rastrillo/idear` ·
 **Source:** <https://amadan.net/rastrillo/idear>
+
+The vanity path is `amadan.net`, not `github.com/carlosframework`,
+because an addon is a separate module in a separate repository on its
+own release schedule — do not guess `github.com/carlosframework/idear`,
+which does not exist. Use the path above verbatim.
 
 The roster for an instance: who is in it, at what role, and who may
 change that. Three strictly ordered roles — Owner, Admin, Member, with
@@ -53,14 +62,14 @@ plugin the app already chose, so [passwords](/docs/passwords) and
 [magic links](/docs/magic-links) both keep working:
 
 ```go
-r, err := idear.New(idear.Config{DB: d.G, OpenSignUp: false})
+roster, err := idear.New(idear.Config{DB: d.G, OpenSignUp: false})
 if err != nil {
 	return nil, err
 }
 ph, err := password.New(password.Config{
 	Sessions:     sess,
 	Lookup:       lookupUser(d.G),
-	Create:       r.Admitting(createUser(d.G)),
+	Create:       roster.Admitting(createUser(d.G)),
 	RenderSignin: renderSignin,
 	RenderSignup: renderSignup,
 })
@@ -69,11 +78,22 @@ if err != nil {
 }
 ```
 
+Not `r`: that name is the chi router everywhere else, including
+[Passwords](/docs/passwords), and shadowing it here would cost you the
+router for the rest of the function.
+
 **What it deliberately does not do.** It is not an identity provider: it
 never mints a session, never hashes a password, never renders a sign-in
 form. It has no tenant field and no tenant scope — a CARLOS app serves
 one team, and separating teams stays the platform's job. See
 [Scoping](/docs/scoping).
+
+Recording refusals is the addon's job, not the framework's. `password`
+answers a `Refuse` at 403 and logs nothing: a refusal is expected
+policy rather than an error, and writing a caller-supplied string and a
+visitor's address to the log on every uninvited signup is noise and
+personal data both. An addon that wants the audit trail keeps it
+itself, at whatever fidelity its own policy calls for.
 
 ## Publishing an addon
 
