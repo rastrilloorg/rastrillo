@@ -283,6 +283,16 @@ func TestScaffoldedAppTestsPass(t *testing.T) {
 	if err != nil {
 		t.Fatalf("scaffolded app's tests fail:\n%s", out)
 	}
+
+	// The browser drive must at least compile under its tag; vet
+	// type-checks the test files without needing a browser. This is
+	// the "compiles under -tags browser in the existing scaffold-build
+	// test" the spec asks for, at vet cost rather than test cost.
+	vet := exec.Command("go", "vet", "-tags", "browser", "./...")
+	vet.Dir = "blogapp"
+	if out, err := vet.CombinedOutput(); err != nil {
+		t.Fatalf("scaffolded app fails go vet -tags browser:\n%s", out)
+	}
 }
 
 // The defaults are the recommendation: vendored Lucide, nothing remote.
@@ -583,6 +593,48 @@ func readScaffold(t *testing.T, parts ...string) string {
 		t.Fatalf("read %v: %v", parts, err)
 	}
 	return string(b)
+}
+
+// The scaffold ships the browser drive: a build-tagged browser_test.go
+// booting the whole app through the framework's harness package (the
+// existing harness_test.go — the httptest HTTP harness — keeps its
+// name and its meaning), and a README whose Browser drive section
+// states the whole interface, CI call included.
+func TestNewScaffoldsBrowserDrive(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"my-blog"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	src := readScaffold(t, "my-blog", "internal", "myblogtest", "browser_test.go")
+	for _, want := range []string{
+		"//go:build browser",
+		"package myblogtest",
+		"github.com/carlosframework/rastrillo/harness",
+		"harness.New(t, func(origin string) http.Handler {",
+		"myblog.App(d, origin, logger)",
+		`rig.Screen("body", "home")`,
+		"RASTRILLO_BROWSER_OPTIONAL",
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("scaffolded browser_test.go missing %q", want)
+		}
+	}
+	if _, err := parser.ParseFile(token.NewFileSet(), "browser_test.go", src, parser.AllErrors); err != nil {
+		t.Errorf("scaffolded browser_test.go does not parse: %v", err)
+	}
+
+	readme := readScaffold(t, "my-blog", "README.md")
+	for _, want := range []string{
+		"go test -tags browser ./...",
+		"RASTRILLO_CHROME",
+		"RASTRILLO_BROWSER_OPTIONAL",
+		"A skip is not a pass",
+		"this app's call",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Errorf("scaffolded README.md missing %q", want)
+		}
+	}
 }
 
 // The scaffold ships the vendored-asset pin test — the review's point:
