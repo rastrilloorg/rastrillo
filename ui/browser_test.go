@@ -175,8 +175,42 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("option-highlighted"),
 		chromedp.KeyEvent(kb.Enter), at("enter"),
 
-		// The mirror: what the form will actually submit.
-		chromedp.Evaluate(`document.querySelector('select[name="author"]')?.value ?? ''`, &nativeValue), at("read-mirrored-value"),
+		// The mirror: what the form will actually submit. Polled, not
+		// sampled: three CI runs in a row read "" here and then burned
+		// the whole drive budget waiting for a #done the empty submit
+		// could never produce. Bounded at 10s so a commit that truly
+		// never happens fails fast, at this step, with the widget's
+		// state in the error instead of a bare deadline.
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			deadline := time.Now().Add(10 * time.Second)
+			for {
+				var v string
+				if err := chromedp.Evaluate(`document.querySelector('select[name="author"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+					return err
+				}
+				if v != "" {
+					nativeValue = v
+					return nil
+				}
+				if time.Now().After(deadline) {
+					var snap string
+					_ = chromedp.Evaluate(`JSON.stringify({
+						activeEl: (document.activeElement && (document.activeElement.tagName + "/" + (document.activeElement.getAttribute("role") || ""))) || "none",
+						hasFocus: document.hasFocus(),
+						options: document.querySelectorAll('[role="option"]').length,
+						highlighted: document.querySelectorAll('[role="option"].is-active').length,
+						listHidden: (function(l){ return l ? l.hidden : "no-list" })(document.querySelector('[role="listbox"]')),
+						inputValue: (function(i){ return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
+					})`, &snap).Do(ctx)
+					return fmt.Errorf("mirror never committed within 10s of Enter; widget state: %s", snap)
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(100 * time.Millisecond):
+				}
+			}
+		}), at("read-mirrored-value"),
 
 		// Submit rather than Click: what this test asserts is that the
 		// form posts the mirrored value, and chromedp.Click waits for the
