@@ -103,3 +103,17 @@ wherever it likes.
 An event-sourced consumer folding untrusted input must treat
 `ErrLastWrap` as a no-op, not a crash — errors are for interactive
 callers.
+
+## JS
+
+```go
+func JS() []byte
+```
+
+The WebCrypto twin as an embedded ES module (`js/keyring.mjs`). It
+imports `./crypto.mjs`, so serve `crypto.JS()` beside it under the same
+mount — the sibling layout is the deployment contract. It passes the
+same golden vectors as the Go package, and one trade is made out loud:
+`contentKey` and `wrapKey` return raw bytes, trading
+non-extractable-CryptoKey hygiene for wrappability, because a grant
+cannot wrap a key it cannot read.
