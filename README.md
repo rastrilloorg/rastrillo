@@ -603,8 +603,10 @@ pulls none of it — CI runs that sentence as a step). A Chromium is
 found on `PATH`, via `RASTRILLO_CHROME`, or in a Playwright cache.
 **A skip is not a pass:** with no browser the tagged tests fail,
 unless `RASTRILLO_BROWSER_OPTIONAL=1` makes the skip a deliberate,
-visible choice. CI's `browser` job runs them with a pinned Chromium on
-every PR.
+visible choice. CI's `browser` job runs the harness and webauthn
+packages with a pinned Chromium on every PR; the ui select drive stays
+a deliberate local run while issue #86 (its Enter reaches the form on
+that runner, nowhere else) is open.
 
 Three packages carry the tag:
 
