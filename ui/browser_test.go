@@ -170,10 +170,15 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// no longer exists. Waiting for the highlight turns that into a
 		// fast, legible failure at the exact step that did not happen.
 		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("list-drawn"),
-		chromedp.Focus(`input[role="combobox"]`, chromedp.ByQuery), at("focused"),
-		chromedp.KeyEvent(kb.ArrowDown), at("arrow-down"),
+		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, and on
+		// a CI runner focus drifted between the highlight and Enter —
+		// Enter reached the form, the form submitted an empty value,
+		// and the drive died on a page with no widget left to poll.
+		// SendKeys focuses its target before delivering the same real
+		// CDP key events, so the key lands where the user's would.
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down"),
 		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("option-highlighted"),
-		chromedp.KeyEvent(kb.Enter), at("enter"),
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
 
 		// The mirror: what the form will actually submit. Polled, not
 		// sampled: three CI runs in a row read "" here and then burned
