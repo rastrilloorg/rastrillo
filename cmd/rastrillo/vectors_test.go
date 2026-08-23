@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -84,5 +85,124 @@ func main() {
 func TestVectorsRejectsInitPlusCheck(t *testing.T) {
 	if err := runVectors([]string{"-init", "-check", "."}); err == nil {
 		t.Fatal("-init and -check together must be refused")
+	}
+}
+
+// passingParityFixture and failingParityFixture stand in for an
+// app's real suite: the -check contract under test here is "run this
+// exact file and believe its exit code", not the suite's content.
+const passingParityFixture = `import { test } from "node:test";
+test("ok", () => {});
+`
+
+const failingParityFixture = `import { test } from "node:test";
+test("no", () => { throw new Error("JS engine disagrees"); });
+`
+
+// needsNode skips a test leg that cannot run without node — the
+// crypto/js_test.go posture, for the legs where a skip stays honest.
+func needsNode(t *testing.T) string {
+	t.Helper()
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node not on PATH; JS leg not exercised")
+	}
+	return node
+}
+
+func TestVectorsCheckFailsWithoutACommittedFile(t *testing.T) {
+	dir := scaffold(t, map[string]string{
+		"go.mod":                 "module demo\n\ngo 1.24\n",
+		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
+	})
+	err := runVectors([]string{"-check", dir})
+	if err == nil {
+		t.Fatal("want a failure: nothing committed to check against")
+	}
+	if !strings.Contains(err.Error(), "test/vectors.json") {
+		t.Errorf("error should name the missing file: %v", err)
+	}
+}
+
+// Leg 1: a diff means the Go engine changed without regenerating in
+// the same commit. It must fail BEFORE the node leg, so this test
+// needs no node at all.
+func TestVectorsCheckFailsOnByteDrift(t *testing.T) {
+	dir := scaffold(t, map[string]string{
+		"go.mod":                 "module demo\n\ngo 1.24\n",
+		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
+		"test/vectors.json":      "[]\n",
+	})
+	err := runVectors([]string{"-check", dir})
+	if err == nil {
+		t.Fatal("want a failure: the committed file does not match a regenerate")
+	}
+	if !strings.Contains(err.Error(), "stale") {
+		t.Errorf("error should say the file is stale: %v", err)
+	}
+}
+
+// Leg 2's precondition, spec §1.3: in check mode a missing node is a
+// FAILURE, not a skip — silent while iterating, loud before ship.
+// PATH is narrowed to a directory holding only go, so the go run in
+// leg 1 still works while LookPath("node") cannot.
+func TestVectorsCheckDemandsNode(t *testing.T) {
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := scaffold(t, map[string]string{
+		"go.mod":                 "module demo\n\ngo 1.24\n",
+		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
+		"test/parity.test.mjs":   passingParityFixture,
+	})
+	if err := runVectors([]string{dir}); err != nil {
+		t.Fatalf("seeding test/vectors.json: %v", err)
+	}
+	binDir := t.TempDir()
+	if err := os.Symlink(goBin, filepath.Join(binDir, "go")); err != nil {
+		t.Skipf("cannot symlink go: %v", err)
+	}
+	t.Setenv("PATH", binDir)
+	err = runVectors([]string{"-check", dir})
+	if err == nil {
+		t.Fatal("want a failure: check mode without node must be loud, never a skip")
+	}
+	if !strings.Contains(err.Error(), "node") {
+		t.Errorf("error should say node is required: %v", err)
+	}
+}
+
+func TestVectorsCheckGreen(t *testing.T) {
+	needsNode(t)
+	dir := scaffold(t, map[string]string{
+		"go.mod":                 "module demo\n\ngo 1.24\n",
+		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
+		"test/parity.test.mjs":   passingParityFixture,
+	})
+	if err := runVectors([]string{dir}); err != nil {
+		t.Fatalf("seeding test/vectors.json: %v", err)
+	}
+	if err := runVectors([]string{"-check", dir}); err != nil {
+		t.Fatalf("both legs should be green: %v", err)
+	}
+}
+
+func TestVectorsCheckFailsWhenTheJSSuiteFails(t *testing.T) {
+	needsNode(t)
+	dir := scaffold(t, map[string]string{
+		"go.mod":                 "module demo\n\ngo 1.24\n",
+		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
+		"test/parity.test.mjs":   failingParityFixture,
+	})
+	if err := runVectors([]string{dir}); err != nil {
+		t.Fatalf("seeding test/vectors.json: %v", err)
+	}
+	err := runVectors([]string{"-check", dir})
+	if err == nil {
+		t.Fatal("want a failure: the JS suite failed")
+	}
+	if !strings.Contains(err.Error(), "parity.test.mjs") {
+		t.Errorf("error should name the suite that failed: %v", err)
 	}
 }

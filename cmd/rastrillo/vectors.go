@@ -99,9 +99,45 @@ func runGenvectors(dir string) ([]byte, error) {
 	return stdout.Bytes(), nil
 }
 
-// vectorsCheck lands in the -check task.
+// vectorsCheck is the pre-ship gate, loud on purpose (spec §1.3):
+// silent while iterating, failing before ship. Leg 1 regenerates and
+// byte-compares against the committed test/vectors.json — a diff
+// means the Go engine changed without `rastrillo vectors` in the
+// same commit. Leg 2 runs the JS parity suite as an EXPLICIT file,
+// never a directory: `node --test <dir>` stopped working on Node
+// ≥ 21 (kass's own Makefile line is bit-rotted this way). Here a
+// missing node is a FAILURE, not the skip the Go-side belt test
+// allows itself, because a gate that quietly skipped one engine
+// would be the drift it exists to catch. Also run by `rastrillo
+// generate -check` when cmd/genvectors exists — one gate before
+// ship, not two to remember.
 func vectorsCheck(dir string) error {
-	return fmt.Errorf("vectors -check: not implemented yet")
+	fresh, err := runGenvectors(dir)
+	if err != nil {
+		return err
+	}
+	committed, err := os.ReadFile(filepath.Join(dir, "test", "vectors.json"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("no test/vectors.json to check against; run `rastrillo vectors` and commit the result")
+		}
+		return err
+	}
+	if !bytes.Equal(fresh, committed) {
+		return fmt.Errorf("test/vectors.json is stale: a regenerate differs from the committed file — the Go engine changed without regenerating; run `rastrillo vectors` and commit the result in the same commit as the engine change")
+	}
+
+	node, err := exec.LookPath("node")
+	if err != nil {
+		return fmt.Errorf("check mode requires node to run the JS half of the gate (test/parity.test.mjs): a check that skipped one engine would be the drift it exists to catch")
+	}
+	cmd := exec.Command(node, "--test", "test/parity.test.mjs")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("node --test test/parity.test.mjs failed — the JS engine disagrees with the Go one, or the suite is broken: %v\n%s", err, out)
+	}
+	fmt.Println("rastrillo vectors -check: vectors regenerate byte-identical, JS parity suite green")
+	return nil
 }
 
 // vectorsInit lands in the -init task.
