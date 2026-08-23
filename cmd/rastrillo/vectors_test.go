@@ -206,3 +206,31 @@ func TestVectorsCheckFailsWhenTheJSSuiteFails(t *testing.T) {
 		t.Errorf("error should name the suite that failed: %v", err)
 	}
 }
+
+// Spec §1.4: when cmd/genvectors exists under the resolved app root,
+// generate -check additionally runs the vectors check — one gate
+// before ship, not two to remember. The stale committed file makes
+// the byte-compare leg fail, so no node is needed here.
+func TestGenerateCheckRunsTheVectorsGate(t *testing.T) {
+	dir := scaffold(t, map[string]string{
+		"go.mod":                 "module demo\n\ngo 1.24\n",
+		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
+		"test/vectors.json":      "[]\n",
+	})
+	err := runGenerate([]string{"--check", dir})
+	if err == nil {
+		t.Fatal("want the vectors byte-compare failure to surface through generate --check")
+	}
+	if !strings.Contains(err.Error(), "stale") {
+		t.Errorf("error should be the vectors staleness failure: %v", err)
+	}
+}
+
+// No cmd/genvectors, no gate: vectors stay opt-in, and every
+// existing app's --check is untouched.
+func TestGenerateCheckIgnoresVectorsWithoutAGenerator(t *testing.T) {
+	dir := scaffold(t, map[string]string{"go.mod": "module demo\n\ngo 1.24\n"})
+	if err := runGenerate([]string{"--check", dir}); err != nil {
+		t.Fatalf("an app with no cmd/genvectors must not grow a vectors gate: %v", err)
+	}
+}
