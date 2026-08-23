@@ -1,6 +1,6 @@
 # 🤖 The CLI
 
-One binary, four commands. Install it with:
+One binary, five commands. Install it with:
 
 ```sh
 go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
