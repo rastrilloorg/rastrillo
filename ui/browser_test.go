@@ -116,10 +116,13 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 	// A healthy run takes well under a second on an idle machine, but
 	// this is wall-clock against a real browser: on a loaded box it is
 	// slower by orders of magnitude, and a budget tuned to the idle case
-	// fails for no reason. 60s tolerates a busy CI runner while still
-	// failing far faster than Go's default test timeout, so a genuine
+	// fails for no reason. 60s was that mistake, tuned on a quiet dev
+	// machine: the browser CI job's first-ever run hit the documented
+	// load flake at exactly the deadline. The budget exists so a hang
+	// fails as itself, not to race a busy runner's clock — 180s still
+	// fails far faster than Go's default test timeout, so a genuine
 	// regression surfaces as a deadline rather than a hung suite.
-	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 60*time.Second)
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancelTimeout()
 
 	var (
