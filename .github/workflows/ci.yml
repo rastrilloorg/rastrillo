@@ -161,6 +161,8 @@ jobs:
 
       # Only the packages carrying browser-tagged tests: the plain
       # suite already ran in the test job, and -tags browser ./...
-      # would rerun all of it here for nothing.
+      # would rerun all of it here for nothing. -p 1 serialises the
+      # packages: three Chromiums cold-starting at once is where the
+      # ui drive's documented load flake lives.
       - name: browser-tagged tests
-        run: go test -tags browser ./harness/ ./ui/ ./webauthn/ -count=1
+        run: go test -tags browser -p 1 ./harness/ ./ui/ ./webauthn/ -count=1
