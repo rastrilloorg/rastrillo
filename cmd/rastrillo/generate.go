@@ -169,6 +169,19 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d unknown icon slug(s)", len(unknownIcons))
 		}
 
+		// Go↔JS parity vectors (vectors design §1.4): when the app has
+		// a cmd/genvectors, the vectors check joins this gate —
+		// regenerate-and-byte-compare plus the JS parity suite — so
+		// there is one gate before ship, not two to remember. Absent
+		// generator, absent gate: vectors are opt-in.
+		if _, err := os.Stat(filepath.Join(dir, "cmd", "genvectors")); err == nil {
+			if err := vectorsCheck(dir); err != nil {
+				return fmt.Errorf("vectors check: %w", err)
+			}
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+
 		fmt.Printf("rastrillo generate --check: %d route(s), %d tool(s), actions tagged, locale catalogs complete, icon slugs resolve\n", len(actions), len(tools))
 		return nil
 	}

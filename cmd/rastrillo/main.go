@@ -25,6 +25,8 @@ func main() {
 		err = runDev(os.Args[2:])
 	case "migration":
 		err = runMigration(os.Args[2:])
+	case "vectors":
+		err = runVectors(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -53,5 +55,8 @@ Usage:
        new <name>                                write a numbered stub migration (for a hand-written change, e.g. a rename)
        status --db <path>                        what a real database's ledger has applied, plus pending drift
        baseline --db <path> [--through <id>]      stamp a ledger by hand after boot refuses to adopt (manual by design)
+  rastrillo vectors [flags] [dir]               Go↔JS parity vectors: run cmd/genvectors, write test/vectors.json (default dir: .)
+       -init                                     scaffold cmd/genvectors, the test/ parity suite, and the go-test belt (once)
+       -check                                    pre-ship gate: regenerate + byte-compare, then node --test test/parity.test.mjs
 `)
 }

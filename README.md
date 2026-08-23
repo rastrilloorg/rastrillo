@@ -621,6 +621,50 @@ nothing, and silently committed the pre-existing value.
 require Go 1.26, and a test-only dependency should not raise the module's
 Go floor for everyone who imports rastrillo.
 
+## Parity vectors
+
+Any derivation over sealed content runs client-side, but the sidecar,
+operator tools and tests want the same derivation in Go — so the
+engine exists twice, and two engines drifting is the most dangerous
+E2EE bug class: a wrong answer with nothing looking broken.
+`rastrillo vectors` promotes kass's golden-vector discipline to a
+verb:
+
+```
+rastrillo vectors -init    # once: scaffold cmd/genvectors, test/parity.test.mjs,
+                           # test/vectors.mjs and the go-test belt
+rastrillo vectors          # regenerate test/vectors.json from the app's Go engine
+rastrillo vectors -check   # pre-ship gate: regenerate + byte-compare, then
+                           # node --test test/parity.test.mjs
+```
+
+The app's `cmd/genvectors` enumerates cases through `vectors.New()` /
+`Add(name, why, fields)` / `WriteTo` — every vector names the rule it
+pins, and the JS test titles become `name — why`. Two treaty rules
+ride the file: the field key names are shared with the JS suite by
+name (change both sides in the same commit; nothing mechanical checks
+they agree), and `time.Time` round-trips as RFC 3339 →
+`new Date(v.now)`.
+
+The comparison rule (`canonical()` in the vendored `test/vectors.mjs`)
+sorts keys, drops `null`/`undefined` members and drops scalar zeros
+(`0`, `false`, `""`) to match Go's `omitempty` — deliberately, blind
+spot included: a meaningful explicit zero on one side and a missing
+field on the other compare equal. The scaffolded suite covers that
+hole with a marked belt section of explicit-value assertions; keep it
+fed as vectors accrue. Nil normalisation is top-level only: a nil
+slice or map directly in `fields` writes as `[]`/`{}`, while inner
+shapes stay the app's own discipline.
+
+Vectors are opt-in: no `cmd/genvectors`, no gate. When the generator
+exists, `rastrillo generate -check` runs the vectors check too — one
+gate before ship, not two to remember. In `-check` a missing `node`
+is a failure, not a skip; the scaffolded `go test` belt skips without
+node so ordinary builds stay green and honest. There is deliberately
+no hash-pin export: app vectors change by design, and the
+byte-compare catches regenerate-drift strictly better than a hash an
+author would just update.
+
 ## Try it
 
 ```
