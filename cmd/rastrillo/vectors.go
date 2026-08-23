@@ -139,8 +139,3 @@ func vectorsCheck(dir string) error {
 	fmt.Println("rastrillo vectors -check: vectors regenerate byte-identical, JS parity suite green")
 	return nil
 }
-
-// vectorsInit lands in the -init task.
-func vectorsInit(dir string) error {
-	return fmt.Errorf("vectors -init: not implemented yet")
-}
