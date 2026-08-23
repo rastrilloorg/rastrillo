@@ -58,10 +58,15 @@ if err != nil {
 	return nil, err
 }
 ph, err := password.New(password.Config{
-	Sessions: sess,
-	Lookup:   lookupUser(d.G),
-	Create:   r.Admitting(createUser(d.G)),
+	Sessions:     sess,
+	Lookup:       lookupUser(d.G),
+	Create:       r.Admitting(createUser(d.G)),
+	RenderSignin: renderSignin,
+	RenderSignup: renderSignup,
 })
+if err != nil {
+	return nil, err
+}
 ```
 
 **What it deliberately does not do.** It is not an identity provider: it
