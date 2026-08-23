@@ -9,11 +9,10 @@ and hands back an id a status page can poll.
 
 ## In-memory, on purpose
 
-These apps are single-process and a restart kills the goroutine, so a
+Your app is single-process and a restart kills the goroutine, so a
 persisted row would only persist a lie. A job is a goroutine, and a
-deploy ends it mid-flight. Design jobs to be idempotent; work that must
-survive a restart belongs in
-[`eventlog`](/docs/reference/eventlog).
+deploy ends it mid-flight. Make jobs idempotent, and put work that has
+to survive a restart in [`eventlog`](/docs/reference/eventlog).
 
 ## New, Start and Get
 
@@ -23,26 +22,26 @@ func (j *Jobs) Start(owner, name, location string, fn func(ctx context.Context, 
 func (j *Jobs) Get(id, owner string) (Job, bool)
 ```
 
-Build one `*Jobs` at boot. The zero value is not usable.
+Build one at boot. The zero value is not usable.
 
-`owner` is the session **`Subject`** — a string, because keymail
-subjects are emails and password subjects are numeric strings. Key your
-own job-related rows the same way.
+`owner` is the session `Subject`, a string, because keymail subjects are
+emails and password subjects are numeric strings. Key your own
+job-related rows the same way.
 
 `fn`'s error text reaches the owner, so write it for them. A panic
 inside `fn` becomes `Failed` rather than taking the process down.
 
-`Get` answers only the owner: a wrong owner and an unknown id are
-indistinguishable, the same 404 rule the
-[`scope`](/docs/reference/scope) package enforces for rows.
+`Get` answers only the owner. A wrong owner and an unknown id are
+indistinguishable, the same 404 rule
+[`scope`](/docs/reference/scope) enforces for rows.
 
-## The two bounds
+## The bounds
 
-`Start` returns `ErrOwnerBusy` past **four** running jobs per owner.
-Flash your own copy — the framework does not choose your wording.
+`Start` returns `ErrOwnerBusy` past four running jobs per owner. Flash
+your own copy; the framework does not choose your wording.
 
-A job still running after **15 minutes** is marked `Failed` and stops
-counting against the limit; its context expires at the same moment, so a
+A job still running after fifteen minutes is marked `Failed` and stops
+counting against the limit. Its context expires at the same moment, so a
 well-behaved `fn` stops too.
 
 What no bound can do is kill a goroutine. An `fn` that ignores its
@@ -65,7 +64,7 @@ type Job struct {
 }
 ```
 
-`Status` is `Running`, `Done` or `Failed`. **There is no "queued"** —
+`Status` is `Running`, `Done` or `Failed`. There is no "queued":
 `Start` runs the goroutine immediately.
 
 `Location` is where the owner lands when the job finishes; empty keeps
@@ -94,8 +93,8 @@ All three are required and `NewHandlers` errors otherwise.
 
 Mount all three inside the `sess.Require` group.
 
-**`RenderFragment` must draw the partial alone**, without the layout, or
-the layout nests inside itself on the next poll.
+`RenderFragment` has to draw the partial on its own, without the layout,
+or the layout nests inside itself on the next poll.
 
 ## PageData
 
@@ -108,17 +107,16 @@ type PageData struct {
 }
 ```
 
-`FragmentPath` goes in `data-poll`; `PollSeconds` feeds
-`data-poll-every` and the `<noscript>` meta refresh. **Emit that meta
-only while the job is running**, or a failed page refreshes forever.
+`FragmentPath` goes in `data-poll`, and `PollSeconds` feeds
+`data-poll-every` and the `<noscript>` meta refresh. Emit that meta only
+while the job is running, or a failed page refreshes forever.
 
-`EventsPath` is opt-in: a template that puts it in `data-poll-push`
-upgrades a supporting browser to server push, and an app that ignores it
-gets plain polling exactly as before.
+`EventsPath` is opt-in. Put it in `data-poll-push` and a supporting
+browser upgrades to server push; ignore it and you get plain polling.
 
 ## The stream
 
 `Events` sends `update`, `done` and `gone` events with `: ping`
 heartbeats every 15 seconds, per-write deadlines, and a bounded stream
-lifetime. It is one-way and it is an enhancement — the shim falls back
-to timer polling on its own, permanently, if the stream fails.
+lifetime. It is one-way, and the shim falls back to timer polling on its own,
+permanently, if the stream fails.

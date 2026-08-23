@@ -14,7 +14,7 @@ assertion before a session exists.
 A passkey never signs anybody in from nothing. Step-up endpoints demand
 a valid session — stale is fine, absent is not. The sign-in pair demands
 a live pending half-session, which only a verified first factor mints.
-A stolen credential id alone opens no door.
+So a stolen credential id on its own opens no door.
 
 ## New, Config and Schema
 
@@ -26,8 +26,8 @@ Merge `passkey.Schema` into your boot set, and serve
 [`webauthn.JS()`](/docs/reference/webauthn) as a static asset for the
 browser half.
 
-Credentials are public material — a public key verifies signatures and
-nothing else — and challenges are single-use rows consumed by
+Credentials are public material: a public key verifies signatures and
+nothing else. Challenges are single-use rows consumed by
 `DELETE ... RETURNING`.
 
 ## The endpoints
@@ -51,13 +51,13 @@ A successful step-up calls `sessions.SignIn`, rotating the session with
 method `"passkey"` and a fresh `AuthTime` — exactly what
 `sessions.RequireFresh` checks.
 
-## Two timeouts
+## The timeouts
 
-A **challenge** lives 2 minutes: long enough for an authenticator
-prompt, short enough that an abandoned one is not a standing invitation.
+A challenge lives two minutes: long enough for an authenticator prompt,
+short enough that an abandoned one is not a standing invitation.
 
-A **pending half-session** lives 5 minutes: first-factor success to
-finished assertion inside that window, or sign in again from the top.
+A pending half-session lives five minutes. Miss that window and you sign
+in again from the top.
 
 ## Gate
 
@@ -75,8 +75,8 @@ mints the real session with the original first-factor method plus
 `"+passkey"` — `"magiclink+passkey"`, say.
 
 An account with no passkey passes the Gate untouched, returning
-`(false, nil)`. You can enable it for everyone and let enrollment
-decide.
+`(false, nil)`, so you can turn it on for everyone and let enrollment
+decide who it applies to.
 
 `Handlers.Enrolled(subject)` reports whether an account has a
 credential, for a settings page or a conditional prompt.
@@ -88,28 +88,26 @@ func (h *Handlers) RegenerateRecoveryCodes(subject string) ([]string, error)
 func (h *Handlers) RecoveryCodesRemaining(subject string) (int, error)
 ```
 
-`RegenerateRecoveryCodes` mints ten single-use codes and **replaces any
-existing set**. Show them once, from a page mounted behind
+`RegenerateRecoveryCodes` mints ten single-use codes and replaces any
+existing set. Show them once, from a page you mount behind
 `sessions.RequireFresh`.
 
 `SignInRecovery` redeems one against the pending half-session where an
-assertion would have gone. It is a plain form POST reading the field
-`code`, with **no JavaScript**, deliberately: recovery is exactly the
-moment WebAuthn is not working.
+assertion would have gone. It is a plain form POST reading the field `code`, with no JavaScript,
+deliberately: recovery is exactly the moment WebAuthn is not working.
 
-A wrong code does not consume the half-session — it redirects to
+A wrong code does not consume the half-session; it redirects to
 `ConfirmPath?recovery=failed` so another can be tried. A correct one
 burns the code, consumes the pending session, and mints a session whose
-method is the first factor plus `"+recovery"`, a marker for nudging
-re-enrollment.
+method is the first factor plus `"+recovery"` — a marker you can use to
+nudge re-enrollment.
 
-**Sign-in only, by design.** There is no recovery step-up:
-`RequireFresh` stays satisfiable only by an assertion or a full
-re-sign-in.
+This is sign-in only. There is no recovery step-up, and `RequireFresh`
+stays satisfiable only by an assertion or a full re-sign-in.
 
-There is deliberately **no attempt counter**. Redeeming requires a live
-half-session held for at most five minutes, and ten codes at 2⁻⁵⁰ apiece
-leave brute force far below any practical odds inside that window.
+There is no attempt counter either. Redeeming needs a live half-session,
+held for at most five minutes, and ten codes at 2⁻⁵⁰ apiece put brute
+force far below any practical odds inside that window.
 
 ## Sweep
 

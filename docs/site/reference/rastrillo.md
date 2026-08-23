@@ -18,22 +18,21 @@ func Serve(opts Options) error
 func Handler(opts Options) (http.Handler, func() error, error)
 ```
 
-`Run` resolves the platform's activation argv and calls `Serve`. It is
-the right call for an app that lets the framework own the database.
+`Run` resolves the platform's activation argv and calls `Serve`. Use it
+when you let the framework own the database.
 
-**When your app opens its own database, use `Resolve` and `Serve`
-instead.** `Run` re-parses argv and repopulates `Options.DBPath`, so
-`Serve` would open a second connection to the file `db.Open` already
-owns. `Resolve` performs the same argv and `$STATE_DIRECTORY`
-resolution without serving.
+When your app opens its own database, use `Resolve` and `Serve` instead.
+`Run` re-parses argv and repopulates `Options.DBPath`, so `Serve` would
+open a second connection to the file `db.Open` already owns. `Resolve`
+does the same argv and `$STATE_DIRECTORY` work without serving.
 
-`Handler` is `Serve` minus the listener — the whole framework chrome as
+`Handler` is `Serve` minus the listener: the whole framework chrome as
 an `http.Handler`, for test harnesses. Call the returned cleanup when
-done.
+you are done.
 
-`OpenDB` is the corrected SQLite opener exported for tests. New apps
-should prefer [`db.Open`](/docs/reference/db), which returns the
-two-pool handle.
+`OpenDB` is the corrected SQLite opener, exported for tests. In a new
+app use [`db.Open`](/docs/reference/db), which returns the two-pool
+handle.
 
 `BuildVersion` is the version string `GET /api/version` reports,
 overridden at build time; it defaults to `"dev"`.
@@ -48,19 +47,19 @@ opened, which is how an app puts the framework-opened handle in its
 per-request `Ctx`. `Serve` owns that handle and closes it when `Serve`
 returns; do not retain it past that.
 
-**`Wrap`** — the one seam for app middleware: sessions, CSRF, panic
-pages, authorization. It runs **inside** the framework's chrome, so
-`GET /healthz` and `GET /api/version` are answered outside it (platform
-probes never traverse app middleware) and locale-prefix stripping
-happens before it (middleware sees the paths routes match on).
-Returning nil is a boot error.
+**`Wrap`** — where your middleware goes: sessions, CSRF, panic pages,
+authorization. It runs inside the framework's chrome, so `GET /healthz`
+and `GET /api/version` are answered outside it (platform probes never
+traverse your middleware) and locale-prefix stripping happens before it
+(your middleware sees the paths your routes match on). Returning nil is
+a boot error.
 
 **`DBPath`** — opens SQLite with the pragma ordering and connection
 settings that have to be right. Blank it before `Serve` when your app
 opened its own handle.
 
 **`Migrations`** — applied in order at boot, idempotently. This is the
-older additive-only mechanism; new apps use
+older additive-only mechanism. In a new app use
 [`migrate`](/docs/reference/migrate) instead.
 
 **`Socket`** and **`Addr`** — the platform's activation contract. Both
@@ -92,14 +91,14 @@ type Ctx struct {
 }
 ```
 
-Passed to every generated action: the app's own wiring, built once by
-its ctx factory. **Per-request state does not live here** — identity is
+Passed to every generated action: your own wiring, built once by your
+ctx factory. Per-request state does not live here — identity is
 `sessions.Current(r)`, locale is `LocaleFrom(r)`.
 
 `Render` is the manifest system's seam. A generated action cannot call
-an app-private helper, so it calls `ctx.Render`; a generated action
-nil-checks it and answers a logged 500 rather than a nil-pointer panic
-when an app forgets to wire it.
+an app-private helper, so it calls `ctx.Render` — and nil-checks it,
+answering a logged 500 instead of a nil-pointer panic if you forget to
+wire it.
 
 ## Localization
 
@@ -115,20 +114,20 @@ const LocaleCookie = "rastrillo_locale"
 `T` and `Tf` are the request-scoped lookups actions call; `Tf`
 interpolates `{name}` placeholders. Lookup falls back through the
 requested locale, the default locale, the framework base catalog, and
-finally the key itself — a missing translation stays visible, never
-blank.
+finally the key itself, so a missing translation stays visible on the
+page instead of blank.
 
 `Catalog` is a flat `map[string]string`. `BaseCatalog` carries
 `rastrillo/ui`'s own strings and is wired into every served app
-automatically; an app entry for the same key wins.
+automatically; your entry for the same key wins.
 
 `Locales` is the resolved set: `Locales.Codes`, `Locales.Default`,
 `Locales.Has`, `Locales.T`, `Locales.Tf`, and `Locales.Middleware`,
 which strips the path prefix before the app's mux sees it.
 
-Nothing writes `LocaleCookie` yet — persisting a user's choice is the
-app's job for now. [Localization](/docs/localization) has the
-resolution order and the two caveats.
+Nothing writes `LocaleCookie` yet, so persisting a user's choice is your
+job for now. [Localization](/docs/localization) has the resolution order
+and the caveats.
 
 ## Assets
 
@@ -150,9 +149,9 @@ func Icon(slug string) template.HTML
 func IconSlugs() []string
 ```
 
-`Icon` renders a vendored icon by slug; an unknown slug renders
-**nothing** rather than panicking a page mid-response. `IconSlugs` is
-the eleven-slug vocabulary, which is Rastrillo's own rather than any
+`Icon` renders a vendored icon by slug, and an unknown slug renders
+nothing instead of panicking a page mid-response. `IconSlugs` is the
+eleven-slug vocabulary, which is Rastrillo's own rather than any
 vendor's — [Icons](/docs/icons) explains why that matters.
 
 ## Agents
@@ -165,8 +164,8 @@ const ( ToolRead Access = iota; ToolWrite )
 ```
 
 An action opts in with `var Tool = rastrillo.Tool{...}`. `ToolRead`
-observes and never changes state; `ToolWrite` changes state and
-therefore requires a confirm sentence and an explicitly confirmed call.
+observes and never changes state. `ToolWrite` changes state, so it
+requires a confirm sentence and an explicitly confirmed call.
 `Access.String` is `"read"` or `"write"`.
 
 ```go
@@ -179,17 +178,17 @@ func ActorFromContext(ctx context.Context) (Actor, bool)
 ```
 
 Every action's caller is attributed, never anonymous, so an audit trail
-can say who did what. `Actor.String` is the audit form — `"human"` or
-`"agent:<name>"` — which is what `eventlog` stores on every appended
-event, so a stream says who did what without importing this package.
+can say who did what. `Actor.String` is the audit form, `"human"` or
+`"agent:<name>"`, and it is what `eventlog` stores on every appended
+event — so a stream says who did what without importing this package.
 
 [Agents and tools](/docs/agents) is the guide.
 
 ## Manifest types
 
 The Go mirror of a `manifest/*.toml` resource, for tooling that builds
-one programmatically. [Manifests](/docs/manifests) is the guide, and
-declaring in TOML is the normal path.
+one programmatically. Declaring in TOML is the normal path —
+[Manifests](/docs/manifests) is the guide.
 
 ```go
 type Resource struct{ /* Name, Route, Store, Scope, List, Form */ }
@@ -198,12 +197,12 @@ func (r Resource) Validate() error
 
 `Resource.Validate` refuses a field colliding with the fixed columns
 every generated store emits — `id`, `created_at`, `updated_at`, and
-`owner` for a scoped resource — rather than producing a confusing table.
+`owner` for a scoped resource — instead of producing a confusing table.
 
 `List` holds `Column` values and `Filter` values; `Form` holds `Field`
 values.
 
-Three enumerations:
+The enumerations:
 
 | Type | Values |
 |---|---|

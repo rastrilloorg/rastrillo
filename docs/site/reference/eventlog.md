@@ -10,7 +10,7 @@ Because the fold is pure and total over the history, replay works for
 free — truncate and refold — and multi-edge works for free: the visible
 state is the merge of many single-writer streams.
 
-This is the app-side half of the platform's `mergeable` contract.
+This is the app-side half of the platform's `mergeable` contract, and
 [Manifests](/docs/manifests) can generate a store on it with
 `store = "mergeable"`.
 
@@ -18,7 +18,7 @@ This is the app-side half of the platform's `mergeable` contract.
 
 One table holds every stream. Each row is one immutable event, keyed
 `(stream, writer, seq)`: `writer` is the appending instance's identity,
-`seq` its own dense counter. **A writer never rewrites its history.**
+`seq` its own dense counter. A writer never rewrites its history.
 
 `eventlog.Schema` is the migration set.
 
@@ -36,10 +36,10 @@ func (l *Log) EventsByPrefix(ctx context.Context, prefix string) ([]Event, error
 
 ## The merge order
 
-The merged read order is `(lamport, ts, writer, seq)` — a total order,
+The merged read order is `(lamport, ts, writer, seq)`: a total order,
 deterministic across edges by construction. Any two logs holding the
 same events in any ingest order read them back identically, which is
-exactly what makes `Derive` converge.
+what makes `Derive` converge.
 
 `Log.Order` is the app-supplied comparator seam for a different merge
 rule. The lamport default is the framework's answer until a real one is
@@ -51,9 +51,9 @@ confirmed against this shape.
 func Derive[S any](events []Event, fold func(S, Event) S, zero S) S
 ```
 
-A pure generic fold. Keep it pure: the whole design rests on being able
-to recompute state from history at any time, and a fold that reads the
-clock or the database cannot be replayed.
+A pure generic fold, and you should keep yours pure. The whole design
+rests on recomputing state from history at any time, and a fold that
+reads the clock or the database cannot be replayed.
 
 `ErrDiverged` reports a fold that disagreed with a recorded result.
 
@@ -63,9 +63,9 @@ clock or the database cannot be replayed.
 func (l *Log) Ingest(ctx context.Context, events []Event) error
 ```
 
-Idempotent, and **the seam the platform's transport will call**.
-Re-ingesting an event already held is a no-op rather than a duplicate,
-which is what lets a transport retry freely.
+Idempotent, and the seam the platform's transport will call.
+Re-ingesting an event you already hold is a no-op instead of a
+duplicate, which is what lets a transport retry freely.
 
 ## LocalWriter
 
@@ -78,9 +78,9 @@ persisted in its own table.
 
 ## What is deliberately not here
 
-- **Transport.** Edge sync is the platform's designed territory, and
-  `Ingest` is the seam it will call. Until it lands, ids minted by a
-  generated mergeable store are writer-local.
+- **Transport.** Edge sync is the platform's territory, and `Ingest` is
+  the seam it will call. Until it lands, ids minted by a generated
+  mergeable store are writer-local.
 - **Snapshots.** Replay is cheap until proven otherwise.
 - **Any `UPDATE` or `DELETE` verb.** Deletion is an appended tombstone
-  event whose meaning belongs to your `Derive`.
+  event, and what it means is up to your `Derive`.

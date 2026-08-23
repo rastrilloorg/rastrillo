@@ -6,12 +6,11 @@ The family envelope: asymmetric sealing, signing, and the symmetric
 half — every operation domain-separated by a caller-supplied context
 string.
 
-**This is a compatibility contract, not just a convenience.** It is
-byte-compatible with keymail's `crypto.go`, amadan's `internal/envelope`
-and `internal/repokey`, and seapointish's `internal/seal` — the three
-hand-rolled copies it retires. `testdata/golden.json` is amadan's pinned
-cross-implementation fixture, and this package and its JavaScript twin
-must both pass it.
+This is a compatibility contract. It is byte-compatible with keymail's
+`crypto.go`, amadan's `internal/envelope` and `internal/repokey`, and
+seapointish's `internal/seal` — the hand-rolled copies it retires.
+`testdata/golden.json` is amadan's pinned cross-implementation fixture,
+and this package and its JavaScript twin both have to pass it.
 
 If you change anything here, the vectors are the specification.
 
@@ -24,8 +23,8 @@ SealSym/OpenSym  iv(12) ‖ AES-256-GCM ciphertext
 Derive           HKDF-SHA256, salt=nil, info=context, 32 bytes
 ```
 
-Note that signatures are **raw r‖s**, not ASN.1 DER. A verifier
-expecting DER will reject every signature this package produces.
+Signatures are raw r‖s, not ASN.1 DER. A verifier expecting DER will
+reject every signature this package produces.
 
 ## Keys
 
@@ -37,9 +36,9 @@ func UnmarshalKeypair(b []byte) (Keypair, error)
 ```
 
 A `Keypair` carries both halves. `Keypair.BoxPub` is the public key for
-`Seal`; `Keypair.SignPub` is the public key for `Verify`. They are
-separate keys with separate jobs, and using one where the other belongs
-fails rather than silently weakening anything.
+`Seal`, `Keypair.SignPub` the one for `Verify`. They are separate keys
+with separate jobs, and using one where the other belongs fails loudly
+instead of quietly weakening something.
 
 `NewKey` mints raw symmetric key bytes for `SealSym`.
 
@@ -53,11 +52,10 @@ func Open(k Keypair, context string, sealed []byte) ([]byte, error)
 ECDH P-256 with an ephemeral key, HKDF-SHA256 to a content key, then
 AES-256-GCM.
 
-The `context` string is domain separation and it is **not optional
-decoration**: the same bytes sealed under two contexts produce
-independent ciphertexts, and opening with the wrong context fails.
-Choose one per purpose and keep it stable — changing it is a format
-break for everything already sealed.
+The `context` string is domain separation. The same bytes sealed under
+two contexts produce independent ciphertexts, and opening with the wrong
+context fails. Pick one per purpose and keep it stable: changing it is a
+format break for everything already sealed.
 
 ## Signing
 
@@ -66,10 +64,9 @@ func Sign(k Keypair, context string, msg []byte) ([]byte, error)
 func Verify(signPub []byte, context string, msg, sig []byte) bool
 ```
 
-The signed digest is `SHA-256(context ‖ 0x00 ‖ msg)`. The `0x00`
-separator is what stops a context/message boundary being ambiguous —
-without it, signing `("ab", "c")` and `("a", "bc")` would produce the
-same digest.
+The signed digest is `SHA-256(context ‖ 0x00 ‖ msg)`. That `0x00` stops
+the context/message boundary being ambiguous: without it, signing
+`("ab", "c")` and `("a", "bc")` would produce the same digest.
 
 ## Symmetric
 
@@ -97,8 +94,8 @@ from one root secret by context suffix — `-id`, `-wrap`, `-claim` — with
 `claimHash` the hex SHA-256 of the claim secret. `WrapKey` and
 `UnwrapKey` are `SealSym` in base64url.
 
-These waited for a consumer to pin their contract. Eleven's messenger
-did, and `testdata/invites.json` carries its vectors verbatim: context
+These waited until a consumer pinned their contract. Eleven's messenger
+did, and `testdata/invites.json` carries its vectors verbatim — context
 `"lchat-invite"` reproduces its wire format byte for byte.
 
 ## JS
@@ -109,4 +106,4 @@ func JS() []byte
 
 The WebCrypto twin as an embedded ES module, so a browser can open what
 a server sealed. It passes the same golden vectors, which is what makes
-it a twin rather than a second implementation.
+it a twin instead of a second implementation.

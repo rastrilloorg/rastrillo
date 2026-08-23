@@ -1,22 +1,20 @@
 # 🤖 Passkeys and second factors
 
-`rastrillo/passkey` adds a WebAuthn second factor in the two places one
-belongs: **step-up**, where a stale session is refreshed by an assertion
-instead of a full re-sign-in, and **sign-in**, where a verified first
-factor must be completed by an assertion before a session exists.
+`rastrillo/passkey` adds a WebAuthn second factor in two places: at
+step-up, where an assertion refreshes a stale session instead of a full
+re-sign-in, and at sign-in, where a verified first factor has to be
+completed by an assertion before a session exists.
 
-## The trust boundary
+## What a passkey is allowed to do
 
 A passkey never signs anybody in from nothing.
 
-It upgrades an *existing* session's freshness, or completes a sign-in
+It upgrades an existing session's freshness, or completes a sign-in
 whose first factor already verified. Step-up endpoints demand a valid
 session — stale is fine, absent is not. The sign-in pair demands a live
-pending half-session, which only a verified first factor mints.
-
-Either way a stolen credential id alone opens no door, and the primary
-factor — magic link, keymail, password — stays the way an account is
-entered.
+pending half-session, which only a verified first factor mints. Either
+way, a stolen credential id on its own opens no door, and the primary
+factor stays the way an account is entered.
 
 ## Wiring it
 
@@ -24,9 +22,10 @@ entered.
 pk, err := passkey.New(passkey.Config{ /* ... */ })
 ```
 
-Merge `passkey.Schema` into your boot set, serve `webauthn.JS()` as a
-static asset for the browser half, and mount the JSON endpoints behind
-`csrf.Protect` like every other mutating route:
+Merge `passkey.Schema` into your boot set, serve
+[`webauthn.JS()`](/docs/reference/webauthn) as a static asset for the
+browser half, and mount the JSON endpoints behind `csrf.Protect` like
+every other mutating route:
 
 ```text
 POST /passkey/register/begin    -> {"challenge": ...}
@@ -45,10 +44,9 @@ with method `"passkey"` and a fresh `AuthTime` — exactly what
 `sessions.RequireFresh` checks. See [Sessions](/docs/sessions) for the
 middleware.
 
-Two timeouts bound the ceremony. A challenge lives **2 minutes**: long
-enough for an authenticator prompt, short enough that an abandoned one
-is not a standing invitation. Challenges are single-use and
-subject-bound, consumed by `DELETE ... RETURNING`.
+A challenge lives two minutes: long enough for an authenticator prompt,
+short enough that an abandoned one is not a standing invitation.
+Challenges are single-use and subject-bound.
 
 ## Sign-in-time 2FA: the Gate
 
@@ -61,25 +59,24 @@ a, err := auth.New(auth.Config{
 })
 ```
 
-Called at the exact point the plugin would mint the session, it lets an
-enrolled account trade the immediate sign-in for a **pending
-half-session** — a short-lived cookie plus a hashed row naming who must
-still assert, which opens nothing by itself — and redirects to
-`Config.ConfirmPath`, your "confirm with your passkey" page.
+Called where the plugin would mint the session, it trades the immediate
+sign-in for a pending half-session — a short-lived cookie plus a hashed
+row naming who must still assert, which opens nothing by itself — and
+redirects to `Config.ConfirmPath`, your "confirm with your passkey"
+page.
 
 That page runs `webauthn.mjs`'s `authenticate()` against
 `/passkey/signin/{begin,finish}`. A verified assertion consumes the
 pending row, clears the cookie, and mints the real session with the
 original first-factor method plus `"+passkey"` — `"magiclink+passkey"`,
-say — and `AuthTime` now.
+say.
 
-An account with **no** passkey passes the Gate untouched, returning
-`(false, nil)`, and the plugin signs in exactly as it always did. You
-can enable the Gate for everyone and let enrollment decide.
+An account with no passkey passes the Gate untouched, returning
+`(false, nil)`. So you can turn the Gate on for everyone and let
+enrollment decide who it applies to.
 
-The gap between factors is bounded at **5 minutes**: first-factor
-success to finished assertion inside that window, or sign in again from
-the top.
+The gap between factors is bounded at five minutes. Miss it and you sign
+in again from the top.
 
 ## Recovery codes
 
@@ -89,47 +86,46 @@ For the account whose only passkey is lost.
 codes, err := pk.RegenerateRecoveryCodes(subject)
 ```
 
-Mints **ten single-use codes**, shown once, from a page you mount behind
-`sessions.RequireFresh`. `pk.RecoveryCodesRemaining(subject)` reports
+You get ten single-use codes, shown once, from a page you mount behind
+`sessions.RequireFresh`. `pk.RecoveryCodesRemaining(subject)` tells you
 how many are left, for a settings page that should nag.
 
 `SignInRecovery` redeems one against the pending half-session where an
-assertion would have gone. It is a **plain form POST with no
-JavaScript**, deliberately: recovery is exactly the moment WebAuthn is
-not working, and a flow that needs a working WebAuthn stack to recover
-from a broken one is not a recovery flow.
+assertion would have gone. It is a plain form POST with no JavaScript,
+deliberately: recovery is exactly the moment WebAuthn is not working,
+and a flow that needs a working WebAuthn stack to recover from a broken
+one is not a recovery flow.
 
-A wrong code does **not** consume the half-session — it redirects back
-to `ConfirmPath?recovery=failed` so the user can try another. A correct
-one burns the code, consumes the pending session, and mints a session
-whose method is the first factor plus `"+recovery"`, a marker your app
-can use to nudge enrolling a replacement passkey.
+A wrong code does not consume the half-session. It redirects back to
+`ConfirmPath?recovery=failed` so the user can try another. A correct one
+burns the code, consumes the pending session, and mints a session whose
+method is the first factor plus `"+recovery"` — a marker you can use to
+nudge enrolling a replacement passkey.
 
-**Sign-in only, by design.** There is no recovery step-up:
-`RequireFresh` stays satisfiable only by an assertion or a full
-re-sign-in.
+This is sign-in only. There is no recovery step-up, and `RequireFresh`
+stays satisfiable only by an assertion or a full re-sign-in.
 
-There is deliberately **no attempt counter**. Redeeming requires a live
-half-session — the first factor already verified — held for at most five
-minutes, and ten codes at 2⁻⁵⁰ apiece leave brute force far below any
+There is no attempt counter either. Redeeming needs a live half-session,
+which means the first factor already verified and is held for at most
+five minutes, and ten codes at 2⁻⁵⁰ apiece put brute force far below any
 practical odds inside that window.
 
-## What webauthn does and does not check
+## What webauthn checks
 
-`rastrillo/webauthn` is the identity half: ES256 only, **no attestation
-checking**, and a deliberately small CBOR subset reader.
+`rastrillo/webauthn` is the identity half: ES256 only, and no
+attestation checking.
 
-Not checking attestation is a decision, not a gap. Attestation tells you
-which manufacturer made the authenticator, which matters for enterprise
-device policy and not for "is this the same key as last time". Verifying
-it means shipping and maintaining a root certificate store.
+Skipping attestation is a decision. Attestation tells you which
+manufacturer made the authenticator, which matters for enterprise device
+policy and not for "is this the same key as last time". Verifying it
+means shipping and maintaining a root certificate store.
 
 `LegacyRPID` accepts credentials minted under a previous hostname, so
 moving domains does not invalidate everybody's passkeys. A credential
-cannot be *minted* under the old name — only used.
+cannot be minted under the old name, only used.
 
-Signature counters are checked, and one going backwards is refused; an
-authenticator that never counts is allowed, because many do not.
+Signature counters are checked and one going backwards is refused. An
+authenticator that never counts is allowed, because plenty do not.
 
 `webauthn/authtest` is a fake authenticator, public so your own tests
 can drive a full ceremony without hardware.

@@ -1,27 +1,29 @@
 # 🤖 Magic links and keymail
 
 `rastrillo/auth` is the framework's turnkey sign-in and the family
-default: a magic-link email that works for every address, which
-auto-upgrades to the keymail ceremony when the address resolves to a
-claimed keymail inbox.
+default: a magic-link email that works for every address, which upgrades
+itself to the keymail ceremony when the address resolves to a claimed
+keymail inbox.
 
-It wraps `github.com/keymaildev/signin`, filling in the deliberate holes
-that package leaves — link storage, mailer, cookies, sessions, CSRF,
-admission — once here, instead of once per app.
+It wraps `github.com/keymaildev/signin`, filling in the holes that
+package deliberately leaves — link storage, mailer, cookies, sessions,
+CSRF, admission — once here instead of once per app.
+
+If you read nothing else on this page, read
+[the trap](#the-trap-do-not-use-sessions-userid-here).
 
 ## The decision tree
 
-Every submitted address is classified. A claimed keymail inbox gets the
-keymail OAuth ceremony; every other address gets a signed link by email.
+Every submitted address gets classified. A claimed keymail inbox gets
+the keymail OAuth ceremony; every other address gets a signed link by
+email.
 
-Classification **fails open** by design. If the probe fails, the address
-gets a magic link. Nobody is ever locked out by a classifier being
-unreachable.
+Classification fails open. If the probe fails, the address gets a magic
+link. Nobody is ever locked out because a classifier was unreachable.
 
 ## Wiring it
 
-Build one `*Auth` at boot, merge its migrations, and mount four
-handlers:
+Build one `*Auth` at boot, merge its migrations, mount four handlers:
 
 ```go
 a, err := auth.New(auth.Config{
@@ -46,9 +48,9 @@ The migration order is not optional:
 var BootSchema = migrate.Merge(sessions.Schema, auth.Schema, Schema)
 ```
 
-`auth`'s backfill migration reads the sessions table, so
-`sessions.Schema` must apply first. `migrate.Merge`'s argument order is
-apply order — see [Migrations](/docs/migrations).
+auth's backfill migration reads the sessions table, so `sessions.Schema`
+has to apply first. `migrate.Merge`'s argument order is apply order —
+see [Migrations](/docs/migrations).
 
 ### The sign-in page stays yours
 
@@ -66,35 +68,33 @@ apply order — see [Migrations](/docs/migrations).
 
 ## Configuration worth understanding
 
-**`InstanceKey` must not be empty**, and `New` refuses an empty one. It
-seals the pending blob with an HMAC. An empty input hashes to one fixed,
-publicly computable value — identical across every deployment that made
-the same mistake, and known to anyone reading the source — which would
-let an attacker forge a pending blob naming their own keymail server.
+`InstanceKey` must not be empty, and `New` refuses an empty one. It
+seals the pending blob with an HMAC, and an empty input hashes to one
+fixed, publicly computable value — identical across every deployment
+that made the same mistake — which would let an attacker forge a pending
+blob naming their own keymail server.
 
-**`Origin`** is the OAuth `client_id` that keymail validates redirects
-against, the base of emailed links, and what decides the `Secure` and
-`__Host-` cookie attributes.
+`Origin` is the OAuth `client_id` keymail validates redirects against,
+the base of emailed links, and what decides the cookie attributes.
 
-**`Mailer`** is a `mail.Sender`. Nil falls back to `mail.Logged` with a
-warning on every send, because an emailed link is a live credential and
-logging it is a development-only convenience.
+`Mailer` is a `mail.Sender`. Leave it nil and you get `mail.Logged` with
+a warning on every send, because an emailed link is a live credential
+and logging it is a development-only convenience.
 
-**`Authorize func(address string) bool`** is the admission gate: given a
+`Authorize func(address string) bool` is the admission gate: given a
 verified address, may it have a session? Nil admits every verified
-address. Membership tables, roles and admin bootstrap are app policy
-layered on this hook — not something the framework models for you.
+address. Membership tables, roles and admin bootstrap are your policy
+layered on this hook, not something the framework models for you.
 
-**`SecondFactor`** is the same seam the password plugin has, called at
-the point a verified first factor would mint the session.
+`SecondFactor` is the same seam the password plugin has.
 [Passkeys](/docs/passkeys) covers it.
 
 ## The trap: do not use sessions.UserID here
 
-This is the single most expensive mistake to make with this plugin.
+This is the most expensive mistake you can make with this plugin.
 
-Under keymail the session's `Subject` is the **verified email address**,
-not a numeric id. So:
+Under keymail the session's `Subject` is the verified email address, not
+a numeric id. So:
 
 ```go
 uid, ok := sessions.UserID(r) // (0, false) — always, under keymail
@@ -109,9 +109,9 @@ func (a *app) owned(r *http.Request) *gorm.DB {
 }
 ```
 
-Every query in the app is then scoped to `user_id = 0`. Nothing errors.
-Users simply see an empty app, or — if any row ever gets written with
-owner zero — each other's data.
+Every query in your app is now scoped to `user_id = 0`. Nothing errors.
+Users just see an empty app — or, if any row ever gets written with
+owner zero, each other's data.
 
 Read the viewer with `auth.From(r)` or `sessions.Current(r)` instead
 (`RequireSession` stashes both), and map the address to your user row's
@@ -139,11 +139,11 @@ and `a.RequireFreshSession(maxAge)` for step-up, matching
 
 ## Links are single-use
 
-A link is consumed in one `DELETE ... RETURNING` statement. A split
-`SELECT`-then-`DELETE` would let two concurrent callers both observe the
-row before either deleted it — even at one writer connection — which
-would defeat single use.
+A link is consumed in one `DELETE ... RETURNING`. A split
+`SELECT`-then-`DELETE` would let two concurrent callers both see the row
+before either deleted it, even at one writer connection, which would
+defeat single use.
 
-An unknown hash, a wrong purpose and an expired row are all the same
-"not ok". Telling them apart would be an oracle. The row is deleted even
-when expired: a presented token is spent either way.
+An unknown hash, a wrong purpose and an expired row all come back as the
+same "not ok"; telling them apart would be an oracle. The row is deleted
+even when expired, because a presented token is spent either way.
