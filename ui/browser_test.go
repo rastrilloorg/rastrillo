@@ -5,38 +5,39 @@
 // and keyboard handling.
 //
 // Build-tagged rather than env-gated so a plain `go test ./...` never
-// silently half-runs it, and so chromedp stays out of the ordinary build
-// graph. Run it with:
+// silently half-runs it, and so chromedp stays out of the ordinary
+// build graph. Run it with:
 //
 //	go test -tags browser ./ui/
 //
-// It needs a Chromium: on PATH, or via RASTRILLO_CHROME, or in the
-// Playwright cache. A skip is not a pass — with no browser this fails,
-// unless RASTRILLO_BROWSER_OPTIONAL is set, which makes the skip a
-// deliberate visible choice rather than an accident.
+// It rides the harness package's rig: Chromium discovery
+// (RASTRILLO_CHROME, PATH, the Playwright cache — a skip is not a
+// pass, RASTRILLO_BROWSER_OPTIONAL makes it deliberate), the
+// loud-failure watchers, and the screen gate's junk scan all live
+// there now, shared with every browser drive in the family.
 //
 // KNOWN LIMITATION, stated rather than discovered: this test is
-// timing-sensitive under machine load. On an idle box it passes in ~0.4s
-// and 20 consecutive runs are green. On a box at load ~9-14 it fails
-// roughly 1 run in 4, always the same way — a keystroke arrives while
-// focus has drifted, Enter reaches the document instead of the combobox,
-// the form submits, the execution context dies, and the next step hangs
-// until the deadline. The failure names the step it got to, so it is
-// legible rather than mysterious.
+// timing-sensitive under machine load. On an idle box it passes in
+// ~0.4s and 20 consecutive runs are green. On a box at load ~9-14 it
+// fails roughly 1 run in 4, always the same way — a keystroke arrives
+// while focus has drifted, Enter reaches the document instead of the
+// combobox, the form submits, the execution context dies, and the next
+// step hangs until the deadline. The failure names the step it got to,
+// so it is legible rather than mysterious.
 //
-// It is build-tagged, so CI (which runs untagged) never sees this; the
-// cost falls on whoever runs it deliberately on a busy machine. Rerun
-// before believing a failure, and read the reported step: a real
-// regression fails at a specific assertion, load flake fails at a
-// deadline after "read-mirrored-value" or later. Fixing it properly
-// likely means driving the widget through synthesised events inside one
-// page evaluation, which trades away the fidelity of real CDP input —
-// not obviously the right trade, so it has not been made.
+// CI runs this in its browser job on an otherwise idle runner; the
+// load-flake cost falls on whoever runs it deliberately on a busy
+// machine. Rerun before believing a failure, and read the reported
+// step: a real regression fails at a specific assertion, load flake
+// fails at a deadline after "read-mirrored-value" or later. Fixing it
+// properly likely means driving the widget through synthesised events
+// inside one page evaluation, which trades away the fidelity of real
+// CDP input — not obviously the right trade, so it has not been made.
 //
 // One test, deliberately: a browser drive is expensive, so this one
 // drives the whole journey — render, enhance, filter, keyboard-select,
-// mirror, submit — and asserts the server received the value. Everything
-// cheaper lives in field_select_test.go and shim_test.go.
+// mirror, submit — and asserts the server received the value.
+// Everything cheaper lives in field_select_test.go and shim_test.go.
 package ui
 
 import (
@@ -44,83 +45,20 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"net/http/httptest"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
+
+	"github.com/carlosframework/rastrillo/harness"
 )
 
-func chromePath(t *testing.T) string {
-	t.Helper()
-	if p := os.Getenv("RASTRILLO_CHROME"); p != "" {
-		return p
-	}
-	for _, name := range []string{"chromium", "chromium-browser", "google-chrome", "google-chrome-stable"} {
-		if p, err := exec.LookPath(name); err == nil {
-			return p
-		}
-	}
-	if home, err := os.UserHomeDir(); err == nil {
-		hits, _ := filepath.Glob(filepath.Join(home, ".cache", "ms-playwright", "chromium-*", "chrome-linux64", "chrome"))
-		if len(hits) > 0 {
-			return hits[len(hits)-1]
-		}
-	}
-	if os.Getenv("RASTRILLO_BROWSER_OPTIONAL") != "" {
-		t.Skip("no chromium found, RASTRILLO_BROWSER_OPTIONAL set — SKIPPED, not passed")
-	}
-	t.Fatal("no chromium found: set RASTRILLO_CHROME, or RASTRILLO_BROWSER_OPTIONAL to skip deliberately")
-	return ""
-}
-
-// problems collects anything the page says went wrong. Loud on purpose:
-// a console error means the enhancement is broken even when the page
-// still looks right.
-type problems struct {
-	mu   sync.Mutex
-	seen []string
-}
-
-func (p *problems) add(s string) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.seen = append(p.seen, s)
-}
-
-func (p *problems) list() []string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return append([]string(nil), p.seen...)
-}
-
-func watch(ctx context.Context, p *problems) {
-	chromedp.ListenTarget(ctx, func(ev any) {
-		switch e := ev.(type) {
-		case *runtime.EventConsoleAPICalled:
-			if e.Type == "error" || e.Type == "assert" {
-				var parts []string
-				for _, a := range e.Args {
-					parts = append(parts, string(a.Value))
-				}
-				p.add("console." + string(e.Type) + ": " + strings.Join(parts, " "))
-			}
-		case *runtime.EventExceptionThrown:
-			p.add("uncaught: " + e.ExceptionDetails.Error())
-		}
-	})
-}
-
-// page renders one form carrying an enhanced field-select, serves the
-// real select.js and tokens.css, and records what a submit delivers.
-func page(t *testing.T, optionCount int) (*httptest.Server, chan string) {
+// page builds the handler serving one form carrying an enhanced
+// field-select, the real select.js and tokens.css, and records what a
+// submit delivers.
+func page(t *testing.T, optionCount int) (http.Handler, chan string) {
 	t.Helper()
 	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
 
@@ -156,9 +94,7 @@ func page(t *testing.T, optionCount int) (*httptest.Server, chan string) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, body.String())
 	})
-	srv := httptest.NewServer(mux)
-	t.Cleanup(srv.Close)
-	return srv, got
+	return mux, got
 }
 
 // TestEnhancedSelectDrivesTheWholeJourney is the one browser test.
@@ -174,34 +110,21 @@ func page(t *testing.T, optionCount int) (*httptest.Server, chan string) {
 //     control the user types into with no accessible name;
 //   - a JS error takes the enhancement down and the page still looks fine.
 func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
-	chrome := chromePath(t)
-	srv, submitted := page(t, 40)
+	mux, submitted := page(t, 40)
+	rig := harness.New(t, func(string) http.Handler { return mux })
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath(chrome),
-		chromedp.Flag("headless", true),
-		chromedp.NoSandbox,
-	)
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
-	defer cancelAlloc()
-
-	ctx, cancel := chromedp.NewContext(allocCtx)
-	defer cancel()
 	// A healthy run takes well under a second on an idle machine, but
 	// this is wall-clock against a real browser: on a loaded box it is
 	// slower by orders of magnitude, and a budget tuned to the idle case
 	// fails for no reason. 60s tolerates a busy CI runner while still
 	// failing far faster than Go's default test timeout, so a genuine
 	// regression surfaces as a deadline rather than a hung suite.
-	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancelTimeout()
-
-	var probs problems
-	watch(ctx, &probs)
 
 	var (
 		comboCount, nativeCount, optionsShown int
-		labelFor, nativeValue, pageText       string
+		labelFor, nativeValue                 string
 		filterText                            string
 		nativeHidden                          bool
 	)
@@ -214,7 +137,7 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
 	}
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(srv.URL), at("navigated"),
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
 		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
 		at("combobox-visible"),
 		// The enhancement happened; the native control survived it.
@@ -260,7 +183,6 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// depending on hit-testing an overlay-adjacent button.
 		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
 		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
-		chromedp.Text(`body`, &pageText, chromedp.ByQuery),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v\n  filterText=%q optionsShown=%d nativeValue=%q labelFor=%q",
 			reached, err, filterText, optionsShown, nativeValue, labelFor)
@@ -304,13 +226,9 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		t.Fatal("the form never reached the server")
 	}
 
-	if p := probs.list(); len(p) > 0 {
-		t.Errorf("console/page errors during the journey:\n%s", strings.Join(p, "\n"))
-	}
-	// The junk scan: the bug class that renders perfectly and says nothing.
-	for _, junk := range []string{"undefined", "[object Object]", "NaN"} {
-		if strings.Contains(pageText, junk) {
-			t.Errorf("rendered text contains %q:\n%s", junk, pageText)
-		}
-	}
+	// The console check and the junk scan are the rig's screen gate
+	// now — which also reads input values and aria-labels, and knows
+	// the junk set in full: the "null" this file's in-place scan was
+	// missing arrived with the move.
+	rig.Screen("body", "after the journey")
 }
