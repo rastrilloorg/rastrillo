@@ -19,16 +19,19 @@ import (
 const screenBudget = 60 * time.Second
 
 // Screen is the gate a drive passes at every screen boundary: wait for
-// selector, then flush the problem list — any accumulated problem
-// fails the test naming the screen it surfaced on. "body" is the
-// whole-page case for rastrillo's server-rendered apps, which have no
-// #app convention to hard-fail on.
+// selector, run the junk scan, then flush the problem list — any
+// accumulated problem fails the test naming the screen it surfaced on.
+// "body" is the whole-page case for rastrillo's server-rendered apps,
+// which have no #app convention to hard-fail on.
 func (r *Rig) Screen(selector, note string) {
 	r.t.Helper()
 	ctx, cancel := context.WithTimeout(r.ctx, screenBudget)
 	defer cancel()
 	if err := chromedp.Run(ctx, chromedp.WaitVisible(selector, chromedp.ByQuery)); err != nil {
 		r.fail(selector, note, fmt.Sprintf("screen %q never arrived: %v", selector, err))
+	}
+	if hits := r.junkHits(selector); len(hits) > 0 {
+		r.fail(selector, note, "a JS value leaked to the screen:\n  "+strings.Join(hits, "\n  "))
 	}
 	if probs := r.take(); len(probs) > 0 {
 		r.fail(selector, note, "the page reported problems:\n  "+strings.Join(probs, "\n  "))

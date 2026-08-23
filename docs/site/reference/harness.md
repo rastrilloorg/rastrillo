@@ -119,3 +119,26 @@ alone since the mirror carries no method or status. `New` calls
 `Allow(http.MethodGet, "/favicon.ico", http.StatusNotFound)` itself,
 so the browser's own favicon probe never needs rediscovering by every
 app that uses the rig.
+
+## The junk scan
+
+```go
+func (r *Rig) AllowText(s string)
+```
+
+`Screen` doesn't just wait for its selector and flush the problem
+list — between the two it scans the screen for the values that render
+perfectly and say nothing: `"undefined"`, `"null"`, `"[object
+Object]"` and `"NaN"`, wherever a template silently dropped a field or
+mishandled a shape. The scan reads the screen the way a person would
+(the root's `textContent`, rooted at `selector`) plus the places a
+person cannot see — every `input`/`textarea` value and every
+`[aria-label]` a screen reader would announce. Any hit fails the test,
+naming the note and quoting the surrounding text so a substring like
+`"null"` is legible in context rather than reported bare.
+
+That context matters because `"null"` is also honest English —
+"this contract is null and void" — so `AllowText(s)` exempts one exact
+string from the scan for the rest of that test. The allowance is the
+surrounding text, not the junk value: everything else on the screen,
+including other occurrences of `"null"`, is still scanned.
