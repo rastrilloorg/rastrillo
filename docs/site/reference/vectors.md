@@ -1,4 +1,4 @@
-# 🧮 vectors
+# 🤖 vectors
 
 `github.com/carlosframework/rastrillo/vectors`
 
@@ -11,6 +11,7 @@ A Set is built by the app's own `cmd/genvectors` (scaffolded by `rastrillo vecto
 ## Building a Set
 
 ```go
+type Set struct { /* ordered cases */ }
 func New() *Set
 func (s *Set) Add(name, why string, fields map[string]any)
 func (s *Set) WriteTo(w io.Writer) (int64, error)
@@ -28,7 +29,7 @@ The `name` and `why` field keys are reserved for the vector's envelope; `WriteTo
 func JS() []byte
 ```
 
-The WebCrypto twin as an embedded ES module, so tests can compare. It exports two functions:
+The vendored ES module helper (`loadVectors` + `canonical`) that scaffolded apps copy as `test/vectors.mjs` and own from then on — the `tokens.css`/shim contract. It exports two functions:
 
 - `loadVectors(path)` — reads and parses a `vectors.json` written by `rastrillo vectors`; resolve the path from your suite's own URL with `fileURLToPath(new URL("./vectors.json", import.meta.url))` so the suite is independent of the directory node started in.
 
