@@ -12,10 +12,10 @@
 
 ## Global Constraints
 
-- Branch is `idear-addon`, already created off `origin/main` (v0.17.0). **Never `git merge` to main, not even locally** — every change is a PR, squash-merged.
+- Branch is `idear-addon`, at `c89e7d4` — `origin/main`, **v0.18.0**. **Never `git merge` to main, not even locally** — every change is a PR, squash-merged.
 - All Go commands run with `GOFLAGS=-mod=mod` and `CGO_ENABLED=0`. These are set job-wide in `.github/workflows/ci.yml`; export them locally too.
 - `gofmt -l .` must be empty. CI fails on any unformatted file.
-- `SKILL.md` must stay **≤ 17,000 bytes** (`skillmd_test.go`, `skillBudget`). It is 16,068 bytes at the start of this plan. Do not raise the constant.
+- `SKILL.md` must stay **≤ 17,000 bytes** (`skillmd_test.go:34`, `skillBudget`). It is **16,129** bytes on the current base (v0.18.0). Do not raise the constant.
 - Every new exported symbol in a mapped package must appear on its reference page or `internal/docsite/symbols_test.go` fails. `password` maps to `reference/password`.
 - Every page on disk under `docs/site/` must be named by `docs/site/nav.json`, and every page nav names must exist — `internal/docsite/nav_test.go` checks both directions.
 - Every ` ```go ` fence in `docs/site/` must parse (`internal/docsite/fences_test.go`), and every `/docs/...` link must resolve including its fragment (`internal/docsite/links_test.go`).
@@ -25,20 +25,20 @@
 
 ### Task 1: `password.ErrRefused` — let a Create callback refuse a signup
 
-**Why:** `password.Config.Create`'s contract is that *any* error means duplicate-email (`password/handlers.go:264-272`). idear's `Admitting` needs to refuse an uninvited signup, and today that refusal would render as "That email is already registered." — false, and an enumeration oracle of the class PRs #69–#73 closed.
+**Why:** `password.Config.Create`'s contract is that *any* error means duplicate-email (`password/handlers.go:260-273`). idear's `Admitting` needs to refuse an uninvited signup, and today that refusal would render as "That email is already registered." — false, and an enumeration oracle of the class PRs #69–#73 closed.
 
 **Files:**
-- Modify: `password/handlers.go` — add `ErrRefused` + `Refuse`, branch in `Signup` (around `:264-272`), update the `Config.Create` doc comment (around `:40-48`)
+- Modify: `password/handlers.go` — add `ErrRefused` + `Refuse`, branch in `Signup` (the `id, err := h.cfg.Create(...)` block at `:260-273`), update the `Config.Create` doc comment (`:44-48`)
 - Modify: `password/handlers_test.go` — new tests; update the `errDuplicateEmail` comment at `:24-28`, which currently states the old contract verbatim
-- Modify: `docs/site/reference/password.md:39` — the "**Any** error it returns reads as a duplicate email" sentence
-- Modify: `docs/site/passwords.md:44` — same rule, restated on the guide page
+- Modify: `docs/site/reference/password.md:39` — the `Create` paragraph
+- Modify: `docs/site/passwords.md:43-45` — the same rule, restated on the guide page
 - Modify: `SKILL.md:274` — "Any error from `Create` reads as a duplicate email"
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
 - Produces: `password.ErrRefused` (`error`, sentinel for `errors.Is`) and `password.Refuse(msg string) error`. idear's `Admitting` returns `password.Refuse("New accounts on this instance are created from an invitation.")`. The refusal renders at **403** with the message shown verbatim to the visitor.
 
-**Design note the implementer must not "simplify" away:** the refusal branch **still burns a limiter unit**. `Hash` runs before `Create` (`handlers.go:252`), so every refused attempt costs a PBKDF2; without the limiter an uninvited address is an unbounded CPU-burn vector. The reason is cost, not enumeration — unlike the duplicate-email branch, the refusal message is identical for every uninvited address and leaks nothing.
+**Design note the implementer must not "simplify" away:** the refusal branch **still burns a limiter unit**. `Hash` runs before `Create` (`handlers.go:253`), so every refused attempt costs a PBKDF2; without the limiter an uninvited address is an unbounded CPU-burn vector. The reason is cost, not enumeration — unlike the duplicate-email branch, the refusal message is identical for every uninvited address and leaks nothing.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -161,7 +161,7 @@ func (r *refusal) Unwrap() error { return ErrRefused }
 
 - [ ] **Step 4: Branch in `Signup`**
 
-Replace the `if err != nil` block after `h.cfg.Create(...)` (`handlers.go:264-273`) with:
+Replace the `id, err := h.cfg.Create(...)` block (`handlers.go:260-273`) with:
 
 ```go
 	id, err := h.cfg.Create(r.Context(), email, hash)
@@ -227,14 +227,21 @@ Expected: PASS, all 19 tests.
 // message, no sentinel type required for that path.
 ```
 
-`docs/site/reference/password.md:39` — replace the `Create` paragraph with:
+`docs/site/reference/password.md:39` — the live text is now:
+
+> `Create` stores a new user. Any error it returns reads as a duplicate
+> email, the only realistic failure for a unique-email store. Leave it nil
+> and signup is disabled entirely: `SignupPage` and `Signup` both 404.
+
+Replace it with (keeping the corpus voice — no bold shouting, "Leave it nil"
+phrasing preserved):
 
 ```markdown
 `Create` stores a new user. An error wrapping `ErrRefused` is a policy
-refusal: `Signup` renders that error's message verbatim at 403. **Any
-other** error reads as a duplicate email, the only realistic failure for
-a unique-email store. Nil disables signup entirely: `SignupPage` and
-`Signup` both 404.
+refusal: `Signup` renders that error's message verbatim at 403. Any other
+error reads as a duplicate email, the only realistic failure for a
+unique-email store. Leave it nil and signup is disabled entirely:
+`SignupPage` and `Signup` both 404.
 
 ```go
 var ErrRefused = errors.New("rastrillo/password: signup refused")
@@ -249,7 +256,17 @@ refusal still costs a rate-limiter unit, because `Hash` runs before
 `Create`.
 ```
 
-`docs/site/passwords.md:44` — replace "is read as a duplicate email — the only realistic failure mode for a" so the sentence reads that any error *other than one wrapping `password.ErrRefused`* is read as a duplicate email. Keep the surrounding prose and line width.
+`docs/site/passwords.md:43-45` — the live text is now:
+
+> `Create` stores a new user and returns the id. Any error it returns is
+> read as a duplicate email, which is the only realistic failure for a
+> unique-email store.
+
+Rewrite so any error *other than one wrapping `password.ErrRefused`* reads as
+a duplicate email, and say what a refusal does instead. The paragraph two
+below it already ends "Handy for an invite-only app." — an invite-only app is
+exactly the `ErrRefused` caller, so make the two read as one thought. Keep
+the corpus voice and the ~72-column width.
 
 `SKILL.md:274` — replace "Any error from `Create` reads as a duplicate" so it reads:
 
@@ -446,7 +463,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 wc -c SKILL.md
 ```
 
-Expected: 16,068 plus whatever Task 1's §5 edit added (roughly +60). Write the number down — Step 4 checks the delta.
+Expected: 16,129 (the v0.18.0 base) plus whatever Task 1's §5 edit added, roughly +60. Record the actual number — Step 4 checks the delta against it, not against a remembered constant.
 
 - [ ] **Step 2: Add the pointer**
 
@@ -474,7 +491,7 @@ Expected: PASS. If it fails, **trim; do not raise `skillBudget`** — the consta
 wc -c SKILL.md
 ```
 
-Expected: roughly 16,460, comfortably under 17,000. A number above 16,700 means the insert grew in editing — re-read it against the spec's §8 quote.
+Expected: roughly 16,520, comfortably under the 17,000 gate. A number above 16,700 means the insert grew in editing — re-read it against the spec's §8 quote.
 
 - [ ] **Step 5: Run the full gate**
 
