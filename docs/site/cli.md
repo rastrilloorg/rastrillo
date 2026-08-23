@@ -156,3 +156,24 @@ what it is for, and it is why it is manual.
 
 [Migrations](/docs/migrations#recovering-an-old-database) walks the
 whole recovery.
+
+## rastrillo vectors
+
+Go↔JS parity vectors: the app's `cmd/genvectors` enumerates golden cases
+from the Go engine, this verb writes them to `test/vectors.json`, and
+the app's JS suite must reproduce every one. The derivation engine an
+app runs client-side exists twice by necessity, and two engines drifting
+is the E2EE bug class where a wrong answer looks fine.
+
+```sh
+rastrillo vectors [--init] [--check] [dir]
+```
+
+Plain `vectors` runs the app's own generator and writes its stdout to
+`test/vectors.json` — a new root-level directory, chosen because the JS
+suite is neither a Go package nor a static asset.
+
+| Flag | Purpose |
+|---|---|
+| `--init` | Scaffold `cmd/genvectors`, the test/ parity suite, and the go-test belt into an existing app (once) |
+| `--check` | Pre-ship gate: regenerate, byte-compare, then run the JS parity suite with `node --test test/parity.test.mjs` |
