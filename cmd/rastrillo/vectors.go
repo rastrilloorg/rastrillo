@@ -129,7 +129,7 @@ func vectorsCheck(dir string) error {
 
 	node, err := exec.LookPath("node")
 	if err != nil {
-		return fmt.Errorf("check mode requires node to run the JS half of the gate (test/parity.test.mjs): a check that skipped one engine would be the drift it exists to catch")
+		return fmt.Errorf("check mode requires node to run the JS half of the gate (test/parity.test.mjs): a check that skipped one engine would be the drift it exists to catch — install node and rerun")
 	}
 	cmd := exec.Command(node, "--test", "test/parity.test.mjs")
 	cmd.Dir = dir
