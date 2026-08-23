@@ -36,9 +36,39 @@ type Config struct {
 `sql.ErrNoRows` for an unknown address — treated identically to a wrong
 password, verified against a decoy hash so the timing does not differ.
 
-`Create` stores a new user. Any error it returns reads as a duplicate
-email, the only realistic failure for a unique-email store. Leave it nil
-and signup is disabled entirely: `SignupPage` and `Signup` both 404.
+`Create` stores a new user. An error wrapping `ErrRefused` is a policy
+refusal: `Signup` renders the refusal's own message verbatim at 403. Any other
+error reads as a duplicate email, the only realistic failure for a
+unique-email store. Leave it nil and signup is disabled entirely:
+`SignupPage` and `Signup` both 404.
+
+```go
+var ErrRefused = errors.New("rastrillo/password: signup refused")
+
+func Refuse(msg string) error
+```
+
+`Refuse` builds a refusal carrying visitor copy. A membership layer is
+the motivating caller: telling an uninvited visitor that their address
+is already registered is simply false.
+
+The 403 is not free. It is distinguishable from the 422, so a refused
+address and a registered one no longer look the same to a prober — the
+duplicate message made them identical. That is the trade the seam
+accepts: a true answer that can be told apart beats a false one that
+cannot. An app that would rather not make the distinction leaves
+`Create` nil and closes signup outright.
+
+Write one refusal message that fits every refused address, and never
+interpolate the submitted address into it. Nothing enforces that, and a
+message that varies by address turns the 403 from a single outcome into
+a finer oracle than the status alone. The message a wrapper adds is
+never rendered — only the string handed to `Refuse` — and an empty one
+renders the package's own generic copy rather than a blank page.
+
+The refusal costs a rate-limiter unit, because `Hash` runs before
+`Create`; it is charged to the refusal budget, not the shared one (see
+[Rate limiting](#rate-limiting) below).
 
 `SignedInPath` is where a fresh session lands absent a same-site
 `return_to`; it defaults to `/`.
@@ -82,19 +112,31 @@ What both render callbacks receive — enough to re-render the form with
 the address still filled in and the problem stated.
 
 Your callback must not write a status. `password` has already written
-the 422 before calling it.
+it before calling — 422, 403 or 429, depending on the outcome.
 
 ## Rate limiting
 
-Sign-in and sign-up share one per-email budget: 10 failures in 15
-minutes answers 429 until one ages out, and a success resets it.
+There are two per-email budgets, each 10 failures in 15 minutes,
+answering 429 until one ages out. A successful sign-up resets both; a
+successful sign-in resets the shared one.
 
-They share it on purpose. Sign-up leaks the same fact sign-in does,
-whether an address is registered, so letting an attacker switch
-endpoints for a fresh allowance would defeat the limit.
+**The shared budget** is spent by wrong credentials at sign-in and by
+the duplicate-email answer at sign-up, and it gates both doors. They
+share it on purpose: sign-up leaks the same fact sign-in does, whether
+an address is registered, so letting an attacker switch endpoints for a
+fresh allowance would defeat the limit.
 
-It is in-memory, and so per-process. IP-level throttling belongs to the
-deployment.
+**The refusal budget** is spent only by a `Create` policy refusal, and
+gates sign-up alone. A refusal has to cost something — `Hash` runs
+before `Create`, so an unmetered refusal path is a PBKDF2 amplifier —
+but it must not cost the shared budget. A refused address is one nobody
+has an account for yet; charging sign-in for it would let a stranger
+who merely knows an invitee's address post ten refused signups and hold
+that address at 429 on *both* doors, renewing it at about one request
+every 90 seconds. `Signin` never consults it.
+
+Both are in-memory, and so per-process. IP-level throttling belongs to
+the deployment.
 
 ## Hashing
 

@@ -11,18 +11,38 @@ import (
 // up, so the message reveals nothing about whether the account exists.
 const tooManyAttempts = "Too many attempts. Try again in a few minutes."
 
-// The limiter's policy — one budget shared by Signin and Signup, fixed
-// rather than configurable until a real deployment needs otherwise:
-// maxFailures failed attempts against one email inside failureWindow
-// block further attempts until the oldest failure ages out. 15 minutes matches the window auth's keymail
-// flow gets from signin.NewMemoryLimiter.
+// The limiter's policy, fixed rather than configurable until a real
+// deployment needs otherwise: maxFailures failed attempts against one
+// email inside failureWindow block further attempts until the oldest
+// failure ages out. 15 minutes matches the window auth's keymail flow
+// gets from signin.NewMemoryLimiter.
+//
+// Handlers keeps two independent limiters of this type, and which one
+// a failure lands in is a security decision, not bookkeeping:
+//
+//   - The shared budget is spent by wrong credentials at sign-in and
+//     by the duplicate-email answer at sign-up, and it gates both
+//     doors. Those two failures leak the same fact — whether an
+//     address is registered — so letting an attacker switch endpoints
+//     for a fresh allowance would defeat the limit.
+//
+//   - The refusal budget is spent only by a Config.Create policy
+//     refusal, and gates sign-up alone. A refusal must cost something,
+//     because Hash runs before Create and an unmetered refusal path is
+//     a PBKDF2 amplifier. It must not cost the shared budget: a
+//     refused address is by definition one the attacker does not have
+//     an account for, so charging sign-in for it would let a stranger
+//     who merely knows an invitee's address post ten refused signups
+//     and hold that address at 429 on both doors, renewing it at about
+//     one request every 90 seconds. Nothing an unregistered address's
+//     visitor does should be able to lock its future owner out.
 //
 // Keying by email (not client IP) is the deliberate trade-off: it is
 // what stops a credential-guessing run against one account, it works
 // behind any proxy topology, and the cost — someone hammering a
-// victim's email can lock the victim out too — is bounded to the
-// window, never a permanent lockout. IP-level throttling of signup
-// spam and distributed guessing stays a deployment concern (the
+// victim's email can lock the victim out of sign-in too — is bounded
+// to the window, never a permanent lockout. IP-level throttling of
+// signup spam and distributed guessing stays a deployment concern (the
 // platform's reverse proxy), as SKILL.md says.
 const (
 	maxFailures   = 10
@@ -35,7 +55,7 @@ const (
 // faster than the window drains it.
 const limitKeyCap = 4096
 
-// limiter tracks recent sign-in failures per key, in memory. Like
+// limiter tracks recent failures per key, in memory. Like
 // signin's memory limiter, state dies with the process — an acceptable
 // reset on a platform that restarts apps rarely, and per-instance by
 // construction.

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -24,8 +25,8 @@ import (
 // errDuplicateEmail is the fake store's stand-in for whatever
 // distinct error the app's real Create returns on a UNIQUE
 // constraint violation — handlers.go's contract is: any error from
-// Create re-renders the duplicate-email message, no sentinel type
-// required.
+// Create that does NOT wrap ErrRefused re-renders the duplicate-email
+// message, no sentinel type required for that path.
 var errDuplicateEmail = errors.New("email already exists")
 
 // fakeUser is one row of the in-memory user store the tests fake
@@ -418,6 +419,210 @@ func TestSignupDuplicateEmailRerenders(t *testing.T) {
 	}
 	if d.Error != "That email is already registered." {
 		t.Errorf("Error = %q, want %q", d.Error, "That email is already registered.")
+	}
+}
+
+func TestSignupRefusedRendersForbidden(t *testing.T) {
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Create = func(context.Context, string, string) (int64, error) {
+			return 0, password.Refuse("New accounts here are created from an invitation.")
+		}
+	})
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", w.Code)
+	}
+	d, ok := env.signup.last()
+	if !ok {
+		t.Fatalf("RenderSignup not called")
+	}
+	if d.Error != "New accounts here are created from an invitation." {
+		t.Errorf("Error = %q, want the refusal message verbatim", d.Error)
+	}
+	if d.Email != "stranger@example.com" {
+		t.Errorf("Email = %q, want the submitted address echoed back", d.Email)
+	}
+}
+
+func TestSignupRefusedIsNotTheDuplicateMessage(t *testing.T) {
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Create = func(context.Context, string, string) (int64, error) {
+			return 0, password.Refuse("By invitation only.")
+		}
+	})
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+
+	// "Not the duplicate path" is a claim about the status as much as
+	// the copy: the duplicate branch answers 422.
+	if w.Code == http.StatusUnprocessableEntity {
+		t.Errorf("status = 422, want anything but the duplicate branch's status")
+	}
+	d, _ := env.signup.last()
+	if strings.Contains(d.Error, "already registered") {
+		t.Errorf("a refusal must not read as duplicate-email: %q", d.Error)
+	}
+}
+
+func TestSignupRefusedStillCostsALimiterUnit(t *testing.T) {
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Create = func(context.Context, string, string) (int64, error) {
+			return 0, password.Refuse("By invitation only.")
+		}
+	})
+
+	// Hash runs before Create, so an unmetered refusal path is a
+	// PBKDF2 burn vector. Ten refusals must close the door.
+	//
+	// The 403 assertion inside the loop is what makes this a test of
+	// the refusal branch: without it, deleting the branch entirely
+	// would drop these attempts into the duplicate branch, which also
+	// meters, and the 429 below would still arrive.
+	for i := 0; i < 10; i++ {
+		w := httptest.NewRecorder()
+		env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("refusal %d status = %d, want 403", i+1, w.Code)
+		}
+	}
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+	if w.Code != http.StatusTooManyRequests {
+		t.Errorf("status after 10 refusals = %d, want 429", w.Code)
+	}
+}
+
+// TestSignupRefusalDoesNotBlockSignin is the reason refusals meter
+// against their own budget: a stranger who knows an address must not
+// be able to spend that address's sign-in allowance. Before ErrRefused
+// existed, an unregistered address could not have its budget burned at
+// all.
+func TestSignupRefusalDoesNotBlockSignin(t *testing.T) {
+	refusing := false
+	env := newTestEnv(t, func(c *password.Config) {
+		store := c.Create
+		c.Create = func(ctx context.Context, email, hash string) (int64, error) {
+			if refusing {
+				return 0, password.Refuse("By invitation only.")
+			}
+			return store(ctx, email, hash)
+		}
+	})
+
+	// A real account at the address the refusals will target.
+	hash, err := password.Hash("s3cretpw")
+	if err != nil {
+		t.Fatalf("Hash: %v", err)
+	}
+	if _, err := env.store.create(context.Background(), "invitee@example.com", hash); err != nil {
+		t.Fatalf("seed create: %v", err)
+	}
+
+	// Now refuse everything, and burn the whole refusal budget against
+	// that address.
+	refusing = true
+	for i := 0; i < 10; i++ {
+		w := httptest.NewRecorder()
+		env.h.Signup(w, signupRequest("invitee@example.com", "longenoughpw"))
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("refusal %d status = %d, want 403", i+1, w.Code)
+		}
+	}
+
+	// Sign-up is now blocked for that address...
+	blocked := httptest.NewRecorder()
+	env.h.Signup(blocked, signupRequest("invitee@example.com", "longenoughpw"))
+	if blocked.Code != http.StatusTooManyRequests {
+		t.Fatalf("signup after the refusal budget = %d, want 429", blocked.Code)
+	}
+
+	// ...but the account holder's sign-in is untouched.
+	w := httptest.NewRecorder()
+	env.h.Signin(w, signinRequest("invitee@example.com", "s3cretpw", ""))
+	if w.Code == http.StatusTooManyRequests {
+		t.Fatalf("signin = 429: refusals spent the shared sign-in budget")
+	}
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("signin = %d, want 303", w.Code)
+	}
+}
+
+// TestSignupRefusalMessageDoesNotLeakWrapping covers the three ways a
+// refusal reaches the renderer: wrapped with caller context, as the
+// bare sentinel, and empty.
+func TestSignupRefusalMessageDoesNotLeakWrapping(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{
+			// errors.Is traverses the wrapper; err.Error() would drag
+			// "invitation lookup: rastrillo/password: signup refused"
+			// onto a public page.
+			name: "wrapped refusal renders only the visitor copy",
+			err:  fmt.Errorf("admitting: %w", password.Refuse("By invitation only.")),
+			want: "By invitation only.",
+		},
+		{
+			name: "bare sentinel falls back",
+			err:  fmt.Errorf("x: %w", password.ErrRefused),
+			want: "",
+		},
+		{
+			name: "empty refusal falls back",
+			err:  password.Refuse(""),
+			want: "",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			env := newTestEnv(t, func(c *password.Config) {
+				c.Create = func(context.Context, string, string) (int64, error) {
+					return 0, tc.err
+				}
+			})
+			w := httptest.NewRecorder()
+			env.h.Signup(w, signupRequest("stranger@example.com", "longenoughpw"))
+			if w.Code != http.StatusForbidden {
+				t.Fatalf("status = %d, want 403", w.Code)
+			}
+			d, ok := env.signup.last()
+			if !ok {
+				t.Fatalf("RenderSignup not called")
+			}
+			if strings.Contains(d.Error, "rastrillo/password") {
+				t.Errorf("Error = %q: the sentinel's own text reached the visitor", d.Error)
+			}
+			if strings.TrimSpace(d.Error) == "" {
+				t.Errorf("Error is blank: a 403 must still say something")
+			}
+			if tc.want != "" && d.Error != tc.want {
+				t.Errorf("Error = %q, want %q", d.Error, tc.want)
+			}
+		})
+	}
+}
+
+func TestSignupPlainErrorStillReadsAsDuplicate(t *testing.T) {
+	env := newTestEnv(t, nil)
+	hash, _ := password.Hash("s3cretpw")
+	env.store.create(context.Background(), "taken@example.com", hash)
+
+	w := httptest.NewRecorder()
+	env.h.Signup(w, signupRequest("taken@example.com", "anotherlongpw"))
+
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("status = %d, want 422 — a non-refusal error keeps the old contract", w.Code)
+	}
+	d, _ := env.signup.last()
+	if d.Error != "That email is already registered." {
+		t.Errorf("Error = %q, want the duplicate message", d.Error)
 	}
 }
 

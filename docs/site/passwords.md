@@ -41,11 +41,25 @@ like a wrong password, verifying against a decoy hash so the timing does
 not give it away either.
 
 `Create` stores a new user and returns the id. Any error it returns is
-read as a duplicate email, which is the only realistic failure for a
-unique-email store.
+read as a duplicate email, the only realistic failure for a
+unique-email store — unless it wraps `password.ErrRefused`, in which
+case `Signup` renders the refusal's own message verbatim at 403
+instead.
 
 Leave `Create` nil and signup is disabled entirely: `SignupPage` and
-`Signup` both answer 404. Handy for an invite-only app.
+`Signup` both answer 404. `password.Refuse` is the finer-grained tool
+for the same job: an invite-only app can keep `Create` wired up and
+refuse only the addresses that never got an invitation, rather than
+closing signup outright.
+
+The refusal is there because the duplicate-email answer would be a
+*lie* to someone who never had an account. It is not free: a 403 and a
+422 can be told apart, so a refused address and a registered one no
+longer look the same to a prober, where the duplicate copy made them
+identical. Saying a true thing that is distinguishable is the trade,
+and it is worth making — but write one refusal message that fits every
+refused address, and never interpolate the submitted address into it,
+or the 403 becomes a finer oracle than the outcome alone.
 
 `RenderSignup` is required whenever `Create` is set, and `New` returns
 an error rather than letting you discover it at request time.
@@ -61,7 +75,7 @@ re-render the form with the address still filled in and the problem
 stated.
 
 Your callback must not write a status. `password` has already written
-the 422 before calling you.
+it before calling you — 422, 403 or 429, depending on the outcome.
 
 ## Methods and their verbs
 
@@ -73,15 +87,27 @@ image tag on any page.
 
 ## Rate limiting
 
-Sign-in and sign-up share one per-email budget. Ten failures in fifteen
-minutes answers 429 until one ages out, and a success resets it.
+There are two per-email budgets. Each allows ten failures in fifteen
+minutes, then answers 429 until one ages out.
 
-They share it on purpose. Sign-up leaks the same fact sign-in does —
+Sign-in and sign-up share the first. Wrong credentials and the
+duplicate-email answer both spend it, and either can block both doors.
+They share it on purpose: sign-up leaks the same fact sign-in does —
 whether an address is already registered — so letting an attacker switch
 endpoints for a fresh allowance would defeat the limit.
 
-It is in-memory, and so per-process. IP-level throttling is the
-deployment's job.
+A `Refuse` refusal spends the second, which gates sign-up alone. A
+refusal has to cost something, since `password.Hash` runs before
+`Create` and an unmetered refusal path is a way to burn CPU. It must
+not cost the shared budget, though: a refused address is one nobody has
+an account for yet, so charging sign-in for it would let a stranger who
+knows an invitee's address post ten refused signups and hold that
+address at 429 on both doors, indefinitely, for about one request every
+ninety seconds. Sign-in never looks at it.
+
+A successful sign-up clears both; a successful sign-in clears the
+shared one. Both are in-memory, and so per-process. IP-level throttling
+is the deployment's job.
 
 ## Passwords at rest
 
