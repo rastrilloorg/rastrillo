@@ -107,6 +107,11 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 		requests: map[network.RequestID]requestInfo{},
 	}
 
+	// The browser probes /favicon.ico on its own; pre-allowed so every
+	// app doesn't rediscover it as a mysterious 404.
+	r.Allow(http.MethodGet, "/favicon.ico", http.StatusNotFound)
+	r.watch()
+
 	var boot []chromedp.Action
 	boot = append(boot, chromedp.ActionFunc(func(ctx context.Context) error {
 		if err := webauthn.Enable().Do(ctx); err != nil {

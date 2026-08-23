@@ -88,3 +88,34 @@ the browser would have seen, not just the error chromedp returned.
 `Context` exposes the rig's underlying `chromedp` context directly, for
 the rare drive that needs a tighter deadline than the test binary's
 own timeout affords.
+
+## The loud-failure watchers
+
+```go
+func (r *Rig) Allow(method, path string, status int)
+func (r *Rig) Screen(selector, note string)
+```
+
+`New` wires up a set of watchers before it hands back the rig, so a
+silent failure is impossible: a console error or assertion, an
+uncaught exception, a failed request, and any response with status
+`>= 400` are all recorded as problems. A 4xx/5xx response also shows up
+a second time as Chromium's own console-error mirror of it — that
+mirror arrives over the CDP log domain rather than the console-API
+event, and carries only a URL, not a method or status.
+
+`Screen(selector, note)` is the gate a drive passes at every screen
+boundary: it waits for `selector` to become visible, then flushes the
+accumulated problems, failing the test — naming `note` and whatever
+was on screen — if any turned up. `"body"` is the whole-page case for
+rastrillo's server-rendered apps, which have no `#app` convention to
+hard-fail on.
+
+Some probes are expected — a signed-out boot asking `/api/me` and
+being told 401 is how an app finds out to show the sign-in screen.
+`Allow(method, path, status)` excuses exactly that response, matched
+by path, and its console-error mirror along with it, matched by path
+alone since the mirror carries no method or status. `New` calls
+`Allow(http.MethodGet, "/favicon.ico", http.StatusNotFound)` itself,
+so the browser's own favicon probe never needs rediscovering by every
+app that uses the rig.
