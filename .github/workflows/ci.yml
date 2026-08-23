@@ -45,6 +45,15 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
+      # The README promises, twice, that chromedp stays out of the
+      # ordinary build graph. This is that sentence, executable.
+      - name: chromedp stays out of the ordinary build graph
+        run: |
+          if go list -deps ./... | grep -i chromedp; then
+            echo "go list -deps ./... pulls chromedp — the README's promise is broken"
+            exit 1
+          fi
+
       # The race detector needs cgo, so this one step overrides the
       # job-wide CGO_ENABLED=0 — the static-binary criterion is about
       # what ships, not about what a detector build links. Scoped to the
@@ -124,3 +133,34 @@ jobs:
           done
           curl -sf http://127.0.0.1:8199/healthz
           kill %1
+
+  # The browser drive: rastrillo's own browser-tagged tests — the ui
+  # select journey, the harness's own checks, and webauthn's PRF
+  # ceremonies including the prfByAssertion fallback — on every PR.
+  # RASTRILLO_BROWSER_OPTIONAL stays unset on purpose: a skip is not a
+  # pass, so a runner that loses its browser fails loudly.
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=mod
+      CGO_ENABLED: 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # A pinned Playwright pins the Chromium build it installs, and it
+      # lands in the cache path harness.ChromePath already globs — no
+      # RASTRILLO_CHROME needed. The runner's preinstalled Chrome
+      # floats with the image and apt's chromium is a snap shim, so
+      # this is the simplest honest pin. Bump it deliberately.
+      - name: install pinned chromium
+        run: npx --yes playwright@1.54.1 install --with-deps chromium
+
+      # Only the packages carrying browser-tagged tests: the plain
+      # suite already ran in the test job, and -tags browser ./...
+      # would rerun all of it here for nothing.
+      - name: browser-tagged tests
+        run: go test -tags browser ./harness/ ./ui/ ./webauthn/ -count=1
