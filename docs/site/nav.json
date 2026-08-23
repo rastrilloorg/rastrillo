@@ -214,6 +214,11 @@
           "blurb": "Render, Fail and ParseID for a generated action."
         },
         {
+          "slug": "reference/vectors",
+          "label": "vectors",
+          "blurb": "Golden vectors that pin an app's JS derivation engine to its Go one, and kass's canonical() rule."
+        },
+        {
           "slug": "reference/webauthn",
           "label": "webauthn",
           "blurb": "The two ceremonies, the six refusals, and what is deliberately not checked."

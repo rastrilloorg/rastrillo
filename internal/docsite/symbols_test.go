@@ -44,6 +44,7 @@ var referencePages = map[string]string{
 	"eventlog": "reference/eventlog",
 	"mail":     "reference/mail",
 	"gormlite": "reference/gormlite",
+	"vectors":  "reference/vectors",
 	".":        "reference/rastrillo",
 }
 
