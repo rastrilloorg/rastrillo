@@ -36,6 +36,26 @@ with a zero-length salt, `crypto.Derive` passes a nil salt, and RFC
 
 ```go
 func NewSeed() ([]byte, error)
+
+func (r Ring) WrapSeed(prf, seed []byte) ([]byte, error)
+func (r Ring) UnwrapSeed(prf, wrapped []byte) ([]byte, error)
 ```
 
 `NewSeed` mints the one per-person root everything else derives from.
+`WrapSeed` seals it under the key derived from a passkey's PRF output —
+`iv(12) ‖ AES-256-GCM ciphertext` — and wrapping the same seed under a
+different credential's PRF output is the whole of device add and RPID
+move. `UnwrapSeed` reverses it; a wrong credential, wrong namespace and
+tampered blob fail indistinguishably.
+
+The transport contract the package names but does not build: store a
+wrapped seed keyed by credential ID, return it at sign-in, accept a new
+one at enrol.
+
+An RPID move is a three-phase drill. Old name: normal operation, the
+seed wrapped under old-RPID passkeys. Crossover: serve under the new
+RPID with [webauthn](/docs/reference/webauthn)'s `Config.LegacyRPID`
+set to the old one (assertions only); a fresh device signs in via the
+legacy fallback, unwraps the seed, and enrols a new-RPID credential —
+`WrapSeed`, same seed. Settled: `LegacyRPID` removed; only new-name
+credentials remain.
