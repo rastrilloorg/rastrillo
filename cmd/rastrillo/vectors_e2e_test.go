@@ -101,7 +101,8 @@ func TestVectorsEndToEndOnAFixtureApp(t *testing.T) {
 	if err := os.WriteFile(parityPath, []byte(jsMutated), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := runVectors([]string{"-check", dir}); err == nil {
-		t.Fatal("a changed JS engine must fail the node leg")
+	err = runVectors([]string{"-check", dir})
+	if err == nil || !strings.Contains(err.Error(), "test/parity.test.mjs failed") {
+		t.Fatalf("a changed JS engine must fail the node leg, got: %v", err)
 	}
 }
