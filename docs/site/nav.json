@@ -106,6 +106,16 @@
       ]
     },
     {
+      "title": "Addons",
+      "pages": [
+        {
+          "slug": "addons",
+          "label": "Addons",
+          "blurb": "Modules that ship outside the framework, the four rules they follow, and how to fetch their skills."
+        }
+      ]
+    },
+    {
       "title": "Reference",
       "pages": [
         {
