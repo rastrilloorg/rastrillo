@@ -9,13 +9,13 @@
 // fingerprinted assets, and localization. The subsystems live beside
 // it: crypto (the family envelope), auth (keymail sign-in with the
 // magic-link fallback), webauthn, eventlog (the Mergeable store),
-// blobs, mail, tools (agent dispatch), and ui (the component
-// partials). README.md keeps the honest status list.
+// blobs, mail, carlos (the platform's scheduled-work contract), tools
+// (agent dispatch), and ui (the component partials). README.md keeps
+// the honest status list.
 package rastrillo
 
 import (
 	"context"
-	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -30,6 +30,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/carlosframework/rastrillo/carlos"
 
 	_ "modernc.org/sqlite"
 )
@@ -452,15 +454,17 @@ func buildMux(opts Options, db *sql.DB) (*http.ServeMux, error) {
 }
 
 // nextDueHandler answers the activator's scheduled-wake poll (see
-// Options.NextDue). The bearer token is $CARLOS_ADMIN_TOKEN — the
-// instance-local secret the platform's exec backend delivers in the
-// overlay env file. No token in the environment means nobody can
-// authenticate: fail closed, don't fail open.
+// Options.NextDue). It presents the same secret a scheduled tick does —
+// $CARLOS_ADMIN_TOKEN, the instance-local token the platform's exec
+// backend delivers in the overlay env file — so it authenticates with
+// carlos.Tick rather than a second, subtly different compare of its
+// own. That is not tidiness: the version here compared the raw header
+// bytes, and ConstantTimeCompare returns 0 immediately on a length
+// mismatch, so it leaked the token's length by timing. One token, one
+// check, and no token in the environment still fails closed.
 func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := os.Getenv("CARLOS_ADMIN_TOKEN")
-		auth := r.Header.Get("Authorization")
-		if token == "" || subtle.ConstantTimeCompare([]byte(auth), []byte("Bearer "+token)) != 1 {
+		if !carlos.Tick(r) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}

@@ -355,6 +355,12 @@ the meantime. This list is their union. **Built:**
 - **`rastrillo/mail`** — the one outbound-email surface (SMTP or
   loudly-logged fallback, header-injection refused), signature-
   compatible with signin's Mailer.
+- **`rastrillo/carlos`** — scheduled work on a hibernating instance
+  (platform spec 2026-08-23-scheduled-work §7): `Tick(r)` authenticates
+  a platform tick against `$CARLOS_ADMIN_TOKEN` in constant time,
+  `TickOccurrence(r)` hands back the at-least-once dedupe key, and
+  `ScheduleAt`/`ScheduleCancel` register one-shot timers over the
+  instance's control socket. Degrades to `ErrNotOnCarlos` off-platform.
 - **Agents** (design doc §8) — actions opt in as tools (`var Tool =
   rastrillo.Tool{...}`), the generator emits the registry
   (`gen.Tools()`), the `tools` package renders schemas and dispatches

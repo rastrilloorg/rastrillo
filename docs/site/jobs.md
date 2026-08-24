@@ -14,6 +14,10 @@ they will be interrupted. And if the work must survive a restart, it
 does not belong here — reach for
 [`eventlog`](/docs/reference/eventlog).
 
+For the same reason, a `time.Ticker` in your app is not a scheduler. On
+CARLOS the platform holds the clock and wakes you when something is
+due; see [`carlos`](/docs/reference/carlos).
+
 ## Starting one
 
 ```go
