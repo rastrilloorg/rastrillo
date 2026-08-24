@@ -32,6 +32,40 @@ transaction at a time and a killed wake rolls back cleanly and retries.
 And background work does not survive: a [job](/docs/jobs) is a
 goroutine, and hibernation ends it, so keep jobs idempotent.
 
+## Work on a clock
+
+Since hibernation ends goroutines, a timer inside your process is not a
+scheduler. The platform keeps the clock instead: you declare a schedule
+from outside the app with `carlos schedule set -name sync -every 6h
+-path /jobs/sync`, and when it comes due the platform wakes the instance
+and POSTs to that path.
+
+Your side is an ordinary handler, guarded so that a stranger POSTing the
+same path gets nothing:
+
+```go
+func handleSync(w http.ResponseWriter, r *http.Request) {
+	if !carlos.Tick(r) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	if err := syncer.RunOnce(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+```
+
+Do the work inside the request. The instance stays awake while it is
+open, and the idle clock starts when you return.
+
+One-off work — a reminder, an expiry — you ask for yourself with
+`carlos.ScheduleAt`, and it arrives as the same kind of tick.
+[`carlos`](/docs/reference/carlos) is the package, and the reason
+`TickOccurrence` is there: delivery is at-least-once, so a retry brings
+the same occurrence back.
+
 ## The middleware seam
 
 `Options.Wrap` is where your app middleware goes — sessions, CSRF, panic

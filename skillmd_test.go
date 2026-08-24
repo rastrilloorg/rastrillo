@@ -31,7 +31,17 @@ import (
 // main's two new facts in 13 fewer bytes than either side spent — and
 // a duplication sweep found none, so the remainder is real growth,
 // not slack. Trim first, still.
-const skillBudget = 17_000
+//
+// Raised again, 17_000 to 18_000, for the scheduled-work paragraph in
+// §6 (Design: carlosframework/platform 2026-08-23-scheduled-work).
+// That is a whole new package — carlos.Tick, TickOccurrence,
+// ScheduleAt — and one an agent writing an app cannot infer, because
+// the thing it replaces (a time.Ticker in main) compiles, runs, and is
+// silently wrong on a hibernating instance. A trim pass over §6 found
+// no redundancy to pay for it: every line there is a fact about the
+// jobs API or the poll shim. 631 bytes of the raise are spent; the
+// rest is headroom, not licence.
+const skillBudget = 18_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

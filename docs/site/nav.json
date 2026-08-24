@@ -134,6 +134,11 @@
           "blurb": "Content-addressed bytes over S3, a directory, or a table."
         },
         {
+          "slug": "reference/carlos",
+          "label": "carlos",
+          "blurb": "Receiving a scheduled tick, and asking the platform for a one-shot one."
+        },
+        {
           "slug": "reference/crypto",
           "label": "crypto",
           "blurb": "The family envelope, its wire formats, and the golden vectors that pin them."
