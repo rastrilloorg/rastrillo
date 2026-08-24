@@ -20,11 +20,11 @@ merges into `BootSchema` — never into its own `Schema`, or
 `rastrillo migration check` proposes dropping tables that `Models` does
 not know about. See [Migrations](/docs/migrations).
 
-**It ships its own `SKILL.md`, fetchable over HTTP.** The framework's
-sits at the repo root a scaffolded app points to; an addon's would
-otherwise land in a module-cache directory nobody names. An addon that
-an agent cannot read is an addon that saves the typing and none of the
-reading.
+**It ships its own `SKILL.md`, inside the module.** The framework's sits
+at the repo root a scaffolded app points to; an addon's lands in the
+module cache, so the directory page's job is to name the one command
+that prints it. An addon that an agent cannot read is an addon that
+saves the typing and none of the reading.
 
 **It does not re-implement the core.** Sessions, CSRF, migrations,
 forms and flash are already there. An addon that brings its own is a
@@ -34,9 +34,7 @@ fork wearing a smaller name.
 
 ### idear — accounts, roles, invitations
 
-**Status:** in development. The module path and the `SKILL.md` URL below
-are the contract it ships against, not addresses that resolve today;
-neither will fetch until idear is announced.
+**Status:** released, v0.1.1.
 
 **Module:** `amadan.net/rastrillo/idear` ·
 **Source:** <https://amadan.net/rastrillo/idear>
@@ -51,10 +49,14 @@ change that. Three strictly ordered roles — Owner, Admin, Member, with
 exactly one Owner at all times — plus invitations, member management,
 and the middleware that makes the membership gate the short path.
 
-Load its authoring doc before building on it:
+Load its authoring doc before building on it. An addon's `SKILL.md`
+ships **inside the module**, so `go get` has already put it on disk —
+and the copy you read is pinned to the version you are building
+against, which a URL would not be:
 
 ```sh
-curl -s https://amadan.net/rastrillo/idear/SKILL.md
+go get amadan.net/rastrillo/idear
+cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/idear)/SKILL.md"
 ```
 
 It sits on top of [sessions](/docs/sessions) and whichever identity
