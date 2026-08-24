@@ -28,6 +28,19 @@ func TestTick(t *testing.T) {
 		}
 	})
 
+	t.Run("accepts any casing of the scheme", func(t *testing.T) {
+		// RFC 7235 makes the scheme case-insensitive. The platform always
+		// sends "Bearer", so this is for the manual path Tick exists to
+		// allow: an ops runbook curling with "bearer" should not get a
+		// 403 whose cause is invisible.
+		t.Setenv(tokenEnv, "sekrit")
+		for _, auth := range []string{"bearer sekrit", "BEARER sekrit", "BeArEr sekrit"} {
+			if !Tick(tickRequest(auth, "sync", "schedule", "1765000000")) {
+				t.Errorf("Authorization %q was refused", auth)
+			}
+		}
+	})
+
 	t.Run("refuses a wrong token", func(t *testing.T) {
 		t.Setenv(tokenEnv, "sekrit")
 		for _, auth := range []string{
@@ -36,6 +49,8 @@ func TestTick(t *testing.T) {
 			"Bearer sekrits", // and one byte too long
 			"sekrit",         // the token with no scheme
 			"Basic sekrit",
+			"Bearer  sekrit", // two spaces: the scheme is loose, the rest is not
+			"Bearersekrit",
 			"",
 		} {
 			if Tick(tickRequest(auth, "sync", "schedule", "1765000000")) {
@@ -95,11 +110,17 @@ func TestTickOccurrence(t *testing.T) {
 	})
 
 	t.Run("refuses an authentic request with no At header", func(t *testing.T) {
+		// Which is why it is the key and not the guard: an app's own
+		// "Sync now" call carries the token and no schedule headers, and
+		// Tick — the guard — still accepts it.
 		t.Setenv(tokenEnv, "sekrit")
 		r := httptest.NewRequest(http.MethodPost, "/jobs/sync", nil)
 		r.Header.Set("Authorization", "Bearer sekrit")
 		if _, ok := TickOccurrence(r); ok {
 			t.Fatal("a request with no X-Carlos-Schedule-At yielded an occurrence key")
+		}
+		if !Tick(r) {
+			t.Fatal("Tick refused the manual path it is documented to allow")
 		}
 	})
 }

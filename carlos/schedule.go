@@ -20,8 +20,11 @@ import (
 // line of main, which is what lets an app re-assert its timers at boot.
 const socketEnv = "CARLOS_CONTROL_SOCKET"
 
-// MaxAhead is how far ahead the platform accepts an `at`. Past it the
-// call fails rather than silently clamping.
+// MaxAhead is how far ahead a one-shot timer may be set. The platform
+// enforces the same bound and answers 400 past it; ScheduleAt checks it
+// first so the caller gets a typed error without a round trip, and so
+// the constant is true of this package rather than merely quoted from
+// the other end of the socket.
 const MaxAhead = 400 * 24 * time.Hour
 
 var (
@@ -50,6 +53,23 @@ var (
 	ErrTooManyTimers = errors.New("rastrillo/carlos: too many one-shot timers on this host")
 )
 
+// StatusError is a control-socket reply with no sentinel of its own.
+// The status is a field rather than only prose because the caller's
+// next move depends on it and the two directions are opposite: the
+// agent's 5xx is a transient registry failure and worth retrying, its
+// 4xx is a permanent complaint about this request and retrying it
+// forever is the bug. A boot pass re-asserting a few dozen timers has
+// to be able to tell them apart.
+type StatusError struct {
+	Status int    // the agent's HTTP status
+	Name   string // the timer the call was for
+	Body   string // the agent's message, whitespace-collapsed, up to 512 bytes
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("rastrillo/carlos: schedule %q: %d: %s", e.Name, e.Status, e.Body)
+}
+
 // nameRE mirrors the platform's own rule for a timer name. Checking it
 // here is not politeness about error messages: name goes into the
 // request path, so anything with a slash or a ".." in it would address
@@ -61,8 +81,9 @@ var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,31}$`)
 // The peer is a local socket held by the agent, so the realistic failure
 // is not slowness but an agent wedged mid-write — and an app re-asserting
 // its timers from main with context.Background() would then never finish
-// booting.
-const defaultTimeout = 10 * time.Second
+// booting. A var, not a const, so the test that proves the default is
+// applied does not have to wait ten seconds for it.
+var defaultTimeout = 10 * time.Second
 
 // ScheduleAt registers a one-shot timer: at the given instant the
 // platform wakes this instance and POSTs to path, exactly as it delivers
@@ -78,12 +99,31 @@ const defaultTimeout = 10 * time.Second
 //
 // name must match ^[a-z0-9][a-z0-9-]{0,31}$ and is the app's own handle
 // on the timer — the only way to cancel or replace it. path must be an
-// absolute path on this app. at may be up to [MaxAhead] ahead; an at in
-// the past fires on the platform's next sweep rather than being refused.
+// absolute path on this app. at must be set and no more than [MaxAhead]
+// ahead; an at in the past is allowed and fires on the platform's next
+// sweep.
 //
 // The errors worth branching on are [ErrNotOnCarlos] (not a CARLOS
-// instance at all), [ErrDeclaredSchedule] and [ErrTooManyTimers].
+// instance at all), [ErrDeclaredSchedule], [ErrTooManyTimers], and
+// [StatusError] for anything else the agent refused.
 func ScheduleAt(ctx context.Context, name string, at time.Time, path string) error {
+	socket, token, err := control()
+	if err != nil {
+		return err
+	}
+	if err := validName(name); err != nil {
+		return err
+	}
+	// A zero time is almost always a field that was never filled in, and
+	// the platform would accept it: a past `at` is legal by design and
+	// fires on the next sweep. Silently reminding someone at boot is a
+	// worse answer than an error the developer can see.
+	if at.IsZero() {
+		return fmt.Errorf("rastrillo/carlos: schedule %q: at is the zero time", name)
+	}
+	if at.After(time.Now().Add(MaxAhead)) {
+		return fmt.Errorf("rastrillo/carlos: schedule %q: at is more than %d days ahead", name, int(MaxAhead.Hours()/24))
+	}
 	body, err := json.Marshal(struct {
 		At   string `json:"at"`
 		Path string `json:"path"`
@@ -91,7 +131,7 @@ func ScheduleAt(ctx context.Context, name string, at time.Time, path string) err
 	if err != nil {
 		return fmt.Errorf("rastrillo/carlos: encode request: %w", err)
 	}
-	return do(ctx, http.MethodPut, name, body)
+	return do(ctx, socket, token, http.MethodPut, name, body)
 }
 
 // ScheduleCancel removes a one-shot timer registered by [ScheduleAt].
@@ -102,23 +142,42 @@ func ScheduleAt(ctx context.Context, name string, at time.Time, path string) err
 // schedule — those are removed with `carlos schedule rm`, from outside
 // the app, so an app cannot cancel work its operator declared.
 func ScheduleCancel(ctx context.Context, name string) error {
-	return do(ctx, http.MethodDelete, name, nil)
+	socket, token, err := control()
+	if err != nil {
+		return err
+	}
+	if err := validName(name); err != nil {
+		return err
+	}
+	return do(ctx, socket, token, http.MethodDelete, name, nil)
+}
+
+// control resolves the environment the verbs need. It runs before any
+// argument checking so that off CARLOS — a laptop, a test — a caller
+// gets ErrNotOnCarlos, which is the fact it can act on, rather than a
+// complaint about an argument that was never going to be sent.
+func control() (socket, token string, err error) {
+	socket = os.Getenv(socketEnv)
+	if socket == "" {
+		return "", "", ErrNotOnCarlos
+	}
+	token = os.Getenv(tokenEnv)
+	if token == "" {
+		return "", "", ErrUnauthorized
+	}
+	return socket, token, nil
+}
+
+func validName(name string) error {
+	if !nameRE.MatchString(name) {
+		return fmt.Errorf("rastrillo/carlos: name %q: want ^[a-z0-9][a-z0-9-]{0,31}$", name)
+	}
+	return nil
 }
 
 // do is the one request path: dial the control socket, present the
 // token, map the platform's status codes onto this package's errors.
-func do(ctx context.Context, method, name string, body []byte) error {
-	if !nameRE.MatchString(name) {
-		return fmt.Errorf("rastrillo/carlos: name %q: want ^[a-z0-9][a-z0-9-]{0,31}$", name)
-	}
-	socket := os.Getenv(socketEnv)
-	if socket == "" {
-		return ErrNotOnCarlos
-	}
-	token := os.Getenv(tokenEnv)
-	if token == "" {
-		return ErrUnauthorized
-	}
+func do(ctx context.Context, socket, token, method, name string, body []byte) error {
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, defaultTimeout)
@@ -164,7 +223,7 @@ func do(ctx context.Context, method, name string, body []byte) error {
 	case resp.StatusCode == http.StatusTooManyRequests:
 		return ErrTooManyTimers
 	}
-	return fmt.Errorf("rastrillo/carlos: schedule %q: %s: %s", name, resp.Status, reason(resp.Body))
+	return &StatusError{Status: resp.StatusCode, Name: name, Body: reason(resp.Body)}
 }
 
 // reason is the agent's plain-text complaint, bounded and tidied — the

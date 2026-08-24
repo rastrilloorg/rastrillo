@@ -39,8 +39,10 @@ import (
 // the thing it replaces (a time.Ticker in main) compiles, runs, and is
 // silently wrong on a hibernating instance. A trim pass over §6 found
 // no redundancy to pay for it: every line there is a fact about the
-// jobs API or the poll shim. 631 bytes of the raise are spent; the
-// rest is headroom, not licence.
+// jobs API or the poll shim, and the one duplication review did find —
+// the package's full import path, already covered by §1's "and its
+// subpackages" — was cut before this number moved. 584 bytes of the
+// raise are spent; the rest is headroom, not licence.
 const skillBudget = 18_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than

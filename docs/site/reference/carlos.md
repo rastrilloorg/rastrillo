@@ -55,7 +55,9 @@ and the `X-Carlos-Schedule` headers are not evidence — anyone can set
 those.
 
 `Tick` looks at the bearer and nothing else. That is what lets the same
-handler serve a "Sync now" button behind your own auth.
+handler serve a "Sync now" button behind your own auth. The scheme is
+matched case-insensitively, so `bearer` from a runbook `curl` works too;
+the token itself is compared in constant time.
 
 ## TickOccurrence
 
@@ -71,12 +73,11 @@ those. It is the instant the delivery is *for*, not the moment it
 arrived.
 
 ```go
-occ, ok := carlos.TickOccurrence(r)
-if !ok {
+if !carlos.Tick(r) {
 	http.Error(w, "forbidden", http.StatusForbidden)
 	return
 }
-if alreadyDone(occ) {
+if occ, ok := carlos.TickOccurrence(r); ok && alreadyDone(occ) {
 	w.WriteHeader(http.StatusNoContent)
 	return
 }
@@ -86,10 +87,16 @@ Record it when the work succeeds and skip it when it comes round again.
 Never key on the wall clock: a retry twenty minutes later is the same
 occurrence, and treating it as a new one is how a job runs twice.
 
-It refuses whatever `Tick` refuses, so you can use it as the guard by
-itself. Treat the string as opaque. It is unique within one schedule
-but not across schedules, so if a single handler serves several, key on
-the `X-Carlos-Schedule` name header alongside it.
+Keep `Tick` as the guard, the way the snippet does. `TickOccurrence`
+refuses everything `Tick` refuses, but it also refuses a request with no
+occurrence header — and that is exactly what your own "Sync now" call
+looks like. Guard on `TickOccurrence` alone and the manual path `Tick`
+was written to allow gets a 403 over a header nobody has heard of. A
+missing occurrence means "no dedupe key, run it".
+
+Treat the key as opaque. It is unique within one schedule but not
+across schedules, so if a single handler serves several, key on the
+`X-Carlos-Schedule` name header alongside it.
 
 ## ScheduleAt
 
@@ -113,8 +120,13 @@ process starts, so that works from the first line of `main`. You
 mostly won't need it: timers live in the box's registry, not in your
 process, and a restart loses none of them.
 
-`at` may be up to `MaxAhead` (400 days) out. An `at` in the past is not
-an error; it fires on the next sweep.
+`at` has to be set, and no more than `MaxAhead` (400 days) out. Both
+bounds are checked here before anything is sent. The zero time is the
+one worth knowing about: the platform would accept it, because an `at`
+in the past is legal and fires on the next sweep, so a field nobody
+filled in would reach someone as a reminder at boot rather than as an
+error you can see. A deliberately past `at` is still fine — pass a real
+one.
 
 The call goes to the agent over a unix socket. That is quick, but it is
 still I/O, so pass a context you are willing to wait on. One with no
@@ -162,6 +174,22 @@ one-shot timers for this app. Cancel finished ones, or if you are
 registering the same shape of work over and over, that is a recurring
 schedule wearing a disguise.
 
-Anything else comes back as a plain error carrying the status and
-whatever the agent said, which is where a rejected `path` or a
-malformed `at` shows up.
+## StatusError
+
+```go
+type StatusError struct {
+	Status int
+	Name   string
+	Body   string
+}
+
+func (e *StatusError) Error() string
+```
+
+Anything the agent refused that has no sentinel comes back as this —
+a rejected `path`, a malformed body. Pull it out with `errors.As` when
+you need to decide what to do next, because the two directions are
+opposite: a 5xx is the agent's registry having a bad moment and is
+worth retrying, a 4xx is a permanent complaint about this exact request
+and retrying it is a loop. `Body` is the agent's own message, which is
+usually the only place the real reason is written down.

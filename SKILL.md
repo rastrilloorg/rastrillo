@@ -334,9 +334,8 @@ the shim rides SSE, falling back to polling itself.
 Hibernation also means a `time.Ticker` is not a scheduler. Recurring work is
 declared OUTSIDE the app (`carlos schedule set -name sync -every 6h -path
 /jobs/sync`); the platform wakes the instance and POSTs there. Guard the
-handler with `carlos.Tick(r)` (`github.com/carlosframework/rastrillo/carlos`:
-bearer == `$CARLOS_ADMIN_TOKEN`, constant-time, false with no token) and work
-**inside** the request — 202-plus-goroutine hibernates mid-job; 2xx done, 5xx
+handler with `carlos.Tick(r)` (bearer == `$CARLOS_ADMIN_TOKEN`,
+constant-time, false with no token) and work **inside** the request — 202-plus-goroutine hibernates mid-job; 2xx done, 5xx
 retry, 4xx don't. Delivery is at-least-once: dedupe on
 `carlos.TickOccurrence(r)`, stable across retries, never on the clock.
 One-offs are `carlos.ScheduleAt(ctx, name, at, path)` (upsert by name;

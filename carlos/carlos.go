@@ -37,6 +37,7 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"os"
+	"strings"
 )
 
 // tokenEnv holds the instance-local secret the platform mints and puts
@@ -78,30 +79,50 @@ func Tick(r *http.Request) bool {
 	if token == "" {
 		return false
 	}
+	// The scheme is compared in the clear and case-insensitively (RFC
+	// 7235 says it is case-insensitive, and it is not a secret), so an
+	// ops runbook curling with "bearer" is not turned away by a 403 with
+	// no visible cause. Exactly one space, though: the platform sends
+	// one, and accepting runs of whitespace only widens what has to be
+	// reasoned about.
+	scheme, credential, ok := strings.Cut(r.Header.Get("Authorization"), " ")
+	if !ok || !strings.EqualFold(scheme, "bearer") {
+		return false
+	}
 	// sha256 both sides before comparing: ConstantTimeCompare is only
 	// constant-time for equal lengths, and it returns 0 immediately on a
 	// length mismatch — which leaks the token's length to a caller who
 	// can time it. Hashing makes both operands 32 bytes always.
-	got := sha256.Sum256([]byte(r.Header.Get("Authorization")))
-	want := sha256.Sum256([]byte("Bearer " + token))
+	got := sha256.Sum256([]byte(credential))
+	want := sha256.Sum256([]byte(token))
 	return subtle.ConstantTimeCompare(got[:], want[:]) == 1
 }
 
 // TickOccurrence returns the occurrence key of an authentic tick: the
 // X-Carlos-Schedule-At header, the instant this delivery is *for*, as
-// unix seconds. It is false for anything Tick refuses, and for a tick
-// with no such header.
+// unix seconds.
 //
 // The value is what makes an app idempotent, because it is stable where
 // the wall clock is not. Every retry of one failed occurrence carries
 // the value the first attempt did, and so does a redelivery after a box
 // crash. Record it and skip work you have already done:
 //
-//	occ, ok := carlos.TickOccurrence(r)
-//	if !ok { ... }
-//	if done(occ) { w.WriteHeader(http.StatusNoContent); return }
+//	if !carlos.Tick(r) {
+//		http.Error(w, "forbidden", http.StatusForbidden)
+//		return
+//	}
+//	if occ, ok := carlos.TickOccurrence(r); ok && done(occ) {
+//		w.WriteHeader(http.StatusNoContent)
+//		return
+//	}
 //
-// Treat it as an opaque string. It is unique per occurrence of one
+// It is the key, not the guard — keep Tick as the guard, as above. The
+// second return is false for everything Tick refuses AND for a request
+// carrying no occurrence header, and the second of those is exactly
+// what an app's own "Sync now" call looks like. Guarding on it alone
+// would 403 the manual path Tick deliberately allows.
+//
+// Treat the key as an opaque string. It is unique per occurrence of one
 // schedule, not across schedules: if a single handler serves more than
 // one, key on the X-Carlos-Schedule name header alongside it.
 func TickOccurrence(r *http.Request) (string, bool) {
