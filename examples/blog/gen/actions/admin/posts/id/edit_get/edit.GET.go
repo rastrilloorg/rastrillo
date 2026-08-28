@@ -27,7 +27,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "posts: loading posts", err)
+		view.Fail(ctx, w, r, "posts: loading posts", err)
 		return
 	}
 

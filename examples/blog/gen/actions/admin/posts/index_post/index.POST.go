@@ -42,7 +42,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "posts: creating posts", err)
+		view.Fail(ctx, w, r, "posts: creating posts", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/posts/%d", id), http.StatusSeeOther)

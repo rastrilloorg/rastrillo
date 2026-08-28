@@ -1,9 +1,13 @@
 package rastrillo
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -322,4 +326,103 @@ func TestBuildHandlerAppHeaderWins(t *testing.T) {
 	if got := rec.Header().Get("X-Frame-Options"); got != "" {
 		t.Errorf("X-Frame-Options = %q, want removed by the app", got)
 	}
+}
+
+// panicMux is an app mux whose /boom route panics with v, and whose
+// /hello route is the ordinary one — so a test can prove the process
+// (and the handler) survive the panic and keep serving.
+func panicMux(v any) *http.ServeMux {
+	mux := helloMux(&captured{})
+	mux.HandleFunc("/boom", func(http.ResponseWriter, *http.Request) { panic(v) })
+	return mux
+}
+
+// A panicking handler is a 500 with the app's own error page, a logged
+// stack, and a reference joining the two — not a dropped connection.
+func TestBuildHandlerRecoversPanicsThroughErrorPage(t *testing.T) {
+	var buf bytes.Buffer
+	var gotStatus int
+	var gotRef, gotPath string
+	h, err := buildHandler(Options{
+		Mux:    panicMux("kaboom"),
+		Logger: slog.New(slog.NewTextHandler(&buf, nil)),
+		ErrorPage: func(w http.ResponseWriter, r *http.Request, status int, ref string) {
+			gotStatus, gotRef, gotPath = status, ref, r.URL.Path
+			w.WriteHeader(status)
+			fmt.Fprintf(w, "our own 500 page, reference %s", ref)
+		},
+	})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+
+	rec := get(h, "/boom", "")
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", rec.Code)
+	}
+	if gotStatus != http.StatusInternalServerError || gotPath != "/boom" {
+		t.Errorf("ErrorPage got (%d, %q), want (500, \"/boom\")", gotStatus, gotPath)
+	}
+	if !regexp.MustCompile(`^[a-z2-7]{6}$`).MatchString(gotRef) {
+		t.Errorf("ErrorPage ref = %q, want a NewRef", gotRef)
+	}
+	if !strings.Contains(rec.Body.String(), gotRef) {
+		t.Errorf("body %q does not carry the reference %q", rec.Body.String(), gotRef)
+	}
+	// The header wrapper runs outside the app, so a recovered response
+	// is still a hardened one.
+	if got := rec.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Errorf("X-Content-Type-Options = %q on a recovered response", got)
+	}
+	// One log line, carrying everything an operator needs to find it:
+	// the reference the user can quote, the panic value, and the stack.
+	out := buf.String()
+	for _, want := range []string{"panic", gotRef, "kaboom", "buildhandler_test.go"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("log line is missing %q:\n%s", want, out)
+		}
+	}
+	// And the handler keeps serving.
+	if again := get(h, "/hello", ""); again.Code != http.StatusOK {
+		t.Errorf("after a panic, /hello = %d, want 200", again.Code)
+	}
+}
+
+// With no ErrorPage wired — the default for every app that has not
+// thought about it yet — recovery still turns the panic into a plain
+// 500 rather than an empty response.
+func TestBuildHandlerRecoversPanicsWithoutAnErrorPage(t *testing.T) {
+	h, err := buildHandler(Options{Mux: panicMux(errors.New("kaboom"))})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+	rec := get(h, "/boom", "")
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", rec.Code)
+	}
+	if got := strings.TrimSpace(rec.Body.String()); got != "Something went wrong." {
+		t.Errorf("body = %q, want the plain 500", got)
+	}
+}
+
+// http.ErrAbortHandler is net/http's own "stop, quietly" signal — the
+// server suppresses its stack and closes the connection. Swallowing it
+// here would turn every aborted stream into a bogus 500 page appended
+// to a half-written response, so it goes straight back up.
+func TestBuildHandlerRepanicsErrAbortHandler(t *testing.T) {
+	h, err := buildHandler(Options{
+		Mux:       panicMux(http.ErrAbortHandler),
+		ErrorPage: func(http.ResponseWriter, *http.Request, int, string) { t.Error("ErrorPage ran for ErrAbortHandler") },
+	})
+	if err != nil {
+		t.Fatalf("buildHandler: %v", err)
+	}
+	defer func() {
+		if v := recover(); v != http.ErrAbortHandler {
+			t.Errorf("recovered %v, want http.ErrAbortHandler back", v)
+		}
+	}()
+	get(h, "/boom", "")
+	t.Error("ErrAbortHandler did not propagate")
 }

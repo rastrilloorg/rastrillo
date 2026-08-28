@@ -40,7 +40,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		FilterStatus: filterStatus,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "ticket_types: counting ticket_types", err)
+		view.Fail(ctx, w, r, "ticket_types: counting ticket_types", err)
 		return
 	}
 	rows, err := store.ListTicketTypes(r.Context(), ticket_typesstore.ListTicketTypesParams{
@@ -50,7 +50,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		PageLimit:    pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "ticket_types: loading ticket_types", err)
+		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
 

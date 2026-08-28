@@ -34,7 +34,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "posts: loading posts", err)
+		view.Fail(ctx, w, r, "posts: loading posts", err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 		ID:    id,
 	}); err != nil {
-		view.Fail(ctx, w, "posts: updating posts", err)
+		view.Fail(ctx, w, r, "posts: updating posts", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/posts/%d", id), http.StatusSeeOther)

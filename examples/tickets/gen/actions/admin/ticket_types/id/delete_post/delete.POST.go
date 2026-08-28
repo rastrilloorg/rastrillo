@@ -24,11 +24,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
-		view.Fail(ctx, w, "ticket_types: loading ticket_types", err)
+		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
 	if err := store.DeleteTicketType(r.Context(), id); err != nil {
-		view.Fail(ctx, w, "ticket_types: deleting ticket_types", err)
+		view.Fail(ctx, w, r, "ticket_types: deleting ticket_types", err)
 		return
 	}
 	http.Redirect(w, r, "/admin/ticket_types", http.StatusSeeOther)

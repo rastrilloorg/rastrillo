@@ -875,6 +875,18 @@ body:has(.rst-backdrop) { overflow: hidden; }
   .rst-shell-sidebar > .rst-shell__rail { block-size: 100vh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
 }
 
+/* error page — one centred column, whatever shell it lands in: the
+   status as a quiet label above the sentence, one or two ways out, and
+   the reference last, where an operator asked to quote it will find it.
+   Logical properties throughout, so an RTL locale mirrors it with no
+   second rule. */
+.rst-error { margin-inline: auto; max-inline-size: 28rem; padding-block: 4rem var(--rst-sp-6); padding-inline: var(--rst-sp-4); text-align: center; }
+.rst-error__status { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 600; letter-spacing: 0.08em; margin: 0; }
+.rst-error__title { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin-block: var(--rst-sp-2) 0; }
+.rst-error__body { color: var(--rst-text-muted); margin-block: var(--rst-sp-3) 0; }
+.rst-error__cta { display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); justify-content: center; margin-block: var(--rst-sp-5) 0; }
+.rst-error__ref { color: var(--rst-text-faint); margin-block: 2rem 0; }
+
 /* ---------------------------------------------------------------------
    Utilities, last on purpose.
 

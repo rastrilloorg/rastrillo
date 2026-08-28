@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"reflect"
@@ -911,6 +912,9 @@ func allPartials() []struct {
 				map[string]any{"Value": "refund", "Label": "Refund…", "Danger": true},
 			},
 		}},
+		{"error-page", map[string]any{
+			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
+		}},
 	}
 }
 
@@ -1010,15 +1014,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"badge", "meter", "person", "callout", "detail-list", "dropdown",
 		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
-		"locale-menu",
+		"locale-menu", "error-page",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 29 {
-		t.Fatalf("the shipped set is 29 partials, this list has %d", len(want))
+	if len(want) != 30 {
+		t.Fatalf("the shipped set is 30 partials, this list has %d", len(want))
 	}
 }
 
@@ -2072,5 +2076,114 @@ func TestLayoutsParseAndRender(t *testing.T) {
 				t.Errorf("%s: an unresolved catalog key leaked into the page", name)
 			}
 		})
+	}
+}
+
+// The error page renders one of the five statuses the base catalog
+// words, falls back to the generic wording for anything else, and never
+// invents navigation the app did not give it.
+func TestErrorPageWordsTheFiveKnownStatuses(t *testing.T) {
+	for status, want := range map[int]string{
+		// Escaped as html/template writes them: the apostrophes in the
+		// catalog's English come out as &#39; in the page.
+		404: "We can&#39;t find that page",
+		403: "You can&#39;t see this",
+		422: "That didn&#39;t go through",
+		500: "Something went wrong on our side",
+		503: "We&#39;re briefly unavailable",
+	} {
+		got := render(t, "error-page", map[string]any{"Status": status})
+		if !strings.Contains(got, want) {
+			t.Errorf("status %d: title %q missing from:\n%s", status, want, got)
+		}
+		if !strings.Contains(got, `<p class="rst-error__status">`+fmt.Sprint(status)+`</p>`) {
+			t.Errorf("status %d: the status itself is not shown:\n%s", status, got)
+		}
+		if strings.Contains(got, "rastrillo.ui.") {
+			t.Errorf("status %d: an unresolved catalog key leaked into the page:\n%s", status, got)
+		}
+	}
+}
+
+// A status the catalog has no wording for must not render the key
+// itself: the partial guards it back to the generic pair.
+func TestErrorPageFallsBackToGenericWording(t *testing.T) {
+	got := render(t, "error-page", map[string]any{"Status": 418})
+	for _, want := range []string{"Something&#39;s not right", "That request couldn&#39;t be completed", ">418<"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("418 page missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "error_418") || strings.Contains(got, "rastrillo.ui.") {
+		t.Errorf("418 page leaked a catalog key:\n%s", got)
+	}
+}
+
+// Caller-supplied Title/Body always win over the catalog, as everywhere
+// else in this package.
+func TestErrorPageCallerWordingWins(t *testing.T) {
+	got := render(t, "error-page", map[string]any{
+		"Status": 404, "Title": "No such order", "Body": "That order was cancelled.",
+	})
+	if !strings.Contains(got, "No such order") || !strings.Contains(got, "That order was cancelled.") {
+		t.Errorf("caller wording lost:\n%s", got)
+	}
+	if strings.Contains(got, "We can't find that page") {
+		t.Errorf("catalog default rendered alongside caller wording:\n%s", got)
+	}
+}
+
+// The reference is a run of LTR alphanumerics inside a sentence that may
+// itself be RTL, so its paragraph carries dir="auto" — the whole of the
+// bidi fix, and the reason the ref is not pre-wrapped by the caller.
+func TestErrorPageReferenceLine(t *testing.T) {
+	got := render(t, "error-page", map[string]any{"Status": 500, "Ref": "k3f9tq"})
+	if !strings.Contains(got, `<p class="rst-error__ref rst-mono" dir="auto">Reference: k3f9tq</p>`) {
+		t.Errorf("reference line is not interpolated with dir=auto:\n%s", got)
+	}
+	if strings.Contains(got, "{ref}") {
+		t.Errorf("the {ref} placeholder survived interpolation:\n%s", got)
+	}
+	if none := render(t, "error-page", map[string]any{"Status": 500}); strings.Contains(none, "rst-error__ref") {
+		t.Errorf("a page with no Ref still rendered the reference line:\n%s", none)
+	}
+}
+
+// Back renders only when the app supplies a href it has validated; the
+// partial never reaches for javascript:history.back().
+func TestErrorPageBackIsOptionalAndNeverJavascript(t *testing.T) {
+	with := render(t, "error-page", map[string]any{"Status": 404, "BackHref": "/orders"})
+	if !strings.Contains(with, `href="/orders"`) || !strings.Contains(with, "Go back") {
+		t.Errorf("BackHref did not render a back link:\n%s", with)
+	}
+	without := render(t, "error-page", map[string]any{"Status": 404})
+	if strings.Contains(without, "Go back") {
+		t.Errorf("back link rendered with no BackHref:\n%s", without)
+	}
+	for _, got := range []string{with, without} {
+		if strings.Contains(got, "javascript:") {
+			t.Errorf("the partial emitted a javascript: URL:\n%s", got)
+		}
+	}
+	// The home CTA is always there, defaulting to the site root.
+	if !strings.Contains(without, `href="/"`) || !strings.Contains(without, "Start page") {
+		t.Errorf("home CTA missing or not defaulted:\n%s", without)
+	}
+	if custom := render(t, "error-page", map[string]any{"Status": 404, "HomeHref": "/app"}); !strings.Contains(custom, `href="/app"`) {
+		t.Errorf("HomeHref ignored:\n%s", custom)
+	}
+}
+
+// The same drift check the other partial families get: every class the
+// error page emits has a rule in tokens.css.
+func TestErrorPageClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{
+		"rst-error", "rst-error__status", "rst-error__title",
+		"rst-error__body", "rst-error__cta", "rst-error__ref",
+	} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
 	}
 }

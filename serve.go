@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -164,6 +165,21 @@ type Options struct {
 
 	// Logger defaults to slog.Default() if nil.
 	Logger *slog.Logger
+
+	// ErrorPage renders the app's own error page for a failure the app
+	// never saw: today, a panic that reached the framework's recovery
+	// wrapper. Nil answers a plain "Something went wrong." — correct,
+	// and ugly enough that most apps will want to set it.
+	//
+	// It is the same function an app puts on Ctx.ErrorPage, which is
+	// what view.Fail/NotFound/Forbidden call, so a 500 from a handler
+	// and a 500 from a panic look identical to the person reading it.
+	// ui's error-page partial is the body; ref is the reference the
+	// failure was logged under.
+	//
+	// It is called only when nothing has been written yet in the
+	// common case; see recoverPanics for the mid-stream caveat.
+	ErrorPage ErrorPageFunc
 
 	// ReadHeaderTimeout bounds how long a client may take to send its
 	// request headers. Zero uses defaultReadHeaderTimeout. This is the
@@ -384,13 +400,59 @@ func securityHeaders(csp string, next http.Handler) http.Handler {
 	})
 }
 
+// recoverPanics turns a panicking handler into a logged 500. It is the
+// OUTERMOST wrapper — outside securityHeaders, and so outside the locale
+// middleware and Options.Wrap too — because a panic in a middleware is
+// exactly as fatal to the connection as a panic in a handler, and the
+// only wrapper that can catch one is the one above it. Headers that the
+// inner wrappers already set on the ResponseWriter are still there when
+// the recovery writes, so a recovered response is a hardened one.
+//
+// http.ErrAbortHandler goes straight back up: it is net/http's own
+// "abandon this response, quietly" signal, and answering it with a 500
+// page would append a bogus body to a stream the handler deliberately
+// abandoned.
+//
+// There is no ResponseWriter wrapper here, and so no "did we already
+// write?" check. A panic AFTER the first byte leaves a broken page: the
+// status and headers are gone, and the error page's markup lands
+// appended to whatever was written. That is precisely what net/http
+// does today (minus the log line and the page), and the alternative —
+// wrapping every response in a recording writer — costs every request
+// to improve the rarest one. An app that streams should not panic
+// mid-stream.
+func recoverPanics(errorPage ErrorPageFunc, logger *slog.Logger, next http.Handler) http.Handler {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			v := recover()
+			if v == nil {
+				return
+			}
+			if v == http.ErrAbortHandler {
+				panic(v)
+			}
+			ref := NewRef()
+			logger.Error("panic", "ref", ref, "err", v, "stack", string(debug.Stack()))
+			if errorPage != nil {
+				errorPage(w, r, http.StatusInternalServerError, ref)
+				return
+			}
+			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
 // buildHandler assembles the serving handler: the framework's own
 // endpoints, the app mux (wrapped by Options.Wrap when set), and
 // — when Options.Locales is set — the locale middleware wrapped around
 // the whole thing, so a locale prefix strips before routing and the
 // translator rides the request context (§10). The security-header
-// wrapper goes around all of it last. Split from Handler so the
-// assembly is testable without a database.
+// wrapper goes around all of it, and panic recovery around that. Split
+// from Handler so the assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -411,7 +473,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	mux.Handle("/", app)
 
 	if len(opts.Locales) == 0 {
-		return securityHeaders(opts.CSP, mux), nil
+		return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, mux)), nil
 	}
 	def := opts.DefaultLocale
 	if def == "" {
@@ -436,7 +498,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	// Registered after mux.Handle("/", app) only for readability:
 	// ServeMux prefers the more specific pattern whatever the order.
 	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
-	return securityHeaders(opts.CSP, loc.Middleware(mux)), nil
+	return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, loc.Middleware(mux))), nil
 }
 
 // buildMux resolves the Mux/Router choice. Router runs after the

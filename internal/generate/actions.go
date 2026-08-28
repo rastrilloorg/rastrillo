@@ -395,7 +395,7 @@ func declaredFilter(r rastrillo.Resource) (field string, values []string, ok boo
 // the "<name>: " prefix that used to live in the helper's own log line
 // is folded into this string instead. Net effect on the emitted log
 // line is unchanged: fail(ctx, w, "creating notes", err) under the old
-// stamped helper logged the same line view.Fail(ctx, w, "notes:
+// stamped helper logged the same line view.Fail(ctx, w, r, "notes:
 // creating notes", err) logs now.
 func failWhat(r rastrillo.Resource, what string) string {
 	return r.Name + ": " + what
@@ -689,7 +689,7 @@ offset := (page - 1) * pageSize
 		}
 		b.WriteString("})\n")
 	}
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "counting "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "counting "+r.Name))
 
 	b.WriteString("rows, err := store.List" + plural + "(r.Context(), " + alias + ".List" + plural + "Params{\n")
 	b.WriteString(ownerParamLine(r))
@@ -701,7 +701,7 @@ offset := (page - 1) * pageSize
 	}
 	b.WriteString("PageOffset: int64(offset),\nPageLimit: pageSize,\n")
 	b.WriteString("})\n")
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
 items := make([]listRow, 0, len(rows))
@@ -972,7 +972,7 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	}
 	b.WriteString("Now: now,\n")
 	b.WriteString("})\n")
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "creating "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "creating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
 	b.WriteString(formViewType)
@@ -1032,7 +1032,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, showView{
@@ -1081,7 +1081,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, formView{
@@ -1163,7 +1163,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n\n", failWhat(r, "loading "+r.Name))
 
 	if len(group) > 0 {
 		b.WriteString(parseCall(group))
@@ -1190,7 +1190,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	}
 	b.WriteString(ownerParamLine(r) + "Now: now,\nID: id,\n")
 	b.WriteString("}); err != nil {\n")
-	fmt.Fprintf(&b, "view.Fail(ctx, w, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
+	fmt.Fprintf(&b, "view.Fail(ctx, w, r, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
 	if groupHasValidation {
@@ -1293,7 +1293,7 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, confirmView{
@@ -1346,8 +1346,8 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), %s); errors.Is(err, sql.ErrNoRows) {\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString("\thttp.NotFound(w, r)\n\treturn\n")
-	fmt.Fprintf(&b, "} else if err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
-	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), %s); err != nil {\n\tview.Fail(ctx, w, %q, err)\n\treturn\n}\n", singular, recordArg(r, alias, "Delete", singular), failWhat(r, "deleting "+r.Name))
+	fmt.Fprintf(&b, "} else if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), %s); err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", singular, recordArg(r, alias, "Delete", singular), failWhat(r, "deleting "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, %q, http.StatusSeeOther)\n}\n", r.Route)
 
 	return b.String()

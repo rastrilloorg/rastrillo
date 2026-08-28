@@ -46,7 +46,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:         now,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "ticket_types: creating ticket_types", err)
+		view.Fail(ctx, w, r, "ticket_types: creating ticket_types", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/ticket_types/%d", id), http.StatusSeeOther)

@@ -51,7 +51,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "bookmarks: creating bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: creating bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/bookmarks/%d", id), http.StatusSeeOther)

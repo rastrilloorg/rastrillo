@@ -53,4 +53,21 @@ type Ctx struct {
 	// emitter for the exact page names a generated action calls it
 	// with.
 	Render RenderFunc
+
+	// ErrorPage renders the app's own error page — the seam view.Fail,
+	// view.NotFound and view.Forbidden call so that a failure inside a
+	// generated action looks like the rest of the app instead of
+	// net/http's bare text. Wire the same function to
+	// Options.ErrorPage and a panic gets the identical page:
+	//
+	//	page := func(w http.ResponseWriter, r *http.Request, status int, ref string) {
+	//		blog.RenderError(w, r, status, ref) // ui's "error-page" partial
+	//	}
+	//	// in the ctx factory: &rastrillo.Ctx{DB: db, ErrorPage: page}
+	//	// in Options:        ErrorPage: page
+	//
+	// Nil is legal and is the default: the helpers answer plain text,
+	// which is honest, ugly, and exactly what an app that has not
+	// thought about its error pages should see.
+	ErrorPage ErrorPageFunc
 }
