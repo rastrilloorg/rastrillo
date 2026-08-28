@@ -361,6 +361,60 @@ onto it. Two things from Tito Go's `searchable-select.js` come across:
 
 The threshold stays at ten. Its strings are already catalog keys.
 
+## 4b. Error pages
+
+Today a 404 is `http.NotFound`'s "404 page not found", a failed render
+is `view.Fail`'s "Something went wrong." as `text/plain`, a bad request
+is "Bad request.", and a panic is whatever `net/http` prints. There are
+~150 `http.Error`/`http.NotFound` call sites across the framework and
+the generated actions, none styled, none localised, none in the app's
+shell. That is the one screen a user is guaranteed to meet on a bad
+day, and it is the ugliest one in the system.
+
+### 4b.1 The partial
+
+`error-page` — rendered *inside the app's shell* (so the chrome, the
+switcher and the account menu are still there; the user is not lost):
+
+```
+Status   int, required        404 | 403 | 422 | 500 | 503 …
+Title    string, optional     default from rastrillo.ui.error_<status>_title
+Body     string, optional     default from rastrillo.ui.error_<status>_body
+Ref      string, optional     a short request id the user can quote
+HomeHref string, optional     default "/"
+```
+
+The default copy explains, plainly, what happened and what to do —
+localised through the catalog, so all twelve base languages ship it:
+
+| Status | Title                          | Body                                                                                                        |
+|--------|--------------------------------|-------------------------------------------------------------------------------------------------------------|
+| 404    | We can't find that page        | The link may be out of date, or the page may have moved. Check the address, or go back to the start.        |
+| 403    | You can't see this             | Your account doesn't have access here. If you think it should, ask whoever runs this site.                  |
+| 422    | That didn't go through         | Something in what was sent wasn't right. Go back and try again; nothing was saved.                          |
+| 500    | Something went wrong on our side | It's not you. The problem has been recorded. Try again in a moment; if it keeps happening, quote the reference below. |
+| 503    | We're briefly unavailable      | The site is being updated or is busy. Try again in a minute.                                                |
+
+Each page has exactly two actions: **Go back** (`history.back()` when
+JS is present, otherwise the `Referer` when same-origin, otherwise
+hidden) and **Start page** (`HomeHref`). A 500 shows `Ref` in a muted
+monospace line ("Reference: k7f2q9") — the same id the server logged,
+so support can find the log line from what the user quotes. Nothing
+about the error itself is ever shown: no stack, no message, no path.
+
+Keys: `error_<status>_title`, `error_<status>_body` for the five
+statuses above, `error_generic_title`/`_body` for any other, `error_back`,
+`error_home`, `error_ref` ("Reference: {ref}").
+
+### 4b.2 The plumbing
+
+- `rastrillo.Ctx` gains `ErrorPage func(w http.ResponseWriter, r *http.Request, status int, ref string)` — set by the scaffold's render helper to render `error-page` inside the layout. Nil falls back to today's text.
+- `view.Fail` mints a `ref` (6 chars, base32 of 4 random bytes), logs it beside the error, and calls `ctx.ErrorPage(w, r, 500, ref)`.
+- `view.NotFound(ctx, w, r)` and `view.Forbidden(ctx, w, r)` replace the bare `http.NotFound`/`http.Error` calls in the generated actions and the auth/password/passkey packages where a `Ctx` is in reach. Sites without a `Ctx` (the framework's own `/healthz`-tier routes) stay plain — they are never a user's screen.
+- `rastrillo.Serve` gains panic recovery: a recovered panic logs the stack with a ref and renders the 500 page through `Options.ErrorPage` (the same function, hoisted to Options so the recovery wrapper outside any `Ctx` can reach it). Today a panic is a dropped connection.
+- The scaffold's `templates/errors.html` defines `content` for `error-page` so an app can restyle it by editing a file it owns. The three shells render it at full page; the design-system page shows all five statuses in every theme.
+- `Accept: application/json` requests get `{"status":404,"ref":"…"}` — the generated actions' JSON paths already exist and just gain the ref.
+
 ## 5. rastrillo.org/design-system
 
 ### 5.1 What is on it
@@ -370,7 +424,8 @@ One page per theme × locale, `index.html` for `ink`/`en`, showing:
 - **Tokens** — every custom property as a swatch, with the contrast
   table rendered from the theme's header, and the type scale.
 - **Every partial**, rendered with sample data, in every state it has
-  (tones, required, error, help, disabled, enhanced and `Plain`).
+  (tones, required, error, help, disabled, enhanced and `Plain`),
+  including the five error pages.
 - **Every class idiom** from `styleguideSamples` — box, list grid,
   dropdown, form layout, toggle block, modal, help, selection box,
   and the three shells' chrome.
@@ -431,11 +486,13 @@ Five PRs, in this order, each green and reviewable alone:
    `LocaleItems`, `POST /_locale`, `shell_*`/`locale_name` keys, error
    keys. Docs: `localization.md` loses its "nothing writes that cookie"
    caveat.
-2. **Themes and shells.** Theme split, three themes, contrast gate,
-   three layouts, shell classes and samples, `--theme`/`--shell`,
-   vendored pin, `Dir` wired into the scaffold layout, logical
-   properties pass over `tokens.css`. Docs: `templates.md`, `cli.md`,
-   `getting-started.md`.
+2. **Themes, shells and error pages.** Theme split, three themes,
+   contrast gate, three layouts, shell classes and samples,
+   `--theme`/`--shell`, vendored pin, `Dir` wired into the scaffold
+   layout, logical properties pass over `tokens.css`; `error-page`,
+   `Ctx.ErrorPage`, `view.NotFound`/`Forbidden`, panic recovery,
+   `error_*` keys in all twelve catalogs. Docs: `templates.md`,
+   `cli.md`, `getting-started.md`, `app-shape.md`.
 3. **Date and time, and the select.** Partials, `form` kinds,
    `datetime.js`, Node harness and twelve fixtures, `date_*` keys in all
    twelve catalogs, optgroup and opt-out in `select.js`. Docs: `forms.md`.
