@@ -18,6 +18,11 @@
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
 <details class="rst-dropdown rst-shell__account">
 <summary>{{T "rastrillo.ui.shell_account"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+{{/* account here is the dropdown's MENU BODY, not the whole menu: the
+     layout owns the details/summary, so an override supplies only the
+     links that sit inside .rst-dropdown__menu. Sidebar's account block
+     is the other shape — a bare slot in the rail — so moving a block
+     between the two shells needs an edit. */}}
 <div class="rst-dropdown__menu">{{block "account" .}}{{end}}</div>
 </details>
 {{block "locale" .}}{{end}}

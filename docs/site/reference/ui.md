@@ -93,6 +93,57 @@ A value you supply beats a partial's default, and your catalog entry
 beats the framework base catalog. See
 [Localization](/docs/localization).
 
+## Themes
+
+```go
+func ThemeNames() []string
+func ThemeCSS(name string) ([]byte, bool)
+```
+
+The three shipped themes, `ink` first: `ink`, `teal`, `warm`.
+`ThemeCSS` returns one theme's bytes and reports `false` for a name that
+is not shipped — `rastrillo new --theme` calls it before it writes
+anything.
+
+A theme is colour and type family only; the structure is `tokens.css`.
+It declares its tokens three times — light, dark under
+`prefers-color-scheme`, and again under `[data-theme]` so an explicit
+toggle wins in both directions — and carries its own measured WCAG 2.2
+AA contrast table in its header comment. `ui`'s `contrast_test.go`
+recomputes every pair, so a theme that drifts fails the build rather
+than shipping.
+
+The chosen theme lands as `static/theme.css` and is app-owned from that
+moment. Swapping in a hand-written one means replacing that file; the
+whole surface a theme has to satisfy is the token set `ink` declares,
+which `TestThemesDeclareIdenticalTokenSets` holds every theme to.
+
+## Shells
+
+```go
+func LayoutNames() []string
+func Layout(name string) ([]byte, bool)
+```
+
+The three shipped page frames, `column` first: `column` is the plain
+centred page, `topbar` adds a header bar with nav and an account menu,
+`sidebar` a left rail that collapses to a `<details>` chrome bar below
+800px. `Layout` returns one shell's complete `layout.html` text and
+reports `false` for a name that is not shipped.
+
+A shell executes `{{template "content" .}}` for the page body and wraps
+it in chrome made of blocks with working defaults: `title`, `lang` and
+`dir` in all three, plus `brand`, `nav`, `account` and `locale` in the
+two chrome shells, and `foot` in `topbar`. No block reads a field off
+the data, so a shell renders the same whether a handler passes a struct,
+a `dict`-built map, or nil.
+
+`rastrillo new --shell` writes the chosen one as
+`templates/layout.html`. It is an ordinary template from then on — no
+pin, no vendoring test — so overriding a block, or rewriting the file
+outright, is expected on day one. [Templates](/docs/templates) has the
+block contract with a worked override.
+
 ## The vendored assets
 
 ```go

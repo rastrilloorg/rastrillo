@@ -155,6 +155,12 @@ This is also where `flash.Take(w, r)` gets called, once per page, so the
 layout can render a notice. [Templates](/docs/templates) covers what is
 available inside them.
 
+`render.go` also holds `ErrorPage`, a `rastrillo.ErrorPageFunc` that
+renders `templates/errors.html` — `ui`'s `error-page` partial inside
+your own layout. `main.go` points `opts.ErrorPage` at it so a panic gets
+a real page; wire it to `Ctx.ErrorPage` too and the 500 a handler
+answers looks the same as the 500 a panic answers.
+
 ## Before you call it done
 
 1. Every handler on an owned model goes through the `owned(r)` method.

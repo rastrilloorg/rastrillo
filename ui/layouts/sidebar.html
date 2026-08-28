@@ -17,6 +17,10 @@
 <aside class="rst-shell__rail">
 {{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
+{{/* account here is a bare slot in the rail: an override supplies the
+     whole thing, chrome included. Topbar's account block is the other
+     shape — the menu body inside a details/summary the layout owns — so
+     moving a block between the two shells needs an edit. */}}
 {{block "account" .}}{{end}}
 {{block "locale" .}}{{end}}
 </aside>

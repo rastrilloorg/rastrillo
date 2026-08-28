@@ -137,8 +137,8 @@ body {
    bulk-bar's actions menu). --rst-tone-negative-fg already clears
    4.5:1 as a filled background against --rst-on-accent's label colour
    in both themes, so no new custom properties are needed — computed
-   with the same WCAG relative-luminance formula as the table at the
-   top of this file:
+   with the same WCAG relative-luminance formula as each theme file's
+   own contrast table:
      light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#93262f)   8.21:1
      dark   --rst-on-accent (#1a1030) on --rst-tone-negative-fg (#f58c95)   7.81:1
    Hover darkens via filter rather than a themed "negative-strong"

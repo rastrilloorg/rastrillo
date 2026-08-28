@@ -141,12 +141,19 @@ func defaultT(key string, _ ...any) string {
 	return key
 }
 
-// defaultTf is defaultT plus {name} substitution, matching
-// rastrillo.Locales.Tf: alternating name/value arguments, and a
+// defaultTf is defaultT plus {name} substitution: alternating
+// name/value arguments, each {name} replaced wherever it appears, and a
 // placeholder with no matching argument left verbatim so a translator's
 // typo shows in the page instead of silently eating a sentence. The
 // substitution happens before html/template escapes the result, so a
 // value carrying markup is escaped like any other interpolated string.
+//
+// It covers the partials' own use and is deliberately not the same code
+// as rastrillo.Locales.Tf. Two differences, neither reachable from a
+// shipped partial: that one also accepts a single map argument, which
+// this one ignores; and it walks the string once, while this one is a
+// sequence of ReplaceAll calls, so a value that itself contains
+// {another-name} would be substituted into by a later pass.
 func defaultTf(key string, args ...any) string {
 	s := defaultT(key)
 	for i := 0; i+1 < len(args); i += 2 {

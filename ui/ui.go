@@ -168,6 +168,17 @@
 // row-menu's per-row aria-label already use:
 //
 //	<label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label>
+//
+// shell — the page frame's own chrome. rst-shell-topbar wraps a
+// rst-shell__bar holding rst-shell__brand, rst-shell__nav,
+// rst-shell__account and, below the page, rst-shell__foot;
+// rst-shell-sidebar wraps a rst-shell__rail of rst-shell__group-labelled
+// nav beside rst-shell__main, collapsing below 800px into a
+// <details class="rst-shell__chrome"> — no JavaScript. Both carry
+// rst-skip, the skip link. The canonical markup is styleguideSamples'
+// "shell-topbar" and "shell-sidebar", and an app does not usually write
+// any of it by hand: Layout ships the three shells as whole templates
+// and rastrillo new writes the chosen one as templates/layout.html.
 package ui
 
 import (

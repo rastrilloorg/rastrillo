@@ -89,6 +89,7 @@ broken page: the status is long gone by then, exactly as in `net/http`.
 
 ```go
 type ErrorPageFunc func(w http.ResponseWriter, r *http.Request, status int, ref string)
+func NewRef() string
 ```
 
 Wire the same function to `Ctx.ErrorPage` and the 500 a handler answers
@@ -99,7 +100,10 @@ is the body; the callback owns the status code as well, so it calls
 `ref` is what `NewRef` mints: six lowercase base32 characters over four
 random bytes, shown on the page and logged beside the error. It is not
 an id and nothing is stored under it — its whole job is to join what
-the user saw to what you grep for.
+the user saw to what you grep for. The alphabet has no `0`, `1`, `8` or
+`9`, so a reference read down a phone line cannot be heard as an `O`, an
+`l` or a `B`. `view.Fail` mints one too; `NewRef` is exported for a
+hand-written handler doing the same job.
 
 ## Ctx and RenderFunc
 

@@ -33,9 +33,16 @@ AGENTS.md               instructions + UX conventions, the source of truth
 CLAUDE.md               an @AGENTS.md import, nothing more
 ```
 
-Three flags shape what gets written: `--icons`, `--icon-delivery` and
-`--ux`. Take the defaults your first time through.
-[Icons](/docs/icons) explains what each one costs when you care.
+Five flags shape what gets written: `--icons`, `--icon-delivery`,
+`--ux`, `--theme` (`ink`, `teal`, `warm`) and `--shell` (`column`,
+`topbar`, `sidebar`). The theme lands as `static/theme.css` and the
+shell as `templates/layout.html`, both yours to edit from that moment.
+Take the defaults your first time through. [Icons](/docs/icons) and
+[Templates](/docs/templates) explain what each one costs when you care.
+
+The templates include an `errors.html` already wired to
+`Options.ErrorPage`, so a failed handler and a panicking one both land
+on a styled page inside your shell rather than a blank 500.
 
 ## Run it
 
