@@ -12,6 +12,11 @@
           "slug": "app-shape",
           "label": "The shape of an app",
           "blurb": "Five files plus migrations.go, and why main.go calls Resolve rather than Run."
+        },
+        {
+          "slug": "compare",
+          "label": "Compare",
+          "blurb": "The Go framework field, and the better answer when it is not this one."
         }
       ]
     },
