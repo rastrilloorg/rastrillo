@@ -40,6 +40,11 @@ export function ring(namespace) {
     // bytes — see the module comment for the extractability trade).
     contentKey: (seed) => derive(seed, namespace + "/content/v1"),
 
+    // blobKey derives the sealing key for one named vault blob —
+    // ns/blob/<name>/v1. Callers validate the name first (the vault
+    // client's closed namespace); the ring derives what it is given.
+    blobKey: (seed, name) => derive(seed, namespace + "/blob/" + name + "/v1"),
+
     // wrapKey derives the seed-wrapping key from a credential's PRF
     // output, consumed directly from the PRF extension result.
     wrapKey: (prf) => derive(prf, wrapContext),
