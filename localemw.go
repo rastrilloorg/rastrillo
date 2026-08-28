@@ -22,10 +22,12 @@ type localesCtxKey struct{}
 // Middleware resolves this request's locale and puts it, and this set,
 // on the request context for LocaleFrom/T/Tf.
 //
-// Precedence is design doc §10's, verbatim: URL path prefix, then
-// Accept-Language, then the stored-preference cookie. (A stored
-// preference beating Accept-Language would be the more usual order —
-// the doc is specific, so the doc wins.)
+// Precedence: URL path prefix, then the stored-preference cookie, then
+// Accept-Language, then the default. The original design doc (§10) put
+// the cookie last; that was reversed on 2026-08-28 when the framework
+// started writing the cookie itself (SwitchHandler) — a stored choice
+// that Accept-Language could override on the next request would make
+// the switcher decorative.
 //
 // A matched locale prefix is stripped from the path before the app's
 // mux sees it, so one route serves every locale. §10's zero-JS locale
@@ -36,12 +38,12 @@ func (l *Locales) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		code, rest := l.splitPrefix(r.URL.Path)
 		if code == "" {
-			code = l.negotiate(r.Header.Get("Accept-Language"))
-		}
-		if code == "" {
 			if c, err := r.Cookie(LocaleCookie); err == nil && l.Has(c.Value) {
 				code = c.Value
 			}
+		}
+		if code == "" {
+			code = l.negotiate(r.Header.Get("Accept-Language"))
 		}
 		if code == "" {
 			code = l.def
