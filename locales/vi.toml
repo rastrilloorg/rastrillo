@@ -1,0 +1,15 @@
+# rastrillo's base strings for vi. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "Phân trang"
+rastrillo.ui.search_submit = "Tìm kiếm"
+rastrillo.ui.cancel = "Hủy"
+rastrillo.ui.done = "Chọn xong"
+rastrillo.ui.select_filter = "Nhập để lọc"
+rastrillo.ui.select_results = "{n} kết quả"
+rastrillo.ui.select_result_one = "1 kết quả"
+rastrillo.ui.locale_name = "Tiếng Việt"
+rastrillo.ui.shell_skip = "Đi tới nội dung"
+rastrillo.ui.shell_menu = "Trình đơn"
+rastrillo.ui.shell_account = "Tài khoản"
+rastrillo.ui.shell_language = "Ngôn ngữ"

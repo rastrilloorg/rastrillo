@@ -1,0 +1,15 @@
+# rastrillo's base strings for en — the source every other catalog is
+# checked against (basecatalog_test.go). An app catalog entry for the
+# same key wins over this one.
+rastrillo.ui.pagination = "Pagination"
+rastrillo.ui.search_submit = "Search"
+rastrillo.ui.cancel = "Cancel"
+rastrillo.ui.done = "Done selecting"
+rastrillo.ui.select_filter = "Type to filter"
+rastrillo.ui.select_results = "{n} results"
+rastrillo.ui.select_result_one = "1 result"
+rastrillo.ui.locale_name = "English"
+rastrillo.ui.shell_skip = "Skip to content"
+rastrillo.ui.shell_menu = "Menu"
+rastrillo.ui.shell_account = "Account"
+rastrillo.ui.shell_language = "Language"

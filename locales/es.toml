@@ -1,0 +1,15 @@
+# rastrillo's base strings for es. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "Paginación"
+rastrillo.ui.search_submit = "Buscar"
+rastrillo.ui.cancel = "Cancelar"
+rastrillo.ui.done = "Selección terminada"
+rastrillo.ui.select_filter = "Escribe para filtrar"
+rastrillo.ui.select_results = "{n} resultados"
+rastrillo.ui.select_result_one = "1 resultado"
+rastrillo.ui.locale_name = "Español"
+rastrillo.ui.shell_skip = "Ir al contenido"
+rastrillo.ui.shell_menu = "Menú"
+rastrillo.ui.shell_account = "Cuenta"
+rastrillo.ui.shell_language = "Idioma"
