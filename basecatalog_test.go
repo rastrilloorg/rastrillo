@@ -1,6 +1,10 @@
 package rastrillo
 
-import "testing"
+import (
+	"reflect"
+	"strings"
+	"testing"
+)
 
 // TestBaseCatalogResolvesThroughLocales exercises the base layer through
 // the real (*Locales).T, per locale.go's doc comment: requested locale's
@@ -25,10 +29,58 @@ func TestBaseCatalogResolvesThroughLocales(t *testing.T) {
 func TestBaseCatalogIsACopy(t *testing.T) {
 	c := BaseCatalog()
 	c["rastrillo.ui.cancel"] = "tampered"
-	if baseCatalog["rastrillo.ui.cancel"] != "Cancel" {
-		t.Fatalf("BaseCatalog() returned the live map, not a copy: shared catalog is now %q", baseCatalog["rastrillo.ui.cancel"])
+	if baseCatalogs["en"]["rastrillo.ui.cancel"] != "Cancel" {
+		t.Fatalf("BaseCatalog() returned the live map, not a copy: shared catalog is now %q", baseCatalogs["en"]["rastrillo.ui.cancel"])
 	}
 	if got := BaseCatalog()["rastrillo.ui.cancel"]; got != "Cancel" {
 		t.Errorf("a second BaseCatalog() call = %q, want the untampered default", got)
+	}
+}
+
+// TestBaseCatalogsShareOneKeySet is spec §3.2's gate: every shipped
+// catalog holds exactly the en key set, so a locale can never be
+// silently missing a string that en has.
+func TestBaseCatalogsShareOneKeySet(t *testing.T) {
+	want := []string{"en", "ga", "zh-Hans", "es", "hi", "pt", "bn", "ru", "ja", "yue", "vi", "ar"}
+	if got := BaseLocales(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("BaseLocales = %v, want %v", got, want)
+	}
+	all := BaseCatalogs()
+	en := all["en"]
+	if len(en) == 0 {
+		t.Fatal("en catalog is empty")
+	}
+	for _, code := range want {
+		c, ok := all[code]
+		if !ok {
+			t.Errorf("no catalog for %s", code)
+			continue
+		}
+		for k := range en {
+			if v, ok := c[k]; !ok || strings.TrimSpace(v) == "" {
+				t.Errorf("%s.toml: missing or empty %s", code, k)
+			}
+		}
+		for k := range c {
+			if _, ok := en[k]; !ok {
+				t.Errorf("%s.toml: key %s is not in en", code, k)
+			}
+		}
+		if code != "en" && c["rastrillo.ui.locale_name"] == en["rastrillo.ui.locale_name"] {
+			t.Errorf("%s.toml: locale_name is still English", code)
+		}
+	}
+	for _, k := range BaseKeys() {
+		if !strings.HasPrefix(k, "rastrillo.ui.") {
+			t.Errorf("key %s is not namespaced rastrillo.ui.*", k)
+		}
+	}
+}
+
+// TestBaseCatalogsAreCopies mirrors TestBaseCatalogIsACopy for the map.
+func TestBaseCatalogsAreCopies(t *testing.T) {
+	BaseCatalogs()["ga"]["rastrillo.ui.cancel"] = "tampered"
+	if got := BaseCatalogs()["ga"]["rastrillo.ui.cancel"]; got == "tampered" {
+		t.Fatal("BaseCatalogs returned live maps")
 	}
 }

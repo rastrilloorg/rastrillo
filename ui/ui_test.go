@@ -967,14 +967,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"badge", "meter", "person", "callout", "detail-list", "dropdown",
 		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
+		"locale-menu",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 28 {
-		t.Fatalf("the shipped set is 28 partials, this list has %d", len(want))
+	if len(want) != 29 {
+		t.Fatalf("the shipped set is 29 partials, this list has %d", len(want))
 	}
 }
 
@@ -1836,5 +1837,39 @@ func TestSrOnlyUtilityComesAfterTheRulesItMustBeat(t *testing.T) {
 		if at > srOnly {
 			t.Errorf("%s is declared after .rst-sr-only; the utility must come last or it loses the cascade to it", competitor)
 		}
+	}
+}
+
+func TestLocaleMenuRenders(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+	items := []rastrillo.LocaleItem{
+		{Code: "en", Name: "English", Href: "/en/orders"},
+		{Code: "ga", Name: "Gaeilge", Href: "/ga/orders", Current: true},
+	}
+	var b strings.Builder
+	if err := tmpl.ExecuteTemplate(&b, "locale-menu", map[string]any{"Items": items, "Return": "/orders?page=2"}); err != nil {
+		t.Fatal(err)
+	}
+	out := b.String()
+	for _, want := range []string{
+		`<details class="rst-dropdown rst-locale"`,
+		`action="/_locale"`,
+		`name="locale" value="ga"`,
+		`name="return" value="/orders?page=2"`,
+		`aria-current="true"`,
+		`lang="ga"`,
+		`>Gaeilge<`,
+		`Language`, // the summary, from the base catalog via defaultT
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in\n%s", want, out)
+		}
+	}
+	b.Reset()
+	if err := tmpl.ExecuteTemplate(&b, "locale-menu", map[string]any{"Items": []rastrillo.LocaleItem{}}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(b.String()) != "" {
+		t.Errorf("empty Items must render nothing, got %q", b.String())
 	}
 }

@@ -1,0 +1,15 @@
+# rastrillo's base strings for bn. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "পৃষ্ঠা বিন্যাস"
+rastrillo.ui.search_submit = "খুঁজুন"
+rastrillo.ui.cancel = "বাতিল"
+rastrillo.ui.done = "নির্বাচন সম্পন্ন"
+rastrillo.ui.select_filter = "ফিল্টার করতে টাইপ করুন"
+rastrillo.ui.select_results = "{n}টি ফলাফল"
+rastrillo.ui.select_result_one = "১টি ফলাফল"
+rastrillo.ui.locale_name = "বাংলা"
+rastrillo.ui.shell_skip = "মূল বিষয়ে যান"
+rastrillo.ui.shell_menu = "মেনু"
+rastrillo.ui.shell_account = "অ্যাকাউন্ট"
+rastrillo.ui.shell_language = "ভাষা"

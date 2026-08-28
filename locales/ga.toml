@@ -1,0 +1,15 @@
+# rastrillo's base strings for ga. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "Leathanaigh"
+rastrillo.ui.search_submit = "Cuardaigh"
+rastrillo.ui.cancel = "Cealaigh"
+rastrillo.ui.done = "Roghnú críochnaithe"
+rastrillo.ui.select_filter = "Clóscríobh chun scagadh"
+rastrillo.ui.select_results = "{n} toradh"
+rastrillo.ui.select_result_one = "1 toradh"
+rastrillo.ui.locale_name = "Gaeilge"
+rastrillo.ui.shell_skip = "Léim chuig an ábhar"
+rastrillo.ui.shell_menu = "Roghchlár"
+rastrillo.ui.shell_account = "Cuntas"
+rastrillo.ui.shell_language = "Teanga"

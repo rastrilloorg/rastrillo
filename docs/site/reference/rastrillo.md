@@ -108,26 +108,50 @@ func T(r *http.Request, key string) string
 func Tf(r *http.Request, key string, args ...any) string
 func LocaleFrom(r *http.Request) string
 func BaseCatalog() Catalog
+func BaseCatalogs() map[string]Catalog
+func BaseLocales() []string
+func BaseKeys() []string
+func IsBaseKey(key string) bool
+func Dir(locale string) string
+func LocaleItems(r *http.Request) []LocaleItem
+type LocaleItem struct {
+	Code    string
+	Name    string
+	Href    string
+	Current bool
+}
 const LocaleCookie = "rastrillo_locale"
+const LocaleSwitchPath = "/_locale"
 ```
 
 `T` and `Tf` are the request-scoped lookups actions call; `Tf`
 interpolates `{name}` placeholders. Lookup falls back through the
-requested locale, the default locale, the framework base catalog, and
-finally the key itself, so a missing translation stays visible on the
-page instead of blank.
+requested locale, the default locale, the framework's catalog for that
+locale, the framework's English, and finally the key itself, so a
+missing translation stays visible on the page instead of blank.
 
 `Catalog` is a flat `map[string]string`. `BaseCatalog` carries
-`rastrillo/ui`'s own strings and is wired into every served app
-automatically; your entry for the same key wins.
+`rastrillo/ui`'s own English strings and is wired into every served app
+automatically; your entry for the same key wins. `BaseCatalogs`,
+`BaseLocales` and `BaseKeys` are the twelve shipped catalogs, their
+codes, and the `rastrillo.ui.*` key set an unshipped locale has to
+translate before `generate --check` passes; `IsBaseKey` reports whether
+one key is the framework's. `Dir` is the `<html dir>` value for a
+locale, `"rtl"` or `"ltr"`.
+
+`LocaleItems` builds the language switcher's data for a request — one
+`LocaleItem` per declared locale, empty for a one-locale app — and the
+`locale-menu` partial renders it as a form posting to `LocaleSwitchPath`.
 
 `Locales` is the resolved set: `Locales.Codes`, `Locales.Default`,
-`Locales.Has`, `Locales.T`, `Locales.Tf`, and `Locales.Middleware`,
-which strips the path prefix before the app's mux sees it.
+`Locales.Has`, `Locales.FrameworkHas`, `Locales.T`, `Locales.Tf`,
+`Locales.Middleware`, which strips the path prefix before the app's mux
+sees it, and `Locales.SwitchHandler`, the `POST /_locale` route that
+writes `LocaleCookie` and redirects — `Serve` mounts it whenever
+`Options.Locales` is set, one locale or twelve.
 
-Nothing writes `LocaleCookie` yet, so persisting a user's choice is your
-job for now. [Localization](/docs/localization) has the resolution order
-and the caveats.
+[Localization](/docs/localization) has the resolution order and the
+caveats.
 
 ## Assets
 

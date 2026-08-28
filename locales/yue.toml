@@ -1,0 +1,15 @@
+# rastrillo's base strings for yue. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "分頁"
+rastrillo.ui.search_submit = "搜尋"
+rastrillo.ui.cancel = "取消"
+rastrillo.ui.done = "揀完喇"
+rastrillo.ui.select_filter = "輸入嚟篩選"
+rastrillo.ui.select_results = "{n} 個結果"
+rastrillo.ui.select_result_one = "1 個結果"
+rastrillo.ui.locale_name = "廣東話"
+rastrillo.ui.shell_skip = "跳到內容"
+rastrillo.ui.shell_menu = "選單"
+rastrillo.ui.shell_account = "帳戶"
+rastrillo.ui.shell_language = "語言"

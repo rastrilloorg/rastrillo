@@ -1,0 +1,15 @@
+# rastrillo's base strings for ja. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "ページ送り"
+rastrillo.ui.search_submit = "検索"
+rastrillo.ui.cancel = "キャンセル"
+rastrillo.ui.done = "選択完了"
+rastrillo.ui.select_filter = "入力して絞り込む"
+rastrillo.ui.select_results = "{n} 件"
+rastrillo.ui.select_result_one = "1 件"
+rastrillo.ui.locale_name = "日本語"
+rastrillo.ui.shell_skip = "本文へ移動"
+rastrillo.ui.shell_menu = "メニュー"
+rastrillo.ui.shell_account = "アカウント"
+rastrillo.ui.shell_language = "言語"

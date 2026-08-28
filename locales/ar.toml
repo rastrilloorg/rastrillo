@@ -1,0 +1,15 @@
+# rastrillo's base strings for ar. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "ترقيم الصفحات"
+rastrillo.ui.search_submit = "بحث"
+rastrillo.ui.cancel = "إلغاء"
+rastrillo.ui.done = "تم التحديد"
+rastrillo.ui.select_filter = "اكتب للتصفية"
+rastrillo.ui.select_results = "{n} نتائج"
+rastrillo.ui.select_result_one = "نتيجة واحدة"
+rastrillo.ui.locale_name = "العربية"
+rastrillo.ui.shell_skip = "الانتقال إلى المحتوى"
+rastrillo.ui.shell_menu = "القائمة"
+rastrillo.ui.shell_account = "الحساب"
+rastrillo.ui.shell_language = "اللغة"

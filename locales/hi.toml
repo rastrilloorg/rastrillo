@@ -1,0 +1,15 @@
+# rastrillo's base strings for hi. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "पृष्ठांकन"
+rastrillo.ui.search_submit = "खोजें"
+rastrillo.ui.cancel = "रद्द करें"
+rastrillo.ui.done = "चयन पूर्ण"
+rastrillo.ui.select_filter = "फ़िल्टर करने के लिए टाइप करें"
+rastrillo.ui.select_results = "{n} परिणाम"
+rastrillo.ui.select_result_one = "1 परिणाम"
+rastrillo.ui.locale_name = "हिन्दी"
+rastrillo.ui.shell_skip = "सामग्री पर जाएँ"
+rastrillo.ui.shell_menu = "मेनू"
+rastrillo.ui.shell_account = "खाता"
+rastrillo.ui.shell_language = "भाषा"

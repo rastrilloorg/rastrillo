@@ -147,3 +147,52 @@ func TestNewLocalesToleratesAMissingCatalog(t *testing.T) {
 		t.Errorf("T = %q, want Save", got)
 	}
 }
+
+func TestFrameworkCatalogLevel(t *testing.T) {
+	// ga is shipped by the framework, fr is not; neither has an app
+	// catalog for rastrillo.ui.cancel. base is what serve.go passes —
+	// framework en plus the app's overlay.
+	l, err := NewLocales([]string{"en", "ga", "fr"}, "en", BaseCatalog(), testFS())
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name, locale, key, want string
+	}{
+		{"shipped locale resolves the framework catalog", "ga", "rastrillo.ui.cancel", "Cealaigh"},
+		{"unshipped locale falls to framework en", "fr", "rastrillo.ui.cancel", "Cancel"},
+		{"app catalog still beats the framework", "fr", "app.title", "Commandes"},
+		{"app default beats the framework catalog", "ga", "app.title", "Orders"},
+		{"declared code must match exactly", "zh", "rastrillo.ui.cancel", "Cancel"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := l.T(tt.locale, tt.key); got != tt.want {
+				t.Errorf("T(%q,%q) = %q, want %q", tt.locale, tt.key, got, tt.want)
+			}
+		})
+	}
+	if !l.FrameworkHas("ga") || l.FrameworkHas("fr") {
+		t.Error("FrameworkHas: ga yes, fr no")
+	}
+}
+
+func TestAppCatalogOverridesAFrameworkKey(t *testing.T) {
+	fsys := testFS()
+	fsys["locales/ga.toml"] = &fstest.MapFile{Data: []byte("rastrillo.ui.cancel = \"Stad\"\n")}
+	l, err := NewLocales([]string{"en", "ga"}, "en", BaseCatalog(), fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := l.T("ga", "rastrillo.ui.cancel"); got != "Stad" {
+		t.Errorf("app ga catalog should win: %q", got)
+	}
+}
+
+func TestDir(t *testing.T) {
+	for in, want := range map[string]string{"ar": "rtl", "ar-EG": "rtl", "he": "rtl", "fa": "rtl", "ur": "rtl", "en": "ltr", "ga": "ltr", "": "ltr", "zh-Hans": "ltr"} {
+		if got := Dir(in); got != want {
+			t.Errorf("Dir(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

@@ -794,6 +794,14 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-dropdown__menu { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); margin-top: 4px; min-width: 176px; padding: 0.25rem; position: absolute; right: 0; top: 100%; z-index: 30; }
 .rst-dropdown__menu a { border-radius: var(--rst-radius-sm); color: inherit; display: block; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-decoration: none; }
 .rst-dropdown__menu a:hover, .rst-dropdown__menu a[aria-current] { background: var(--rst-accent-soft); }
+/* locale-menu — the language switcher is a dropdown whose items are
+   one-field POST forms (spec §2.4), so the button inside each form
+   takes the menu-link styling. Autonyms keep their own script, so no
+   text-transform here, ever. */
+.rst-locale form { margin: 0; }
+.rst-locale button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
+.rst-locale button:hover { background: var(--rst-accent-soft); }
+.rst-locale button[aria-current] { color: var(--rst-accent); font-weight: 600; }
 /* Task 2's menu only ever held links; bulk-bar's actions menu (Task 4)
    is real submit buttons on the surrounding form, so the same panel
    needs button styling too — mirrors .rst-row-menu__panel's combined

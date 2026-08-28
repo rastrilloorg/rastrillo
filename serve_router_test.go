@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -143,4 +144,41 @@ func TestOpenDBMaterializesAndMigrates(t *testing.T) {
 		t.Fatalf("re-open with idempotent migrations failed: %v", err)
 	}
 	again.Close()
+}
+
+func TestLocaleSwitchRouteMountedOnlyWithLocales(t *testing.T) {
+	mux := http.NewServeMux()
+	without, err := buildHandler(Options{Mux: mux})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	without.ServeHTTP(rec, httptest.NewRequest("POST", LocaleSwitchPath, nil))
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("no locales: status %d, want 404", rec.Code)
+	}
+
+	with, err := buildHandler(Options{Mux: http.NewServeMux(), Locales: []string{"en", "ga"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	form := strings.NewReader("locale=ga&return=/x")
+	req := httptest.NewRequest("POST", LocaleSwitchPath, form)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	rec = httptest.NewRecorder()
+	with.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/ga/x" {
+		t.Errorf("with locales: status %d Location %q", rec.Code, rec.Header().Get("Location"))
+	}
+	// Under a locale prefix the same route still answers (the
+	// middleware strips the prefix first).
+	req = httptest.NewRequest("POST", "/ga"+LocaleSwitchPath, strings.NewReader("locale=en&return=/x"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	rec = httptest.NewRecorder()
+	with.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Errorf("prefixed: status %d", rec.Code)
+	}
 }

@@ -1,0 +1,15 @@
+# rastrillo's base strings for zh-Hans. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "分页"
+rastrillo.ui.search_submit = "搜索"
+rastrillo.ui.cancel = "取消"
+rastrillo.ui.done = "完成选择"
+rastrillo.ui.select_filter = "输入以筛选"
+rastrillo.ui.select_results = "{n} 个结果"
+rastrillo.ui.select_result_one = "1 个结果"
+rastrillo.ui.locale_name = "简体中文"
+rastrillo.ui.shell_skip = "跳到内容"
+rastrillo.ui.shell_menu = "菜单"
+rastrillo.ui.shell_account = "账户"
+rastrillo.ui.shell_language = "语言"

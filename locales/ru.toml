@@ -1,0 +1,15 @@
+# rastrillo's base strings for ru. Machine-drafted from en.toml; a
+# native speaker's correction is welcome — every key must stay present
+# (basecatalog_test.go checks the set, not the wording).
+rastrillo.ui.pagination = "Навигация по страницам"
+rastrillo.ui.search_submit = "Поиск"
+rastrillo.ui.cancel = "Отмена"
+rastrillo.ui.done = "Выбор завершён"
+rastrillo.ui.select_filter = "Введите текст для фильтра"
+rastrillo.ui.select_results = "Результатов: {n}"
+rastrillo.ui.select_result_one = "1 результат"
+rastrillo.ui.locale_name = "Русский"
+rastrillo.ui.shell_skip = "Перейти к содержимому"
+rastrillo.ui.shell_menu = "Меню"
+rastrillo.ui.shell_account = "Аккаунт"
+rastrillo.ui.shell_language = "Язык"

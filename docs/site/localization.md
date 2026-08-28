@@ -24,12 +24,23 @@ orders.greeting = "Hello, {name}"
 ## How a locale gets picked
 
 In this order: a URL path prefix, stripped before your mux sees it so
-`/fr/orders` and `/orders` reach the same route; then `Accept-Language`,
-q-ordered, so a browser sending `fr-CA` matches a declared `fr`; then
-the `rastrillo_locale` cookie; then your default.
+`/fr/orders` and `/orders` reach the same route; then the
+`rastrillo_locale` cookie, when it names a declared locale; then
+`Accept-Language`, q-ordered, so a browser sending `fr-CA` matches a
+declared `fr`; then your default.
 
-Nothing writes that cookie yet. Persisting a user's locale choice across
-requests is your job for now.
+The cookie is written by the framework's own `POST /_locale` route,
+which `rastrillo.Serve` mounts whenever you declare locales at all. The
+`locale-menu` partial renders a switcher that posts to it:
+
+```html
+{{template "locale-menu" dict "Items" .Locales "Return" .Path}}
+```
+
+where `.Locales` is `rastrillo.LocaleItems(r)` — empty for a one-locale
+app, so the partial renders nothing — and `.Path` is the current path
+and query to return to. Each item lands on the same path under the new
+prefix, and the cookie makes the choice stick on unprefixed paths too.
 
 ## Looking strings up
 
@@ -40,20 +51,29 @@ rastrillo.Tf(r, "orders.greeting", "name", user.Name)
 
 `Tf` interpolates `{name}`-style placeholders.
 
-Lookup falls back through four levels: the requested locale's catalog,
-the default locale's catalog, the framework's base catalog, and finally
-the key itself. A missing translation stays visible on the page as
-`orders.title` — never blank, never a crash.
+A missing translation stays visible on the page as `orders.title` —
+never blank, never a crash. Lookup falls back through five levels,
+listed in the next section.
 
 ## The framework base catalog
 
-`rastrillo.BaseCatalog()` carries `rastrillo/ui`'s own `rastrillo.ui.*`
-strings and is wired into every served app automatically, so a
-single-locale app gets correctly-worded built-in components without
-writing a catalog at all.
+The framework ships its own strings — `rastrillo/ui`'s `rastrillo.ui.*`
+keys — in twelve locales: `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt`, `bn`,
+`ru`, `ja`, `yue`, `vi`, `ar`. Declare one of those and the built-in
+components speak it with no catalog of your own. Matching is by the code
+you declare, exactly: `zh` does not find `zh-Hans`.
+
+Lookup falls back through five levels: the requested locale's app
+catalog, the default locale's app catalog, the framework's catalog for
+the requested locale (when it ships one), the framework's English, and
+finally the key itself. A missing translation stays visible on the page
+as `orders.title` — never blank, never a crash.
 
 Your own catalog entry for the same key wins, so you can reword a
 component's built-in string without ejecting it.
+
+`rastrillo.Dir(locale)` gives the `<html dir>` value — `rtl` for
+Arabic, Persian, Hebrew and Urdu — so a layout never guesses.
 
 Inside a partial, a caller-supplied value beats the built-in default.
 `ui.FuncsWith` rebinds `T` to a request-scoped lookup so those defaults
@@ -72,6 +92,11 @@ rastrillo generate --check --default-locale en
 ```
 
 Fails when a non-default catalog is missing keys the default has.
+
+It also fails when a non-default catalog is for a locale the framework
+does not ship and leaves any `rastrillo.ui.*` key untranslated — those
+components would silently render in English. The message lists the keys;
+copy them from the module's `locales/en.toml`.
 
 This runs under `--check` only. Plain `rastrillo generate` — and so
 `rastrillo dev` and `rastrillo new` — never fails on an incomplete

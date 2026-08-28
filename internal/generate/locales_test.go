@@ -88,3 +88,31 @@ func TestMissingKeysReportsAnUndecodableCatalog(t *testing.T) {
 		t.Errorf("error should name the offending file: %v", err)
 	}
 }
+
+func TestMissingFrameworkKeys(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, body string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("en.toml", "app.title = \"Orders\"\n")
+	write("fr.toml", "app.title = \"Commandes\"\nrastrillo.ui.cancel = \"Annuler\"\n")
+	write("ga.toml", "app.title = \"Orduithe\"\n") // shipped by the framework: exempt
+	keys := []string{"rastrillo.ui.cancel", "rastrillo.ui.done"}
+	got, err := MissingFrameworkKeys(dir, "en", keys, []string{"en", "ga"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string][]string{"fr": {"rastrillo.ui.done"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestMissingFrameworkKeysNoLocalesDir(t *testing.T) {
+	got, err := MissingFrameworkKeys(filepath.Join(t.TempDir(), "nope"), "en", []string{"k"}, nil)
+	if err != nil || got != nil {
+		t.Errorf("got %v, %v", got, err)
+	}
+}

@@ -56,9 +56,13 @@ badge          bulk-bar       callout        choice-field
 confirm-form   detail-list    dropdown       empty-state
 field          field-check    field-select   field-text
 field-textarea form-foot      job-status     list-bar
-list-bar-search list-row-action meter        page-header
-pagination     person         seg-tabs       status-pill
+list-bar-search list-row-action locale-menu   meter
+page-header    pagination     person         seg-tabs
+status-pill
 ```
+
+`locale-menu` is the language switcher; see
+[Localization](/docs/localization).
 
 Each partial's file carries its data contract in a comment above the
 `{{define}}`, and `ui_test.go`'s `TestAllPartialsAreDefined` is the
