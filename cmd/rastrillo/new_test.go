@@ -75,13 +75,62 @@ func TestNewThemeFlag(t *testing.T) {
 	}
 }
 
+// --shell picks which of ui's shells lands as templates/layout.html,
+// verbatim; column is the default; an unknown name fails before
+// anything is written.
+func TestNewShellFlag(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--shell=topbar", "app"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("app", "internal", "app", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := ui.Layout("topbar")
+	if !bytes.Equal(got, want) {
+		t.Error("templates/layout.html is not ui.Layout(\"topbar\") verbatim")
+	}
+
+	if err := runNew([]string{"plainapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err = os.ReadFile(filepath.Join("plainapp", "internal", "plainapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ = ui.Layout("column")
+	if !bytes.Equal(got, want) {
+		t.Error("the default shell is not ui.Layout(\"column\") verbatim")
+	}
+
+	if err := runNew([]string{"--shell=nope", "app2"}); err == nil {
+		t.Fatal("unknown shell must fail")
+	}
+	if _, err := os.Stat("app2"); !os.IsNotExist(err) {
+		t.Error("a failed new must not leave a directory behind")
+	}
+}
+
+// defaultLayout is the shell rastrillo new writes as
+// templates/layout.html when --shell is not given.
+func defaultLayout(t *testing.T) string {
+	t.Helper()
+	src, ok := ui.Layout("column")
+	if !ok {
+		t.Fatal(`ui.Layout("column") is missing`)
+	}
+	return string(src)
+}
+
 // The scaffolded layout links the theme beside the tokens: structure
 // then colour, both through the fingerprinting {{asset ...}} helper.
 func TestLayoutTemplateLinksThemeCSS(t *testing.T) {
-	if !strings.Contains(layoutTemplate, `<link rel="stylesheet" href="{{asset "static/theme.css"}}">`) {
-		t.Errorf("layout template does not link static/theme.css:\n%s", layoutTemplate)
+	layout := defaultLayout(t)
+	if !strings.Contains(layout, `<link rel="stylesheet" href="{{asset "static/theme.css"}}">`) {
+		t.Errorf("layout template does not link static/theme.css:\n%s", layout)
 	}
-	if strings.Index(layoutTemplate, "static/tokens.css") > strings.Index(layoutTemplate, "static/theme.css") {
+	if strings.Index(layout, "static/tokens.css") > strings.Index(layout, "static/theme.css") {
 		t.Error("theme.css must come after tokens.css: the theme fills in what the tokens declare")
 	}
 }
@@ -107,8 +156,9 @@ func TestNewScaffoldsRastrilloJS(t *testing.T) {
 // tokens.css: through the fingerprinting {{asset ...}} helper, deferred
 // so it never blocks first paint.
 func TestLayoutTemplateLoadsRastrilloJS(t *testing.T) {
-	if !strings.Contains(layoutTemplate, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
-		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layoutTemplate)
+	layout := defaultLayout(t)
+	if !strings.Contains(layout, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
+		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layout)
 	}
 }
 
@@ -504,16 +554,19 @@ func TestStandardProfileAddsNoConventions(t *testing.T) {
 	}
 }
 
-// The layout must call iconAssets, or a cdn/js choice is inert.
+// The layout must call iconAssets, or a cdn/js choice is inert. Both
+// icon seams reach the template tree through ui.WithIcons now — passing
+// only one of them is the documented silent trap, so the scaffold
+// passes both in the one call.
 func TestScaffoldedLayoutCallsIconAssets(t *testing.T) {
-	if !strings.Contains(layoutTemplate, "{{iconAssets}}") {
+	if !strings.Contains(defaultLayout(t), "{{iconAssets}}") {
 		t.Error("layout.html never calls iconAssets; cdn and js delivery would render nothing")
 	}
-	if !strings.Contains(renderTemplate, `"iconAssets": icons.Assets`) {
-		t.Error("render.go does not register the iconAssets seam")
+	if !strings.Contains(renderTemplate, `ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))`) {
+		t.Error("render.go does not point ui's icon seams at the app's own icon package")
 	}
-	if !strings.Contains(renderTemplate, `"icon":       icons.Icon`) {
-		t.Error("render.go does not register the icon seam")
+	if !strings.Contains(renderTemplate, `ParseFS(ui.Templates(), "*.html")`) {
+		t.Error("render.go does not parse ui's partials, so no page can call one")
 	}
 }
 
@@ -531,7 +584,11 @@ func TestNewScaffoldsSelectJS(t *testing.T) {
 	if !bytes.Equal(got, ui.SelectJS()) {
 		t.Error("scaffolded select.js is not ui.SelectJS() verbatim")
 	}
-	if !strings.Contains(layoutTemplate, `static/select.js`) {
+	layout, err := os.ReadFile(filepath.Join("selapp", "internal", "selapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(layout), `static/select.js`) {
 		t.Error("the layout never loads select.js, so the enhancement can never run")
 	}
 }

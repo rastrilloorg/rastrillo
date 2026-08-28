@@ -38,14 +38,16 @@ func runNew(args []string) error {
 	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
 	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
 	theme := fset.String("theme", "ink", "colour theme: "+strings.Join(ui.ThemeNames(), ", "))
+	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
 	rest := fset.Args()
 	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] <name>",
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] <name>",
 			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
-			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"))
+			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"),
+			strings.Join(ui.LayoutNames(), "|"))
 	}
 	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
@@ -68,6 +70,10 @@ func runNew(args []string) error {
 	themeCSS, ok := ui.ThemeCSS(*theme)
 	if !ok {
 		return fmt.Errorf("unknown theme %q: known themes are %s", *theme, strings.Join(ui.ThemeNames(), ", "))
+	}
+	layoutHTML, ok := ui.Layout(*shell)
+	if !ok {
+		return fmt.Errorf("unknown shell %q: known shells are %s", *shell, strings.Join(ui.LayoutNames(), ", "))
 	}
 
 	pkg := packageName(name)
@@ -93,13 +99,18 @@ func runNew(args []string) error {
 	files := map[string]string{
 		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
 			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
-		filepath.Join(name, "cmd", name, "main.go"):       fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(appDir, "app.go"):                   fmt.Sprintf(appTemplate, pkg),
-		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
-		filepath.Join(appDir, "migrations.go"):            fmt.Sprintf(migrationsTemplate, pkg),
-		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
-		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, name, pkg),
-		filepath.Join(appDir, "templates", "layout.html"): layoutTemplate,
+		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
+		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg),
+		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
+		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
+		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg),
+		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg),
+		// The page frame, chosen by --shell and delivered verbatim from
+		// ui.Layout: app-owned from here on, exactly like tokens.css.
+		// Its chrome is blocks with working defaults (title, lang, dir,
+		// and in the chrome shells brand/nav/account/locale/foot), so a
+		// page overrides only what it cares about.
+		filepath.Join(appDir, "templates", "layout.html"): string(layoutHTML),
 		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
 		// The initial migration and the schema.sql snapshot it adds up
 		// to, both static: the scaffold's Note model is fixed and
@@ -200,6 +211,8 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
 	fmt.Printf("  internal/%s/static/theme.css (the %s theme — app-owned; --theme picks from %s)\n",
 		pkg, *theme, strings.Join(ui.ThemeNames(), ", "))
+	fmt.Printf("  internal/%s/templates/layout.html (the %s shell — app-owned; --shell picks from %s)\n",
+		pkg, *shell, strings.Join(ui.LayoutNames(), ", "))
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
 	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
@@ -515,6 +528,7 @@ import (
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/ui"
 
 	"%[1]s/internal/%[2]s/icons"
 )
@@ -534,18 +548,23 @@ var pages = map[string]*template.Template{}
 
 func init() {
 	for _, name := range []string{"index"} {
-		pages[name] = template.Must(template.New("layout").
-			Funcs(template.FuncMap{
-				"asset": assets.Path,
-				// The app's own icon set (internal/%[2]s/icons), scaffolded
-				// by rastrillo new. iconAssets is whatever <head> markup the
-				// chosen delivery needs — empty for the vendored-inline
-				// default, so the layout calls it unconditionally and
-				// switching delivery later needs no template edit.
-				"icon":       icons.Icon,
-				"iconAssets": icons.Assets,
-			}).
-			ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
+		pages[name] = template.Must(
+			// ui's partials and their helpers first, so every page can
+			// call one without registering anything. WithIcons points
+			// ui's two icon seams at the app's own set
+			// (internal/%[2]s/icons, scaffolded by rastrillo new) —
+			// both of them, always: passing only icon would leave
+			// iconAssets on the framework default and silently break
+			// cdn and js delivery. iconAssets is whatever <head> markup
+			// the chosen delivery needs, empty for the vendored-inline
+			// default, so the layout calls it unconditionally and
+			// switching delivery later needs no template edit.
+			template.Must(template.New("layout").
+				Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
+				Funcs(template.FuncMap{"asset": assets.Path}).
+				ParseFS(ui.Templates(), "*.html")).
+				// Then the app's own: the shell and this page's body.
+				ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
 	}
 }
 
@@ -561,27 +580,6 @@ func render(w http.ResponseWriter, name string, data any) {
 	}
 	buf.WriteTo(w)
 }
-`
-
-const layoutTemplate = `{{define "layout"}}<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{block "title" .}}Hello{{end}}</title>
-<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
-<link rel="stylesheet" href="{{asset "static/theme.css"}}">
-<script defer src="{{asset "static/rastrillo.js"}}"></script>
-{{iconAssets}}
-<script defer src="{{asset "static/select.js"}}"></script>
-</head>
-<body>
-<main>
-{{template "content" .}}
-</main>
-</body>
-</html>
-{{end}}
 `
 
 const indexTemplate = `{{define "content"}}
