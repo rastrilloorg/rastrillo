@@ -43,6 +43,9 @@ import (
 // the package's full import path, already covered by §1's "and its
 // subpackages" — was cut before this number moved. 584 bytes of the
 // raise are spent; the rest is headroom, not licence.
+// A 2026-08-28 editorial rewrite (terser prose, same facts and API
+// names) brought the file from 17,998 back to ~15,100, so the budget
+// holds real headroom again for the design-system programme's keys.
 const skillBudget = 18_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
