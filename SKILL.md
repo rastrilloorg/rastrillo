@@ -101,6 +101,13 @@ Handlers hang off one struct holding `*gorm.DB`; `render.go` embeds and
 parses one `*template.Template` per page (layout + that page) so two pages
 can both define `"content"`.
 
+Locales: `Options.Locales`/`DefaultLocale`/`LocaleFS` (flat TOML per code).
+The framework ships `rastrillo.ui.*` in en ga zh-Hans es hi pt bn ru ja yue
+vi ar; any other declared locale must translate them or `generate --check`
+fails. `{{template "locale-menu" dict "Items" (rastrillo.LocaleItems r)}}`
+is the switcher; it POSTs `/_locale`, which Serve mounts. `rastrillo.Dir`
+for `<html dir>`.
+
 ## 2. Data
 
 Models are plain GORM structs — no base type, no embedding:
@@ -345,11 +352,8 @@ One-offs are `carlos.ScheduleAt(ctx, name, at, path)` (upsert by name;
 
 - **Manifests: declare what fits the vocabulary, hand-write the rest.** A
   `manifest/*.toml` resource generates CRUD screens — three field kinds
-  (text, textarea, money), no relations. `store = "exclusive"` (default) is
-  one SQL table, `"mergeable"` an `eventlog` stream per record.
-  `scope = "user"` owner-filters either by session subject (someone else's
-  row 404s); mount behind `sessions.Require`/`auth.RequireSession`.
-  Full treatment: docs/site/manifests.md — rastrillo.org/docs/manifests
+  (text, textarea, money), no relations; `scope = "user"` owner-filters by
+  session subject. docs/site/manifests.md
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`.**
   `glebarez/sqlite` registers the driver name `sqlite` that
   `modernc.org/sqlite` already does, so a binary with it and
