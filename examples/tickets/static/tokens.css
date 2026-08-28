@@ -715,6 +715,13 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-field-row { align-items: end; display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
 .rst-field-row .rst-field { margin: 0; }
 .rst-field-row > .rst-grow { flex: 1; min-width: 0; }
+/* field-daterange — the fieldset reset the grouped start/end pair needs,
+   with the legend sized like a field label. Its own selector rather than
+   a share of .rst-choice: the two groups look alike today, and a card
+   tweak there must not silently reshape a date range. */
+.rst-field-range { border: 0; margin: var(--rst-sp-4) 0; padding: 0; }
+.rst-field-range > legend { font-size: var(--rst-fs-sm); font-weight: 600; margin: 0 0 0.45rem; padding: 0; }
+.rst-field-range > .rst-field-row { margin: 0; }
 .rst-form-foot { align-items: center; background: var(--rst-bg); border-top: 1px solid var(--rst-line); bottom: 0; display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.75rem; padding: 0.8rem 0; position: sticky; z-index: 5; }
 .rst-form-foot .rst-form-foot__note { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin-inline-end: auto; }
 .rst-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }

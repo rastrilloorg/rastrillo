@@ -1,7 +1,9 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
+	"html"
 	"html/template"
 	"io/fs"
 	"reflect"
@@ -915,6 +917,26 @@ func allPartials() []struct {
 		{"error-page", map[string]any{
 			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
 		}},
+		{"field-date", map[string]any{
+			"Name": "published_on", "Label": "Published on", "Value": "2026-08-28",
+			"Required": true, "Hint": "The day it goes live.", "Error": "Pick a date.",
+			"Min": "2026-01-01", "Max": "2026-12-31",
+		}},
+		{"field-time", map[string]any{
+			"Name": "doors", "Label": "Doors open", "Value": "19:30",
+			"Required": true, "Hint": "Local time.", "Error": "Pick a time.",
+			"Min": "09:00", "Max": "23:00",
+		}},
+		{"field-datetime", map[string]any{
+			"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30",
+			"Required": true, "Hint": "When the session begins.", "Error": "Pick a start.",
+			"Min": "2026-01-01T00:00", "Max": "2026-12-31T23:59",
+		}},
+		{"field-daterange", map[string]any{
+			"Legend": "When", "Seed": "session",
+			"Start": map[string]any{"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30"},
+			"End":   map[string]any{"Name": "ends_at", "Label": "Ends", "Error": "The end comes before the start."},
+		}},
 	}
 }
 
@@ -1015,14 +1037,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
+		"field-date", "field-time", "field-datetime", "field-daterange",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 30 {
-		t.Fatalf("the shipped set is 30 partials, this list has %d", len(want))
+	if len(want) != 34 {
+		t.Fatalf("the shipped set is 34 partials, this list has %d", len(want))
 	}
 }
 
@@ -2252,5 +2275,268 @@ func TestErrorPageClassesAreStyled(t *testing.T) {
 		if !strings.Contains(css, "."+class) {
 			t.Errorf("tokens.css has no selector for %q", class)
 		}
+	}
+}
+
+// ── The date and time fields ──────────────────────────────────────────
+
+// dateVocabulary is the seventeen parser words the enhancement needs,
+// short name → base catalog key suffix. It is the same list dateWords
+// builds, spelled out again here so a silent drop in funcs.go fails.
+var dateVocabulary = []string{
+	"today", "tomorrow", "yesterday", "next", "last", "in", "ago", "at",
+	"day", "week", "month", "hour", "minute", "noon", "midnight", "am", "pm",
+}
+
+var wordsAttrRe = regexp.MustCompile(`data-rst-date-words="([^"]*)"`)
+
+// wordsAttr decodes the words attribute the way a browser does: html/template
+// escapes the JSON's quotes into entities on the way out, getAttribute
+// unescapes them, and JSON.parse reads the result. html.UnescapeString plus
+// json.Unmarshal is that round trip.
+func wordsAttr(t *testing.T, markup string) map[string]string {
+	t.Helper()
+	m := wordsAttrRe.FindStringSubmatch(markup)
+	if m == nil {
+		t.Fatalf("no data-rst-date-words attribute in:\n%s", markup)
+	}
+	var words map[string]string
+	if err := json.Unmarshal([]byte(html.UnescapeString(m[1])), &words); err != nil {
+		t.Fatalf("data-rst-date-words is not JSON after unescaping (%v): %s", err, m[1])
+	}
+	return words
+}
+
+// The three singular fields are native inputs first: the type carries the
+// value, the enhancement rides on data attributes beside it.
+func TestDateFieldsRenderNativeInputs(t *testing.T) {
+	for _, c := range []struct{ partial, typ, flag, example string }{
+		{"field-date", "date", "data-rst-date", "2006-01-02"},
+		{"field-time", "time", "data-rst-time", "15:04"},
+		{"field-datetime", "datetime-local", "data-rst-date", "2006-01-02T15:04"},
+	} {
+		got := render(t, c.partial, fixtureFor(t, c.partial))
+		fixture := fixtureFor(t, c.partial)
+		name, _ := fixture["Name"].(string)
+		for _, want := range []string{
+			`<div class="rst-field">`,
+			`<label class="rst-field__label" for="` + name + `">`,
+			`type="` + c.typ + `"`,
+			`id="` + name + `"`, `name="` + name + `"`,
+			`value="` + fixture["Value"].(string) + `"`,
+			`min="` + fixture["Min"].(string) + `"`,
+			`max="` + fixture["Max"].(string) + `"`,
+			" required", ` aria-invalid="true"`,
+			" " + c.flag + " ",
+			`data-rst-date-set="Set"`,
+			`data-rst-date-hint="Try: ` + c.example + `"`,
+			`data-rst-date-pick="Open the calendar"`,
+			`data-rst-date-results="{n} suggestions"`,
+			`data-rst-date-result-one="1 suggestion"`,
+			`data-rst-date-quick-today="Today"`,
+			`data-rst-date-quick-tomorrow="Tomorrow"`,
+			`data-rst-date-quick-next-week="In a week"`,
+			`data-rst-date-quick-plus-1h="An hour later"`,
+			`data-rst-date-quick-plus-2h="Two hours later"`,
+			`data-rst-date-quick-end-of-day="End of that day"`,
+			`data-rst-date-quick-next-day="Same time next day"`,
+		} {
+			if !strings.Contains(got, want) {
+				t.Errorf("%s is missing %q:\n%s", c.partial, want, got)
+			}
+		}
+		// The arming flag is one attribute, and only one: the display
+		// attributes are data-rst-date-* on all three fields (they are the
+		// same catalog strings), so this looks for the bare flag with
+		// spaces either side rather than for the prefix.
+		other := map[string]string{"data-rst-date": "data-rst-time", "data-rst-time": "data-rst-date"}[c.flag]
+		if strings.Contains(got, " "+other+" ") {
+			t.Errorf("%s carries %q as well as %q:\n%s", c.partial, other, c.flag, got)
+		}
+	}
+}
+
+// The words attribute is one JSON object holding the whole parser
+// vocabulary, localised through the bound T.
+func TestDateFieldsCarryTheVocabularyAsJSON(t *testing.T) {
+	for _, partial := range []string{"field-date", "field-time", "field-datetime"} {
+		words := wordsAttr(t, render(t, partial, fixtureFor(t, partial)))
+		if len(words) != len(dateVocabulary) {
+			t.Errorf("%s: words attribute has %d entries, want %d", partial, len(words), len(dateVocabulary))
+		}
+		for _, short := range dateVocabulary {
+			want := rastrillo.BaseCatalog()["rastrillo.ui.date_"+short]
+			if want == "" {
+				t.Fatalf("base catalog has no rastrillo.ui.date_%s", short)
+			}
+			if words[short] != want {
+				t.Errorf("%s: words[%q] = %q, want %q", partial, short, words[short], want)
+			}
+		}
+		// Vocabulary keys carry their alternative spellings; the split
+		// happens browser-side, so the pipes must survive the attribute.
+		if !strings.Contains(words["day"], "|") {
+			t.Errorf("%s: words[\"day\"] = %q, want the |-separated spellings intact", partial, words["day"])
+		}
+	}
+}
+
+// A rebound T localises the whole attribute set, words included — the
+// per-request seam FuncsWith documents.
+func TestDateFieldsLocaliseThroughABoundT(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(FuncsWith(func(key string, _ ...any) string {
+		return "X-" + key
+	})).ParseFS(Templates(), "*.html"))
+	var buf strings.Builder
+	if err := tmpl.ExecuteTemplate(&buf, "field-date", fixtureFor(t, "field-date")); err != nil {
+		t.Fatal(err)
+	}
+	got := buf.String()
+	if !strings.Contains(got, `data-rst-date-set="X-rastrillo.ui.date_set"`) {
+		t.Errorf("display attribute did not rebind: %s", got)
+	}
+	if words := wordsAttr(t, got); words["today"] != "X-rastrillo.ui.date_today" {
+		t.Errorf("words attribute did not rebind: %q", words["today"])
+	}
+}
+
+// Plain is the escape hatch: the native input, nothing else. Not one
+// data-rst attribute, so the script never sees the field.
+func TestDateFieldsPlainEmitNoDataAttributes(t *testing.T) {
+	for _, partial := range []string{"field-date", "field-time", "field-datetime"} {
+		fixture := map[string]any{}
+		for k, v := range fixtureFor(t, partial) {
+			fixture[k] = v
+		}
+		fixture["Plain"] = true
+		got := render(t, partial, fixture)
+		if strings.Contains(got, "data-rst") {
+			t.Errorf("%s with Plain emitted a data-rst attribute:\n%s", partial, got)
+		}
+		// Everything else survives: Plain drops the enhancement, not the field.
+		if !strings.Contains(got, `value="`+fixture["Value"].(string)+`"`) {
+			t.Errorf("%s with Plain lost its value:\n%s", partial, got)
+		}
+	}
+}
+
+// Hint and error wiring is field-text's, repeated: ids derived from Name,
+// aria-describedby listing exactly what renders, aria-invalid with an error.
+func TestDateFieldsWireHintAndError(t *testing.T) {
+	for _, partial := range []string{"field-date", "field-time", "field-datetime"} {
+		both := render(t, partial, map[string]any{
+			"Name": "when", "Label": "When", "Hint": "Any time today.", "Error": "Pick one.",
+		})
+		for _, want := range []string{
+			`aria-describedby="when-hint when-error"`, ` aria-invalid="true"`,
+			`<small class="rst-field__hint" id="when-hint">Any time today.</small>`,
+			`<small class="rst-field__error" id="when-error">Pick one.</small>`,
+		} {
+			if !strings.Contains(both, want) {
+				t.Errorf("%s is missing %q:\n%s", partial, want, both)
+			}
+		}
+		hintOnly := render(t, partial, map[string]any{"Name": "when", "Label": "When", "Hint": "H"})
+		if !strings.Contains(hintOnly, `aria-describedby="when-hint"`) || strings.Contains(hintOnly, "when-error") {
+			t.Errorf("%s: hint-only describedby is wrong:\n%s", partial, hintOnly)
+		}
+		errOnly := render(t, partial, map[string]any{"Name": "when", "Label": "When", "Error": "E"})
+		if !strings.Contains(errOnly, `aria-describedby="when-error"`) || strings.Contains(errOnly, "when-hint") {
+			t.Errorf("%s: error-only describedby is wrong:\n%s", partial, errOnly)
+		}
+		bare := render(t, partial, map[string]any{"Name": "when", "Label": "When"})
+		for _, gone := range []string{"aria-describedby", "aria-invalid", "rst-field__hint", "rst-field__error", " required", " min=", " max=", " value="} {
+			if strings.Contains(bare, gone) {
+				t.Errorf("%s emitted %q with nothing to put in it:\n%s", partial, gone, bare)
+			}
+		}
+	}
+}
+
+// The required marker is presentation on top of the required attribute,
+// never a substitute for it.
+func TestDateFieldsRequiredMarkerIsAriaHidden(t *testing.T) {
+	for _, partial := range []string{"field-date", "field-time", "field-datetime"} {
+		got := render(t, partial, map[string]any{"Name": "when", "Label": "When", "Required": true})
+		if !strings.Contains(got, `<span class="rst-field__required" aria-hidden="true">*</span>`) {
+			t.Errorf("%s: required marker missing or exposed:\n%s", partial, got)
+		}
+	}
+}
+
+// field-daterange is a labelled pair: one fieldset, one legend, the two
+// singular partials side by side in a row the script can find.
+func TestFieldDaterangeWrapsTwoFields(t *testing.T) {
+	got := render(t, "field-daterange", fixtureFor(t, "field-daterange"))
+	for _, want := range []string{
+		"<fieldset", "<legend", ">When</legend>",
+		`<div class="rst-field-row" data-rst-range="session">`,
+		`name="starts_at"`, `name="ends_at"`,
+		`type="datetime-local"`,
+		`<small class="rst-field__error" id="ends_at-error">The end comes before the start.</small>`,
+		`aria-describedby="ends_at-error"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("field-daterange is missing %q:\n%s", want, got)
+		}
+	}
+	// Both halves get the enhancement, so either can be typed into.
+	if n := strings.Count(got, "data-rst-date-words="); n != 2 {
+		t.Errorf("field-daterange enhanced %d halves, want 2:\n%s", n, got)
+	}
+}
+
+// Seed is optional: without it the marker attribute is still there (the
+// script uses it to pair the two inputs), just with no seeding rule.
+func TestFieldDaterangeSeedIsOptional(t *testing.T) {
+	got := render(t, "field-daterange", map[string]any{
+		"Legend": "When",
+		"Start":  map[string]any{"Name": "a", "Label": "From"},
+		"End":    map[string]any{"Name": "b", "Label": "To"},
+	})
+	if !strings.Contains(got, `<div class="rst-field-row" data-rst-range>`) {
+		t.Errorf("unseeded range lost its marker attribute:\n%s", got)
+	}
+}
+
+// Kind picks the halves' input type — a whole-day range is two date
+// fields, not two datetime-locals.
+func TestFieldDaterangeKindDate(t *testing.T) {
+	got := render(t, "field-daterange", map[string]any{
+		"Legend": "When", "Kind": "date",
+		"Start": map[string]any{"Name": "a", "Label": "From"},
+		"End":   map[string]any{"Name": "b", "Label": "To"},
+	})
+	if n := strings.Count(got, `type="date"`); n != 2 {
+		t.Errorf("Kind \"date\" produced %d date inputs, want 2:\n%s", n, got)
+	}
+	if strings.Contains(got, "datetime-local") {
+		t.Errorf("Kind \"date\" still rendered a datetime-local input:\n%s", got)
+	}
+}
+
+// F10's lesson, applied to the new group: the class the partial emits and
+// the selector tokens.css styles are one string, so a rename cannot leave
+// the fieldset with the browser's default border and nobody notice.
+func TestDaterangeFieldsetIsStyled(t *testing.T) {
+	got := render(t, "field-daterange", fixtureFor(t, "field-daterange"))
+	if !strings.Contains(got, `<fieldset class="rst-field-range">`) {
+		t.Errorf("daterange fieldset lost its class:\n%s", got)
+	}
+	if !strings.Contains(string(TokensCSS()), ".rst-field-range {") {
+		t.Error("tokens.css does not style .rst-field-range")
+	}
+}
+
+// A hidden legend is still a legend: the group keeps its accessible name
+// when the visible heading would be noise.
+func TestFieldDaterangeLegendCanBeHidden(t *testing.T) {
+	got := render(t, "field-daterange", map[string]any{
+		"Legend": "When", "LegendHidden": true,
+		"Start": map[string]any{"Name": "a", "Label": "From"},
+		"End":   map[string]any{"Name": "b", "Label": "To"},
+	})
+	if !strings.Contains(got, `<legend class="rst-sr-only">When</legend>`) {
+		t.Errorf("LegendHidden did not hide the legend:\n%s", got)
 	}
 }

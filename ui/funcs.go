@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"strings"
@@ -83,8 +84,11 @@ func WithT(t func(key string, args ...any) string) Option {
 // ({{Tf "rastrillo.ui.error_ref" "ref" .Ref}}), which is a translation
 // unit in a way string concatenation never is.
 //
+// dateWords is the date fields' vocabulary, JSON in one attribute — see
+// its own doc comment below.
+//
 // An app is free to add its own entries on top; it must not drop these
-// six, or the shipped partials stop parsing.
+// seven, or the shipped partials stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -98,6 +102,7 @@ func Funcs(opts ...Option) template.FuncMap {
 	return template.FuncMap{
 		"dict": dict, "list": list,
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
+		"dateWords": dateWords(c.t),
 	}
 }
 
@@ -164,6 +169,55 @@ func defaultTf(key string, args ...any) string {
 		s = strings.ReplaceAll(s, "{"+name+"}", fmt.Sprint(args[i+1]))
 	}
 	return s
+}
+
+// dateWordNames are the seventeen words datetime.js parses with, short
+// name first because the short name is what the browser reads: the
+// catalog key is rastrillo.ui.date_ + the name. They are the vocabulary
+// half of the date_* keys — the ones whose values are |-separated lists
+// of accepted spellings — and deliberately not the display half
+// (date_set, date_hint, the quick picks), which the partials emit as
+// their own attributes because each is a sentence in its own right.
+var dateWordNames = []string{
+	"today", "tomorrow", "yesterday", "next", "last", "in", "ago", "at",
+	"day", "week", "month", "hour", "minute", "noon", "midnight", "am", "pm",
+}
+
+// dateWords returns the {{dateWords}} helper bound to one translator: it
+// resolves all seventeen vocabulary keys through t and encodes them as a
+// single JSON object, so a date field carries its whole parser
+// vocabulary in one data-rst-date-words attribute instead of seventeen.
+//
+// It is bound rather than free-standing for the same reason T is: an app
+// that rebinds T per request (see FuncsWith) gets the request's language
+// in the words attribute too, and a field enhanced in Japanese parses
+// Japanese. A free function reading the base catalog would have pinned
+// every page's parser to English while every visible string localised —
+// the most confusing possible half-failure.
+//
+// The result is a plain string, not template.HTMLAttr or template.JS:
+// html/template escapes it as an ordinary attribute value, turning the
+// JSON's quotes into &#34;, and getAttribute reverses that before
+// JSON.parse ever sees it. Marking it "safe" would only disable the
+// escaping that makes the attribute well-formed.
+//
+// json.Marshal sorts map keys, so the same catalog renders the same
+// bytes every time.
+func dateWords(t func(key string, args ...any) string) func() string {
+	return func() string {
+		words := make(map[string]string, len(dateWordNames))
+		for _, name := range dateWordNames {
+			words[name] = t("rastrillo.ui.date_" + name)
+		}
+		// A map[string]string of catalog values cannot fail to encode;
+		// the empty object keeps a broken build rendering a page rather
+		// than a template error, and the field still works unenhanced.
+		encoded, err := json.Marshal(words)
+		if err != nil {
+			return "{}"
+		}
+		return string(encoded)
+	}
 }
 
 // dict builds a map from alternating key/value arguments:

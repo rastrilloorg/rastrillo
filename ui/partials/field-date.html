@@ -1,0 +1,43 @@
+{{/* field-date — one labelled date input. The native <input type="date">
+     is the value carrier and the whole field with scripts off: it posts
+     2006-01-02 either way, and the browser's own picker still opens.
+
+     Unless Plain, the input also carries the enhancement's contract:
+     data-rst-date arms ui/datetime.js, data-rst-date-words hands it the
+     parser vocabulary as one JSON object ({{dateWords}}, resolved
+     through the bound T so it localises per request), and the remaining
+     data-rst-date-* attributes are the strings it puts on screen. Every
+     one of them comes from the catalog — datetime.js contains no
+     English of its own, which is the point of the split.
+
+     html/template escapes the words JSON's quotes into &#34; on the way
+     into the attribute; getAttribute reverses that before JSON.parse
+     sees it. That is the correct escaping, not a bug to route around.
+
+     The wrapper repeats field-text's rather than composing it, for the
+     reason field-text's own comment gives: Go templates cannot capture a
+     rendered fragment, so composition would push control rendering back
+     into every caller's Go code.
+
+     Keys:
+       Name      string, required — the input's name and id, and the
+                 prefix for the hint/error ids
+       Label     string, required — the visible label
+       Value     string, optional — the current value, 2006-01-02
+       Min, Max  strings, optional — the min/max attributes, same format
+       Required  bool, optional — required attribute + visible *
+       Hint      string, optional — muted guidance under the input
+       Error     string, optional — validation message; also sets
+                 aria-invalid
+       Plain     bool, optional — emit the bare native input, no
+                 enhancement attributes at all */}}
+{{define "field-date"}}<div class="rst-field">
+  <label class="rst-field__label" for="{{.Name}}">{{.Label}}{{if .Required}} <span class="rst-field__required" aria-hidden="true">*</span>{{end}}</label>
+  <input class="rst-input" id="{{.Name}}" name="{{.Name}}" type="date"{{if .Value}} value="{{.Value}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}{{if not .Plain}} data-rst-date data-rst-date-words="{{dateWords}}" data-rst-date-set="{{T "rastrillo.ui.date_set"}}" data-rst-date-hint="{{Tf "rastrillo.ui.date_hint" "example" "2006-01-02"}}" data-rst-date-pick="{{T "rastrillo.ui.date_pick"}}" data-rst-date-results="{{T "rastrillo.ui.date_results"}}" data-rst-date-result-one="{{T "rastrillo.ui.date_result_one"}}" data-rst-date-quick-today="{{T "rastrillo.ui.date_quick_today"}}" data-rst-date-quick-tomorrow="{{T "rastrillo.ui.date_quick_tomorrow"}}" data-rst-date-quick-next-week="{{T "rastrillo.ui.date_quick_next_week"}}" data-rst-date-quick-plus-1h="{{T "rastrillo.ui.date_quick_plus_1h"}}" data-rst-date-quick-plus-2h="{{T "rastrillo.ui.date_quick_plus_2h"}}" data-rst-date-quick-end-of-day="{{T "rastrillo.ui.date_quick_end_of_day"}}" data-rst-date-quick-next-day="{{T "rastrillo.ui.date_quick_next_day"}}"{{end}}>
+  {{- if .Hint}}
+  <small class="rst-field__hint" id="{{.Name}}-hint">{{.Hint}}</small>
+  {{- end}}
+  {{- if .Error}}
+  <small class="rst-field__error" id="{{.Name}}-error">{{.Error}}</small>
+  {{- end}}
+</div>{{end}}

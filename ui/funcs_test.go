@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"strings"
 	"testing"
+
+	"github.com/carlosframework/rastrillo"
 )
 
 func TestDictBuildsAMap(t *testing.T) {
@@ -66,17 +69,17 @@ func TestListWithNoItemsIsEmptyNotNil(t *testing.T) {
 	}
 }
 
-func TestFuncsRegistersDictListIconIconAssetsTAndTf(t *testing.T) {
+func TestFuncsRegistersDictListIconIconAssetsTTfAndDateWords(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf"} {
+	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf", "dateWords"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 6 {
-		t.Errorf("Funcs() has %d entries, want exactly 6", len(f))
+	if len(f) != 7 {
+		t.Errorf("Funcs() has %d entries, want exactly 7", len(f))
 	}
 }
 
@@ -135,13 +138,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf"} {
+	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf", "dateWords"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 6 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 6", len(f))
+	if len(f) != 7 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 7", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {
@@ -302,5 +305,66 @@ func TestWithTRebindsTf(t *testing.T) {
 	}
 	if got, want := fn("k", "ref", "v"), "app:k:refv"; got != want {
 		t.Errorf("Tf = %q, want %q", got, want)
+	}
+}
+
+// dateWords is the one helper that reads a whole family of keys rather
+// than one: seventeen parser words, JSON-encoded into a single attribute
+// so datetime.js gets its vocabulary without seventeen more attributes.
+func TestDateWordsIsJSONOfTheWholeVocabulary(t *testing.T) {
+	fn, ok := Funcs()["dateWords"].(func() string)
+	if !ok {
+		t.Fatalf("dateWords is %T, want func() string", Funcs()["dateWords"])
+	}
+	var words map[string]string
+	if err := json.Unmarshal([]byte(fn()), &words); err != nil {
+		t.Fatalf("dateWords() is not valid JSON (%v): %s", err, fn())
+	}
+	if len(words) != len(dateWordNames) {
+		t.Errorf("dateWords() has %d entries, want %d", len(words), len(dateWordNames))
+	}
+	for _, short := range dateWordNames {
+		want := rastrillo.BaseCatalog()["rastrillo.ui.date_"+short]
+		if want == "" {
+			t.Fatalf("base catalog has no rastrillo.ui.date_%s", short)
+		}
+		if words[short] != want {
+			t.Errorf("dateWords()[%q] = %q, want %q", short, words[short], want)
+		}
+	}
+	// The short names are the parser's, not the catalog's: no key prefix
+	// travels to the browser.
+	if _, leaked := words["rastrillo.ui.date_today"]; leaked {
+		t.Error("dateWords() shipped catalog keys as names")
+	}
+}
+
+// It resolves through the BOUND t, so WithT localises the vocabulary per
+// request exactly the way it localises every other partial default.
+func TestDateWordsFollowsTheBoundT(t *testing.T) {
+	fn, ok := FuncsWith(func(key string, _ ...any) string { return "X-" + key })["dateWords"].(func() string)
+	if !ok {
+		t.Fatal("FuncsWith did not rebind dateWords")
+	}
+	var words map[string]string
+	if err := json.Unmarshal([]byte(fn()), &words); err != nil {
+		t.Fatalf("rebound dateWords() is not valid JSON (%v): %s", err, fn())
+	}
+	for _, short := range dateWordNames {
+		if want := "X-rastrillo.ui.date_" + short; words[short] != want {
+			t.Errorf("rebound dateWords()[%q] = %q, want %q", short, words[short], want)
+		}
+	}
+}
+
+// Same input, same bytes: json.Marshal sorts map keys, so a page's markup
+// does not churn between renders (and neither do the docs goldens).
+func TestDateWordsIsDeterministic(t *testing.T) {
+	fn := Funcs()["dateWords"].(func() string)
+	first := fn()
+	for i := 0; i < 20; i++ {
+		if got := fn(); got != first {
+			t.Fatalf("dateWords() run %d differs:\n%s\n%s", i, first, got)
+		}
 	}
 }
