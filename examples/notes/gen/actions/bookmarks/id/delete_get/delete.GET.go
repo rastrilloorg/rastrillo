@@ -34,7 +34,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "bookmarks: loading bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
 

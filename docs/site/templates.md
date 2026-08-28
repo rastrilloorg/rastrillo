@@ -129,17 +129,186 @@ byte-identical to the library's, so you find out you have drifted when
 you meant to, rather than at an upgrade. Delete or update that test when
 you intend to diverge. See [Assets](/docs/assets).
 
+Two stylesheets, not one. `tokens.css` is structure — layout, spacing,
+radius, the type scale, and every `rst-` component class. A theme,
+written beside it as `static/theme.css`, is the colour and the type
+family those classes paint themselves with. The split is what makes a
+restyle cheap: swapping one file changes how everything looks, and
+nothing about how anything is laid out.
+
+## Themes
+
+Three ship, and `rastrillo new --theme=<name>` writes the one you pick:
+
+| Theme  | The look                                                            |
+|--------|---------------------------------------------------------------------|
+| `ink`  | iron-gall violet on cool-violet neutrals (default)                  |
+| `teal` | workbench teal on green-grey neutrals, monospace-leaning type       |
+| `warm` | rust on cream paper neutrals — closer to letters than to a dashboard |
+
+A theme file holds custom properties and a `color-scheme`, declared
+three times: once for light, once under `prefers-color-scheme: dark`,
+and once more under `[data-theme]` so an explicit toggle beats the OS in
+both directions. Both modes are authored — the dark set is not the light
+set inverted.
+
+Each file carries its own contrast table in the header comment: every
+text-on-background and border-on-background pair with the measured
+ratio beside the WCAG 2.2 AA requirement it has to clear. `ui`'s
+contrast gate recomputes every pair from the hex values in the file and
+fails if one has dropped under its AA floor — 4.5:1 for text, 3:1 for a
+control border. What it does not check is the printed number. A row can
+go stale and the build stays green, so if you edit a colour, edit the
+row: nothing else will.
+
+Swapping in a theme of your own is replacing `static/theme.css`. The
+only contract is the token set: declare every colour name `ink` declares
+in each of the three blocks — `--rst-font` is declared once, in its own
+`:root` — and every component class already knows what to do with it.
+The scaffold's `vendored_test.go` pins `theme.css` to the library copy
+exactly as it pins `tokens.css`, so delete its line there when the edit
+is deliberate.
+
+## Shells
+
+The shell is the page frame — `templates/layout.html`, written once by
+`rastrillo new --shell=<name>` and yours from then on:
+
+| Shell     | The frame                                                                  |
+|-----------|----------------------------------------------------------------------------|
+| `column`  | a centred content column, no chrome (default)                              |
+| `topbar`  | header bar: brand, nav, account menu, locale switcher, footer              |
+| `sidebar` | a left rail of nav groups, collapsing to a `<details>` chrome bar below 800px |
+
+Every shell defines `layout`, renders `{{template "content" .}}` for the
+page's own body, and puts each piece of chrome in a block with a working
+default. A page overrides only what it cares about, by redefining the
+block:
+
+```html
+{{define "brand"}}<a class="rst-shell__brand" href="/">Notes</a>{{end}}
+{{define "nav"}}
+  <a href="/" aria-current="page">Notes</a>
+  <a href="/archive">Archive</a>
+{{end}}
+{{define "account"}}
+  <a href="/settings">Settings</a>
+  <form method="post" action="/signout"><button type="submit">Sign out</button></form>
+{{end}}
+{{define "content"}}<h1>Your notes</h1>{{end}}
+```
+
+The blocks are `title`, `lang` and `dir` in all three shells, plus
+`brand`, `nav`, `account` and `locale` in `topbar` and `sidebar`, and
+`foot` in `topbar` only. None of them reads a field off the data, so a
+shell renders whether your handler passes a struct, a `dict`-built map
+or nil — a shell can never break because a page's view model changed
+shape.
+
+`account` is the one asymmetric block, and it is worth knowing which
+shell you are in. In `topbar` the layout owns the `<details
+class="rst-dropdown rst-shell__account">` and its summary, so your
+`account` block is the **menu body only** — the links that go inside
+`.rst-dropdown__menu`. In `sidebar` there is no dropdown: `account` is a
+bare slot in the rail, and you supply the whole thing. Move a block
+between shells and this is the edit you will need.
+
+The chrome classes live in `tokens.css` like every other idiom:
+`rst-shell-topbar`, `rst-shell__bar`, `rst-shell__brand`,
+`rst-shell__nav`, `rst-shell__account` and `rst-shell__foot` for the
+topbar; `rst-shell-sidebar`, `rst-shell__rail`, `rst-shell__chrome`,
+`rst-shell__group` and `rst-shell__main` for the sidebar; and
+`rst-skip`, the skip link, which all three shells carry — `column`
+included. The sidebar's mobile collapse is that
+`<details class="rst-shell__chrome">` and nothing else — no JavaScript,
+like every other idiom here.
+
+The `locale` block is where the language switcher goes, and
+`locale-menu` is the partial that fills it:
+
+```html
+{{define "locale"}}{{template "locale-menu" dict "Items" .Locales "Return" .Path}}{{end}}
+```
+
+It renders nothing when `Items` is empty, so a one-locale app can wire
+it and forget it. It sits on `rst-dropdown rst-locale` — the ordinary
+dropdown vocabulary, not a shell-specific class — so it looks and
+behaves the same in either shell. See
+[Localization](/docs/localization).
+
+## Error pages
+
+`ui`'s `error-page` partial is the whole body of an error response: the
+status, one honest sentence, a way back to somewhere real, and — for a
+500 — the reference the operator will grep for. It renders *inside your
+shell*, so the nav and the account menu are still there and the user is
+not stranded on a bare page.
+
+`rastrillo new` scaffolds it as `templates/errors.html`:
+
+```html
+{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}
+```
+
+and points `Options.ErrorPage` at the `render.go` helper that renders
+it. Wire the same function to `Ctx.ErrorPage` and the 500 a handler
+answers looks identical to the 500 a panic answers:
+
+```go
+func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
+	w.WriteHeader(status)
+	render(w, "errors", map[string]any{"Status": status, "Ref": ref})
+}
+```
+
+The callback owns the status code as well as the body, so it calls
+`WriteHeader` itself.
+
+The partial words five statuses from the framework catalog — 404, 403,
+422, 500 and 503 — in all twelve base languages. Any other status falls
+back to a generic title and sentence rather than rendering a missing
+key's name, so handing it a 418 produces a real page. `Title` and `Body`
+override the catalog when you want your own wording, and `HomeHref`
+moves the "Start page" link.
+
+`Ref` renders only when it is set. A 500 has one — six lowercase base32
+characters, minted by [`rastrillo.NewRef`](/docs/reference/rastrillo),
+written to the log line under `ref` and shown on the page — because that
+is the string a person quotes down a phone line and you grep for. A 404
+has nothing to look up later, so it shows no reference.
+
+`BackHref` renders a second, secondary link, and the rule is that **you
+supply it and only from a `Referer` you have checked is same-site**.
+There is deliberately no `javascript:history.back()` in the partial:
+nothing here needs JavaScript to be usable, and an unvalidated `Referer`
+is an open redirect with better manners. Leave it unset and the page
+still has its "Start page" link.
+
+Not everyone gets the page. A client that sent `Accept:
+application/json` gets `{"status":500,"ref":"k3f9tq"}` from the view
+helpers instead — `ref` is omitted when there is none, so a 404 answers
+`{"status":404}`. Your `ErrorPage` callback is not consulted at all on
+that path: it renders HTML, and the caller asked for something it can
+parse. The panic-recovery path is the exception, and serves the HTML
+page whatever the `Accept` header says. The callback receives `r`, so an
+app that wants to sniff it can.
+
 ## The view helpers
 
 For generated actions working against a `*rastrillo.Ctx`:
 
 ```go
 func Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any)
-func Fail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error)
+func Fail(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, what string, err error)
+func NotFound(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request)
+func Forbidden(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request)
 func ParseID(r *http.Request) (int64, bool)
 ```
 
 `Fail` logs the real error and answers a safe 500, so the detail reaches
-your logs and never the response body. `ParseID` reads the `{id}` path
-value; a malformed one answers `false`, which your handler should turn
-into a 404 rather than a 400. See [Scoping](/docs/scoping).
+your logs and never the response body; `NotFound` and `Forbidden` are
+the same answer at 404 and 403. All three render through
+`Ctx.ErrorPage` when it is wired, which is what puts the error page
+above on the screen. `ParseID` reads the `{id}` path value; a malformed
+one answers `false`, which your handler should turn into a 404 rather
+than a 400. See [Scoping](/docs/scoping).

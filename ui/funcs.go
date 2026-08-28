@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"html/template"
+	"strings"
 
 	"github.com/carlosframework/rastrillo"
 )
@@ -15,6 +16,7 @@ type config struct {
 	icon   func(string) template.HTML
 	assets func() template.HTML
 	t      func(key string, args ...any) string
+	tf     func(key string, args ...any) string
 }
 
 // WithIcons points the icon and iconAssets seams at an app's own icon
@@ -43,10 +45,17 @@ func WithIcons(icon func(string) template.HTML, assets func() template.HTML) Opt
 // partial defaults resolved in the request's locale instead of the
 // framework's hardcoded English. See FuncsWith for the per-request
 // Clone discipline this requires.
+//
+// It replaces Tf as well, and with the same function: a translator
+// signature already takes args (rastrillo.Tf's own shape), so an app
+// that rebinds lookup would otherwise get its own wording for every
+// plain default and the framework's English for the one sentence that
+// interpolates a value. One option, both entries, no way to bind half.
 func WithT(t func(key string, args ...any) string) Option {
 	return func(c *config) {
 		if t != nil {
 			c.t = t
+			c.tf = t
 		}
 	}
 }
@@ -68,22 +77,27 @@ func WithT(t func(key string, args ...any) string) Option {
 // resolves the framework's default strings — English, the framework base
 // catalog, unless rebound. Partials call it only for their own defaults
 // (a caller-supplied Label/CancelLabel/etc. always wins over T); it never
-// reaches into an app's own catalog on this path.
+// reaches into an app's own catalog on this path. Tf is T with {name}
+// placeholders filled from alternating name/value arguments — the
+// wording that has a value inside the sentence rather than beside it
+// ({{Tf "rastrillo.ui.error_ref" "ref" .Ref}}), which is a translation
+// unit in a way string concatenation never is.
 //
 // An app is free to add its own entries on top; it must not drop these
-// five, or the shipped partials stop parsing.
+// six, or the shipped partials stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
 		assets: func() template.HTML { return "" },
 		t:      defaultT,
+		tf:     defaultTf,
 	}
 	for _, opt := range opts {
 		opt(&c)
 	}
 	return template.FuncMap{
 		"dict": dict, "list": list,
-		"icon": c.icon, "iconAssets": c.assets, "T": c.t,
+		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 	}
 }
 
@@ -125,6 +139,31 @@ func defaultT(key string, _ ...any) string {
 		return v
 	}
 	return key
+}
+
+// defaultTf is defaultT plus {name} substitution: alternating
+// name/value arguments, each {name} replaced wherever it appears, and a
+// placeholder with no matching argument left verbatim so a translator's
+// typo shows in the page instead of silently eating a sentence. The
+// substitution happens before html/template escapes the result, so a
+// value carrying markup is escaped like any other interpolated string.
+//
+// It covers the partials' own use and is deliberately not the same code
+// as rastrillo.Locales.Tf. Two differences, neither reachable from a
+// shipped partial: that one also accepts a single map argument, which
+// this one ignores; and it walks the string once, while this one is a
+// sequence of ReplaceAll calls, so a value that itself contains
+// {another-name} would be substituted into by a later pass.
+func defaultTf(key string, args ...any) string {
+	s := defaultT(key)
+	for i := 0; i+1 < len(args); i += 2 {
+		name, ok := args[i].(string)
+		if !ok {
+			continue
+		}
+		s = strings.ReplaceAll(s, "{"+name+"}", fmt.Sprint(args[i+1]))
+	}
+	return s
 }
 
 // dict builds a map from alternating key/value arguments:

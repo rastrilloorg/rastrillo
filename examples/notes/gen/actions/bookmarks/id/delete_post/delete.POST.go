@@ -30,11 +30,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
-		view.Fail(ctx, w, "bookmarks: loading bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
 	if err := store.DeleteBookmark(r.Context(), bookmarksstore.DeleteBookmarkParams{ID: id, Owner: sess.Subject}); err != nil {
-		view.Fail(ctx, w, "bookmarks: deleting bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: deleting bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, "/bookmarks", http.StatusSeeOther)

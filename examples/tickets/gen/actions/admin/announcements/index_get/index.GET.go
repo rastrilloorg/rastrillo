@@ -32,7 +32,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	store := announcementsstore.New(ctx.DB)
 	total, err := store.CountAnnouncements(r.Context(), search)
 	if err != nil {
-		view.Fail(ctx, w, "announcements: counting announcements", err)
+		view.Fail(ctx, w, r, "announcements: counting announcements", err)
 		return
 	}
 	rows, err := store.ListAnnouncements(r.Context(), announcementsstore.ListAnnouncementsParams{
@@ -41,7 +41,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		PageLimit:  pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "announcements: loading announcements", err)
+		view.Fail(ctx, w, r, "announcements: loading announcements", err)
 		return
 	}
 

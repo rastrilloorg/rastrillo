@@ -28,6 +28,25 @@ func TestVendoredTokensCSSMatchesTheLibrary(t *testing.T) {
 	}
 }
 
+// tokens.css declares the colour tokens; a theme fills them in, so a
+// vendored theme can fall behind exactly the way the tokens once did.
+// The blog is scaffolded with ink — swap static/theme.css and this
+// constant together.
+func TestVendoredThemeCSSMatchesTheLibrary(t *testing.T) {
+	const vendoredTheme = "ink"
+	lib, ok := ui.ThemeCSS(vendoredTheme)
+	if !ok {
+		t.Fatalf("ui.ThemeCSS(%q) reports no such theme", vendoredTheme)
+	}
+	vendored, err := os.ReadFile(filepath.Join("..", "..", "static", "theme.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(vendored, lib) {
+		t.Errorf("static/theme.css differs from ui.ThemeCSS(%q); re-copy the library file", vendoredTheme)
+	}
+}
+
 // The embedded static tree serves through the fingerprinting handler
 // exactly as the old FileServerFS did for a bare name — /static/
 // tokens.css resolves against the embedded paths, which carry the

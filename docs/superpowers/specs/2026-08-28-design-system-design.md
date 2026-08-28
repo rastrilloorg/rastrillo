@@ -117,10 +117,12 @@ defaults:
 
 `column` defines only `title` and `locale`, and renders the switcher
 as a single line above `<main>` when there is more than one locale.
+As built, `column` defines `title`, `lang` and `dir` and no `locale`
+block at all (as built, 2026-08-28).
 
 The shell classes — `rst-shell-topbar`, `rst-shell-sidebar`,
-`rst-shell__rail`, `rst-shell__chrome`, `rst-shell__menu` — live in
-`tokens.css` beside the other class idioms, with `styleguideSamples`
+`rst-shell__rail`, `rst-shell__chrome`, ~~`rst-shell__menu`~~ (never
+built; see §2.4) — live in `tokens.css` beside the other class idioms, with `styleguideSamples`
 entries so `TestIdiomClassesAreStyled` covers them. Mobile collapse of
 the sidebar is `<details class="rst-shell__chrome">` — no JavaScript.
 
@@ -129,6 +131,8 @@ Built-in strings — skip link, "Menu", "Account", "Language" — are
 `lang` and `dir` from the request: the scaffold's render helper passes
 them in `data`; `ui` exports `Dir(locale) string` (`"rtl"` for `ar`,
 `fa`, `he`, `ur`; `"ltr"` otherwise) so an app never guesses.
+`Dir` shipped in the root `rastrillo` package instead, beside the rest
+of the locale surface, so `ui` need not import it (as built, 2026-08-28).
 
 ### 2.3 Delivery
 
@@ -141,7 +145,9 @@ validated before any file is written.
 ### 2.4 The language switcher
 
 A `<details class="rst-shell__menu rst-locale">` listing the app's
-declared locales. Each item is a link to the **same path under that
+declared locales. The switcher rides `rst-dropdown rst-locale`, reusing
+the ordinary dropdown vocabulary rather than a `rst-shell__menu` class
+that never needed to exist (as built, 2026-08-28). Each item is a link to the **same path under that
 locale's prefix** (`/ga/orders` for `/orders`), labelled by its
 autonym (`rastrillo.ui.locale_name` in that locale's catalog:
 "Gaeilge", "日本語", "العربية"), the current one `aria-current="true"`.
@@ -210,7 +216,9 @@ fallback chain grows one level:
 app catalog (request locale) → app catalog (default) → framework catalog (request locale) → framework en → key
 ```
 
-`NewLocales` takes the map; a declared locale with no framework catalog
+`NewLocales`'s signature is unchanged: it reads the framework catalogs
+internally rather than taking the map from its caller (as built,
+2026-08-28). A declared locale with no framework catalog
 (`fr`, say) skips the third level and lands on `en`, which is today's
 behaviour exactly. The framework catalog is looked up by the app's
 *declared* code, and only that: an app declaring `zh` gets no framework
@@ -397,7 +405,9 @@ localised through the catalog, so all twelve base languages ship it:
 
 Each page has exactly two actions: **Go back** (`history.back()` when
 JS is present, otherwise the `Referer` when same-origin, otherwise
-hidden) and **Start page** (`HomeHref`). A 500 shows `Ref` in a muted
+hidden) and **Start page** (`HomeHref`). Back renders only from a
+caller-validated `BackHref` — no `history.back()` and no `Referer`
+sniffing inside the partial (as built, 2026-08-28). A 500 shows `Ref` in a muted
 monospace line ("Reference: k7f2q9") — the same id the server logged,
 so support can find the log line from what the user quotes. Nothing
 about the error itself is ever shown: no stack, no message, no path.
@@ -408,9 +418,9 @@ statuses above, `error_generic_title`/`_body` for any other, `error_back`,
 
 ### 4b.2 The plumbing
 
-- `rastrillo.Ctx` gains `ErrorPage func(w http.ResponseWriter, r *http.Request, status int, ref string)` — set by the scaffold's render helper to render `error-page` inside the layout. Nil falls back to today's text.
+- `rastrillo.Ctx` gains `ErrorPage func(w http.ResponseWriter, r *http.Request, status int, ref string)` — set by the scaffold's render helper to render `error-page` inside the layout. Nil falls back to today's text. The scaffold wires `Options.ErrorPage` only; `Ctx.ErrorPage` is the app's own to set, because the mux scaffold has no ctx factory to hang it off (as built, 2026-08-28).
 - `view.Fail` mints a `ref` (6 chars, base32 of 4 random bytes), logs it beside the error, and calls `ctx.ErrorPage(w, r, 500, ref)`.
-- `view.NotFound(ctx, w, r)` and `view.Forbidden(ctx, w, r)` replace the bare `http.NotFound`/`http.Error` calls in the generated actions and the auth/password/passkey packages where a `Ctx` is in reach. Sites without a `Ctx` (the framework's own `/healthz`-tier routes) stay plain — they are never a user's screen.
+- `view.NotFound(ctx, w, r)` and `view.Forbidden(ctx, w, r)` replace the bare `http.NotFound`/`http.Error` calls in the generated actions and the auth/password/passkey packages where a `Ctx` is in reach. The generated-actions and identity-plugin adoption of the two helpers moves to PR 3; only `Fail`'s signature sweep landed with this PR (as built, 2026-08-28). Sites without a `Ctx` (the framework's own `/healthz`-tier routes) stay plain — they are never a user's screen.
 - `rastrillo.Serve` gains panic recovery: a recovered panic logs the stack with a ref and renders the 500 page through `Options.ErrorPage` (the same function, hoisted to Options so the recovery wrapper outside any `Ctx` can reach it). Today a panic is a dropped connection.
 - The scaffold's `templates/errors.html` defines `content` for `error-page` so an app can restyle it by editing a file it owns. The three shells render it at full page; the design-system page shows all five statuses in every theme.
 - `Accept: application/json` requests get `{"status":404,"ref":"…"}` — the generated actions' JSON paths already exist and just gain the ref.

@@ -40,7 +40,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "bookmarks: loading bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
 
@@ -76,7 +76,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 		ID:    id,
 	}); err != nil {
-		view.Fail(ctx, w, "bookmarks: updating bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: updating bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/bookmarks/%d", id), http.StatusSeeOther)

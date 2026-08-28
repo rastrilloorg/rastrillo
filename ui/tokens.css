@@ -16,88 +16,11 @@
    not a wish (ui_test.go, TestTokensCSSIsSelfContained) — which is also
    why this comment cannot spell those constructs out literally.
 
-   The look: ink on paper. Neutrals carry a faint violet cast rather than
-   the usual cool blue-grey, and the one accent is an iron-gall violet —
-   the colour writing ink oxidises to. Semantic status colours are
-   functional and never the accent, so a pill can never be mistaken for a
-   link. Both themes are authored, never inverted: dark follows the OS,
-   and the [data-theme] hooks let an explicit toggle win in both
-   directions.
-
-   ── WCAG 2.2 AA, measured ─────────────────────────────────────────────
-   Normal text needs 4.5:1; large text and UI component boundaries need
-   3:1. Every pair below was computed from these exact hex values. If you
-   change a token, recompute its row.
-
-   LIGHT                                     ratio      requirement
-     --rst-text        on --rst-surface       17.23      4.5:1  text
-     --rst-text        on --rst-bg            15.47      4.5:1  text
-     --rst-text        on --rst-surface-2     16.43      4.5:1  text
-     --rst-text        on --rst-accent-soft   15.11      4.5:1  text
-     --rst-text-muted  on --rst-surface        6.98      4.5:1  text
-     --rst-text-muted  on --rst-bg             6.26      4.5:1  text
-     --rst-text-muted  on --rst-surface-2      6.65      4.5:1  text
-     --rst-text-muted  on --rst-accent-soft    6.12      4.5:1  text
-     --rst-text-faint  on --rst-surface        5.21      4.5:1  text
-     --rst-text-faint  on --rst-bg             4.67      4.5:1  text
-     --rst-text-faint  on --rst-surface-2      4.96      4.5:1  text
-     --rst-text-faint  on --rst-accent-soft    4.56      4.5:1  text
-     --rst-accent      on --rst-surface        7.72      4.5:1  text + focus ring
-     --rst-accent      on --rst-bg             6.93      4.5:1  text + focus ring
-     --rst-accent      on --rst-surface-2      7.36      4.5:1  text
-     --rst-accent      on --rst-accent-soft    6.77      4.5:1  text
-     --rst-on-accent   on --rst-accent         7.72      4.5:1  button label
-     --rst-on-accent   on --rst-accent-strong 10.06      4.5:1  button label, hover
-     --rst-line-strong on --rst-surface        3.36      3:1    control border
-     --rst-line-strong on --rst-bg             3.02      3:1    control border
-     --rst-line-strong on --rst-surface-2      3.20      3:1    control border
-     pill neutral  fg on its own tint          7.88      4.5:1  text
-     pill positive fg on its own tint          6.10      4.5:1  text
-     pill warning  fg on its own tint          6.21      4.5:1  text
-     pill negative fg on its own tint          6.37      4.5:1  text
-
-   DARK                                      ratio      requirement
-     --rst-text        on --rst-surface       14.92      4.5:1  text
-     --rst-text        on --rst-bg            16.20      4.5:1  text
-     --rst-text        on --rst-surface-2     15.60      4.5:1  text
-     --rst-text        on --rst-accent-soft   13.35      4.5:1  text
-     --rst-text-muted  on --rst-surface        7.11      4.5:1  text
-     --rst-text-muted  on --rst-bg             7.72      4.5:1  text
-     --rst-text-muted  on --rst-surface-2      7.43      4.5:1  text
-     --rst-text-muted  on --rst-accent-soft    6.36      4.5:1  text
-     --rst-text-faint  on --rst-surface        5.69      4.5:1  text
-     --rst-text-faint  on --rst-bg             6.17      4.5:1  text
-     --rst-text-faint  on --rst-surface-2      5.95      4.5:1  text
-     --rst-text-faint  on --rst-accent-soft    5.09      4.5:1  text
-     --rst-accent      on --rst-surface        8.08      4.5:1  text + focus ring
-     --rst-accent      on --rst-bg             8.77      4.5:1  text + focus ring
-     --rst-accent      on --rst-surface-2      8.45      4.5:1  text
-     --rst-accent      on --rst-accent-soft    7.23      4.5:1  text
-     --rst-on-accent   on --rst-accent         8.15      4.5:1  button label
-     --rst-on-accent   on --rst-accent-strong 10.34      4.5:1  button label, hover
-     --rst-line-strong on --rst-surface        3.32      3:1    control border
-     --rst-line-strong on --rst-bg             3.60      3:1    control border
-     --rst-line-strong on --rst-surface-2      3.47      3:1    control border
-     pill neutral  fg on its own tint          7.43      4.5:1  text
-     pill positive fg on its own tint          8.42      4.5:1  text
-     pill warning  fg on its own tint          8.21      4.5:1  text
-     pill negative fg on its own tint          6.93      4.5:1  text
-
-   --rst-line is a hairline divider between rows, not a control border or
-   a meaningful graphic, so 1.4.11's 3:1 does not apply to it. Control
-   borders use --rst-line-strong, which does clear 3:1.
-
-   Pagination chips are the one deliberate exception: they are bordered
-   with --rst-line rather than --rst-line-strong, because a page strip
-   ringed in hard outlines shouts louder than the list it belongs to.
-   1.4.11 is satisfied without that border — each chip's meaning is
-   carried by its text label at 4.5:1 or better, and the current page
-   adds a filled background, a heavier weight and aria-current on top.
-   The border is decoration, so it is allowed to be quiet.
-
-   --rst-text-faint is the tightest pair in the set — 4.67:1 in light on
-   --rst-bg, against a 4.5:1 floor. Put it on a surface not listed above
-   and you are guessing; recompute first.
+   Colour and the type family are not here: they live in themes/ink.css,
+   which rastrillo new writes beside this file as static/theme.css. This
+   file is structure — layout, spacing, radius, the type scale, and the
+   component classes, every one of them painted with var(--rst-*). Swap
+   the theme file and the app changes palette; nothing here is touched.
 
    Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
    WCAG 2.2): pagination chips measure about 30px, row action pills
@@ -111,7 +34,6 @@
 
 /* ── Scale: type, spacing, radius. Theme-independent. ─────────────── */
 :root {
-  --rst-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --rst-fs-base: 0.875rem;   /* 14px at the browser default */
   --rst-fs-sm: 0.78125rem;   /* 12.5px */
   --rst-fs-xs: 0.71875rem;   /* 11.5px */
@@ -126,104 +48,6 @@
   --rst-radius: 10px;
   --rst-radius-sm: 7px;
   --rst-radius-pill: 999px;
-}
-
-/* ── Colour: light. Also the explicit-toggle-to-light case. ───────── */
-:root,
-:root[data-theme="light"] {
-  color-scheme: light;
-
-  --rst-bg: #f3f2f7;
-  --rst-surface: #ffffff;
-  --rst-surface-2: #faf9fc;
-  --rst-line: #e4e2ec;
-  --rst-line-strong: #8d89a4;
-
-  --rst-text: #1b1a23;
-  --rst-text-muted: #5b5670;
-  --rst-text-faint: #6e6987;
-
-  --rst-accent: #5b3fa8;
-  --rst-accent-strong: #47308f;
-  --rst-accent-soft: #f2eefc;
-  --rst-on-accent: #ffffff;
-
-  --rst-tone-neutral-fg: #45415a;
-  --rst-tone-neutral-bg: #e8e6ef;
-  --rst-tone-positive-fg: #17603f;
-  --rst-tone-positive-bg: #d7ecdf;
-  --rst-tone-warning-fg: #74490e;
-  --rst-tone-warning-bg: #f4e4c9;
-  --rst-tone-negative-fg: #93262f;
-  --rst-tone-negative-bg: #f9dcdd;
-
-  --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* ── Colour: dark, following the OS. ──────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --rst-bg: #0d0c12;
-    --rst-surface: #17161f;
-    --rst-surface-2: #121119;
-    --rst-line: #292733;
-    --rst-line-strong: #6b6782;
-
-    --rst-text: #ebe9f2;
-    --rst-text-muted: #a5a0b8;
-    --rst-text-faint: #928db0;
-
-    --rst-accent: #b6a0ff;
-    --rst-accent-strong: #cbbaff;
-    --rst-accent-soft: #241c3d;
-    --rst-on-accent: #1a1030;
-
-    --rst-tone-neutral-fg: #bcb7cf;
-    --rst-tone-neutral-bg: #2a2836;
-    --rst-tone-positive-fg: #74dba8;
-    --rst-tone-positive-bg: #16301f;
-    --rst-tone-warning-fg: #eab86c;
-    --rst-tone-warning-bg: #322512;
-    --rst-tone-negative-fg: #f58c95;
-    --rst-tone-negative-bg: #35191e;
-
-    --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* ── Colour: dark, chosen explicitly. Higher specificity than the
-      media query above, so a toggle wins over the OS in both
-      directions. ───────────────────────────────────────────────────── */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --rst-bg: #0d0c12;
-  --rst-surface: #17161f;
-  --rst-surface-2: #121119;
-  --rst-line: #292733;
-  --rst-line-strong: #6b6782;
-
-  --rst-text: #ebe9f2;
-  --rst-text-muted: #a5a0b8;
-  --rst-text-faint: #928db0;
-
-  --rst-accent: #b6a0ff;
-  --rst-accent-strong: #cbbaff;
-  --rst-accent-soft: #241c3d;
-  --rst-on-accent: #1a1030;
-
-  --rst-tone-neutral-fg: #bcb7cf;
-  --rst-tone-neutral-bg: #2a2836;
-  --rst-tone-positive-fg: #74dba8;
-  --rst-tone-positive-bg: #16301f;
-  --rst-tone-warning-fg: #eab86c;
-  --rst-tone-warning-bg: #322512;
-  --rst-tone-negative-fg: #f58c95;
-  --rst-tone-negative-bg: #35191e;
-
-  --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Base. Three rules, so a freshly scaffolded app looks finished
@@ -313,8 +137,9 @@ body {
    bulk-bar's actions menu). --rst-tone-negative-fg already clears
    4.5:1 as a filled background against --rst-on-accent's label colour
    in both themes, so no new custom properties are needed — computed
-   with the same WCAG relative-luminance formula as the table at the
-   top of this file:
+   with the same WCAG relative-luminance formula as each theme file's
+   own contrast table (ink's values, shown; every theme's own pair is
+   gated the same way):
      light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#93262f)   8.21:1
      dark   --rst-on-accent (#1a1030) on --rst-tone-negative-fg (#f58c95)   7.81:1
    Hover darkens via filter rather than a themed "negative-strong"
@@ -322,7 +147,8 @@ body {
    (and, being a post-paint filter, the label too), so one rule works
    in both themes without a new pair of colours to maintain. Re-checked
    with the label included in the scaled result, both still clear
-   4.5:1 by a wide margin:
+   4.5:1 by a wide margin (ink's values again; a post-paint filter
+   result, so these two rows are illustrative rather than gated):
      light  0.9× fill (#84222a) vs 0.9× label (#e6e6e6)   7.50:1
      dark   0.9× fill (#dc7e86) vs 0.9× label (#170e2b)   6.50:1
    background/border-color/color are restated on :hover, matching
@@ -703,7 +529,7 @@ body {
 .rst-callout__body > strong { display: block; font-weight: 600; }
 .rst-callout__body > p { color: var(--rst-text-muted); margin: 0.15rem 0 0; }
 .rst-callout__body > p:only-child { color: inherit; margin: 0; }
-.rst-callout__body > ul { color: var(--rst-text-muted); margin: 0.15rem 0 0; padding-left: 1.1rem; }
+.rst-callout__body > ul { color: var(--rst-text-muted); margin: 0.15rem 0 0; padding-inline-start: 1.1rem; }
 .rst-callout[data-tone="positive"] { background: var(--rst-tone-positive-bg); border-color: var(--rst-tone-positive-fg); }
 .rst-callout[data-tone="positive"] > .rst-callout__ic { color: var(--rst-tone-positive-fg); }
 .rst-callout[data-tone="warning"] { background: var(--rst-tone-warning-bg); border-color: var(--rst-tone-warning-fg); }
@@ -759,7 +585,7 @@ body {
 .rst-lrow:last-child { border-bottom: 0; }
 .rst-lrow--head { color: var(--rst-text-faint); font-size: 0.71875rem; font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
 .rst-lrow:not(.rst-lrow--head):has(> .rst-nm, > .rst-person):hover { background: var(--rst-accent-soft); }
-.rst-nm { border-radius: var(--rst-radius-sm); color: inherit; font-weight: 550; min-width: 0; text-align: left; text-decoration: none; }
+.rst-nm { border-radius: var(--rst-radius-sm); color: inherit; font-weight: 550; min-width: 0; text-align: start; text-decoration: none; }
 a.rst-nm:hover { color: var(--rst-accent); }
 .rst-nm small { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); font-weight: 400; }
 .rst-cell-mut { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -777,8 +603,8 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-row-menu > summary { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-faint); cursor: pointer; display: flex; height: 26px; justify-content: center; list-style: none; width: 26px; }
 .rst-row-menu > summary::-webkit-details-marker { display: none; }
 .rst-row-menu > summary:hover, .rst-row-menu[open] > summary { background: var(--rst-accent-soft); color: var(--rst-text); }
-.rst-row-menu__panel { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); min-width: 176px; padding: 0.25rem; position: absolute; right: 0; top: calc(100% + 4px); z-index: 40; }
-.rst-row-menu__panel a, .rst-row-menu__panel button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); font-weight: 450; margin: 0; padding: 0.4rem 0.65rem; text-align: left; text-decoration: none; width: 100%; }
+.rst-row-menu__panel { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; min-width: 176px; padding: 0.25rem; position: absolute; top: calc(100% + 4px); z-index: 40; }
+.rst-row-menu__panel a, .rst-row-menu__panel button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); font-weight: 450; margin: 0; padding: 0.4rem 0.65rem; text-align: start; text-decoration: none; width: 100%; }
 .rst-row-menu__panel a:hover, .rst-row-menu__panel button:hover { background: var(--rst-accent-soft); }
 .rst-row-menu__panel hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
 .rst-danger { color: var(--rst-tone-negative-fg); }
@@ -791,7 +617,7 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-dropdown > summary { align-items: center; color: var(--rst-text-muted); cursor: pointer; display: flex; gap: 0.3rem; list-style: none; padding: 0.4rem 0.6rem; white-space: nowrap; }
 .rst-dropdown > summary::-webkit-details-marker { display: none; }
 .rst-dropdown > summary:hover, .rst-dropdown[open] > summary { color: var(--rst-text); }
-.rst-dropdown__menu { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); margin-top: 4px; min-width: 176px; padding: 0.25rem; position: absolute; right: 0; top: 100%; z-index: 30; }
+.rst-dropdown__menu { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; margin-top: 4px; min-width: 176px; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
 .rst-dropdown__menu a { border-radius: var(--rst-radius-sm); color: inherit; display: block; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-decoration: none; }
 .rst-dropdown__menu a:hover, .rst-dropdown__menu a[aria-current] { background: var(--rst-accent-soft); }
 /* locale-menu — the language switcher is a dropdown whose items are
@@ -806,19 +632,19 @@ a.rst-nm:hover { color: var(--rst-accent); }
    is real submit buttons on the surrounding form, so the same panel
    needs button styling too — mirrors .rst-row-menu__panel's combined
    a/button rule above. */
-.rst-dropdown__menu button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); margin: 0; padding: 0.4rem 0.65rem; text-align: left; width: 100%; }
+.rst-dropdown__menu button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); margin: 0; padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
 .rst-dropdown__menu button:hover { background: var(--rst-accent-soft); }
 .rst-dropdown__menu .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 .rst-dropdown__menu .rst-menu-group > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
 .rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker { display: none; }
-.rst-dropdown__menu .rst-menu-group > div { padding-left: 0.6rem; }
+.rst-dropdown__menu .rst-menu-group > div { padding-inline-start: 0.6rem; }
 .rst-caret { align-items: center; color: var(--rst-text-faint); display: inline-flex; font-size: 0.8em; transition: transform 0.15s; }
 .rst-caret svg, .rst-caret .icon { display: block; height: 1em; width: 1em; }
 details[open] > summary > .rst-caret { transform: rotate(180deg); }
 
 /* ftok — an applied filter as a removable chip; the × is a plain link
    to the unfiltered URL, so removing a filter is just navigation. */
-.rst-ftok { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding: 0.1rem 0.3rem 0.1rem 0.6rem; }
+.rst-ftok { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0.1rem; padding-inline: 0.6rem 0.3rem; }
 .rst-ftok .rst-ftok__k { color: var(--rst-text-muted); }
 .rst-ftok a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 17px; justify-content: center; text-decoration: none; width: 17px; }
 .rst-ftok a:hover { background: var(--rst-tone-negative-bg); color: var(--rst-tone-negative-fg); }
@@ -851,11 +677,16 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-field__help { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
 .rst-field__error { color: var(--rst-tone-negative-fg); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
 
-/* switch — the one toggle mechanism: real checkbox, visible track. */
+/* switch — the one toggle mechanism: real checkbox, visible track. The
+   knob's left: 2px is deliberately physical, not inset-inline-start: it
+   is the origin of a physical translateX, so the pair has to travel the
+   same axis in either writing mode or the knob leaves the track. What
+   that gives up: the knob therefore always travels left-to-right, so a
+   mirrored switch would need a direction-scoped rule of its own. */
 .rst-switch { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input { height: 1px; opacity: 0; position: absolute; width: 1px; }
 .rst-switch__track { background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; transition: background 0.15s; width: 34px; }
-.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
+.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
 .rst-switch:has(input:checked) .rst-switch__track { background: var(--rst-accent); }
 .rst-switch:has(input:checked) .rst-switch__track::after { transform: translateX(15px); }
 .rst-switch:has(input:focus-visible) .rst-switch__track { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
@@ -877,7 +708,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-seg-tabs { background: var(--rst-accent-soft); border-radius: 8px; display: flex; gap: 2px; padding: 2px; width: max-content; }
 .rst-seg-tabs a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
 .rst-seg-tabs a:hover { color: var(--rst-text); }
-.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); color: var(--rst-text); font-weight: 600; }
+.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field { margin-top: var(--rst-sp-5); }
@@ -885,7 +716,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-field-row .rst-field { margin: 0; }
 .rst-field-row > .rst-grow { flex: 1; min-width: 0; }
 .rst-form-foot { align-items: center; background: var(--rst-bg); border-top: 1px solid var(--rst-line); bottom: 0; display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.75rem; padding: 0.8rem 0; position: sticky; z-index: 5; }
-.rst-form-foot .rst-form-foot__note { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin-right: auto; }
+.rst-form-foot .rst-form-foot__note { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin-inline-end: auto; }
 .rst-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 /* form/form-foot — the container the form-foot partial's callers wrap
    fields in, and the closing action row form-foot itself emits. */
@@ -919,19 +750,19 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
    plain link to that page. */
 .rst-backdrop { display: contents; }
 body:has(.rst-backdrop) { overflow: hidden; }
-.rst-modal-overlay { align-items: center; background: rgba(0, 0, 0, 0.45); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
+.rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
 .rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
-.rst-modal-panel > nav { border-right: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
+.rst-modal-panel > nav { border-inline-end: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
 .rst-modal-panel > nav a { border-radius: 8px; color: inherit; padding: 0.4rem 0.65rem; text-decoration: none; }
 .rst-modal-panel > nav a:hover { background: var(--rst-accent-soft); }
 .rst-modal-panel > nav a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
 .rst-modal-panel > section { flex: 1; min-width: 0; overflow-y: auto; padding: 1.5rem 2rem 2rem; position: relative; }
-.rst-modal-close { color: var(--rst-text-muted); font-size: 1.5rem; line-height: 1; position: absolute; right: 1.1rem; text-decoration: none; top: 1rem; }
+.rst-modal-close { color: var(--rst-text-muted); font-size: 1.5rem; inset-inline-end: 1.1rem; line-height: 1; position: absolute; text-decoration: none; top: 1rem; }
 .rst-modal-close:hover { color: inherit; }
 @media (max-width: 800px) {
   .rst-modal-overlay { padding: 0.75rem; }
   .rst-modal-panel { flex-direction: column; max-height: 92vh; }
-  .rst-modal-panel > nav { border-bottom: 1px solid var(--rst-line); border-right: 0; flex-direction: row; width: auto; }
+  .rst-modal-panel > nav { border-bottom: 1px solid var(--rst-line); border-inline-end: 0; flex-direction: row; width: auto; }
 }
 
 /* help — a bordered ? icon-link to a section's help article: plain <a>,
@@ -940,18 +771,18 @@ body:has(.rst-backdrop) { overflow: hidden; }
 .rst-help { align-items: center; border: 1px solid var(--rst-line-strong); border-radius: 7px; color: var(--rst-text-muted); display: inline-flex; height: 28px; justify-content: center; position: relative; width: 28px; }
 .rst-help:hover { border-color: var(--rst-text-faint); color: var(--rst-text); }
 .rst-help svg, .rst-help .icon { height: 15px; width: 15px; }
-.rst-tip::after { background: var(--rst-text); border-radius: var(--rst-radius-sm); color: var(--rst-bg); content: attr(data-tip); font-size: 0.71875rem; font-weight: 500; opacity: 0; padding: 3px 8px; pointer-events: none; position: absolute; right: 0; top: calc(100% + 6px); transition: opacity 0.12s; white-space: nowrap; z-index: 35; }
+.rst-tip::after { background: var(--rst-text); border-radius: var(--rst-radius-sm); color: var(--rst-bg); content: attr(data-tip); font-size: 0.71875rem; font-weight: 500; inset-inline-end: 0; opacity: 0; padding: 3px 8px; pointer-events: none; position: absolute; top: calc(100% + 6px); transition: opacity 0.12s; white-space: nowrap; z-index: 35; }
 .rst-tip:hover::after, .rst-tip:focus-visible::after { opacity: 1; }
 
 /* bulk-bar + selbox — select mode as server-rendered state. */
-.rst-bulkbar { align-items: center; background: var(--rst-accent-soft); border-bottom: 1px solid var(--rst-line); display: flex; gap: 0.7rem; min-height: 46px; padding: 0 0.85rem 0 0.6rem; }
+.rst-bulkbar { align-items: center; background: var(--rst-accent-soft); border-bottom: 1px solid var(--rst-line); display: flex; gap: 0.7rem; min-height: 46px; padding-block: 0; padding-inline: 0.6rem 0.85rem; }
 .rst-bulkbar__close { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); display: inline-flex; height: 26px; justify-content: center; text-decoration: none; width: 26px; }
 .rst-bulkbar__close:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .rst-bulkbar__close svg, .rst-bulkbar__close .icon { height: 15px; width: 15px; }
 .rst-bulkbar__count { font-size: var(--rst-fs-sm); font-weight: 600; }
 .rst-bulkbar__escalate { color: var(--rst-accent); font-size: var(--rst-fs-xs); font-weight: 550; text-decoration: none; }
 .rst-bulkbar__escalate:hover { text-decoration: underline; }
-.rst-bulkbar .rst-dropdown { margin-left: auto; }
+.rst-bulkbar .rst-dropdown { margin-inline-start: auto; }
 .rst-bulkbar .rst-dropdown > summary { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; font-size: var(--rst-fs-xs); font-weight: 550; padding: 0.22rem 0.6rem; }
 .rst-selbox { align-items: center; display: flex; margin: 0; }
 .rst-selbox input { accent-color: var(--rst-accent); cursor: pointer; height: 16px; margin: 0; width: 16px; }
@@ -975,6 +806,8 @@ body:has(.rst-backdrop) { overflow: hidden; }
   width: 1em;
   height: 1em;
   border: 2px solid currentColor;
+  /* Physical on purpose: the gap in a ring that rotates a full turn
+     every 0.8s has no start or end side to mirror. */
   border-right-color: transparent;
   border-radius: 50%;
   vertical-align: -0.15em;
@@ -996,6 +829,69 @@ body:has(.rst-backdrop) { overflow: hidden; }
 /* The committed option is marked in the accessibility tree by
    aria-selected; this is the matching visual, never the only signal. */
 .rst-combo__option[aria-selected="true"] { font-weight: 600; }
+
+/* ── Shells: the page frames an app's layout template wraps .rst-page
+      in — topbar and sidebar. Written in logical properties throughout,
+      so a right-to-left locale gets a mirrored shell for free: the rail
+      moves to the inline end, the account menu with it, and nothing
+      here needs a second rule. ─────────────────────────────────────── */
+
+/* skip link — first in the DOM of every shell, out of sight until it
+   takes focus, then a real chip at the block/inline start. A keyboard
+   user must be able to jump the nav; this is the whole mechanism. */
+.rst-skip { block-size: 1px; clip-path: inset(50%); inline-size: 1px; overflow: hidden; position: absolute; white-space: nowrap; }
+.rst-skip:focus-visible { background: var(--rst-surface); block-size: auto; border: 1px solid var(--rst-accent); border-radius: var(--rst-radius-sm); clip-path: none; color: var(--rst-text); inline-size: auto; inset-block-start: var(--rst-sp-2); inset-inline-start: var(--rst-sp-2); overflow: visible; padding: 0.4rem 0.7rem; text-decoration: none; z-index: 60; }
+
+/* topbar shell — brand, nav and an account menu on one bar, the page
+   column beneath it, a footer under that. The account dropdown is
+   pushed to the inline end by auto margin, not by order or float. */
+.rst-shell-topbar .rst-shell__bar { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-4); padding-block: 0.5rem; padding-inline: var(--rst-sp-4); }
+.rst-shell__brand { color: inherit; font-weight: 650; text-decoration: none; }
+.rst-shell__nav { display: flex; gap: var(--rst-sp-4); }
+.rst-shell__nav a { border-block-end: 2px solid transparent; color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding-block: 0.3rem; text-decoration: none; }
+.rst-shell__nav a:hover { color: var(--rst-text); }
+.rst-shell__nav a[aria-current] { border-block-end-color: var(--rst-accent); color: var(--rst-text); font-weight: 550; }
+.rst-shell__account { margin-inline-start: auto; }
+/* an account menu whose block was never overridden has an empty menu; hide the whole control rather than show a dead summary. */
+.rst-shell__account:has(> .rst-dropdown__menu:empty) { display: none; }
+.rst-shell__foot { border-block-start: 1px solid var(--rst-line); color: var(--rst-text-muted); font-size: var(--rst-fs-xs); padding-block: var(--rst-sp-4); padding-inline: var(--rst-sp-4); text-align: center; }
+/* the topbar shell emits a foot even when the block is un-overridden; an empty one is a stray rule and padding, so draw nothing. */
+.rst-shell__foot:empty { display: none; }
+
+/* sidebar shell — a rail beside the page. Below 800px the rail is
+   hidden behind a <details> chrome strip and, opened, becomes an
+   ordinary full-width block above the content: the open state is the
+   native element's own, so the shell stays zero-JS like every idiom
+   above it. The main column carries min-inline-size: 0 so a wide child
+   (a list grid, a <pre>) scrolls itself instead of stretching the grid
+   track. */
+.rst-shell__main { min-inline-size: 0; }
+.rst-shell-sidebar > .rst-shell__rail { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+.rst-shell-sidebar > .rst-shell__chrome > summary { align-items: center; border-block-end: 1px solid var(--rst-line); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.3rem; list-style: none; padding-block: 0.55rem; padding-inline: var(--rst-sp-4); }
+.rst-shell-sidebar > .rst-shell__chrome > summary::-webkit-details-marker { display: none; }
+.rst-shell-sidebar > .rst-shell__chrome[open] + .rst-shell__rail { display: flex; }
+.rst-shell__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block: var(--rst-sp-3) 0.2rem; text-transform: uppercase; }
+.rst-shell-sidebar .rst-shell__nav { flex-direction: column; gap: 2px; }
+.rst-shell-sidebar .rst-shell__nav a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
+.rst-shell-sidebar .rst-shell__nav a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-shell-sidebar .rst-shell__nav a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+@media (min-width: 800px) {
+  .rst-shell-sidebar { display: grid; grid-template-columns: 15rem 1fr; }
+  .rst-shell-sidebar > .rst-shell__chrome { display: none; }
+  .rst-shell-sidebar > .rst-shell__rail { block-size: 100dvh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
+}
+
+/* error page — one centred column, whatever shell it lands in: the
+   status as a quiet label above the sentence, one or two ways out, and
+   the reference last, where an operator asked to quote it will find it.
+   Logical properties throughout, so an RTL locale mirrors it with no
+   second rule. */
+.rst-error { margin-inline: auto; max-inline-size: 28rem; padding-block: 4rem var(--rst-sp-6); padding-inline: var(--rst-sp-4); text-align: center; }
+.rst-error__status { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 600; letter-spacing: 0.08em; margin: 0; }
+.rst-error__title { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin-block: var(--rst-sp-2) 0; }
+.rst-error__body { color: var(--rst-text-muted); margin-block: var(--rst-sp-3) 0; }
+.rst-error__cta { display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); justify-content: center; margin-block: var(--rst-sp-5) 0; }
+.rst-error__ref { color: var(--rst-text-faint); margin-block: 2rem 0; }
 
 /* ---------------------------------------------------------------------
    Utilities, last on purpose.

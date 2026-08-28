@@ -37,14 +37,17 @@ func runNew(args []string) error {
 	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
 	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
 	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
+	theme := fset.String("theme", "ink", "colour theme: "+strings.Join(ui.ThemeNames(), ", "))
+	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
 	rest := fset.Args()
 	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] <name>",
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] <name>",
 			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
-			strings.Join(profileNames(), "|"))
+			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"),
+			strings.Join(ui.LayoutNames(), "|"))
 	}
 	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
@@ -63,6 +66,14 @@ func runNew(args []string) error {
 	conventions, err := conventionsSection(*uxProfile, *iconSet, *iconDelivery)
 	if err != nil {
 		return err
+	}
+	themeCSS, ok := ui.ThemeCSS(*theme)
+	if !ok {
+		return fmt.Errorf("unknown theme %q: known themes are %s", *theme, strings.Join(ui.ThemeNames(), ", "))
+	}
+	layoutHTML, ok := ui.Layout(*shell)
+	if !ok {
+		return fmt.Errorf("unknown shell %q: known shells are %s", *shell, strings.Join(ui.LayoutNames(), ", "))
 	}
 
 	pkg := packageName(name)
@@ -88,14 +99,20 @@ func runNew(args []string) error {
 	files := map[string]string{
 		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
 			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
-		filepath.Join(name, "cmd", name, "main.go"):       fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(appDir, "app.go"):                   fmt.Sprintf(appTemplate, pkg),
-		filepath.Join(appDir, "models.go"):                fmt.Sprintf(modelsTemplate, pkg),
-		filepath.Join(appDir, "migrations.go"):            fmt.Sprintf(migrationsTemplate, pkg),
-		filepath.Join(appDir, "handlers.go"):              fmt.Sprintf(handlersTemplate, pkg),
-		filepath.Join(appDir, "render.go"):                fmt.Sprintf(renderTemplate, name, pkg),
-		filepath.Join(appDir, "templates", "layout.html"): layoutTemplate,
+		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
+		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg),
+		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
+		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
+		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg),
+		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg),
+		// The page frame, chosen by --shell and delivered verbatim from
+		// ui.Layout: app-owned from here on, exactly like tokens.css.
+		// Its chrome is blocks with working defaults (title, lang, dir,
+		// and in the chrome shells brand/nav/account/locale/foot), so a
+		// page overrides only what it cares about.
+		filepath.Join(appDir, "templates", "layout.html"): string(layoutHTML),
 		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
+		filepath.Join(appDir, "templates", "errors.html"): errorsTemplate,
 		// The initial migration and the schema.sql snapshot it adds up
 		// to, both static: the scaffold's Note model is fixed and
 		// known at the time this template is written, so unlike a real
@@ -111,6 +128,11 @@ func runNew(args []string) error {
 		// never serves CSS at runtime; from here on this is an ordinary
 		// app-owned file that new/generate never touch again.
 		filepath.Join(appDir, "static", "tokens.css"): string(ui.TokensCSS()),
+		// The colours. tokens.css is structural only — every colour
+		// token gets its value here — so an app without a theme renders
+		// colourless. Delivered on the same terms: app-owned from here,
+		// swap it for another of ui.ThemeNames() or edit it freely.
+		filepath.Join(appDir, "static", "theme.css"): string(themeCSS),
 		// The fragment shim, delivered once like tokens.css: app-owned
 		// from here on, loaded by the layout via the same fingerprinting
 		// {{asset ...}} helper.
@@ -128,7 +150,7 @@ func runNew(args []string) error {
 		// The pin that makes the vendored bytes above verifiable: a
 		// reviewer runs the suite and knows static/'s ~56KB is the
 		// library's, not app diff to read line by line.
-		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg),
+		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, *theme),
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg),
 		// The browser drive, on the same delivered-once terms as the
 		// harness. browser_test.go, never harness_test.go: that name
@@ -188,6 +210,10 @@ func runNew(args []string) error {
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
 	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
+	fmt.Printf("  internal/%s/static/theme.css (the %s theme — app-owned; --theme picks from %s)\n",
+		pkg, *theme, strings.Join(ui.ThemeNames(), ", "))
+	fmt.Printf("  internal/%s/templates/layout.html (the %s shell — app-owned; --shell picks from %s)\n",
+		pkg, *shell, strings.Join(ui.LayoutNames(), ", "))
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
 	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
@@ -309,6 +335,10 @@ func main() {
 
 	opts.Mux = mux
 	opts.DBPath = ""
+	// The same page a handler's own error path renders (render.go's
+	// ErrorPage — wire it to Ctx.ErrorPage too as the app grows
+	// handlers), so a panic and a handled failure look identical.
+	opts.ErrorPage = %[2]s.ErrorPage
 	if err := rastrillo.Serve(opts); err != nil {
 		logger.Error("serve failed", "err", err)
 		os.Exit(1)
@@ -503,6 +533,7 @@ import (
 	"net/http"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/ui"
 
 	"%[1]s/internal/%[2]s/icons"
 )
@@ -521,19 +552,24 @@ var assets = rastrillo.NewAssets(appFS)
 var pages = map[string]*template.Template{}
 
 func init() {
-	for _, name := range []string{"index"} {
-		pages[name] = template.Must(template.New("layout").
-			Funcs(template.FuncMap{
-				"asset": assets.Path,
-				// The app's own icon set (internal/%[2]s/icons), scaffolded
-				// by rastrillo new. iconAssets is whatever <head> markup the
-				// chosen delivery needs — empty for the vendored-inline
-				// default, so the layout calls it unconditionally and
-				// switching delivery later needs no template edit.
-				"icon":       icons.Icon,
-				"iconAssets": icons.Assets,
-			}).
-			ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
+	for _, name := range []string{"index", "errors"} {
+		pages[name] = template.Must(
+			// ui's partials and their helpers first, so every page can
+			// call one without registering anything. WithIcons points
+			// ui's two icon seams at the app's own set
+			// (internal/%[2]s/icons, scaffolded by rastrillo new) —
+			// both of them, always: passing only icon would leave
+			// iconAssets on the framework default and silently break
+			// cdn and js delivery. iconAssets is whatever <head> markup
+			// the chosen delivery needs, empty for the vendored-inline
+			// default, so the layout calls it unconditionally and
+			// switching delivery later needs no template edit.
+			template.Must(template.New("layout").
+				Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
+				Funcs(template.FuncMap{"asset": assets.Path}).
+				ParseFS(ui.Templates(), "*.html")).
+				// Then the app's own: the shell and this page's body.
+				ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
 	}
 }
 
@@ -549,31 +585,38 @@ func render(w http.ResponseWriter, name string, data any) {
 	}
 	buf.WriteTo(w)
 }
-`
 
-const layoutTemplate = `{{define "layout"}}<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{block "title" .}}Hello{{end}}</title>
-<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
-<script defer src="{{asset "static/rastrillo.js"}}"></script>
-{{iconAssets}}
-<script defer src="{{asset "static/select.js"}}"></script>
-</head>
-<body>
-<main>
-{{template "content" .}}
-</main>
-</body>
-</html>
-{{end}}
+// ErrorPage renders the "errors" page — templates/errors.html, which
+// wraps ui's error-page partial in the layout — for status inside ref
+// (rastrillo.NewRef, or empty when there is none to show). It is the
+// rastrillo.ErrorPageFunc cmd/%[1]s/main.go points Options.ErrorPage at,
+// so a panic gets the same page a handled failure would; wire it to
+// Ctx.ErrorPage too as the app grows handlers of its own.
+func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
+	w.WriteHeader(status)
+	render(w, "errors", map[string]any{"Status": status, "Ref": ref})
+}
 `
 
 const indexTemplate = `{{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
+`
+
+// errorsTemplate is templates/errors.html: the whole page is ui's
+// error-page partial (dict builds its one data value inline — no
+// per-page view-model type for a two-field page), so restyling the
+// error page or adding a Body/BackHref override means editing this one
+// file, not the partial ui ships.
+const errorsTemplate = `{{/* errors.html — the app's error page: layout.html's content block
+     rendered by render.go's ErrorPage, which cmd/<app>/main.go points
+     Options.ErrorPage at (so a panic gets this page) and which the app
+     can wire to Ctx.ErrorPage too as handlers grow. All the wording
+     and layout live in the partial below — restyle the error page by
+     editing this file, or hand it Title/Body/HomeHref/BackHref to
+     override the partial's own catalog defaults; see
+     ui/partials/error-page.html for what it accepts. */}}
+{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}
 `
 
 // harnessTemplate is the scaffolded test harness, delivered once as
@@ -674,8 +717,16 @@ import (
 // to re-copy is caught instead of drifting silently. If you edit one
 // DELIBERATELY, delete its line below — the file is yours.
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
+	// The theme this app was scaffolded with. Change it here when you
+	// swap static/theme.css for another of ui.ThemeNames().
+	const vendoredTheme = "%[2]s"
+	themeCSS, ok := ui.ThemeCSS(vendoredTheme)
+	if !ok {
+		t.Fatalf("unknown theme %%q", vendoredTheme)
+	}
 	for name, lib := range map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
+		"theme.css":    themeCSS,
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
 	} {
@@ -695,9 +746,12 @@ const indexTestTemplate = `package %[2]stest
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"strings"
 	"testing"
+
+	%[2]s "%[1]s/internal/%[2]s"
 )
 
 // hashedStylesheet is the fingerprinted URL shape the index page
@@ -738,6 +792,25 @@ func TestBareAssetNameStaysFresh(t *testing.T) {
 	}
 	if got := rec.Header().Get("Cache-Control"); got != "no-cache" {
 		t.Errorf("Cache-Control = %%q, want no-cache", got)
+	}
+}
+
+// ErrorPage is what main.go points Options.ErrorPage at (and the seam
+// to wire into Ctx.ErrorPage as handlers grow); called directly, it
+// pins that a panic's page is the framework's error-page partial, not
+// a stray net/http default.
+func TestErrorPageRendersFrameworkPartial(t *testing.T) {
+	rec := httptest.NewRecorder()
+	%[2]s.ErrorPage(rec, httptest.NewRequest(http.MethodGet, "/", nil), http.StatusInternalServerError, "abc123")
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("ErrorPage: status %%d, want %%d", rec.Code, http.StatusInternalServerError)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Something went wrong on our side") {
+		t.Errorf("ErrorPage body missing the 500 title:\n%%s", body)
+	}
+	if !strings.Contains(body, "abc123") {
+		t.Errorf("ErrorPage body missing the ref:\n%%s", body)
 	}
 }
 `

@@ -72,7 +72,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		FilterTitle: filterTitle,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "notes: counting notes", err)
+		view.Fail(ctx, w, r, "notes: counting notes", err)
 		return
 	}
 	rows, err := store.ListNotes(r.Context(), notesstore.ListNotesParams{
@@ -82,7 +82,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		PageLimit:   pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "notes: loading notes", err)
+		view.Fail(ctx, w, r, "notes: loading notes", err)
 		return
 	}
 
@@ -212,7 +212,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "notes: loading notes", err)
+		view.Fail(ctx, w, r, "notes: loading notes", err)
 		return
 	}
 
@@ -228,7 +228,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 		ID:    id,
 	}); err != nil {
-		view.Fail(ctx, w, "notes: updating notes", err)
+		view.Fail(ctx, w, r, "notes: updating notes", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/notes/%d", id), http.StatusSeeOther)
@@ -272,7 +272,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "notes: loading notes", err)
+		view.Fail(ctx, w, r, "notes: loading notes", err)
 		return
 	}
 
@@ -343,7 +343,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "notes: loading notes", err)
+		view.Fail(ctx, w, r, "notes: loading notes", err)
 		return
 	}
 
@@ -376,7 +376,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 		ID:    id,
 	}); err != nil {
-		view.Fail(ctx, w, "notes: updating notes", err)
+		view.Fail(ctx, w, r, "notes: updating notes", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/notes/%d", id), http.StatusSeeOther)
@@ -446,7 +446,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		FilterStatus: filterStatus,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "events: counting events", err)
+		view.Fail(ctx, w, r, "events: counting events", err)
 		return
 	}
 	rows, err := store.ListEvents(r.Context(), eventsstore.ListEventsParams{
@@ -456,7 +456,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		PageLimit:    pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "events: loading events", err)
+		view.Fail(ctx, w, r, "events: loading events", err)
 		return
 	}
 
@@ -683,7 +683,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:    now,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "events: creating events", err)
+		view.Fail(ctx, w, r, "events: creating events", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/events/%d", id), http.StatusSeeOther)
@@ -769,7 +769,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "events: loading events", err)
+		view.Fail(ctx, w, r, "events: loading events", err)
 		return
 	}
 
@@ -802,7 +802,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:    now,
 		ID:     id,
 	}); err != nil {
-		view.Fail(ctx, w, "events: updating events", err)
+		view.Fail(ctx, w, r, "events: updating events", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/events/%d", id), http.StatusSeeOther)
@@ -895,7 +895,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Search: search,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "bookmarks: counting bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: counting bookmarks", err)
 		return
 	}
 	rows, err := store.ListBookmarks(r.Context(), bookmarksstore.ListBookmarksParams{
@@ -905,7 +905,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		PageLimit:  pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "bookmarks: loading bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
 
@@ -1045,7 +1045,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Now:   now,
 	})
 	if err != nil {
-		view.Fail(ctx, w, "bookmarks: creating bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: creating bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/bookmarks/%d", id), http.StatusSeeOther)
@@ -1092,11 +1092,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
-		view.Fail(ctx, w, "bookmarks: loading bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
 	if err := store.DeleteBookmark(r.Context(), bookmarksstore.DeleteBookmarkParams{ID: id, Owner: sess.Subject}); err != nil {
-		view.Fail(ctx, w, "bookmarks: deleting bookmarks", err)
+		view.Fail(ctx, w, r, "bookmarks: deleting bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, "/bookmarks", http.StatusSeeOther)

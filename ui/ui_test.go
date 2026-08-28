@@ -1,8 +1,10 @@
 package ui
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -55,22 +57,57 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 		t.Fatal("TokensCSS() is empty")
 	}
 	for _, want := range []string{
-		"--rst-bg", "--rst-surface", "--rst-text", "--rst-accent",
-		"--rst-tone-positive-fg", "--rst-sp-4",
-		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+		"--rst-sp-4", "--rst-fs-base", "--rst-radius",
+		"var(--rst-bg)", "var(--rst-text)", "var(--rst-accent)", "var(--rst-font)",
 		".rst-status", ".rst-sr-only",
 	} {
 		if !strings.Contains(string(css), want) {
 			t.Errorf("tokens.css is missing %q", want)
 		}
 	}
+	// The colour blocks are the theme's now. tokens.css naming one again
+	// means a palette leaked back into the structural file, where a
+	// theme swap could no longer reach it.
+	for _, gone := range []string{
+		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+	} {
+		if strings.Contains(string(css), gone) {
+			t.Errorf("tokens.css declares theme block %q; colour belongs in themes/", gone)
+		}
+	}
+}
+
+// Every shipped theme is a whole theme: the colour blocks, the type
+// family, and the three-block structure the contrast gate parses.
+func TestThemeCSSIsEmbedded(t *testing.T) {
+	for _, name := range ThemeNames() {
+		css, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) reports missing, but it is in ThemeNames()", name)
+		}
+		for _, want := range []string{
+			"--rst-bg", "--rst-surface", "--rst-text", "--rst-accent",
+			"--rst-tone-positive-fg", "--rst-font",
+			"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+		} {
+			if !strings.Contains(string(css), want) {
+				t.Errorf("themes/%s.css is missing %q", name, want)
+			}
+		}
+	}
+	for _, bad := range []string{"nope", "", "ink.css", "../tokens"} {
+		if _, ok := ThemeCSS(bad); ok {
+			t.Errorf("ThemeCSS(%q) reports a theme that is not shipped", bad)
+		}
+	}
 }
 
 // Both themes are authored, never inverted: every themed token is
 // declared three times — light, dark-by-OS, and dark-by-toggle. A
-// half-authored dark theme is the classic way a token file rots.
+// half-authored dark theme is the classic way a token file rots, and
+// after the split it is the classic way a *new* theme ships half-done,
+// so this runs over every theme rather than over tokens.css.
 func TestBothThemesDeclareEveryColourToken(t *testing.T) {
-	css := string(TokensCSS())
 	themed := []string{
 		"--rst-bg", "--rst-surface", "--rst-surface-2", "--rst-line", "--rst-line-strong",
 		"--rst-text", "--rst-text-muted", "--rst-text-faint",
@@ -79,13 +116,20 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		"--rst-tone-positive-fg", "--rst-tone-positive-bg",
 		"--rst-tone-warning-fg", "--rst-tone-warning-bg",
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
-		"--rst-shadow-pop",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
 	}
-	for _, prop := range themed {
-		// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
-		// trailing colon counts declarations only.
-		if got := strings.Count(css, prop+":"); got != 3 {
-			t.Errorf("%s is declared %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", prop, got)
+	for _, name := range ThemeNames() {
+		raw, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) missing", name)
+		}
+		css := string(raw)
+		for _, prop := range themed {
+			// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
+			// trailing colon counts declarations only.
+			if got := strings.Count(css, prop+":"); got != 3 {
+				t.Errorf("themes/%s.css declares %s %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", name, prop, got)
+			}
 		}
 	}
 }
@@ -868,6 +912,9 @@ func allPartials() []struct {
 				map[string]any{"Value": "refund", "Label": "Refund…", "Danger": true},
 			},
 		}},
+		{"error-page", map[string]any{
+			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
+		}},
 	}
 }
 
@@ -967,15 +1014,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"badge", "meter", "person", "callout", "detail-list", "dropdown",
 		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
-		"locale-menu",
+		"locale-menu", "error-page",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 29 {
-		t.Fatalf("the shipped set is 29 partials, this list has %d", len(want))
+	if len(want) != 30 {
+		t.Fatalf("the shipped set is 30 partials, this list has %d", len(want))
 	}
 }
 
@@ -1000,10 +1047,24 @@ func TestRenderedPartialsAreSelfContained(t *testing.T) {
 // The one non-partial asset this package ships gets the same bar as the
 // partials and the vendored icons.
 func TestTokensCSSIsSelfContained(t *testing.T) {
+	reachOut := []string{"@import", "url(", "http://", "https://", "//fonts", "src:"}
 	css := string(TokensCSS())
-	for _, bad := range []string{"@import", "url(", "http://", "https://", "//fonts", "src:"} {
+	for _, bad := range reachOut {
 		if strings.Contains(css, bad) {
 			t.Errorf("tokens.css reaches outside the page (%q)", bad)
+		}
+	}
+	// The promise spans both scaffolded stylesheets: a theme is where a
+	// webfont would be most tempting, and it is exactly as banned there.
+	for _, name := range ThemeNames() {
+		theme, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) missing", name)
+		}
+		for _, bad := range reachOut {
+			if strings.Contains(string(theme), bad) {
+				t.Errorf("themes/%s.css reaches outside the page (%q)", name, bad)
+			}
 		}
 	}
 }
@@ -1427,6 +1488,38 @@ var styleguideSamples = map[string]string{
 	// row-menu's per-row aria-label already use, rather than a bare
 	// "checkbox 3 of 12".
 	"selbox": `<label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label>`,
+	// shell-topbar — one of the two page frames a shell puts around
+	// .rst-page: a skip link first in the DOM, a bar carrying brand, nav
+	// and an account dropdown pushed to the inline end, then the page
+	// column and a footer. No partial emits
+	// any of this — an app's layout template owns its own shell — so
+	// this sample is the only exercise these classes get. The nav's
+	// current item is aria-current, the same signal the dropdown and
+	// seg-tabs idioms already use.
+	"shell-topbar": `<div class="rst-shell-topbar">
+  <a class="rst-skip" href="#main">Skip to content</a>
+  <header class="rst-shell__bar"><a class="rst-shell__brand" href="/">Notes</a>
+    <nav class="rst-shell__nav"><a href="/" aria-current="page">Home</a><a href="/archive">Archive</a></nav>
+    <details class="rst-dropdown rst-shell__account"><summary>Account<span class="rst-caret" aria-hidden="true">` + iconSVG("chevron-down") + `</span></summary>
+      <div class="rst-dropdown__menu"><a href="/settings">Settings</a></div></details>
+  </header>
+  <main class="rst-page" id="main">Content.</main>
+  <footer class="rst-shell__foot">Made with rastrillo</footer>
+</div>`,
+	// shell-sidebar — the same frame with a rail instead of a bar. The
+	// narrow-screen disclosure is a native <details> strip whose open
+	// state reveals the rail (the adjacent-sibling selector in
+	// tokens.css), so the shell stays zero-JS like every other idiom
+	// here. The rail's own .rst-page still wraps the content, so a
+	// screen's markup is identical in either shell.
+	"shell-sidebar": `<div class="rst-shell-sidebar">
+  <a class="rst-skip" href="#main">Skip to content</a>
+  <details class="rst-shell__chrome"><summary>Menu</summary></details>
+  <aside class="rst-shell__rail"><a class="rst-shell__brand" href="/">Notes</a>
+    <nav class="rst-shell__nav"><span class="rst-shell__group">Work</span><a href="/" aria-current="page">Dashboard</a><a href="/reports">Reports</a></nav>
+  </aside>
+  <main class="rst-shell__main" id="main"><div class="rst-page">Content.</div></main>
+</div>`,
 }
 
 // The samples are static HTML with no template actions, so parsing them
@@ -1536,6 +1629,87 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 	} {
 		if !seen[class] {
 			t.Errorf("selector %q was added to tokens.css in the routes-family task but no styleguide sample uses it", class)
+		}
+	}
+	// The shell selectors: same rule again for the page frames. A shell
+	// is markup an app's own layout template writes, so no partial and
+	// no other sample can carry these — the two shell samples above are
+	// their only exercise, in both directions.
+	for _, class := range []string{
+		"rst-skip",
+		"rst-shell-topbar", "rst-shell__bar", "rst-shell__brand", "rst-shell__nav",
+		"rst-shell__account", "rst-shell__foot",
+		"rst-shell-sidebar", "rst-shell__chrome", "rst-shell__rail", "rst-shell__group", "rst-shell__main",
+	} {
+		if !seen[class] {
+			t.Errorf("selector %q was added to tokens.css in the shells task but no styleguide sample uses it", class)
+		}
+	}
+}
+
+// TestEveryEmbeddedThemeAndLayoutIsNamed closes the ungated-theme path.
+// ThemeCSS and Layout read the embedded FS by filename, but every gate
+// that checks a theme or a shell — the token-set parity check, the WCAG
+// contrast sweep, TestLayoutsParseAndRender — iterates ThemeNames() and
+// LayoutNames() instead. So a themes/foo.css added without its slice
+// entry is scaffoldable (rastrillo new --theme=foo finds the file) while
+// no gate ever looks at it. This test is the one place the directory
+// itself is read, so the file set and the name list cannot drift apart.
+func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
+	for _, tc := range []struct {
+		dir   string
+		ext   string
+		fsys  fs.FS
+		names []string
+	}{
+		{"themes", ".css", themesFS, ThemeNames()},
+		{"layouts", ".html", layoutsFS, LayoutNames()},
+	} {
+		t.Run(tc.dir, func(t *testing.T) {
+			ents, err := fs.ReadDir(tc.fsys, tc.dir)
+			if err != nil {
+				t.Fatalf("ReadDir(%s): %v", tc.dir, err)
+			}
+			onDisk := map[string]bool{}
+			for _, e := range ents {
+				onDisk[e.Name()] = true
+			}
+			named := map[string]bool{}
+			for _, n := range tc.names {
+				named[n+tc.ext] = true
+			}
+			for f := range onDisk {
+				if !named[f] {
+					t.Errorf("%s/%s is embedded but not in the name list: it is scaffoldable and ungated", tc.dir, f)
+				}
+			}
+			for f := range named {
+				if !onDisk[f] {
+					t.Errorf("the name list promises %s/%s, which is not embedded", tc.dir, f)
+				}
+			}
+		})
+	}
+}
+
+// The same drift check the styleguide samples get, for the shells that
+// ship as whole templates: every rst- class the layout files emit must
+// resolve to a selector in tokens.css. TestIdiomClassesAreStyled covers
+// the samples; a layout is markup no sample carries, so without this a
+// shell could name a class the stylesheet never defines.
+func TestLayoutClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, name := range LayoutNames() {
+		src, ok := Layout(name)
+		if !ok {
+			t.Fatalf("Layout(%q) missing", name)
+		}
+		for _, attr := range classAttrPattern.FindAllStringSubmatch(string(src), -1) {
+			for _, class := range rstClassPattern.FindAllString(attr[1], -1) {
+				if !strings.Contains(css, "."+class) {
+					t.Errorf("tokens.css has no selector for %q (used in layouts/%s.html)", class, name)
+				}
+			}
 		}
 	}
 }
@@ -1871,5 +2045,212 @@ func TestLocaleMenuRenders(t *testing.T) {
 	}
 	if strings.TrimSpace(b.String()) != "" {
 		t.Errorf("empty Items must render nothing, got %q", b.String())
+	}
+}
+
+// Every theme file must declare exactly the same set of --rst-*
+// properties as ink, the reference theme. A theme that forgets a token
+// does not fail loudly at render time — it silently falls back to
+// whatever the cascade already had, which in a scaffolded app is
+// nothing at all, so the affected element renders unstyled rather than
+// wrong. Names only: values are the theme's whole point, and their
+// contrast is contrast_test.go's job.
+func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
+	names := ThemeNames()
+	if len(names) == 0 || names[0] != "ink" {
+		t.Fatalf("ThemeNames = %v; ink must exist and come first", names)
+	}
+	want := themePropSet(t, "ink")
+	if len(want) == 0 {
+		t.Fatal("ink declares no --rst- properties")
+	}
+	for _, n := range names[1:] {
+		got := themePropSet(t, n)
+		for p := range want {
+			if !got[p] {
+				t.Errorf("theme %s is missing %s", n, p)
+			}
+		}
+		for p := range got {
+			if !want[p] {
+				t.Errorf("theme %s declares %s, which ink does not", n, p)
+			}
+		}
+	}
+}
+
+// themePropSet: every --rst-* name declared anywhere in the theme file.
+func themePropSet(t *testing.T, name string) map[string]bool {
+	t.Helper()
+	css, ok := ThemeCSS(name)
+	if !ok {
+		t.Fatalf("ThemeCSS(%q) missing", name)
+	}
+	out := map[string]bool{}
+	for _, m := range regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:`).FindAllStringSubmatch(string(css), -1) {
+		out[m[1]] = true
+	}
+	return out
+}
+
+func TestTokensCSSHasNoColourLiterals(t *testing.T) {
+	// After the split, structural tokens.css may reference colours only
+	// via var(); bare hex in a *declaration value* means a colour leaked
+	// back in. Exempt: none — the three rgba() literals that used to live
+	// here (the switch knob shadow, the seg-tab lift shadow, the modal
+	// scrim) are gone too, replaced with var(--rst-shadow-knob),
+	// var(--rst-shadow-lift) and var(--rst-overlay) declared per theme —
+	// so this gate also matches rgba()/rgb()/hsl() function values, not
+	// just bare hex, to keep that claim enforced instead of just stated.
+	decl := regexp.MustCompile(`:\s*[^;]*(#[0-9a-fA-F]{3,6}|rgba?\(|hsl\()`)
+	for i, line := range strings.Split(string(TokensCSS()), "\n") {
+		if (strings.Contains(line, "#") || strings.Contains(line, "rgb") || strings.Contains(line, "hsl")) && decl.MatchString(line) {
+			t.Errorf("tokens.css line %d declares a colour literal: %s", i+1, strings.TrimSpace(line))
+		}
+	}
+}
+
+// The three shells are real templates, not documentation: each one
+// parses with the ui funcs, defines "layout", executes against nil data
+// (so a struct-vs-map decision in an app cannot break a shell), and
+// resolves every catalog key it names.
+func TestLayoutsParseAndRender(t *testing.T) {
+	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar"}) {
+		t.Fatalf("LayoutNames = %v", got)
+	}
+	for _, name := range LayoutNames() {
+		t.Run(name, func(t *testing.T) {
+			src, ok := Layout(name)
+			if !ok {
+				t.Fatal("missing")
+			}
+			tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
+				"asset":      func(p string) string { return "/" + p },
+				"iconAssets": func() template.HTML { return "" },
+			}).Parse(string(src)))
+			template.Must(tmpl.Parse(`{{define "content"}}CONTENT-SENTINEL{{end}}`))
+			var b strings.Builder
+			if err := tmpl.ExecuteTemplate(&b, "layout", nil); err != nil {
+				t.Fatal(err)
+			}
+			out := b.String()
+			for _, want := range []string{"CONTENT-SENTINEL", "static/theme.css", "static/tokens.css", `id="main"`, "Skip to content"} {
+				if !strings.Contains(out, want) {
+					t.Errorf("%s: missing %q", name, want)
+				}
+			}
+			if strings.Contains(out, "rastrillo.ui.") {
+				t.Errorf("%s: an unresolved catalog key leaked into the page", name)
+			}
+		})
+	}
+}
+
+// The error page renders one of the five statuses the base catalog
+// words, falls back to the generic wording for anything else, and never
+// invents navigation the app did not give it.
+func TestErrorPageWordsTheFiveKnownStatuses(t *testing.T) {
+	for status, want := range map[int]string{
+		// Escaped as html/template writes them: the apostrophes in the
+		// catalog's English come out as &#39; in the page.
+		404: "We can&#39;t find that page",
+		403: "You can&#39;t see this",
+		422: "That didn&#39;t go through",
+		500: "Something went wrong on our side",
+		503: "We&#39;re briefly unavailable",
+	} {
+		got := render(t, "error-page", map[string]any{"Status": status})
+		if !strings.Contains(got, want) {
+			t.Errorf("status %d: title %q missing from:\n%s", status, want, got)
+		}
+		if !strings.Contains(got, `<p class="rst-error__status">`+fmt.Sprint(status)+`</p>`) {
+			t.Errorf("status %d: the status itself is not shown:\n%s", status, got)
+		}
+		if strings.Contains(got, "rastrillo.ui.") {
+			t.Errorf("status %d: an unresolved catalog key leaked into the page:\n%s", status, got)
+		}
+	}
+}
+
+// A status the catalog has no wording for must not render the key
+// itself: the partial guards it back to the generic pair.
+func TestErrorPageFallsBackToGenericWording(t *testing.T) {
+	got := render(t, "error-page", map[string]any{"Status": 418})
+	for _, want := range []string{"Something&#39;s not right", "That request couldn&#39;t be completed", ">418<"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("418 page missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "error_418") || strings.Contains(got, "rastrillo.ui.") {
+		t.Errorf("418 page leaked a catalog key:\n%s", got)
+	}
+}
+
+// Caller-supplied Title/Body always win over the catalog, as everywhere
+// else in this package.
+func TestErrorPageCallerWordingWins(t *testing.T) {
+	got := render(t, "error-page", map[string]any{
+		"Status": 404, "Title": "No such order", "Body": "That order was cancelled.",
+	})
+	if !strings.Contains(got, "No such order") || !strings.Contains(got, "That order was cancelled.") {
+		t.Errorf("caller wording lost:\n%s", got)
+	}
+	if strings.Contains(got, "We can't find that page") {
+		t.Errorf("catalog default rendered alongside caller wording:\n%s", got)
+	}
+}
+
+// The reference is a run of LTR alphanumerics inside a sentence that may
+// itself be RTL, so its paragraph carries dir="auto" — the whole of the
+// bidi fix, and the reason the ref is not pre-wrapped by the caller.
+func TestErrorPageReferenceLine(t *testing.T) {
+	got := render(t, "error-page", map[string]any{"Status": 500, "Ref": "k3f9tq"})
+	if !strings.Contains(got, `<p class="rst-error__ref rst-mono" dir="auto">Reference: k3f9tq</p>`) {
+		t.Errorf("reference line is not interpolated with dir=auto:\n%s", got)
+	}
+	if strings.Contains(got, "{ref}") {
+		t.Errorf("the {ref} placeholder survived interpolation:\n%s", got)
+	}
+	if none := render(t, "error-page", map[string]any{"Status": 500}); strings.Contains(none, "rst-error__ref") {
+		t.Errorf("a page with no Ref still rendered the reference line:\n%s", none)
+	}
+}
+
+// Back renders only when the app supplies a href it has validated; the
+// partial never reaches for javascript:history.back().
+func TestErrorPageBackIsOptionalAndNeverJavascript(t *testing.T) {
+	with := render(t, "error-page", map[string]any{"Status": 404, "BackHref": "/orders"})
+	if !strings.Contains(with, `href="/orders"`) || !strings.Contains(with, "Go back") {
+		t.Errorf("BackHref did not render a back link:\n%s", with)
+	}
+	without := render(t, "error-page", map[string]any{"Status": 404})
+	if strings.Contains(without, "Go back") {
+		t.Errorf("back link rendered with no BackHref:\n%s", without)
+	}
+	for _, got := range []string{with, without} {
+		if strings.Contains(got, "javascript:") {
+			t.Errorf("the partial emitted a javascript: URL:\n%s", got)
+		}
+	}
+	// The home CTA is always there, defaulting to the site root.
+	if !strings.Contains(without, `href="/"`) || !strings.Contains(without, "Start page") {
+		t.Errorf("home CTA missing or not defaulted:\n%s", without)
+	}
+	if custom := render(t, "error-page", map[string]any{"Status": 404, "HomeHref": "/app"}); !strings.Contains(custom, `href="/app"`) {
+		t.Errorf("HomeHref ignored:\n%s", custom)
+	}
+}
+
+// The same drift check the other partial families get: every class the
+// error page emits has a rule in tokens.css.
+func TestErrorPageClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, class := range []string{
+		"rst-error", "rst-error__status", "rst-error__title",
+		"rst-error__body", "rst-error__cta", "rst-error__ref",
+	} {
+		if !strings.Contains(css, "."+class) {
+			t.Errorf("tokens.css has no selector for %q", class)
+		}
 	}
 }

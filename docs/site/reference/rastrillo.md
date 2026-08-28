@@ -79,6 +79,32 @@ poll. Unset, the route does not exist.
 **`Sidecar`** — the app's sidecar pass, run in a loop when the platform
 spawns `<binary> sidecar run`. See [Agents and tools](/docs/agents).
 
+**`ErrorPage`** — your own error page, for a failure your app never saw.
+The framework recovers a panicking handler outermost of all — outside
+the security headers, so outside your middleware too — logs the stack
+with a reference, and calls this to render the body at 500. Unset, the
+response is a plain "Something went wrong.". `http.ErrAbortHandler`
+goes straight back up, and a panic *after* the first byte still leaves a
+broken page: the status is long gone by then, exactly as in `net/http`.
+
+```go
+type ErrorPageFunc func(w http.ResponseWriter, r *http.Request, status int, ref string)
+func NewRef() string
+```
+
+Wire the same function to `Ctx.ErrorPage` and the 500 a handler answers
+looks identical to the 500 a panic answers. `ui`'s `error-page` partial
+is the body; the callback owns the status code as well, so it calls
+`WriteHeader(status)` itself.
+
+`ref` is what `NewRef` mints: six lowercase base32 characters over four
+random bytes, shown on the page and logged beside the error. It is not
+an id and nothing is stored under it — its whole job is to join what
+the user saw to what you grep for. The alphabet has no `0`, `1`, `8` or
+`9`, so a reference read down a phone line cannot be heard as an `O`, an
+`l` or a `B`. `view.Fail` mints one too; `NewRef` is exported for a
+hand-written handler doing the same job.
+
 ## Ctx and RenderFunc
 
 ```go
@@ -88,6 +114,8 @@ type Ctx struct {
 	Assets *Assets
 	Actor  Actor
 	Render RenderFunc
+
+	ErrorPage ErrorPageFunc
 }
 ```
 
@@ -99,6 +127,10 @@ ctx factory. Per-request state does not live here — identity is
 an app-private helper, so it calls `ctx.Render` — and nil-checks it,
 answering a logged 500 instead of a nil-pointer panic if you forget to
 wire it.
+
+`ErrorPage` is the same seam for the unhappy path: it is what
+[`view.Fail`, `view.NotFound` and `view.Forbidden`](/docs/reference/view)
+render through. Nil is legal, and the helpers answer plain text.
 
 ## Localization
 

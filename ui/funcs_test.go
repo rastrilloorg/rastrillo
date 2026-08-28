@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"html/template"
 	"strings"
 	"testing"
@@ -65,17 +66,17 @@ func TestListWithNoItemsIsEmptyNotNil(t *testing.T) {
 	}
 }
 
-func TestFuncsRegistersDictListIconIconAssetsAndT(t *testing.T) {
+func TestFuncsRegistersDictListIconIconAssetsTAndTf(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T"} {
+	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 5 {
-		t.Errorf("Funcs() has %d entries, want exactly 5", len(f))
+	if len(f) != 6 {
+		t.Errorf("Funcs() has %d entries, want exactly 6", len(f))
 	}
 }
 
@@ -132,15 +133,15 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 }
 
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
-func TestFuncsWithReplacesOnlyT(t *testing.T) {
+func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T"} {
+	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 5 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 5", len(f))
+	if len(f) != 6 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 6", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {
@@ -264,5 +265,42 @@ func TestFuncsWithResetsTheIconSeam(t *testing.T) {
 	reverted := FuncsWith(func(key string, _ ...any) string { return key })
 	if !strings.Contains(string(reverted["icon"].(func(string) template.HTML)("check")), "<svg") {
 		t.Error("FuncsWith no longer resets icon to the framework default; update its doc comment, which warns that it does")
+	}
+}
+
+// Tf is T plus {name} interpolation — the root package's Locales.Tf
+// semantics, available to a partial that has a value to place inside a
+// sentence (the error page's reference line is the first caller).
+func TestTfInterpolatesTheBaseCatalog(t *testing.T) {
+	fn, ok := Funcs()["Tf"].(func(string, ...any) string)
+	if !ok {
+		t.Fatalf("Funcs has no Tf entry of the T signature: %T", Funcs()["Tf"])
+	}
+	if got, want := fn("rastrillo.ui.error_ref", "ref", "k3f9tq"), "Reference: k3f9tq"; got != want {
+		t.Errorf("Tf = %q, want %q", got, want)
+	}
+	// A placeholder with no argument stays verbatim: a translator's typo
+	// shows up in the page rather than silently deleting a sentence.
+	if got, want := fn("rastrillo.ui.error_ref"), "Reference: {ref}"; got != want {
+		t.Errorf("Tf with no args = %q, want %q", got, want)
+	}
+	// An unknown key is its own name, exactly as T's miss behaves.
+	if got := fn("rastrillo.ui.nope", "ref", "x"); got != "rastrillo.ui.nope" {
+		t.Errorf("Tf on a miss = %q, want the key back", got)
+	}
+}
+
+// WithT rebinds Tf too — the request-scoped translator an app passes
+// takes args already, so a page rendered per request interpolates
+// through the app's lookup rather than the framework's English.
+func TestWithTRebindsTf(t *testing.T) {
+	fn, ok := FuncsWith(func(key string, args ...any) string {
+		return "app:" + key + ":" + fmt.Sprint(args...)
+	})["Tf"].(func(string, ...any) string)
+	if !ok {
+		t.Fatalf("FuncsWith left Tf unbound")
+	}
+	if got, want := fn("k", "ref", "v"), "app:k:refv"; got != want {
+		t.Errorf("Tf = %q, want %q", got, want)
 	}
 }

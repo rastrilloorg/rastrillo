@@ -30,6 +30,111 @@ func TestNewScaffoldsTokensCSS(t *testing.T) {
 	}
 }
 
+// tokens.css is structural only: colour arrives in a theme, and the
+// default is ink. Without static/theme.css a scaffolded app renders
+// colourless, so the theme ships beside the tokens.
+func TestNewScaffoldsThemeCSS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("blogapp", "internal", "blogapp", "static", "theme.css"))
+	if err != nil {
+		t.Fatalf("expected a scaffolded theme: %v", err)
+	}
+	want, ok := ui.ThemeCSS("ink")
+	if !ok {
+		t.Fatal(`ui.ThemeCSS("ink") reports no such theme`)
+	}
+	if !bytes.Equal(got, want) {
+		t.Errorf("scaffolded theme.css is not the ink theme verbatim (%d bytes vs %d)", len(got), len(want))
+	}
+}
+
+// --theme picks the colours; an unknown name fails while the working
+// directory is still clean, the same resolve-before-scaffold rule the
+// icon flags follow.
+func TestNewThemeFlag(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--theme=teal", "app"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("app", "internal", "app", "static", "theme.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := ui.ThemeCSS("teal")
+	if !bytes.Equal(got, want) {
+		t.Error("static/theme.css is not the teal theme")
+	}
+	if err := runNew([]string{"--theme=nope", "app2"}); err == nil {
+		t.Fatal("unknown theme must fail")
+	}
+	if _, err := os.Stat("app2"); !os.IsNotExist(err) {
+		t.Error("a failed new must not leave a directory behind")
+	}
+}
+
+// --shell picks which of ui's shells lands as templates/layout.html,
+// verbatim; column is the default; an unknown name fails before
+// anything is written.
+func TestNewShellFlag(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--shell=topbar", "app"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("app", "internal", "app", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := ui.Layout("topbar")
+	if !bytes.Equal(got, want) {
+		t.Error("templates/layout.html is not ui.Layout(\"topbar\") verbatim")
+	}
+
+	if err := runNew([]string{"plainapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err = os.ReadFile(filepath.Join("plainapp", "internal", "plainapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ = ui.Layout("column")
+	if !bytes.Equal(got, want) {
+		t.Error("the default shell is not ui.Layout(\"column\") verbatim")
+	}
+
+	if err := runNew([]string{"--shell=nope", "app2"}); err == nil {
+		t.Fatal("unknown shell must fail")
+	}
+	if _, err := os.Stat("app2"); !os.IsNotExist(err) {
+		t.Error("a failed new must not leave a directory behind")
+	}
+}
+
+// defaultLayout is the shell rastrillo new writes as
+// templates/layout.html when --shell is not given.
+func defaultLayout(t *testing.T) string {
+	t.Helper()
+	src, ok := ui.Layout("column")
+	if !ok {
+		t.Fatal(`ui.Layout("column") is missing`)
+	}
+	return string(src)
+}
+
+// The scaffolded layout links the theme beside the tokens: structure
+// then colour, both through the fingerprinting {{asset ...}} helper.
+func TestLayoutTemplateLinksThemeCSS(t *testing.T) {
+	layout := defaultLayout(t)
+	if !strings.Contains(layout, `<link rel="stylesheet" href="{{asset "static/theme.css"}}">`) {
+		t.Errorf("layout template does not link static/theme.css:\n%s", layout)
+	}
+	if strings.Index(layout, "static/tokens.css") > strings.Index(layout, "static/theme.css") {
+		t.Error("theme.css must come after tokens.css: the theme fills in what the tokens declare")
+	}
+}
+
 // rastrillo new writes the fragment shim into the new app's static
 // tree, once, the same way it writes tokens.css. From then on it is an
 // ordinary app-owned file.
@@ -51,8 +156,9 @@ func TestNewScaffoldsRastrilloJS(t *testing.T) {
 // tokens.css: through the fingerprinting {{asset ...}} helper, deferred
 // so it never blocks first paint.
 func TestLayoutTemplateLoadsRastrilloJS(t *testing.T) {
-	if !strings.Contains(layoutTemplate, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
-		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layoutTemplate)
+	layout := defaultLayout(t)
+	if !strings.Contains(layout, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
+		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layout)
 	}
 }
 
@@ -120,6 +226,9 @@ func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 		filepath.Join("internal", "blogapp", "render.go"),
 		filepath.Join("internal", "blogapp", "templates", "layout.html"),
 		filepath.Join("internal", "blogapp", "templates", "index.html"),
+		filepath.Join("internal", "blogapp", "templates", "errors.html"),
+		filepath.Join("internal", "blogapp", "static", "tokens.css"),
+		filepath.Join("internal", "blogapp", "static", "theme.css"),
 		filepath.Join("manifest", "README.md"),
 	} {
 		if _, err := os.Stat(filepath.Join("blogapp", rel)); err != nil {
@@ -146,6 +255,45 @@ func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
 	}
 	if strings.Index(src, `opts.DBPath = ""`) < strings.Index(src, "db.Open(") {
 		t.Error("DBPath must be cleared only after db.Open used it")
+	}
+}
+
+// main.go wires Options.ErrorPage to the app's own ErrorPage, and only
+// after opts.Mux is set — Resolve populates opts fresh, so setting
+// ErrorPage any earlier would be overwritten by nothing but reads
+// stranger than setting it alongside the rest of the app wiring.
+func TestMainTemplateWiresErrorPage(t *testing.T) {
+	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
+	if !strings.Contains(src, "opts.ErrorPage = blogapp.ErrorPage") {
+		t.Errorf("main.go template does not wire opts.ErrorPage:\n%s", src)
+	}
+	if strings.Index(src, "opts.ErrorPage = blogapp.ErrorPage") < strings.Index(src, "opts.Mux = mux") {
+		t.Error("ErrorPage must be wired after opts.Mux is set, alongside the rest of the app wiring")
+	}
+}
+
+// render.go exports ErrorPage (the func Options.ErrorPage above points
+// at) and registers "errors" as a page, so render(w, "errors", …)
+// resolves.
+func TestRenderTemplateWiresErrorPage(t *testing.T) {
+	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp")
+	if !strings.Contains(src, `[]string{"index", "errors"}`) {
+		t.Errorf("render.go's pages init loop does not include \"errors\":\n%s", src)
+	}
+	if !strings.Contains(src, "func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string)") {
+		t.Errorf("render.go does not export ErrorPage with the ErrorPageFunc signature:\n%s", src)
+	}
+	if !strings.Contains(src, `render(w, "errors", map[string]any{"Status": status, "Ref": ref})`) {
+		t.Errorf("render.go's ErrorPage does not render the \"errors\" page:\n%s", src)
+	}
+}
+
+// errors.html renders ui's error-page partial inside the layout —
+// nothing more, so the whole styling and wording seam stays inside
+// that partial (and the app's tokens/theme), not duplicated here.
+func TestErrorsTemplateRendersErrorPagePartial(t *testing.T) {
+	if !strings.Contains(errorsTemplate, `{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}`) {
+		t.Errorf("errors.html template does not render the error-page partial:\n%s", errorsTemplate)
 	}
 }
 
@@ -446,16 +594,19 @@ func TestStandardProfileAddsNoConventions(t *testing.T) {
 	}
 }
 
-// The layout must call iconAssets, or a cdn/js choice is inert.
+// The layout must call iconAssets, or a cdn/js choice is inert. Both
+// icon seams reach the template tree through ui.WithIcons now — passing
+// only one of them is the documented silent trap, so the scaffold
+// passes both in the one call.
 func TestScaffoldedLayoutCallsIconAssets(t *testing.T) {
-	if !strings.Contains(layoutTemplate, "{{iconAssets}}") {
+	if !strings.Contains(defaultLayout(t), "{{iconAssets}}") {
 		t.Error("layout.html never calls iconAssets; cdn and js delivery would render nothing")
 	}
-	if !strings.Contains(renderTemplate, `"iconAssets": icons.Assets`) {
-		t.Error("render.go does not register the iconAssets seam")
+	if !strings.Contains(renderTemplate, `ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))`) {
+		t.Error("render.go does not point ui's icon seams at the app's own icon package")
 	}
-	if !strings.Contains(renderTemplate, `"icon":       icons.Icon`) {
-		t.Error("render.go does not register the icon seam")
+	if !strings.Contains(renderTemplate, `ParseFS(ui.Templates(), "*.html")`) {
+		t.Error("render.go does not parse ui's partials, so no page can call one")
 	}
 }
 
@@ -473,7 +624,11 @@ func TestNewScaffoldsSelectJS(t *testing.T) {
 	if !bytes.Equal(got, ui.SelectJS()) {
 		t.Error("scaffolded select.js is not ui.SelectJS() verbatim")
 	}
-	if !strings.Contains(layoutTemplate, `static/select.js`) {
+	layout, err := os.ReadFile(filepath.Join("selapp", "internal", "selapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(layout), `static/select.js`) {
 		t.Error("the layout never loads select.js, so the enhancement can never run")
 	}
 }
@@ -650,6 +805,10 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 		"ui.TokensCSS()",
 		"ui.ShimJS()",
 		"ui.SelectJS()",
+		// The theme is vendored too, and the pin has to remember which
+		// one this app was scaffolded with.
+		`vendoredTheme = "ink"`,
+		"ui.ThemeCSS(vendoredTheme)",
 		`filepath.Join("..", "blogapp", "static", name)`,
 	} {
 		if !strings.Contains(src, want) {

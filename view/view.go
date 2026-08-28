@@ -6,18 +6,102 @@
 package view
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/carlosframework/rastrillo"
 )
 
-// Fail logs through Ctx.Logger (when set) and answers a plain 500.
-func Fail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error) {
+// Fail logs through Ctx.Logger (when set) and answers a 500 — the app's
+// own error page when Ctx.ErrorPage is wired, JSON when the client asked
+// for JSON, and plain text otherwise.
+//
+// It mints a reference (rastrillo.NewRef) and puts it in both places:
+// the log line, under "ref", and the response. That is the only thing
+// the reference is for — a person quotes six characters, and an operator
+// greps for them.
+//
+// The response never carries the error itself. An error string is
+// written for an operator and routinely names a table, a path or a
+// query; none of that belongs in a reply to someone who may have caused
+// the error deliberately.
+//
+// r may be nil, for a caller with no request in scope: the page callback
+// takes a request, so a nil one falls back to plain text (and there is
+// no Accept header to sniff either).
+func Fail(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, what string, err error) {
+	ref := rastrillo.NewRef()
 	if ctx.Logger != nil {
-		ctx.Logger.Error(what, "err", err)
+		ctx.Logger.Error(what, "err", err, "ref", ref)
+	}
+	if writeJSON(w, r, http.StatusInternalServerError, ref) {
+		return
+	}
+	if ctx.ErrorPage != nil && r != nil {
+		ctx.ErrorPage(w, r, http.StatusInternalServerError, ref)
+		return
 	}
 	http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+}
+
+// NotFound answers 404 the same three ways Fail answers 500 — the app's
+// page, JSON, or net/http's own text. No reference and no log line: a
+// 404 is a URL that was never ours, not a failure to look up later.
+func NotFound(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	if writeJSON(w, r, http.StatusNotFound, "") {
+		return
+	}
+	if ctx.ErrorPage != nil && r != nil {
+		ctx.ErrorPage(w, r, http.StatusNotFound, "")
+		return
+	}
+	http.NotFound(w, r)
+}
+
+// Forbidden answers 403 like NotFound answers 404. It says nothing about
+// what exists: "you can't see this" and "there is nothing here" are
+// deliberately the same amount of information to an unauthorized caller
+// beyond the status itself.
+func Forbidden(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	if writeJSON(w, r, http.StatusForbidden, "") {
+		return
+	}
+	if ctx.ErrorPage != nil && r != nil {
+		ctx.ErrorPage(w, r, http.StatusForbidden, "")
+		return
+	}
+	http.Error(w, "Forbidden.", http.StatusForbidden)
+}
+
+// wantsJSON reports whether the caller asked for JSON. The sniff is
+// deliberately crude — a substring of Accept, not a parsed q-list —
+// because fetch() and every JSON client send exactly this, and a browser
+// navigation never does. A nil request wants nothing.
+func wantsJSON(r *http.Request) bool {
+	return r != nil && strings.Contains(r.Header.Get("Accept"), "application/json")
+}
+
+// writeJSON answers a JSON client and reports whether it did, so the
+// three helpers above can share one shape: {"status":404}, plus "ref"
+// when there is one. The app's ErrorPage is not consulted on this path
+// at all — that callback renders HTML, and this caller asked for
+// something it can parse.
+func writeJSON(w http.ResponseWriter, r *http.Request, status int, ref string) bool {
+	if !wantsJSON(r) {
+		return false
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	body := struct {
+		Status int    `json:"status"`
+		Ref    string `json:"ref,omitempty"`
+	}{status, ref}
+	// An encode error here means the connection is already gone; there
+	// is nothing left to say to the client about it.
+	_ = json.NewEncoder(w).Encode(body)
+	return true
 }
 
 // Render hands data to the app's template tree through ctx.Render (see

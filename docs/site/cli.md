@@ -13,7 +13,8 @@ and `--help` all print usage.
 ## rastrillo new
 
 ```sh
-rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>] <name>
+rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
+              [--theme=<name>] [--shell=<name>] <name>
 ```
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
@@ -25,6 +26,8 @@ own tests, and serves, before you have written anything. It runs
 | `--icons` | `lucide`, `font-awesome` | `lucide` |
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
+| `--theme` | `ink`, `teal`, `warm` | `ink` |
+| `--shell` | `column`, `topbar`, `sidebar` | `column` |
 
 All six set × delivery combinations scaffold, compile and pass
 `generate --check`. The icon set becomes an ordinary app-owned package
@@ -33,6 +36,14 @@ into `AGENTS.md`, which is the source of truth from then on — nothing
 re-reads the profile name afterwards. [Icons](/docs/icons) explains what
 each delivery mode costs, including the one worth repeating: with `js`,
 icons do not render at all without JavaScript.
+
+`--theme` picks the colour-and-type stylesheet written as
+`static/theme.css`, and `--shell` picks the page frame written as
+`templates/layout.html`. Both are copied in verbatim and are yours from
+that moment — the theme like `tokens.css`, the layout like every other
+template. Every value is checked before a single file is created, so a
+typo fails with your working directory still clean.
+[Templates](/docs/templates) describes the three of each.
 
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
 requires, because that obligation is the app's and has to travel with

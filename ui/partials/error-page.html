@@ -1,0 +1,40 @@
+{{/* error-page — the whole body of an error response: the status, one
+     honest sentence about what happened, a way back to somewhere real,
+     and (for a 500) the reference an operator can grep for.
+
+     Keys:
+       Status    int, required — the HTTP status. 404, 403, 422, 500 and
+                 503 are the five the framework catalog words; anything
+                 else falls back to the generic pair rather than
+                 rendering a missing key's name.
+       Title     string, optional — overrides the catalog title
+       Body      string, optional — overrides the catalog sentence
+       HomeHref  string, optional — the "Start page" link, default "/"
+       BackHref  string, optional — renders a second, secondary link.
+                 The app supplies it, and only from a Referer it has
+                 checked is same-site: there is deliberately no
+                 javascript:history.back() here, because this library
+                 does not ship pages that need JavaScript to be usable,
+                 and an unvalidated Referer is an open redirect with
+                 better manners.
+       Ref       string, optional — the error reference (rastrillo.NewRef,
+                 minted by view.Fail and by panic recovery). Rendered
+                 only when set: a 404 has nothing to reference.
+
+     The reference paragraph carries dir="auto" because the ref is a run
+     of LTR alphanumerics inside a sentence that may itself be RTL —
+     "Reference: k3f9tq" in Arabic would otherwise render the ref at the
+     wrong end of the line. dir="auto" on the paragraph isolates it; the
+     ref is NOT pre-wrapped in bidi marks by the caller, which would
+     either escape visibly or force the caller to hand this partial
+     trusted HTML. */}}
+{{define "error-page"}}{{$known := or (eq .Status 404) (eq .Status 403) (eq .Status 422) (eq .Status 500) (eq .Status 503)}}<div class="rst-error">
+  <p class="rst-error__status">{{.Status}}</p>
+  <h1 class="rst-error__title">{{if .Title}}{{.Title}}{{else if $known}}{{T (printf "rastrillo.ui.error_%d_title" .Status)}}{{else}}{{T "rastrillo.ui.error_generic_title"}}{{end}}</h1>
+  <p class="rst-error__body">{{if .Body}}{{.Body}}{{else if $known}}{{T (printf "rastrillo.ui.error_%d_body" .Status)}}{{else}}{{T "rastrillo.ui.error_generic_body"}}{{end}}</p>
+  <p class="rst-error__cta"><a class="rst-btn rst-btn--primary" href="{{or .HomeHref "/"}}">{{T "rastrillo.ui.error_home"}}</a>
+    {{- with .BackHref}} <a class="rst-btn" href="{{.}}">{{T "rastrillo.ui.error_back"}}</a>{{end}}</p>
+  {{- with .Ref}}
+  <p class="rst-error__ref rst-mono" dir="auto">{{Tf "rastrillo.ui.error_ref" "ref" .}}</p>
+  {{- end}}
+</div>{{end}}

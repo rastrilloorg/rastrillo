@@ -27,6 +27,11 @@ internal/<app>/render.go     embedded templates, flash/session-aware page data
 cmd/<app>/main.go            Resolve -> db.Open -> App -> Serve
 ```
 
+`rastrillo new --theme=ink|teal|warm --shell=column|topbar|sidebar <name>`
+scaffolds all of it (also `--icons`, `--icon-delivery`, `--ux`): the theme
+lands as `static/theme.css`, the shell as `templates/layout.html`, both
+app-owned from that moment. docs/site/templates.md
+
 Imports: `github.com/carlosframework/rastrillo` and subpackages (`db`,
 `migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
 `jobs`), `github.com/go-chi/chi/v5`, `gorm.io/gorm`.
@@ -311,6 +316,12 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   Screens stack vertically — never heading, paragraph and button in one
   flex row; a notice with a CTA is a `callout` ending in a link.
   docs/site/templates.md
+- **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
+  render styled pages inside the shell; a 500 shows a ref matching the
+  `ref` on the log line. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a
+  `rastrillo.ErrorPageFunc` — `rastrillo new` scaffolds it as `render.go`'s
+  `ErrorPage` over `templates/errors.html`, and panics recover to that
+  same page. Unwired, errors are bare text. docs/site/templates.md
 - **Never `git merge` to main**, even locally: every change is a PR,
   squash-merged.
 

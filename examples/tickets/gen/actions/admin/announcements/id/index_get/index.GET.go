@@ -27,7 +27,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		view.Fail(ctx, w, "announcements: loading announcements", err)
+		view.Fail(ctx, w, r, "announcements: loading announcements", err)
 		return
 	}
 

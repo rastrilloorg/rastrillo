@@ -8,9 +8,11 @@ import (
 	"testing"
 )
 
-// This file is a WCAG 2.2 AA contrast gate over tokens.css's *declared*
-// custom-property values — the pairs a component's markup names directly
-// (e.g. "color: var(--rst-text); background: var(--rst-bg)").
+// This file is a WCAG 2.2 AA contrast gate over every shipped theme's
+// *declared* custom-property values — the pairs a component's markup
+// names directly (e.g. "color: var(--rst-text); background:
+// var(--rst-bg)"). tokens.css declares no colour of its own; the values
+// under test all live in themes/<name>.css.
 //
 // LIMITATION, stated explicitly because it is easy to forget: this checks
 // token pairs, not the resolved cascade. It parses each theme's :root
@@ -33,8 +35,8 @@ import (
 // colorMixSkip lists custom properties whose *value* uses a CSS function
 // this test cannot evaluate (color-mix(), light-dark(), etc.) — computing
 // those is out of scope, so they are named here, explicitly, rather than
-// silently skipped by a parse failure. Empty today: no token in
-// tokens.css uses color-mix()/light-dark() as of Task 5. If one is added,
+// silently skipped by a parse failure. Empty today: no shipped theme
+// uses color-mix()/light-dark(). If one is added,
 // name it here with a comment instead of weakening the parser to accept
 // it silently.
 var colorMixSkip = map[string]bool{
@@ -42,7 +44,8 @@ var colorMixSkip = map[string]bool{
 }
 
 // hexPattern matches a bare #rgb or #rrggbb custom-property value, the
-// only colour syntax tokens.css uses today (no rgba(), no color-mix()).
+// only colour syntax a gated token uses today (no color-mix();
+// --rst-shadow-pop's rgba() is not in the pair table).
 var hexPattern = regexp.MustCompile(`^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
 
 // declPattern matches one custom-property declaration: "--rst-name:
@@ -54,7 +57,7 @@ var declPattern = regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
 // parseTokens extracts every --rst-* declaration in body into a map. Only
 // the last declaration of a given name wins, matching CSS's own "later
 // wins" rule for same-specificity declarations in one block — not that
-// tokens.css redeclares a name twice in the same block today.
+// a theme file redeclares a name twice in the same block today.
 func parseTokens(body string) map[string]string {
 	out := map[string]string{}
 	for _, m := range declPattern.FindAllStringSubmatch(body, -1) {
@@ -64,15 +67,16 @@ func parseTokens(body string) map[string]string {
 }
 
 // blockBody returns the brace-matched contents following header (which
-// must itself end in "{"), starting the search at css[from:]. tokens.css
-// nests at most one level (the prefers-color-scheme media query wrapping
-// a :root block), so simple depth counting is enough — no CSS string
-// literals here contain '{' or '}'.
-func blockBody(t *testing.T, css, header string, from int) string {
+// must itself end in "{"), starting the search at css[from:]. A theme
+// file nests at most one level (the prefers-color-scheme media query
+// wrapping a :root block), so simple depth counting is enough — no CSS
+// string literals here contain '{' or '}'. where names the file, so a
+// structure failure says which theme drifted.
+func blockBody(t *testing.T, where, css, header string, from int) string {
 	t.Helper()
 	i := strings.Index(css[from:], header)
 	if i < 0 {
-		t.Fatalf("tokens.css structure changed: %q not found from offset %d", header, from)
+		t.Fatalf("%s structure changed: %q not found from offset %d", where, header, from)
 	}
 	start := from + i + len(header)
 	depth := 1
@@ -87,24 +91,31 @@ func blockBody(t *testing.T, css, header string, from int) string {
 			}
 		}
 	}
-	t.Fatalf("tokens.css structure changed: unterminated block for %q", header)
+	t.Fatalf("%s structure changed: unterminated block for %q", where, header)
 	return ""
 }
 
-// themeTokens reads the three theme blocks tokens.css declares (light,
-// dark-by-OS, dark-by-toggle — the same structure
+// themeTokens reads the three colour blocks one theme file declares
+// (light, dark-by-OS, dark-by-toggle — the same structure
 // TestBothThemesDeclareEveryColourToken checks token names against) and
-// returns each as its own name→value map, keyed for test output.
-func themeTokens(t *testing.T) map[string]map[string]string {
+// returns each as its own name→value map, keyed for test output. Every
+// theme is authored in all three blocks, so every theme gets gated in
+// all three.
+func themeTokens(t *testing.T, theme string) map[string]map[string]string {
 	t.Helper()
-	css := string(TokensCSS())
+	raw, ok := ThemeCSS(theme)
+	if !ok {
+		t.Fatalf("ThemeCSS(%q) missing", theme)
+	}
+	css := string(raw)
+	where := "themes/" + theme + ".css"
 
-	light := parseTokens(blockBody(t, css, `:root[data-theme="light"] {`, 0))
+	light := parseTokens(blockBody(t, where, css, `:root[data-theme="light"] {`, 0))
 
-	mediaBody := blockBody(t, css, `@media (prefers-color-scheme: dark) {`, 0)
-	darkOS := parseTokens(blockBody(t, mediaBody, `:root {`, 0))
+	mediaBody := blockBody(t, where, css, `@media (prefers-color-scheme: dark) {`, 0)
+	darkOS := parseTokens(blockBody(t, where, mediaBody, `:root {`, 0))
 
-	darkToggle := parseTokens(blockBody(t, css, `:root[data-theme="dark"] {`, 0))
+	darkToggle := parseTokens(blockBody(t, where, css, `:root[data-theme="dark"] {`, 0))
 
 	return map[string]map[string]string{
 		"light (:root / [data-theme=light])": light,
@@ -183,7 +194,8 @@ func contrastRatio(fgHex, bgHex string) (float64, error) {
 
 // TestContrastMathMatchesDocumentedDangerFillRatios sanity-checks this
 // file's WCAG arithmetic against numbers tokens.css's own comment already
-// published and hand-verified (the .rst-btn--danger comment, Task 4):
+// published and hand-verified (the .rst-btn--danger comment, Task 4 —
+// the one colour commentary that stayed with the component rule):
 // --rst-on-accent on --rst-tone-negative-fg, both themes. If this test
 // ever fails, suspect the formula in this file before suspecting the
 // published ratios.
@@ -208,9 +220,9 @@ func TestContrastMathMatchesDocumentedDangerFillRatios(t *testing.T) {
 }
 
 // TestThemeTokenContrastMeetsWCAG is the real gate: the full pair table
-// tokens.css's own "WCAG 2.2 AA, measured" header comment documents
-// (§ near the top of tokens.css), enforced at each row's documented
-// floor, in every authored theme. See the file doc comment above for
+// each theme's own "WCAG 2.2 AA, measured" header comment documents
+// (§ near the top of themes/ink.css), enforced at each row's documented
+// floor, in every authored theme and every one of its three blocks. See the file doc comment above for
 // exactly what this does and does not verify.
 //
 // --rst-text-faint is held to the same 4.5:1 body-text floor as
@@ -219,7 +231,7 @@ func TestContrastMathMatchesDocumentedDangerFillRatios(t *testing.T) {
 // (.rst-count-line, .rst-field__hint) and on .rst-lrow--head (11.5px,
 // well under WCAG's ~18pt/14pt-bold "large text" threshold even with its
 // letter-spacing and uppercase transform), so 3:1 would be the wrong bar
-// for what this token is actually used for. tokens.css's own header
+// for what this token is actually used for. ink.css's own header
 // table already publishes it at 4.5:1 throughout (its tightest pair,
 // 4.67:1 in light on --rst-bg) — this test previously asserted only one
 // --rst-text-faint pair at a 3:1 floor, which is loose enough that a
@@ -233,13 +245,13 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		min    float64
 		why    string
 	}
-	// Transcribed from tokens.css's own "WCAG 2.2 AA, measured" header
+	// Transcribed from ink.css's own "WCAG 2.2 AA, measured" header
 	// table plus the .rst-btn--danger comment's documented pair (not in
 	// the main table, since it reuses --rst-tone-negative-fg as a solid
 	// fill rather than declaring a dedicated --rst-danger-* token) — every
-	// row that table publishes, at its documented floor. If tokens.css's
-	// header table grows a row, add it here too; the two are meant to
-	// stay in lockstep.
+	// row that table publishes, at its documented floor. If that header
+	// table grows a row, add it here too; the two are meant to stay in
+	// lockstep.
 	pairs := []pair{
 		{"--rst-text", "--rst-surface", 4.5, "body text on a card"},
 		{"--rst-text", "--rst-bg", 4.5, "body text"},
@@ -266,40 +278,43 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		{"--rst-tone-positive-fg", "--rst-tone-positive-bg", 4.5, "status pill text"},
 		{"--rst-tone-warning-fg", "--rst-tone-warning-bg", 4.5, "status pill text"},
 		{"--rst-tone-negative-fg", "--rst-tone-negative-bg", 4.5, "status pill text"},
-		// Not in tokens.css's main header table — documented separately in
-		// the .rst-btn--danger comment (Task 4), which reuses
+		// Not in ink.css's main header table — documented separately in
+		// tokens.css's .rst-btn--danger comment (Task 4), which reuses
 		// --rst-tone-negative-fg as a solid fill rather than declaring a
 		// dedicated --rst-danger-* pair. This is the real pair the danger
 		// button's label renders against, so it belongs in the gate anyway.
 		{"--rst-on-accent", "--rst-tone-negative-fg", 4.5, "danger button label"},
 	}
 
-	for themeName, tokens := range themeTokens(t) {
-		t.Run(themeName, func(t *testing.T) {
-			for _, p := range pairs {
-				if colorMixSkip[p.fg] || colorMixSkip[p.bg] {
-					t.Logf("skipping %s on %s: listed in colorMixSkip", p.fg, p.bg)
-					continue
+	for _, theme := range ThemeNames() {
+		for blockName, tokens := range themeTokens(t, theme) {
+			themeName := theme + "/" + blockName
+			t.Run(themeName, func(t *testing.T) {
+				for _, p := range pairs {
+					if colorMixSkip[p.fg] || colorMixSkip[p.bg] {
+						t.Logf("skipping %s on %s: listed in colorMixSkip", p.fg, p.bg)
+						continue
+					}
+					fgVal, ok := tokens[p.fg]
+					if !ok {
+						t.Errorf("%s: token %s is not declared in this theme", themeName, p.fg)
+						continue
+					}
+					bgVal, ok := tokens[p.bg]
+					if !ok {
+						t.Errorf("%s: token %s is not declared in this theme", themeName, p.bg)
+						continue
+					}
+					ratio, err := contrastRatio(fgVal, bgVal)
+					if err != nil {
+						t.Errorf("%s: %s (%s) on %s (%s): %v — add to colorMixSkip if this is a color-mix()/light-dark() value", themeName, p.fg, fgVal, p.bg, bgVal, err)
+						continue
+					}
+					if ratio < p.min {
+						t.Errorf("%s: %s (%s) on %s (%s) = %.2f:1, want >= %.1f:1 (%s)", themeName, p.fg, fgVal, p.bg, bgVal, ratio, p.min, p.why)
+					}
 				}
-				fgVal, ok := tokens[p.fg]
-				if !ok {
-					t.Errorf("%s: token %s is not declared in this theme", themeName, p.fg)
-					continue
-				}
-				bgVal, ok := tokens[p.bg]
-				if !ok {
-					t.Errorf("%s: token %s is not declared in this theme", themeName, p.bg)
-					continue
-				}
-				ratio, err := contrastRatio(fgVal, bgVal)
-				if err != nil {
-					t.Errorf("%s: %s (%s) on %s (%s): %v — add to colorMixSkip if this is a color-mix()/light-dark() value", themeName, p.fg, fgVal, p.bg, bgVal, err)
-					continue
-				}
-				if ratio < p.min {
-					t.Errorf("%s: %s (%s) on %s (%s) = %.2f:1, want >= %.1f:1 (%s)", themeName, p.fg, fgVal, p.bg, bgVal, ratio, p.min, p.why)
-				}
-			}
-		})
+			})
+		}
 	}
 }

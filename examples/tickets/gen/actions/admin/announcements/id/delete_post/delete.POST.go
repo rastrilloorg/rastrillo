@@ -24,11 +24,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
-		view.Fail(ctx, w, "announcements: loading announcements", err)
+		view.Fail(ctx, w, r, "announcements: loading announcements", err)
 		return
 	}
 	if err := store.DeleteAnnouncement(r.Context(), id); err != nil {
-		view.Fail(ctx, w, "announcements: deleting announcements", err)
+		view.Fail(ctx, w, r, "announcements: deleting announcements", err)
 		return
 	}
 	http.Redirect(w, r, "/admin/announcements", http.StatusSeeOther)
