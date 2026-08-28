@@ -55,22 +55,57 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 		t.Fatal("TokensCSS() is empty")
 	}
 	for _, want := range []string{
-		"--rst-bg", "--rst-surface", "--rst-text", "--rst-accent",
-		"--rst-tone-positive-fg", "--rst-sp-4",
-		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+		"--rst-sp-4", "--rst-fs-base", "--rst-radius",
+		"var(--rst-bg)", "var(--rst-text)", "var(--rst-accent)", "var(--rst-font)",
 		".rst-status", ".rst-sr-only",
 	} {
 		if !strings.Contains(string(css), want) {
 			t.Errorf("tokens.css is missing %q", want)
 		}
 	}
+	// The colour blocks are the theme's now. tokens.css naming one again
+	// means a palette leaked back into the structural file, where a
+	// theme swap could no longer reach it.
+	for _, gone := range []string{
+		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+	} {
+		if strings.Contains(string(css), gone) {
+			t.Errorf("tokens.css declares theme block %q; colour belongs in themes/", gone)
+		}
+	}
+}
+
+// Every shipped theme is a whole theme: the colour blocks, the type
+// family, and the three-block structure the contrast gate parses.
+func TestThemeCSSIsEmbedded(t *testing.T) {
+	for _, name := range ThemeNames() {
+		css, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) reports missing, but it is in ThemeNames()", name)
+		}
+		for _, want := range []string{
+			"--rst-bg", "--rst-surface", "--rst-text", "--rst-accent",
+			"--rst-tone-positive-fg", "--rst-font",
+			"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+		} {
+			if !strings.Contains(string(css), want) {
+				t.Errorf("themes/%s.css is missing %q", name, want)
+			}
+		}
+	}
+	for _, bad := range []string{"nope", "", "ink.css", "../tokens"} {
+		if _, ok := ThemeCSS(bad); ok {
+			t.Errorf("ThemeCSS(%q) reports a theme that is not shipped", bad)
+		}
+	}
 }
 
 // Both themes are authored, never inverted: every themed token is
 // declared three times — light, dark-by-OS, and dark-by-toggle. A
-// half-authored dark theme is the classic way a token file rots.
+// half-authored dark theme is the classic way a token file rots, and
+// after the split it is the classic way a *new* theme ships half-done,
+// so this runs over every theme rather than over tokens.css.
 func TestBothThemesDeclareEveryColourToken(t *testing.T) {
-	css := string(TokensCSS())
 	themed := []string{
 		"--rst-bg", "--rst-surface", "--rst-surface-2", "--rst-line", "--rst-line-strong",
 		"--rst-text", "--rst-text-muted", "--rst-text-faint",
@@ -81,11 +116,18 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
 		"--rst-shadow-pop",
 	}
-	for _, prop := range themed {
-		// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
-		// trailing colon counts declarations only.
-		if got := strings.Count(css, prop+":"); got != 3 {
-			t.Errorf("%s is declared %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", prop, got)
+	for _, name := range ThemeNames() {
+		raw, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) missing", name)
+		}
+		css := string(raw)
+		for _, prop := range themed {
+			// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
+			// trailing colon counts declarations only.
+			if got := strings.Count(css, prop+":"); got != 3 {
+				t.Errorf("themes/%s.css declares %s %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", name, prop, got)
+			}
 		}
 	}
 }
@@ -1000,10 +1042,24 @@ func TestRenderedPartialsAreSelfContained(t *testing.T) {
 // The one non-partial asset this package ships gets the same bar as the
 // partials and the vendored icons.
 func TestTokensCSSIsSelfContained(t *testing.T) {
+	reachOut := []string{"@import", "url(", "http://", "https://", "//fonts", "src:"}
 	css := string(TokensCSS())
-	for _, bad := range []string{"@import", "url(", "http://", "https://", "//fonts", "src:"} {
+	for _, bad := range reachOut {
 		if strings.Contains(css, bad) {
 			t.Errorf("tokens.css reaches outside the page (%q)", bad)
+		}
+	}
+	// The promise spans both scaffolded stylesheets: a theme is where a
+	// webfont would be most tempting, and it is exactly as banned there.
+	for _, name := range ThemeNames() {
+		theme, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) missing", name)
+		}
+		for _, bad := range reachOut {
+			if strings.Contains(string(theme), bad) {
+				t.Errorf("themes/%s.css reaches outside the page (%q)", name, bad)
+			}
 		}
 	}
 }
@@ -1871,5 +1927,62 @@ func TestLocaleMenuRenders(t *testing.T) {
 	}
 	if strings.TrimSpace(b.String()) != "" {
 		t.Errorf("empty Items must render nothing, got %q", b.String())
+	}
+}
+
+// Every theme file must declare exactly the same set of --rst-*
+// properties as ink, the reference theme. A theme that forgets a token
+// does not fail loudly at render time — it silently falls back to
+// whatever the cascade already had, which in a scaffolded app is
+// nothing at all, so the affected element renders unstyled rather than
+// wrong. Names only: values are the theme's whole point, and their
+// contrast is contrast_test.go's job.
+func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
+	names := ThemeNames()
+	if len(names) == 0 || names[0] != "ink" {
+		t.Fatalf("ThemeNames = %v; ink must exist and come first", names)
+	}
+	want := themePropSet(t, "ink")
+	if len(want) == 0 {
+		t.Fatal("ink declares no --rst- properties")
+	}
+	for _, n := range names[1:] {
+		got := themePropSet(t, n)
+		for p := range want {
+			if !got[p] {
+				t.Errorf("theme %s is missing %s", n, p)
+			}
+		}
+		for p := range got {
+			if !want[p] {
+				t.Errorf("theme %s declares %s, which ink does not", n, p)
+			}
+		}
+	}
+}
+
+// themePropSet: every --rst-* name declared anywhere in the theme file.
+func themePropSet(t *testing.T, name string) map[string]bool {
+	t.Helper()
+	css, ok := ThemeCSS(name)
+	if !ok {
+		t.Fatalf("ThemeCSS(%q) missing", name)
+	}
+	out := map[string]bool{}
+	for _, m := range regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:`).FindAllStringSubmatch(string(css), -1) {
+		out[m[1]] = true
+	}
+	return out
+}
+
+func TestTokensCSSHasNoColourLiterals(t *testing.T) {
+	// After the split, structural tokens.css may reference colours only
+	// via var(); bare hex in a *declaration value* means a colour leaked
+	// back in. Exempt: none — rgba() shadows live in the themes now too.
+	decl := regexp.MustCompile(`:\s*[^;]*#[0-9a-fA-F]{3,6}`)
+	for i, line := range strings.Split(string(TokensCSS()), "\n") {
+		if strings.Contains(line, "#") && decl.MatchString(line) {
+			t.Errorf("tokens.css line %d declares a colour literal: %s", i+1, strings.TrimSpace(line))
+		}
 	}
 }

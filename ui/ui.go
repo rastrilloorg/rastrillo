@@ -49,10 +49,13 @@
 // rst-box. The horizontal idioms are the ones tokens.css ships:
 // rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.
 //
-// Styling comes from tokens.css, which rastrillo new writes once into a
-// new app's static/ directory. rastrillo.Serve never serves it: from the
-// moment it is scaffolded it is an ordinary app-owned static file the app
-// is free to edit in place. rastrillo.js, the fragment shim behind
+// Styling comes from two stylesheets rastrillo new writes once into a
+// new app's static/ directory: tokens.css, which is structure — layout,
+// spacing, radius, the type scale and the component classes — and a
+// theme (see ThemeCSS), which is the colour and the type family those
+// classes paint themselves with. rastrillo.Serve never serves either:
+// from the moment they are scaffolded they are ordinary app-owned
+// static files the app is free to edit in place. rastrillo.js, the fragment shim behind
 // data-poll and data-busy, ships the same way, landing beside it. It
 // never replaces a native idiom — every "no JavaScript" idiom above
 // still works with scripts disabled; the shim exists only for the one
@@ -178,6 +181,9 @@ var partialsFS embed.FS
 //go:embed tokens.css
 var tokensCSS []byte
 
+//go:embed themes/*.css
+var themesFS embed.FS
+
 //go:embed rastrillo.js
 var shimJS []byte
 
@@ -201,7 +207,32 @@ func Templates() fs.FS {
 // TokensCSS returns tokens.css's raw bytes, for rastrillo new's scaffold
 // step to write into a new app's static directory. The stylesheet is
 // delivered once, at scaffold time, and is app-owned from then on.
+//
+// It is structure only. Colour and the type family live in a theme file
+// beside it — see ThemeCSS.
 func TokensCSS() []byte { return tokensCSS }
+
+// themeNames lists the shipped themes, ink first: it is the reference
+// theme, the one every other theme's token set is checked against
+// (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice matches
+// the files in themes/ exactly — adding a theme means adding both.
+var themeNames = []string{"ink"}
+
+// ThemeNames returns the shipped theme names, ink first. The returned
+// slice is a copy, so a caller sorting or truncating it cannot reorder
+// the library's own list.
+func ThemeNames() []string { return append([]string(nil), themeNames...) }
+
+// ThemeCSS returns one theme's raw bytes — the colour tokens and the
+// type family tokens.css paints its component classes with — reporting
+// false for a name that is not shipped. rastrillo new writes the chosen
+// theme once as static/theme.css, beside tokens.css and on exactly the
+// same terms: app-owned from then on, and swappable for a hand-written
+// one without touching the structural stylesheet.
+func ThemeCSS(name string) ([]byte, bool) {
+	b, err := fs.ReadFile(themesFS, "themes/"+name+".css")
+	return b, err == nil
+}
 
 // ShimJS returns rastrillo.js's raw bytes — the fragment shim — for
 // rastrillo new's scaffold step to write into a new app's static

@@ -56,8 +56,8 @@ import (
 )
 
 // page builds the handler serving one form carrying an enhanced
-// field-select, the real select.js and tokens.css, and records what a
-// submit delivers.
+// field-select, the real select.js, tokens.css and theme, and records
+// what a submit delivers.
 func page(t *testing.T, optionCount int) (http.Handler, chan string) {
 	t.Helper()
 	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
@@ -72,6 +72,17 @@ func page(t *testing.T, optionCount int) (http.Handler, chan string) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
 	})
+	// Both halves of the scaffolded stylesheet, the way a real app links
+	// them: structure from tokens.css, colour and type from the theme.
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
 		select {
@@ -84,6 +95,7 @@ func page(t *testing.T, optionCount int) (http.Handler, chan string) {
 		var body strings.Builder
 		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
 			`<title>select</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css">` +
 			`<script defer src="/select.js"></script></head><body>` +
 			`<form method="post" action="/submit">`)
 		if err := tmpl.ExecuteTemplate(&body, "field-select", selectData(optionCount)); err != nil {
