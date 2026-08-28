@@ -84,3 +84,15 @@ func TestBaseCatalogsAreCopies(t *testing.T) {
 		t.Fatal("BaseCatalogs returned live maps")
 	}
 }
+
+// TestIsBaseKey covers the predicate `rastrillo generate --check` uses to
+// tell a framework key from an app's own: only keys en actually ships,
+// and only under the rastrillo.ui.* namespace.
+func TestIsBaseKey(t *testing.T) {
+	if !IsBaseKey("rastrillo.ui.error_404_title") || !IsBaseKey("rastrillo.ui.cancel") {
+		t.Error("shipped keys must report true")
+	}
+	if IsBaseKey("rastrillo.ui.nope") || IsBaseKey("app.title") {
+		t.Error("unshipped keys must report false")
+	}
+}
