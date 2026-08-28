@@ -84,7 +84,7 @@ release. Still maintained, moving slowly.
 
 The other frameworks here optimise for what a developer can build
 quickly. Rastrillo optimises for what an agent can hold at once: one
-17 KB `SKILL.md`, budgeted and enforced by a test, covering the whole
+15 KB `SKILL.md`, budgeted and enforced by a test, covering the whole
 framework. Nothing else on this page ships a single-file spec an agent
 loads before it starts.
 
