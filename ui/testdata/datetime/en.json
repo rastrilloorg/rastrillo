@@ -69,7 +69,8 @@
 
   {"id": "impossible-hour-with-a-meridiem", "input": "25pm", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-hour-with-am", "input": "99am", "now": "2026-08-28T10:30", "expected": null},
-  {"id": "hour-zero-is-not-a-12-hour-clock", "input": "0am", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "hour-zero-with-am-is-midnight", "input": "0am", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "hour-zero-with-pm-is-noon", "input": "0pm", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
   {"id": "month-day-year-below-a-thousand", "input": "25 dec 0500", "now": "2026-08-28T10:30", "expected": null},
   {"id": "month-day-year-zero", "input": "25 dec 0000", "now": "2026-08-28T10:30", "expected": null},
   {"id": "month-day-three-digit-year", "input": "25 dec 500", "now": "2026-08-28T10:30", "expected": null},

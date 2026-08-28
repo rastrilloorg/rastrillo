@@ -531,8 +531,18 @@
           // 13:00 and "99am" was 03:00 — a guess dressed as a reading,
           // and the leftover check could not see it because every token
           // had been claimed.
+          //
+          // Zero is one of the twelve. Japanese and Chinese write
+          // midnight and noon as 午前0時 and 午後0時, 上午0点 and 下午0点 —
+          // ordinary usage, not a typo — and the modular fold already
+          // says the right thing about them: 0 with a morning marker is
+          // midnight, 0 with an afternoon one is noon, exactly as 12
+          // reads the other way round. That also lets English "0am"
+          // through, which is coherent (it IS midnight) and much
+          // simpler than a rule that would have to know which
+          // languages say it.
           if (pm >= 0 || am >= 0) {
-            if (h < 1 || h > 12) return null;
+            if (h < 0 || h > 12) return null;
             if (pm >= 0) { used[pm] = true; h = (h % 12) + 12; }
             else { used[am] = true; h = h % 12; }
           }

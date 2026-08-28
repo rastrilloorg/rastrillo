@@ -36,5 +36,10 @@
   {"id": "ru-nominative-month-parses", "lang": "ru", "input": "25 декабрь", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "ru-genitive-month-is-refused-not-guessed", "lang": "ru", "input": "25 декабря", "now": "2026-08-28T10:30", "expected": null},
   {"id": "ru-tomorrow", "lang": "ru", "input": "завтра", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
-  {"id": "ru-counted-weeks", "lang": "ru", "input": "через 2 недели", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"}
+  {"id": "ru-counted-weeks", "lang": "ru", "input": "через 2 недели", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "ja-zero-hour-morning-is-midnight", "lang": "ja", "input": "午前0時", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "ja-zero-hour-afternoon-is-noon", "lang": "ja", "input": "午後0時", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "zh-zero-hour-morning-is-midnight", "lang": "zh-Hans", "input": "上午0点", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "zh-zero-hour-afternoon-is-noon", "lang": "zh-Hans", "input": "下午0点", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "ja-zero-hour-and-minutes", "lang": "ja", "input": "午前0時30分", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:30"}
 ]
