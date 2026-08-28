@@ -67,6 +67,15 @@
   {"id": "three-digit-year-is-refused", "input": "0999", "now": "2026-08-28T10:30", "expected": null},
   {"id": "earliest-year-a-carrier-can-hold", "input": "1000", "now": "2026-08-28T10:30", "expected": "1000-08-28T09:00"},
 
+  {"id": "impossible-hour-with-a-meridiem", "input": "25pm", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-hour-with-am", "input": "99am", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "hour-zero-is-not-a-12-hour-clock", "input": "0am", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "month-day-year-below-a-thousand", "input": "25 dec 0500", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "month-day-year-zero", "input": "25 dec 0000", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "month-day-three-digit-year", "input": "25 dec 500", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "wire-date-below-a-thousand", "input": "0500-12-25", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "numeric-date-below-a-thousand", "input": "25/12/0500", "now": "2026-08-28T10:30", "expected": null},
+
   {"id": "junk", "input": "wibble", "now": "2026-08-28T10:30", "expected": null},
   {"id": "empty", "input": "", "now": "2026-08-28T10:30", "expected": null},
   {"id": "blank", "input": "   ", "now": "2026-08-28T10:30", "expected": null},

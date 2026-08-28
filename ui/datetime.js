@@ -116,10 +116,16 @@
   // in the Date constructor, which is how a typo becomes a date nobody
   // meant. Built, read back, and refused if it moved.
   function makeDate(y, mo, d, h, mi) {
+    // The carrier's wire format is four digits of year, so a year below
+    // a thousand writes "500-12-25" — which every date input rejects by
+    // silently emptying itself. A reading that clears the field is not
+    // a reading, and the floor lives here rather than beside each
+    // caller so no path can grow around it: the wire formats, the
+    // numeric d/m/y, "25 dec 0500" and a bare year all pass through.
+    if (y < 1000) return null;
     if (mo < 0 || mo > 11 || d < 1 || d > 31) return null;
     if (h < 0 || h > 23 || mi < 0 || mi > 59) return null;
     var dt = new Date(y, mo, d, h, mi, 0, 0);
-    if (y >= 0 && y < 100) dt.setFullYear(y);
     if (dt.getMonth() !== mo || dt.getDate() !== d) return null;
     return dt;
   }
@@ -518,8 +524,18 @@
         }
         if (hasTime) {
           var pm = find("pm"), am = find("am");
-          if (pm >= 0) { used[pm] = true; h = (h % 12) + 12; }
-          else if (am >= 0) { used[am] = true; h = h % 12; }
+          // A half-of-the-day marker says the clock beside it is a
+          // 12-hour one, and a 12-hour clock has twelve hours on it.
+          // The fold below is modular, so without this line every
+          // impossible hour came back as a plausible one: "25pm" was
+          // 13:00 and "99am" was 03:00 — a guess dressed as a reading,
+          // and the leftover check could not see it because every token
+          // had been claimed.
+          if (pm >= 0 || am >= 0) {
+            if (h < 1 || h > 12) return null;
+            if (pm >= 0) { used[pm] = true; h = (h % 12) + 12; }
+            else { used[am] = true; h = h % 12; }
+          }
         }
       }
       if (hasTime && (h > 23 || mi > 59)) return null;
@@ -613,11 +629,9 @@
         count++;
         if (toks[i].digits === 4) only = i;
       }
-      // Four digits, and a year a wire format can actually carry: a
-      // "0500" typed into the box produced the value "0500-08-28"'s
-      // three-digit cousin "500-08-28", which every date input rejects
-      // silently by emptying itself. A reading that clears the field is
-      // not a reading.
+      // Four digits, and a year makeDate's floor will accept — checked
+      // here too so a refused year never claims its token and never
+      // reads as a date at all.
       if (count === 1 && only >= 0 && toks[only].n >= 1000) {
         used[only] = true;
         date = new Date(own.getFullYear(), own.getMonth(), own.getDate());

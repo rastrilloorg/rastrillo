@@ -30,5 +30,11 @@
   {"id": "pt-hyphenated-noon", "lang": "pt", "input": "meio-dia", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
   {"id": "hi-kal-reads-as-tomorrow", "lang": "hi", "input": "कल", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
   {"id": "bn-kal-reads-as-tomorrow", "lang": "bn", "input": "কাল", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
-  {"id": "ga-accent-folded", "lang": "ga", "input": "amarach", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"}
+  {"id": "ga-accent-folded", "lang": "ga", "input": "amarach", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "ja-impossible-hour-with-a-meridiem", "lang": "ja", "input": "午後25時", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "zh-impossible-hour-with-a-meridiem", "lang": "zh-Hans", "input": "下午25点", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "ru-nominative-month-parses", "lang": "ru", "input": "25 декабрь", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "ru-genitive-month-is-refused-not-guessed", "lang": "ru", "input": "25 декабря", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "ru-tomorrow", "lang": "ru", "input": "завтра", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "ru-counted-weeks", "lang": "ru", "input": "через 2 недели", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"}
 ]
