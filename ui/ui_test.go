@@ -1483,6 +1483,38 @@ var styleguideSamples = map[string]string{
 	// row-menu's per-row aria-label already use, rather than a bare
 	// "checkbox 3 of 12".
 	"selbox": `<label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label>`,
+	// shell-topbar — one of the two page frames a shell puts around
+	// .rst-page: a skip link first in the DOM, a bar carrying brand, nav
+	// and an account dropdown pushed to the inline end, then the page
+	// column and a footer. No partial emits
+	// any of this — an app's layout template owns its own shell — so
+	// this sample is the only exercise these classes get. The nav's
+	// current item is aria-current, the same signal the dropdown and
+	// seg-tabs idioms already use.
+	"shell-topbar": `<div class="rst-shell-topbar">
+  <a class="rst-skip" href="#main">Skip to content</a>
+  <header class="rst-shell__bar"><a class="rst-shell__brand" href="/">Notes</a>
+    <nav class="rst-shell__nav"><a href="/" aria-current="page">Home</a><a href="/archive">Archive</a></nav>
+    <details class="rst-dropdown rst-shell__account"><summary>Account<span class="rst-caret" aria-hidden="true">` + iconSVG("chevron-down") + `</span></summary>
+      <div class="rst-dropdown__menu"><a href="/settings">Settings</a></div></details>
+  </header>
+  <main class="rst-page" id="main">Content.</main>
+  <footer class="rst-shell__foot">Made with rastrillo</footer>
+</div>`,
+	// shell-sidebar — the same frame with a rail instead of a bar. The
+	// narrow-screen disclosure is a native <details> strip whose open
+	// state reveals the rail (the adjacent-sibling selector in
+	// tokens.css), so the shell stays zero-JS like every other idiom
+	// here. The rail's own .rst-page still wraps the content, so a
+	// screen's markup is identical in either shell.
+	"shell-sidebar": `<div class="rst-shell-sidebar">
+  <a class="rst-skip" href="#main">Skip to content</a>
+  <details class="rst-shell__chrome"><summary>Menu</summary></details>
+  <aside class="rst-shell__rail"><a class="rst-shell__brand" href="/">Notes</a>
+    <nav class="rst-shell__nav"><span class="rst-shell__group">Work</span><a href="/" aria-current="page">Dashboard</a><a href="/reports">Reports</a></nav>
+  </aside>
+  <main class="rst-shell__main" id="main"><div class="rst-page">Content.</div></main>
+</div>`,
 }
 
 // The samples are static HTML with no template actions, so parsing them
@@ -1592,6 +1624,20 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 	} {
 		if !seen[class] {
 			t.Errorf("selector %q was added to tokens.css in the routes-family task but no styleguide sample uses it", class)
+		}
+	}
+	// The shell selectors: same rule again for the page frames. A shell
+	// is markup an app's own layout template writes, so no partial and
+	// no other sample can carry these — the two shell samples above are
+	// their only exercise, in both directions.
+	for _, class := range []string{
+		"rst-skip",
+		"rst-shell-topbar", "rst-shell__bar", "rst-shell__brand", "rst-shell__nav",
+		"rst-shell__account", "rst-shell__foot",
+		"rst-shell-sidebar", "rst-shell__chrome", "rst-shell__rail", "rst-shell__group", "rst-shell__main",
+	} {
+		if !seen[class] {
+			t.Errorf("selector %q was added to tokens.css in the shells task but no styleguide sample uses it", class)
 		}
 	}
 }
