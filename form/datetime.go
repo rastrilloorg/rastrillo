@@ -66,10 +66,14 @@ func (p *Parsed) DateTime(name string) time.Time { return p.dates[name] }
 // works interchangeably here). If either side is empty or failed to
 // parse, Range adds nothing — Parse already recorded that field's own
 // error (required or date_invalid), and Range never overwrites or
-// duplicates it. Equal instants are not an error.
+// duplicates it. Equal instants are not an error. Range compares only
+// fields that actually parsed (a comma-ok read of the dates map, not
+// an IsZero check) — a genuinely-submitted zero date participates
+// like any other instant, rather than being mistaken for unset.
 func Range(p *Parsed, start, end string) {
-	s, e := p.dates[start], p.dates[end]
-	if s.IsZero() || e.IsZero() {
+	s, sok := p.dates[start]
+	e, eok := p.dates[end]
+	if !sok || !eok {
 		return
 	}
 	if e.Before(s) {

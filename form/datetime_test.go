@@ -200,6 +200,26 @@ func TestRange(t *testing.T) {
 	if got := p.Errors()["End"]; got != "rastrillo.ui.date_end_before_start" {
 		t.Errorf("DateTime end-before-start error = %q", got)
 	}
+
+	// A genuinely-submitted zero date ("0001-01-01") is a real parsed
+	// instant, not "unset" — it must participate in the comparison
+	// like any other date, proving Range reads parse-presence
+	// (comma-ok) rather than IsZero.
+	p = parseForm(t, url.Values{"Start": {"0001-01-01"}, "End": {"2026-08-28"}},
+		Field{Name: "Start", Kind: Date}, Field{Name: "End", Kind: Date})
+	Range(p, "Start", "End")
+	if !p.OK() {
+		t.Errorf("zero-date start before End flagged: %v", p.Errors())
+	}
+
+	// Same zero date as Start, but now after End: must error, which
+	// an IsZero-based check would have missed entirely.
+	p = parseForm(t, url.Values{"Start": {"0001-01-01"}, "End": {"0000-12-31"}},
+		Field{Name: "Start", Kind: Date}, Field{Name: "End", Kind: Date})
+	Range(p, "Start", "End")
+	if got := p.Errors()["End"]; got != "rastrillo.ui.date_end_before_start" {
+		t.Errorf("zero-date-start-after-End error = %q, want date_end_before_start", got)
+	}
 }
 
 func TestDatetimeAccessorsUnknownNames(t *testing.T) {
