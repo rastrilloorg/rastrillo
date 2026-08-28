@@ -37,14 +37,15 @@ func runNew(args []string) error {
 	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
 	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
 	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
+	theme := fset.String("theme", "ink", "colour theme: "+strings.Join(ui.ThemeNames(), ", "))
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
 	rest := fset.Args()
 	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] <name>",
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] <name>",
 			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
-			strings.Join(profileNames(), "|"))
+			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"))
 	}
 	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
@@ -63,6 +64,10 @@ func runNew(args []string) error {
 	conventions, err := conventionsSection(*uxProfile, *iconSet, *iconDelivery)
 	if err != nil {
 		return err
+	}
+	themeCSS, ok := ui.ThemeCSS(*theme)
+	if !ok {
+		return fmt.Errorf("unknown theme %q: known themes are %s", *theme, strings.Join(ui.ThemeNames(), ", "))
 	}
 
 	pkg := packageName(name)
@@ -111,6 +116,11 @@ func runNew(args []string) error {
 		// never serves CSS at runtime; from here on this is an ordinary
 		// app-owned file that new/generate never touch again.
 		filepath.Join(appDir, "static", "tokens.css"): string(ui.TokensCSS()),
+		// The colours. tokens.css is structural only — every colour
+		// token gets its value here — so an app without a theme renders
+		// colourless. Delivered on the same terms: app-owned from here,
+		// swap it for another of ui.ThemeNames() or edit it freely.
+		filepath.Join(appDir, "static", "theme.css"): string(themeCSS),
 		// The fragment shim, delivered once like tokens.css: app-owned
 		// from here on, loaded by the layout via the same fingerprinting
 		// {{asset ...}} helper.
@@ -128,7 +138,7 @@ func runNew(args []string) error {
 		// The pin that makes the vendored bytes above verifiable: a
 		// reviewer runs the suite and knows static/'s ~56KB is the
 		// library's, not app diff to read line by line.
-		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg),
+		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, *theme),
 		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg),
 		// The browser drive, on the same delivered-once terms as the
 		// harness. browser_test.go, never harness_test.go: that name
@@ -188,6 +198,8 @@ func runNew(args []string) error {
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
 	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
+	fmt.Printf("  internal/%s/static/theme.css (the %s theme — app-owned; --theme picks from %s)\n",
+		pkg, *theme, strings.Join(ui.ThemeNames(), ", "))
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
 	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
@@ -558,6 +570,7 @@ const layoutTemplate = `{{define "layout"}}<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<link rel="stylesheet" href="{{asset "static/theme.css"}}">
 <script defer src="{{asset "static/rastrillo.js"}}"></script>
 {{iconAssets}}
 <script defer src="{{asset "static/select.js"}}"></script>
@@ -674,8 +687,16 @@ import (
 // to re-copy is caught instead of drifting silently. If you edit one
 // DELIBERATELY, delete its line below — the file is yours.
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
+	// The theme this app was scaffolded with. Change it here when you
+	// swap static/theme.css for another of ui.ThemeNames().
+	const vendoredTheme = "%[2]s"
+	themeCSS, ok := ui.ThemeCSS(vendoredTheme)
+	if !ok {
+		t.Fatalf("unknown theme %%q", vendoredTheme)
+	}
 	for name, lib := range map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
+		"theme.css":    themeCSS,
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
 	} {

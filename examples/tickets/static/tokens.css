@@ -16,88 +16,11 @@
    not a wish (ui_test.go, TestTokensCSSIsSelfContained) — which is also
    why this comment cannot spell those constructs out literally.
 
-   The look: ink on paper. Neutrals carry a faint violet cast rather than
-   the usual cool blue-grey, and the one accent is an iron-gall violet —
-   the colour writing ink oxidises to. Semantic status colours are
-   functional and never the accent, so a pill can never be mistaken for a
-   link. Both themes are authored, never inverted: dark follows the OS,
-   and the [data-theme] hooks let an explicit toggle win in both
-   directions.
-
-   ── WCAG 2.2 AA, measured ─────────────────────────────────────────────
-   Normal text needs 4.5:1; large text and UI component boundaries need
-   3:1. Every pair below was computed from these exact hex values. If you
-   change a token, recompute its row.
-
-   LIGHT                                     ratio      requirement
-     --rst-text        on --rst-surface       17.23      4.5:1  text
-     --rst-text        on --rst-bg            15.47      4.5:1  text
-     --rst-text        on --rst-surface-2     16.43      4.5:1  text
-     --rst-text        on --rst-accent-soft   15.11      4.5:1  text
-     --rst-text-muted  on --rst-surface        6.98      4.5:1  text
-     --rst-text-muted  on --rst-bg             6.26      4.5:1  text
-     --rst-text-muted  on --rst-surface-2      6.65      4.5:1  text
-     --rst-text-muted  on --rst-accent-soft    6.12      4.5:1  text
-     --rst-text-faint  on --rst-surface        5.21      4.5:1  text
-     --rst-text-faint  on --rst-bg             4.67      4.5:1  text
-     --rst-text-faint  on --rst-surface-2      4.96      4.5:1  text
-     --rst-text-faint  on --rst-accent-soft    4.56      4.5:1  text
-     --rst-accent      on --rst-surface        7.72      4.5:1  text + focus ring
-     --rst-accent      on --rst-bg             6.93      4.5:1  text + focus ring
-     --rst-accent      on --rst-surface-2      7.36      4.5:1  text
-     --rst-accent      on --rst-accent-soft    6.77      4.5:1  text
-     --rst-on-accent   on --rst-accent         7.72      4.5:1  button label
-     --rst-on-accent   on --rst-accent-strong 10.06      4.5:1  button label, hover
-     --rst-line-strong on --rst-surface        3.36      3:1    control border
-     --rst-line-strong on --rst-bg             3.02      3:1    control border
-     --rst-line-strong on --rst-surface-2      3.20      3:1    control border
-     pill neutral  fg on its own tint          7.88      4.5:1  text
-     pill positive fg on its own tint          6.10      4.5:1  text
-     pill warning  fg on its own tint          6.21      4.5:1  text
-     pill negative fg on its own tint          6.37      4.5:1  text
-
-   DARK                                      ratio      requirement
-     --rst-text        on --rst-surface       14.92      4.5:1  text
-     --rst-text        on --rst-bg            16.20      4.5:1  text
-     --rst-text        on --rst-surface-2     15.60      4.5:1  text
-     --rst-text        on --rst-accent-soft   13.35      4.5:1  text
-     --rst-text-muted  on --rst-surface        7.11      4.5:1  text
-     --rst-text-muted  on --rst-bg             7.72      4.5:1  text
-     --rst-text-muted  on --rst-surface-2      7.43      4.5:1  text
-     --rst-text-muted  on --rst-accent-soft    6.36      4.5:1  text
-     --rst-text-faint  on --rst-surface        5.69      4.5:1  text
-     --rst-text-faint  on --rst-bg             6.17      4.5:1  text
-     --rst-text-faint  on --rst-surface-2      5.95      4.5:1  text
-     --rst-text-faint  on --rst-accent-soft    5.09      4.5:1  text
-     --rst-accent      on --rst-surface        8.08      4.5:1  text + focus ring
-     --rst-accent      on --rst-bg             8.77      4.5:1  text + focus ring
-     --rst-accent      on --rst-surface-2      8.45      4.5:1  text
-     --rst-accent      on --rst-accent-soft    7.23      4.5:1  text
-     --rst-on-accent   on --rst-accent         8.15      4.5:1  button label
-     --rst-on-accent   on --rst-accent-strong 10.34      4.5:1  button label, hover
-     --rst-line-strong on --rst-surface        3.32      3:1    control border
-     --rst-line-strong on --rst-bg             3.60      3:1    control border
-     --rst-line-strong on --rst-surface-2      3.47      3:1    control border
-     pill neutral  fg on its own tint          7.43      4.5:1  text
-     pill positive fg on its own tint          8.42      4.5:1  text
-     pill warning  fg on its own tint          8.21      4.5:1  text
-     pill negative fg on its own tint          6.93      4.5:1  text
-
-   --rst-line is a hairline divider between rows, not a control border or
-   a meaningful graphic, so 1.4.11's 3:1 does not apply to it. Control
-   borders use --rst-line-strong, which does clear 3:1.
-
-   Pagination chips are the one deliberate exception: they are bordered
-   with --rst-line rather than --rst-line-strong, because a page strip
-   ringed in hard outlines shouts louder than the list it belongs to.
-   1.4.11 is satisfied without that border — each chip's meaning is
-   carried by its text label at 4.5:1 or better, and the current page
-   adds a filled background, a heavier weight and aria-current on top.
-   The border is decoration, so it is allowed to be quiet.
-
-   --rst-text-faint is the tightest pair in the set — 4.67:1 in light on
-   --rst-bg, against a 4.5:1 floor. Put it on a surface not listed above
-   and you are guessing; recompute first.
+   Colour and the type family are not here: they live in themes/ink.css,
+   which rastrillo new writes beside this file as static/theme.css. This
+   file is structure — layout, spacing, radius, the type scale, and the
+   component classes, every one of them painted with var(--rst-*). Swap
+   the theme file and the app changes palette; nothing here is touched.
 
    Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
    WCAG 2.2): pagination chips measure about 30px, row action pills
@@ -111,7 +34,6 @@
 
 /* ── Scale: type, spacing, radius. Theme-independent. ─────────────── */
 :root {
-  --rst-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --rst-fs-base: 0.875rem;   /* 14px at the browser default */
   --rst-fs-sm: 0.78125rem;   /* 12.5px */
   --rst-fs-xs: 0.71875rem;   /* 11.5px */
@@ -126,104 +48,6 @@
   --rst-radius: 10px;
   --rst-radius-sm: 7px;
   --rst-radius-pill: 999px;
-}
-
-/* ── Colour: light. Also the explicit-toggle-to-light case. ───────── */
-:root,
-:root[data-theme="light"] {
-  color-scheme: light;
-
-  --rst-bg: #f3f2f7;
-  --rst-surface: #ffffff;
-  --rst-surface-2: #faf9fc;
-  --rst-line: #e4e2ec;
-  --rst-line-strong: #8d89a4;
-
-  --rst-text: #1b1a23;
-  --rst-text-muted: #5b5670;
-  --rst-text-faint: #6e6987;
-
-  --rst-accent: #5b3fa8;
-  --rst-accent-strong: #47308f;
-  --rst-accent-soft: #f2eefc;
-  --rst-on-accent: #ffffff;
-
-  --rst-tone-neutral-fg: #45415a;
-  --rst-tone-neutral-bg: #e8e6ef;
-  --rst-tone-positive-fg: #17603f;
-  --rst-tone-positive-bg: #d7ecdf;
-  --rst-tone-warning-fg: #74490e;
-  --rst-tone-warning-bg: #f4e4c9;
-  --rst-tone-negative-fg: #93262f;
-  --rst-tone-negative-bg: #f9dcdd;
-
-  --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* ── Colour: dark, following the OS. ──────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --rst-bg: #0d0c12;
-    --rst-surface: #17161f;
-    --rst-surface-2: #121119;
-    --rst-line: #292733;
-    --rst-line-strong: #6b6782;
-
-    --rst-text: #ebe9f2;
-    --rst-text-muted: #a5a0b8;
-    --rst-text-faint: #928db0;
-
-    --rst-accent: #b6a0ff;
-    --rst-accent-strong: #cbbaff;
-    --rst-accent-soft: #241c3d;
-    --rst-on-accent: #1a1030;
-
-    --rst-tone-neutral-fg: #bcb7cf;
-    --rst-tone-neutral-bg: #2a2836;
-    --rst-tone-positive-fg: #74dba8;
-    --rst-tone-positive-bg: #16301f;
-    --rst-tone-warning-fg: #eab86c;
-    --rst-tone-warning-bg: #322512;
-    --rst-tone-negative-fg: #f58c95;
-    --rst-tone-negative-bg: #35191e;
-
-    --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* ── Colour: dark, chosen explicitly. Higher specificity than the
-      media query above, so a toggle wins over the OS in both
-      directions. ───────────────────────────────────────────────────── */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --rst-bg: #0d0c12;
-  --rst-surface: #17161f;
-  --rst-surface-2: #121119;
-  --rst-line: #292733;
-  --rst-line-strong: #6b6782;
-
-  --rst-text: #ebe9f2;
-  --rst-text-muted: #a5a0b8;
-  --rst-text-faint: #928db0;
-
-  --rst-accent: #b6a0ff;
-  --rst-accent-strong: #cbbaff;
-  --rst-accent-soft: #241c3d;
-  --rst-on-accent: #1a1030;
-
-  --rst-tone-neutral-fg: #bcb7cf;
-  --rst-tone-neutral-bg: #2a2836;
-  --rst-tone-positive-fg: #74dba8;
-  --rst-tone-positive-bg: #16301f;
-  --rst-tone-warning-fg: #eab86c;
-  --rst-tone-warning-bg: #322512;
-  --rst-tone-negative-fg: #f58c95;
-  --rst-tone-negative-bg: #35191e;
-
-  --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Base. Three rules, so a freshly scaffolded app looks finished
@@ -855,7 +679,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-switch { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input { height: 1px; opacity: 0; position: absolute; width: 1px; }
 .rst-switch__track { background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; transition: background 0.15s; width: 34px; }
-.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
+.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
 .rst-switch:has(input:checked) .rst-switch__track { background: var(--rst-accent); }
 .rst-switch:has(input:checked) .rst-switch__track::after { transform: translateX(15px); }
 .rst-switch:has(input:focus-visible) .rst-switch__track { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
@@ -877,7 +701,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-seg-tabs { background: var(--rst-accent-soft); border-radius: 8px; display: flex; gap: 2px; padding: 2px; width: max-content; }
 .rst-seg-tabs a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
 .rst-seg-tabs a:hover { color: var(--rst-text); }
-.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); color: var(--rst-text); font-weight: 600; }
+.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field { margin-top: var(--rst-sp-5); }
@@ -919,7 +743,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
    plain link to that page. */
 .rst-backdrop { display: contents; }
 body:has(.rst-backdrop) { overflow: hidden; }
-.rst-modal-overlay { align-items: center; background: rgba(0, 0, 0, 0.45); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
+.rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
 .rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
 .rst-modal-panel > nav { border-right: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
 .rst-modal-panel > nav a { border-radius: 8px; color: inherit; padding: 0.4rem 0.65rem; text-decoration: none; }

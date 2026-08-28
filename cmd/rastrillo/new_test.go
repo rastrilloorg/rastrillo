@@ -30,6 +30,62 @@ func TestNewScaffoldsTokensCSS(t *testing.T) {
 	}
 }
 
+// tokens.css is structural only: colour arrives in a theme, and the
+// default is ink. Without static/theme.css a scaffolded app renders
+// colourless, so the theme ships beside the tokens.
+func TestNewScaffoldsThemeCSS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("blogapp", "internal", "blogapp", "static", "theme.css"))
+	if err != nil {
+		t.Fatalf("expected a scaffolded theme: %v", err)
+	}
+	want, ok := ui.ThemeCSS("ink")
+	if !ok {
+		t.Fatal(`ui.ThemeCSS("ink") reports no such theme`)
+	}
+	if !bytes.Equal(got, want) {
+		t.Errorf("scaffolded theme.css is not the ink theme verbatim (%d bytes vs %d)", len(got), len(want))
+	}
+}
+
+// --theme picks the colours; an unknown name fails while the working
+// directory is still clean, the same resolve-before-scaffold rule the
+// icon flags follow.
+func TestNewThemeFlag(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--theme=teal", "app"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("app", "internal", "app", "static", "theme.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := ui.ThemeCSS("teal")
+	if !bytes.Equal(got, want) {
+		t.Error("static/theme.css is not the teal theme")
+	}
+	if err := runNew([]string{"--theme=nope", "app2"}); err == nil {
+		t.Fatal("unknown theme must fail")
+	}
+	if _, err := os.Stat("app2"); !os.IsNotExist(err) {
+		t.Error("a failed new must not leave a directory behind")
+	}
+}
+
+// The scaffolded layout links the theme beside the tokens: structure
+// then colour, both through the fingerprinting {{asset ...}} helper.
+func TestLayoutTemplateLinksThemeCSS(t *testing.T) {
+	if !strings.Contains(layoutTemplate, `<link rel="stylesheet" href="{{asset "static/theme.css"}}">`) {
+		t.Errorf("layout template does not link static/theme.css:\n%s", layoutTemplate)
+	}
+	if strings.Index(layoutTemplate, "static/tokens.css") > strings.Index(layoutTemplate, "static/theme.css") {
+		t.Error("theme.css must come after tokens.css: the theme fills in what the tokens declare")
+	}
+}
+
 // rastrillo new writes the fragment shim into the new app's static
 // tree, once, the same way it writes tokens.css. From then on it is an
 // ordinary app-owned file.
@@ -120,6 +176,8 @@ func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 		filepath.Join("internal", "blogapp", "render.go"),
 		filepath.Join("internal", "blogapp", "templates", "layout.html"),
 		filepath.Join("internal", "blogapp", "templates", "index.html"),
+		filepath.Join("internal", "blogapp", "static", "tokens.css"),
+		filepath.Join("internal", "blogapp", "static", "theme.css"),
 		filepath.Join("manifest", "README.md"),
 	} {
 		if _, err := os.Stat(filepath.Join("blogapp", rel)); err != nil {
@@ -650,6 +708,10 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 		"ui.TokensCSS()",
 		"ui.ShimJS()",
 		"ui.SelectJS()",
+		// The theme is vendored too, and the pin has to remember which
+		// one this app was scaffolded with.
+		`vendoredTheme = "ink"`,
+		"ui.ThemeCSS(vendoredTheme)",
 		`filepath.Join("..", "blogapp", "static", name)`,
 	} {
 		if !strings.Contains(src, want) {
