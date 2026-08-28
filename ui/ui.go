@@ -184,6 +184,9 @@ var tokensCSS []byte
 //go:embed themes/*.css
 var themesFS embed.FS
 
+//go:embed layouts/*.html
+var layoutsFS embed.FS
+
 //go:embed rastrillo.js
 var shimJS []byte
 
@@ -250,3 +253,32 @@ func ShimJS() []byte { return shimJS }
 // enough to read in one sitting. An app that never renders a select past
 // ten options can delete it and the script tag; nothing else changes.
 func SelectJS() []byte { return selectJS }
+
+// layoutNames lists the shipped shells, column first: it is the plain
+// centred page every scaffolded app starts on, and the two chrome
+// shells are the ones an app opts into. The slice matches the files in
+// layouts/ exactly — adding a shell means adding both.
+var layoutNames = []string{"column", "topbar", "sidebar"}
+
+// LayoutNames returns the shipped shell names, column first. The
+// returned slice is a copy, so a caller sorting or truncating it cannot
+// reorder the library's own list.
+func LayoutNames() []string { return append([]string(nil), layoutNames...) }
+
+// Layout returns one shell's raw template text — a complete
+// layout.html defining "layout" — reporting false for a name that is
+// not shipped. rastrillo new writes the chosen shell once as
+// templates/layout.html, on the same terms as tokens.css and the theme:
+// app-owned from the moment it lands.
+//
+// A shell is a page frame with holes in it. It executes
+// {{template "content" .}} for the page's own body, and every piece of
+// chrome around that is a block with a working default a page overrides
+// by redefining it: title, lang and dir in all three, plus brand, nav,
+// account and locale in the two chrome shells, and foot in topbar. No
+// block reads a field off the data, so a shell renders the same whether
+// a handler passes a struct, a dict-built map, or nil.
+func Layout(name string) ([]byte, bool) {
+	b, err := fs.ReadFile(layoutsFS, "layouts/"+name+".html")
+	return b, err == nil
+}

@@ -1,0 +1,31 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<link rel="stylesheet" href="{{asset "static/theme.css"}}">
+<script defer src="{{asset "static/rastrillo.js"}}"></script>
+{{iconAssets}}
+<script defer src="{{asset "static/select.js"}}"></script>
+</head>
+<body>
+<div class="rst-shell-sidebar">
+<a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<details class="rst-shell__chrome"><summary>{{T "rastrillo.ui.shell_menu"}}</summary></details>
+<aside class="rst-shell__rail">
+{{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+<nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
+{{block "account" .}}{{end}}
+{{block "locale" .}}{{end}}
+</aside>
+<main class="rst-shell__main" id="main">
+<div class="rst-page">
+{{template "content" .}}
+</div>
+</main>
+</div>
+</body>
+</html>
+{{end}}

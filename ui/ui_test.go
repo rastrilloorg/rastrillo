@@ -3,6 +3,7 @@ package ui
 import (
 	"html/template"
 	"io/fs"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -2035,5 +2036,41 @@ func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 		if (strings.Contains(line, "#") || strings.Contains(line, "rgb") || strings.Contains(line, "hsl")) && decl.MatchString(line) {
 			t.Errorf("tokens.css line %d declares a colour literal: %s", i+1, strings.TrimSpace(line))
 		}
+	}
+}
+
+// The three shells are real templates, not documentation: each one
+// parses with the ui funcs, defines "layout", executes against nil data
+// (so a struct-vs-map decision in an app cannot break a shell), and
+// resolves every catalog key it names.
+func TestLayoutsParseAndRender(t *testing.T) {
+	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar"}) {
+		t.Fatalf("LayoutNames = %v", got)
+	}
+	for _, name := range LayoutNames() {
+		t.Run(name, func(t *testing.T) {
+			src, ok := Layout(name)
+			if !ok {
+				t.Fatal("missing")
+			}
+			tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
+				"asset":      func(p string) string { return "/" + p },
+				"iconAssets": func() template.HTML { return "" },
+			}).Parse(string(src)))
+			template.Must(tmpl.Parse(`{{define "content"}}CONTENT-SENTINEL{{end}}`))
+			var b strings.Builder
+			if err := tmpl.ExecuteTemplate(&b, "layout", nil); err != nil {
+				t.Fatal(err)
+			}
+			out := b.String()
+			for _, want := range []string{"CONTENT-SENTINEL", "static/theme.css", "static/tokens.css", `id="main"`, "Skip to content"} {
+				if !strings.Contains(out, want) {
+					t.Errorf("%s: missing %q", name, want)
+				}
+			}
+			if strings.Contains(out, "rastrillo.ui.") {
+				t.Errorf("%s: an unresolved catalog key leaked into the page", name)
+			}
+		})
 	}
 }
