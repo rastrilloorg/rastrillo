@@ -1,0 +1,26 @@
+{{/* locale-menu — the language switcher (design spec 2026-08-28 §2.4):
+     a details/summary dropdown listing the app's declared locales,
+     each item a one-field POST form to /_locale so the choice is stored
+     in the locale cookie and the user lands on the same path under the
+     new prefix. No JavaScript. Renders nothing for an empty Items, so
+     a one-locale app calls it unconditionally.
+
+     Each item's autonym is marked with its own lang so a screen reader
+     switches voice to say "Gaeilge" in Irish. The current locale is
+     aria-current and rendered as a button too, so the list is uniform
+     for keyboard users; submitting it is a harmless no-op.
+
+     Keys:
+       Items   []rastrillo.LocaleItem, required — from rastrillo.LocaleItems(r)
+       Return  string, optional — current path+query to come back to;
+               omit and the switch lands on the locale's home
+       Action  string, optional — default /_locale (rastrillo.LocaleSwitchPath) */}}
+{{define "locale-menu"}}{{if .Items}}<details class="rst-dropdown rst-locale">
+  <summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+  <div class="rst-dropdown__menu">
+  {{- $action := or .Action "/_locale"}}{{$return := .Return}}
+  {{- range .Items}}
+    <form method="post" action="{{$action}}"><input type="hidden" name="locale" value="{{.Code}}">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit" lang="{{.Code}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</button></form>
+  {{- end}}
+  </div>
+</details>{{end}}{{end}}
