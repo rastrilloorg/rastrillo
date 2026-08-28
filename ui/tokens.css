@@ -852,7 +852,11 @@ body:has(.rst-backdrop) { overflow: hidden; }
 .rst-shell__nav a:hover { color: var(--rst-text); }
 .rst-shell__nav a[aria-current] { border-block-end-color: var(--rst-accent); color: var(--rst-text); font-weight: 550; }
 .rst-shell__account { margin-inline-start: auto; }
+/* an account menu whose block was never overridden has an empty menu; hide the whole control rather than show a dead summary. */
+.rst-shell__account:has(> .rst-dropdown__menu:empty) { display: none; }
 .rst-shell__foot { border-block-start: 1px solid var(--rst-line); color: var(--rst-text-muted); font-size: var(--rst-fs-xs); padding-block: var(--rst-sp-4); padding-inline: var(--rst-sp-4); text-align: center; }
+/* the topbar shell emits a foot even when the block is un-overridden; an empty one is a stray rule and padding, so draw nothing. */
+.rst-shell__foot:empty { display: none; }
 
 /* sidebar shell — a rail beside the page. Below 800px the rail is
    hidden behind a <details> chrome strip and, opened, becomes an
@@ -874,7 +878,7 @@ body:has(.rst-backdrop) { overflow: hidden; }
 @media (min-width: 800px) {
   .rst-shell-sidebar { display: grid; grid-template-columns: 15rem 1fr; }
   .rst-shell-sidebar > .rst-shell__chrome { display: none; }
-  .rst-shell-sidebar > .rst-shell__rail { block-size: 100vh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
+  .rst-shell-sidebar > .rst-shell__rail { block-size: 100dvh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
 }
 
 /* error page — one centred column, whatever shell it lands in: the

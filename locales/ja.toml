@@ -26,6 +26,6 @@ rastrillo.ui.error_503_body = "サイトを更新中か、混み合っていま�
 rastrillo.ui.error_generic_title = "何か問題があります"
 rastrillo.ui.error_generic_body = "そのリクエストは完了できませんでした。前に戻ってやり直してください。"
 rastrillo.ui.error_back = "戻る"
-rastrillo.ui.error_home = "最初のページ"
+rastrillo.ui.error_home = "トップページ"
 rastrillo.ui.error_ref = "参照番号: {ref}"
 rastrillo.ui.shell_home = "ホーム"

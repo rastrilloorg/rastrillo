@@ -1647,6 +1647,73 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 	}
 }
 
+// TestEveryEmbeddedThemeAndLayoutIsNamed closes the ungated-theme path.
+// ThemeCSS and Layout read the embedded FS by filename, but every gate
+// that checks a theme or a shell — the token-set parity check, the WCAG
+// contrast sweep, TestLayoutsParseAndRender — iterates ThemeNames() and
+// LayoutNames() instead. So a themes/foo.css added without its slice
+// entry is scaffoldable (rastrillo new --theme=foo finds the file) while
+// no gate ever looks at it. This test is the one place the directory
+// itself is read, so the file set and the name list cannot drift apart.
+func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
+	for _, tc := range []struct {
+		dir   string
+		ext   string
+		fsys  fs.FS
+		names []string
+	}{
+		{"themes", ".css", themesFS, ThemeNames()},
+		{"layouts", ".html", layoutsFS, LayoutNames()},
+	} {
+		t.Run(tc.dir, func(t *testing.T) {
+			ents, err := fs.ReadDir(tc.fsys, tc.dir)
+			if err != nil {
+				t.Fatalf("ReadDir(%s): %v", tc.dir, err)
+			}
+			onDisk := map[string]bool{}
+			for _, e := range ents {
+				onDisk[e.Name()] = true
+			}
+			named := map[string]bool{}
+			for _, n := range tc.names {
+				named[n+tc.ext] = true
+			}
+			for f := range onDisk {
+				if !named[f] {
+					t.Errorf("%s/%s is embedded but not in the name list: it is scaffoldable and ungated", tc.dir, f)
+				}
+			}
+			for f := range named {
+				if !onDisk[f] {
+					t.Errorf("the name list promises %s/%s, which is not embedded", tc.dir, f)
+				}
+			}
+		})
+	}
+}
+
+// The same drift check the styleguide samples get, for the shells that
+// ship as whole templates: every rst- class the layout files emit must
+// resolve to a selector in tokens.css. TestIdiomClassesAreStyled covers
+// the samples; a layout is markup no sample carries, so without this a
+// shell could name a class the stylesheet never defines.
+func TestLayoutClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, name := range LayoutNames() {
+		src, ok := Layout(name)
+		if !ok {
+			t.Fatalf("Layout(%q) missing", name)
+		}
+		for _, attr := range classAttrPattern.FindAllStringSubmatch(string(src), -1) {
+			for _, class := range rstClassPattern.FindAllString(attr[1], -1) {
+				if !strings.Contains(css, "."+class) {
+					t.Errorf("tokens.css has no selector for %q (used in layouts/%s.html)", class, name)
+				}
+			}
+		}
+	}
+}
+
 // Same drift check again, direct rather than sample-driven: the classes
 // this task's partials (confirm-form, back-nav, notice, form-error,
 // bulk-bar) emit themselves, so there is no arbitrary caller-composed

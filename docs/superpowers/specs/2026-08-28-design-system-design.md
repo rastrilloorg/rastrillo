@@ -418,7 +418,7 @@ statuses above, `error_generic_title`/`_body` for any other, `error_back`,
 
 ### 4b.2 The plumbing
 
-- `rastrillo.Ctx` gains `ErrorPage func(w http.ResponseWriter, r *http.Request, status int, ref string)` — set by the scaffold's render helper to render `error-page` inside the layout. Nil falls back to today's text.
+- `rastrillo.Ctx` gains `ErrorPage func(w http.ResponseWriter, r *http.Request, status int, ref string)` — set by the scaffold's render helper to render `error-page` inside the layout. Nil falls back to today's text. The scaffold wires `Options.ErrorPage` only; `Ctx.ErrorPage` is the app's own to set, because the mux scaffold has no ctx factory to hang it off (as built, 2026-08-28).
 - `view.Fail` mints a `ref` (6 chars, base32 of 4 random bytes), logs it beside the error, and calls `ctx.ErrorPage(w, r, 500, ref)`.
 - `view.NotFound(ctx, w, r)` and `view.Forbidden(ctx, w, r)` replace the bare `http.NotFound`/`http.Error` calls in the generated actions and the auth/password/passkey packages where a `Ctx` is in reach. The generated-actions and identity-plugin adoption of the two helpers moves to PR 3; only `Fail`'s signature sweep landed with this PR (as built, 2026-08-28). Sites without a `Ctx` (the framework's own `/healthz`-tier routes) stay plain — they are never a user's screen.
 - `rastrillo.Serve` gains panic recovery: a recovered panic logs the stack with a ref and renders the 500 page through `Options.ErrorPage` (the same function, hoisted to Options so the recovery wrapper outside any `Ctx` can reach it). Today a panic is a dropped connection.
