@@ -76,3 +76,22 @@ test("a grant is namespaced", async () => {
   const other = ring("app");
   await assert.rejects(() => other.openGrant(member.boxPrivJwk, sealed));
 });
+
+test("blobKey matches the Go derivation, pinned by value", async () => {
+  // Not in golden.json (that file is hash-pinned, wire-format-forever);
+  // pinned instead against the Go side's deterministic output for
+  // seed = 0x07 x32, ring "kass", name "servers" — see
+  // keyring/blobkey_test.go.
+  const seed = new Uint8Array(32).fill(7);
+  const got = await r.blobKey(seed, "servers");
+  assert.equal(
+    Buffer.from(got).toString("hex"),
+    "f3b239c47fc8cec5c20588083f93c73640b6b75ce8a1473576d93ebe172d2d43");
+});
+
+test("blobKey isolates names", async () => {
+  const seed = new Uint8Array(32).fill(7);
+  const a = Buffer.from(await r.blobKey(seed, "servers")).toString("hex");
+  const b = Buffer.from(await r.blobKey(seed, "drafts")).toString("hex");
+  assert.notEqual(a, b);
+});

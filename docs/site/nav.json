@@ -239,6 +239,11 @@
           "blurb": "Render, Fail and ParseID for a generated action."
         },
         {
+          "slug": "reference/vault",
+          "label": "vault",
+          "blurb": "The Pegamento vault's client half: sealed named blobs, wrapped seeds per method, and the enrol/restore handoff."
+        },
+        {
           "slug": "reference/vectors",
           "label": "vectors",
           "blurb": "Golden vectors that pin an app's JS derivation engine to its Go one, and kass's canonical() rule."

@@ -64,6 +64,18 @@ func (r Ring) ContentKey(seed []byte) []byte {
 	return crypto.Derive(seed, r.Namespace+"/content/v1")
 }
 
+// BlobKey derives the sealing key for one named vault blob:
+// crypto.Derive(seed, Namespace+"/blob/"+name+"/v1") — Woodstar's
+// woodstar/blob/v1 generalised per name. Deterministic, like
+// ContentKey: a blob key is a name for one of the seed's purposes,
+// not a second secret. The name lands inside the context string, so
+// callers must validate it first (the vault package's closed
+// namespace restricts names to [a-z0-9-]{1,64} at construction);
+// keyring derives what it is given.
+func (r Ring) BlobKey(seed []byte, name string) []byte {
+	return crypto.Derive(seed, r.Namespace+"/blob/"+name+"/v1")
+}
+
 // WrapKey derives the seed-wrapping key from a credential's PRF
 // output: crypto.Derive(prf, Namespace+"/wrap/v1"). WrapSeed and
 // UnwrapSeed compose it; it is exported because the JS twin's caller

@@ -216,6 +216,42 @@ func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) 
 	return nil
 }
 
+// Mint creates a session row and returns its token without touching
+// any cookie — for a credential that lives somewhere other than this
+// browser (the vault's copy of an instance session, say). Same TTL,
+// same table, same Sweep as every other row; only the delivery
+// differs. The token is the credential: hand it only to something the
+// subject controls.
+func (s *Sessions) Mint(sess Session) (string, error) {
+	token, hash, err := NewToken()
+	if err != nil {
+		return "", err
+	}
+	if err := s.create(hash, sess, time.Now()); err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+// Adopt verifies token against the store and, if its row is alive,
+// sets the session cookie to it and returns the session. It mints
+// nothing and revokes nothing: the row simply gains a cookie pointing
+// at it (Mint's counterpart — the vault restore path). A dead or
+// unknown token refuses without touching any cookie, so a failed
+// restore falls through to the app's ordinary sign-in.
+func (s *Sessions) Adopt(w http.ResponseWriter, r *http.Request, token string) (Session, bool) {
+	sess, ok, err := s.lookup(HashToken(token), time.Now())
+	if err != nil {
+		s.cfg.Logger.Error("rastrillo/sessions: adopt lookup", "err", err)
+		return Session{}, false
+	}
+	if !ok {
+		return Session{}, false
+	}
+	s.setCookie(w, token, int(s.cfg.TTL.Seconds()))
+	return sess, true
+}
+
 // SignOut revokes the presented session's row (real revocation — the
 // cookie alone dying would leave the token valid) and clears the
 // cookie. A revoke failure is logged, not returned: sign-out from the
