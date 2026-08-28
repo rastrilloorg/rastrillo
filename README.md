@@ -736,3 +736,29 @@ rastrillo builds apps on top of, and
 the Claude Code skill capturing the family's conventions — including,
 after this framework's first pieces landed, which of those conventions
 rastrillo now enforces mechanically rather than asks you to remember.
+
+## Licence
+
+Rastrillo is licensed under the **Mozilla Public License 2.0**. The full
+text is in [`LICENSE`](LICENSE).
+
+MPL-2.0 is file-level copyleft, which is the property that suits a
+framework: an app that imports Rastrillo is unaffected and may carry any
+licence you like, while changes made to Rastrillo's own files are
+expected to be published.
+
+Two parts of this repository are not covered by that licence:
+
+- **`gormlite/`** is MIT, not MPL. It is a minimal fork of
+  `github.com/glebarez/sqlite` v1.11.0 and keeps the upstream copyright
+  in [`gormlite/LICENSE`](gormlite/LICENSE).
+- **Icons** carry their vendors' terms. `--icons=font-awesome` means
+  Font Awesome Free and writes the CC BY 4.0 attribution its licence
+  requires into the generated package; that obligation belongs to the
+  app, not to the framework.
+
+Addons live in their own repositories on their own release schedules and
+set their own licences; `amadan.net/rastrillo/idear` does not inherit
+this one.
+
+Copyright (c) 2026 The Rastrillo authors.
