@@ -150,15 +150,22 @@ block contract with a worked override.
 func TokensCSS() []byte
 func ShimJS() []byte
 func SelectJS() []byte
+func DatetimeJS() []byte
 ```
 
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
 into the app's `static/`. `ShimJS` is `rastrillo.js` — the
 progressive-enhancement shim that drives `data-poll`, `data-poll-push`
 and `data-busy` ([Background jobs](/docs/jobs)). `SelectJS` backs the
-enhanced select.
+enhanced select. `DatetimeJS` backs the date fields: it turns an input
+carrying `data-rst-date` or `data-rst-time` into a combobox that reads
+"tomorrow", "next fri 9am" or "in 2 weeks" and writes the result back
+to the native input, which stays in the form as the value carrier. It
+holds no month names, no weekday names and no English of its own — the
+calendar names come from `Intl` in the page's language, and the words
+arrive on `data-rst-date-words` from the request's catalog.
 
-All three are delivered once and yours from then on. Edit them freely;
+All four are delivered once and yours from then on. Edit them freely;
 nothing in the framework overwrites them. The scaffold's
 `vendored_test.go` pins the delivered copies byte-identical to these, so
 drift is something you choose rather than discover — update or delete

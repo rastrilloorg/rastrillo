@@ -13,6 +13,14 @@
      screen. Every one of them comes from the catalog — datetime.js
      contains no English of its own, which is the point of the split.
 
+     The hint travels as its RAW template, {example} and all:
+     datetime.js substitutes an example date it formatted itself, in
+     the page's own locale. Filling it in here would have meant Tf, and
+     an app that rebinds T to a lookup ignoring its arguments — which
+     rastrillo.T(r, key) is — gets the placeholder back unsubstituted
+     and prints "{example}" at a person. One placeholder, substituted
+     where the locale's own formatter is.
+
      html/template escapes the words JSON's quotes into &#34; on the way
      into the attribute; getAttribute reverses that before JSON.parse
      sees it. That is the correct escaping, not a bug to route around.
@@ -37,7 +45,7 @@
                  enhancement attributes at all */}}
 {{define "field-datetime"}}<div class="rst-field">
   <label class="rst-field__label" for="{{.Name}}">{{.Label}}{{if .Required}} <span class="rst-field__required" aria-hidden="true">*</span>{{end}}</label>
-  <input class="rst-input" id="{{.Name}}" name="{{.Name}}" type="datetime-local"{{if .Value}} value="{{.Value}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}{{if not .Plain}} data-rst-date data-rst-date-words="{{dateWords}}" data-rst-date-set="{{T "rastrillo.ui.date_set"}}" data-rst-date-hint="{{Tf "rastrillo.ui.date_hint" "example" "2006-01-02T15:04"}}" data-rst-date-pick="{{T "rastrillo.ui.date_pick"}}" data-rst-date-results="{{T "rastrillo.ui.date_results"}}" data-rst-date-result-one="{{T "rastrillo.ui.date_result_one"}}" data-rst-date-quick-today="{{T "rastrillo.ui.date_quick_today"}}" data-rst-date-quick-tomorrow="{{T "rastrillo.ui.date_quick_tomorrow"}}" data-rst-date-quick-next-week="{{T "rastrillo.ui.date_quick_next_week"}}" data-rst-date-quick-plus-1h="{{T "rastrillo.ui.date_quick_plus_1h"}}" data-rst-date-quick-plus-2h="{{T "rastrillo.ui.date_quick_plus_2h"}}" data-rst-date-quick-end-of-day="{{T "rastrillo.ui.date_quick_end_of_day"}}" data-rst-date-quick-next-day="{{T "rastrillo.ui.date_quick_next_day"}}"{{end}}>
+  <input class="rst-input" id="{{.Name}}" name="{{.Name}}" type="datetime-local"{{if .Value}} value="{{.Value}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}{{if not .Plain}} data-rst-date data-rst-date-words="{{dateWords}}" data-rst-date-set="{{T "rastrillo.ui.date_set"}}" data-rst-date-hint="{{T "rastrillo.ui.date_hint"}}" data-rst-date-pick="{{T "rastrillo.ui.date_pick"}}" data-rst-date-results="{{T "rastrillo.ui.date_results"}}" data-rst-date-result-one="{{T "rastrillo.ui.date_result_one"}}" data-rst-date-quick-today="{{T "rastrillo.ui.date_quick_today"}}" data-rst-date-quick-tomorrow="{{T "rastrillo.ui.date_quick_tomorrow"}}" data-rst-date-quick-next-week="{{T "rastrillo.ui.date_quick_next_week"}}" data-rst-date-quick-plus-1h="{{T "rastrillo.ui.date_quick_plus_1h"}}" data-rst-date-quick-plus-2h="{{T "rastrillo.ui.date_quick_plus_2h"}}" data-rst-date-quick-end-of-day="{{T "rastrillo.ui.date_quick_end_of_day"}}" data-rst-date-quick-next-day="{{T "rastrillo.ui.date_quick_next_day"}}"{{end}}>
   {{- if .Hint}}
   <small class="rst-field__hint" id="{{.Name}}-hint">{{.Hint}}</small>
   {{- end}}

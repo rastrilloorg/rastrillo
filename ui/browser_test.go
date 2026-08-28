@@ -1,8 +1,9 @@
 //go:build browser
 
-// The browser test for field-select's enhancement — the residue a Go
-// test cannot reach, because it needs a real JS engine and real focus
-// and keyboard handling.
+// The browser tests for the two enhancements that need one —
+// field-select's combobox and the date fields' — the residue a Go test
+// cannot reach, because it needs a real JS engine and real focus and
+// keyboard handling.
 //
 // Build-tagged rather than env-gated so a plain `go test ./...` never
 // silently half-runs it, and so chromedp stays out of the ordinary
@@ -34,10 +35,11 @@
 // inside one page evaluation, which trades away the fidelity of real
 // CDP input — not obviously the right trade, so it has not been made.
 //
-// One test, deliberately: a browser drive is expensive, so this one
-// drives the whole journey — render, enhance, filter, keyboard-select,
-// mirror, submit — and asserts the server received the value.
-// Everything cheaper lives in field_select_test.go and shim_test.go.
+// One test per enhancement, deliberately: a browser drive is
+// expensive, so each drives a whole journey — render, enhance, type,
+// keyboard-commit, mirror, submit — and asserts the server received the
+// value. Everything cheaper lives in field_select_test.go,
+// datetime_test.go and shim_test.go.
 package ui
 
 import (
@@ -285,4 +287,204 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 	// the junk set in full: the "null" this file's in-place scan was
 	// missing arrived with the move.
 	rig.Screen("body", "after the journey")
+}
+
+// datePage serves one form carrying an enhanced field-date, the real
+// datetime.js, tokens.css and theme, and records what a submit
+// delivers.
+func datePage(t *testing.T) (http.Handler, chan string) {
+	t.Helper()
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+
+	got := make(chan string, 1)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /datetime.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(DatetimeJS())
+	})
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		select {
+		case got <- r.PostFormValue("due"):
+		default:
+		}
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>ok</title></head><body><p id="done">received</p></body></html>`)
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		var body strings.Builder
+		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+			`<title>date</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css">` +
+			`<script defer src="/datetime.js"></script></head><body>` +
+			`<form method="post" action="/submit">`)
+		if err := tmpl.ExecuteTemplate(&body, "field-date", map[string]any{
+			"Name": "due", "Label": "Due",
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		body.WriteString(`<button type="submit" id="go">Save</button></form></body></html>`)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, body.String())
+	})
+	return mux, got
+}
+
+// TestEnhancedDateDrivesTheWholeJourney is the date field's one browser
+// test, on the same terms as the select drive above: a real engine, real
+// focus, real keys.
+//
+// Bug classes it exists to catch — each renders perfectly and says
+// nothing wrong:
+//
+//   - the parser reads "tomorrow" but nothing is written back, so the
+//     form submits an empty date while the screen shows one;
+//   - the native input is removed rather than hidden, so the form
+//     submits nothing at all;
+//   - the label is left pointing at the hidden native, leaving the
+//     control the user types into with no accessible name;
+//   - a JS error takes the enhancement down and the page still looks
+//     fine (the rig's screen gate catches this one).
+//
+// It shares the select drive's KNOWN LIMITATION: real CDP input under
+// machine load can deliver a keystroke while focus has drifted. Read
+// the reported step before believing a failure.
+func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
+	mux, submitted := datePage(t)
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancelTimeout()
+
+	// The browser and this test share one clock, so "tomorrow" is the
+	// same day for both — except across the one midnight a run could
+	// straddle. Both readings are accepted rather than pinning the
+	// clock, which a real browser will not let a Go test do anyway.
+	before := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+
+	var (
+		comboCount, nativeCount int
+		labelFor, nativeValue   string
+		typed                   string
+		nativeHidden            bool
+	)
+
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
+		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+		chromedp.Evaluate(`document.querySelectorAll('input[role="combobox"]').length`, &comboCount),
+		chromedp.Evaluate(`document.querySelectorAll('input[name="due"]').length`, &nativeCount),
+		// Hidden, not removed — and "hidden" measured the way the
+		// utility actually hides it. A replaced element keeps an
+		// intrinsic minimum size whatever inline-size says (the date
+		// input measures 6x5 in Chromium, not the select's ~1x1), so
+		// what proves it invisible is the clip and the absolute
+		// position, not a width threshold. A native left in flow fails
+		// all three.
+		chromedp.Evaluate(`(function () {
+			var el = document.querySelector('input[name="due"]');
+			if (!el) return false;
+			var s = getComputedStyle(el);
+			return s.position === "absolute" && s.clipPath !== "none" &&
+				el.getBoundingClientRect().width < 24;
+		})()`, &nativeHidden),
+		chromedp.Evaluate(`document.querySelector('label')?.getAttribute('for') ?? ''`, &labelFor),
+
+		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
+		chromedp.SendKeys(`input[role="combobox"]`, "tomorrow", chromedp.ByQuery), at("typed-phrase"),
+		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &typed),
+		// Synchronise on the reading being armed rather than assuming
+		// the keystrokes landed: the highlighted row IS the parse, and
+		// waiting for it turns a drifted focus into a fast, legible
+		// failure at this step instead of a deadline three steps later.
+		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("reading-armed"),
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
+
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			deadline := time.Now().Add(10 * time.Second)
+			for {
+				var v string
+				if err := chromedp.Evaluate(`document.querySelector('input[name="due"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+					return err
+				}
+				if v != "" {
+					nativeValue = v
+					return nil
+				}
+				if time.Now().After(deadline) {
+					var snap string
+					_ = chromedp.Evaluate(`JSON.stringify({
+						activeEl: (document.activeElement && (document.activeElement.tagName + "/" + (document.activeElement.getAttribute("role") || ""))) || "none",
+						options: document.querySelectorAll('[role="option"]').length,
+						highlighted: document.querySelectorAll('[role="option"].is-active').length,
+						inputValue: (function(i){ return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
+					})`, &snap).Do(ctx)
+					return fmt.Errorf("the carrier never took a value within 10s of Enter; widget state: %s", snap)
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(100 * time.Millisecond):
+				}
+			}
+		}), at("read-carrier-value"),
+
+		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+	); err != nil {
+		t.Fatalf("drive failed after %q: %v\n  typed=%q nativeValue=%q labelFor=%q",
+			reached, err, typed, nativeValue, labelFor)
+	}
+
+	after := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+
+	if comboCount != 1 {
+		t.Errorf("expected exactly one combobox, found %d", comboCount)
+	}
+	if nativeCount != 1 {
+		t.Errorf("the native date input must survive enhancement, found %d", nativeCount)
+	}
+	if !nativeHidden {
+		t.Error("the native date input is still visible; it should be clipped out of sight, not removed")
+	}
+	if !strings.HasSuffix(labelFor, "-combo") {
+		t.Errorf("label still points at the hidden native (for=%q): the combobox has no accessible name", labelFor)
+	}
+	if typed != "tomorrow" {
+		t.Errorf("the combobox holds %q, want %q: the keystrokes did not land where they were aimed", typed, "tomorrow")
+	}
+	// The whole point: a phrase typed in English became the wire value
+	// the server parses. Crucially NOT today's date, which is what an
+	// unparsed reading committing the first quick pick would leave.
+	if nativeValue != before && nativeValue != after {
+		t.Errorf("the carrier holds %q, want tomorrow (%q or %q)", nativeValue, before, after)
+	}
+
+	select {
+	case v := <-submitted:
+		if v != nativeValue {
+			t.Errorf("server received due=%q, the carrier held %q", v, nativeValue)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the form never reached the server")
+	}
+
+	rig.Screen("body", "after the date journey")
 }

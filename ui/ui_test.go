@@ -2314,10 +2314,10 @@ func wordsAttr(t *testing.T, markup string) map[string]string {
 // The three singular fields are native inputs first: the type carries the
 // value, the enhancement rides on data attributes beside it.
 func TestDateFieldsRenderNativeInputs(t *testing.T) {
-	for _, c := range []struct{ partial, typ, flag, example string }{
-		{"field-date", "date", "data-rst-date", "2006-01-02"},
-		{"field-time", "time", "data-rst-time", "15:04"},
-		{"field-datetime", "datetime-local", "data-rst-date", "2006-01-02T15:04"},
+	for _, c := range []struct{ partial, typ, flag string }{
+		{"field-date", "date", "data-rst-date"},
+		{"field-time", "time", "data-rst-time"},
+		{"field-datetime", "datetime-local", "data-rst-date"},
 	} {
 		got := render(t, c.partial, fixtureFor(t, c.partial))
 		fixture := fixtureFor(t, c.partial)
@@ -2333,7 +2333,13 @@ func TestDateFieldsRenderNativeInputs(t *testing.T) {
 			" required", ` aria-invalid="true"`,
 			" " + c.flag + " ",
 			`data-rst-date-set="Set"`,
-			`data-rst-date-hint="Try: ` + c.example + `"`,
+			// The hint rides out as its RAW template. datetime.js
+			// substitutes {example} with a date its own Intl formatter
+			// wrote, in the page's locale — filling it in here would
+			// need Tf, and a rebound T that ignores its arguments (which
+			// rastrillo.T(r, key) is) would print the placeholder at a
+			// person.
+			`data-rst-date-hint="Try: {example}"`,
 			`data-rst-date-pick="Open the calendar"`,
 			`data-rst-date-results="{n} suggestions"`,
 			`data-rst-date-result-one="1 suggestion"`,
