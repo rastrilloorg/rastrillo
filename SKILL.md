@@ -357,6 +357,11 @@ One-offs are `carlos.ScheduleAt(ctx, name, at, path)` (upsert by name;
   one; `db.Open` already wires `gormlite` over modernc.
 - **Never bind a form onto a model, query an owned model unscoped, or answer
   403 where 404 is honest.** See §3, §4.
+- **UI: `rst-list`/`rst-card` hold rows only (no padding by design); a form,
+  prose or links go in `rst-box`, heading as a sibling `rst-box-head`.
+  Screens stack vertically — never a heading, paragraph and button in one
+  flex row; a notice with a CTA is a `callout` ending in a link.**
+  docs/site/templates.md — rastrillo.org/docs/templates
 - **Never `git merge` to main**, not even locally: every change is a PR,
   squash-merged.
 

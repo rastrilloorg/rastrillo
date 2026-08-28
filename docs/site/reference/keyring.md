@@ -25,11 +25,15 @@ type Ring struct{ Namespace string }
 func (r Ring) PRFSalt() string
 func (r Ring) ContentKey(seed []byte) []byte
 func (r Ring) WrapKey(prf []byte) []byte
+func (r Ring) BlobKey(seed []byte, name string) []byte
 ```
 
 A `Ring` carries your namespace and derives every context string from
 it: `PRFSalt` is `ns/prf/v1`, `ContentKey` derives with `ns/content/v1`,
-`WrapKey` with `ns/wrap/v1`. Two apps on one keyring can never
+`WrapKey` with `ns/wrap/v1`, and `BlobKey` derives one sealing key per
+named [vault](/docs/reference/vault) blob with `ns/blob/<name>/v1` —
+the name lands inside the context string, so the vault's closed
+namespace validates it before the ring ever sees it. Two apps on one keyring can never
 collide. Kass's existing strings fall out as the
 `Ring{"kass"}` case, byte-identically: its `deriveBytes` is HKDF-SHA256
 with a zero-length salt, `crypto.Derive` passes a nil salt, and RFC

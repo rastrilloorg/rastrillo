@@ -74,9 +74,45 @@ They belong to your page markup, so the library does not emit them:
 <form class="rst-form">  <!-- the column a run of fields and a form-foot sit in -->
 ```
 
-There is also a class idiom vocabulary — list grid, dropdown, filter
-tokens, help tooltip, selection checkbox — that is CSS rather than a Go
-partial. The `ui` package's doc comment has the full list.
+There is also a class idiom vocabulary — section box, list grid,
+dropdown, filter tokens, help tooltip, selection checkbox — that is CSS
+rather than a Go partial. The `ui` package's doc comment has the full
+list.
+
+### Which card is which
+
+Two of those containers look like cards and are not the card you want
+for ordinary content. `rst-list` and `rst-card` have **no padding by
+design**: they hold a run of rows, and each row pads itself. Put a form,
+a paragraph, a strip of links or anything else that is not a row straight
+into one and it renders flush against the border — the text touching the
+edge is the tell.
+
+The padded card for arbitrary content is `rst-box`, with its heading as
+a sibling `rst-box-head` before it:
+
+```html
+<div class="rst-box-head"><h2>Sign in</h2></div>
+<section class="rst-box">
+  <form class="rst-form" method="post" action="/signin">…</form>
+</section>
+```
+
+`rst-form` is a hook the form partials assume, not a container: it draws
+nothing on its own, so it needs a `rst-box` (or the bare page) around it.
+
+### Screens stack vertically
+
+A screen is a column: page-header, then section-header + card, then the
+next section-header + card, in reading order. Do not compose a heading, a
+paragraph and a button side by side in a flex row — a three-word heading
+wrapped onto three lines beside a full-width paragraph and a tall narrow
+button is what that produces at any real width. A notice that needs a
+call to action is either a `callout` whose body ends in a link, or a
+`rst-box-head` (the `<h2>` plus one compact `rst-btn`) over a `rst-box`
+holding the explanation. Horizontal arrangement is reserved for the
+idioms that ship it: `rst-box-head`, `rst-field-row`, `rst-lbar`,
+`rst-lrow` cells, `rst-seg-tabs`.
 
 ## Styling
 

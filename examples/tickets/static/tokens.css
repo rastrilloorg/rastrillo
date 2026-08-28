@@ -389,6 +389,10 @@ body {
 }
 
 /* ── The list card, its toolbar, and its search field ─────────────── */
+/* No padding here, on purpose: a list card holds rows, and each row pads
+   itself. A form, prose or a strip of links does NOT go in here — it
+   goes in .rst-box, the padded section card. Text touching the border
+   is the sign that content landed in the wrong card. */
 .rst-list {
   background: var(--rst-surface);
   border: 1px solid var(--rst-line);
@@ -747,7 +751,9 @@ body {
 /* The list grid — the real data-table vocabulary. The card sets the
    columns once (--rst-cols, inline, trailing 32px for the kebab);
    rows only choose cells. Hover fill only on rows that contain the
-   identity link — a display-only row must never look clickable. */
+   identity link — a display-only row must never look clickable.
+   Like .rst-list, .rst-card has no padding: rows only. Anything that
+   is not a row belongs in .rst-box. */
 .rst-card { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); }
 .rst-lrow { align-items: center; border-bottom: 1px solid var(--rst-line); display: grid; gap: 0.85rem; grid-template-columns: var(--rst-cols, 1fr); padding: 0.68rem 1rem; position: relative; }
 .rst-lrow:last-child { border-bottom: 0; }

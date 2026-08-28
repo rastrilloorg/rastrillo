@@ -77,6 +77,20 @@ revocation is real: the cookie is dead even if it survives.
 `Sessions.CookieName` reports the cookie's name, which varies with the
 origin's scheme because of the `__Host-` prefix.
 
+```go
+func (s *Sessions) Mint(sess Session) (token string, err error)
+func (s *Sessions) Adopt(w http.ResponseWriter, r *http.Request, token string) (Session, bool)
+```
+
+`Mint` and `Adopt` split `SignIn` for a credential that lives somewhere
+other than this browser — the [vault](/docs/reference/vault)'s copy of
+an instance session. `Mint` creates a row and returns its token without
+touching any cookie: same TTL, same table, same `Sweep`. `Adopt` is the
+return leg: verify the presented token and, if its row is alive, set
+the cookie to it — minting nothing, revoking nothing. A dead token
+refuses without touching any cookie, so a failed restore falls through
+to ordinary sign-in.
+
 ## Middleware
 
 ```go
