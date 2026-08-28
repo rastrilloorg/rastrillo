@@ -24,7 +24,11 @@
                      once the start is committed
        Start, End    dicts, required — each the single-field contract of
                      field-datetime/field-date (Name, Label, Value, Min,
-                     Max, Required, Hint, Error, Plain) */}}
+                     Max, Required, Hint, Error, Plain). Their Names must
+                     differ: each half derives its input id and its
+                     hint/error ids from its own Name, so a shared Name
+                     duplicates every id and points both halves'
+                     aria-describedby at the wrong messages. */}}
 {{define "field-daterange"}}<fieldset class="rst-field-range">
   <legend{{if .LegendHidden}} class="rst-sr-only"{{end}}>{{.Legend}}</legend>
   <div class="rst-field-row" data-rst-range{{with .Seed}}="{{.}}"{{end}}>

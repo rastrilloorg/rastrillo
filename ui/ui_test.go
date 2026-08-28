@@ -928,8 +928,12 @@ func allPartials() []struct {
 			"Min": "09:00", "Max": "23:00",
 		}},
 		{"field-datetime", map[string]any{
-			"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30",
-			"Required": true, "Hint": "When the session begins.", "Error": "Pick a start.",
+			// Deliberately not "starts_at": the daterange fixture below
+			// uses that Name, and TestRenderEverythingSmoke renders every
+			// fixture into one document, where two fields sharing a Name
+			// would share ids too.
+			"Name": "published_at", "Label": "Publish at", "Value": "2026-08-28T19:30",
+			"Required": true, "Hint": "When it goes live.", "Error": "Pick a time.",
 			"Min": "2026-01-01T00:00", "Max": "2026-12-31T23:59",
 		}},
 		{"field-daterange", map[string]any{
