@@ -30,8 +30,8 @@ In this order: a URL path prefix, stripped before your mux sees it so
 declared `fr`; then your default.
 
 The cookie is written by the framework's own `POST /_locale` route,
-which `rastrillo.Serve` mounts whenever you declare more than one
-locale. The `locale-menu` partial renders a switcher that posts to it:
+which `rastrillo.Serve` mounts whenever you declare locales at all. The
+`locale-menu` partial renders a switcher that posts to it:
 
 ```html
 {{template "locale-menu" dict "Items" .Locales "Return" .Path}}

@@ -102,11 +102,11 @@ parses one `*template.Template` per page (layout + that page) so two pages
 can both define `"content"`.
 
 Locales: `Options.Locales`/`DefaultLocale`/`LocaleFS` (flat TOML per code).
-The framework ships `rastrillo.ui.*` in en ga zh-Hans es hi pt bn ru ja yue
-vi ar; any other declared locale must translate them or `generate --check`
-fails. `{{template "locale-menu" dict "Items" (rastrillo.LocaleItems r)}}`
-is the switcher; it POSTs `/_locale`, which Serve mounts. `rastrillo.Dir`
-for `<html dir>`.
+Ships `rastrillo.ui.*` in en ga zh-Hans es hi pt bn ru ja yue vi ar; others
+must translate them or `generate --check` fails. Switcher: put
+`rastrillo.LocaleItems(r)` in page data, then `{{template "locale-menu"
+dict "Items" .Locales "Return" .Path}}`; it POSTs `/_locale`, mounted by
+Serve. `rastrillo.Dir` for `<html dir>`.
 
 ## 2. Data
 

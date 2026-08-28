@@ -147,8 +147,8 @@ locale, `"rtl"` or `"ltr"`.
 `Locales.Has`, `Locales.FrameworkHas`, `Locales.T`, `Locales.Tf`,
 `Locales.Middleware`, which strips the path prefix before the app's mux
 sees it, and `Locales.SwitchHandler`, the `POST /_locale` route that
-writes `LocaleCookie` and redirects — `Serve` mounts it whenever more
-than one locale is declared.
+writes `LocaleCookie` and redirects — `Serve` mounts it whenever
+`Options.Locales` is set, one locale or twelve.
 
 [Localization](/docs/localization) has the resolution order and the
 caveats.
