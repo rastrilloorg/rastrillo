@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 // probe records what the wrapped handler saw, so a test can assert on
@@ -253,6 +254,7 @@ func TestSwitchHandlerRefusals(t *testing.T) {
 		{"undeclared locale", switchReq("es", "/"), http.StatusBadRequest},
 		{"protocol-relative return", switchReq("fr", "//evil.example/"), http.StatusBadRequest},
 		{"absolute return", switchReq("fr", "https://evil.example/"), http.StatusBadRequest},
+		{"backslash return", switchReq("fr", "/\\evil.example/"), http.StatusBadRequest},
 		{"GET", httptest.NewRequest("GET", LocaleSwitchPath, nil), http.StatusMethodNotAllowed},
 	}
 	crossSite := switchReq("fr", "/")
@@ -291,9 +293,44 @@ func TestSwitchHandlerSecureCookieBehindTLS(t *testing.T) {
 	req.Header.Set("X-Forwarded-Proto", "https")
 	rec := httptest.NewRecorder()
 	l.SwitchHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status %d, want 303", rec.Code)
+	}
+	var found bool
 	for _, c := range rec.Result().Cookies() {
-		if c.Name == LocaleCookie && !c.Secure {
-			t.Error("cookie must be Secure when the request arrived over https")
+		if c.Name == LocaleCookie {
+			found = true
+			if !c.Secure {
+				t.Error("cookie must be Secure when the request arrived over https")
+			}
 		}
+	}
+	if !found {
+		t.Fatal("locale cookie was not set")
+	}
+}
+
+func TestLocaleItemsAutonymAppCatalogWins(t *testing.T) {
+	fsys := fstest.MapFS{
+		"locales/ga.toml": {Data: []byte("rastrillo.ui.locale_name = \"Gaeilge na hApp\"\n")},
+	}
+	l, err := NewLocales([]string{"en", "ga"}, "en", BaseCatalog(), fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var items []LocaleItem
+	h := l.Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		items = LocaleItems(r)
+	}))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/en/orders", nil))
+	byCode := map[string]LocaleItem{}
+	for _, it := range items {
+		byCode[it.Code] = it
+	}
+	if got := byCode["ga"].Name; got != "Gaeilge na hApp" {
+		t.Errorf("ga Name = %q, want %q (app catalog should beat the framework)", got, "Gaeilge na hApp")
+	}
+	if got := byCode["en"].Name; got != "English" {
+		t.Errorf("en Name = %q, want English (framework branch still works)", got)
 	}
 }
