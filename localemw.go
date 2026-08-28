@@ -11,9 +11,9 @@ import (
 )
 
 // LocaleCookie is the stored-preference cookie the resolution chain
-// consults last. Design doc §10 names "a stored preference" without
-// naming the mechanism; a cookie is the only one that survives §9's
-// zero-JS baseline.
+// consults right after the path prefix, before Accept-Language. Design doc §10
+// names "a stored preference" without naming the mechanism; a cookie is the
+// only one that survives §9's zero-JS baseline.
 const LocaleCookie = "rastrillo_locale"
 
 type localeCtxKey struct{}
