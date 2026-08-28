@@ -114,7 +114,7 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		"--rst-tone-positive-fg", "--rst-tone-positive-bg",
 		"--rst-tone-warning-fg", "--rst-tone-warning-bg",
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
-		"--rst-shadow-pop",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
 	}
 	for _, name := range ThemeNames() {
 		raw, ok := ThemeCSS(name)
@@ -1978,10 +1978,15 @@ func themePropSet(t *testing.T, name string) map[string]bool {
 func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 	// After the split, structural tokens.css may reference colours only
 	// via var(); bare hex in a *declaration value* means a colour leaked
-	// back in. Exempt: none — rgba() shadows live in the themes now too.
-	decl := regexp.MustCompile(`:\s*[^;]*#[0-9a-fA-F]{3,6}`)
+	// back in. Exempt: none — the three rgba() literals that used to live
+	// here (the switch knob shadow, the seg-tab lift shadow, the modal
+	// scrim) are gone too, replaced with var(--rst-shadow-knob),
+	// var(--rst-shadow-lift) and var(--rst-overlay) declared per theme —
+	// so this gate also matches rgba()/rgb()/hsl() function values, not
+	// just bare hex, to keep that claim enforced instead of just stated.
+	decl := regexp.MustCompile(`:\s*[^;]*(#[0-9a-fA-F]{3,6}|rgba?\(|hsl\()`)
 	for i, line := range strings.Split(string(TokensCSS()), "\n") {
-		if strings.Contains(line, "#") && decl.MatchString(line) {
+		if (strings.Contains(line, "#") || strings.Contains(line, "rgb") || strings.Contains(line, "hsl")) && decl.MatchString(line) {
 			t.Errorf("tokens.css line %d declares a colour literal: %s", i+1, strings.TrimSpace(line))
 		}
 	}

@@ -84,6 +84,20 @@
    --rst-text-faint is the tightest pair in the set — 4.67:1 in light on
    --rst-bg, against a 4.5:1 floor. Put it on a surface not listed above
    and you are guessing; recompute first.
+
+   --rst-shadow-knob, --rst-shadow-lift and --rst-overlay are not in the
+   table above: they paint a translucent shadow or scrim over whatever
+   sits underneath, not text over a fixed background, so a contrast
+   ratio does not apply. They used to be rgba() literals baked into
+   tokens.css (the switch knob's shadow, the seg-tab lift, the modal
+   scrim); tokens.css can no longer hold a colour of its own, so every
+   theme now declares its own values for exactly those three. ink keeps
+   today's numbers unchanged — knob and lift stay flat across all three
+   blocks, and the scrim deepens from 0.45 to 0.6 alpha in both dark
+   blocks, matching --rst-shadow-pop's own light-to-dark jump (0.12 to
+   0.5): black reads lighter against a dark backdrop, so the overlay
+   needs more alpha to still read as a dimming layer over the page
+   underneath.
    ──────────────────────────────────────────────────────────────────── */
 
 /* ── Type: the family only. Sizes, spacing and radius are structural
@@ -122,6 +136,9 @@
   --rst-tone-negative-bg: #f9dcdd;
 
   --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --rst-shadow-knob: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --rst-shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --rst-overlay: rgba(0, 0, 0, 0.45);
 }
 
 /* ── Colour: dark, following the OS. ──────────────────────────────── */
@@ -154,6 +171,9 @@
     --rst-tone-negative-bg: #35191e;
 
     --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --rst-shadow-knob: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --rst-shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --rst-overlay: rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -188,4 +208,7 @@
   --rst-tone-negative-bg: #35191e;
 
   --rst-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --rst-shadow-knob: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --rst-shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --rst-overlay: rgba(0, 0, 0, 0.6);
 }

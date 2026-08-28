@@ -216,7 +216,7 @@ func TokensCSS() []byte { return tokensCSS }
 // theme, the one every other theme's token set is checked against
 // (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice matches
 // the files in themes/ exactly — adding a theme means adding both.
-var themeNames = []string{"ink"}
+var themeNames = []string{"ink", "teal", "warm"}
 
 // ThemeNames returns the shipped theme names, ink first. The returned
 // slice is a copy, so a caller sorting or truncating it cannot reorder

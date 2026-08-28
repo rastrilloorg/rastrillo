@@ -679,7 +679,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-switch { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input { height: 1px; opacity: 0; position: absolute; width: 1px; }
 .rst-switch__track { background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; transition: background 0.15s; width: 34px; }
-.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
+.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
 .rst-switch:has(input:checked) .rst-switch__track { background: var(--rst-accent); }
 .rst-switch:has(input:checked) .rst-switch__track::after { transform: translateX(15px); }
 .rst-switch:has(input:focus-visible) .rst-switch__track { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
@@ -701,7 +701,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-seg-tabs { background: var(--rst-accent-soft); border-radius: 8px; display: flex; gap: 2px; padding: 2px; width: max-content; }
 .rst-seg-tabs a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
 .rst-seg-tabs a:hover { color: var(--rst-text); }
-.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); color: var(--rst-text); font-weight: 600; }
+.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field { margin-top: var(--rst-sp-5); }
@@ -743,7 +743,7 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
    plain link to that page. */
 .rst-backdrop { display: contents; }
 body:has(.rst-backdrop) { overflow: hidden; }
-.rst-modal-overlay { align-items: center; background: rgba(0, 0, 0, 0.45); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
+.rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
 .rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
 .rst-modal-panel > nav { border-right: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
 .rst-modal-panel > nav a { border-radius: 8px; color: inherit; padding: 0.4rem 0.65rem; text-decoration: none; }
