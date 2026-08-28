@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/carlosframework/rastrillo"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -110,11 +112,19 @@ func TestGenerateCheckFailsOnAnIncompleteCatalog(t *testing.T) {
 }
 
 func TestGenerateCheckPassesOnACompleteCatalog(t *testing.T) {
+	// fr is not one of the framework's shipped locales, so its catalog
+	// must also translate every rastrillo.ui.* key (Task 6) to pass
+	// --check, on top of matching the app's own en.toml keys.
+	var fr strings.Builder
+	fr.WriteString("a = \"A\"\n")
+	for _, k := range rastrillo.BaseKeys() {
+		fmt.Fprintf(&fr, "%s = \"x\"\n", k)
+	}
 	dir := scaffold(t, map[string]string{
 		"go.mod":               "module demo\n\ngo 1.22\n",
 		"actions/index.GET.go": handleSrc,
 		"locales/en.toml":      "a = \"A\"\n",
-		"locales/fr.toml":      "a = \"A\"\n",
+		"locales/fr.toml":      fr.String(),
 	})
 	if err := runGenerate([]string{"--check", dir}); err != nil {
 		t.Fatalf("want a pass, got %v", err)

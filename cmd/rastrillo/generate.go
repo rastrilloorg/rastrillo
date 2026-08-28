@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
+	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/internal/generate"
 	"github.com/carlosframework/rastrillo/internal/manifest"
 )
@@ -125,6 +127,27 @@ func runGenerate(args []string) error {
 				}
 			}
 			return fmt.Errorf("%d locale catalog(s) incomplete; silent fallback while iterating, loud failure before ship (design doc §10)", len(missing))
+		}
+
+		fw, err := generate.MissingFrameworkKeys(filepath.Join(dir, "locales"), *defaultLocale, rastrillo.BaseKeys(), rastrillo.BaseLocales())
+		if err != nil {
+			return fmt.Errorf("i18n framework-key check: %w", err)
+		}
+		if len(fw) > 0 {
+			codes := make([]string, 0, len(fw))
+			for code := range fw {
+				codes = append(codes, code)
+			}
+			sort.Strings(codes)
+			fmt.Fprintln(os.Stderr, "rastrillo generate: built-in components would render in English —")
+			for _, code := range codes {
+				fmt.Fprintf(os.Stderr, "  locales/%s.toml is missing %d rastrillo.ui.* key(s):\n", code, len(fw[code]))
+				for _, key := range fw[code] {
+					fmt.Fprintf(os.Stderr, "    %s\n", key)
+				}
+			}
+			fmt.Fprintf(os.Stderr, "the framework ships %s; any other locale translates these itself — copy the keys from the rastrillo module's locales/en.toml\n", strings.Join(rastrillo.BaseLocales(), ", "))
+			return fmt.Errorf("%d locale catalog(s) leave built-in strings untranslated", len(fw))
 		}
 
 		// Manifest resources (design doc §9): idempotency and
