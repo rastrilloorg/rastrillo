@@ -37,6 +37,18 @@
 //	<div class="rst-list">   — the card wrapping a list-bar and a run of rows
 //	<form class="rst-form">  — the column a run of fields and a form-foot sit in
 //
+// rst-list and rst-card have no padding by design: they hold rows, and
+// each row pads itself. Anything that is not a row — a form, prose, a
+// strip of links — goes in rst-box, the padded section card, never
+// straight into a list card (the tell is text flush against the border).
+// rst-form draws nothing on its own; it sits inside a rst-box or on the
+// bare page. Screens stack vertically: page-header, then section-header +
+// card, repeated. Do not put a heading, a paragraph and a button side by
+// side in a flex row; a notice with a call to action is a callout whose
+// body ends in a link, or rst-box-head (h2 + one compact button) over a
+// rst-box. The horizontal idioms are the ones tokens.css ships:
+// rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.
+//
 // Styling comes from tokens.css, which rastrillo new writes once into a
 // new app's static/ directory. rastrillo.Serve never serves it: from the
 // moment it is scaffolded it is an ordinary app-owned static file the app
