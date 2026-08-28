@@ -63,6 +63,10 @@
   {"id": "own-datetime-display-reads-back", "input": "Fri, Aug 28, 2026, 9:00 AM", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
   {"id": "midnight-boundary", "input": "24:00", "now": "2026-08-28T10:30", "expected": null},
 
+  {"id": "bare-year-below-a-thousand-is-refused", "input": "0500", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "three-digit-year-is-refused", "input": "0999", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "earliest-year-a-carrier-can-hold", "input": "1000", "now": "2026-08-28T10:30", "expected": "1000-08-28T09:00"},
+
   {"id": "junk", "input": "wibble", "now": "2026-08-28T10:30", "expected": null},
   {"id": "empty", "input": "", "now": "2026-08-28T10:30", "expected": null},
   {"id": "blank", "input": "   ", "now": "2026-08-28T10:30", "expected": null},

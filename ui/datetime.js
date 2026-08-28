@@ -42,7 +42,11 @@
    and field-daterange.html emit all of it. Every string comes from the
    framework's base catalog (rastrillo.ui.date_*) and rides out on
    attributes, because this markup is built in the browser where the
-   catalog is out of reach — this file contains no English of its own.
+   catalog is out of reach — so this file carries no English
+   VOCABULARY: not one word the parser matches on is written here. It
+   does carry English fallbacks for the eleven labels it puts on
+   screen, exactly as select.js does, so the file still works standing
+   alone in a page that forgot an attribute.
 
    The parser is a pure function of (text, vocabulary, locale tables,
    now). It knows no month names and no weekday names by heart: it asks
@@ -70,7 +74,12 @@
   // are excluded on purpose: "9am" and "25dec" are one run to a
   // tokenizer and two words to a person.
   var LETTERISH = /[a-z\u00c0-\u024f\u0370-\u03ff\u0400-\u04ff\u0530-\u058f\u0590-\u05ff\u0600-\u06ff\u0900-\u097f\u0980-\u09ff\u0b80-\u0bff\u0e00-\u0e7f]/;
-  var BREAKS = /[\s,;]/;
+  // The punctuation that separates words, and not only the ASCII of
+  // it: Arabic writes its comma \u060c and its semicolon \u061b, and CJK
+  // writes \uff0c\u3001\u3002. Left out, those characters fall through to the
+  // unknown-run branch and refuse a phrase that was punctuated
+  // correctly in its own script.
+  var BREAKS = /[\s,;\u060c\u061b\uff0c\u3001\u3002]/;
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -181,6 +190,18 @@
         for (k = 0; k < parts.length; k++) if (parts[k].type === type) value = parts[k].value;
         value = fold(value);
         if (!value) continue;
+        // A NAME has to be a word. Japanese and Chinese write their
+        // months as numbers, and Intl reports that as
+        // {month:"8"}+{literal:"\u6708"} — so the "name" of August comes
+        // back as the bare digit 8, and a table holding it turns every
+        // typed number into a month. It did: ja "2025" tokenized as
+        // month 2 plus 025 and committed 25 February 2027 without a
+        // word of warning, which is the one thing this parser promises
+        // never to do. Anything that is only digits and separators is
+        // refused here rather than trusted; a calendar whose months are
+        // numbers is one this grammar cannot read, and saying so is the
+        // honest answer.
+        if (!/[^\d\s.,\/\-]/.test(value)) continue;
         if (out[i].indexOf(value) === -1) out[i].push(value);
         // An abbreviation's full stop is dropped as often as it is
         // typed ("16 Aug." retyped as "16 Aug"), so both spellings are
@@ -244,9 +265,18 @@
     return list;
   }
 
+  // A separator is never a letter, whatever block it lives in. The
+  // Arabic comma sits at \u060c, inside the same range as the letters
+  // either side of it, so a class drawn by range alone reads
+  // "\u063a\u062f\u0627\u060c 6" as one unbroken word and refuses a phrase that was
+  // punctuated correctly.
+  function letterish(c) {
+    return !!c && !BREAKS.test(c) && LETTERISH.test(c);
+  }
+
   function boundaryOK(s, from, to) {
-    if (from > 0 && LETTERISH.test(s.charAt(from - 1)) && LETTERISH.test(s.charAt(from))) return false;
-    if (to < s.length && LETTERISH.test(s.charAt(to)) && LETTERISH.test(s.charAt(to - 1))) return false;
+    if (from > 0 && letterish(s.charAt(from - 1)) && letterish(s.charAt(from))) return false;
+    if (to < s.length && letterish(s.charAt(to)) && letterish(s.charAt(to - 1))) return false;
     return true;
   }
 
@@ -451,6 +481,20 @@
               mi = 0;
               used[i] = true;
               hasTime = true;
+              // A half-of-the-day marker and a clock marker can both
+              // sit on the same hour: \u5348\u5f8c6\u6642 and \u4e0b\u53486\u70b9 are "6 in the
+              // afternoon" with the hour word still attached. Claiming
+              // the number and leaving the \u6642 behind failed the
+              // leftover check and refused a perfectly ordinary phrase.
+              if (isWord(nx, "hour")) {
+                used[nx] = true;
+                var mnx = after(nx);
+                if (mnx >= 0 && toks[mnx].t === "num" && (after(mnx) < 0 || isWord(after(mnx), "minute"))) {
+                  mi = toks[mnx].n;
+                  used[mnx] = true;
+                  if (after(mnx) >= 0) used[after(mnx)] = true;
+                }
+              }
             } else if (isWord(nx, "hour")) {
               h = toks[i].n;
               mi = 0;
@@ -491,15 +535,26 @@
     if (!hasDate) {
       var next = find("next"), last = find("last");
       var wi = findRole("weekday");
-      // A weekday sitting beside a month and a day is decoration, not
-      // the date: it is how this field writes its own value back
-      // ("Fri, 28 Aug 2026"), and the only way to retype a year in
-      // place is for the weekday beside it to be consumed rather than
-      // obeyed. Obeying it would move the date to the coming Friday
-      // and silently throw the typed year away.
-      if (wi >= 0 && findRole("month") >= 0) {
-        used[wi] = true;
-        wi = -1;
+      var mo = findRole("month");
+      if (wi >= 0 && mo >= 0) {
+        if (wi === mo) {
+          // ONE spelling wearing both hats: Spanish "mar" is March and
+          // it is Tuesday, and the scanner merges same-length matches
+          // rather than picking for you. A day number beside it settles
+          // it — "25 mar" is a date and nothing else — and with no
+          // number to count, a weekday is what a person means.
+          if (findKind("num") >= 0) wi = -1;
+          else mo = -1;
+        } else {
+          // A weekday sitting beside a month and a day is decoration,
+          // not the date: it is how this field writes its own value
+          // back ("Fri, 28 Aug 2026"), and the only way to retype a
+          // year in place is for the weekday beside it to be consumed
+          // rather than obeyed. Obeying it would move the date to the
+          // coming Friday and silently throw the typed year away.
+          used[wi] = true;
+          wi = -1;
+        }
       }
       if (wi >= 0) {
         used[wi] = true;
@@ -510,7 +565,6 @@
         }
         hasDate = true;
       } else {
-        var mo = findRole("month");
         if (mo >= 0) {
           used[mo] = true;
           var dnum = -1, ynum = -1, k;
@@ -559,7 +613,12 @@
         count++;
         if (toks[i].digits === 4) only = i;
       }
-      if (count === 1 && only >= 0) {
+      // Four digits, and a year a wire format can actually carry: a
+      // "0500" typed into the box produced the value "0500-08-28"'s
+      // three-digit cousin "500-08-28", which every date input rejects
+      // silently by emptying itself. A reading that clears the field is
+      // not a reading.
+      if (count === 1 && only >= 0 && toks[only].n >= 1000) {
         used[only] = true;
         date = new Date(own.getFullYear(), own.getMonth(), own.getDate());
         date.setFullYear(toks[only].n);

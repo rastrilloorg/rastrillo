@@ -11,7 +11,9 @@
      through the bound T so it localises per request), and the
      remaining data-rst-date-* attributes are the strings it puts on
      screen. Every one of them comes from the catalog — datetime.js
-     contains no English of its own, which is the point of the split.
+     matches on no English word of its own, which is the point of the
+     split. (It does keep English fallbacks for these labels, the way
+     select.js does, for a field that arrives without them.)
 
      The hint travels as its RAW template, {example} and all:
      datetime.js substitutes an example date it formatted itself, in

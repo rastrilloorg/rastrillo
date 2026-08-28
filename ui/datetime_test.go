@@ -21,29 +21,49 @@ const fixturesComplete = false
 
 // vocabStdin is what the browser reads off data-rst-date-words, built
 // the same way {{dateWords}} builds it: the framework's own catalog for
-// that locale, the seventeen vocabulary keys, and nothing else. The
+// each locale, the seventeen vocabulary keys, and nothing else. The
 // fixtures deliberately do not carry their own copy — words under test
 // have to be the words that ship, or a translator's improvement would
 // go green against a stale duplicate.
+//
+// Every shipped catalog goes over, not just the fixture's own: a case
+// may name its own language with a "lang" key, which is what
+// testdata/datetime/regressions.json is made of.
 func vocabStdin(t *testing.T, locale string) []byte {
 	t.Helper()
-	catalog, ok := rastrillo.BaseCatalogs()[locale]
-	if !ok {
+	catalogs := make(map[string]map[string]string)
+	for code, catalog := range rastrillo.BaseCatalogs() {
+		words := make(map[string]string, len(dateWordNames))
+		for _, name := range dateWordNames {
+			value := catalog["rastrillo.ui.date_"+name]
+			if value == "" {
+				t.Fatalf("%s: base catalog has no rastrillo.ui.date_%s", code, name)
+			}
+			words[name] = value
+		}
+		catalogs[code] = words
+	}
+	if _, ok := catalogs[locale]; !ok {
 		t.Fatalf("no base catalog for %q", locale)
 	}
-	words := make(map[string]string, len(dateWordNames))
-	for _, name := range dateWordNames {
-		value := catalog["rastrillo.ui.date_"+name]
-		if value == "" {
-			t.Fatalf("%s: base catalog has no rastrillo.ui.date_%s", locale, name)
-		}
-		words[name] = value
-	}
-	encoded, err := json.Marshal(map[string]any{"locale": locale, "vocab": words})
+	encoded, err := json.Marshal(map[string]any{"locale": locale, "catalogs": catalogs})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return encoded
+}
+
+// localeOf reads a fixture's default language off its filename. A file
+// not named after a shipped locale is a cross-locale one — every case
+// in it names its own language — and English is its default.
+func localeOf(fixture string) string {
+	name := strings.TrimSuffix(filepath.Base(fixture), ".json")
+	for _, code := range rastrillo.BaseLocales() {
+		if code == name {
+			return code
+		}
+	}
+	return "en"
 }
 
 // The parser is the risk in datetime.js, and it is the half no Go test
@@ -75,10 +95,10 @@ func TestDatetimeParserFixtures(t *testing.T) {
 	}
 
 	for _, fixture := range fixtures {
-		locale := strings.TrimSuffix(filepath.Base(fixture), ".json")
-		t.Run(locale, func(t *testing.T) {
+		name := strings.TrimSuffix(filepath.Base(fixture), ".json")
+		t.Run(name, func(t *testing.T) {
 			cmd := exec.Command(node, "datetime_node.mjs", fixture)
-			cmd.Stdin = bytes.NewReader(vocabStdin(t, locale))
+			cmd.Stdin = bytes.NewReader(vocabStdin(t, localeOf(fixture)))
 			// The fixtures are wall-clock: a runner in a zone with a
 			// summer-time jump inside a fixture's span would move an
 			// expectation for reasons that have nothing to do with the

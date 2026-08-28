@@ -161,9 +161,11 @@ enhanced select. `DatetimeJS` backs the date fields: it turns an input
 carrying `data-rst-date` or `data-rst-time` into a combobox that reads
 "tomorrow", "next fri 9am" or "in 2 weeks" and writes the result back
 to the native input, which stays in the form as the value carrier. It
-holds no month names, no weekday names and no English of its own — the
-calendar names come from `Intl` in the page's language, and the words
-arrive on `data-rst-date-words` from the request's catalog.
+holds no month names, no weekday names and no English vocabulary — the
+calendar names come from `Intl` in the page's language, and the words it
+matches on arrive on `data-rst-date-words` from the request's catalog.
+Its on-screen labels have English fallbacks, the same way `select.js`
+does, for a field that reaches it without the attributes.
 
 All four are delivered once and yours from then on. Edit them freely;
 nothing in the framework overwrites them. The scaffold's
