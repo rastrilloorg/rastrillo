@@ -146,23 +146,28 @@ Three ship, and `rastrillo new --theme=<name>` writes the one you pick:
 | `teal` | workbench teal on green-grey neutrals, monospace-leaning type       |
 | `warm` | rust on cream paper neutrals — closer to letters than to a dashboard |
 
-A theme file holds nothing but custom properties, declared three times:
-once for light, once under `prefers-color-scheme: dark`, and once more
-under `[data-theme]` so an explicit toggle beats the OS in both
-directions. Both modes are authored — the dark set is not the light set
-inverted.
+A theme file holds custom properties and a `color-scheme`, declared
+three times: once for light, once under `prefers-color-scheme: dark`,
+and once more under `[data-theme]` so an explicit toggle beats the OS in
+both directions. Both modes are authored — the dark set is not the light
+set inverted.
 
 Each file carries its own contrast table in the header comment: every
 text-on-background and border-on-background pair with the measured
-ratio beside the WCAG 2.2 AA requirement it has to clear. That table is
-not decoration. `ui`'s contrast gate recomputes every pair from the hex
-values in the file, so a token you change without recomputing its row
-fails the build. If you edit a colour, edit the row.
+ratio beside the WCAG 2.2 AA requirement it has to clear. `ui`'s
+contrast gate recomputes every pair from the hex values in the file and
+fails if one has dropped under its AA floor — 4.5:1 for text, 3:1 for a
+control border. What it does not check is the printed number. A row can
+go stale and the build stays green, so if you edit a colour, edit the
+row: nothing else will.
 
 Swapping in a theme of your own is replacing `static/theme.css`. The
-only contract is the token set: declare every name `ink` declares, in
-all three blocks, and every component class already knows what to do
-with it.
+only contract is the token set: declare every colour name `ink` declares
+in each of the three blocks — `--rst-font` is declared once, in its own
+`:root` — and every component class already knows what to do with it.
+The scaffold's `vendored_test.go` pins `theme.css` to the library copy
+exactly as it pins `tokens.css`, so delete its line there when the edit
+is deliberate.
 
 ## Shells
 
@@ -173,7 +178,7 @@ The shell is the page frame — `templates/layout.html`, written once by
 |-----------|----------------------------------------------------------------------------|
 | `column`  | a centred content column, no chrome (default)                              |
 | `topbar`  | header bar: brand, nav, account menu, locale switcher, footer              |
-| `sidebar` | a left rail of nav groups, collapsing to a `<details>` chrome bar <800px   |
+| `sidebar` | a left rail of nav groups, collapsing to a `<details>` chrome bar below 800px |
 
 Every shell defines `layout`, renders `{{template "content" .}}` for the
 page's own body, and puts each piece of chrome in a block with a working
@@ -212,8 +217,9 @@ The chrome classes live in `tokens.css` like every other idiom:
 `rst-shell-topbar`, `rst-shell__bar`, `rst-shell__brand`,
 `rst-shell__nav`, `rst-shell__account` and `rst-shell__foot` for the
 topbar; `rst-shell-sidebar`, `rst-shell__rail`, `rst-shell__chrome`,
-`rst-shell__group` and `rst-shell__main` for the sidebar; `rst-skip` for
-the skip link both carry. The sidebar's mobile collapse is that
+`rst-shell__group` and `rst-shell__main` for the sidebar; and
+`rst-skip`, the skip link, which all three shells carry — `column`
+included. The sidebar's mobile collapse is that
 `<details class="rst-shell__chrome">` and nothing else — no JavaScript,
 like every other idiom here.
 
@@ -278,13 +284,14 @@ nothing here needs JavaScript to be usable, and an unvalidated `Referer`
 is an open redirect with better manners. Leave it unset and the page
 still has its "Start page" link.
 
-Two things about who gets which response. A client that sent `Accept:
-application/json` gets `{"status":…,"ref":…}` from the view helpers
-instead of a page — your `ErrorPage` callback is not consulted at all on
-that path, because it renders HTML and the caller asked for something it
-can parse. The panic-recovery path is the exception: it serves the HTML
-page regardless of `Accept`. The callback receives `r`, so an app that
-cares can sniff the header itself.
+Not everyone gets the page. A client that sent `Accept:
+application/json` gets `{"status":500,"ref":"k3f9tq"}` from the view
+helpers instead — `ref` is omitted when there is none, so a 404 answers
+`{"status":404}`. Your `ErrorPage` callback is not consulted at all on
+that path: it renders HTML, and the caller asked for something it can
+parse. The panic-recovery path is the exception, and serves the HTML
+page whatever the `Accept` header says. The callback receives `r`, so an
+app that wants to sniff it can.
 
 ## The view helpers
 

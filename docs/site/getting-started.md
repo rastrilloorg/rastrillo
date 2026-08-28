@@ -40,9 +40,10 @@ shell as `templates/layout.html`, both yours to edit from that moment.
 Take the defaults your first time through. [Icons](/docs/icons) and
 [Templates](/docs/templates) explain what each one costs when you care.
 
-The templates include an `errors.html` already wired to
-`Options.ErrorPage`, so a failed handler and a panicking one both land
-on a styled page inside your shell rather than a blank 500.
+The templates include an `errors.html`, wired to `Options.ErrorPage`, so
+a panicking handler lands on a styled page inside your shell rather than
+a blank 500. Wire the same function to `Ctx.ErrorPage` and your own
+failures land there too — until you do, `view.Fail` answers plain text.
 
 ## Run it
 

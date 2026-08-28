@@ -117,10 +117,12 @@ defaults:
 
 `column` defines only `title` and `locale`, and renders the switcher
 as a single line above `<main>` when there is more than one locale.
+As built, `column` defines `title`, `lang` and `dir` and no `locale`
+block at all (as built, 2026-08-28).
 
 The shell classes — `rst-shell-topbar`, `rst-shell-sidebar`,
-`rst-shell__rail`, `rst-shell__chrome`, `rst-shell__menu` — live in
-`tokens.css` beside the other class idioms, with `styleguideSamples`
+`rst-shell__rail`, `rst-shell__chrome`, ~~`rst-shell__menu`~~ (never
+built; see §2.4) — live in `tokens.css` beside the other class idioms, with `styleguideSamples`
 entries so `TestIdiomClassesAreStyled` covers them. Mobile collapse of
 the sidebar is `<details class="rst-shell__chrome">` — no JavaScript.
 

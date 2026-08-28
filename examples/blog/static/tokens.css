@@ -138,7 +138,8 @@ body {
    4.5:1 as a filled background against --rst-on-accent's label colour
    in both themes, so no new custom properties are needed — computed
    with the same WCAG relative-luminance formula as each theme file's
-   own contrast table:
+   own contrast table (ink's values, shown; every theme's own pair is
+   gated the same way):
      light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#93262f)   8.21:1
      dark   --rst-on-accent (#1a1030) on --rst-tone-negative-fg (#f58c95)   7.81:1
    Hover darkens via filter rather than a themed "negative-strong"
@@ -146,7 +147,8 @@ body {
    (and, being a post-paint filter, the label too), so one rule works
    in both themes without a new pair of colours to maintain. Re-checked
    with the label included in the scaled result, both still clear
-   4.5:1 by a wide margin:
+   4.5:1 by a wide margin (ink's values again; a post-paint filter
+   result, so these two rows are illustrative rather than gated):
      light  0.9× fill (#84222a) vs 0.9× label (#e6e6e6)   7.50:1
      dark   0.9× fill (#dc7e86) vs 0.9× label (#170e2b)   6.50:1
    background/border-color/color are restated on :hover, matching

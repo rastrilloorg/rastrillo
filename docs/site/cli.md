@@ -37,12 +37,12 @@ re-reads the profile name afterwards. [Icons](/docs/icons) explains what
 each delivery mode costs, including the one worth repeating: with `js`,
 icons do not render at all without JavaScript.
 
-`--theme` picks the colour and type file written as `static/theme.css`,
-and `--shell` picks the page frame written as `templates/layout.html`.
-Both are copied in verbatim and are yours from that moment — the theme
-like `tokens.css`, the layout like every other template. Every value is
-checked before a single file is created, so a typo fails with your
-working directory still clean.
+`--theme` picks the colour-and-type stylesheet written as
+`static/theme.css`, and `--shell` picks the page frame written as
+`templates/layout.html`. Both are copied in verbatim and are yours from
+that moment — the theme like `tokens.css`, the layout like every other
+template. Every value is checked before a single file is created, so a
+typo fails with your working directory still clean.
 [Templates](/docs/templates) describes the three of each.
 
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
