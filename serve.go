@@ -433,6 +433,9 @@ func buildHandler(opts Options) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Registered after mux.Handle("/", app) only for readability:
+	// ServeMux prefers the more specific pattern whatever the order.
+	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
 	return securityHeaders(opts.CSP, loc.Middleware(mux)), nil
 }
 

@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/carlosframework/rastrillo/csrf"
 )
 
 // LocaleCookie is the stored-preference cookie the resolution chain
@@ -186,4 +188,116 @@ func Tf(r *http.Request, key string, args ...any) string {
 		return interpolate(key, args)
 	}
 	return l.Tf(LocaleFrom(r), key, args...)
+}
+
+// LocaleSwitchPath is the framework route the language switcher POSTs
+// to (spec §2.4). Mounted by Serve whenever Options.Locales is set.
+const LocaleSwitchPath = "/_locale"
+
+// LocaleItem is one entry of the language switcher: the declared code,
+// its autonym (rastrillo.ui.locale_name in that locale, or the code
+// when no catalog names it), a plain link to the same path under that
+// locale's prefix, and whether it is the request's locale.
+type LocaleItem struct {
+	Code    string
+	Name    string
+	Href    string
+	Current bool
+}
+
+// LocaleItems builds the switcher's data for r. Empty when the request
+// never went through Middleware or the app declares one locale — the
+// partial renders nothing for an empty list, so a one-locale app can
+// call it unconditionally.
+func LocaleItems(r *http.Request) []LocaleItem {
+	l, ok := r.Context().Value(localesCtxKey{}).(*Locales)
+	if !ok || len(l.codes) < 2 {
+		return nil
+	}
+	cur := LocaleFrom(r)
+	rest := r.URL.EscapedPath()
+	if r.URL.RawQuery != "" {
+		rest += "?" + r.URL.RawQuery
+	}
+	items := make([]LocaleItem, 0, len(l.codes))
+	for _, c := range l.codes {
+		items = append(items, LocaleItem{
+			Code:    c,
+			Name:    l.autonym(c),
+			Href:    "/" + c + rest,
+			Current: c == cur,
+		})
+	}
+	return items
+}
+
+// autonym is the language's own name for itself, and deliberately not a
+// T lookup: T falls back through the default locale and the base
+// English catalog, so a declared locale the framework does not ship —
+// "fr", say — would come back labelled "English", which is exactly the
+// entry a reader looking for their language must be able to find. Only
+// a catalog for that very locale can name it, so this consults the
+// app's catalog for the code, then the framework's, then gives up and
+// shows the code.
+func (l *Locales) autonym(code string) string {
+	const key = "rastrillo.ui.locale_name"
+	if v, ok := l.app[code][key]; ok {
+		return v
+	}
+	if v, ok := l.fw[code][key]; ok {
+		return v
+	}
+	return code
+}
+
+// SwitchHandler answers POST /_locale: it stores the chosen locale in
+// LocaleCookie and 303s to the return path under that locale's prefix.
+// Same-origin is checked the way every mutating route in this
+// framework checks it (csrf.SameOrigin), with the origin taken from the
+// request itself — the handler has no configured origin and needs
+// none, because the check is "did a page of ours submit this".
+func (l *Locales) SwitchHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", http.MethodPost)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		scheme := "http"
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
+		if !csrf.SameOrigin(r, scheme+"://"+r.Host) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		code := r.PostFormValue("locale")
+		if !l.Has(code) {
+			http.Error(w, "unknown locale", http.StatusBadRequest)
+			return
+		}
+		ret := r.PostFormValue("return")
+		if ret == "" {
+			ret = "/"
+		}
+		if !strings.HasPrefix(ret, "/") || strings.HasPrefix(ret, "//") || strings.HasPrefix(ret, "/\\") {
+			http.Error(w, "bad return path", http.StatusBadRequest)
+			return
+		}
+		// A return path that already carries a locale prefix loses it,
+		// so switching from /fr/orders lands on /en/orders, not
+		// /en/fr/orders.
+		if _, rest := l.splitPrefix(strings.SplitN(ret, "?", 2)[0]); rest != "" {
+			if i := strings.Index(ret, "?"); i >= 0 {
+				rest += ret[i:]
+			}
+			ret = rest
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name: LocaleCookie, Value: code, Path: "/",
+			MaxAge: 365 * 24 * 3600, HttpOnly: true,
+			SameSite: http.SameSiteLaxMode, Secure: scheme == "https",
+		})
+		http.Redirect(w, r, "/"+code+ret, http.StatusSeeOther)
+	})
 }

@@ -3,6 +3,8 @@ package rastrillo
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -169,5 +171,128 @@ func TestMiddlewareFallsBackCleanlyWhenTheRawLocaleBoundaryIsSmuggled(t *testing
 func TestLocaleFromWithoutMiddleware(t *testing.T) {
 	if got := LocaleFrom(httptest.NewRequest("GET", "/", nil)); got != "" {
 		t.Errorf("LocaleFrom = %q, want \"\"", got)
+	}
+}
+
+func TestLocaleItems(t *testing.T) {
+	l := mwLocales(t) // en, fr, de-informal; default en
+	var items []LocaleItem
+	h := l.Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		items = LocaleItems(r)
+	}))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/fr/orders?page=2", nil))
+	want := []LocaleItem{
+		{Code: "en", Name: "English", Href: "/en/orders?page=2"},
+		{Code: "fr", Name: "fr", Href: "/fr/orders?page=2", Current: true},
+		{Code: "de-informal", Name: "de-informal", Href: "/de-informal/orders?page=2"},
+	}
+	if !reflect.DeepEqual(items, want) {
+		t.Errorf("items = %+v\nwant  %+v", items, want)
+	}
+}
+
+func TestLocaleItemsEmptyForOneLocaleOrNoMiddleware(t *testing.T) {
+	if got := LocaleItems(httptest.NewRequest("GET", "/", nil)); len(got) != 0 {
+		t.Errorf("without middleware: %v", got)
+	}
+	l, _ := NewLocales([]string{"en"}, "en", BaseCatalog(), nil)
+	var got []LocaleItem
+	l.Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { got = LocaleItems(r) })).
+		ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
+	if len(got) != 0 {
+		t.Errorf("one locale: %v", got)
+	}
+}
+
+func switchReq(locale, ret string) *http.Request {
+	form := url.Values{"locale": {locale}, "return": {ret}}
+	req := httptest.NewRequest("POST", LocaleSwitchPath, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	return req
+}
+
+func TestSwitchHandlerSetsCookieAndRedirects(t *testing.T) {
+	l := mwLocales(t)
+	rec := httptest.NewRecorder()
+	l.SwitchHandler().ServeHTTP(rec, switchReq("fr", "/orders?page=2"))
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status %d, want 303", rec.Code)
+	}
+	if got := rec.Header().Get("Location"); got != "/fr/orders?page=2" {
+		t.Errorf("Location = %q", got)
+	}
+	var c *http.Cookie
+	for _, k := range rec.Result().Cookies() {
+		if k.Name == LocaleCookie {
+			c = k
+		}
+	}
+	if c == nil || c.Value != "fr" || !c.HttpOnly || c.SameSite != http.SameSiteLaxMode || c.Path != "/" || c.MaxAge < 86400*300 {
+		t.Errorf("cookie = %+v", c)
+	}
+}
+
+func TestSwitchHandlerStripsAnExistingPrefixFromReturn(t *testing.T) {
+	l := mwLocales(t)
+	rec := httptest.NewRecorder()
+	l.SwitchHandler().ServeHTTP(rec, switchReq("en", "/fr/orders"))
+	if got := rec.Header().Get("Location"); got != "/en/orders" {
+		t.Errorf("Location = %q, want /en/orders", got)
+	}
+}
+
+func TestSwitchHandlerRefusals(t *testing.T) {
+	l := mwLocales(t)
+	tests := []struct {
+		name   string
+		req    *http.Request
+		status int
+	}{
+		{"undeclared locale", switchReq("es", "/"), http.StatusBadRequest},
+		{"protocol-relative return", switchReq("fr", "//evil.example/"), http.StatusBadRequest},
+		{"absolute return", switchReq("fr", "https://evil.example/"), http.StatusBadRequest},
+		{"GET", httptest.NewRequest("GET", LocaleSwitchPath, nil), http.StatusMethodNotAllowed},
+	}
+	crossSite := switchReq("fr", "/")
+	crossSite.Header.Set("Sec-Fetch-Site", "cross-site")
+	tests = append(tests, struct {
+		name   string
+		req    *http.Request
+		status int
+	}{"cross-site", crossSite, http.StatusForbidden})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			l.SwitchHandler().ServeHTTP(rec, tt.req)
+			if rec.Code != tt.status {
+				t.Errorf("status %d, want %d", rec.Code, tt.status)
+			}
+			if rec.Header().Get("Set-Cookie") != "" {
+				t.Error("a refusal must not set the cookie")
+			}
+		})
+	}
+}
+
+func TestSwitchHandlerEmptyReturnGoesHome(t *testing.T) {
+	l := mwLocales(t)
+	rec := httptest.NewRecorder()
+	l.SwitchHandler().ServeHTTP(rec, switchReq("fr", ""))
+	if got := rec.Header().Get("Location"); got != "/fr/" {
+		t.Errorf("Location = %q, want /fr/", got)
+	}
+}
+
+func TestSwitchHandlerSecureCookieBehindTLS(t *testing.T) {
+	l := mwLocales(t)
+	req := switchReq("fr", "/")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	rec := httptest.NewRecorder()
+	l.SwitchHandler().ServeHTTP(rec, req)
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == LocaleCookie && !c.Secure {
+			t.Error("cookie must be Secure when the request arrived over https")
+		}
 	}
 }
