@@ -17,21 +17,19 @@ type Catalog map[string]string
 // framework's base English catalog underneath them.
 //
 // Lookup is layered, in this order: the requested locale's app catalog,
-// the default locale's app catalog, the framework base catalog, then the
-// key itself. The middle layer is design doc §10's "missing keys fall
-// back to the declared default locale during development"; the base
-// layer is what lets a single-locale app get correctly-worded built-in
+// the default locale's app catalog, the framework's catalog for the
+// requested locale, when it ships one, the base catalog, then the key
+// itself. The middle layer is design doc §10's "missing keys fall back
+// to the declared default locale during development"; the base layer is
+// what lets a single-locale app get correctly-worded built-in
 // components without writing a catalog at all. Returning the key —
 // never "" — keeps a missing string visible on the page instead of
 // silently blanking a sentence.
-//
-// The framework base catalog is English-only in v1, exactly as §10
-// describes it ("its own base English catalog"), and is consulted last
-// whatever the requested locale is.
 type Locales struct {
 	codes []string
 	def   string
 	app   map[string]Catalog
+	fw    map[string]Catalog
 	base  Catalog
 }
 
@@ -68,6 +66,12 @@ func NewLocales(codes []string, def string, base Catalog, fsys fs.FS) (*Locales,
 	}
 	if l.base == nil {
 		l.base = Catalog{}
+	}
+	l.fw = map[string]Catalog{}
+	for _, c := range codes {
+		if bc, ok := baseCatalogs[c]; ok {
+			l.fw[c] = bc
+		}
 	}
 	if fsys == nil {
 		return l, nil
@@ -114,10 +118,29 @@ func (l *Locales) T(locale, key string) string {
 	if v, ok := l.app[l.def][key]; ok {
 		return v
 	}
+	if v, ok := l.fw[locale][key]; ok {
+		return v
+	}
 	if v, ok := l.base[key]; ok {
 		return v
 	}
 	return key
+}
+
+// FrameworkHas reports whether the framework ships a base catalog for
+// a declared code — matched exactly, so "zh" never finds "zh-Hans"
+// (spec §3.3).
+func (l *Locales) FrameworkHas(code string) bool { _, ok := l.fw[code]; return ok }
+
+// Dir is the HTML dir attribute for a locale: "rtl" for the
+// right-to-left scripts a rastrillo app can declare, "ltr" otherwise.
+// Decided on the primary subtag, so ar-EG mirrors as ar does.
+func Dir(locale string) string {
+	switch primarySubtag(strings.ToLower(locale)) {
+	case "ar", "fa", "he", "ur":
+		return "rtl"
+	}
+	return "ltr"
 }
 
 // Tf is T plus {name} placeholder interpolation — design doc §10's
