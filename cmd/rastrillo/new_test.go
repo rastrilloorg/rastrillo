@@ -226,6 +226,7 @@ func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 		filepath.Join("internal", "blogapp", "render.go"),
 		filepath.Join("internal", "blogapp", "templates", "layout.html"),
 		filepath.Join("internal", "blogapp", "templates", "index.html"),
+		filepath.Join("internal", "blogapp", "templates", "errors.html"),
 		filepath.Join("internal", "blogapp", "static", "tokens.css"),
 		filepath.Join("internal", "blogapp", "static", "theme.css"),
 		filepath.Join("manifest", "README.md"),
@@ -254,6 +255,45 @@ func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
 	}
 	if strings.Index(src, `opts.DBPath = ""`) < strings.Index(src, "db.Open(") {
 		t.Error("DBPath must be cleared only after db.Open used it")
+	}
+}
+
+// main.go wires Options.ErrorPage to the app's own ErrorPage, and only
+// after opts.Mux is set — Resolve populates opts fresh, so setting
+// ErrorPage any earlier would be overwritten by nothing but reads
+// stranger than setting it alongside the rest of the app wiring.
+func TestMainTemplateWiresErrorPage(t *testing.T) {
+	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
+	if !strings.Contains(src, "opts.ErrorPage = blogapp.ErrorPage") {
+		t.Errorf("main.go template does not wire opts.ErrorPage:\n%s", src)
+	}
+	if strings.Index(src, "opts.ErrorPage = blogapp.ErrorPage") < strings.Index(src, "opts.Mux = mux") {
+		t.Error("ErrorPage must be wired after opts.Mux is set, alongside the rest of the app wiring")
+	}
+}
+
+// render.go exports ErrorPage (the func Options.ErrorPage above points
+// at) and registers "errors" as a page, so render(w, "errors", …)
+// resolves.
+func TestRenderTemplateWiresErrorPage(t *testing.T) {
+	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp")
+	if !strings.Contains(src, `[]string{"index", "errors"}`) {
+		t.Errorf("render.go's pages init loop does not include \"errors\":\n%s", src)
+	}
+	if !strings.Contains(src, "func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string)") {
+		t.Errorf("render.go does not export ErrorPage with the ErrorPageFunc signature:\n%s", src)
+	}
+	if !strings.Contains(src, `render(w, "errors", map[string]any{"Status": status, "Ref": ref})`) {
+		t.Errorf("render.go's ErrorPage does not render the \"errors\" page:\n%s", src)
+	}
+}
+
+// errors.html renders ui's error-page partial inside the layout —
+// nothing more, so the whole styling and wording seam stays inside
+// that partial (and the app's tokens/theme), not duplicated here.
+func TestErrorsTemplateRendersErrorPagePartial(t *testing.T) {
+	if !strings.Contains(errorsTemplate, `{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}`) {
+		t.Errorf("errors.html template does not render the error-page partial:\n%s", errorsTemplate)
 	}
 }
 

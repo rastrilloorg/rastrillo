@@ -112,6 +112,7 @@ func runNew(args []string) error {
 		// page overrides only what it cares about.
 		filepath.Join(appDir, "templates", "layout.html"): string(layoutHTML),
 		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
+		filepath.Join(appDir, "templates", "errors.html"): errorsTemplate,
 		// The initial migration and the schema.sql snapshot it adds up
 		// to, both static: the scaffold's Note model is fixed and
 		// known at the time this template is written, so unlike a real
@@ -334,6 +335,10 @@ func main() {
 
 	opts.Mux = mux
 	opts.DBPath = ""
+	// The same page a handler's own error path renders (render.go's
+	// ErrorPage — wire it to Ctx.ErrorPage too as the app grows
+	// handlers), so a panic and a handled failure look identical.
+	opts.ErrorPage = %[2]s.ErrorPage
 	if err := rastrillo.Serve(opts); err != nil {
 		logger.Error("serve failed", "err", err)
 		os.Exit(1)
@@ -547,7 +552,7 @@ var assets = rastrillo.NewAssets(appFS)
 var pages = map[string]*template.Template{}
 
 func init() {
-	for _, name := range []string{"index"} {
+	for _, name := range []string{"index", "errors"} {
 		pages[name] = template.Must(
 			// ui's partials and their helpers first, so every page can
 			// call one without registering anything. WithIcons points
@@ -580,11 +585,38 @@ func render(w http.ResponseWriter, name string, data any) {
 	}
 	buf.WriteTo(w)
 }
+
+// ErrorPage renders the "errors" page — templates/errors.html, which
+// wraps ui's error-page partial in the layout — for status inside ref
+// (rastrillo.NewRef, or empty when there is none to show). It is the
+// rastrillo.ErrorPageFunc cmd/%[1]s/main.go points Options.ErrorPage at,
+// so a panic gets the same page a handled failure would; wire it to
+// Ctx.ErrorPage too as the app grows handlers of its own.
+func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
+	w.WriteHeader(status)
+	render(w, "errors", map[string]any{"Status": status, "Ref": ref})
+}
 `
 
 const indexTemplate = `{{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
+`
+
+// errorsTemplate is templates/errors.html: the whole page is ui's
+// error-page partial (dict builds its one data value inline — no
+// per-page view-model type for a two-field page), so restyling the
+// error page or adding a Body/BackHref override means editing this one
+// file, not the partial ui ships.
+const errorsTemplate = `{{/* errors.html — the app's error page: layout.html's content block
+     rendered by render.go's ErrorPage, which cmd/<app>/main.go points
+     Options.ErrorPage at (so a panic gets this page) and which the app
+     can wire to Ctx.ErrorPage too as handlers grow. All the wording
+     and layout live in the partial below — restyle the error page by
+     editing this file, or hand it Title/Body/HomeHref/BackHref to
+     override the partial's own catalog defaults; see
+     ui/partials/error-page.html for what it accepts. */}}
+{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}
 `
 
 // harnessTemplate is the scaffolded test harness, delivered once as
@@ -714,9 +746,12 @@ const indexTestTemplate = `package %[2]stest
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"strings"
 	"testing"
+
+	%[2]s "%[1]s/internal/%[2]s"
 )
 
 // hashedStylesheet is the fingerprinted URL shape the index page
@@ -757,6 +792,25 @@ func TestBareAssetNameStaysFresh(t *testing.T) {
 	}
 	if got := rec.Header().Get("Cache-Control"); got != "no-cache" {
 		t.Errorf("Cache-Control = %%q, want no-cache", got)
+	}
+}
+
+// ErrorPage is what main.go points Options.ErrorPage at (and the seam
+// to wire into Ctx.ErrorPage as handlers grow); called directly, it
+// pins that a panic's page is the framework's error-page partial, not
+// a stray net/http default.
+func TestErrorPageRendersFrameworkPartial(t *testing.T) {
+	rec := httptest.NewRecorder()
+	%[2]s.ErrorPage(rec, httptest.NewRequest(http.MethodGet, "/", nil), http.StatusInternalServerError, "abc123")
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("ErrorPage: status %%d, want %%d", rec.Code, http.StatusInternalServerError)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Something went wrong on our side") {
+		t.Errorf("ErrorPage body missing the 500 title:\n%%s", body)
+	}
+	if !strings.Contains(body, "abc123") {
+		t.Errorf("ErrorPage body missing the ref:\n%%s", body)
 	}
 }
 `
