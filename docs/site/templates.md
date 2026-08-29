@@ -96,7 +96,7 @@ scrim. `tokens.css` undoes the browser's own dialog block — absolute
 positioning, auto margins, `1em` of padding — so the panel lays out as
 before.
 
-Two things stay divs on purpose. The `rst-lrow` grid is a **layout
+Three things stay divs on purpose. The `rst-lrow` grid is a **layout
 grid**, not a table: its columns come from one `--rst-cols` custom
 property on the card, and CSS grid on real `<table>` markup means
 `display: grid` on the table and its rows, which throws away the table
@@ -106,6 +106,12 @@ rows are links. A list row (`list-row-action`'s `rst-row`) is a div for
 the same reason — it lives in a `rst-list` card your own page markup
 writes, and a `<li>` needs a list around it that the partial does not
 own.
+
+`job-status`'s `rst-job` is the third, and the reason is behaviour
+rather than structure: the shim replaces that element **wholesale** on
+every poll, and whether a live region whose host node keeps being
+swapped out still announces is a question for a browser, not a
+judgement call. It stays a plain div until someone drives it.
 
 ### Menus close each other
 

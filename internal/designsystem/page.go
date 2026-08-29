@@ -793,7 +793,10 @@ const shellTemplate = `
 //
 // The panel is <dialog open>, exactly as the sample is: rendered open,
 // never showModal()'d, so it never enters the top layer, ::backdrop
-// never paints, and .rst-modal-overlay stays the scrim.
+// never paints, and .rst-modal-overlay stays the scrim. Its
+// aria-labelledby points at the panel's own <h2>, the same way the
+// sample's does — a dialog role with no name is an axe failure, and the
+// heading is already the text that names this panel.
 const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
@@ -812,7 +815,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 </main>
 </div>
 <div class="rst-modal-overlay">
-  <dialog class="rst-modal-panel" open>
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
     <nav>
       <a href="{{.Self}}" aria-current="page">Profile</a>
       <a href="{{.Self}}">Billing</a>
@@ -820,7 +823,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
     </nav>
     <section>
       <a class="rst-modal-close" href="{{.Index}}" aria-label="Close settings">✕</a>
-      <h2>Profile</h2>
+      <h2 id="modal-title">Profile</h2>
       <p>Update the name and photo shown across the account.</p>
       <p>There is no JavaScript on this page. Closing is the ✕ above, a plain link; the tabs on the left are plain links too, which is why they stay on this URL instead of pretending to load a section.</p>
       <p>In an application the ✕ would return you to the screen in the backdrop. Here it returns you to the gallery you opened this demo from, because that is the page that exists.</p>

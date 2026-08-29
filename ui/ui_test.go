@@ -1844,7 +1844,7 @@ func TestNestedMenuGroupNeverSharesItsParentsName(t *testing.T) {
 func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
 	sample := Styleguide()["modal"]
 	for _, want := range []string{
-		`<dialog class="rst-modal-panel" open>`, `</dialog>`,
+		`<dialog class="rst-modal-panel" open `, `</dialog>`,
 		`<div class="rst-modal-overlay">`, `<div class="rst-backdrop" inert>`,
 	} {
 		if !strings.Contains(sample, want) {
@@ -1853,6 +1853,18 @@ func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
 	}
 	if strings.Contains(sample, `<div class="rst-modal-panel">`) {
 		t.Errorf("the modal panel is still a div: %s", sample)
+	}
+	// A dialog role with no accessible name is announced as "dialog" and
+	// nothing else, and fails axe's aria-dialog-name — a failure this
+	// vocabulary created for itself the moment the panel stopped being a
+	// div. The name comes from the panel's own heading rather than a
+	// string in this library, so it is already in the page's language.
+	id := regexp.MustCompile(`aria-labelledby="([^"]+)"`).FindStringSubmatch(sample)
+	if id == nil {
+		t.Fatalf("the dialog has no accessible name: %s", sample)
+	}
+	if !strings.Contains(sample, `<h2 id="`+id[1]+`">`) {
+		t.Errorf("aria-labelledby=%q points at no heading in the panel: %s", id[1], sample)
 	}
 	// Comments stripped first: this file explains ::backdrop and names
 	// the reset rule in prose, and a check that cannot tell a selector

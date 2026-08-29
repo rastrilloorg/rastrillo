@@ -884,7 +884,8 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	}
 	var (
 		afterAccount, afterRow, afterSubmenu string
-		afterOutside, afterInside, afterEsc  string
+		afterOutside, afterReopen            string
+		afterInside, afterEsc                string
 		focusAfterEsc                        string
 		tblockOpenAfter                      bool
 	)
@@ -909,10 +910,20 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 		chromedp.Click(`#submenu-summary`, chromedp.ByQuery), at("opened-submenu"),
 		chromedp.Evaluate(openStateJS, &afterSubmenu),
 
-		// 4. Click somewhere that is not a menu. Everything in the group
-		//    closes; the chrome strip does not.
+		// 4. Click somewhere that is not a menu. Every menu closes — the
+		//    nested submenu included, which the <details name> group
+		//    cannot do for it and must not: dismissal is not exclusivity.
+		//    The chrome strip is left alone.
 		chromedp.Click(`#elsewhere`, chromedp.ByQuery), at("clicked-outside"),
 		chromedp.Evaluate(openStateJS, &afterOutside),
+
+		// 4b. Reopen the parent. The submenu must NOT come back open: a
+		//     menu that remembers a state the user cannot see is the bug
+		//     that made submenus join the dismiss selector in the first
+		//     place.
+		chromedp.Click(`#filter-summary`, chromedp.ByQuery), at("reopened-filter"),
+		chromedp.Evaluate(openStateJS, &afterReopen),
+		chromedp.Click(`#elsewhere`, chromedp.ByQuery), at("cleared-again"),
 
 		// 5. Reopen, then click an item INSIDE the open menu. It must
 		//    survive: a light dismiss that fires on its own menu's items
@@ -944,14 +955,17 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	if afterSubmenu != "filter,submenu,chrome" {
 		t.Errorf("after opening the submenu, open = %q, want %q — a nested rst-menu-group sharing its parent's group closes the parent", afterSubmenu, "filter,submenu,chrome")
 	}
-	if afterOutside != "submenu,chrome" {
-		t.Errorf("after a click outside, open = %q, want %q — light dismiss must close the menus and leave shell chrome alone", afterOutside, "submenu,chrome")
+	if afterOutside != "chrome" {
+		t.Errorf("after a click outside, open = %q, want %q — light dismiss must close every menu, submenus included, and leave shell chrome alone", afterOutside, "chrome")
 	}
-	if afterInside != "account,submenu,chrome" {
-		t.Errorf("after clicking an item inside the open menu, open = %q, want %q — light dismiss closed the menu being used", afterInside, "account,submenu,chrome")
+	if afterReopen != "filter,chrome" {
+		t.Errorf("reopening the parent gave open = %q, want %q — the submenu was left open behind its closing parent", afterReopen, "filter,chrome")
 	}
-	if afterEsc != "submenu,chrome" {
-		t.Errorf("after Escape, open = %q, want %q", afterEsc, "submenu,chrome")
+	if afterInside != "account,chrome" {
+		t.Errorf("after clicking an item inside the open menu, open = %q, want %q — light dismiss closed the menu being used", afterInside, "account,chrome")
+	}
+	if afterEsc != "chrome" {
+		t.Errorf("after Escape, open = %q, want %q", afterEsc, "chrome")
 	}
 	if focusAfterEsc != "account-summary" {
 		t.Errorf("focus after Escape is %q, want the summary that opened the menu", focusAfterEsc)
@@ -1017,6 +1031,7 @@ func TestModalDialogPanelDrive(t *testing.T) {
 		isOpen, inTopLayer     bool
 		centred, insideOverlay bool
 		backdropInert          bool
+		labelledBy, labelText  string
 	)
 	if err := chromedp.Run(ctx,
 		chromedp.Navigate(rig.Origin+"/"),
@@ -1039,6 +1054,15 @@ func TestModalDialogPanelDrive(t *testing.T) {
 			return Math.abs((o.left + o.right) / 2 - (p.left + p.right) / 2) < 2;
 		})()`, &centred),
 		chromedp.Evaluate(`document.querySelector(".rst-backdrop").hasAttribute("inert")`, &backdropInert),
+		// The dialog role has to be named. Resolve aria-labelledby the way
+		// an AT would — follow the id to the element and read its text —
+		// rather than trusting the attribute is pointing at anything.
+		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").getAttribute("aria-labelledby") ?? ""`, &labelledBy),
+		chromedp.Evaluate(`(function () {
+			var id = document.querySelector(".rst-modal-panel").getAttribute("aria-labelledby");
+			var el = id ? document.getElementById(id) : null;
+			return el ? el.textContent.trim() : "";
+		})()`, &labelText),
 	); err != nil {
 		t.Fatalf("modal drive failed: %v", err)
 	}
@@ -1066,6 +1090,15 @@ func TestModalDialogPanelDrive(t *testing.T) {
 	}
 	if !backdropInert {
 		t.Error("the page behind the panel lost its inert attribute")
+	}
+	if labelledBy == "" {
+		t.Error("the dialog has no aria-labelledby: a dialog role with no name is announced as \"dialog\" and nothing else")
+	}
+	// Resolved through the id, not merely present: an aria-labelledby
+	// pointing at an id that is not in the document names nothing at all,
+	// and looks entirely correct in the markup.
+	if labelText == "" {
+		t.Errorf("aria-labelledby=%q resolves to no text; the dialog's accessible name is empty", labelledBy)
 	}
 
 	rig.Screen(".rst-modal-panel", "the open modal")

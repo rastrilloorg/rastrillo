@@ -22,12 +22,15 @@ func TestShimContract(t *testing.T) {
 		// header-driven navigation, and the bfcache restore that
 		// re-enables a busy form.
 		"403", "404", "localPath", "pageshow",
-		// Light dismiss: the menu classes it answers to, the containment
-		// test that keeps the menu being used open, the Escape key, and
-		// the focus hand-back to the summary. Delegated on the document,
-		// so the count of addEventListener calls stays at two however
-		// many menus a page renders.
-		"rst-dropdown", "rst-row-menu", "closeMenus", "contains", "Escape", "summary.focus()",
+		// Light dismiss: the menu classes it answers to — the nested
+		// rst-menu-group among them, so a submenu is never left open
+		// behind its closing parent — the containment test that keeps the
+		// menu being used open, the Escape key, and the focus hand-back to
+		// the summary. Delegated on the document, so the count of
+		// addEventListener calls stays at two however many menus a page
+		// renders.
+		"rst-dropdown", "rst-menu-group", "rst-row-menu",
+		"closeMenus", "contains", "Escape", "summary.focus()",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.

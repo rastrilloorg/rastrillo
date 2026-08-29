@@ -70,8 +70,15 @@
 // Errors follow ordinary html/template semantics (nothing is
 // special-cased). With dict-built map data a key the caller forgot to set
 // does not fail at Execute; the partials guard every optional field, so a
-// missing key renders nothing. A caller who wants missing-field detection
-// gets it by passing a Go struct instead of a dict-built map.
+// missing key renders nothing. That guarding is what makes a key optional
+// for a MAP: a struct caller must carry every field the partial names,
+// optional ones included, because html/template treats a field a struct
+// does not have as an Execute error rather than an empty value. MenuGroup
+// is the one exception, read through the menuGroup func precisely so
+// adding it did not break existing struct callers. A caller who wants
+// missing-field detection gets it by passing a Go struct instead of a
+// dict-built map — and takes on keeping that struct in step with the
+// partial.
 //
 // # Class idioms
 //
@@ -176,13 +183,20 @@
 // with the dialog open and nothing ever calls showModal(), so the idiom
 // keeps its zero-JS promise while the panel gains the element's dialog
 // role. Because nothing enters the top layer, ::backdrop never paints —
-// the rst-modal-overlay div is still the scrim, as it always was:
+// the rst-modal-overlay div is still the scrim, as it always was.
+//
+// The dialog role needs a name like any other: aria-labelledby points at
+// the panel's own heading, which is already the text saying what the
+// modal is — so the name comes from the page's own language rather than
+// a string this library would have to translate. A dialog with no
+// accessible name fails axe's aria-dialog-name and is announced as
+// "dialog" and nothing else:
 //
 //	<div class="rst-backdrop" inert>…the page a Close click returns to…</div>
 //	<div class="rst-modal-overlay">
-//	  <dialog class="rst-modal-panel" open>
+//	  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
 //	    <nav><a href="/settings/profile" aria-current="page">Profile</a><a href="/settings/billing">Billing</a></nav>
-//	    <section><a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>…</section>
+//	    <section><a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a><h2 id="modal-title">Profile</h2>…</section>
 //	  </dialog>
 //	</div>
 //

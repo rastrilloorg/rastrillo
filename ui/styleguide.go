@@ -112,7 +112,15 @@ var styleguideSamples = map[string]string{
 	// which is precisely what a modal-as-a-URL is: the server sends the
 	// page with the dialog already open and no script ever calls
 	// showModal(), so the idiom stays zero-JS while the panel gets the
-	// element's dialog role for free. Nothing moves to the top layer, so
+	// element's dialog role for free — a role that, like every other one,
+	// needs a name. aria-labelledby points at the panel's own <h2>, which
+	// is already the thing on screen saying what the modal is, so the
+	// name is real text in the page's own language rather than a string
+	// this library would have to translate. A dialog with no accessible
+	// name fails axe's aria-dialog-name and, more to the point, is
+	// announced as "dialog" and nothing else.
+	//
+	// Nothing moves to the top layer, so
 	// ::backdrop never paints and the .rst-modal-overlay div remains the
 	// scrim. tokens.css's dialog.rst-modal-panel rule undoes the UA
 	// dialog block (absolute positioning, auto margins, 1em padding,
@@ -121,7 +129,7 @@ var styleguideSamples = map[string]string{
   <div class="rst-page"><h1>Settings</h1></div>
 </div>
 <div class="rst-modal-overlay">
-  <dialog class="rst-modal-panel" open>
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
     <nav>
       <a href="/settings/profile" aria-current="page">Profile</a>
       <a href="/settings/billing">Billing</a>
@@ -129,7 +137,7 @@ var styleguideSamples = map[string]string{
     </nav>
     <section>
       <a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>
-      <h2>Profile</h2>
+      <h2 id="modal-title">Profile</h2>
       <p>Update the name and photo shown across the account.</p>
     </section>
   </dialog>

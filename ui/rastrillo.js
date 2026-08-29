@@ -1,6 +1,6 @@
 /* rastrillo.js — the fragment shim. First-party, dependency-free, and
-   almost entirely inert: everything below the menu section answers only
-   to an opt-in data attribute, and everything it enhances also works
+   almost entirely inert: everything apart from the menu section answers
+   only to an opt-in data attribute, and everything it enhances also works
    with scripts disabled (a status page's <noscript> meta refresh). This
    file is app-owned from the moment it is scaffolded — edit it like any
    other static file.
@@ -37,10 +37,11 @@
    direct navigation. Reserved: the framework's own handlers do not
    read it today.
 
-   Menus (no attribute — see above): an open <details class="rst-dropdown">
-   or <details class="rst-row-menu"> closes on a click outside it and on
-   Escape. Which of them is open at once is still the native <details
-   name> group, with no script involved at all.
+   Menus (no attribute — see above): an open <details class="rst-dropdown">,
+   <details class="rst-row-menu"> or nested <details class="rst-menu-group">
+   closes on a click outside it and on Escape. Which of them is open at
+   once is still the native <details name> group, with no script involved
+   at all.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -189,11 +190,23 @@
   // menus still toggle and the native <details name> group still keeps
   // one open at a time.
   //
+  // The nested rst-menu-group is in MENUS even though it is never in the
+  // <details name> group with its parent — the two mechanisms answer
+  // different questions. The name group decides which menus may be open
+  // at once, and a submenu must be exempt from it or opening one would
+  // close the menu around it. Dismissal is not exclusivity: a submenu
+  // left open behind its closing parent is still open the next time the
+  // parent opens, which is a menu remembering a state the user has no
+  // way to see. Listing it here also gives the natural behaviour of
+  // clicking elsewhere INSIDE the parent closing the submenu — the
+  // contains(except) test below already draws that line for free.
+  //
   // Shell chrome and the toggle-block are deliberately absent from
   // MENUS. A sidebar's disclosure strip and a settings switch are not
   // menus; closing them because a click landed elsewhere would fight the
   // user rather than help.
-  var MENUS = "details.rst-dropdown[open], details.rst-row-menu[open]";
+  var MENUS = "details.rst-dropdown[open], details.rst-menu-group[open], " +
+    "details.rst-row-menu[open]";
 
   // except is the clicked node: the menu containing it stays open, which
   // is what keeps a click on a menu item — or on the summary of a menu
@@ -212,6 +225,14 @@
     // back to the summary that opened the menu.
     var el = document.activeElement;
     var host = el && el.closest ? el.closest(MENUS) : null;
+    // Climb to the OUTERMOST open menu around the focus. closest() finds
+    // the innermost, which for focus inside a submenu is the submenu —
+    // and its summary is inside the parent that is about to close too, so
+    // focusing it would hand focus to something no longer rendered, which
+    // is no hand-back at all.
+    while (host && host.parentElement && host.parentElement.closest(MENUS)) {
+      host = host.parentElement.closest(MENUS);
+    }
     closeMenus(null);
     if (host) {
       var summary = host.querySelector("summary");
