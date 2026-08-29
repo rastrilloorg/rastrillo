@@ -266,9 +266,16 @@ func parseTokens(body string) []tokenRow {
 			Colour: colourValue.MatchString(v),
 			Shadow: strings.HasPrefix(name, "--rst-shadow"),
 		}
-		row.Preview = preview("background", name)
-		if row.Shadow {
+		// Only a value that is a colour gets painted into a chip, and
+		// only a shadow gets worn by one. Anything else — a future
+		// token in the light block that is neither — shows its name and
+		// value with no preview, rather than a chip painted with
+		// something that is not a colour.
+		switch {
+		case row.Shadow:
 			row.Preview = preview("box-shadow", name)
+		case row.Colour:
+			row.Preview = preview("background", name)
 		}
 		rows = append(rows, row)
 	}

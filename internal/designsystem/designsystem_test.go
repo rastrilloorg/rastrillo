@@ -152,7 +152,7 @@ func TestTreeStaysUnderTheSizeGate(t *testing.T) {
 	if total > maxTreeBytes {
 		t.Errorf("rendered tree is %d bytes, over the %d-byte gate", total, maxTreeBytes)
 	}
-	t.Logf("rendered tree: %d files, %.1f MB", len(render(t)), float64(total)/(1<<20))
+	t.Logf("rendered tree: %d files, %d bytes (%.2f MiB)", len(render(t)), total, float64(total)/(1<<20))
 }
 
 // The tree the repository carries must be exactly what Render()
@@ -294,6 +294,18 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	for _, name := range want {
 		if _, ok := files[name]; !ok {
 			t.Errorf("missing from the tree: %s", name)
+		}
+	}
+	// The theme half of the path/stylesheet wiring: a page under
+	// <theme>/ must link that theme's stylesheet, not another one's.
+	// Nothing else notices a swapped variable here — every page would
+	// still be a valid document, just painted in the wrong palette.
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			path := fmt.Sprintf("%s/%s/index.html", theme, locale)
+			if want := `href="../../theme-` + theme + `.css"`; !strings.Contains(string(files[path]), want) {
+				t.Errorf("%s does not link its own theme (%s)", path, want)
+			}
 		}
 	}
 	if len(files) != len(want) {

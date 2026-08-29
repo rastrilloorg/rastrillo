@@ -70,6 +70,18 @@ type idiomView struct {
 	Rule   template.HTML // the #98 callout this idiom carries, if any
 	HTML   template.HTML
 	Blurb  string
+
+	// Source and DemoHref are the shell idioms' escape route. A shell
+	// sample is a whole page frame, <main id="main"> and all, and this
+	// page already has one: rendering it inline nests a main inside a
+	// main (invalid HTML) and puts three main landmarks on the page.
+	// So the two shell samples are shown as escaped source — which is
+	// what a reader wants from them anyway, since they are markup to
+	// copy rather than a component to look at — beside a link to the
+	// full-page demo, where the same chrome is real.
+	Source   string
+	Demo     string // the shell demo's name, e.g. "sidebar"
+	DemoHref string
 }
 
 type shellView struct {
@@ -127,7 +139,7 @@ func renderIndex(theme, locale, root, self string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	idioms, err := buildIdioms(tmpl)
+	idioms, err := buildIdioms(tmpl, self)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +149,7 @@ func renderIndex(theme, locale, root, self string) ([]byte, error) {
 		LocaleName: rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"],
 		Root:       root, Self: self,
 		Themes:    themeLinks(theme, locale, root),
-		Locales:   localeLinks(theme, locale, root),
+		Locales:   localeLinks(theme, locale, root, "index.html"),
 		Font:      font,
 		Colours:   colours,
 		Structure: structure,
@@ -155,11 +167,16 @@ func renderIndex(theme, locale, root, self string) ([]byte, error) {
 func themeLinks(theme, locale, root string) []navLink {
 	out := make([]navLink, 0, len(ui.ThemeNames()))
 	for _, name := range ui.ThemeNames() {
-		out = append(out, navLink{
-			Label:   name,
-			Href:    root + name + "/" + locale + "/index.html",
-			Current: name == theme,
-		})
+		// The current theme links to the page you are already on rather
+		// than to its address in the tree: from the root index those two
+		// are different files (index.html and ink/en/index.html) holding
+		// the same page, and aria-current pointing somewhere else is a
+		// small lie the switcher does not need to tell.
+		href := root + name + "/" + locale + "/index.html"
+		if name == theme {
+			href = "index.html"
+		}
+		out = append(out, navLink{Label: name, Href: href, Current: name == theme})
 	}
 	return out
 }
@@ -172,15 +189,23 @@ func themeLinks(theme, locale, root string) []navLink {
 // Links rather than locale-menu's POST forms, because a static site has
 // no /_locale route to post to. The partial itself is on the page, in
 // the route family, with the markup a real app uses.
-func localeLinks(theme, locale, root string) []localeLink {
+// selfHref is where the current locale's own entry points: "index.html"
+// on an index page, which is the page you are already on, and "" on a
+// shell demo, where "index.html" would name a sibling shell rather than
+// this page. See themeLinks for why the current entry self-links at all.
+func localeLinks(theme, locale, root, selfHref string) []localeLink {
 	catalogs := rastrillo.BaseCatalogs()
 	out := make([]localeLink, 0, len(rastrillo.BaseLocales()))
 	for _, code := range rastrillo.BaseLocales() {
+		href := root + theme + "/" + code + "/index.html"
+		if code == locale && selfHref != "" {
+			href = selfHref
+		}
 		out = append(out, localeLink{
 			Code:    code,
 			Name:    catalogs[code]["rastrillo.ui.locale_name"],
 			Dir:     rastrillo.Dir(code),
-			Href:    root + theme + "/" + code + "/index.html",
+			Href:    href,
 			Current: code == locale,
 		})
 	}
@@ -356,11 +381,19 @@ var idiomRules = map[string]struct{ Title, Body string }{
 	},
 }
 
+// shellIdioms maps the two whole-page-frame samples to the shell demo
+// that shows them working. See idiomView.Source for why they are the
+// two that cannot be rendered inline.
+var shellIdioms = map[string]string{
+	"shell-topbar":  "topbar",
+	"shell-sidebar": "sidebar",
+}
+
 // buildIdioms renders ui.Styleguide in sorted order. The samples are
 // complete HTML with no template actions, so they go onto the page as
 // they are — the point is that the page shows the same bytes the ui
 // tests hold against tokens.css.
-func buildIdioms(tmpl *template.Template) ([]idiomView, error) {
+func buildIdioms(tmpl *template.Template, self string) ([]idiomView, error) {
 	samples := ui.Styleguide()
 	names := make([]string, 0, len(samples))
 	for name := range samples {
@@ -372,8 +405,14 @@ func buildIdioms(tmpl *template.Template) ([]idiomView, error) {
 		view := idiomView{
 			Name:   name,
 			Marker: marker("idiom", name),
-			HTML:   template.HTML(samples[name]),
 			Blurb:  idiomBlurbs[name],
+		}
+		if shell, ok := shellIdioms[name]; ok {
+			view.Source = samples[name]
+			view.Demo = shell
+			view.DemoHref = self + "shells/" + shell + ".html"
+		} else {
+			view.HTML = template.HTML(samples[name])
 		}
 		if rule, ok := idiomRules[name]; ok {
 			var buf strings.Builder
@@ -452,7 +491,7 @@ func renderShell(theme, locale, shell, root string) ([]byte, error) {
 		Name:    shell,
 		Title:   "The " + shell + " shell — rastrillo design system",
 		Index:   "../index.html",
-		Locales: localeLinks(theme, locale, "../../../"),
+		Locales: localeLinks(theme, locale, "../../../", ""),
 		Account: accountMarkup[shell],
 	})
 	if err != nil {
@@ -496,6 +535,8 @@ const dsCSS = `
 .ds-frame { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); block-size: 26rem; display: block; inline-size: 100%; margin: var(--rst-sp-3) 0; }
 .ds-shell { margin: var(--rst-sp-5) 0; }
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
+.ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
+.ds-src code { white-space: pre; }
 `
 
 // indexTemplate is the whole design-system page. Two things in it are
@@ -550,7 +591,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 <p class="ds-swatch-note">The values printed here are the light ones. The dark set is authored by hand in the same file — never inverted — and ui/contrast_test.go holds every documented pair in both sets to the WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. The chips themselves are painted with var(), so they follow whichever scheme you are reading in, and they will not match the printed values in dark mode.</p>
 {{range .Colours}}
 <h3 class="ds-sub">{{.Title}}</h3>
-<ul class="ds-toks">{{range .Rows}}<li class="ds-tok"><span class="ds-chip" style="{{.Preview}}"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
+<ul class="ds-toks">{{range .Rows}}<li class="ds-tok">{{if .Preview}}<span class="ds-chip" style="{{.Preview}}"></span>{{end}}<span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
 {{end}}
 <h3 class="ds-sub">Type family</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Font.Name}}</span><span class="ds-tok__value">{{.Font.Value}}</span></span></li></ul>
@@ -560,7 +601,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 {{end}}
 
 <div class="ds-head"><h2 id="partials">Partials</h2></div>
-<p class="ds-lead">Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below.</p>
+<p class="ds-lead">Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below. One thing a gallery cannot help: page-header and error-page each own an h1, so this page carries several, where a real screen has exactly one.</p>
 {{range .Families}}
 <section class="ds-family">
 <h3>{{.Title}}</h3>
@@ -591,7 +632,9 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 <h4 class="rst-mono">{{.Name}}</h4>
 {{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
 {{.Rule}}
-<div class="ds-sample">{{.HTML}}</div>
+{{if .Source}}<pre class="ds-src rst-mono"><code>{{.Source}}</code></pre>
+<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="{{.DemoHref}}">Open the {{.Demo}} shell demo</a> to see the same markup as a real page.</p>
+{{else}}<div class="ds-sample">{{.HTML}}</div>{{end}}
 </article>
 {{end}}
 
