@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">待機中 — 何も起きていないときのボタン</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">何かを変えるボタンには読み込み中の状態がつきます。何かを開くだけのボタン——ディスクロージャー、ドロップダウン、タブ——にはつきません。rastrillo.js はこの規則をすべてのフォームのすべての送信ボタンに適用します。有効にする設定はありません。</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">処理中 — フォームが出ていくときに rastrillo.js が書くもの</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">押されたボタンだけです。フォーム内のほかの送信ボタンは name と value をそのまま保ち、フォーム自体は二重送信から守られます。data-busy=&#34;false&#34; でこの規則を外せます（フォームにも、ボタン一つにも）。data-busy-label は文言を差し替えます。スクリプトを切ると何も起こらず、フォームはこれまでどおり送信されるので、冪等性は変わらずサーバーの仕事です。</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

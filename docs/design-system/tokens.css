@@ -176,6 +176,34 @@ body {
   filter: brightness(0.9);
 }
 
+/* busy — the loading state rastrillo.js gives every submit button on
+   its way out, and the one state of a button that is not a variant:
+   any .rst-btn can wear it. The spinner is a real child element
+   (.rst-spin, further down) rather than a pseudo-element, because the
+   shim adds and removes it; .rst-btn's own `gap` spaces it from the
+   label, so there is no margin here to keep in step with the padding.
+   :disabled arrives a tick later, once the submission is under way —
+   the two are styled together so the button does not change twice.
+   Nothing here animates, so prefers-reduced-motion has nothing to say
+   to it: .rst-spin already stops rotating under that query. */
+.rst-btn[aria-busy="true"], .rst-btn:disabled {
+  cursor: default;
+}
+/* Dimmed, but not much. A disabled control is "incidental" under WCAG
+   1.4.3 and exempt from the contrast minimum, and this one is disabled
+   for a second — so the dimming is a hint that the button is not
+   listening, not a licence to make the label hard to read while
+   someone is waiting on it. */
+.rst-btn:disabled {
+  opacity: 0.8;
+}
+/* The ring must not be squeezed by a long label, and must not stretch
+   with the button's align-items: center default. */
+.rst-btn__spin {
+  align-self: center;
+  flex: none;
+}
+
 /* ── page-header ──────────────────────────────────────────────────── */
 .rst-page-header {
   align-items: baseline;

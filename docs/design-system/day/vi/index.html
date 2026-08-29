@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">Nghỉ — nút trước khi có chuyện gì xảy ra</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Nút LÀM THAY ĐỔI một thứ gì đó thì có trạng thái đang tải; nút chỉ hiện ra một thứ gì đó — khối mở rộng, menu thả xuống, thẻ — thì không. rastrillo.js áp dụng quy tắc đó cho mọi nút gửi trong mọi biểu mẫu, không cần bật gì cả.</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">Đang xử lý — thứ rastrillo.js viết ra khi biểu mẫu rời đi</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Chỉ nút đã được bấm: mọi nút gửi khác trong biểu mẫu vẫn giữ nguyên name và value của mình, còn bản thân biểu mẫu được chặn khỏi lần gửi thứ hai. data-busy=&#34;false&#34; để bỏ quy tắc, đặt trên biểu mẫu hoặc trên một nút; data-busy-label thay phần chữ. Tắt script thì không có gì trong số này xảy ra và biểu mẫu vẫn gửi đúng như trước, nên tính lũy đẳng vẫn là việc của máy chủ.</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

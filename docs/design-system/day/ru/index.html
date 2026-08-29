@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">В покое — кнопка до того, как что-либо произошло</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Кнопка, которая ЧТО-ТО МЕНЯЕТ, получает состояние загрузки; кнопка, которая лишь что-то раскрывает — раскрывающийся блок, выпадающее меню, вкладка, — нет. rastrillo.js применяет это правило к каждой кнопке отправки в каждой форме, включать ничего не нужно.</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">В работе — то, что rastrillo.js пишет на выходе</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Только та кнопка, по которой нажали: все остальные кнопки отправки в форме сохраняют своё name и value, а сама форма защищена от повторной отправки. data-busy=&#34;false&#34; отключает правило — на форме или на одной кнопке; data-busy-label заменяет текст. Без скриптов ничего этого не происходит и форма отправляется ровно так же, как всегда, так что идемпотентность по-прежнему забота сервера.</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

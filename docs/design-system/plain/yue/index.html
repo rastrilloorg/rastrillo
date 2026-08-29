@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">閒置——乜都未發生之前嘅掣</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">會改變啲嘢嘅掣要有載入狀態；淨係展開啲嘢嘅掣——展開區、下拉選單、分頁——就唔使。rastrillo.js 會將呢條規則用喺每個表單嘅每個提交掣度，唔使開任何嘢。</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">處理緊——表單送出嗰陣 rastrillo.js 寫低嘅嘢</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">淨係㩒咗嗰個掣：表單入面其他提交掣都保住自己嘅 name 同 value，表單本身亦都防住第二次提交。data-busy=&#34;false&#34; 可以唔要呢條規則，寫喺表單或者某一個掣度；data-busy-label 用嚟換咗啲字。熄咗腳本就乜都唔會發生，表單照舊噉提交，所以冪等仲係伺服器嘅事。</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">空闲——任何事情发生之前的按钮</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">会改变某样东西的按钮要有加载状态；只是展开某样东西的按钮——展开块、下拉菜单、标签页——不需要。rastrillo.js 会把这条规则用在每个表单的每个提交按钮上，没有什么要开启的。</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">工作中——表单送出时 rastrillo.js 写下的样子</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">只有被点击的那个按钮：表单里其他提交按钮都保留自己的 name 和 value，表单本身也会防住第二次提交。data-busy=&#34;false&#34; 可以退出，写在表单上或某一个按钮上；data-busy-label 用来替换文字。关掉脚本，这些都不会发生，表单照旧提交，所以幂等仍然是服务器的事。</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">Em repouso — o botão antes de acontecer alguma coisa</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Um botão que MUDA alguma coisa ganha um estado de carregamento; um botão que apenas revela alguma coisa — uma divulgação, um menu, um separador — não. O rastrillo.js aplica essa regra a todos os botões de envio de todos os formulários, sem nada para ativar.</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">A trabalhar — o que o rastrillo.js escreve quando o formulário sai</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Apenas o botão em que se clicou: todos os outros botões de envio do formulário mantêm o seu nome e o seu valor, e o próprio formulário fica protegido contra um segundo envio. data-busy=&#34;false&#34; desativa a regra, no formulário ou num botão; data-busy-label substitui o texto. Sem scripts nada disto acontece e o formulário é enviado exatamente como sempre foi, por isso a idempotência continua a ser tarefa do servidor.</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

@@ -788,3 +788,70 @@ default for submit buttons, with `data-busy="false"` as the opt-out and
 substance of the rule; the spinner is how it tells the truth to the person
 waiting. Zero-JS: unchanged submit, no busy state — idempotency stays the
 app's job. Plan: Task 5c.
+
+#### AS BUILT (2026-08-29)
+
+**Shape.** One delegated capture-phase `submit` listener on the document,
+replacing the `form[data-busy]` scan — so a form arriving inside a polled
+fragment is covered the moment it lands, and the attribute survives only as
+an opt-out. The form gets `aria-busy="true"` and a `rstBusy` flag; the button
+the browser submitted with (`SubmitEvent.submitter` — the one clicked, or the
+default one implicit submission clicked) gets `aria-busy="true"`, a
+`<span class="rst-spin rst-btn__spin" aria-hidden="true">` before its label,
+the optional `data-busy-label` swap, and `disabled` one tick later.
+`data-busy="false"` is read on the form (skip everything) and on the button
+(skip the loading state, keep the form's guard). The bfcache restore now
+walks `form[aria-busy]` rather than `form[data-busy]`.
+
+**Ordering is the whole design.** Chrome really does drop a submit button's
+name/value if `disabled` is set inside the submit handler — mutation-verified,
+not assumed: the drive's payload assertion goes from `action=save&note=hello`
+to `note=hello` the moment the hardening is hoisted out of the deferred
+callback. So the synchronous half is only what cannot reach the payload
+(`aria-busy`, the spinner, a `<button>`'s text, which is never submitted), and
+the deferred half is `disabled` plus an `<input type="submit">`'s value, which
+IS what it submits.
+
+**Divergences from the sketch above, and why.** Only the CLICKED button goes
+busy, not every submit button in the form — the others must keep their name
+and value for a Save / Save-draft pair to still be distinguishable server-side.
+A form with a `target` other than `_self` is skipped: the page it is on is not
+going anywhere. A submit that something downstream cancels
+(`e.defaultPrevented` at the tick) is handed back, guard included — a form the
+browser never sent must not sit there looking busy, and an app handler that
+took the job owns the feedback. An `<input type="submit">` gets the attributes
+and the label but no spinner: it is void, with nowhere to put one. An engine
+without `SubmitEvent.submitter` keeps the guard and skips the loading state.
+
+**Trap 3 is structural, not defended.** Constraint validation fails BEFORE the
+submit event fires, so an invalid form never reaches this code and cannot be
+left stuck busy. `formnovalidate` skips validation and really does submit,
+which should look like a submission. Both are driven.
+
+**CSS.** `.rst-spin` already carried its `prefers-reduced-motion` branch
+(`animation: none; opacity: 0.5`), so nothing was added for it. New in
+`tokens.css`: `.rst-btn[aria-busy="true"], .rst-btn:disabled { cursor: default }`,
+`.rst-btn:disabled { opacity: 0.72 }`, and `.rst-btn__spin { align-self: center;
+flex: none }`. `.rst-btn`'s own `gap` spaces the ring from the label.
+
+**Budget.** The shim's cap rose 12KB → 16KB, once, with the arithmetic in
+`TestShimIsSmall`: 11,689 → 15,638 bytes, of which 618 are code and 3,331 are
+comment. Splitting was rejected on those numbers — 618 bytes of behaviour does
+not earn a third scaffolded file and a third `<script>` tag on every page.
+select.js keeps its own 12KB; the shared number was a coincidence of history.
+
+**Gates.** `TestBusyRuleIsTheDefault` (Go) pins the delegated listener, the
+absence of the opt-in scan, both readings of `data-busy="false"`, and the
+sync/deferred split of the payload-affecting mutations.
+`TestBusyButtonDrive` (`-tags browser`) drives a real engine through seven
+legs: the refused form, the form-level opt-out, the button-level opt-out (form
+still guarded), the busy state with the payload the server actually received,
+re-entrancy from three directions, `prefers-reduced-motion` (computed
+`animation-name: none`, ring still shown), and scripts disabled. The endpoint
+answers **204 No Content**, which is defined not to navigate — that is what
+keeps the busy state on the page long enough to assert against instead of
+racing a response.
+
+**Gallery.** `form-foot` gains an idle/working pair, the second a `Raw` sample
+because it is not a state the partial can be asked for, with the rule and its
+limits as the two notes — four new prose keys in twelve locales.

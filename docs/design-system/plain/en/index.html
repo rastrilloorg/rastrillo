@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">Idle — the button before anything happens</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">A button that CHANGES something gets a loading state; a button that only reveals something — a disclosure, a dropdown, a tab — does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into.</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">Working — what rastrillo.js writes on the way out</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=&#34;false&#34; opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server&#39;s job.</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

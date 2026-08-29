@@ -303,8 +303,10 @@ markup opts in. `data-poll="URL"` + `data-poll-every="2"` swap the
 element for the fetched fragment and repeat while the fragment still
 carries `data-poll` (ui's `job-status` partial drops it once done); the
 partial's `PushURL` (= `EventsPath`) emits `data-poll-push` and the shim
-rides SSE, falling back to polling. `data-busy`/`data-busy-label`
-disable and retitle a submit button.
+rides SSE, falling back to polling. Every submit button gets a spinner,
+`aria-busy` and a double-submit guard by DEFAULT; `data-busy="false"`
+(form or button) opts out, `data-busy-label` retitles. It is manners,
+not idempotency — the server still has to refuse the second write.
 
 Hibernation means a `time.Ticker` is not a scheduler. Declare recurring
 work outside the app (`carlos schedule set -name sync -every 6h -path

@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">নিষ্ক্রিয় — কিছু ঘটার আগের বোতাম</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">যে বোতাম কিছু বদলায় তা লোডিং অবস্থা পায়; যে বোতাম শুধু কিছু দেখায় — ডিসক্লোজার, ড্রপডাউন, ট্যাব — তা পায় না। rastrillo.js এই নিয়ম প্রতিটি ফর্মের প্রতিটি সাবমিট বোতামে প্রয়োগ করে, চালু করার মতো কিছু নেই।</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">কাজ চলছে — ফর্ম বেরোনোর সময় rastrillo.js যা লেখে</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">শুধু যে বোতামে ক্লিক হয়েছে সেটিই: ফর্মের অন্য সব সাবমিট বোতাম নিজের name আর value ধরে রাখে, আর ফর্মটি নিজেই দ্বিতীয়বার জমা পড়া থেকে রক্ষা পায়। data-busy=&#34;false&#34; দিয়ে নিয়মটি বাদ দেওয়া যায়, ফর্মে বা কোনো একটি বোতামে; data-busy-label লেখাটা বদলে দেয়। স্ক্রিপ্ট বন্ধ থাকলে এর কিছুই ঘটে না, ফর্ম আগের মতোই জমা পড়ে, তাই idempotency এখনও সার্ভারের দায়িত্ব।</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

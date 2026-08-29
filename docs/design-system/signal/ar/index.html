@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">في السكون — الزر قبل أن يحدث أي شيء</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">الزر الذي يُغيّر شيئًا يحصل على حالة تحميل؛ أما الزر الذي يكشف شيئًا فقط — كتلة إظهار، قائمة منسدلة، تبويب — فلا. يطبّق rastrillo.js هذه القاعدة على كل زر إرسال في كل نموذج، دون أي شيء يجب تفعيله.</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">قيد العمل — ما يكتبه rastrillo.js عند خروج النموذج</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">الزر الذي نُقر عليه وحده: تحتفظ بقية أزرار الإرسال في النموذج باسمها وقيمتها، والنموذج نفسه محميّ من إرسال ثانٍ. تُلغي data-busy=&#34;false&#34; القاعدة، على النموذج أو على زر واحد؛ وتستبدل data-busy-label النص. مع إيقاف السكربتات لا يحدث أي من هذا ويُرسَل النموذج كما كان دائمًا، فتبقى الحيادية عند التكرار من مهام الخادم.</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

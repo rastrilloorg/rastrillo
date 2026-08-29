@@ -106,7 +106,7 @@ From Paul's screenshots (reproduce each in the browser rig first — screenshot,
 - Zero-JS: no busy state, form submits exactly as today. The rule is an enhancement, not a correctness claim — say so in the docs (server-side idempotency is still the app's job).
 - Reuse `.rst-spin`; keep the shim under its 12KB cap or raise honestly.
 
-- [ ] Drives: click submit → busy attrs + visible spinner + the button's name/value present in the submitted payload + a second click submits nothing new; reduced-motion → no spin; scriptless → unchanged. Gallery shows both states with the rule beside them. Commit `ui: a button that changes something says so while it works`.
+- [x] Drives: click submit → busy attrs + visible spinner + the button's name/value present in the submitted payload + a second click submits nothing new; reduced-motion → no spin; scriptless → unchanged. Gallery shows both states with the rule beside them. Commit `ui: a button that changes something says so while it works`.
 
 ---
 

@@ -197,6 +197,29 @@ Both handle negatives correctly, writing the sign once against the
 absolute value. Formatting a negative directly produces `"$-1.-50"`,
 since Go's `/` and `%` both truncate toward zero.
 
+## The busy button is not a guarantee
+
+`rastrillo.js` gives every submit button a loading state while its form
+is out — spinner, `aria-busy`, then `disabled` — and refuses a second
+submit from the same form while the first is in flight. It is on by
+default; `data-busy="false"` on the form or on one button opts out, and
+`data-busy-label` replaces the text. The whole rule, including what it
+looks like, is in
+[Templates](/docs/templates/#a-button-that-changes-something-says-so).
+
+What it buys you is that the ordinary double click stops posting twice.
+What it does not buy you is idempotency, and it is worth being blunt
+about the difference: the guard lives in the browser, and the browser is
+not where your data is. With JavaScript off there is no guard at all and
+the form submits exactly as it always did — twice, if someone clicks
+twice. A refresh, a back button, a retried request, two tabs, someone
+with a script: none of them go through it.
+
+So the server still has to be able to see the same write twice and only
+do it once. A unique index, an idempotency key on the form, a token you
+consume — whichever fits the write. The busy button is manners. The
+constraint is the correctness.
+
 ## After a successful write
 
 ```go

@@ -475,6 +475,21 @@ func families() []family {
 							"Submit": "Save post", "CancelHref": "/posts", "CancelLabel": "Back to posts",
 						}},
 						{State: "Submit only", Data: map[string]any{"Submit": "Send invitation"}},
+						// The busy rule, shown as the pair it is. The
+						// second state is Raw rather than data, because
+						// it is not a state the partial can be asked
+						// for: it is what rastrillo.js writes over the
+						// first one the moment the form goes out.
+						{State: "Idle — the button before anything happens", Data: map[string]any{
+							"Submit": "Publish", "CancelHref": "/posts", "CancelLabel": "Back to posts",
+						}, Note: "A button that CHANGES something gets a loading state; a button that only reveals something — a disclosure, a dropdown, a tab — does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into."},
+						{State: "Working — what rastrillo.js writes on the way out",
+							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
+							Raw: `<div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div>`,
+						},
 					},
 				},
 				{

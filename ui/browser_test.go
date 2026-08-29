@@ -51,6 +51,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -1463,4 +1464,382 @@ func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
 	}
 
 	rig.Screen("body", "the field rows")
+}
+
+// ── The busy rule ────────────────────────────────────────────────────
+
+// busyStateJS reads the whole busy state of the two-button form in one
+// round trip: the attributes, the swapped label, the untouched sibling,
+// and — the part an attribute check would miss — whether the spinner is
+// really on screen and really turning, out of the computed style rather
+// than out of the markup.
+const busyStateJS = `(function () {
+  var f = document.getElementById("two");
+  var s = document.getElementById("save");
+  var d = document.getElementById("draft");
+  var spin = s.querySelector(".rst-btn__spin");
+  var cs = spin && getComputedStyle(spin);
+  return [
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "save:" + (s.getAttribute("aria-busy") || "-"),
+    "save-off:" + s.disabled,
+    "save-text:" + s.textContent.trim(),
+    "spin-first:" + (spin ? s.firstElementChild === spin : false),
+    "spin-hidden:" + (spin ? spin.getAttribute("aria-hidden") : "-"),
+    "spin-anim:" + (cs ? cs.animationName : "-"),
+    // offsetWidth, not getBoundingClientRect: a rect is the rotated
+    // box, so a 4px ring that only LOOKS bigger because it is spinning
+    // would pass a rect check and fail the reduced-motion one.
+    "spin-shown:" + (spin ? (spin.offsetWidth > 6 && spin.offsetHeight > 6 &&
+      cs.display !== "none" && cs.visibility === "visible" &&
+      parseFloat(cs.opacity) > 0) : false),
+    "draft:" + (d.getAttribute("aria-busy") || "-"),
+    "draft-off:" + d.disabled,
+    "draft-value:" + d.value,
+  ].join(" ");
+})()`
+
+// invalidStateJS is the same reading for the form the browser refuses:
+// nothing about it may look as though it is on its way anywhere.
+const invalidStateJS = `(function () {
+  var f = document.getElementById("needs-title");
+  var b = document.getElementById("try");
+  return [
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "btn-off:" + b.disabled,
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "valid:" + f.checkValidity(),
+  ].join(" ");
+})()`
+
+// optOutStateJS reads the form that said data-busy="false".
+const optOutStateJS = `(function () {
+  var f = document.getElementById("out");
+  var b = document.getElementById("optout");
+  return [
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "btn-off:" + b.disabled,
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+  ].join(" ");
+})()`
+
+// quietStateJS reads the form whose BUTTON said data-busy="false": the
+// form is still guarded, the button just declines the loading state.
+const quietStateJS = `(function () {
+  var f = document.getElementById("quiet");
+  var b = document.getElementById("quietbtn");
+  return [
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "btn-off:" + b.disabled,
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "guarded:" + (f.rstBusy === true),
+  ].join(" ");
+})()`
+
+// busyPage serves the four forms the busy drive needs and a submit
+// endpoint that answers 204.
+//
+// The 204 is the whole trick. A form whose response navigates leaves
+// nothing on the screen to look at — the busy state is gone with the
+// document before an assertion can reach it, and a drive that sometimes
+// reads the old page and sometimes the new one is worse than no drive.
+// A form submission answered with 204 No Content is defined not to
+// navigate at all: the request is really made, the payload is really
+// delivered, and the page stays exactly as the submit left it, busy
+// button and all, for as long as the assertions need. Which is also,
+// near enough, the situation the rule exists for — a submit that is
+// under way and has not come back yet.
+//
+// The endpoint reports what it received on a buffered channel, which is
+// how the drive checks the clicked button's name and value survived:
+// the trap the deferred `disabled` exists to avoid.
+func busyPage(t *testing.T) (http.Handler, chan string) {
+	t.Helper()
+	payloads := make(chan string, 8)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /rastrillo.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(ShimJS())
+	})
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		select {
+		case payloads <- r.PostForm.Encode():
+		default:
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
+			`<title>busy</title><link rel="stylesheet" href="/tokens.css">`+
+			`<link rel="stylesheet" href="/theme.css">`+
+			`<script defer src="/rastrillo.js"></script></head><body>`+
+			// Two submit buttons in one form: the clicked one goes busy,
+			// the other keeps its name, its value and its wits.
+			`<form id="two" class="rst-form" method="post" action="/submit">`+
+			`<input type="hidden" name="note" value="hello">`+
+			`<div class="rst-form__foot">`+
+			`<button id="save" class="rst-btn rst-btn--primary" type="submit" name="action" value="save" data-busy-label="Saving…">Save post</button>`+
+			`<button id="draft" class="rst-btn" type="submit" name="action" value="draft">Save draft</button>`+
+			`</div></form>`+
+			// A form the browser will refuse: constraint validation
+			// fires before the submit event, so nothing here may end up
+			// looking busy.
+			`<form id="needs-title" class="rst-form" method="post" action="/submit">`+
+			`<input class="rst-input" id="title" name="title" required>`+
+			`<button id="try" class="rst-btn" type="submit">Publish</button>`+
+			`</form>`+
+			// The opt-out, twice: once on the form, once on the button.
+			// The button-level one still guards the form — the guard is
+			// the substance, and only the loading state is being
+			// declined.
+			`<form id="out" class="rst-form" method="post" action="/submit" data-busy="false">`+
+			`<button id="optout" class="rst-btn" type="submit" name="action" value="optout">Opt out</button>`+
+			`</form>`+
+			`<form id="quiet" class="rst-form" method="post" action="/submit">`+
+			`<button id="quietbtn" class="rst-btn" type="submit" name="action" value="quiet" data-busy="false">Quietly</button>`+
+			`</form>`+
+			`</body></html>`)
+	})
+	return mux, payloads
+}
+
+// took reports what the endpoint received, or fails: the drive is
+// meaningless if the submission never arrived.
+func took(t *testing.T, payloads chan string, leg string) string {
+	t.Helper()
+	select {
+	case p := <-payloads:
+		return p
+	case <-time.After(20 * time.Second):
+		t.Fatalf("%s: the server never received a submission", leg)
+		return ""
+	}
+}
+
+// tookNothing is the double-submit assertion: after the guard is armed,
+// no second request may reach the server.
+func tookNothing(t *testing.T, payloads chan string, leg string) {
+	t.Helper()
+	select {
+	case p := <-payloads:
+		t.Fatalf("%s: the server received a SECOND submission (%q); the guard is the substance of the rule", leg, p)
+	case <-time.After(1500 * time.Millisecond):
+	}
+}
+
+// TestBusyButtonDrive is the busy rule in a real engine.
+//
+// Bug classes it exists to catch — every one of which renders perfectly
+// and says nothing wrong:
+//
+//   - the button is disabled while the payload is being read, so the
+//     clicked button's name/value never reaches the server and the
+//     handler cannot tell Save from Save-draft;
+//   - the whole form goes busy, so a second submit button loses its
+//     value too, or reads as unavailable when it is not;
+//   - the guard is missing, so a double click posts twice — which for a
+//     payment or an invitation is the bug the rule is FOR;
+//   - the busy class is set but the spinner never paints (no rule for
+//     it, zero size, display:none), so the page claims to be working
+//     and shows nothing;
+//   - the spinner keeps rotating for a reader who asked for reduced
+//     motion;
+//   - a form the browser REFUSED is left stuck busy, so the visitor
+//     fixes the field and finds a dead button;
+//   - the rule turns out to depend on the script, breaking the
+//     scriptless submit it is only ever an enhancement to.
+func TestBusyButtonDrive(t *testing.T) {
+	mux, payloads := busyPage(t)
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancel()
+
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+	fail := func(err error) {
+		if err != nil {
+			t.Fatalf("drive failed after %q: %v", reached, err)
+		}
+	}
+
+	// ── 1. The form the browser refuses ───────────────────────────────
+	//
+	// #title is required and empty, so the click never produces a submit
+	// event at all. Nothing may be busy afterwards, and nothing may have
+	// been sent.
+	var invalidBefore, invalidAfter string
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
+		chromedp.WaitVisible(`#save`, chromedp.ByQuery), at("page-visible"),
+		chromedp.Evaluate(invalidStateJS, &invalidBefore),
+		chromedp.Click(`#try`, chromedp.ByQuery), at("clicked-invalid-submit"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(invalidStateJS, &invalidAfter),
+	))
+	const wantInvalid = "form:- btn:- btn-off:false spin:no valid:false"
+	if invalidBefore != wantInvalid {
+		t.Fatalf("before the click the invalid form reads %q, want %q — this leg proves nothing unless the form really is invalid to begin with", invalidBefore, wantInvalid)
+	}
+	if invalidAfter != wantInvalid {
+		t.Errorf("after submitting an invalid form the state is %q, want %q — the browser refused the submit, so the button must not be left stuck busy", invalidAfter, wantInvalid)
+	}
+	tookNothing(t, payloads, "invalid form")
+
+	// ── 2. The opt-out ────────────────────────────────────────────────
+	//
+	// data-busy="false" on the form. It still submits — that is the
+	// point, it is opting out of the loading state and nothing else.
+	var optOut string
+	fail(chromedp.Run(ctx,
+		chromedp.Click(`#optout`, chromedp.ByQuery), at("clicked-optout"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(optOutStateJS, &optOut),
+	))
+	if got := took(t, payloads, "opt-out"); got != "action=optout" {
+		t.Errorf("the opted-out form sent %q, want %q", got, "action=optout")
+	}
+	const wantOptOut = "form:- btn:- btn-off:false spin:no"
+	if optOut != wantOptOut {
+		t.Errorf(`data-busy="false" form reads %q, want %q — the opt-out is not being honoured`, optOut, wantOptOut)
+	}
+
+	// ── 2b. The same opt-out, on the button ──────────────────────────
+	//
+	// The button declines the loading state; the FORM is still guarded,
+	// because the guard is the substance of the rule and is not what
+	// was opted out of.
+	var quiet string
+	fail(chromedp.Run(ctx,
+		chromedp.Click(`#quietbtn`, chromedp.ByQuery), at("clicked-quiet"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(quietStateJS, &quiet),
+	))
+	if got := took(t, payloads, "button opt-out"); got != "action=quiet" {
+		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
+	}
+	const wantQuiet = "form:true btn:- btn-off:false spin:no guarded:true"
+	if quiet != wantQuiet {
+		t.Errorf(`data-busy="false" on the button reads %q, want %q`, quiet, wantQuiet)
+	}
+
+	// ── 3. The rule itself, and the payload ───────────────────────────
+	var busy, afterSecond string
+	fail(chromedp.Run(ctx,
+		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save"),
+		// The hardening to disabled is deferred by a tick, so wait for
+		// it rather than for a guess at how long a tick takes.
+		chromedp.Poll(`document.getElementById("save").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("save-hardened"),
+		chromedp.Evaluate(busyStateJS, &busy),
+	))
+	// The payload check: the trap this whole shape exists to avoid is a
+	// disabled button whose name/value never reaches the server.
+	if got := took(t, payloads, "save"); got != "action=save&note=hello" {
+		t.Errorf("the server received %q, want %q — the clicked button's name/value was dropped from the payload", got, "action=save&note=hello")
+	}
+	const wantBusy = "form:true save:true save-off:true save-text:Saving… " +
+		"spin-first:true spin-hidden:true spin-anim:rst-spin spin-shown:true " +
+		"draft:- draft-off:false draft-value:draft"
+	if busy != wantBusy {
+		t.Errorf("busy state is\n  %q\nwant\n  %q", busy, wantBusy)
+	}
+
+	rig.Screen("body", "a submit button while it works")
+
+	// ── 4. Re-entrancy ────────────────────────────────────────────────
+	//
+	// Three ways back in, one guard: a second click on the button that
+	// started it, a click on the OTHER submit button in the same form,
+	// and a programmatic requestSubmit(). None may reach the server.
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("save").click()`, nil), at("clicked-save-again"),
+		chromedp.Evaluate(`document.getElementById("draft").click()`, nil), at("clicked-draft"),
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("requested-submit"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(busyStateJS, &afterSecond),
+	))
+	tookNothing(t, payloads, "second submit")
+	if afterSecond != wantBusy {
+		t.Errorf("after the re-entrancy attempts the state is\n  %q\nwant it unchanged:\n  %q", afterSecond, wantBusy)
+	}
+
+	// ── 5. Reduced motion ─────────────────────────────────────────────
+	//
+	// The spinner is still there and still says "working"; it just stops
+	// turning. A computed animationName of "none" is the assertion —
+	// the media query is in tokens.css, so a spinner built with an
+	// inline animation would pass every markup check and fail here.
+	var reduced string
+	fail(chromedp.Run(ctx,
+		chromedp.ActionFunc(func(c context.Context) error {
+			return emulation.SetEmulatedMedia().
+				WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: "reduce"}}).
+				Do(c)
+		}), at("emulated-reduced-motion"),
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-reduced"),
+		chromedp.WaitVisible(`#save`, chromedp.ByQuery), at("page-visible-reduced"),
+		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save-reduced"),
+		chromedp.Poll(`document.getElementById("save").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("save-hardened-reduced"),
+		chromedp.Evaluate(busyStateJS, &reduced),
+	))
+	took(t, payloads, "reduced motion")
+	const wantReduced = "form:true save:true save-off:true save-text:Saving… " +
+		"spin-first:true spin-hidden:true spin-anim:none spin-shown:true " +
+		"draft:- draft-off:false draft-value:draft"
+	if reduced != wantReduced {
+		t.Errorf("under prefers-reduced-motion the busy state is\n  %q\nwant\n  %q", reduced, wantReduced)
+	}
+
+	// ── 6. Scriptless ─────────────────────────────────────────────────
+	//
+	// The rule is an enhancement, not a correctness claim. With script
+	// execution off the form submits exactly as it always did, carrying
+	// exactly the same payload, and nothing on the page is marked busy.
+	var scriptless string
+	fail(chromedp.Run(ctx,
+		chromedp.ActionFunc(func(c context.Context) error {
+			if err := emulation.SetEmulatedMedia().Do(c); err != nil {
+				return err
+			}
+			return emulation.SetScriptExecutionDisabled(true).Do(c)
+		}), at("disabled-scripts"),
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-scriptless"),
+		chromedp.WaitVisible(`#save`, chromedp.ByQuery), at("page-visible-scriptless"),
+		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save-scriptless"),
+		chromedp.Sleep(500*time.Millisecond),
+		chromedp.Evaluate(busyStateJS, &scriptless),
+		chromedp.ActionFunc(func(c context.Context) error {
+			return emulation.SetScriptExecutionDisabled(false).Do(c)
+		}),
+	))
+	if got := took(t, payloads, "scriptless"); got != "action=save&note=hello" {
+		t.Errorf("with scripts off the server received %q, want %q — the shim changed the scriptless submit", got, "action=save&note=hello")
+	}
+	const wantScriptless = "form:- save:- save-off:false save-text:Save post " +
+		"spin-first:false spin-hidden:- spin-anim:- spin-shown:false " +
+		"draft:- draft-off:false draft-value:draft"
+	if scriptless != wantScriptless {
+		t.Errorf("with scripts off the page reads\n  %q\nwant\n  %q", scriptless, wantScriptless)
+	}
 }

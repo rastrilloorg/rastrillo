@@ -139,6 +139,45 @@ file to opt out; with no script at all the menus still open, still close
 on a second click of their own summary, and still keep one open at a
 time.
 
+### A button that changes something says so
+
+Every submit button in every form gets a loading state on its way out:
+`aria-busy="true"`, a spinner before the label, and — a tick later, once
+the submission is under way — `disabled`. `rastrillo.js` does it by
+default, with no attribute to remember. A button that only *reveals*
+something gets nothing: a disclosure, a dropdown, a tab is not doing
+work, and dressing it as though it were is a lie the reader has to learn
+to ignore.
+
+Only the button that was clicked. The others in the same form keep their
+`name` and their `value`, so a Save / Save-draft pair still tells your
+handler which one it was. The form is what carries the guard: a second
+click, Enter in a field and a programmatic `requestSubmit()` all arrive
+at the same place and are all refused while the first submission is out.
+
+| Attribute | On | Effect |
+|---|---|---|
+| `data-busy="false"` | the `<form>` | the whole form opts out |
+| `data-busy="false"` | one submit button | that button opts out; the form is still guarded |
+| `data-busy-label="Saving…"` | either | replaces the button's text while it works |
+
+Two things the rule deliberately does not do. It does not touch a form
+whose `target` sends the result somewhere else — that page is not going
+anywhere, so it has nothing to be busy about. And it hands the form back
+if something downstream cancels the submit: an app handler that calls
+`preventDefault()` to do the work itself owns the feedback too.
+
+The spinner is `.rst-spin`, the same ring `job-status` wears, and it
+stops turning under `prefers-reduced-motion` — the ring stays, dimmed,
+because the message is "working", not "look at this". An
+`<input type="submit">` gets the attributes and the label swap but no
+spinner: it is a void element with nowhere to put one. Prefer
+`<button type="submit">`, which is what `form-foot` emits.
+
+This is an enhancement and nothing more. See
+[Forms](/docs/forms/#the-busy-button-is-not-a-guarantee) for what it
+does not promise you.
+
 ### Three containers the partials assume
 
 They belong to your page markup, so the library does not emit them:

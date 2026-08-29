@@ -1127,6 +1127,24 @@
 
 </div>
 
+<div class="ds-sample">
+<p class="ds-state">निष्क्रिय — कुछ भी होने से पहले का बटन</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">Publish</button>
+  <a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">जो बटन कुछ बदलता है उसे लोडिंग स्थिति मिलती है; जो बटन सिर्फ़ कुछ दिखाता है — डिस्क्लोज़र, ड्रॉपडाउन, टैब — उसे नहीं। rastrillo.js यह नियम हर फ़ॉर्म के हर सबमिट बटन पर लगाता है, कुछ भी चालू करने की ज़रूरत नहीं।</p>
+</div>
+
+<div class="ds-sample">
+<p class="ds-state">काम चल रहा है — फ़ॉर्म जाते समय rastrillo.js जो लिखता है</p>
+<section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div></form></section>
+<p class="ds-note">सिर्फ़ वही बटन जिस पर क्लिक हुआ: फ़ॉर्म के बाकी सबमिट बटन अपना name और value रखते हैं, और फ़ॉर्म खुद दूसरी बार जाने से बचा रहता है। data-busy=&#34;false&#34; से नियम छोड़ा जा सकता है, फ़ॉर्म पर या किसी एक बटन पर; data-busy-label टेक्स्ट बदल देता है। स्क्रिप्ट बंद हों तो इनमें से कुछ नहीं होता और फ़ॉर्म पहले की तरह ही जाता है, इसलिए idempotency अब भी सर्वर का काम है।</p>
+</div>
+
 </article>
 
 <!-- partial: confirm-form -->

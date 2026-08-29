@@ -1,15 +1,19 @@
 /* rastrillo.js — the fragment shim. First-party, dependency-free, and
-   almost entirely inert: everything apart from the menu section answers
-   only to an opt-in data attribute, and everything it enhances also works
-   with scripts disabled (a status page's <noscript> meta refresh). This
-   file is app-owned from the moment it is scaffolded — edit it like any
-   other static file.
+   almost entirely inert: the polling section answers only to an opt-in
+   data attribute, and everything it enhances also works with scripts
+   disabled (a status page's <noscript> meta refresh). This file is
+   app-owned from the moment it is scaffolded — edit it like any other
+   static file.
 
-   The one exception is light dismiss for the menu idioms, which keys off
-   the rst-dropdown / rst-row-menu classes rather than a data attribute:
-   there is no per-instance decision to make, and a menu that closes on
-   an outside click on one screen and not the next is worse than either
-   rule applied everywhere. Delete the section to opt the whole app out.
+   Two sections are on by default instead, because neither has a
+   per-instance decision to make. Light dismiss for the menu idioms keys
+   off the rst-dropdown / rst-row-menu classes: a menu that closes on an
+   outside click on one screen and not the next is worse than either rule
+   applied everywhere. The busy rule keys off nothing at all — every
+   submit button in every form is covered, because a button that changes
+   something should say so while it works, everywhere, and a form that
+   double-submits because someone clicked twice is a bug on every screen.
+   Delete either section to opt the whole app out of it.
 
    Vocabulary:
      data-poll="URL"       fetch URL for an HTML fragment, replace this
@@ -23,9 +27,13 @@
                            element to timer polling for good (once,
                            no flapping); a browser without EventSource
                            never leaves the timer path
-     data-busy             on a <form>: on the way out, disable submit
-                           buttons and set aria-busy="true"
-     data-busy-label="…"   optional button text while busy
+     data-busy="false"     on a <form> or on one submit button: opt OUT
+                           of the busy rule below. The rule is the
+                           default, so this attribute is only ever an
+                           opt-out; any other value (data-busy alone
+                           included) changes nothing
+     data-busy-label="…"   on the form or on the button: replacement
+                           button text while it works
 
    select.js is a sibling file following exactly these rules, kept
    separate so this one stays small enough to read in one sitting. It
@@ -50,8 +58,6 @@
    and keeps trying — a network blip must not strand a status page. */
 (function () {
   "use strict";
-
-  var SUBMITS = 'button[type="submit"], button:not([type]), input[type="submit"]';
 
   // The same rule sessions.SafeReturn enforces server-side: a same-site
   // absolute path — starts with exactly one "/", no scheme, no
@@ -131,47 +137,105 @@
     schedule();
   }
 
-  function busyForm(form) {
-    form.addEventListener("submit", function () {
-      // Deferred a tick: disabling a submit button during the submit
-      // event would drop its name/value from the submitted form data.
-      setTimeout(function () {
-        form.setAttribute("aria-busy", "true");
-        var buttons = form.querySelectorAll(SUBMITS);
-        buttons.forEach(function (b) {
-          b.disabled = true;
-          var label = form.getAttribute("data-busy-label");
-          if (label) {
-            if (b.tagName === "INPUT") {
-              b.setAttribute("data-idle-label", b.value);
-              b.value = label;
-            } else {
-              b.setAttribute("data-idle-label", b.textContent);
-              b.textContent = label;
-            }
-          }
-        });
-      }, 0);
+  // ── The busy rule ────────────────────────────────────────────────
+  //
+  // A button that CHANGES something says so while it works; a button
+  // that only reveals something — a disclosure, a dropdown, a tab —
+  // does not. So every submit button in every form is covered by
+  // default, with no attribute to remember: the submitted button gets
+  // aria-busy, a spinner and — once the submission is under way —
+  // disabled, and its form gets aria-busy and a guard against a second
+  // submit. data-busy="false" on the form or on the button opts out;
+  // data-busy-label replaces the button's text.
+  //
+  // The guard is the substance, the spinner is the manners, and neither
+  // is a promise: with scripts off the form submits exactly as it
+  // always did, twice if the visitor clicks twice. Idempotency stays
+  // the server's job. One delegated capture-phase listener, like light
+  // dismiss above, so a form arriving in a polled fragment is covered
+  // the moment it lands and re-scanning can never double-bind.
+  //
+  // Two traps this shape exists to avoid:
+  //
+  //   - A form the browser REFUSED must not sit there looking busy.
+  //     Constraint validation fails before the submit event is fired at
+  //     all, so an invalid form never reaches this code; a cancelled
+  //     one is handed back in the tick below. (formnovalidate skips
+  //     validation and really does submit, which should look like it.)
+  //   - Nothing that could change the payload happens while the payload
+  //     is being read. The entry list is built before submit fires, but
+  //     engines have differed, so aria-busy, the spinner and a
+  //     <button>'s TEXT (never submitted — a button submits its value
+  //     attribute) go on synchronously, while disabled and an
+  //     <input type="submit">'s value (which IS what it submits) wait.
+  function busyOff(form) {
+    form.rstBusy = false;
+    form.removeAttribute("aria-busy");
+    form.querySelectorAll('[aria-busy="true"]').forEach(function (b) {
+      b.disabled = false;
+      b.removeAttribute("aria-busy");
+      var spin = b.querySelector(".rst-btn__spin");
+      if (spin) spin.remove();
+      var idle = b.getAttribute("data-idle-label");
+      if (idle === null) return;
+      if (b.tagName === "INPUT") { b.value = idle; } else { b.textContent = idle; }
+      b.removeAttribute("data-idle-label");
     });
   }
 
-  // The back/forward cache restores a page's DOM exactly as it was left
-  // — busy buttons still disabled, still wearing the busy label — so a
-  // visitor who navigates back finds a dead form. Re-enable the buttons,
-  // put their idle labels back, and clear the busy flag.
-  function unbusy() {
-    document.querySelectorAll("form[data-busy]").forEach(function (form) {
-      form.removeAttribute("aria-busy");
-      form.querySelectorAll(SUBMITS).forEach(function (b) {
-        b.disabled = false;
-        var idle = b.getAttribute("data-idle-label");
-        if (idle !== null) {
-          if (b.tagName === "INPUT") { b.value = idle; } else { b.textContent = idle; }
-          b.removeAttribute("data-idle-label");
+  function busySubmit(e) {
+    var form = e.target;
+    if (!form || form.tagName !== "FORM") return;
+    if (form.getAttribute("data-busy") === "false") return;
+    // A form whose result opens elsewhere leaves this page sitting
+    // where it is, with nothing to be busy about.
+    if (form.target && form.target !== "_self") return;
+    if (form.rstBusy) { e.preventDefault(); return; }
+    form.rstBusy = true;
+    form.setAttribute("aria-busy", "true");
+    // The button the browser submitted with: the one clicked, or — for
+    // Enter in a field — the default one it implicitly clicked. Only
+    // that one goes busy; every other submit button in the form keeps
+    // its name and its value. An engine with no SubmitEvent.submitter
+    // leaves the buttons alone and keeps the guard, which is the half
+    // that matters.
+    var btn = e.submitter;
+    if (!btn || btn.getAttribute("data-busy") === "false") btn = null;
+    var label = btn && (btn.getAttribute("data-busy-label") ||
+      form.getAttribute("data-busy-label"));
+    if (btn) {
+      btn.setAttribute("aria-busy", "true");
+      if (btn.tagName === "BUTTON") {
+        if (label) {
+          btn.setAttribute("data-idle-label", btn.textContent);
+          btn.textContent = label;
         }
-      });
-    });
+        // A child element, not a pseudo-element: the shim has to be
+        // able to take it away again. An <input type="submit"> has no
+        // children, which is the one shape this cannot draw a spinner
+        // on. tokens.css stops it rotating under reduced motion.
+        var spin = document.createElement("span");
+        spin.className = "rst-spin rst-btn__spin";
+        spin.setAttribute("aria-hidden", "true");
+        btn.insertBefore(spin, btn.firstChild);
+      }
+    }
+    setTimeout(function () {
+      // Someone downstream cancelled the submit — an app handler doing
+      // the work itself, most likely. Nothing is on its way anywhere,
+      // so hand the form back, guard included, and let whoever took the
+      // job own the feedback too.
+      if (e.defaultPrevented) { busyOff(form); return; }
+      if (!btn) return;
+      if (label && btn.tagName === "INPUT") {
+        btn.setAttribute("data-idle-label", btn.value);
+        btn.value = label;
+      }
+      btn.disabled = true;
+    }, 0);
   }
+
+  document.addEventListener("submit", busySubmit, true);
 
   // Light dismiss — the one behaviour the native disclosure genuinely
   // cannot do, which is the shim's whole admission rule. A <details>
@@ -245,11 +309,14 @@
 
   function scan() {
     document.querySelectorAll("[data-poll]").forEach(poll);
-    document.querySelectorAll("form[data-busy]").forEach(busyForm);
   }
 
+  // The back/forward cache restores a page's DOM exactly as it was left
+  // — busy buttons still disabled, still wearing the busy label and the
+  // spinner — so a visitor who navigates back finds a dead form. Hand
+  // every busy form back.
   window.addEventListener("pageshow", function (e) {
-    if (e.persisted) unbusy();
+    if (e.persisted) document.querySelectorAll("form[aria-busy]").forEach(busyOff);
   });
 
   if (document.readyState === "loading") {
