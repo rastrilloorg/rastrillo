@@ -678,18 +678,39 @@ details[open] > summary > .rst-caret { transform: rotate(180deg); }
 .rst-field { margin: var(--rst-sp-4) 0; }
 .rst-field__label { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); margin: 0 0 0.2rem; }
 .rst-field__hint { color: var(--rst-text-faint); font-weight: 400; }
-.rst-input { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
+/* box-sizing is set here rather than in a `*` reset, because this file
+   promises exactly one collision surface with an app's own CSS: the
+   rst- prefix. Without it width:100% is the CONTENT box, so an input
+   overflowed its own wrapper by its padding and borders — 21px for a
+   plain field, 47px once .rst-dtp__input reserves room for the picker
+   button. That overflow was three of this batch's visible bugs at once:
+   an input running under the field beside it in a row, an input running
+   out of its card, and a picker button anchored to the wrapper landing
+   47px short of the input's visible end. */
+.rst-input { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
 .rst-input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.rst-input--short { width: 6.5rem; }
+/* short is compact, not tiny: 8rem is a border-box width, so it renders
+   within a pixel or two of the old 6.5rem content box plus its padding,
+   and it is wide enough for the postcodes and codes it is for. The
+   max keeps it from overflowing a column narrower than itself. */
+.rst-input--short { inline-size: 8rem; max-inline-size: 100%; }
 textarea.rst-input { min-height: 5rem; resize: vertical; }
 /* field-text/field-textarea (the interim pair the manifest generator
    emits) mark a required label with * and put the textarea on its own
    class; styled here so both field families render finished. */
 .rst-field__required { color: var(--rst-tone-negative-fg); }
-.rst-textarea { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
+.rst-textarea { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
 .rst-textarea:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.rst-field__help { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
-.rst-field__error { color: var(--rst-tone-negative-fg); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+/* The three message lines under a control. display:block is load-bearing
+   rather than cosmetic: the field partial emits them as <p>, and the
+   field-text/date/time/select family as <small>, and an inline <small>
+   silently drops the top margin — so the same message sat at two
+   different distances from its control depending on which partial drew
+   it. The hint's class is shared with the inline parenthetical inside a
+   label in the field partial, so only the <small> form is blocked out. */
+.rst-field__help { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+.rst-field__error { color: var(--rst-tone-negative-fg); display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
 
 /* switch — the one toggle mechanism: real checkbox, visible track. The
    knob's left: 2px is deliberately physical, not inset-inline-start: it
@@ -726,9 +747,40 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field { margin-top: var(--rst-sp-5); }
-.rst-field-row { align-items: end; display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
+/* field-row aligns by the CONTROL row, not by the bottom of the box.
+   align-items:end was the bug: a field carrying an error is taller than
+   its sibling, so bottom-aligning it lifted its input clear of the row
+   and dropped its error line across the field beside it.
+
+   Judged against grid-with-subgrid, which does align label/control/
+   message tracks across siblings exactly: subgrid needs the row to be a
+   grid, and a grid cannot express what this row is for. grid-auto-flow:
+   column never wraps, so a narrow screen overflows instead of stacking;
+   and grid-auto-columns is one value for every column, so rst-grow — a
+   wide field beside a short one — cannot be said at all. Flex keeps
+   both. What align-items:start gives up is a row whose fields have
+   label boxes of different heights; the ::before below buys back the
+   common case of that (a field with no label at all), and a label long
+   enough to wrap is a field that wants its own row.
+
+   The message then flows under its own column and shifts no sibling,
+   which is the second half of the fix — it needs the border-box on
+   .rst-input above to hold, or the control overflows the column the
+   message is measured against. */
+.rst-field-row { align-items: start; display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
 .rst-field-row .rst-field { margin: 0; }
-.rst-field-row > .rst-grow { flex: 1; min-width: 0; }
+.rst-field-row > .rst-field { flex: 0 1 auto; min-inline-size: 8rem; }
+.rst-field-row > .rst-grow { flex: 1 1 12rem; }
+/* A field in a row with no label reserves the label's line anyway, so
+   its control still lines up with a labelled sibling's. One line of
+   .rst-field__label: its font-size at the body's 1.5 line-height, plus
+   the label's own bottom margin. */
+.rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: calc(var(--rst-fs-sm) * 1.5); content: ""; display: block; margin-block-end: 0.2rem; }
+/* A row is sized by its controls, never by its messages: contain keeps a
+   long error out of the field's max-content width, so the sentence wraps
+   under its own control instead of stretching the column it belongs to
+   and squeezing the field beside it. */
+.rst-field-row > .rst-field > :is(.rst-field__help, .rst-field__error, .rst-field__hint) { contain: inline-size; }
 /* field-daterange — the fieldset reset the grouped start/end pair needs,
    with the legend sized like a field label. Its own selector rather than
    a share of .rst-choice: the two groups look alike today, and a card
@@ -741,7 +793,17 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 /* form/form-foot — the container the form-foot partial's callers wrap
    fields in, and the closing action row form-foot itself emits. */
-.rst-form { display: flex; flex-direction: column; gap: var(--rst-sp-2); max-inline-size: 44rem; }
+/* One spacing mechanism, not two. The form is a flex column, so its
+   children's own stacking margins never collapse — they were added to
+   the gap, and they were also added at the two ends, where nothing is
+   being separated from anything. Inside a card holding a single field
+   that was the whole of the dead space under the control: 16px of
+   field margin on top of the card's own padding, at both ends. The gap
+   is now the rhythm (the same var(--rst-sp-5) .rst-form-flow uses
+   between its fields) and the blocks contribute no margin of their
+   own. */
+.rst-form { display: flex; flex-direction: column; gap: var(--rst-sp-5); max-inline-size: 44rem; }
+.rst-form > :is(.rst-field, .rst-field-row, .rst-field-range, .rst-choice, .rst-tblock) { margin-block: 0; }
 .rst-form__foot { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -876,7 +938,16 @@ dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 
    .rst-sr-only, because it is what the form submits. */
 .rst-dtp { position: relative; }
 .rst-dtp__input { padding-inline-end: 2.25rem; }
-.rst-dtp__pick { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block-start: 0.3rem; inset-inline-end: 0.35rem; justify-content: center; padding: 0; position: absolute; }
+/* The button is anchored to .rst-dtp, which is exactly as wide and as
+   tall as the input it wraps once the input is a border box — so
+   inset-inline-end puts it at the control's inline end in either
+   writing mode, and inset-block:0 with auto block margins centres it on
+   the control at whatever height the type scale gives it. The old
+   inset-block-start:0.3rem was that centring measured once by hand
+   against one font size. .rst-dtp__input's padding-inline-end is the
+   room this reserves inside the control, so text never runs under it,
+   with a value or without one. */
+.rst-dtp__pick { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block: 0; inset-inline-end: 0.35rem; justify-content: center; margin-block: auto; padding: 0; position: absolute; }
 .rst-dtp__pick:hover { color: var(--rst-text); }
 .rst-dtp__pick svg { block-size: 1rem; inline-size: 1rem; }
 .rst-dtp__list { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-block-start: 4px; max-block-size: 17rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 40; }

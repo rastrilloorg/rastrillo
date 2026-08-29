@@ -1134,3 +1134,219 @@ func TestModalDialogPanelDrive(t *testing.T) {
 
 	rig.Screen(".rst-modal-panel", "the open modal")
 }
+
+// fieldRowPage serves one page holding the two layouts this batch's
+// geometry bugs lived in: a date range whose end carries an error (the
+// row that misaligned and dropped its message across its neighbour) and
+// a grow/short pair (the row whose grown input ran under the short
+// field's label). Both go through the real partials, the real
+// stylesheet and the real enhancement, because every one of the bugs
+// was in the interaction between them.
+func fieldRowPage(t *testing.T) http.Handler {
+	t.Helper()
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /datetime.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(DatetimeJS())
+	})
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		var body strings.Builder
+		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+			`<title>rows</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css">` +
+			`<script defer src="/datetime.js"></script></head><body class="rst-page">` +
+			`<form class="rst-form" method="post" action="/submit">`)
+		if err := tmpl.ExecuteTemplate(&body, "field-daterange", map[string]any{
+			"Legend": "Booking", "Kind": "date",
+			"Start": map[string]any{"Name": "dr_from", "Label": "From", "Value": "2026-09-04"},
+			"End": map[string]any{"Name": "dr_to", "Label": "To", "Value": "2026-09-01",
+				"Error": "The end comes before the start, so this booking cannot be made."},
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		body.WriteString(`<div class="rst-field-row" id="addr">` +
+			`<div class="rst-field rst-grow"><label class="rst-field__label" for="city">City</label>` +
+			`<input class="rst-input" type="text" id="city" name="city" value="Dublin"></div>` +
+			`<div class="rst-field"><label class="rst-field__label" for="zip">ZIP</label>` +
+			`<input class="rst-input rst-input--short" type="text" id="zip" name="zip" value="D02 XY45"></div>` +
+			`</div>`)
+		body.WriteString(`<button type="submit" id="go">Save</button></form></body></html>`)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, body.String())
+	})
+	return mux
+}
+
+// geometry is one element's border box, as the browser measured it.
+type geometry struct {
+	Top    float64 `json:"top"`
+	Left   float64 `json:"left"`
+	Right  float64 `json:"right"`
+	Bottom float64 `json:"bottom"`
+	Width  float64 `json:"width"`
+}
+
+// rowGeometry is everything the assertions below need, read in one
+// evaluation so every rect comes from the same layout.
+type rowGeometry struct {
+	FromControl geometry `json:"fromControl"`
+	ToControl   geometry `json:"toControl"`
+	FromField   geometry `json:"fromField"`
+	ToField     geometry `json:"toField"`
+	Error       geometry `json:"error"`
+	FromPick    geometry `json:"fromPick"`
+	City        geometry `json:"city"`
+	CityField   geometry `json:"cityField"`
+	Zip         geometry `json:"zip"`
+	ZipField    geometry `json:"zipField"`
+	RootFont    float64  `json:"rootFont"`
+}
+
+const rowGeometryJS = `(function () {
+  function box(el) {
+    var r = el.getBoundingClientRect();
+    return {top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width};
+  }
+  // The control a person sees: the enhancement's combobox where it ran,
+  // the native input where it did not.
+  function control(name) {
+    var native = document.getElementsByName(name)[0];
+    var wrap = native.closest(".rst-dtp");
+    return wrap ? wrap.querySelector(".rst-dtp__input") : native;
+  }
+  function field(name) { return document.getElementsByName(name)[0].closest(".rst-field"); }
+  var from = control("dr_from"), to = control("dr_to");
+  return {
+    fromControl: box(from), toControl: box(to),
+    fromField: box(field("dr_from")), toField: box(field("dr_to")),
+    error: box(document.getElementById("dr_to-error")),
+    fromPick: box(from.closest(".rst-dtp").querySelector(".rst-dtp__pick")),
+    city: box(document.getElementById("city")), cityField: box(document.getElementById("city").closest(".rst-field")),
+    zip: box(document.getElementById("zip")), zipField: box(document.getElementById("zip").closest(".rst-field")),
+    rootFont: parseFloat(getComputedStyle(document.documentElement).fontSize)
+  };
+})()`
+
+// TestFieldRowGeometryHoldsUnderAnError pins the layout contract of
+// .rst-field-row with a real engine doing the layout, because none of
+// these four bugs is visible in the markup — every one of them is a
+// used value the browser computed.
+//
+// The bug classes it exists to catch, all four shipped at once and all
+// four looked fine in the template:
+//
+//   - the row bottom-aligned its fields, so a field carrying an error
+//     lifted its control clear of its neighbour's and dropped the error
+//     line across the field beside it;
+//   - .rst-input sized width:100% as a content box, so every input
+//     overflowed its own column by its padding and borders and ran
+//     under the field next to it;
+//   - the picker button, anchored to a wrapper the input had outgrown,
+//     landed short of the control's visible end — inside the text, not
+//     at the edge;
+//   - the short field shrank to whatever was left over.
+//
+// Cheap by browser-drive standards: one navigation, one evaluation, no
+// input, so it does not share the keystroke flakiness the two journey
+// drives above document.
+func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return fieldRowPage(t) })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancelTimeout()
+
+	var g rowGeometry
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(".rst-dtp__pick", chromedp.ByQuery),
+		chromedp.Evaluate(rowGeometryJS, &g),
+	); err != nil {
+		t.Fatalf("reading the row's geometry: %v", err)
+	}
+
+	// One device pixel of slack: sub-pixel layout is legitimate, a
+	// misaligned row is not.
+	const slack = 1.0
+	abs := func(f float64) float64 {
+		if f < 0 {
+			return -f
+		}
+		return f
+	}
+
+	if abs(g.FromControl.Top-g.ToControl.Top) > slack {
+		t.Errorf("the row's controls do not share a top edge: From at %.1f, To at %.1f — the field carrying the error is riding at a different height",
+			g.FromControl.Top, g.ToControl.Top)
+	}
+	// The error belongs to the To column and must stay in it. Overlap is
+	// the literal bug from the screenshot: the message printed across the
+	// From field's input.
+	if g.Error.Left < g.FromControl.Right-slack && g.Error.Top < g.FromControl.Bottom-slack && g.Error.Bottom > g.FromControl.Top+slack {
+		t.Errorf("the To field's error overlaps the From control: error %+v, From control %+v", g.Error, g.FromControl)
+	}
+	if g.Error.Left < g.ToField.Left-slack || g.Error.Right > g.ToField.Right+slack {
+		t.Errorf("the error escapes its own column: error left %.1f right %.1f, To field left %.1f right %.1f",
+			g.Error.Left, g.Error.Right, g.ToField.Left, g.ToField.Right)
+	}
+
+	// No control may outgrow the field that holds it — the box-sizing
+	// bug, stated as the invariant it broke.
+	for _, c := range []struct {
+		name           string
+		control, field geometry
+	}{
+		{"From", g.FromControl, g.FromField},
+		{"To", g.ToControl, g.ToField},
+		{"City", g.City, g.CityField},
+		{"ZIP", g.Zip, g.ZipField},
+	} {
+		if c.control.Right > c.field.Right+slack || c.control.Left < c.field.Left-slack {
+			t.Errorf("the %s control overflows its field: control [%.1f, %.1f], field [%.1f, %.1f] — width:100%% is being measured as a content box",
+				c.name, c.control.Left, c.control.Right, c.field.Left, c.field.Right)
+		}
+	}
+	if g.City.Right > g.ZipField.Left+slack {
+		t.Errorf("the grown City control runs into the ZIP field: City ends at %.1f, ZIP field starts at %.1f", g.City.Right, g.ZipField.Left)
+	}
+
+	// The picker sits at the control's inline end, inside it, centred on
+	// it. 0.35rem is the inset tokens.css declares; anything past a
+	// couple of pixels of that is the button drifting into the text.
+	if want := g.FromControl.Right - 0.35*g.RootFont; abs(g.FromPick.Right-want) > 2 {
+		t.Errorf("the picker button is not at the control's inline end: button right %.1f, wanted about %.1f (control ends at %.1f)",
+			g.FromPick.Right, want, g.FromControl.Right)
+	}
+	if g.FromPick.Left < g.FromControl.Left || g.FromPick.Top < g.FromControl.Top || g.FromPick.Bottom > g.FromControl.Bottom {
+		t.Errorf("the picker button is not inside the control it belongs to: button %+v, control %+v", g.FromPick, g.FromControl)
+	}
+	if top, bottom := g.FromPick.Top-g.FromControl.Top, g.FromControl.Bottom-g.FromPick.Bottom; abs(top-bottom) > slack {
+		t.Errorf("the picker button is not centred on the control: %.1f above, %.1f below", top, bottom)
+	}
+
+	// Short is compact, not crushed: 8rem is what tokens.css declares,
+	// and the point of declaring it is that a row cannot take it away.
+	if want := 8 * g.RootFont; g.Zip.Width < want-slack {
+		t.Errorf("the short field lost its width in the row: %.1f, wanted at least %.1f", g.Zip.Width, want)
+	}
+	if g.City.Width <= g.Zip.Width {
+		t.Errorf("rst-grow did not grow: City %.1f, ZIP %.1f", g.City.Width, g.Zip.Width)
+	}
+
+	rig.Screen("body", "the field rows")
+}
