@@ -72,17 +72,21 @@ type idiomView struct {
 	HTML   template.HTML
 	Blurb  string
 
-	// Source and DemoHref are the shell idioms' escape route. A shell
+	// Source, Why, DemoLabel and DemoHref are the escape route for the
+	// samples that cannot be rendered inline on a gallery page. A shell
 	// sample is a whole page frame, <main id="main"> and all, and this
 	// page already has one: rendering it inline nests a main inside a
 	// main (invalid HTML) and puts three main landmarks on the page.
-	// So the two shell samples are shown as escaped source — which is
-	// what a reader wants from them anyway, since they are markup to
-	// copy rather than a component to look at — beside a link to the
-	// full-page demo, where the same chrome is real.
-	Source   string
-	Demo     string // the shell demo's name, e.g. "sidebar"
-	DemoHref string
+	// The modal sample is worse — its overlay is position: fixed, so it
+	// rendered as an open modal covering the whole gallery the moment
+	// the page loaded. Those samples are shown as escaped source —
+	// which is what a reader wants from them anyway, since they are
+	// markup to copy rather than a component to look at — beside a link
+	// to the demo page where the same markup is real. See sourceIdioms.
+	Source    string
+	Why       string // why it is source here and not markup
+	DemoLabel string // the link's own words
+	DemoHref  string
 }
 
 type shellView struct {
@@ -239,6 +243,13 @@ func shellHref(theme, locale, shell string) string {
 	return mountPath + "/" + theme + "/" + locale + "/shells/" + shell + ".html"
 }
 
+// modalHref is the modal demo's address — which is the whole point of
+// the demo. A modal is its own URL, so the sample that shows one open
+// has to be a page you navigate to, not a fragment of a gallery.
+func modalHref(theme, locale string) string {
+	return mountPath + "/" + theme + "/" + locale + "/modal.html"
+}
+
 // ── Partial samples ──────────────────────────────────────────────────
 
 // buildFamilies renders every sample in samples.go, then sweeps up any
@@ -391,12 +402,35 @@ var idiomRules = map[string]struct{ Title, Body string }{
 	},
 }
 
-// shellIdioms maps the two whole-page-frame samples to the shell demo
-// that shows them working. See idiomView.Source for why they are the
-// two that cannot be rendered inline.
-var shellIdioms = map[string]string{
-	"shell-topbar":  "topbar",
-	"shell-sidebar": "sidebar",
+// sourceIdiom is one sample the gallery shows as escaped source: why it
+// is not rendered inline, the words its link wears, and the page where
+// the same markup is real.
+type sourceIdiom struct {
+	Why   string
+	Label string
+	Href  func(theme, locale string) string
+}
+
+// sourceIdioms are the three samples that cannot be rendered inline on
+// a gallery page. See idiomView.Source for the shape of the problem;
+// each Why below is the particular one.
+var sourceIdioms = map[string]sourceIdiom{
+	"shell-topbar": {
+		Why:   "Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one.",
+		Label: "Open the topbar shell demo, where the same markup is a real page",
+		Href:  func(theme, locale string) string { return shellHref(theme, locale, "topbar") },
+	},
+	"shell-sidebar": {
+		Why:   "Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one.",
+		Label: "Open the sidebar shell demo, where the same markup is a real page",
+		Href:  func(theme, locale string) string { return shellHref(theme, locale, "sidebar") },
+	},
+	"modal": {
+		Why: "Shown as source, not rendered: the overlay is fixed to the viewport, so rendering it here opened a modal over the whole gallery the moment this page loaded. " +
+			"That is the idiom telling you what it wants — a modal is its own URL, and this is not it.",
+		Label: "See it live at the URL it belongs to",
+		Href:  modalHref,
+	},
 }
 
 // buildIdioms renders ui.Styleguide in sorted order. The samples are
@@ -417,10 +451,11 @@ func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, er
 			Marker: marker("idiom", name),
 			Blurb:  idiomBlurbs[name],
 		}
-		if shell, ok := shellIdioms[name]; ok {
+		if src, ok := sourceIdioms[name]; ok {
 			view.Source = samples[name]
-			view.Demo = shell
-			view.DemoHref = shellHref(theme, locale, shell)
+			view.Why = src.Why
+			view.DemoLabel = src.Label
+			view.DemoHref = src.Href(theme, locale)
 		} else {
 			view.HTML = template.HTML(samples[name])
 		}
@@ -503,6 +538,51 @@ func renderShell(theme, locale, shell string) ([]byte, error) {
 		Index:   indexHref(theme, locale),
 		Locales: localeLinks(theme, locale),
 		Account: accountMarkup[shell],
+	})
+	if err != nil {
+		return nil, err
+	}
+	return []byte(buf.String()), nil
+}
+
+// ── The modal demo ───────────────────────────────────────────────────
+
+// modalData is what the modal demo page executes against. Self is the
+// page's own address, so the panel's nav rail can switch tabs without
+// leaving the modal; Index is the gallery, which is where Close goes.
+type modalData struct {
+	Theme  string
+	Locale string
+	Dir    string
+	Mount  string
+	Index  string
+	Self   string
+}
+
+// renderModal builds one theme × locale modal demo: the idiom at the
+// URL the idiom insists on. The markup is ui.Styleguide()["modal"]'s
+// own structure — inert backdrop holding the page, overlay and panel
+// over it — with the sample's hrefs replaced by addresses this tree
+// actually serves, so every link on it resolves.
+//
+// No scripts: closing is a link, the backdrop is an HTML attribute, and
+// there is nothing here to enhance. That is the demonstration.
+func renderModal(theme, locale string) ([]byte, error) {
+	tmpl, err := partialTree(locale)
+	if err != nil {
+		return nil, fmt.Errorf("parsing partials: %w", err)
+	}
+	if _, err := tmpl.Parse(modalTemplate); err != nil {
+		return nil, fmt.Errorf("parsing the modal demo: %w", err)
+	}
+	var buf strings.Builder
+	err = tmpl.ExecuteTemplate(&buf, "ds-modal", modalData{
+		Theme:  theme,
+		Locale: locale,
+		Dir:    rastrillo.Dir(locale),
+		Mount:  mountPath,
+		Index:  indexHref(theme, locale),
+		Self:   modalHref(theme, locale),
 	})
 	if err != nil {
 		return nil, err
@@ -648,7 +728,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 {{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
 {{.Rule}}
 {{if .Source}}<pre class="ds-src rst-mono"><code>{{.Source}}</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="{{.DemoHref}}">Open the {{.Demo}} shell demo</a> to see the same markup as a real page.</p>
+<p class="ds-note">{{.Why}} <a href="{{.DemoHref}}">{{.DemoLabel}}</a>.</p>
 {{else}}<div class="ds-sample">{{.HTML}}</div>{{end}}
 </article>
 {{end}}
@@ -694,3 +774,56 @@ const shellTemplate = `
 <p class="rst-count-line">Displaying <strong>1–2</strong> of <strong>412</strong></p>
 {{end}}
 `
+
+// modalTemplate is the modal demo page: the sample's structure with
+// real addresses. It is a hand-written document rather than one of the
+// three shells because the idiom is body-level — the backdrop wraps the
+// whole page, and no shell has a block outside its own main.
+//
+// The three deviations from ui.Styleguide()["modal"], all of them the
+// difference between a sample and a page that exists:
+//
+//   - the backdrop holds a real screen (page-header and a box) instead
+//     of a bare <h1>, so there is something visible behind the panel;
+//   - the panel's nav rail links this page, so switching tabs keeps the
+//     modal open rather than landing on /settings/billing, a 404;
+//   - Close returns to the gallery rather than to the backdrop's own
+//     screen, which does not have a URL of its own here. The panel says
+//     so, rather than leaving a reader to wonder.
+const modalTemplate = `{{define "ds-modal"}}<!doctype html>
+<html lang="{{.Locale}}" dir="{{.Dir}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The modal route — rastrillo design system</title>
+<link rel="stylesheet" href="{{.Mount}}/tokens.css">
+<link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+{{template "page-header" dict "Title" "Settings" "Sub" "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up."}}
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>One response rendered this screen and the panel over it. That is the whole idiom: the modal is a URL, the page underneath is what a Close click returns to, and neither of them is client state.</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <div class="rst-modal-panel">
+    <nav>
+      <a href="{{.Self}}" aria-current="page">Profile</a>
+      <a href="{{.Self}}">Billing</a>
+      <a href="{{.Self}}">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="{{.Index}}" aria-label="Close settings">✕</a>
+      <h2>Profile</h2>
+      <p>Update the name and photo shown across the account.</p>
+      <p>There is no JavaScript on this page. Closing is the ✕ above, a plain link; the tabs on the left are plain links too, which is why they stay on this URL instead of pretending to load a section.</p>
+      <p>In an application the ✕ would return you to the screen in the backdrop. Here it returns you to the gallery you opened this demo from, because that is the page that exists.</p>
+      <p><a class="rst-btn" href="{{.Index}}">Back to the design system</a></p>
+    </section>
+  </div>
+</div>
+</body>
+</html>
+{{end}}`

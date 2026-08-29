@@ -518,13 +518,24 @@ One page per theme × locale, `index.html` for `ink`/`en`, showing:
   and two of the three shells' chrome: `shell-topbar` and
   `shell-sidebar` are idiom entries, `column` is not, because its shell
   has no bespoke chrome classes beyond what the full-page demo already
-  shows (as built, 2026-08-29). The two shell idioms render as escaped
-  source in a `<pre>`, not live markup: rendered inline they nested a
-  second `<main>` landmark inside the page's own, so the fix pass moved
-  them to source-plus-a-link-to-the-real-page instead (as built,
-  2026-08-29).
+  shows (as built, 2026-08-29). Three idioms render as escaped source in
+  a `<pre>`, not live markup, each beside a link to the page where the
+  markup is real. The two shell idioms nested a second `<main>` landmark
+  inside the page's own; the `modal` idiom was worse — `position: fixed;
+  inset: 0` plus `body:has(.rst-backdrop) { overflow: hidden }` meant
+  every index page loaded with an open modal covering the gallery, its
+  Close link the sample's own `/settings`, a 404. So the modal renders
+  as source with a live demo at its own URL, which is the doctrine the
+  idiom teaches: a modal is its own URL, and closing it is a plain link
+  back (as built, 2026-08-29).
 - **The three shells** at full page, each its own URL
   (`shells/topbar.html`), shown inline in an `<iframe>` and linked.
+- **The modal route** at full page, one URL per theme × locale
+  (`modal.html`): a small settings screen inside the inert backdrop,
+  the overlay and panel over it, and every link on it real — Close and
+  the panel's Back button return to that page's own index, the panel's
+  nav tabs self-link. Linked from the idiom, not embedded (as built,
+  2026-08-29).
 - **The date and time fields and the filterable select** live — this
   is the one place rastrillo.org serves JavaScript, and only here.
 - **The rules** from PR #98 — which card is padded, screens stack
@@ -573,14 +584,15 @@ byte-identity outright rather than blanking hrefs to compare the rest
 docs/design-system/
   index.html                 ink, en
   <theme>/<locale>/index.html
+  <theme>/<locale>/modal.html
   <theme>/<locale>/shells/{column,topbar,sidebar}.html
   tokens.css  theme-{ink,teal,warm}.css  select.js  datetime.js  rastrillo.js
 ```
 
 ~~36 pages plus 108 shell pages; each is ~100 KB; the tree is ~15 MB and
-committed.~~ As built: 152 files (36 index pages + 108 shell pages + the
-root index + 7 shared assets), 4,303,299 bytes — 4.10 MiB, well under
-the ~15 MB estimate. `TestTreeStaysUnderTheSizeGate` holds the whole
+committed.~~ As built: 188 files (36 index pages + 36 modal demos + 108
+shell pages + the root index + 7 shared assets), 4,427,216 bytes —
+4.22 MiB, well under the ~15 MB estimate. `TestTreeStaysUnderTheSizeGate` holds the whole
 rendered tree to a 20 MB ceiling, logging the exact byte count each run
 (as built, 2026-08-29). Committed regardless of size; that is the price
 of no-Go-on-the-website, and it is reviewable: a partial change shows as
@@ -591,7 +603,7 @@ generate` invokes. Before it deletes anything it refuses to run unless
 its output root is an absolute path ending `docs/design-system` whose
 repo root two levels up holds a `go.mod` declaring
 `github.com/carlosframework/rastrillo` — a guard added after a
-throwaway debug run once wrote 152 files into
+throwaway debug run once wrote the whole tree into
 `internal/designsystem/` itself (as built, 2026-08-29).
 
 Gate `TestDesignSystemIsCurrent` renders to memory and diffs against
@@ -611,6 +623,14 @@ early and from the renderer's own file map rather than from a crawl;
 the sample hrefs inside the partials (`/orders/AB3PX` and friends) are
 content, not chrome, and are exempt by not starting with the mount
 prefix (as built, 2026-08-29).
+`TestNoIndexPageOpensAModalOverTheGallery` holds the modal to source:
+no index page may carry a live `rst-modal-overlay` or `rst-backdrop`
+element, and every one must carry the escaped source and a link to its
+own `modal.html`. A plain string match is the right instrument because
+escaped source cannot trip it — `html/template` writes the sample's
+quotes as `&#34;` inside the `<code>`, so `class="rst-modal-overlay"`
+occurs only where a browser would lay the overlay out (as built,
+2026-08-29).
 
 ### 5.3 The site
 

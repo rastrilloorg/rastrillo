@@ -1315,23 +1315,25 @@
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.</p>
 
-<div class="ds-sample"><div class="rst-backdrop" inert>
-  <div class="rst-page"><h1>Settings</h1></div>
-</div>
-<div class="rst-modal-overlay">
-  <div class="rst-modal-panel">
-    <nav>
-      <a href="/settings/profile" aria-current="page">Profile</a>
-      <a href="/settings/billing">Billing</a>
-      <a href="/settings/notifications">Notifications</a>
-    </nav>
-    <section>
-      <a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>
-      <h2>Profile</h2>
-      <p>Update the name and photo shown across the account.</p>
-    </section>
-  </div>
-</div></div>
+<pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-backdrop&#34; inert&gt;
+  &lt;div class=&#34;rst-page&#34;&gt;&lt;h1&gt;Settings&lt;/h1&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;rst-modal-overlay&#34;&gt;
+  &lt;div class=&#34;rst-modal-panel&#34;&gt;
+    &lt;nav&gt;
+      &lt;a href=&#34;/settings/profile&#34; aria-current=&#34;page&#34;&gt;Profile&lt;/a&gt;
+      &lt;a href=&#34;/settings/billing&#34;&gt;Billing&lt;/a&gt;
+      &lt;a href=&#34;/settings/notifications&#34;&gt;Notifications&lt;/a&gt;
+    &lt;/nav&gt;
+    &lt;section&gt;
+      &lt;a class=&#34;rst-modal-close&#34; href=&#34;/settings&#34; aria-label=&#34;Close settings&#34;&gt;✕&lt;/a&gt;
+      &lt;h2&gt;Profile&lt;/h2&gt;
+      &lt;p&gt;Update the name and photo shown across the account.&lt;/p&gt;
+    &lt;/section&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p class="ds-note">Shown as source, not rendered: the overlay is fixed to the viewport, so rendering it here opened a modal over the whole gallery the moment this page loaded. That is the idiom telling you what it wants — a modal is its own URL, and this is not it. <a href="/design-system/ink/hi/modal.html">See it live at the URL it belongs to</a>.</p>
+
 </article>
 
 <!-- idiom: selbox -->
@@ -1355,7 +1357,7 @@
   &lt;/aside&gt;
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/ink/hi/shells/sidebar.html">Open the sidebar shell demo</a> to see the same markup as a real page.</p>
+<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/ink/hi/shells/sidebar.html">Open the sidebar shell demo, where the same markup is a real page</a>.</p>
 
 </article>
 
@@ -1374,7 +1376,7 @@
   &lt;main class=&#34;rst-page&#34; id=&#34;main&#34;&gt;Content.&lt;/main&gt;
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/ink/hi/shells/topbar.html">Open the topbar shell demo</a> to see the same markup as a real page.</p>
+<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/ink/hi/shells/topbar.html">Open the topbar shell demo, where the same markup is a real page</a>.</p>
 
 </article>
 
