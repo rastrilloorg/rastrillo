@@ -157,7 +157,10 @@ func DatetimeJS() []byte
 into the app's `static/`. `ShimJS` is `rastrillo.js` — the
 progressive-enhancement shim that drives `data-poll`, `data-poll-push`
 and `data-busy` ([Background jobs](/docs/jobs)). `SelectJS` backs the
-enhanced select. `DatetimeJS` backs the date fields: it turns an input
+enhanced select: it mirrors a `<select>` carrying `data-rst-select` as a
+filterable ARIA combobox, renders any `<optgroup>`s as labelled
+`role="group"`s rather than flattening them, and never touches one
+marked `data-rst-select="false"`. `DatetimeJS` backs the date fields: it turns an input
 carrying `data-rst-date` or `data-rst-time` into a combobox that reads
 "tomorrow", "next fri 9am" or "in 2 weeks" and writes the result back
 to the native input, which stays in the form as the value carrier. It
