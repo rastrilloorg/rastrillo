@@ -821,7 +821,7 @@ func menuPage(t *testing.T) http.Handler {
 			`<a id="filter-item" href="#paid">Paid</a>`+
 			`<details class="rst-menu-group" name="rst-menus-price" id="submenu">`+
 			`<summary id="submenu-summary">Price</summary>`+
-			`<div><a href="#free">Free</a></div></details>`+
+			`<div><a id="submenu-item" href="#free">Free</a></div></details>`+
 			`</div></details></div>`+
 			// A row menu, in the shared group.
 			`<div class="rst-card" style="--rst-cols: 1fr 32px">`+
@@ -887,6 +887,8 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 		afterOutside, afterReopen            string
 		afterInside, afterEsc                string
 		focusAfterEsc                        string
+		focusInSubmenu                       string
+		afterSubEsc, focusAfterSubEsc        string
 		tblockOpenAfter                      bool
 	)
 
@@ -938,6 +940,24 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 		chromedp.Evaluate(openStateJS, &afterEsc),
 		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusAfterEsc),
 
+		// 7. Escape with focus INSIDE an open submenu. Everything closes,
+		//    and focus must land on the PARENT dropdown's summary — not
+		//    the submenu's, which by then sits inside a closed parent and
+		//    is not rendered, so focusing it would drop focus to <body>
+		//    and strand the keyboard user at the top of the document.
+		//    This is the leg that exercises the outermost-menu climb;
+		//    without it that code is only ever proven by reading it.
+		chromedp.Click(`#filter-summary`, chromedp.ByQuery), at("reopened-filter-for-escape"),
+		chromedp.Click(`#submenu-summary`, chromedp.ByQuery), at("reopened-submenu"),
+		// Focus rather than click: what this leg is about is where focus
+		// goes, so it has to start from a focus this test put there on
+		// purpose rather than one a click happened to leave behind.
+		chromedp.Focus(`#submenu-item`, chromedp.ByQuery), at("focused-in-submenu"),
+		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusInSubmenu),
+		chromedp.KeyEvent(kb.Escape), at("escape-from-submenu"),
+		chromedp.Evaluate(openStateJS, &afterSubEsc),
+		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusAfterSubEsc),
+
 		// The toggle-block is not a <details> at all, so nothing above can
 		// have touched it — but it is the other thing the brief holds
 		// outside the group, so read it rather than assume it.
@@ -969,6 +989,17 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	}
 	if focusAfterEsc != "account-summary" {
 		t.Errorf("focus after Escape is %q, want the summary that opened the menu", focusAfterEsc)
+	}
+	// The premise first: if focus never reached the submenu, the two
+	// assertions below would pass for the wrong reason.
+	if focusInSubmenu != "submenu-item" {
+		t.Fatalf("focus before Escape is %q, want %q — this leg proves nothing unless focus starts inside the submenu", focusInSubmenu, "submenu-item")
+	}
+	if afterSubEsc != "chrome" {
+		t.Errorf("after Escape from inside the submenu, open = %q, want %q", afterSubEsc, "chrome")
+	}
+	if focusAfterSubEsc != "filter-summary" {
+		t.Errorf("focus after Escape from inside the submenu is %q, want %q — the hand-back must climb to the OUTERMOST open menu; the submenu's own summary is inside the parent that just closed, so focusing it drops focus to <body>", focusAfterSubEsc, "filter-summary")
 	}
 	if !tblockOpenAfter {
 		t.Error("the toggle-block's switch was flipped by the menu handling; it is not a menu")

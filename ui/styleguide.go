@@ -120,9 +120,13 @@ var styleguideSamples = map[string]string{
 	// name fails axe's aria-dialog-name and, more to the point, is
 	// announced as "dialog" and nothing else.
 	//
-	// Nothing moves to the top layer, so
-	// ::backdrop never paints and the .rst-modal-overlay div remains the
-	// scrim. tokens.css's dialog.rst-modal-panel rule undoes the UA
+	// id="modal-title" assumes the one-dialog-per-response pattern this
+	// idiom IS — a modal is its own URL, so a response carries one panel.
+	// Paste this sample twice on one page and the two ids collide: give
+	// each panel its own.
+	//
+	// Nothing moves to the top layer, so ::backdrop never paints and the
+	// .rst-modal-overlay div remains the scrim. tokens.css's dialog.rst-modal-panel rule undoes the UA
 	// dialog block (absolute positioning, auto margins, 1em padding,
 	// Canvas colours) so the panel lays out exactly as it did as a div.
 	"modal": `<div class="rst-backdrop" inert>
