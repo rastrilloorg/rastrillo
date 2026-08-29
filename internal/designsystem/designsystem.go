@@ -35,6 +35,20 @@ import (
 	"github.com/carlosframework/rastrillo/ui"
 )
 
+// mountPath is where this tree is served: rastrillo.org/design-system.
+// Every URL the renderer emits — stylesheet, script, iframe, switcher,
+// shell demo, back-link — is an absolute path under it.
+//
+// Absolute rather than relative because the CARLOS static edge serves a
+// directory index at its slash-less URL as a 200 with no redirect:
+// /design-system and /design-system/ both return the same document, but
+// a relative href in it resolves against a different base on each, so
+// the slash-less visit loaded no stylesheet and every link pointed one
+// directory too high. That was the live bug. The cost is that the tree
+// only works at this one mount path, which is the path the site serves
+// it from; the constant is the whole of that binding.
+const mountPath = "/design-system"
+
 // Render builds the whole design-system tree in memory: path relative to
 // docs/design-system → file content.
 //
@@ -64,13 +78,13 @@ func Render() (map[string][]byte, error) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			dir := theme + "/" + locale + "/"
-			page, err := renderIndex(theme, locale, "../../", "")
+			page, err := renderIndex(theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"index.html", err)
 			}
 			out[dir+"index.html"] = page
 			for _, shell := range ui.LayoutNames() {
-				demo, err := renderShell(theme, locale, shell, "../../../")
+				demo, err := renderShell(theme, locale, shell)
 				if err != nil {
 					return nil, fmt.Errorf("designsystem: %s: %w", dir+"shells/"+shell+".html", err)
 				}
@@ -79,15 +93,17 @@ func Render() (map[string][]byte, error) {
 		}
 	}
 
-	// The tree root is ink/en again, at a different depth: same page,
-	// every relative path rewritten. Generated rather than copied, so
-	// the two cannot drift — the only difference between this call and
-	// the one above is the two prefixes.
-	root, err := renderIndex("ink", "en", "", "ink/en/")
-	if err != nil {
-		return nil, fmt.Errorf("designsystem: index.html: %w", err)
+	// The tree root is ink/en again. It used to be a second render at a
+	// different depth, because every path on it needed rewriting for
+	// the shallower directory; with absolute paths there is nothing
+	// left to rewrite, so the two files are the same bytes and saying
+	// so is more honest than a second call that could only ever return
+	// them. Copied, not aliased: callers get one slice per path.
+	nested, ok := out["ink/en/index.html"]
+	if !ok {
+		return nil, fmt.Errorf("designsystem: index.html: no ink/en page to serve as the tree root")
 	}
-	out["index.html"] = root
+	out["index.html"] = append([]byte(nil), nested...)
 	return out, nil
 }
 

@@ -237,6 +237,14 @@ any change to `ui` or its templates, and `TestDesignSystemIsCurrent`
 fails the build if the tree drifts from what's committed. It will be
 published at rastrillo.org/design-system once the website vendors it.
 
+Every link in that tree — stylesheets, scripts, the theme and language
+switchers, the shell demos — is an absolute path under
+`/design-system/`, so the tree is served from that path and no other.
+Relative links looked more portable and were wrong: the static edge
+serves `/design-system` and `/design-system/` as the same page without
+redirecting between them, and a relative href resolves differently on
+each.
+
 ## Styling
 
 `ui.TokensCSS()` is the design-token stylesheet, and `rastrillo new`
