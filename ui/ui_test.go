@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -1166,7 +1167,32 @@ func TestRenderEverythingSmoke(t *testing.T) {
 			t.Errorf("<%s> is unbalanced: %d opened, %d closed", tag, open, closed)
 		}
 	}
+
+	// One page, one id. Every partial above renders into the same
+	// document, which is the situation a real screen is in — and a
+	// duplicate id there is not cosmetic: a label's `for` points at the
+	// first match, aria-describedby and aria-controls resolve to the
+	// first match, and the second field quietly loses its name to a
+	// screen reader. Cheap to check here and invisible everywhere else,
+	// because each partial rendered alone is always fine.
+	seen := make(map[string]int)
+	var dupes []string
+	for _, m := range idAttr.FindAllStringSubmatch(out, -1) {
+		seen[m[1]]++
+		if seen[m[1]] == 2 {
+			dupes = append(dupes, m[1])
+		}
+	}
+	sort.Strings(dupes)
+	if len(dupes) > 0 {
+		t.Errorf("the combined render repeats id %v; give the fixtures distinct Names or the partials distinct ids", dupes)
+	}
 }
+
+// idAttr matches a rendered id attribute. The partials only ever emit
+// double-quoted attributes (html/template writes them that way), so one
+// shape is enough.
+var idAttr = regexp.MustCompile(`\bid="([^"]*)"`)
 
 // countOpenTags counts opening tags for one element name, matching both
 // "<tag " and "<tag>" so <p> is never confused with <path>.

@@ -37,6 +37,6 @@
   {"id": "numeric-day-first-in-bengali-digits", "input": "২৫/১২/২০২৬", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "bare-year-in-bengali-digits", "input": "২০৩০", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
 
-  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "an-unknown-word-is-refused", "input": "আজগুবি", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-clock-in-bengali-digits", "input": "২৫:০০", "now": "2026-08-28T10:30", "expected": null}
 ]

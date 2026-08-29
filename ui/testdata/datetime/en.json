@@ -58,6 +58,7 @@
 
   {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
   {"id": "spelled-out-quantity", "input": "in two weeks", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "both-directions-at-once-is-a-contradiction", "input": "in 2 weeks ago", "now": "2026-08-28T10:30", "expected": null},
   {"id": "meridiem-detached", "input": "6 pm", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
   {"id": "relative-day-with-a-clock", "input": "in 2 days at 5pm", "now": "2026-08-28T10:30", "expected": "2026-08-30T17:00"},
   {"id": "own-datetime-display-reads-back", "input": "Fri, Aug 28, 2026, 9:00 AM", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},

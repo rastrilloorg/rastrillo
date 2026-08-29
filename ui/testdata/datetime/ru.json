@@ -35,8 +35,11 @@
   {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "numeric-day-first-with-dots", "input": "25.12.2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+  {"id": "own-display-reads-back", "input": "пт, 25 дек. 2026 г.", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-datetime-display-reads-back", "input": "пт, 25 дек. 2026 г., 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
 
   {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
   {"id": "spelled-out-quantity", "input": "через две недели", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "both-directions-at-once-is-a-contradiction", "input": "через 2 недели назад", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
 ]

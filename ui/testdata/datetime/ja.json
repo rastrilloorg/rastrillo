@@ -34,11 +34,16 @@
   {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
 
   {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "year-first-with-slashes", "input": "2026/12/25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "year-first-with-dots", "input": "2026.12.25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-display-reads-back", "input": "2026年12月25日(金)", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-datetime-display-reads-back", "input": "2026年12月25日(金) 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
+  {"id": "own-display-year-edited", "input": "2030年12月25日(金)", "now": "2026-08-28T10:30", "expected": "2030-12-25T09:00"},
   {"id": "bare-year-is-not-a-month", "input": "2025", "now": "2026-08-28T10:30", "expected": "2025-08-28T09:00"},
 
-  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "an-unknown-word-is-refused", "input": "ぬるぽむにゃ", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-hour-with-a-meridiem", "input": "午後25時", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-day-in-a-counter-date", "input": "12月32日", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-month-in-a-counter-date", "input": "13月1日", "now": "2026-08-28T10:30", "expected": null},
-  {"id": "slashed-year-first-is-not-read", "input": "2026/12/25", "now": "2026-08-28T10:30", "expected": null}
+  {"id": "impossible-day-in-a-year-first-date", "input": "2026/12/32", "now": "2026-08-28T10:30", "expected": null}
 ]

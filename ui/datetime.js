@@ -267,6 +267,69 @@
     return out;
   }
 
+  // The options the field's own display formats with. Up here in the
+  // pure half rather than beside the page code that uses it, because
+  // the parser has to read that display back: what this field writes,
+  // it must be able to re-read, and a reading that cannot is how an
+  // in-place edit turns into a refusal.
+  function displayOptions(kind) {
+    var opts = kind === "time"
+      ? { hour: "numeric", minute: "2-digit" }
+      : { weekday: "short", day: "numeric", month: "short", year: "numeric" };
+    if (kind === "datetime") {
+      opts.hour = "numeric";
+      opts.minute = "2-digit";
+    }
+    return opts;
+  }
+
+  // What Intl writes that nobody typed: the literals it threads between
+  // the numbers (ja 年月日, ru's "г.", pt's "de", the brackets round a
+  // Japanese weekday) and the dayPeriod names it chooses, which are not
+  // always the ones a catalog spells — Intl writes yue's afternoon as
+  // 下晝 where the catalog says 下午. Derived from the same options the
+  // display uses, plus the day-and-month shapes, which is the form a
+  // person types ("25 de marzo"). Literals come back ignorable and
+  // dayPeriods come back as am/pm, so the field can read its own
+  // writing without a per-language table anybody maintains.
+  function displayTokens(locale, fold) {
+    var probes = [displayOptions("date"), displayOptions("datetime"), displayOptions("time"),
+      { day: "numeric", month: "long" }, { day: "numeric", month: "short" }];
+    var when = [new Date(Date.UTC(2026, 11, 25, 15, 30)), new Date(Date.UTC(2026, 2, 3, 9, 5))];
+    var out = { literal: {}, am: {}, pm: {} }, p, i, fmt, parts, k, v, c, run;
+    function keep(bag, s) { s = fold(s); if (s) bag[s] = true; }
+    for (p = 0; p < probes.length; p++) {
+      probes[p].timeZone = "UTC";
+      try {
+        fmt = new Intl.DateTimeFormat(locale, probes[p]);
+      } catch (e) {
+        continue;
+      }
+      for (i = 0; i < when.length; i++) {
+        parts = fmt.formatToParts(when[i]);
+        for (k = 0; k < parts.length; k++) {
+          v = parts[k].value;
+          if (parts[k].type === "dayPeriod") {
+            keep(when[i].getUTCHours() < 12 ? out.am : out.pm, v);
+            continue;
+          }
+          if (parts[k].type !== "literal") continue;
+          // One literal is not always one token: ja hands back "日(" in
+          // a single part. Split into letter runs and single marks so
+          // the day counter stays a day counter and the bracket becomes
+          // its own ignorable thing.
+          for (c = 0, run = ""; c <= v.length; c++) {
+            if (c < v.length && letterish(v.charAt(c))) { run += v.charAt(c); continue; }
+            keep(out.literal, run);
+            run = "";
+            if (c < v.length && !BREAKS.test(v.charAt(c))) keep(out.literal, v.charAt(c));
+          }
+        }
+      }
+    }
+    return out;
+  }
+
   var TABLES = {};
 
   // Everything derived from a locale, built once and cached: the fold,
@@ -286,7 +349,8 @@
       locale: loc,
       fold: fold,
       months: nameTable(loc, "month", monthDates, fold),
-      weekdays: nameTable(loc, "weekday", weekDates, fold)
+      weekdays: nameTable(loc, "weekday", weekDates, fold),
+      display: displayTokens(loc, fold)
     };
     // Does this locale call its months anything at all? Japanese does
     // not — it numbers them, and nameTable will not hold a bare digit
@@ -312,6 +376,18 @@
         var text = tbl.fold(alts[i]);
         if (text) list.push({ text: text, role: "word", kind: name, at: -1 });
       }
+    }
+    // The display's own vocabulary, on the same list: a literal is a
+    // word the reading may skip, and a dayPeriod is am or pm however
+    // Intl chose to spell it. Both are additive — a spelling already
+    // carrying a kind keeps it and gains this one, because matchAt
+    // merges every entry of the same length.
+    var seen = ["literal", "am", "pm"], kind;
+    for (i = 0; i < seen.length; i++) {
+      kind = seen[i] === "literal" ? "ignore" : seen[i];
+      for (name in tbl.display[seen[i]])
+        if (Object.prototype.hasOwnProperty.call(tbl.display[seen[i]], name))
+          list.push({ text: name, role: "word", kind: kind, at: -1 });
     }
     for (m = 0; m < tbl.months.length; m++)
       for (k = 0; k < tbl.months[m].length; k++)
@@ -444,6 +520,15 @@
         m[4] === undefined ? clockM : +m[5]);
       return d ? { date: d, hasDate: true, hasTime: m[4] !== undefined } : null;
     }
+    // Year first, with the separators a keyboard reaches for rather
+    // than the wire's hyphen. Nothing else in any calendar puts four
+    // digits in front of a date, so 2026/12/25 and 2026.12.25 need no
+    // day-or-month guess: it is how ja, zh and yue write one down.
+    m = /^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})$/.exec(raw);
+    if (m) {
+      d = makeDate(+m[1], +m[2] - 1, +m[3], clockH, clockM);
+      return d ? { date: d, hasDate: true, hasTime: false } : null;
+    }
     // Numeric d/m[/y], day first — and swapped where only the other
     // reading can be true, so a pasted 12/25/2027 is understood rather
     // than refused.
@@ -544,6 +629,14 @@
     // with nothing counted and "in" with a number beside it.
     var quantified = findKind("num") >= 0;
     var into = find("in"), back = find("ago");
+    // Both directions at once is not a phrase, it is a contradiction:
+    // "in 2 weeks ago" and "через 2 недели назад" name no instant, and
+    // the sign was being picked by whichever branch ran second — ago
+    // won, silently, and the reading looked confident. Two DISTINCT
+    // tokens is the test, because one spelling is allowed to carry
+    // both kinds (Vietnamese "sau" does) and a single word wearing two
+    // hats is still one word.
+    if (into >= 0 && back >= 0 && into !== back) return null;
     if (quantified && (into >= 0 || back >= 0)) {
       var u = unit();
       if (u) {
@@ -670,17 +763,24 @@
       else if (tod >= 0) { date = midnight(now); used[tod] = true; hasDate = true; }
     }
     if (!hasDate) {
-      var next = find("next"), last = find("last"), cm;
+      var next = find("next"), last = find("last"), dup;
+      var cm = counterMonth();
       var wi = findRole("weekday");
       var mo = findRole("month");
       if (wi >= 0 && mo >= 0) {
         if (wi === mo) {
           // ONE spelling wearing both hats: Spanish "mar" is March and
           // it is Tuesday, and the scanner merges same-length matches
-          // rather than picking for you. A day number beside it settles
-          // it — "25 mar" is a date and nothing else — and with no
-          // number to count, a weekday is what a person means.
-          if (findKind("num") >= 0) wi = -1;
+          // rather than picking for you. Twice in a row is this field's
+          // own writing — "mar, 3 mar 2026" is Tuesday and then March —
+          // so a second month-naming token settles it and the first is
+          // the decoration. Otherwise a day number beside it settles it
+          // ("25 mar" is a date and nothing else), and with no number
+          // to count, a weekday is what a person means.
+          for (dup = wi + 1; dup < toks.length; dup++)
+            if (!used[dup] && toks[dup].t === "word" && toks[dup].month >= 0) { mo = dup; break; }
+          if (mo !== wi) { used[wi] = true; wi = -1; }
+          else if (findKind("num") >= 0) wi = -1;
           else mo = -1;
         } else {
           // A weekday sitting beside a month and a day is decoration,
@@ -692,6 +792,13 @@
           used[wi] = true;
           wi = -1;
         }
+      } else if (wi >= 0 && cm >= 0) {
+        // Same rule where the months are numbered rather than named:
+        // 2026年12月25日(金) and 2026年12月25日周五 are a full date with
+        // the weekday written beside it, and the weekday is the part
+        // that follows from the rest.
+        used[wi] = true;
+        wi = -1;
       }
       if (wi >= 0) {
         used[wi] = true;
@@ -726,12 +833,12 @@
             toks[mo].month, dnum, 0, 0);
           if (!date) return null;
           hasDate = true;
-        } else if ((cm = counterMonth()) >= 0) {
+        } else if (cm >= 0) {
           // A calendar that numbers its months writes the number with
           // its counter, and the counter is doing the work a name does
           // everywhere else. The day beside it is written the same way,
           // with or without its own counter.
-          var cmon = toks[cm].n - 1, cday = -1, ck;
+          var cmon = toks[cm].n - 1, cday = -1, cyear = -1, ck;
           used[cm] = true;
           used[cm + 1] = true;
           ck = after(cm + 1);
@@ -741,7 +848,15 @@
             claimCounter(ck, "day");
           }
           if (cday < 0) return null;
-          date = makeDate(inferYear(now, cmon, cday), cmon, cday, 0, 0);
+          // The year goes in front here (2026年12月25日), so it is
+          // whatever four digits are still unspoken for. Without this
+          // the field could write a full date it could not read back.
+          for (ck = 0; ck < toks.length && cyear < 0; ck++) {
+            if (used[ck] || toks[ck].t !== "num" || toks[ck].digits !== 4) continue;
+            cyear = toks[ck].n;
+            used[ck] = true;
+          }
+          date = makeDate(cyear >= 0 ? cyear : inferYear(now, cmon, cday), cmon, cday, 0, 0);
           if (!date) return null;
           hasDate = true;
         } else if (next >= 0 || last >= 0) {
@@ -782,14 +897,16 @@
     }
 
     // Anything left over is a word this reading did not account for,
-    // and a reading that ignores half the sentence is a guess. The one
-    // exception is the "at" particle, which is optional everywhere it
-    // appears and required nowhere.
+    // and a reading that ignores half the sentence is a guess. Two
+    // exceptions: the "at" particle, which is optional everywhere it
+    // appears and required nowhere; and a literal the display itself
+    // writes, which nobody typed on purpose and which carries no
+    // meaning to drop.
     for (i = 0; i < toks.length; i++) {
       if (used[i]) continue;
       if (toks[i].t !== "word") return null;
       if (toks[i].month >= 0 || toks[i].weekday >= 0) return null;
-      for (var kind in toks[i].kinds) if (kind !== "at") return null;
+      for (var kind in toks[i].kinds) if (kind !== "at" && kind !== "ignore") return null;
     }
     if (!hasDate && !hasTime) return null;
 
@@ -830,16 +947,11 @@
       return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0);
     }
 
+    // displayOptions is up in the pure half, because the parser reads
+    // these back: one set of options, formatted here and derived there.
     function formatter(locale, kind) {
-      var opts = kind === "time"
-        ? { hour: "numeric", minute: "2-digit" }
-        : { weekday: "short", day: "numeric", month: "short", year: "numeric" };
-      if (kind === "datetime") {
-        opts.hour = "numeric";
-        opts.minute = "2-digit";
-      }
       try {
-        return new Intl.DateTimeFormat(locale, opts);
+        return new Intl.DateTimeFormat(locale, displayOptions(kind));
       } catch (e) {
         return null;
       }
@@ -1215,6 +1327,6 @@
   // The pure half, for ui/datetime_node.mjs. A browser has no `module`
   // and never takes this branch.
   if (typeof module !== "undefined" && module && module.exports) {
-    module.exports = { parse: parse, tables: tables };
+    module.exports = { parse: parse, tables: tables, displayOptions: displayOptions };
   }
 })();

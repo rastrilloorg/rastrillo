@@ -23,6 +23,7 @@
   {"id": "day-month-clock", "input": "25 dic 18:00", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
   {"id": "day-month-year", "input": "25 diciembre 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
   {"id": "month-day", "input": "dic 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "the-de-linker-is-how-a-person-writes-it", "input": "25 de marzo", "now": "2026-08-28T10:30", "expected": "2027-03-25T09:00"},
   {"id": "homograph-with-a-day-is-the-month", "input": "25 mar", "now": "2026-08-28T10:30", "expected": "2027-03-25T09:00"},
   {"id": "homograph-alone-is-the-weekday", "input": "mar", "now": "2026-08-28T10:30", "expected": "2026-09-01T09:00"},
 
@@ -37,6 +38,8 @@
   {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+  {"id": "own-display-reads-back", "input": "vie, 25 dic 2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-display-with-a-homograph-twice", "input": "mar, 3 mar 2026", "now": "2026-08-28T10:30", "expected": "2026-03-03T09:00"},
 
   {"id": "range-end-time-only-lands-on-the-start-day", "input": "17:00", "now": "2026-08-28T10:30", "prev": "2026-08-20T09:00", "base": "2026-12-25T10:00", "expected": "2026-12-25T17:00"},
 

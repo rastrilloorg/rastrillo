@@ -14,6 +14,10 @@
 //	echo '{"locale":"en","catalogs":{"en":{…},…}}' |
 //	  node datetime_node.mjs testdata/datetime/en.json
 //
+// With --round-trip in place of a fixture it runs the read-back loop
+// instead: every catalog on stdin, formatted with the combobox's own
+// display options and parsed straight back. See roundTrip below.
+//
 // The vocabulary comes in on stdin rather than out of the fixture,
 // because it is not test data: it is the framework's own base catalog
 // for that locale, and a fixture carrying its own copy would go stale
@@ -36,13 +40,88 @@ import parser from "./datetime.js";
 
 const fixturePath = process.argv[2];
 if (!fixturePath) {
-  process.stderr.write("usage: datetime_node.mjs <fixture.json>\n");
+  process.stderr.write("usage: datetime_node.mjs <fixture.json | --round-trip>\n");
   process.exit(2);
 }
 
 const chunks = [];
 for await (const chunk of process.stdin) chunks.push(chunk);
 const { locale, catalogs } = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+
+// ── the read-back loop ───────────────────────────────────────────────
+//
+// A field that cannot read its own writing is a field nobody can edit
+// in place: focus it, change the year, and the reading it wrote a
+// second ago comes back a refusal. That failed silently in five of the
+// twelve shipped languages — ja and zh wrote 年 and a bracketed
+// weekday, pt wrote "de" linkers, ru wrote a "г." suffix, and yue wrote
+// a dayPeriod no catalog spells — and no fixture could have caught it,
+// because every fixture is a phrase somebody chose to type.
+//
+// So this loop types nothing. It formats an instant with the SAME
+// options the combobox displays with, hands the result straight back to
+// the parser, and asks for the instant again. Run as
+// `datetime_node.mjs --round-trip`, over every catalog on stdin.
+const roundTrip = () => {
+  const samples = [
+    new Date(2026, 11, 25, 15, 30),
+    new Date(2026, 2, 3, 9, 5),
+    new Date(2027, 7, 28, 0, 0),
+  ];
+  const now = new Date(2026, 7, 28, 10, 30);
+  const day = (d) => [d.getFullYear(), d.getMonth(), d.getDate()].join("-");
+  const clock = (d) => [d.getHours(), d.getMinutes()].join(":");
+  const lines = [], broken = [];
+  for (const lang of Object.keys(catalogs)) {
+    const tbl = parser.tables(lang);
+    const misses = [];
+    let ok = 0, total = 0;
+    for (const kind of ["date", "datetime", "time"]) {
+      let fmt;
+      try {
+        fmt = new Intl.DateTimeFormat(lang, parser.displayOptions(kind));
+      } catch {
+        continue;
+      }
+      for (const want of samples) {
+        total++;
+        const shown = fmt.format(want);
+        let read = null;
+        try {
+          read = parser.parse(shown, catalogs[lang], tbl, now, {});
+        } catch (e) {
+          read = null;
+        }
+        // A date display carries no clock and a time display carries no
+        // day, so each kind is asked back only for what it wrote.
+        const same = read &&
+          (kind === "time" || day(read.date) === day(want)) &&
+          (kind === "date" || clock(read.date) === clock(want));
+        if (same) ok++;
+        else misses.push(`      ${kind} ${JSON.stringify(shown)} -> ${read ? read.date : "null"}`);
+      }
+    }
+    lines.push(`  ${lang}: ${ok}/${total}`);
+    if (misses.length) {
+      lines.push(...misses);
+      broken.push(lang);
+    }
+  }
+  // Eleven of twelve, not twelve of twelve: a locale whose display Intl
+  // changes under us should be reported by name rather than block the
+  // build on a CLDR bump. The names are in the output either way.
+  const want = 11;
+  const good = Object.keys(catalogs).length - broken.length;
+  process.stdout.write(
+    `own-display read-back: ${good} of ${Object.keys(catalogs).length} locales round-trip fully\n` +
+      `${lines.join("\n")}\n` +
+      (broken.length ? `  not round-tripping: ${broken.join(", ")}\n` : ""),
+  );
+  process.exit(good >= want ? 0 : 1);
+};
+
+if (fixturePath === "--round-trip") roundTrip();
+
 const cases = JSON.parse(readFileSync(fixturePath, "utf8"));
 
 // One set of locale tables per language in the file, built once.

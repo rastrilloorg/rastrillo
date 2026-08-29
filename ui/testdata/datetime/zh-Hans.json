@@ -32,6 +32,9 @@
   {"id": "tomorrow-and-a-wire-clock", "input": "明天18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
 
   {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "year-first-with-slashes", "input": "2026/12/25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-display-reads-back", "input": "2026年12月25日周五", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-datetime-display-reads-back", "input": "2026年12月25日周五 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
   {"id": "bare-year-is-not-a-month", "input": "2025", "now": "2026-08-28T10:30", "expected": "2025-08-28T09:00"},
 
   {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},

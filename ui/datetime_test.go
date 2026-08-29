@@ -113,6 +113,36 @@ func TestDatetimeParserFixtures(t *testing.T) {
 	}
 }
 
+// A field has to be able to read what it just wrote. Every fixture is a
+// phrase somebody chose to type, so no fixture could catch the opposite
+// failure: the combobox formatting a value with Intl and then refusing
+// its own formatting back. It was refusing it in five of the twelve
+// shipped languages — ja and zh-Hans write 年 and a bracketed weekday,
+// pt writes "de" linkers, ru writes a "г." suffix, yue writes a
+// dayPeriod (下晝) no catalog spells — which made an in-place edit
+// impossible in each of them and looked like nothing at all from here.
+//
+// So this drives datetime_node.mjs's --round-trip mode: format three
+// instants per kind with the display's own options, parse each back,
+// and compare. The harness names any locale that does not survive the
+// trip and fails below eleven of twelve — see roundTrip in
+// ui/datetime_node.mjs for why eleven rather than twelve.
+func TestDatetimeReadsItsOwnDisplayBack(t *testing.T) {
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node is not on PATH, so datetime.js's read-back is unverified here: " +
+			"install Node and rerun `go test ./ui/` to exercise ui/datetime_node.mjs --round-trip")
+	}
+	cmd := exec.Command(node, "datetime_node.mjs", "--round-trip")
+	cmd.Stdin = bytes.NewReader(vocabStdin(t, "en"))
+	cmd.Env = append(os.Environ(), "TZ=UTC")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s\n%v", out, err)
+	}
+	t.Log(strings.TrimSpace(string(out)))
+}
+
 // Every shipped locale gets its own fixture, because the vocabulary is
 // the part of this parser that cannot be derived: a missing fixture is
 // a language nobody has checked can type a date.
@@ -183,18 +213,32 @@ func TestDatetimeContract(t *testing.T) {
 	// — a file an app owner has to page through is a file they stop
 	// owning.
 	//
-	// Raised from 48KB to 54KB, once, by the twelve-locale fixtures:
-	// writing a real date in each of the eleven other languages bought
-	// four capabilities this parser did not have. It now folds the
-	// digits an Arabic or Hindi keyboard makes (plain "ar" resolves to
-	// latn in ICU, so the locale's default numbering system was not
-	// enough); it holds the month name Intl only gives up when a day is
-	// in the format, which is the form a Russian actually types; it
-	// reads a date written with counter words rather than month names
-	// (12月25日); and it tells a counted 月 from Monday. Six kilobytes
-	// for eleven languages that could not previously type a date is the
-	// trade, and it is a decision, not a drift.
-	if n := len(DatetimeJS()); n > 54*1024 {
+	// Raised twice, and the arithmetic is written down both times so
+	// the next raise has to argue with real numbers.
+	//
+	// 48KB → 54KB, by the twelve-locale fixtures: writing a real date
+	// in each of the eleven other languages bought four capabilities
+	// this parser did not have. It folds the digits an Arabic or Hindi
+	// keyboard makes (plain "ar" resolves to latn in ICU, so the
+	// locale's default numbering system was not enough); it holds the
+	// month name Intl only gives up when a day is in the format, which
+	// is the form a Russian actually types; it reads a date written
+	// with counter words rather than month names (12月25日); and it
+	// tells a counted 月 from Monday. The honest split of that 6.6KB:
+	// about 2.7KB of code and about 3.9KB of the prose explaining it.
+	// An earlier wording here said "six kilobytes for eleven
+	// languages", which read as six kilobytes of parser and was not.
+	//
+	// 54KB → 60KB, by the read-back wave: the parser now derives, from
+	// the same Intl options the field displays with, the literals that
+	// display threads between the numbers and the dayPeriod names it
+	// picks — so it can read its own writing in all twelve languages
+	// instead of five, and "25 de marzo" parses because "de" is a
+	// literal Intl already told us about. Split again: about 2.7KB of
+	// code, about 3.2KB of comment. More than half of both raises is
+	// prose, which is the trade this file makes on purpose — the cap is
+	// on what an owner has to page through, not on what runs.
+	if n := len(DatetimeJS()); n > 60*1024 {
 		t.Fatalf("datetime.js is %d bytes; split something out before it stops being readable", n)
 	}
 }

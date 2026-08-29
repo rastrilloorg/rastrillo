@@ -39,6 +39,6 @@
   {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
 
-  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "an-unknown-word-is-refused", "input": "غداغد", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
 ]
