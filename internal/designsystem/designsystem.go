@@ -354,11 +354,26 @@ func preview(property, token string) template.CSS {
 
 // tokenGroup is a run of related custom properties under one heading.
 // Kind picks the shape of the preview the page draws beside each row:
-// "colour" (the default), "type", "space" or "radius".
+// "colour" (the default), "type", "space", "radius" or "font".
+//
+// ID is the group's anchor on the page, and the reason newGroup exists:
+// it is derived from the ENGLISH title, before localiseGroups touches
+// it, so /ja/index.html and /en/index.html carry the same twelve
+// fragments and a link to one is a link to the same thing on all of
+// them.
 type tokenGroup struct {
 	Title string
 	Kind  string
+	ID    string
 	Rows  []tokenRow
+}
+
+// newGroup starts a group with its anchor already on it. Every
+// tokenGroup on the page comes through here; a literal built anywhere
+// else would render a heading the sidebar cannot link to, and
+// TestTheSidebarLinksEverythingOnThePageExactlyOnce says so.
+func newGroup(title, kind string) tokenGroup {
+	return tokenGroup{Title: title, Kind: kind, ID: anchorID("tokens", title)}
 }
 
 // colourGroups splits a theme's light-block tokens into the five groups
@@ -379,7 +394,7 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 	out := make([]tokenGroup, 0, len(groups)+1)
 	claimed := map[string]bool{}
 	for _, g := range groups {
-		group := tokenGroup{Title: g.Title, Kind: "colour"}
+		group := newGroup(g.Title, "colour")
 		for _, row := range rows {
 			for _, prefix := range g.Prefixes {
 				if strings.HasPrefix(row.Name, prefix) && !claimed[row.Name] {
@@ -393,7 +408,7 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 			out = append(out, group)
 		}
 	}
-	other := tokenGroup{Title: "Other", Kind: "colour"}
+	other := newGroup("Other", "colour")
 	for _, row := range rows {
 		if !claimed[row.Name] {
 			other.Rows = append(other.Rows, row)
@@ -428,10 +443,11 @@ func structuralGroups() ([]tokenGroup, error) {
 	}
 	// No Radius group: the radii moved into the themes in v2, so they are
 	// part of the palette below, not of the structure every page shares.
-	return []tokenGroup{
-		{Title: "Type scale", Kind: "type", Rows: pick("--rst-fs-", "font-size")},
-		{Title: "Spacing", Kind: "space", Rows: pick("--rst-sp-", "inline-size")},
-	}, nil
+	scale := newGroup("Type scale", "type")
+	scale.Rows = pick("--rst-fs-", "font-size")
+	space := newGroup("Spacing", "space")
+	space.Rows = pick("--rst-sp-", "inline-size")
+	return []tokenGroup{scale, space}, nil
 }
 
 // lightHalf resolves a v2 theme value for the light scheme: the first
@@ -473,21 +489,29 @@ func lightHalf(v string) string {
 // and the type family. Dark values are not on the page: they live in the
 // same declaration, and the page says so rather than showing a second
 // set of chips nobody can compare side by side anyway.
-func themePalette(theme string) (colours []tokenGroup, font tokenRow, err error) {
+//
+// The type family comes back as a one-row group rather than as a
+// tokenRow of its own. It used to be the latter, and the page had a
+// hand-written heading and list for it — which meant the sidebar had a
+// heading to link and no group to derive it from. A group with one row
+// renders the same bytes (a font stack has no preview to draw) and is
+// one fewer special case in two files.
+func themePalette(theme string) ([]tokenGroup, error) {
 	raw, ok := ui.ThemeCSS(theme)
 	if !ok {
-		return nil, tokenRow{}, fmt.Errorf("no theme %q", theme)
+		return nil, fmt.Errorf("no theme %q", theme)
 	}
 	css := string(raw)
 	// ":root {" cannot match the two toggle rules at the foot of the
 	// file, whose selectors are ":root[data-theme=…] {".
 	body, err := blockBody(css, ":root {")
 	if err != nil {
-		return nil, tokenRow{}, fmt.Errorf("themes/%s.css: %w", theme, err)
+		return nil, fmt.Errorf("themes/%s.css: %w", theme, err)
 	}
 
 	var palette []tokenRow
 	var radii []tokenRow
+	var font tokenRow
 	for _, row := range parseTokens(body) {
 		switch {
 		case row.Name == "--rst-font":
@@ -501,9 +525,16 @@ func themePalette(theme string) (colours []tokenGroup, font tokenRow, err error)
 	}
 	groups := colourGroups(palette)
 	if len(radii) > 0 {
-		groups = append(groups, tokenGroup{Title: "Radius", Kind: "radius", Rows: radii})
+		radius := newGroup("Radius", "radius")
+		radius.Rows = radii
+		groups = append(groups, radius)
 	}
-	return groups, font, nil
+	if font.Name != "" {
+		family := newGroup("Type family", "font")
+		family.Rows = []tokenRow{font}
+		groups = append(groups, family)
+	}
+	return groups, nil
 }
 
 // resolveLight rewrites one row to the light scheme: the displayed value

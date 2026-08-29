@@ -768,8 +768,15 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 				t.Errorf("%s: the gallery header never closes", name)
 				continue
 			}
-			if !strings.HasPrefix(strings.TrimSpace(rest), `<main class="rst-page"`) {
-				t.Errorf("%s: the gallery header is not the element immediately before main", name)
+			// The chrome moved inside the shell's main column when the
+			// sidebar landed, so what follows it is the content
+			// column rather than main itself. It is still the first
+			// thing in the reading order of the page's own content.
+			if !strings.HasPrefix(strings.TrimSpace(rest), `<div class="rst-page">`) {
+				t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
+			}
+			if _, chromeStart, _ := strings.Cut(page, `<main class="rst-shell__main" id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
+				t.Errorf("%s: the gallery header is not the first thing inside main", name)
 			}
 			// The theme switcher: one link per theme, exactly one current.
 			if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
@@ -843,7 +850,12 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if strings.Contains(js, "\t") {
 		t.Error("gallery.js uses two-space indentation, not tabs")
 	}
-	if n := len(js); n > 8*1024 {
+	// 8 KiB was the budget when this file did one thing. It does two
+	// now — the toggle and the sidebar filter — and the ceiling moved
+	// once, with the second feature, rather than being shaved off the
+	// comments that are this file's documentation. It is still a
+	// ceiling: a third feature is a conversation, not a bump.
+	if n := len(js); n > 10*1024 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
 	// The two halves of the scriptless story: the toggle is hidden
@@ -861,6 +873,220 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	}
 	if !strings.Contains(page, `:root[data-rst-js] .ds-scheme`) {
 		t.Error("the page never reveals the scheme toggle for a reader who has JavaScript")
+	}
+	// The filter tells the same story, in the same two rules. The nav
+	// under it is a complete list of every anchor on the page either
+	// way; the box that filters it is the part that needs a script.
+	if !strings.Contains(page, ".ds-search { display: none; }") {
+		t.Error("the page does not hide the filter box by default — with scripts off it would look like a control that works")
+	}
+	if !strings.Contains(page, `:root[data-rst-js] .ds-search`) {
+		t.Error("the page never reveals the filter box for a reader who has JavaScript")
+	}
+	if !strings.Contains(js, `querySelector("[data-ds-filter]")`) {
+		t.Error("gallery.js does not look for the filter box — the seam is empty")
+	}
+}
+
+// ── The sidebar ──────────────────────────────────────────────────────
+
+var (
+	// An element the sidebar is allowed to link. The attribute is the
+	// marker, exactly as the coverage gates use a comment: an element
+	// that grew an id for some other reason (main, the four section
+	// headings, a sample's own form field) is not a nav target, and a
+	// section that lost its id is not one either.
+	anchorMarker = regexp.MustCompile(`id="([^"]*)" data-ds-anchor`)
+	// A link into this page. The rail's other links — the demo pages —
+	// are absolute paths, and TestEveryPageIsAWholeLocalisedDocument
+	// already holds those to files the tree contains.
+	navFragment   = regexp.MustCompile(`<a href="#([^"]*)"`)
+	navHref       = regexp.MustCompile(`<a href="([^"]*)"`)
+	partialMarker = regexp.MustCompile(`<!-- partial: (\S+) -->`)
+	idiomMarker   = regexp.MustCompile(`<!-- idiom: (\S+) -->`)
+)
+
+// railOf cuts the sidebar's nav out of a page. Everything below reads
+// this slice rather than the whole document, so a stray anchor
+// somewhere in a sample cannot make the rail look complete.
+func railOf(t *testing.T, name, page string) string {
+	t.Helper()
+	_, after, ok := strings.Cut(page, `<nav class="rst-shell__nav ds-nav" id="ds-nav"`)
+	if !ok {
+		t.Errorf("%s: no sidebar nav", name)
+		return ""
+	}
+	rail, _, ok := strings.Cut(after, "</nav>")
+	if !ok {
+		t.Errorf("%s: the sidebar nav never closes", name)
+		return ""
+	}
+	return rail
+}
+
+// The rail is a reading of the page, not a second copy of it.
+//
+// The gate is a sequence comparison, which is stronger than it looks
+// and is the reason the nav is derived in Go rather than written out in
+// the template: the fragments the rail links, in rail order, must be
+// exactly the anchored elements on the page, in page order. A partial
+// added to ui appears in both lists or in neither — appearing in one is
+// the failure. So is a rail entry pointing at a fragment nothing on the
+// page carries, a section rendered with no way to reach it, and a
+// reordering of one side and not the other.
+//
+// The three things it cannot see on its own, checked beside it:
+// duplicate ids (a fragment that resolves twice resolves to the first,
+// silently), the marker comments the two coverage gates use (so a
+// partial's anchor is derived from the same name they are), and the
+// rail's out-of-page links.
+func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			name := theme + "/" + locale + "/index.html"
+			page := string(files[name])
+			rail := railOf(t, name, page)
+			if rail == "" {
+				continue
+			}
+
+			var anchors []string
+			for _, m := range anchorMarker.FindAllStringSubmatch(page, -1) {
+				anchors = append(anchors, m[1])
+			}
+			var fragments []string
+			for _, m := range navFragment.FindAllStringSubmatch(rail, -1) {
+				fragments = append(fragments, m[1])
+			}
+			if len(anchors) == 0 {
+				t.Errorf("%s: nothing on the page is anchored at all — the marker has stopped working, and this gate with it", name)
+				continue
+			}
+			if len(fragments) != len(anchors) {
+				t.Errorf("%s: the sidebar links %d fragments, the page anchors %d", name, len(fragments), len(anchors))
+			}
+			for i := range anchors {
+				if i >= len(fragments) {
+					t.Errorf("%s: nothing in the sidebar links #%s", name, anchors[i])
+					continue
+				}
+				if fragments[i] != anchors[i] {
+					t.Errorf("%s: sidebar entry %d links #%s, the page's %dth anchor is #%s", name, i, fragments[i], i, anchors[i])
+				}
+			}
+
+			// A duplicate id is the bug a rail full of fragments would
+			// hide: both entries scroll to the first element and the
+			// second is unreachable for ever.
+			for _, id := range anchors {
+				if n := strings.Count(page, `id="`+id+`"`); n != 1 {
+					t.Errorf("%s: id %q appears %d times; a fragment can only ever reach the first", name, id, n)
+				}
+			}
+
+			// The anchors are the marker comments' own names, so the
+			// two coverage gates and this one are looking at one list.
+			linked := map[string]bool{}
+			for _, f := range fragments {
+				linked[f] = true
+			}
+			for _, kind := range []struct {
+				prefix string
+				re     *regexp.Regexp
+			}{{"partial", partialMarker}, {"idiom", idiomMarker}} {
+				found := kind.re.FindAllStringSubmatch(page, -1)
+				if len(found) == 0 {
+					t.Errorf("%s: no %s markers on the page", name, kind.prefix)
+				}
+				for _, m := range found {
+					if want := anchorID(kind.prefix, m[1]); !linked[want] {
+						t.Errorf("%s: %s %q is on the page and not in the sidebar (no #%s)", name, kind.prefix, m[1], want)
+					}
+				}
+			}
+
+			// Everything in the rail that is not a fragment leaves this
+			// document, and there is exactly one such link per shell
+			// demo plus the modal. They are the only reason the rail
+			// links off-page at all.
+			var away int
+			for _, m := range navHref.FindAllStringSubmatch(rail, -1) {
+				if strings.HasPrefix(m[1], "#") {
+					continue
+				}
+				away++
+				if !strings.HasPrefix(m[1], mountPrefix) || !resolves(files, m[1]) {
+					t.Errorf("%s: the sidebar links %q, which is not a page of this tree", name, m[1])
+				}
+			}
+			if want := len(ui.LayoutNames()) + 1; away != want {
+				t.Errorf("%s: the sidebar has %d links off this page, want %d (one per shell demo, plus the modal)", name, away, want)
+			}
+		}
+	}
+}
+
+// The gallery is laid out in the vocabulary it documents. Not a style
+// preference: the sidebar shell is one of the three things this page
+// exists to show, and a gallery that documented rst-shell-sidebar while
+// being built out of something else would be advertising, not
+// documentation. The mobile collapse comes with it — the <details>
+// chrome strip is the shell's own, so the rail folds away below 800px
+// with no JavaScript and nothing here to write.
+func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			name := theme + "/" + locale + "/index.html"
+			page := string(files[name])
+			for _, want := range []string{
+				`<div class="rst-shell-sidebar">`,
+				`<details class="rst-shell__chrome">`,
+				`<aside class="rst-shell__rail ds-rail">`,
+				`<nav class="rst-shell__nav ds-nav" id="ds-nav"`,
+				`<main class="rst-shell__main" id="main">`,
+			} {
+				if !strings.Contains(page, want) {
+					t.Errorf("%s: the page is not laid out in the sidebar shell (no %s)", name, want)
+				}
+			}
+			// The filter: a real search input, in a search landmark,
+			// naming the nav it filters, with the "no matches" line
+			// rendered by the page and hidden until something needs it.
+			for _, want := range []string{
+				`<search class="ds-search">`,
+				`<input id="ds-filter" type="search"`,
+				`aria-controls="ds-nav"`,
+				`data-ds-filter`,
+				`data-ds-filter-empty role="status" hidden`,
+			} {
+				if !strings.Contains(page, want) {
+					t.Errorf("%s: the filter box is not there as specified (no %s)", name, want)
+				}
+			}
+			// Five sections, every one of them open on arrival: the
+			// rail is a table of contents first and a set of
+			// disclosures second.
+			rail := railOf(t, name, page)
+			if n := strings.Count(rail, "<details open>"); n != 5 {
+				t.Errorf("%s: %d open sidebar sections, want 5 (tokens, partials, idioms, shells, demos)", name, n)
+			}
+			if n := strings.Count(rail, "<details"); n != 5 {
+				t.Errorf("%s: %d sidebar sections, and not all of them start open", name, n)
+			}
+			// Each of them says its name in this page's language, and
+			// the nav says what it is.
+			for _, key := range []string{"Tokens", "Partials", "Class idioms", "Shells", "Demos"} {
+				want := "<summary>" + template.HTMLEscapeString(proseIn(locale, key)) + "</summary>"
+				if !strings.Contains(rail, want) {
+					t.Errorf("%s: no sidebar section named %q", name, proseIn(locale, key))
+				}
+			}
+			if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "On this page")) + `"`; !strings.Contains(page, want) {
+				t.Errorf("%s: the sidebar nav is not named in this page's language", name)
+			}
+		}
 	}
 }
 

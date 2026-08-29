@@ -45,6 +45,24 @@
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 </style>
 <script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
@@ -52,7 +70,26 @@
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
+<div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">মূল বিষয়ে যান</a>
+<details class="rst-shell__chrome"><summary>মেনু</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">এই পাতা ফিল্টার করুন</label>
+    <input id="ds-filter" type="search" placeholder="এই পাতা ফিল্টার করুন" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>এখানে এর সঙ্গে মেলে এমন কিছু নেই</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="এই পাতায়">
+    <details open><summary>টোকেন</summary><a href="#tokens-surfaces-and-lines">পৃষ্ঠতল আর রেখা</a><a href="#tokens-text">লেখা</a><a href="#tokens-accent">উজ্জ্বল রং</a><a href="#tokens-status-tones">অবস্থার টোন</a><a href="#tokens-depth">গভীরতা</a><a href="#tokens-radius">কোণের ব্যাসার্ধ</a><a href="#tokens-type-family">টাইপ ফ্যামিলি</a><a href="#tokens-type-scale">টাইপ স্কেল</a><a href="#tokens-spacing">ফাঁক</a></details>
+    <details open><summary>পার্শিয়াল</summary><a href="#family-list-screen" class="ds-nav__group">তালিকার পর্দা</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">উপস্থাপন</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">ফর্ম</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">রুট</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open><summary>ক্লাস ইডিয়ম</summary><a href="#idiom-box" class="rst-mono">box</a><a href="#idiom-dropdown" class="rst-mono">dropdown</a><a href="#idiom-form-layout" class="rst-mono">form-layout</a><a href="#idiom-help" class="rst-mono">help</a><a href="#idiom-list-grid" class="rst-mono">list-grid</a><a href="#idiom-modal" class="rst-mono">modal</a><a href="#idiom-selbox" class="rst-mono">selbox</a><a href="#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open><summary>শেল</summary><a href="#shell-column" class="rst-mono">column</a><a href="#shell-topbar" class="rst-mono">topbar</a><a href="#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details open><summary>ডেমো</summary><a href="/design-system/plain/bn/shells/column.html">column শেল</a><a href="/design-system/plain/bn/shells/topbar.html">topbar শেল</a><a href="/design-system/plain/bn/shells/sidebar.html">sidebar শেল</a><a href="/design-system/plain/bn/modal.html">মোডালের রুট</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
 
 <header class="ds-chrome">
   <nav class="rst-seg-tabs" aria-label="থিম"><a href="/design-system/day/bn/index.html">day</a><a href="/design-system/plain/bn/index.html" aria-current="page">plain</a><a href="/design-system/signal/bn/index.html">signal</a></nav>
@@ -63,7 +100,7 @@
   </details>
 </header>
 
-<main class="rst-page" id="main">
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
@@ -82,31 +119,32 @@
 <p class="ds-lead">যে কাস্টম প্রপার্টি দিয়ে প্রতিটি কম্পোনেন্ট নিজেকে রাঙায়। রং আর টাইপ ফ্যামিলি আসে থিম থেকে (themes/plain.css); টাইপ স্কেল আর ফাঁকের ধাপগুলো কাঠামোর অংশ, আসে tokens.css থেকে, সব থিমে একই।</p>
 <p class="ds-swatch-note">এখানে ছাপা মানগুলো হালকা সেটের। গাঢ় সেটটি একই ফাইলে হাতে লেখা — কখনও উল্টে নেওয়া নয় — আর ui/contrast_test.go দুই সেটের প্রতিটি নথিভুক্ত জোড়াকে WCAG 2.2 AA-এর সর্বনিম্ন সীমায় ধরে রাখে: লেখার জন্য 4.5:1, কন্ট্রোলের সীমানার জন্য 3:1। রঙের টুকরোগুলো নিজে var() দিয়ে রাঙানো, তাই আপনি যে স্কিমে পড়ছেন সেটিই তারা অনুসরণ করে, আর গাঢ় মোডে ছাপা মানের সঙ্গে মিলবে না।</p>
 
-<h3 class="ds-sub">পৃষ্ঠতল আর রেখা</h3>
+<h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>পৃষ্ঠতল আর রেখা</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e0e0e0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#767676</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f4f4f4</span></span></li></ul>
 
-<h3 class="ds-sub">লেখা</h3>
+<h3 class="ds-sub" id="tokens-text" data-ds-anchor>লেখা</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#111111</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#636363</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#4a4a4a</span></span></li></ul>
 
-<h3 class="ds-sub">উজ্জ্বল রং</h3>
+<h3 class="ds-sub" id="tokens-accent" data-ds-anchor>উজ্জ্বল রং</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#111111</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#ededed</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#000000</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">অবস্থার টোন</h3>
+<h3 class="ds-sub" id="tokens-status-tones" data-ds-anchor>অবস্থার টোন</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#f0e3e3</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#7a2c2c</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#eaeaea</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#3f3f3f</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#e4ebe6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#2e5b3e</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#efeadd</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#6a5320</span></span></li></ul>
 
-<h3 class="ds-sub">গভীরতা</h3>
+<h3 class="ds-sub" id="tokens-depth" data-ds-anchor>গভীরতা</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(0, 0, 0, 0.4)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 1px light-dark(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.4))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 1px light-dark(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.3))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 1px 3px light-dark(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.5))</span></span></li></ul>
 
-<h3 class="ds-sub">কোণের ব্যাসার্ধ</h3>
+<h3 class="ds-sub" id="tokens-radius" data-ds-anchor>কোণের ব্যাসার্ধ</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">4px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">3px</span></span></li></ul>
 
-<h3 class="ds-sub">টাইপ ফ্যামিলি</h3>
+<h3 class="ds-sub" id="tokens-type-family" data-ds-anchor>টাইপ ফ্যামিলি</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">system-ui, -apple-system, &#34;Segoe UI&#34;, Roboto, &#34;Helvetica Neue&#34;, Arial, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">টাইপ স্কেল</h3>
+
+<h3 class="ds-sub" id="tokens-type-scale" data-ds-anchor>টাইপ স্কেল</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">ফাঁক</h3>
+<h3 class="ds-sub" id="tokens-spacing" data-ds-anchor>ফাঁক</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
@@ -114,12 +152,12 @@
 <p class="ds-lead">ui যত টেমপ্লেট পার্শিয়াল দেয়, সবগুলোই এখানে — বাস্তব পর্দা যে অবস্থাগুলোতে সেগুলোকে রাখে সেই অবস্থায়। প্রতিটি ঠিক একটি ডেটা মান নেয়, যা dict দিয়ে সেখানেই বানানো। ফর্ম বসে প্যাডিংযুক্ত rst-box-এ আর সারি বসে rst-list-এ, কারণ এই পার্শিয়ালগুলো তা-ই ধরে নেয় — নিচে ক্লাস ইডিয়ম অংশের দুটি নিয়ম দেখুন। একটি ব্যাপারে গ্যালারির কিছু করার নেই: page-header আর error-page দুটোরই নিজস্ব h1 আছে, তাই এই পাতায় কয়েকটি h1 রয়েছে, যেখানে বাস্তব পর্দায় ঠিক একটিই থাকে।</p>
 <p class="ds-note">নমুনার বিষয়বস্তু প্রতিটি পাতায় ইংরেজিতেই থাকে: এই নমুনাগুলোর নাম, রুট আর লেবেল কেবল বদলি, আর সেগুলো অনুবাদ করলে মনে হবে ফ্রেমওয়ার্ক ওই শব্দগুলোই দেয়। শেল আর মোডালের ডেমো ঠিক উল্টো — সেগুলো সত্যিকারের অ্যাপ্লিকেশন হওয়ার ভান করে, তাই তাদের কাঠামো আপনার বেছে নেওয়া ভাষাতেই কথা বলে।</p>
 
-<section class="ds-family">
+<section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>তালিকার পর্দা</h3>
 <p class="ds-lead">যে পর্দায় বেশির ভাগ অ্যাপ বেশির ভাগ সময় কাটায়: একটি শিরোনাম পট্টি, একটি টুলবার, সারির একটি সারিবদ্ধ ধারা, আর বাকিগুলোর ভিতর দিয়ে যাওয়ার উপায়।</p>
 
 <!-- partial: page-header -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
 <p class="ds-lead">পর্দার শিরোনাম পট্টি: একটি h1, একটি ঐচ্ছিক উপশিরোনাম, আর বড়জোর একটি প্রধান কাজ।</p>
 
@@ -149,7 +187,7 @@
 </article>
 
 <!-- partial: list-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
 <p class="ds-lead">তালিকা কার্ডের উপরের টুলবার: খোঁজার ফর্ম, আর তার পাশে ফিল্টারের জন্য জায়গা।</p>
 
@@ -178,7 +216,7 @@
 </article>
 
 <!-- partial: list-bar-search -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
 <p class="ds-lead">একা খোঁজার ফর্ম, এমন তালিকার জন্য যেটি কেবল খোঁজে। সাধারণ একটি method=&#34;get&#34; ফর্ম।</p>
 
@@ -207,7 +245,7 @@
 </article>
 
 <!-- partial: list-search-submit -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-search-submit" data-ds-anchor>
 <h4 class="rst-mono">list-search-submit</h4>
 <p class="ds-lead">খোঁজার ফর্মের আসল সাবমিট বোতাম: চোখের আড়ালে, কিন্তু Tab ক্রমে আছে, আর কীবোর্ড ফোকাস পেলেই সামনে আসে।</p>
 
@@ -221,7 +259,7 @@
 </article>
 
 <!-- partial: list-row-action -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
 <p class="ds-lead">তালিকার একটি সারি: রেকর্ডের নাম মূল লিঙ্ক হিসেবে, একটি মেটা লাইন, আর বড়জোর একটি গৌণ কাজ।</p>
 
@@ -248,7 +286,7 @@
 </article>
 
 <!-- partial: seg-tabs -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
 <p class="ds-lead">সার্ভারে তৈরি লিঙ্ক দিয়ে গড়া একটি খণ্ডিত নিয়ন্ত্রণ। বর্তমান ট্যাব মানে কেবল একটি লিঙ্কে aria-current, এর বেশি কিছু নয়।</p>
 
@@ -262,7 +300,7 @@
 </article>
 
 <!-- partial: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">JavaScript ছাড়াই একটি ডিসক্লোজার: একটি summary বোতাম, তার নিচে সাধারণ লিঙ্কের প্যানেল।</p>
 
@@ -283,7 +321,7 @@
 </article>
 
 <!-- partial: bulk-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-bulk-bar" data-ds-anchor>
 <h4 class="rst-mono">bulk-bar</h4>
 <p class="ds-lead">নির্বাচন মোডের উপরের পট্টি, যা তালিকা বারের জায়গা নেয়: সংখ্যা, নির্বাচন বাড়ানোর একটি লিঙ্ক, আর কাজের মেনু।</p>
 
@@ -297,7 +335,7 @@
 </article>
 
 <!-- partial: pagination -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-pagination" data-ds-anchor>
 <h4 class="rst-mono">pagination</h4>
 <p class="ds-lead">সাধারণ লিঙ্কের একটি নম্বরযুক্ত সারি, যাতে JavaScript বন্ধ থাকলেও পাতা বদল কাজ করে।</p>
 
@@ -319,7 +357,7 @@
 </article>
 
 <!-- partial: empty-state -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
 <p class="ds-lead">ফাঁকা অবস্থার কার্ড। ফাঁকা অবস্থা শেখায়: এখানে কী থাকত আর কীভাবে একটি বানানো যায়, সেটি বলে দেয়।</p>
 
@@ -349,12 +387,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-display" data-ds-anchor>
 <h3>উপস্থাপন</h3>
 <p class="ds-lead">যে ছোট ছোট শব্দভান্ডার দিয়ে একটি পর্দা গড়া হয়: অবস্থা, পরিচয়, অগ্রগতি, আর সতর্কবার্তার একমাত্র রূপ।</p>
 
 <!-- partial: status-pill -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
 <p class="ds-lead">রেকর্ডের অবস্থা, রঙিন একটি পিল হিসেবে। অবস্থা কখনও কেবল রঙে বোঝানো হয় না — লেবেলটি সবসময় দৃশ্যমান লেখা।</p>
 
@@ -392,7 +430,7 @@
 </article>
 
 <!-- partial: badge -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-badge" data-ds-anchor>
 <h4 class="rst-mono">badge</h4>
 <p class="ds-lead">বড় হরফের সীমানাযুক্ত ছোট একটি চিপ, স্থির চিহ্নের জন্য। এটি status-pill থেকে আলাদা, যা রেকর্ডের অবস্থা বোঝায়।</p>
 
@@ -430,7 +468,7 @@
 </article>
 
 <!-- partial: meter -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
 <p class="ds-lead">ধারণক্ষমতার একটি বার, সঙ্গে তার সংখ্যা। ভগ্নাংশটি সবসময় লেখা থাকে — কেবল বার দিয়ে সংখ্যা বোঝানো হয় না।</p>
 
@@ -468,7 +506,7 @@
 </article>
 
 <!-- partial: person -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
 <p class="ds-lead">আদ্যক্ষরের অবতার, নাম আর ইমেল: যেসব রেকর্ড আসলে মানুষ, তাদের পরিচয়ের ঘর।</p>
 
@@ -494,7 +532,7 @@
 </article>
 
 <!-- partial: callout -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-callout" data-ds-anchor>
 <h4 class="rst-mono">callout</h4>
 <p class="ds-lead">সতর্কবার্তার একমাত্র শব্দভান্ডার: রঙিন পট্টি, টোনের আইকন, ঐচ্ছিক মোটা শিরোনাম, আর একটি অনুচ্ছেদ।</p>
 
@@ -538,7 +576,7 @@
 </article>
 
 <!-- partial: detail-list -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
 <p class="ds-lead">কোনো রেকর্ডের লেবেলযুক্ত তথ্য, সংজ্ঞা-তালিকা হিসেবে — বিস্তারিত পর্দার মূল অংশ। Mono দিয়ে যন্ত্র-ধাঁচের মান চিহ্নিত হয়।</p>
 
@@ -561,7 +599,7 @@
 </article>
 
 <!-- partial: notice -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-notice" data-ds-anchor>
 <h4 class="rst-mono">notice</h4>
 <p class="ds-lead">রিডাইরেক্টের পরে এক লাইনের নিশ্চিতকরণ। এটি dict নয়, সাধারণ একটি স্ট্রিং নেয়, আর ফাঁকা হলে কিছুই দেখায় না।</p>
 
@@ -575,7 +613,7 @@
 </article>
 
 <!-- partial: form-error -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-error" data-ds-anchor>
 <h4 class="rst-mono">form-error</h4>
 <p class="ds-lead">ফর্মের ত্রুটির সারসংক্ষেপ লাইন, role=&#34;alert&#34;। এটি সাধারণ একটি স্ট্রিং নেয়; ত্রুটি না থাকলে কিছুই দেখায় না।</p>
 
@@ -589,7 +627,7 @@
 </article>
 
 <!-- partial: job-status -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-job-status" data-ds-anchor>
 <h4 class="rst-mono">job-status</h4>
 <p class="ds-lead">পটভূমির কাজের পোল-করা অংশ। কাজ চলাকালীনই কেবল data-poll বৈশিষ্ট্যটি বসে — সেটি বাদ দেওয়াই পোলিং থামানোর উপায়।</p>
 
@@ -628,12 +666,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-form" data-ds-anchor>
 <h3>ফর্ম</h3>
 <p class="ds-lead">প্রতিটি কন্ট্রোল, বাস্তব ফর্ম যে অবস্থাগুলোতে সেগুলোকে রাখে সেই অবস্থায়। প্রতিটি বসে প্যাডিংযুক্ত rst-box-এ, কারণ এই পার্শিয়ালগুলো সেটাই ধরে নেয়।</p>
 
 <!-- partial: field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
 <p class="ds-lead">লেবেল, ইনপুট, ঐচ্ছিক ইঙ্গিত, সহায়তা আর ত্রুটি — সাধারণ লেখা-ধাঁচের কন্ট্রোল, স্পষ্ট একটি ID সহ।</p>
 
@@ -691,7 +729,7 @@
 </article>
 
 <!-- partial: field-text -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
 <p class="ds-lead">লেবেলযুক্ত একটি টেক্সট ইনপুট, যার id গুলো Name থেকে তৈরি। আবশ্যিকতার তারাটি aria-hidden — আসল প্রোগ্রাম্যাটিক সংকেত হলো ইনপুটের required বৈশিষ্ট্য।</p>
 
@@ -737,7 +775,7 @@
 </article>
 
 <!-- partial: field-textarea -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-textarea" data-ds-anchor>
 <h4 class="rst-mono">field-textarea</h4>
 <p class="ds-lead">একটি textarea-র চারপাশে field-text-এর মোড়ক।</p>
 
@@ -783,7 +821,7 @@
 </article>
 
 <!-- partial: field-select -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-select" data-ds-anchor>
 <h4 class="rst-mono">field-select</h4>
 <p class="ds-lead">নেটিভ select-এর চারপাশে field-এর মোড়ক। দশটির বেশি অপশন হলে select, select.js-এর ছেঁকে নেওয়া কম্বোবক্স চালু করে; তবু ফর্ম যা পাঠায় তা ওই নেটিভ select-ই।</p>
 
@@ -838,7 +876,7 @@
 </article>
 
 <!-- partial: field-check -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-check" data-ds-anchor>
 <h4 class="rst-mono">field-check</h4>
 <p class="ds-lead">টগল করার একমাত্র উপায়: সত্যিকারের একটি চেকবক্স, সুইচের চেহারায়, কীবোর্ড আর স্ক্রিন রিডার অক্ষত।</p>
 
@@ -864,7 +902,7 @@
 </article>
 
 <!-- partial: choice-field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-choice-field" data-ds-anchor>
 <h4 class="rst-mono">choice-field</h4>
 <p class="ds-lead">অপশন কার্ড — রেডিও বা চেকবক্স দলের পছন্দের রূপ। Title ছোট থাকে; ব্যাখ্যা করে Desc।</p>
 
@@ -884,7 +922,7 @@
 </article>
 
 <!-- partial: field-date -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-date" data-ds-anchor>
 <h4 class="rst-mono">field-date</h4>
 <p class="ds-lead">একটি নেটিভ তারিখ ইনপুট, সঙ্গে datetime.js যে স্বাভাবিক-ভাষার কম্বোবক্স চালু করে — যদি না ডাকার সময় Plain দেওয়া হয়। এতে &#34;আগামীকাল&#34; লিখে দেখুন।</p>
 
@@ -930,7 +968,7 @@
 </article>
 
 <!-- partial: field-time -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-time" data-ds-anchor>
 <h4 class="rst-mono">field-time</h4>
 <p class="ds-lead">একই মোড়ক, এবার নেটিভ সময় ইনপুটের চারপাশে। এই উন্নতিটি ক্যালেন্ডার নয়, ঘড়ি পড়ে।</p>
 
@@ -976,7 +1014,7 @@
 </article>
 
 <!-- partial: field-datetime -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-datetime" data-ds-anchor>
 <h4 class="rst-mono">field-datetime</h4>
 <p class="ds-lead">একটিই ইনপুটে তারিখ আর সময়, একটিই মান।</p>
 
@@ -1022,7 +1060,7 @@
 </article>
 
 <!-- partial: field-daterange -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
 <p class="ds-lead">শুরু আর শেষ, একটিই লেবেলযুক্ত দল হিসেবে। দুই অংশের Name আলাদা হতে হবে — প্রত্যেকে নিজের Name থেকেই নিজের id বানায়।</p>
 
@@ -1067,7 +1105,7 @@
 </article>
 
 <!-- partial: form-foot -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-foot" data-ds-anchor>
 <h4 class="rst-mono">form-foot</h4>
 <p class="ds-lead">ফর্মের শেষ সারি: একটি প্রধান সাবমিট আর ঐচ্ছিক একটি বাতিল লিঙ্ক। বাতিল একটি লিঙ্ক, কারণ ফর্ম ছেড়ে যাওয়া মানে অন্য পাতায় যাওয়া।</p>
 
@@ -1092,7 +1130,7 @@
 </article>
 
 <!-- partial: confirm-form -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-confirm-form" data-ds-anchor>
 <h4 class="rst-mono">confirm-form</h4>
 <p class="ds-lead">নিশ্চিতকরণ পাতার কাজের সারি। ধ্বংসাত্মক কাজের জন্য ডায়ালগ নয়, নিজস্ব রুট থাকে, তাই স্ক্রিপ্ট লেখার কিছুই থাকে না।</p>
 
@@ -1113,12 +1151,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-route" data-ds-anchor>
 <h3>রুট</h3>
 <p class="ds-lead">যে অংশগুলো নিজেরাই একটি গোটা রেসপন্স, কোনো রেসপন্সের টুকরো নয়।</p>
 
 <!-- partial: error-page -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
 <p class="ds-lead">একটি ত্রুটি-রেসপন্সের গোটা অংশ: অবস্থা, একটি সৎ বাক্য, ফেরার পথ, আর — 500 হলে — সেই রেফারেন্স যা পরিচালক grep করতে পারেন।</p>
 
@@ -1193,7 +1231,7 @@
 </article>
 
 <!-- partial: back-nav -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-back-nav" data-ds-anchor>
 <h4 class="rst-mono">back-nav</h4>
 <p class="ds-lead">এক ধাপ উপরে ফেরার লিঙ্ক, বিস্তারিত বা সম্পাদনার পর্দার উপরে।</p>
 
@@ -1207,7 +1245,7 @@
 </article>
 
 <!-- partial: locale-menu -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-locale-menu" data-ds-anchor>
 <h4 class="rst-mono">locale-menu</h4>
 <p class="ds-lead">ভাষা বদলের সুইচ: একটি details মেনু, যাতে /_locale-এ পাঠানো এক-ফিল্ডের POST ফর্ম থাকে, যাতে বাছাইটি locale কুকিতে গিয়ে বসে আর পাঠক একই পথেই থাকেন।</p>
 
@@ -1243,7 +1281,7 @@
 <p class="ds-lead">যে আকারগুলো কোনো পার্শিয়াল হতে পারে না, কারণ তারা এমন ভিতরটাকে ঘিরে থাকে যা কেবল ব্যবহারকারীই জানে: বিভাগের কার্ড, ডেটা গ্রিড, ডিসক্লোজার মেনু, শেলের নিজস্ব কাঠামো। ক্লাস দেয় tokens.css, আর মার্কআপ লেখে অ্যাপ। নিচে যা আছে তা হুবহু সেই নমুনা যা ui.Styleguide ফেরত দেয়, অর্থাৎ যে নমুনা ui-এর পরীক্ষাগুলো tokens.css-এর সঙ্গে মিলিয়ে দেখে — এখান থেকেই কপি করুন।</p>
 
 <!-- idiom: box -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
 <h4 class="rst-mono">box</h4>
 <p class="ds-lead">প্যাডিংযুক্ত বিভাগের কার্ড, আর যে শিরোনামটি তার বাইরে বসে।</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>কোন কার্ড কোনটি</strong><p>rst-list আর rst-card-এ ইচ্ছে করেই কোনো প্যাডিং নেই: এরা সারির একটি ধারা ধরে রাখে, আর প্রতিটি সারি নিজেই নিজের প্যাডিং দেয়। এদের ভিতরে সরাসরি কোনো ফর্ম, অনুচ্ছেদ, লিঙ্কের সারি বা সারি নয় এমন কিছু রাখলে তা সীমানার গায়ে লেগে বসবে — কিনারা ছুঁয়ে থাকা লেখাই সেই লক্ষণ। যেকোনো বিষয়বস্তুর জন্য প্যাডিংযুক্ত কার্ডটি rst-box, আর তার শিরোনাম আসে আগে, সহোদর rst-box-head হিসেবে।</p></div></div>
@@ -1252,7 +1290,7 @@
 </article>
 
 <!-- idiom: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">হেডারের বাড়তি মেনু আর তালিকা বারের ফিল্টারের পিছনে থাকা details/summary মেনু, সঙ্গে প্রয়োগ করা ফিল্টার একটি সরানো-যায় এমন চিপ হিসেবে।</p>
 
@@ -1267,7 +1305,7 @@
 </article>
 
 <!-- idiom: form-layout -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
 <h4 class="rst-mono">form-layout</h4>
 <p class="ds-lead">যে ক্লাসগুলো ফর্মকে তার ছন্দ আর সংরক্ষণের পট্টি দেয়। কোনো পার্শিয়াল এগুলো বের করে না — এরা ব্যবহারকারীর নিজের সাজানো ফিল্ডের সারিকে ঘিরে রাখে।</p>
 
@@ -1301,7 +1339,7 @@
 </article>
 
 <!-- idiom: help -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
 <h4 class="rst-mono">help</h4>
 <p class="ds-lead">সীমানাযুক্ত একটি প্রশ্নচিহ্ন, যা সহায়তা নিবন্ধে নিয়ে যায়। এর CSS টুলটিপ কেবল সাজসজ্জা; লিঙ্কটি নিজের পূর্ণ বাক্যের লেবেল বহন করে।</p>
 
@@ -1309,7 +1347,7 @@
 </article>
 
 <!-- idiom: list-grid -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h4 class="rst-mono">list-grid</h4>
 <p class="ds-lead">ডেটা টেবিলের আসল শব্দভান্ডার: কার্ড একবারেই তার কলাম ঠিক করে, সারিরা কেবল ঘর বেছে নেয়।</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>পর্দাগুলো উপর-নিচে সাজে</strong><p>একটি পর্দা মানে একটি কলাম: page-header, তারপর section-header &#43; কার্ড, তারপর পরের section-header &#43; কার্ড, পড়ার ক্রমে। শিরোনাম, অনুচ্ছেদ আর বোতামকে একটি flex সারিতে পাশাপাশি বসাবেন না। আনুভূমিক বিন্যাস কেবল সেই ইডিয়মগুলোর জন্য যারা নিজেরাই সেটি আনে: rst-box-head, rst-field-row, rst-lbar, rst-lrow-এর ঘর, rst-seg-tabs।</p></div></div>
@@ -1328,7 +1366,7 @@
 </article>
 
 <!-- idiom: modal -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">মোডালের নিজস্ব একটি URL থাকে, এটি ক্লায়েন্টের অবস্থা নয়: নিচের পাতাটি inert চিহ্নিত, তার উপরে প্যানেল, আর বন্ধ করার জন্য একটি সাধারণ লিঙ্ক।</p>
 
@@ -1354,7 +1392,7 @@
 </article>
 
 <!-- idiom: selbox -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
 <h4 class="rst-mono">selbox</h4>
 <p class="ds-lead">নির্বাচন মোডে তালিকার সারি যে চেকবক্সটি পরে। এর লেবেল সারিটির পরিচয় আবার বলে দেয়।</p>
 
@@ -1362,7 +1400,7 @@
 </article>
 
 <!-- idiom: shell-sidebar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
 <h4 class="rst-mono">shell-sidebar</h4>
 <p class="ds-lead">sidebar শেলের নিজস্ব কাঠামো, যা 800px-এর নিচে গুটিয়ে details ডিসক্লোজারে পরিণত হয়।</p>
 
@@ -1379,7 +1417,7 @@
 </article>
 
 <!-- idiom: shell-topbar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h4 class="rst-mono">shell-topbar</h4>
 <p class="ds-lead">topbar শেলের নিজস্ব কাঠামো, মার্কআপ হিসেবে। Layout একে গোটা টেমপ্লেট হিসেবে দেয় — এটিই তার ভিতরের অংশ।</p>
 
@@ -1398,7 +1436,7 @@
 </article>
 
 <!-- idiom: tblock -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
 <h4 class="rst-mono">tblock</h4>
 <p class="ds-lead">সীমানাযুক্ত একটি কার্ড, যার ভিতরের অংশ :has() দিয়ে কেবল সুইচ চালু থাকলেই দেখা যায়। সুইচই আসল অবস্থা; দেখানোটা কেবল সুবিধা।</p>
 
@@ -1420,21 +1458,21 @@
 <div class="ds-head"><h2 id="shells">শেল</h2></div>
 <p class="ds-lead">পাতার কাঠামোটাই। rastrillo new এদের একটিকে templates/layout.html হিসেবে লেখে; পাতা তার বিষয়বস্তুর ফাঁকটি ভরে আর প্রয়োজনমতো কাঠামোর ব্লকগুলো বদলে নেয়। নিচের প্রতিটি ডেমো নিজের URL-এ একটি গোটা পাতা — একটি খুলে পূর্ণ প্রস্থে দেখুন, যেখানে sidebar-এর পট্টি আর topbar-এর ফুটার সত্যিই জায়গা পায়।</p>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-column" data-ds-anchor>
 <h3>column</h3>
 <p class="ds-lead">সদ্য বানানো প্রতিটি অ্যাপ যেখান থেকে শুরু করে, সেই সাদামাটা কেন্দ্রস্থ পাতা: একটি স্কিপ লিঙ্ক, একটি শিরোনাম, আর বিষয়বস্তুর কলাম।</p>
 <iframe class="ds-frame" src="/design-system/plain/bn/shells/column.html" title="column শেল, গোটা পাতা জুড়ে দেখানো" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/plain/bn/shells/column.html">column শেল খুলুন</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
 <h3>topbar</h3>
 <p class="ds-lead">উপরের সারিতে ব্র্যান্ড, নেভিগেশন আর অ্যাকাউন্ট মেনু, আর পাতার নিচে ফুটার।</p>
 <iframe class="ds-frame" src="/design-system/plain/bn/shells/topbar.html" title="topbar শেল, গোটা পাতা জুড়ে দেখানো" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/plain/bn/shells/topbar.html">topbar শেল খুলুন</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
 <h3>sidebar</h3>
 <p class="ds-lead">পাতার পাশে একটি নেভিগেশন বার, যা 800px-এর নিচে গুটিয়ে details ডিসক্লোজারে পরিণত হয়। কোনো JavaScript নেই।</p>
 <iframe class="ds-frame" src="/design-system/plain/bn/shells/sidebar.html" title="sidebar শেল, গোটা পাতা জুড়ে দেখানো" loading="lazy"></iframe>
@@ -1442,6 +1480,8 @@
 </section>
 
 
+</div>
 </main>
+</div>
 </body>
 </html>

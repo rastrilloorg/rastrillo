@@ -45,6 +45,24 @@
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 </style>
 <script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
@@ -52,7 +70,26 @@
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
+<div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">本文へ移動</a>
+<details class="rst-shell__chrome"><summary>メニュー</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">このページを絞り込む</label>
+    <input id="ds-filter" type="search" placeholder="このページを絞り込む" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>該当するものはありません</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="このページの内容">
+    <details open><summary>トークン</summary><a href="#tokens-surfaces-and-lines">面と線</a><a href="#tokens-text">文字</a><a href="#tokens-accent">アクセント</a><a href="#tokens-status-tones">状態のトーン</a><a href="#tokens-depth">奥行き</a><a href="#tokens-radius">角の丸み</a><a href="#tokens-type-family">書体</a><a href="#tokens-type-scale">文字サイズの段階</a><a href="#tokens-spacing">余白</a></details>
+    <details open><summary>部品</summary><a href="#family-list-screen" class="ds-nav__group">一覧画面</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">表示</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">フォーム</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">ルート</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open><summary>クラスの語彙</summary><a href="#idiom-box" class="rst-mono">box</a><a href="#idiom-dropdown" class="rst-mono">dropdown</a><a href="#idiom-form-layout" class="rst-mono">form-layout</a><a href="#idiom-help" class="rst-mono">help</a><a href="#idiom-list-grid" class="rst-mono">list-grid</a><a href="#idiom-modal" class="rst-mono">modal</a><a href="#idiom-selbox" class="rst-mono">selbox</a><a href="#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open><summary>シェル</summary><a href="#shell-column" class="rst-mono">column</a><a href="#shell-topbar" class="rst-mono">topbar</a><a href="#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details open><summary>デモ</summary><a href="/design-system/signal/ja/shells/column.html">column シェル</a><a href="/design-system/signal/ja/shells/topbar.html">topbar シェル</a><a href="/design-system/signal/ja/shells/sidebar.html">sidebar シェル</a><a href="/design-system/signal/ja/modal.html">モーダルのルート</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
 
 <header class="ds-chrome">
   <nav class="rst-seg-tabs" aria-label="テーマ"><a href="/design-system/day/ja/index.html">day</a><a href="/design-system/plain/ja/index.html">plain</a><a href="/design-system/signal/ja/index.html" aria-current="page">signal</a></nav>
@@ -63,7 +100,7 @@
   </details>
 </header>
 
-<main class="rst-page" id="main">
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
@@ -82,31 +119,32 @@
 <p class="ds-lead">各コンポーネントが自分を描くのに使うカスタムプロパティです。色と書体は テーマ（themes/signal.css）から、文字サイズの段階と余白の段階は構造として tokens.css から来ます。後者はどのテーマでも同じです。</p>
 <p class="ds-swatch-note">ここに印字してあるのはライト側の値です。ダーク側は同じファイルに手で書かれていて、反転で作ることはありません。ui/contrast_test.go が両方の組の文書化された対をすべて WCAG 2.2 AA の下限 — 文字は 4.5:1、コントロールの境界線は 3:1 — に照らして守っています。色チップ自体は var() で塗られるので、あなたがいま読んでいる配色に従い、ダークモードでは印字された値と一致しません。</p>
 
-<h3 class="ds-sub">面と線</h3>
+<h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>面と線</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
 
-<h3 class="ds-sub">文字</h3>
+<h3 class="ds-sub" id="tokens-text" data-ds-anchor>文字</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#0c0e12</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#5b6270</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#454b57</span></span></li></ul>
 
-<h3 class="ds-sub">アクセント</h3>
+<h3 class="ds-sub" id="tokens-accent" data-ds-anchor>アクセント</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#1a56ff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#e9eeff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#0f3fd6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">状態のトーン</h3>
+<h3 class="ds-sub" id="tokens-status-tones" data-ds-anchor>状態のトーン</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#fbdee0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#a8121f</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#e6e8ee</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#3b414d</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#d6efe6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#08624a</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#f8e5c2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#7a4708</span></span></li></ul>
 
-<h3 class="ds-sub">奥行き</h3>
+<h3 class="ds-sub" id="tokens-depth" data-ds-anchor>奥行き</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(9, 11, 16, 0.55)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.45), rgba(0, 0, 0, 0.6))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.2), rgba(0, 0, 0, 0.5))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 4px 10px light-dark(rgba(12, 14, 18, 0.22), rgba(0, 0, 0, 0.62))</span></span></li></ul>
 
-<h3 class="ds-sub">角の丸み</h3>
+<h3 class="ds-sub" id="tokens-radius" data-ds-anchor>角の丸み</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">4px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">2px</span></span></li></ul>
 
-<h3 class="ds-sub">書体</h3>
+<h3 class="ds-sub" id="tokens-type-family" data-ds-anchor>書体</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">&#34;Helvetica Neue&#34;, Helvetica, &#34;Segoe UI Variable Text&#34;, &#34;Segoe UI&#34;, Roboto, Arial, ui-sans-serif, system-ui, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">文字サイズの段階</h3>
+
+<h3 class="ds-sub" id="tokens-type-scale" data-ds-anchor>文字サイズの段階</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">余白</h3>
+<h3 class="ds-sub" id="tokens-spacing" data-ds-anchor>余白</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
@@ -114,12 +152,12 @@
 <p class="ds-lead">ui が備えるすべてのテンプレート部品を、実際の画面が取らせる状態で並べています。どれもデータ値をちょうどひとつだけ受け取り、その場で dict を使って組み立てています。フォームは余白のある rst-box に、行は rst-list に入ります。部品がそう前提しているからです（下の「クラスの語彙」にある二つの規則を参照）。ギャラリーではどうにもならないことがひとつ。page-header と error-page はそれぞれ h1 を持つので、このページには h1 がいくつもあります。実際の画面ではちょうどひとつです。</p>
 <p class="ds-note">見本の中身はどのページでも英語のままです。ここに出てくる名前、経路、ラベルはどれも仮のもので、訳してしまうとフレームワークがその言葉を備えているかのように読めます。シェルとモーダルのデモは逆で、実在のアプリケーションのふりをしているので、その枠はあなたが選んだ言語で話します。</p>
 
-<section class="ds-family">
+<section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>一覧画面</h3>
 <p class="ds-lead">多くのアプリがいちばん長くとどまる画面です。タイトルバー、ツールバー、並んだ行、そして残りをたどる手段。</p>
 
 <!-- partial: page-header -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
 <p class="ds-lead">画面のタイトルバーです。h1、任意のサブ見出し、そして主要な操作はあっても一つまで。</p>
 
@@ -149,7 +187,7 @@
 </article>
 
 <!-- partial: list-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
 <p class="ds-lead">一覧カードの上端に載るツールバーです。検索フォームと、その隣に絞り込みのための場所。</p>
 
@@ -178,7 +216,7 @@
 </article>
 
 <!-- partial: list-bar-search -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
 <p class="ds-lead">検索フォーム単体で、検索しかしない一覧のためのものです。ごく普通の method=&#34;get&#34; のフォームです。</p>
 
@@ -207,7 +245,7 @@
 </article>
 
 <!-- partial: list-search-submit -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-search-submit" data-ds-anchor>
 <h4 class="rst-mono">list-search-submit</h4>
 <p class="ds-lead">検索フォームの本物の送信ボタンです。目には見えませんがタブ順には入っていて、キーボードでフォーカスすると姿を現します。</p>
 
@@ -221,7 +259,7 @@
 </article>
 
 <!-- partial: list-row-action -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
 <p class="ds-lead">一覧の一行です。レコード名が主リンク、補足の一行、そして副次的な操作はあっても一つまで。</p>
 
@@ -248,7 +286,7 @@
 </article>
 
 <!-- partial: seg-tabs -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
 <p class="ds-lead">サーバーで描画したリンクによるセグメント切り替えです。現在のタブとは、あるリンクに付いた aria-current のことでしかありません。</p>
 
@@ -262,7 +300,7 @@
 </article>
 
 <!-- partial: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">JavaScript を一行も使わない開閉です。summary のボタンの下に、ただのリンクを並べたパネルがあります。</p>
 
@@ -283,7 +321,7 @@
 </article>
 
 <!-- partial: bulk-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-bulk-bar" data-ds-anchor>
 <h4 class="rst-mono">bulk-bar</h4>
 <p class="ds-lead">選択モードのヘッダー帯で、一覧バーと入れ替わります。件数、選択を広げるリンク、そして操作メニュー。</p>
 
@@ -297,7 +335,7 @@
 </article>
 
 <!-- partial: pagination -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-pagination" data-ds-anchor>
 <h4 class="rst-mono">pagination</h4>
 <p class="ds-lead">番号付きの普通のリンクを並べた帯です。JavaScript を切ってもページ送りは動きます。</p>
 
@@ -319,7 +357,7 @@
 </article>
 
 <!-- partial: empty-state -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
 <p class="ds-lead">空状態のカードです。空状態は教えるためのもので、ここに何があるはずかと、どう作るかを伝えます。</p>
 
@@ -349,12 +387,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-display" data-ds-anchor>
 <h3>表示</h3>
 <p class="ds-lead">画面を組み立てる小さな語彙です。状態、人物、進捗、そしてただひとつのお知らせの形。</p>
 
 <!-- partial: status-pill -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
 <p class="ds-lead">レコードの状態を色付きのピルで示します。状態を色だけで表すことはなく、ラベルは常に読める文字です。</p>
 
@@ -392,7 +430,7 @@
 </article>
 
 <!-- partial: badge -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-badge" data-ds-anchor>
 <h4 class="rst-mono">badge</h4>
 <p class="ds-lead">小さな固定の目印に使う、大文字の枠付きチップです。レコードの状態を示す status-pill とは別物です。</p>
 
@@ -430,7 +468,7 @@
 </article>
 
 <!-- partial: meter -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
 <p class="ds-lead">数値付きの容量バーです。割合は必ずテキストで示します。バーだけで数値を表すことはありません。</p>
 
@@ -468,7 +506,7 @@
 </article>
 
 <!-- partial: person -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
 <p class="ds-lead">イニシャルのアバター、名前、メールアドレス。レコードが人であるときの、その人を示すセルです。</p>
 
@@ -494,7 +532,7 @@
 </article>
 
 <!-- partial: callout -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-callout" data-ds-anchor>
 <h4 class="rst-mono">callout</h4>
 <p class="ds-lead">お知らせの語彙はこれひとつです。色付きの帯、トーンのアイコン、任意の太字見出し、本文ひと段落。</p>
 
@@ -538,7 +576,7 @@
 </article>
 
 <!-- partial: detail-list -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
 <p class="ds-lead">レコードのラベル付きの事実を定義リストにしたもので、詳細画面の本体です。Mono は機械寄りの値に付けます。</p>
 
@@ -561,7 +599,7 @@
 </article>
 
 <!-- partial: notice -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-notice" data-ds-anchor>
 <h4 class="rst-mono">notice</h4>
 <p class="ds-lead">リダイレクトのあとに出る一行の確認です。dict ではなくただの文字列を受け取り、空なら何も描画しません。</p>
 
@@ -575,7 +613,7 @@
 </article>
 
 <!-- partial: form-error -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-error" data-ds-anchor>
 <h4 class="rst-mono">form-error</h4>
 <p class="ds-lead">フォームのエラー要約行です（role=&#34;alert&#34;）。ただの文字列を受け取り、エラーがなければ何も描画しません。</p>
 
@@ -589,7 +627,7 @@
 </article>
 
 <!-- partial: job-status -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-job-status" data-ds-anchor>
 <h4 class="rst-mono">job-status</h4>
 <p class="ds-lead">バックグラウンド処理のポーリング用フラグメントです。data-poll 属性は処理の実行中だけ出力されます。付けないことがポーリングの止め方です。</p>
 
@@ -628,12 +666,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-form" data-ds-anchor>
 <h3>フォーム</h3>
 <p class="ds-lead">実際のフォームが取らせる状態で、すべてのコントロールを並べています。どれも余白のある rst-box の中に入っています。これらの部品がそう前提しているからです。</p>
 
 <!-- partial: field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
 <p class="ds-lead">ラベル、入力、任意のヒント、ヘルプ、エラー。ID を明示した、テキスト系の汎用コントロールです。</p>
 
@@ -691,7 +729,7 @@
 </article>
 
 <!-- partial: field-text -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
 <p class="ds-lead">ラベル付きのテキスト入力がひとつ、id は Name から作られます。必須を示すアスタリスクは aria-hidden で、プログラム上の合図は入力の required 属性のほうです。</p>
 
@@ -737,7 +775,7 @@
 </article>
 
 <!-- partial: field-textarea -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-textarea" data-ds-anchor>
 <h4 class="rst-mono">field-textarea</h4>
 <p class="ds-lead">textarea を field-text で包んだものです。</p>
 
@@ -783,7 +821,7 @@
 </article>
 
 <!-- partial: field-select -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-select" data-ds-anchor>
 <h4 class="rst-mono">field-select</h4>
 <p class="ds-lead">ネイティブの select を field で包んだものです。選択肢が十を超えると select は select.js の絞り込みコンボボックスを有効にしますが、フォームが送信するのは変わらずネイティブの select です。</p>
 
@@ -838,7 +876,7 @@
 </article>
 
 <!-- partial: field-check -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-check" data-ds-anchor>
 <h4 class="rst-mono">field-check</h4>
 <p class="ds-lead">切り替えの仕組みはこれひとつ。見た目をスイッチにした本物のチェックボックスで、キーボードもスクリーンリーダーもそのまま使えます。</p>
 
@@ -864,7 +902,7 @@
 </article>
 
 <!-- partial: choice-field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-choice-field" data-ds-anchor>
 <h4 class="rst-mono">choice-field</h4>
 <p class="ds-lead">選択肢カード。ラジオやチェックボックスの group として推奨される形です。Title は短く保ち、説明は Desc に任せます。</p>
 
@@ -884,7 +922,7 @@
 </article>
 
 <!-- partial: field-date -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-date" data-ds-anchor>
 <h4 class="rst-mono">field-date</h4>
 <p class="ds-lead">ネイティブの日付入力に、datetime.js が有効にする自然文コンボボックスを重ねたものです（呼び出し側が Plain を渡した場合を除く）。「明日」と入力してみてください。</p>
 
@@ -930,7 +968,7 @@
 </article>
 
 <!-- partial: field-time -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-time" data-ds-anchor>
 <h4 class="rst-mono">field-time</h4>
 <p class="ds-lead">同じ包みを、ネイティブの時刻入力に。こちらの拡張が読むのはカレンダーではなく時計です。</p>
 
@@ -976,7 +1014,7 @@
 </article>
 
 <!-- partial: field-datetime -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-datetime" data-ds-anchor>
 <h4 class="rst-mono">field-datetime</h4>
 <p class="ds-lead">ひとつの入力欄に日付と時刻を、ひとつの値として。</p>
 
@@ -1022,7 +1060,7 @@
 </article>
 
 <!-- partial: field-daterange -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
 <p class="ds-lead">開始と終了をひとつのラベル付きグループにしたものです。二つの側は別々の Name を持つ必要があります。それぞれ自分の Name から id を組み立てるからです。</p>
 
@@ -1067,7 +1105,7 @@
 </article>
 
 <!-- partial: form-foot -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-foot" data-ds-anchor>
 <h4 class="rst-mono">form-foot</h4>
 <p class="ds-lead">フォームを締めくくる行です。主となる送信ボタンひとつと、任意のキャンセルリンク。キャンセルがリンクなのは、フォームを離れることが画面移動だからです。</p>
 
@@ -1092,7 +1130,7 @@
 </article>
 
 <!-- partial: confirm-form -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-confirm-form" data-ds-anchor>
 <h4 class="rst-mono">confirm-form</h4>
 <p class="ds-lead">確認ページの操作行です。取り消せない操作にはダイアログではなく専用のルートがあるので、書くべきスクリプトがありません。</p>
 
@@ -1113,12 +1151,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-route" data-ds-anchor>
 <h3>ルート</h3>
 <p class="ds-lead">レスポンスの一部ではなく、それ自体がレスポンス全体になる部品です。</p>
 
 <!-- partial: error-page -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
 <p class="ds-lead">エラーレスポンスの本文まるごとです。ステータス、正直な一文、戻る道、そして 500 のときは運用担当者が grep できる参照番号。</p>
 
@@ -1193,7 +1231,7 @@
 </article>
 
 <!-- partial: back-nav -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-back-nav" data-ds-anchor>
 <h4 class="rst-mono">back-nav</h4>
 <p class="ds-lead">ひとつ上の階層に戻るリンクで、詳細画面や編集画面の上に置きます。</p>
 
@@ -1207,7 +1245,7 @@
 </article>
 
 <!-- partial: locale-menu -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-locale-menu" data-ds-anchor>
 <h4 class="rst-mono">locale-menu</h4>
 <p class="ds-lead">言語スイッチャーです。/_locale へ送る一項目だけの POST フォームを details メニューに並べたもので、選択はロケールの Cookie に入り、読者は同じパスにとどまります。</p>
 
@@ -1243,7 +1281,7 @@
 <p class="ds-lead">部品にはなれない形。呼び出し側にしか分からない中身を包むからです。セクションカード、データグリッド、開閉メニュー、シェル自身の枠。クラスは tokens.css が出し、マークアップはアプリが書きます。以下はすべて ui.Styleguide が返す見本そのもので、ui のテストが tokens.css と突き合わせている見本です。コピーはここから。</p>
 
 <!-- idiom: box -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
 <h4 class="rst-mono">box</h4>
 <p class="ds-lead">余白のあるセクションカードと、その外側に置く見出しです。</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>どのカードがどれか</strong><p>rst-list と rst-card に余白がないのは意図です。これらは行の連なりを収めるもので、余白は各行が自分で持ちます。フォームや段落、リンクの帯など、行でないものを直に入れると枠線にぴったり付いて描かれます。文字が縁に触れているのがその印です。任意の内容を入れる余白付きのカードは rst-box で、その見出しは直前に置く兄弟の rst-box-head です。</p></div></div>
@@ -1252,7 +1290,7 @@
 </article>
 
 <!-- idiom: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">ヘッダーのはみ出しメニューや一覧バーの絞り込みの正体である details/summary のメニューと、適用中の絞り込みを表す取り外せるチップです。</p>
 
@@ -1267,7 +1305,7 @@
 </article>
 
 <!-- idiom: form-layout -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
 <h4 class="rst-mono">form-layout</h4>
 <p class="ds-lead">フォームにリズムと保存バーを与えるクラスです。これらを出力する部品はありません。呼び出し側が組み立てたフィールドの連なりを包むものです。</p>
 
@@ -1301,7 +1339,7 @@
 </article>
 
 <!-- idiom: help -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
 <h4 class="rst-mono">help</h4>
 <p class="ds-lead">ヘルプ記事にリンクする、枠付きの疑問符です。CSS のツールチップは飾りで、リンク自身が文としてのラベルを持っています。</p>
 
@@ -1309,7 +1347,7 @@
 </article>
 
 <!-- idiom: list-grid -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h4 class="rst-mono">list-grid</h4>
 <p class="ds-lead">データテーブルの本当の語彙です。列を決めるのはカードで一度きり、行はセルを選ぶだけです。</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>画面は縦に積む</strong><p>画面はひとつの列です。page-header、次に section-header とカード、次の section-header とカード、と読む順に並びます。見出しと段落とボタンを flex の行に横並びで組まないでください。横並びは、それを備えた語彙 — rst-box-head、rst-field-row、rst-lbar、rst-lrow のセル、rst-seg-tabs — のためのものです。</p></div></div>
@@ -1328,7 +1366,7 @@
 </article>
 
 <!-- idiom: modal -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">モーダルはクライアント側の状態ではなく、それ自体がひとつの URL です。下の画面を inert にし、その上にパネルを置き、閉じるのはただのリンクです。</p>
 
@@ -1354,7 +1392,7 @@
 </article>
 
 <!-- idiom: selbox -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
 <h4 class="rst-mono">selbox</h4>
 <p class="ds-lead">選択モードで一覧の行が身につけるチェックボックスです。そのラベルは、その行が何であるかを言い直します。</p>
 
@@ -1362,7 +1400,7 @@
 </article>
 
 <!-- idiom: shell-sidebar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
 <h4 class="rst-mono">shell-sidebar</h4>
 <p class="ds-lead">sidebar シェル自身の枠で、800px を下回ると details の開閉に畳まれます。</p>
 
@@ -1379,7 +1417,7 @@
 </article>
 
 <!-- idiom: shell-topbar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h4 class="rst-mono">shell-topbar</h4>
 <p class="ds-lead">topbar シェル自身の枠を、マークアップとして示したものです。Layout はこれをテンプレート一式として提供します。これはその中身です。</p>
 
@@ -1398,7 +1436,7 @@
 </article>
 
 <!-- idiom: tblock -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
 <h4 class="rst-mono">tblock</h4>
 <p class="ds-lead">枠付きのカードで、中身はスイッチが入っている間だけ :has() で表示されます。本当の状態はスイッチであり、表示は見せ方の都合にすぎません。</p>
 
@@ -1420,21 +1458,21 @@
 <div class="ds-head"><h2 id="shells">シェル</h2></div>
 <p class="ds-lead">ページの枠そのものです。rastrillo new はこのうちひとつを templates/layout.html として書き出します。ページは内容の穴を埋め、必要な枠のブロックだけを上書きします。下のデモはどれも独自の URL を持つ一枚のページです。ひとつ開いて全幅で見てください。sidebar のレールや topbar のフッターに、実際に場所があるのが分かります。</p>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-column" data-ds-anchor>
 <h3>column</h3>
 <p class="ds-lead">生成したアプリがまず立つ、素朴な中央寄せのページです。スキップリンク、タイトル、そして本文の列。</p>
 <iframe class="ds-frame" src="/design-system/signal/ja/shells/column.html" title="column シェルを、ページ全体として表示" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/signal/ja/shells/column.html">column シェルを開く</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
 <h3>topbar</h3>
 <p class="ds-lead">上端にブランド、ナビゲーション、アカウントメニューを並べ、ページの下にフッターを置きます。</p>
 <iframe class="ds-frame" src="/design-system/signal/ja/shells/topbar.html" title="topbar シェルを、ページ全体として表示" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/signal/ja/shells/topbar.html">topbar シェルを開く</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
 <h3>sidebar</h3>
 <p class="ds-lead">ページの横に立つナビゲーションレールです。800px を下回ると details の開閉に畳まれます。JavaScript は使いません。</p>
 <iframe class="ds-frame" src="/design-system/signal/ja/shells/sidebar.html" title="sidebar シェルを、ページ全体として表示" loading="lazy"></iframe>
@@ -1442,6 +1480,8 @@
 </section>
 
 
+</div>
 </main>
+</div>
 </body>
 </html>

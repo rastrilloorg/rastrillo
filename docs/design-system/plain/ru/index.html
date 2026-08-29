@@ -45,6 +45,24 @@
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 </style>
 <script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
@@ -52,7 +70,26 @@
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
+<div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">Перейти к содержимому</a>
+<details class="rst-shell__chrome"><summary>Меню</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">Фильтровать эту страницу</label>
+    <input id="ds-filter" type="search" placeholder="Фильтровать эту страницу" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Здесь ничего не совпадает</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="На этой странице">
+    <details open><summary>Токены</summary><a href="#tokens-surfaces-and-lines">Поверхности и линии</a><a href="#tokens-text">Текст</a><a href="#tokens-accent">Акцент</a><a href="#tokens-status-tones">Тона статусов</a><a href="#tokens-depth">Глубина</a><a href="#tokens-radius">Скругление</a><a href="#tokens-type-family">Семейство шрифтов</a><a href="#tokens-type-scale">Шкала кегля</a><a href="#tokens-spacing">Отступы</a></details>
+    <details open><summary>Партиалы</summary><a href="#family-list-screen" class="ds-nav__group">Экран списка</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">Отображение</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">Форма</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">Маршрут</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open><summary>Идиомы классов</summary><a href="#idiom-box" class="rst-mono">box</a><a href="#idiom-dropdown" class="rst-mono">dropdown</a><a href="#idiom-form-layout" class="rst-mono">form-layout</a><a href="#idiom-help" class="rst-mono">help</a><a href="#idiom-list-grid" class="rst-mono">list-grid</a><a href="#idiom-modal" class="rst-mono">modal</a><a href="#idiom-selbox" class="rst-mono">selbox</a><a href="#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open><summary>Оболочки</summary><a href="#shell-column" class="rst-mono">column</a><a href="#shell-topbar" class="rst-mono">topbar</a><a href="#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details open><summary>Демо</summary><a href="/design-system/plain/ru/shells/column.html">Оболочка column</a><a href="/design-system/plain/ru/shells/topbar.html">Оболочка topbar</a><a href="/design-system/plain/ru/shells/sidebar.html">Оболочка sidebar</a><a href="/design-system/plain/ru/modal.html">Маршрут модального окна</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
 
 <header class="ds-chrome">
   <nav class="rst-seg-tabs" aria-label="Тема"><a href="/design-system/day/ru/index.html">day</a><a href="/design-system/plain/ru/index.html" aria-current="page">plain</a><a href="/design-system/signal/ru/index.html">signal</a></nav>
@@ -63,7 +100,7 @@
   </details>
 </header>
 
-<main class="rst-page" id="main">
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
@@ -82,31 +119,32 @@
 <p class="ds-lead">Пользовательские свойства, которыми каждый компонент себя красит. Цвет и семейство шрифтов приходят из темы (themes/plain.css); шкала кегля и шаги отступов — это структура, они приходят из tokens.css и одинаковы во всех темах.</p>
 <p class="ds-swatch-note">Здесь напечатаны светлые значения. Тёмный набор написан вручную в том же файле — никогда не инверсией — и ui/contrast_test.go держит каждую задокументированную пару в обоих наборах на порогах WCAG 2.2 AA: 4,5:1 для текста и 3:1 для границ элементов управления. Сами плашки покрашены через var(), поэтому следуют той схеме, в которой вы читаете, и в тёмной теме не совпадут с напечатанными значениями.</p>
 
-<h3 class="ds-sub">Поверхности и линии</h3>
+<h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>Поверхности и линии</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e0e0e0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#767676</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f4f4f4</span></span></li></ul>
 
-<h3 class="ds-sub">Текст</h3>
+<h3 class="ds-sub" id="tokens-text" data-ds-anchor>Текст</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#111111</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#636363</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#4a4a4a</span></span></li></ul>
 
-<h3 class="ds-sub">Акцент</h3>
+<h3 class="ds-sub" id="tokens-accent" data-ds-anchor>Акцент</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#111111</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#ededed</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#000000</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">Тона статусов</h3>
+<h3 class="ds-sub" id="tokens-status-tones" data-ds-anchor>Тона статусов</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#f0e3e3</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#7a2c2c</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#eaeaea</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#3f3f3f</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#e4ebe6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#2e5b3e</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#efeadd</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#6a5320</span></span></li></ul>
 
-<h3 class="ds-sub">Глубина</h3>
+<h3 class="ds-sub" id="tokens-depth" data-ds-anchor>Глубина</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(0, 0, 0, 0.4)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 1px light-dark(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.4))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 1px light-dark(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.3))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 1px 3px light-dark(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.5))</span></span></li></ul>
 
-<h3 class="ds-sub">Скругление</h3>
+<h3 class="ds-sub" id="tokens-radius" data-ds-anchor>Скругление</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">4px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">3px</span></span></li></ul>
 
-<h3 class="ds-sub">Семейство шрифтов</h3>
+<h3 class="ds-sub" id="tokens-type-family" data-ds-anchor>Семейство шрифтов</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">system-ui, -apple-system, &#34;Segoe UI&#34;, Roboto, &#34;Helvetica Neue&#34;, Arial, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">Шкала кегля</h3>
+
+<h3 class="ds-sub" id="tokens-type-scale" data-ds-anchor>Шкала кегля</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">Отступы</h3>
+<h3 class="ds-sub" id="tokens-spacing" data-ds-anchor>Отступы</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
@@ -114,12 +152,12 @@
 <p class="ds-lead">Каждый шаблонный партиал, который несёт ui, в тех состояниях, в которые его ставит настоящий экран. Каждый принимает ровно одно значение данных, собранное на месте через dict. Формы лежат в rst-box с отступами, а строки — в rst-list, потому что именно это они предполагают; см. два правила в разделе «Идиомы классов» ниже. Одного галерея исправить не может: у page-header и у error-page есть свой h1, поэтому на этой странице их несколько, тогда как на настоящем экране он ровно один.</p>
 <p class="ds-note">Содержимое образцов остаётся английским на любой странице: имена, маршруты и подписи в этих образцах — заглушки, и переводить их значило бы намекать, что фреймворк несёт именно эти слова. Демонстрации оболочек и модального окна устроены наоборот: они изображают настоящее приложение, поэтому их обрамление говорит на языке, который вы выбрали.</p>
 
-<section class="ds-family">
+<section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>Экран списка</h3>
 <p class="ds-lead">Экран, на котором большинство приложений проводит большую часть времени: строка заголовка, панель инструментов, вереница строк и способ пройти по остальным.</p>
 
 <!-- partial: page-header -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
 <p class="ds-lead">Строка заголовка экрана: h1, необязательный подзаголовок и не более одного главного действия.</p>
 
@@ -149,7 +187,7 @@
 </article>
 
 <!-- partial: list-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
 <p class="ds-lead">Панель инструментов вверху карточки списка: форма поиска и место рядом под фильтр.</p>
 
@@ -178,7 +216,7 @@
 </article>
 
 <!-- partial: list-bar-search -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
 <p class="ds-lead">Форма поиска сама по себе, для списка, который только ищет. Обычная форма method=&#34;get&#34;.</p>
 
@@ -207,7 +245,7 @@
 </article>
 
 <!-- partial: list-search-submit -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-search-submit" data-ds-anchor>
 <h4 class="rst-mono">list-search-submit</h4>
 <p class="ds-lead">Настоящая кнопка отправки формы поиска: визуально скрыта, но в порядке табуляции, и показывается при фокусе с клавиатуры.</p>
 
@@ -221,7 +259,7 @@
 </article>
 
 <!-- partial: list-row-action -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
 <p class="ds-lead">Одна строка списка: имя записи как главная ссылка, строка сведений и не более одного второстепенного действия.</p>
 
@@ -248,7 +286,7 @@
 </article>
 
 <!-- partial: seg-tabs -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
 <p class="ds-lead">Сегментированный переключатель из ссылок, отрисованных сервером. Текущая вкладка — это aria-current на ссылке, и ничего больше.</p>
 
@@ -262,7 +300,7 @@
 </article>
 
 <!-- partial: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">Раскрывающийся блок вовсе без JavaScript: кнопка summary над панелью обычных ссылок.</p>
 
@@ -283,7 +321,7 @@
 </article>
 
 <!-- partial: bulk-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-bulk-bar" data-ds-anchor>
 <h4 class="rst-mono">bulk-bar</h4>
 <p class="ds-lead">Верхняя полоса режима выбора, заменяющая панель списка: счётчик, ссылка расширить выбор и меню действий.</p>
 
@@ -297,7 +335,7 @@
 </article>
 
 <!-- partial: pagination -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-pagination" data-ds-anchor>
 <h4 class="rst-mono">pagination</h4>
 <p class="ds-lead">Полоса обычных пронумерованных ссылок, чтобы разбивка на страницы работала и с выключенным JavaScript.</p>
 
@@ -319,7 +357,7 @@
 </article>
 
 <!-- partial: empty-state -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
 <p class="ds-lead">Карточка пустого состояния. Пустое состояние учит: оно говорит, что здесь было бы и как это создать.</p>
 
@@ -349,12 +387,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-display" data-ds-anchor>
 <h3>Отображение</h3>
 <p class="ds-lead">Мелкие части словаря, из которых собирается экран: статус, личность, прогресс и единственная форма предупреждения.</p>
 
 <!-- partial: status-pill -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
 <p class="ds-lead">Статус записи в виде цветной плашки. Состояние никогда не передаётся одним цветом — подпись всегда видимый текст.</p>
 
@@ -392,7 +430,7 @@
 </article>
 
 <!-- partial: badge -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-badge" data-ds-anchor>
 <h4 class="rst-mono">badge</h4>
 <p class="ds-lead">Небольшая рамочная метка прописными буквами для статичных пометок. Это не status-pill: тот показывает статус записи.</p>
 
@@ -430,7 +468,7 @@
 </article>
 
 <!-- partial: meter -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
 <p class="ds-lead">Полоса заполнения вместе с числом. Доля всегда написана словами — одна полоса никогда не несёт число сама.</p>
 
@@ -468,7 +506,7 @@
 </article>
 
 <!-- partial: person -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
 <p class="ds-lead">Аватар из инициалов, имя и почта: ячейка личности для тех типов записей, которые являются людьми.</p>
 
@@ -494,7 +532,7 @@
 </article>
 
 <!-- partial: callout -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-callout" data-ds-anchor>
 <h4 class="rst-mono">callout</h4>
 <p class="ds-lead">Единственный словарь предупреждений: цветная полоса, значок тона, необязательный жирный заголовок и один абзац текста.</p>
 
@@ -538,7 +576,7 @@
 </article>
 
 <!-- partial: detail-list -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
 <p class="ds-lead">Помеченные факты записи в виде списка определений — тело экрана просмотра. Mono отмечает машинные по виду значения.</p>
 
@@ -561,7 +599,7 @@
 </article>
 
 <!-- partial: notice -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-notice" data-ds-anchor>
 <h4 class="rst-mono">notice</h4>
 <p class="ds-lead">Однострочное подтверждение после перенаправления. Принимает обычную строку, а не dict, и при пустой не выводит ничего.</p>
 
@@ -575,7 +613,7 @@
 </article>
 
 <!-- partial: form-error -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-error" data-ds-anchor>
 <h4 class="rst-mono">form-error</h4>
 <p class="ds-lead">Строка со сводкой ошибок формы, role=&#34;alert&#34;. Принимает обычную строку; при отсутствии ошибки не выводит ничего.</p>
 
@@ -589,7 +627,7 @@
 </article>
 
 <!-- partial: job-status -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-job-status" data-ds-anchor>
 <h4 class="rst-mono">job-status</h4>
 <p class="ds-lead">Опрашиваемый фрагмент фоновой задачи. Атрибут data-poll выводится, только пока задача выполняется, — не вывести его и значит остановить опрос.</p>
 
@@ -628,12 +666,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-form" data-ds-anchor>
 <h3>Форма</h3>
 <p class="ds-lead">Каждый элемент управления в тех состояниях, в которые его ставит настоящая форма. Все они лежат в rst-box с отступами, потому что именно это предполагают эти партиалы.</p>
 
 <!-- partial: field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
 <p class="ds-lead">Подпись, поле, необязательная подсказка, справка и ошибка — обычный текстовый элемент управления, с явным ID.</p>
 
@@ -691,7 +729,7 @@
 </article>
 
 <!-- partial: field-text -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
 <p class="ds-lead">Одно текстовое поле с подписью, id выводятся из Name. Звёздочка обязательности — aria-hidden: программный признак это атрибут required на поле.</p>
 
@@ -737,7 +775,7 @@
 </article>
 
 <!-- partial: field-textarea -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-textarea" data-ds-anchor>
 <h4 class="rst-mono">field-textarea</h4>
 <p class="ds-lead">Обёртка field-text вокруг textarea.</p>
 
@@ -783,7 +821,7 @@
 </article>
 
 <!-- partial: field-select -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-select" data-ds-anchor>
 <h4 class="rst-mono">field-select</h4>
 <p class="ds-lead">Обёртка field вокруг родного select. Больше десяти вариантов — и select включает комбобокс с фильтром из select.js; отправляет форма всё равно родной select.</p>
 
@@ -838,7 +876,7 @@
 </article>
 
 <!-- partial: field-check -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-check" data-ds-anchor>
 <h4 class="rst-mono">field-check</h4>
 <p class="ds-lead">Единственный механизм переключения: настоящий флажок с видом тумблера, клавиатура и экранный диктор не страдают.</p>
 
@@ -864,7 +902,7 @@
 </article>
 
 <!-- partial: choice-field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-choice-field" data-ds-anchor>
 <h4 class="rst-mono">choice-field</h4>
 <p class="ds-lead">Карточки вариантов — предпочтительная группа радиокнопок или флажков. Title остаётся коротким, объясняет Desc.</p>
 
@@ -884,7 +922,7 @@
 </article>
 
 <!-- partial: field-date -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-date" data-ds-anchor>
 <h4 class="rst-mono">field-date</h4>
 <p class="ds-lead">Обычное поле даты плюс комбобокс с разбором обычной речи, который включает datetime.js, если вызывающий не передал Plain. Наберите в нём &#34;завтра&#34;.</p>
 
@@ -930,7 +968,7 @@
 </article>
 
 <!-- partial: field-time -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-time" data-ds-anchor>
 <h4 class="rst-mono">field-time</h4>
 <p class="ds-lead">Та же обёртка вокруг родного поля времени. Улучшение читает часы, а не календарь.</p>
 
@@ -976,7 +1014,7 @@
 </article>
 
 <!-- partial: field-datetime -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-datetime" data-ds-anchor>
 <h4 class="rst-mono">field-datetime</h4>
 <p class="ds-lead">Дата и время в одном поле, одно значение.</p>
 
@@ -1022,7 +1060,7 @@
 </article>
 
 <!-- partial: field-daterange -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
 <p class="ds-lead">Начало и конец как одна помеченная группа. У половин должны быть разные Name — каждая выводит свои id из своего.</p>
 
@@ -1067,7 +1105,7 @@
 </article>
 
 <!-- partial: form-foot -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-foot" data-ds-anchor>
 <h4 class="rst-mono">form-foot</h4>
 <p class="ds-lead">Завершающая строка формы: одна главная кнопка отправки и необязательная ссылка отмены. Отмена — ссылка, потому что уйти с формы значит перейти на другую страницу.</p>
 
@@ -1092,7 +1130,7 @@
 </article>
 
 <!-- partial: confirm-form -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-confirm-form" data-ds-anchor>
 <h4 class="rst-mono">confirm-form</h4>
 <p class="ds-lead">Строка действий на странице подтверждения. У необратимых действий свой маршрут, а не диалог, поэтому писать скрипт не для чего.</p>
 
@@ -1113,12 +1151,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-route" data-ds-anchor>
 <h3>Маршрут</h3>
 <p class="ds-lead">Части, которые сами по себе целый ответ, а не кусок ответа.</p>
 
 <!-- partial: error-page -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
 <p class="ds-lead">Всё тело ответа об ошибке: статус, одна честная фраза, путь назад и — для 500 — ссылка, которую администратор может найти через grep.</p>
 
@@ -1193,7 +1231,7 @@
 </article>
 
 <!-- partial: back-nav -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-back-nav" data-ds-anchor>
 <h4 class="rst-mono">back-nav</h4>
 <p class="ds-lead">Ссылка на уровень выше, над экраном просмотра или редактирования.</p>
 
@@ -1207,7 +1245,7 @@
 </article>
 
 <!-- partial: locale-menu -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-locale-menu" data-ds-anchor>
 <h4 class="rst-mono">locale-menu</h4>
 <p class="ds-lead">Переключатель языка: меню на details из POST-форм с одним полем на /_locale, чтобы выбор попал в cookie локали, а читатель остался на том же пути.</p>
 
@@ -1243,7 +1281,7 @@
 <p class="ds-lead">Формы, которыми партиал быть не может, потому что они оборачивают тело, известное только вызывающему: карточка раздела, сетка данных, раскрывающееся меню, собственное обрамление оболочек. Классы даёт tokens.css, разметку пишет приложение. Всё ниже — ровно тот образец, который возвращает ui.Styleguide, то есть образец, который тесты ui сверяют с tokens.css. Копируйте отсюда.</p>
 
 <!-- idiom: box -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
 <h4 class="rst-mono">box</h4>
 <p class="ds-lead">Карточка раздела с отступами и заголовок, который стоит вне её.</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Какая карточка какая</strong><p>У rst-list и rst-card намеренно нет отступов: они держат череду строк, а каждая строка отбивает себя сама. Положите внутрь форму, абзац, полосу ссылок или что угодно, что не строка, — и это отрисуется вплотную к границе; текст, касающийся края, и есть примета. Карточка с отступами для произвольного содержимого — rst-box, а её заголовок стоит перед ней соседним rst-box-head.</p></div></div>
@@ -1252,7 +1290,7 @@
 </article>
 
 <!-- idiom: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">Меню на details/summary, стоящее за меню переполнения в шапке и за фильтром панели списка, плюс применённый фильтр в виде снимаемой метки.</p>
 
@@ -1267,7 +1305,7 @@
 </article>
 
 <!-- idiom: form-layout -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
 <h4 class="rst-mono">form-layout</h4>
 <p class="ds-lead">Классы, которые задают форме её ритм и её панель сохранения. Ни один партиал их не выводит — они оборачивают набор полей, который собрал вызывающий.</p>
 
@@ -1301,7 +1339,7 @@
 </article>
 
 <!-- idiom: help -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
 <h4 class="rst-mono">help</h4>
 <p class="ds-lead">Вопросительный знак в рамке, ведущий к статье справки. Его CSS-подсказка — украшение; ссылка несёт собственную подпись целым предложением.</p>
 
@@ -1309,7 +1347,7 @@
 </article>
 
 <!-- idiom: list-grid -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h4 class="rst-mono">list-grid</h4>
 <p class="ds-lead">Настоящий словарь таблиц данных: карточка задаёт колонки один раз, строки только выбирают ячейки.</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Экраны складываются по вертикали</strong><p>Экран — это колонка: page-header, затем section-header и карточка, затем следующий section-header и карточка, в порядке чтения. Не ставьте заголовок, абзац и кнопку рядом во flex-строке. Горизонтальная раскладка оставлена тем идиомам, которые её несут: rst-box-head, rst-field-row, rst-lbar, ячейки rst-lrow, rst-seg-tabs.</p></div></div>
@@ -1328,7 +1366,7 @@
 </article>
 
 <!-- idiom: modal -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">У модального окна есть собственный URL, а не состояние на клиенте: страница под ним помечена inert, панель над ней и обычная ссылка, чтобы закрыть.</p>
 
@@ -1354,7 +1392,7 @@
 </article>
 
 <!-- idiom: selbox -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
 <h4 class="rst-mono">selbox</h4>
 <p class="ds-lead">Флажок выбора, который строка списка носит в режиме выбора. Его подпись повторяет, что это за строка.</p>
 
@@ -1362,7 +1400,7 @@
 </article>
 
 <!-- idiom: shell-sidebar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
 <h4 class="rst-mono">shell-sidebar</h4>
 <p class="ds-lead">Собственное обрамление оболочки sidebar, которое уже 800px сворачивается в details.</p>
 
@@ -1379,7 +1417,7 @@
 </article>
 
 <!-- idiom: shell-topbar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h4 class="rst-mono">shell-topbar</h4>
 <p class="ds-lead">Собственное обрамление оболочки topbar, в виде разметки. Layout отдаёт его целым шаблоном — а вот что у него внутри.</p>
 
@@ -1398,7 +1436,7 @@
 </article>
 
 <!-- idiom: tblock -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
 <h4 class="rst-mono">tblock</h4>
 <p class="ds-lead">Карточка с рамкой, тело которой раскрывается только при включённом переключателе, через :has(). Главное — переключатель; раскрытие лишь удобство отображения.</p>
 
@@ -1420,21 +1458,21 @@
 <div class="ds-head"><h2 id="shells">Оболочки</h2></div>
 <p class="ds-lead">Сам каркас страницы. rastrillo new пишет один такой как templates/layout.html; страница заполняет его дыру под содержимое и переопределяет те блоки обрамления, которые ей нужны. Каждая демонстрация ниже — целая страница по собственному URL: откройте одну и посмотрите на полной ширине, где панели sidebar и подвалу topbar действительно хватает места.</p>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-column" data-ds-anchor>
 <h3>column</h3>
 <p class="ds-lead">Простая страница по центру, с которой начинается каждое сгенерированное приложение: ссылка-пропуск, заголовок и колонка содержимого.</p>
 <iframe class="ds-frame" src="/design-system/plain/ru/shells/column.html" title="Оболочка column, показанная целой страницей" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/plain/ru/shells/column.html">Открыть оболочку column</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
 <h3>topbar</h3>
 <p class="ds-lead">Логотип, навигация и меню аккаунта по верхнему краю, а под страницей — подвал.</p>
 <iframe class="ds-frame" src="/design-system/plain/ru/shells/topbar.html" title="Оболочка topbar, показанная целой страницей" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/plain/ru/shells/topbar.html">Открыть оболочку topbar</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
 <h3>sidebar</h3>
 <p class="ds-lead">Панель навигации сбоку от страницы; уже 800px она сворачивается в раскрывающийся details. Без JavaScript.</p>
 <iframe class="ds-frame" src="/design-system/plain/ru/shells/sidebar.html" title="Оболочка sidebar, показанная целой страницей" loading="lazy"></iframe>
@@ -1442,6 +1480,8 @@
 </section>
 
 
+</div>
 </main>
+</div>
 </body>
 </html>

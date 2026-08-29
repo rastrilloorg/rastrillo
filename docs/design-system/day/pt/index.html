@@ -45,6 +45,24 @@
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 </style>
 <script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
@@ -52,7 +70,26 @@
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
+<div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">Ir para o conteúdo</a>
+<details class="rst-shell__chrome"><summary>Menu</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">Filtrar esta página</label>
+    <input id="ds-filter" type="search" placeholder="Filtrar esta página" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Nada aqui corresponde a isso</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="Nesta página">
+    <details open><summary>Tokens</summary><a href="#tokens-surfaces-and-lines">Superfícies e linhas</a><a href="#tokens-text">Texto</a><a href="#tokens-accent">Cor de destaque</a><a href="#tokens-status-tones">Tons de estado</a><a href="#tokens-depth">Profundidade</a><a href="#tokens-radius">Raio dos cantos</a><a href="#tokens-type-family">Família tipográfica</a><a href="#tokens-type-scale">Escala tipográfica</a><a href="#tokens-spacing">Espaçamento</a></details>
+    <details open><summary>Parciais</summary><a href="#family-list-screen" class="ds-nav__group">Ecrã de lista</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">Apresentação</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">Formulário</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">Rota</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open><summary>Idiomas de classes</summary><a href="#idiom-box" class="rst-mono">box</a><a href="#idiom-dropdown" class="rst-mono">dropdown</a><a href="#idiom-form-layout" class="rst-mono">form-layout</a><a href="#idiom-help" class="rst-mono">help</a><a href="#idiom-list-grid" class="rst-mono">list-grid</a><a href="#idiom-modal" class="rst-mono">modal</a><a href="#idiom-selbox" class="rst-mono">selbox</a><a href="#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open><summary>Invólucros</summary><a href="#shell-column" class="rst-mono">column</a><a href="#shell-topbar" class="rst-mono">topbar</a><a href="#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details open><summary>Demonstrações</summary><a href="/design-system/day/pt/shells/column.html">O invólucro column</a><a href="/design-system/day/pt/shells/topbar.html">O invólucro topbar</a><a href="/design-system/day/pt/shells/sidebar.html">O invólucro sidebar</a><a href="/design-system/day/pt/modal.html">A rota do modal</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
 
 <header class="ds-chrome">
   <nav class="rst-seg-tabs" aria-label="Tema"><a href="/design-system/day/pt/index.html" aria-current="page">day</a><a href="/design-system/plain/pt/index.html">plain</a><a href="/design-system/signal/pt/index.html">signal</a></nav>
@@ -63,7 +100,7 @@
   </details>
 </header>
 
-<main class="rst-page" id="main">
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
@@ -82,31 +119,32 @@
 <p class="ds-lead">As propriedades personalizadas com que cada componente se pinta. A cor e a família tipográfica vêm do tema (themes/day.css); a escala tipográfica e os passos de espaçamento são estrutura e vêm do tokens.css, iguais em todos os temas.</p>
 <p class="ds-swatch-note">Os valores impressos aqui são os do modo claro. O conjunto escuro é escrito à mão no mesmo ficheiro — nunca invertido — e o ui/contrast_test.go segura cada par documentado dos dois conjuntos nos mínimos WCAG 2.2 AA: 4,5:1 para texto e 3:1 para contornos de controlos. As amostras de cor são pintadas com var(), por isso seguem o esquema em que está a ler e, no modo escuro, não vão coincidir com os valores impressos.</p>
 
-<h3 class="ds-sub">Superfícies e linhas</h3>
+<h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>Superfícies e linhas</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e5e7eb</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#7f8792</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f6f7f8</span></span></li></ul>
 
-<h3 class="ds-sub">Texto</h3>
+<h3 class="ds-sub" id="tokens-text" data-ds-anchor>Texto</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#1a1d21</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#656c78</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#4b5563</span></span></li></ul>
 
-<h3 class="ds-sub">Cor de destaque</h3>
+<h3 class="ds-sub" id="tokens-accent" data-ds-anchor>Cor de destaque</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#2464e0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#eef3fe</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#1a4fc0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">Tons de estado</h3>
+<h3 class="ds-sub" id="tokens-status-tones" data-ds-anchor>Tons de estado</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#fee2e2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#b91c1c</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#eef0f2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#374151</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#dcfce7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#166534</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#fef3c7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#854d0e</span></span></li></ul>
 
-<h3 class="ds-sub">Profundidade</h3>
+<h3 class="ds-sub" id="tokens-depth" data-ds-anchor>Profundidade</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(0, 0, 0, 0.45)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 2px rgba(0, 0, 0, 0.3)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 2px rgba(0, 0, 0, 0.08)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 8px 24px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5))</span></span></li></ul>
 
-<h3 class="ds-sub">Raio dos cantos</h3>
+<h3 class="ds-sub" id="tokens-radius" data-ds-anchor>Raio dos cantos</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">8px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">6px</span></span></li></ul>
 
-<h3 class="ds-sub">Família tipográfica</h3>
+<h3 class="ds-sub" id="tokens-type-family" data-ds-anchor>Família tipográfica</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">system-ui, -apple-system, &#34;Segoe UI&#34;, Roboto, &#34;Helvetica Neue&#34;, Arial, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">Escala tipográfica</h3>
+
+<h3 class="ds-sub" id="tokens-type-scale" data-ds-anchor>Escala tipográfica</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">Espaçamento</h3>
+<h3 class="ds-sub" id="tokens-spacing" data-ds-anchor>Espaçamento</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
@@ -114,12 +152,12 @@
 <p class="ds-lead">Todos os parciais de modelo que o ui traz, nos estados em que um ecrã a sério os põe. Cada um recebe exatamente um valor de dados, construído ali mesmo com dict. Os formulários ficam num rst-box com espaçamento e as linhas num rst-list, porque é isso que estes parciais assumem — veja as duas regras em Idiomas de classes, mais abaixo. Há uma coisa que uma galeria não pode evitar: page-header e error-page têm cada um o seu h1, por isso esta página leva vários, quando um ecrã a sério tem exatamente um.</p>
 <p class="ds-note">O conteúdo das amostras fica em inglês em todas as páginas: os nomes, as rotas e as etiquetas destas amostras são substitutos, e traduzi-los daria a entender que a framework traz essas palavras. As demonstrações dos invólucros e do modal são ao contrário — fingem ser uma aplicação a sério, por isso a sua moldura fala a língua que escolheu.</p>
 
-<section class="ds-family">
+<section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>Ecrã de lista</h3>
 <p class="ds-lead">O ecrã onde a maioria das aplicações passa a maior parte do tempo: uma barra de título, uma barra de ferramentas, uma série de linhas e uma forma de percorrer as restantes.</p>
 
 <!-- partial: page-header -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
 <p class="ds-lead">A barra de título do ecrã: um h1, um subtítulo opcional e, no máximo, uma ação principal.</p>
 
@@ -149,7 +187,7 @@
 </article>
 
 <!-- partial: list-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
 <p class="ds-lead">A barra de ferramentas no topo de um cartão de lista: o formulário de pesquisa e espaço ao lado para um filtro.</p>
 
@@ -178,7 +216,7 @@
 </article>
 
 <!-- partial: list-bar-search -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
 <p class="ds-lead">O formulário de pesquisa sozinho, para uma lista que só pesquisa. Um formulário method=&#34;get&#34; vulgar.</p>
 
@@ -207,7 +245,7 @@
 </article>
 
 <!-- partial: list-search-submit -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-search-submit" data-ds-anchor>
 <h4 class="rst-mono">list-search-submit</h4>
 <p class="ds-lead">O verdadeiro botão de envio do formulário de pesquisa: escondido à vista, dentro da ordem de tabulação, e aparece quando recebe o foco do teclado.</p>
 
@@ -221,7 +259,7 @@
 </article>
 
 <!-- partial: list-row-action -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
 <p class="ds-lead">Uma linha de lista: o nome do registo como ligação principal, uma linha de detalhe e, no máximo, uma ação secundária.</p>
 
@@ -248,7 +286,7 @@
 </article>
 
 <!-- partial: seg-tabs -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
 <p class="ds-lead">Um controlo segmentado de ligações desenhadas no servidor. O separador atual é um aria-current numa ligação, nada mais.</p>
 
@@ -262,7 +300,7 @@
 </article>
 
 <!-- partial: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">Um desdobrável sem JavaScript nenhum: um botão summary sobre um painel de ligações simples.</p>
 
@@ -283,7 +321,7 @@
 </article>
 
 <!-- partial: bulk-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-bulk-bar" data-ds-anchor>
 <h4 class="rst-mono">bulk-bar</h4>
 <p class="ds-lead">A faixa de cabeçalho do modo de seleção, que substitui a barra de lista: a contagem, uma ligação para alargar a seleção e o menu de ações.</p>
 
@@ -297,7 +335,7 @@
 </article>
 
 <!-- partial: pagination -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-pagination" data-ds-anchor>
 <h4 class="rst-mono">pagination</h4>
 <p class="ds-lead">Uma tira numerada de ligações normais, para que a paginação continue a funcionar com o JavaScript desligado.</p>
 
@@ -319,7 +357,7 @@
 </article>
 
 <!-- partial: empty-state -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
 <p class="ds-lead">O cartão de estado vazio. Um estado vazio ensina: diz o que estaria aqui e como criar um.</p>
 
@@ -349,12 +387,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-display" data-ds-anchor>
 <h3>Apresentação</h3>
 <p class="ds-lead">As peças pequenas de vocabulário com que se monta um ecrã: estado, identidade, progresso e a única forma de aviso.</p>
 
 <!-- partial: status-pill -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
 <p class="ds-lead">O estado de um registo como uma etiqueta arredondada e colorida. O estado nunca é só cor — a etiqueta é sempre texto visível.</p>
 
@@ -392,7 +430,7 @@
 </article>
 
 <!-- partial: badge -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-badge" data-ds-anchor>
 <h4 class="rst-mono">badge</h4>
 <p class="ds-lead">Uma etiqueta com contorno em maiúsculas, para marcas pequenas e fixas. Diferente do status-pill, que é o estado de um registo.</p>
 
@@ -430,7 +468,7 @@
 </article>
 
 <!-- partial: meter -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
 <p class="ds-lead">Uma barra de capacidade com o seu número. A fração é sempre texto — uma barra nunca leva o número sozinha.</p>
 
@@ -468,7 +506,7 @@
 </article>
 
 <!-- partial: person -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
 <p class="ds-lead">Avatar de iniciais, nome e e-mail: a célula de identidade para os tipos de registo que são pessoas.</p>
 
@@ -494,7 +532,7 @@
 </article>
 
 <!-- partial: callout -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-callout" data-ds-anchor>
 <h4 class="rst-mono">callout</h4>
 <p class="ds-lead">O único vocabulário de avisos: faixa com cor, ícone de tom, título a negrito opcional e um parágrafo de corpo.</p>
 
@@ -538,7 +576,7 @@
 </article>
 
 <!-- partial: detail-list -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
 <p class="ds-lead">Os dados etiquetados de um registo como lista de definições — o corpo do ecrã de detalhe. Mono marca os valores mais de máquina.</p>
 
@@ -561,7 +599,7 @@
 </article>
 
 <!-- partial: notice -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-notice" data-ds-anchor>
 <h4 class="rst-mono">notice</h4>
 <p class="ds-lead">Uma confirmação de uma linha depois de um redirecionamento. Recebe uma cadeia simples, não um dict, e não desenha nada se estiver vazia.</p>
 
@@ -575,7 +613,7 @@
 </article>
 
 <!-- partial: form-error -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-error" data-ds-anchor>
 <h4 class="rst-mono">form-error</h4>
 <p class="ds-lead">A linha de resumo de erros de um formulário, role=&#34;alert&#34;. Recebe uma cadeia simples; não desenha nada quando não há erro.</p>
 
@@ -589,7 +627,7 @@
 </article>
 
 <!-- partial: job-status -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-job-status" data-ds-anchor>
 <h4 class="rst-mono">job-status</h4>
 <p class="ds-lead">O fragmento consultado de uma tarefa em segundo plano. O atributo data-poll só é emitido enquanto a tarefa corre — omiti-lo é a forma de parar a consulta.</p>
 
@@ -628,12 +666,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-form" data-ds-anchor>
 <h3>Formulário</h3>
 <p class="ds-lead">Todos os controlos, nos estados em que um formulário a sério os põe. Cada um fica dentro de um rst-box com espaçamento, porque é essa a regra que estes parciais assumem.</p>
 
 <!-- partial: field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
 <p class="ds-lead">Etiqueta, campo, dica opcional, ajuda e erro — o controlo de tipo texto geral, com um ID explícito.</p>
 
@@ -691,7 +729,7 @@
 </article>
 
 <!-- partial: field-text -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
 <p class="ds-lead">Um campo de texto com etiqueta, com os ids derivados de Name. O asterisco de obrigatório é aria-hidden — o sinal para o software é o atributo required do campo.</p>
 
@@ -737,7 +775,7 @@
 </article>
 
 <!-- partial: field-textarea -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-textarea" data-ds-anchor>
 <h4 class="rst-mono">field-textarea</h4>
 <p class="ds-lead">O invólucro do field-text à volta de um textarea.</p>
 
@@ -783,7 +821,7 @@
 </article>
 
 <!-- partial: field-select -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-select" data-ds-anchor>
 <h4 class="rst-mono">field-select</h4>
 <p class="ds-lead">O invólucro do field à volta de um select nativo. A partir de dez opções, o select ativa a caixa com filtro do select.js; o que o formulário envia continua a ser o select nativo.</p>
 
@@ -838,7 +876,7 @@
 </article>
 
 <!-- partial: field-check -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-check" data-ds-anchor>
 <h4 class="rst-mono">field-check</h4>
 <p class="ds-lead">O único mecanismo de comutação: uma caixa de verificação a sério com aspeto de interruptor, sem perder teclado nem leitor de ecrã.</p>
 
@@ -864,7 +902,7 @@
 </article>
 
 <!-- partial: choice-field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-choice-field" data-ds-anchor>
 <h4 class="rst-mono">choice-field</h4>
 <p class="ds-lead">Cartões de opção — o grupo de rádios ou caixas que preferimos. O Title fica curto; o Desc explica.</p>
 
@@ -884,7 +922,7 @@
 </article>
 
 <!-- partial: field-date -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-date" data-ds-anchor>
 <h4 class="rst-mono">field-date</h4>
 <p class="ds-lead">Um campo de data nativo, mais a caixa de linguagem natural que o datetime.js ativa, a não ser que quem o usa passe Plain. Escreva &#34;amanhã&#34; nele.</p>
 
@@ -930,7 +968,7 @@
 </article>
 
 <!-- partial: field-time -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-time" data-ds-anchor>
 <h4 class="rst-mono">field-time</h4>
 <p class="ds-lead">O mesmo invólucro à volta de um campo de hora nativo. A melhoria lê um relógio em vez de um calendário.</p>
 
@@ -976,7 +1014,7 @@
 </article>
 
 <!-- partial: field-datetime -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-datetime" data-ds-anchor>
 <h4 class="rst-mono">field-datetime</h4>
 <p class="ds-lead">Uma data e uma hora num só campo, um só valor.</p>
 
@@ -1022,7 +1060,7 @@
 </article>
 
 <!-- partial: field-daterange -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
 <p class="ds-lead">Um início e um fim como um só grupo etiquetado. As duas metades têm de levar Names diferentes — cada uma deriva os seus ids do seu.</p>
 
@@ -1067,7 +1105,7 @@
 </article>
 
 <!-- partial: form-foot -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-foot" data-ds-anchor>
 <h4 class="rst-mono">form-foot</h4>
 <p class="ds-lead">A linha final de um formulário: um botão de envio principal e uma ligação opcional para cancelar. Cancelar é uma ligação, porque sair de um formulário é navegar.</p>
 
@@ -1092,7 +1130,7 @@
 </article>
 
 <!-- partial: confirm-form -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-confirm-form" data-ds-anchor>
 <h4 class="rst-mono">confirm-form</h4>
 <p class="ds-lead">A linha de ações da página de confirmação. As ações destrutivas têm rota própria em vez de um diálogo, por isso não há nada para programar.</p>
 
@@ -1113,12 +1151,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-route" data-ds-anchor>
 <h3>Rota</h3>
 <p class="ds-lead">As peças que são uma resposta inteira e não um pedaço de uma.</p>
 
 <!-- partial: error-page -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
 <p class="ds-lead">O corpo inteiro de uma resposta de erro: o estado, uma frase honesta, um caminho de volta e — no caso de um 500 — a referência que quem opera pode procurar com grep.</p>
 
@@ -1193,7 +1231,7 @@
 </article>
 
 <!-- partial: back-nav -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-back-nav" data-ds-anchor>
 <h4 class="rst-mono">back-nav</h4>
 <p class="ds-lead">A ligação para subir um nível, por cima de um ecrã de detalhe ou de edição.</p>
 
@@ -1207,7 +1245,7 @@
 </article>
 
 <!-- partial: locale-menu -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-locale-menu" data-ds-anchor>
 <h4 class="rst-mono">locale-menu</h4>
 <p class="ds-lead">O seletor de idioma: um menu details com formulários POST de um só campo para /_locale, para que a escolha fique no cookie de idioma e quem lê se mantenha no mesmo caminho.</p>
 
@@ -1243,7 +1281,7 @@
 <p class="ds-lead">As formas que um parcial não pode ser, porque envolvem um corpo que só quem as usa conhece: o cartão de secção, a grelha de dados, o menu desdobrável, a moldura própria dos invólucros. O tokens.css traz as classes e a aplicação escreve a marcação. Tudo o que está abaixo é exatamente a amostra que o ui.Styleguide devolve, que é a amostra que os testes do ui confrontam com o tokens.css — copie daqui.</p>
 
 <!-- idiom: box -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
 <h4 class="rst-mono">box</h4>
 <p class="ds-lead">O cartão de secção com espaçamento, e o título que fica fora dele.</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Qual cartão é qual</strong><p>O rst-list e o rst-card não têm espaçamento de propósito: seguram uma série de linhas, e cada linha espaça-se a si mesma. Meta lá dentro um formulário, um parágrafo, uma tira de ligações ou qualquer coisa que não seja uma linha e aparece encostado ao contorno — o texto a tocar na borda é o sinal. O cartão com espaçamento para conteúdo qualquer é o rst-box, com o seu título como rst-box-head irmão logo antes.</p></div></div>
@@ -1252,7 +1290,7 @@
 </article>
 
 <!-- idiom: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">O menu details/summary por trás dos menus de excedente do cabeçalho e do filtro de uma barra de lista, mais um filtro aplicado como etiqueta removível.</p>
 
@@ -1267,7 +1305,7 @@
 </article>
 
 <!-- idiom: form-layout -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
 <h4 class="rst-mono">form-layout</h4>
 <p class="ds-lead">As classes que dão a um formulário o seu ritmo e a sua barra de guardar. Nenhum parcial as emite — envolvem uma série de campos composta por quem as usa.</p>
 
@@ -1301,7 +1339,7 @@
 </article>
 
 <!-- idiom: help -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
 <h4 class="rst-mono">help</h4>
 <p class="ds-lead">Um ponto de interrogação com contorno que liga a um artigo de ajuda. A sua dica de CSS é decoração; a ligação leva a sua própria etiqueta, em frase completa.</p>
 
@@ -1309,7 +1347,7 @@
 </article>
 
 <!-- idiom: list-grid -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h4 class="rst-mono">list-grid</h4>
 <p class="ds-lead">O vocabulário a sério das tabelas de dados: o cartão define as suas colunas uma vez e as linhas só escolhem células.</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Os ecrãs empilham-se na vertical</strong><p>Um ecrã é uma coluna: page-header, depois section-header &#43; cartão, depois o section-header &#43; cartão seguinte, por ordem de leitura. Não ponha um título, um parágrafo e um botão lado a lado numa linha flex. A disposição horizontal está reservada aos idiomas que a trazem: rst-box-head, rst-field-row, rst-lbar, as células de rst-lrow e rst-seg-tabs.</p></div></div>
@@ -1328,7 +1366,7 @@
 </article>
 
 <!-- idiom: modal -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">Um modal é um URL próprio, não um estado do cliente: a página por baixo marcada como inert, o painel por cima e uma ligação simples para fechar.</p>
 
@@ -1354,7 +1392,7 @@
 </article>
 
 <!-- idiom: selbox -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
 <h4 class="rst-mono">selbox</h4>
 <p class="ds-lead">A caixa de seleção que uma linha de lista usa em modo de seleção. A sua etiqueta repete a identidade da linha.</p>
 
@@ -1362,7 +1400,7 @@
 </article>
 
 <!-- idiom: shell-sidebar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
 <h4 class="rst-mono">shell-sidebar</h4>
 <p class="ds-lead">A moldura própria do invólucro sidebar, que abaixo de 800px se dobra num details.</p>
 
@@ -1379,7 +1417,7 @@
 </article>
 
 <!-- idiom: shell-topbar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h4 class="rst-mono">shell-topbar</h4>
 <p class="ds-lead">A moldura própria do invólucro topbar, como marcação. O Layout entrega-a como modelo inteiro — isto é o que está lá dentro.</p>
 
@@ -1398,7 +1436,7 @@
 </article>
 
 <!-- idiom: tblock -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
 <h4 class="rst-mono">tblock</h4>
 <p class="ds-lead">Um cartão com contorno cujo corpo só aparece enquanto o seu interruptor está ligado, através de :has(). O interruptor é que manda; mostrar é apenas uma conveniência.</p>
 
@@ -1420,21 +1458,21 @@
 <div class="ds-head"><h2 id="shells">Invólucros</h2></div>
 <p class="ds-lead">A moldura da página em si. O rastrillo new escreve uma destas como templates/layout.html; uma página preenche o seu buraco de conteúdo e substitui os blocos de moldura de que precisar. Cada demonstração abaixo é uma página inteira no seu próprio URL — abra uma para a ver a toda a largura, onde a barra do sidebar e o rodapé do topbar têm mesmo espaço.</p>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-column" data-ds-anchor>
 <h3>column</h3>
 <p class="ds-lead">A página simples e centrada com que arranca toda a aplicação acabada de gerar: uma ligação de salto, um título e a coluna de conteúdo.</p>
 <iframe class="ds-frame" src="/design-system/day/pt/shells/column.html" title="O invólucro column, apresentado em página inteira" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/day/pt/shells/column.html">Abrir o invólucro column</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
 <h3>topbar</h3>
 <p class="ds-lead">Marca, navegação e menu de conta ao longo do topo, com um rodapé por baixo da página.</p>
 <iframe class="ds-frame" src="/design-system/day/pt/shells/topbar.html" title="O invólucro topbar, apresentado em página inteira" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/day/pt/shells/topbar.html">Abrir o invólucro topbar</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
 <h3>sidebar</h3>
 <p class="ds-lead">Uma barra de navegação ao lado da página, que abaixo de 800px se dobra num details. Sem JavaScript.</p>
 <iframe class="ds-frame" src="/design-system/day/pt/shells/sidebar.html" title="O invólucro sidebar, apresentado em página inteira" loading="lazy"></iframe>
@@ -1442,6 +1480,8 @@
 </section>
 
 
+</div>
 </main>
+</div>
 </body>
 </html>

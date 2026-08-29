@@ -1,20 +1,23 @@
 //go:build browser
 
-// The browser drive for the gallery's own script. gallery.js is the
+// The browser drives for the gallery's own script. gallery.js is the
 // only JavaScript in this tree that is not the framework's, and the
 // only one whose whole job — write an attribute on <html>, remember it,
-// reveal a control — is invisible to a Go test: nothing about it shows
-// up in the rendered bytes, because everything it does happens after
-// the bytes arrive.
+// reveal a control, hide half a list of links — is invisible to a Go
+// test: nothing about it shows up in the rendered bytes, because
+// everything it does happens after the bytes arrive.
 //
 // Build-tagged like ui/browser_test.go, and for the same reasons. Run
-// it with:
+// them with:
 //
 //	go test -tags browser ./internal/designsystem/
 //
-// One test, one journey: load, click Dark, reload, click System. The
-// reload is the half a unit test could never fake — persistence that
-// survives a fresh document is the only kind worth having.
+// Two tests, one journey each. The scheme toggle: load, click Dark,
+// reload, click System — the reload is the half a unit test could never
+// fake, because persistence that survives a fresh document is the only
+// kind worth having. The sidebar filter: type a partial's name, type a
+// family's, type junk, press Escape — and the collapse a reader made by
+// hand, which a search has to borrow and give back.
 package designsystem
 
 import (
@@ -26,6 +29,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/chromedp/chromedp/kb"
 
 	"github.com/carlosframework/rastrillo/harness"
 )
@@ -196,5 +200,268 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 	}
 	if systemPressed != "system" {
 		t.Errorf("after choosing System, the pressed button is %q, want %q", systemPressed, "system")
+	}
+}
+
+// railState is one reading of the sidebar: what it is showing, what it
+// has folded away, and where the focus is. Every assertion below is
+// made against one of these rather than against a handful of separate
+// evaluations, so a step's whole picture is caught at one instant.
+type railState struct {
+	Links   int      `json:"links"`
+	Shown   []string `json:"shown"`
+	Folded  int      `json:"folded"`
+	Open    []bool   `json:"open"`
+	Empty   bool     `json:"empty"`
+	Focused string   `json:"focused"`
+	Value   string   `json:"value"`
+	BoxSeen bool     `json:"boxSeen"`
+}
+
+// railProbe reads the whole rail in one evaluation.
+const railProbe = `(() => {
+  const links = Array.from(document.querySelectorAll("#ds-nav a"));
+  const secs = Array.from(document.querySelectorAll("#ds-nav details"));
+  const box = document.querySelector("[data-ds-filter]");
+  const empty = document.querySelector("[data-ds-filter-empty]");
+  return {
+    links: links.length,
+    shown: links.filter(a => !a.hidden).map(a => a.getAttribute("href")),
+    folded: secs.filter(d => d.hidden).length,
+    open: secs.map(d => d.open),
+    empty: !empty.hidden,
+    focused: document.activeElement ? document.activeElement.id : "",
+    value: box.value,
+    boxSeen: getComputedStyle(box.closest(".ds-search")).display !== "none",
+  };
+})()`
+
+// showing reports whether the rail is showing a link to this fragment.
+func showing(state railState, href string) bool {
+	for _, s := range state.Shown {
+		if s == href {
+			return true
+		}
+	}
+	return false
+}
+
+// TestTheSidebarFilterDrivesTheWholeJourney is the second drive: the
+// type-to-filter box over the rail.
+//
+// Everything it asserts is invisible to a Go test, because none of it
+// is in the rendered bytes — the page ships one complete list of links
+// and the whole feature is what happens to that list after a keystroke.
+// The bug classes, each of which leaves a page that renders perfectly:
+//
+//   - the filter matches nothing, or matches everything, because the
+//     folding is applied to one side only;
+//   - a section whose every entry is hidden stays on screen as a
+//     heading over a gap;
+//   - the family label inside Partials outlives the partials under it,
+//     or disappears when the family's own name is what matched;
+//   - "no matches" never appears, or never goes away;
+//   - Escape does not clear, or clears and leaves the rail filtered;
+//   - a section the reader collapsed by hand is left open by a search
+//     they have finished with;
+//   - the box is visible with scripts off, which is a control that
+//     cannot work.
+func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancel()
+
+	url := rig.Origin + indexHref(RootTheme(), "en")
+
+	var (
+		fresh, scriptless, badge, family, junk, cleared, handled, restored railState
+		navWithNoJS                                                        int
+	)
+
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+
+	// Each step is a query on its own rather than one appended to the
+	// last, so the box is emptied through the same input event a reader
+	// selecting-all and typing over would raise.
+	typing := func(q string) chromedp.Tasks {
+		return chromedp.Tasks{
+			chromedp.Focus(`#ds-filter`, chromedp.ByQuery),
+			chromedp.Evaluate(`(() => {
+			  const box = document.querySelector("[data-ds-filter]");
+			  box.value = "";
+			  box.dispatchEvent(new Event("input", {bubbles: true}));
+			})()`, nil),
+			chromedp.SendKeys(`#ds-filter`, q, chromedp.ByQuery),
+		}
+	}
+
+	if err := chromedp.Run(ctx,
+		// A window wide enough for the rail to be a rail. Below 800px
+		// the sidebar shell folds it behind the <details> chrome strip
+		// and it is display:none until a reader opens it — correct
+		// behaviour, and not the behaviour this drive is about, so the
+		// viewport is stated rather than inherited from whatever size
+		// the harness happened to open.
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(url), at("navigated"),
+		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("filter-visible"),
+		chromedp.Evaluate(railProbe, &fresh),
+
+		// The scriptless half, asked of the real engine: take the
+		// marker away and the box goes with it, while every link in the
+		// rail stays exactly where it was.
+		chromedp.Evaluate(`(() => {
+		  document.documentElement.removeAttribute("data-rst-js");
+		  const links = Array.from(document.querySelectorAll("#ds-nav a"));
+		  const state = {
+		    links: links.length,
+		    shown: links.filter(a => !a.hidden).map(a => a.getAttribute("href")),
+		    folded: 0, open: [], empty: false, focused: "", value: "",
+		    boxSeen: getComputedStyle(document.querySelector(".ds-search")).display !== "none",
+		  };
+		  document.documentElement.setAttribute("data-rst-js", "on");
+		  return state;
+		})()`, &scriptless),
+		chromedp.Evaluate(`document.querySelectorAll("#ds-nav a").length`, &navWithNoJS),
+		at("scriptless-read"),
+
+		// A partial's own name: one entry left in Partials, every other
+		// section folded away.
+		typing("badge"), at("typed-badge"),
+		chromedp.Evaluate(railProbe, &badge),
+
+		// A family's name stands for the run under it: matching "form"
+		// keeps the whole family, heading included.
+		typing("form"), at("typed-form"),
+		chromedp.Evaluate(railProbe, &family),
+
+		// Junk: nothing left, and the page's own sentence saying so.
+		typing("zzqqxx"), at("typed-junk"),
+		chromedp.Evaluate(railProbe, &junk),
+
+		// Escape clears it, from inside the box, with focus unmoved.
+		chromedp.KeyEvent(kb.Escape), at("escaped"),
+		chromedp.Evaluate(railProbe, &cleared),
+
+		// The same key again, this time as an untrusted event. Chromium
+		// clears an <input type="search"> on Escape all by itself, so
+		// the real keypress above proves the journey and proves nothing
+		// about this file: it passes just as happily with the handler
+		// deleted. A synthetic event gets no default action, so what
+		// clears the box here is gallery.js or nothing — and Firefox,
+		// which has no native Escape on a search field, is the engine
+		// that makes the difference matter.
+		typing("zzqqxx"), at("typed-junk-again"),
+		chromedp.Evaluate(`document.querySelector("[data-ds-filter]").dispatchEvent(
+		  new KeyboardEvent("keydown", {key: "Escape", bubbles: true, cancelable: true}))`, nil),
+		chromedp.Evaluate(railProbe, &handled),
+
+		// A section the reader collapses by hand is opened by a query
+		// that finds something in it, and folded back when the query
+		// goes.
+		chromedp.Evaluate(`document.querySelectorAll("#ds-nav details")[1].open = false`, nil),
+		typing("badge"), at("typed-into-collapsed"),
+		chromedp.KeyEvent(kb.Escape), at("escaped-again"),
+		chromedp.Evaluate(railProbe, &restored),
+		at("done"),
+	); err != nil {
+		t.Fatalf("drive failed after %q: %v", reached, err)
+	}
+
+	if !fresh.BoxSeen {
+		t.Error("the filter box is not visible to a reader who has JavaScript")
+	}
+	if fresh.Links < 50 {
+		t.Errorf("the rail holds %d links; the page has far more than that to link", fresh.Links)
+	}
+	if len(fresh.Shown) != fresh.Links {
+		t.Errorf("%d of %d rail links are hidden before anything is typed", fresh.Links-len(fresh.Shown), fresh.Links)
+	}
+	if fresh.Empty {
+		t.Error("the no-matches line is on screen before anything is typed")
+	}
+	for i, open := range fresh.Open {
+		if !open {
+			t.Errorf("sidebar section %d arrives collapsed; the rail is a table of contents first", i)
+		}
+	}
+
+	if scriptless.BoxSeen {
+		t.Error("the filter box is still visible without data-rst-js — with scripts off it would look like a control that works")
+	}
+	if len(scriptless.Shown) != fresh.Links || navWithNoJS != fresh.Links {
+		t.Errorf("with the marker off the rail shows %d of %d links; the nav is complete with or without a script", len(scriptless.Shown), fresh.Links)
+	}
+
+	if !showing(badge, "#partial-badge") {
+		t.Error(`typing "badge" hid the badge partial`)
+	}
+	if showing(badge, "#partial-meter") {
+		t.Error(`typing "badge" left the meter partial on screen`)
+	}
+	if showing(badge, "#tokens-accent") {
+		t.Error(`typing "badge" left a token group on screen`)
+	}
+	if badge.Folded == 0 {
+		t.Error(`typing "badge" folded no section away; Tokens, Shells and Demos have nothing in them that matches`)
+	}
+	if badge.Empty {
+		t.Error(`typing "badge" said there were no matches`)
+	}
+
+	if !showing(family, "#family-form") {
+		t.Error(`typing "form" hid the Form family's own heading`)
+	}
+	if !showing(family, "#partial-field-check") {
+		t.Error(`typing "form" hid field-check, which is in the family that matched`)
+	}
+	// Display is not the family to check here: form-error lives in it,
+	// so "form" legitimately keeps it. List screen has nothing in it
+	// that matches, which is the case worth asserting.
+	if showing(family, "#family-list-screen") {
+		t.Error(`typing "form" left the List screen family's heading over an empty gap`)
+	}
+	if !showing(family, "#partial-form-error") {
+		t.Error(`typing "form" hid form-error, which matches on its own name`)
+	}
+
+	if len(junk.Shown) != 0 {
+		t.Errorf("junk left %d entries on screen: %v", len(junk.Shown), junk.Shown)
+	}
+	if !junk.Empty {
+		t.Error("junk matched nothing and the page never said so")
+	}
+	if junk.Focused != "ds-filter" {
+		t.Errorf("focus moved to %q while typing; the filter must not take it anywhere", junk.Focused)
+	}
+
+	if cleared.Value != "" {
+		t.Errorf("Escape left %q in the box", cleared.Value)
+	}
+	if len(cleared.Shown) != cleared.Links {
+		t.Errorf("Escape cleared the box and left %d of %d entries hidden", cleared.Links-len(cleared.Shown), cleared.Links)
+	}
+	if cleared.Empty {
+		t.Error("Escape cleared the box and left the no-matches line up")
+	}
+	if cleared.Focused != "ds-filter" {
+		t.Errorf("Escape moved focus to %q", cleared.Focused)
+	}
+
+	if handled.Value != "" {
+		t.Errorf("a synthetic Escape left %q in the box — gallery.js is not handling the key, the browser is", handled.Value)
+	}
+	if len(handled.Shown) != handled.Links {
+		t.Errorf("a synthetic Escape cleared the box and left %d of %d entries hidden", handled.Links-len(handled.Shown), handled.Links)
+	}
+
+	if len(restored.Open) < 2 || restored.Open[1] {
+		t.Error("a section the reader collapsed by hand was left open by a search that has been cleared")
+	}
+	if len(restored.Shown) != restored.Links {
+		t.Errorf("after the search was cleared, %d of %d entries are still hidden", restored.Links-len(restored.Shown), restored.Links)
 	}
 }

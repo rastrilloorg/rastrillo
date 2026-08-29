@@ -45,6 +45,24 @@
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 </style>
 <script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
@@ -52,7 +70,26 @@
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
+<div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">الانتقال إلى المحتوى</a>
+<details class="rst-shell__chrome"><summary>القائمة</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">تصفية هذه الصفحة</label>
+    <input id="ds-filter" type="search" placeholder="تصفية هذه الصفحة" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>لا شيء هنا يطابق ذلك</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="في هذه الصفحة">
+    <details open><summary>الرموز</summary><a href="#tokens-surfaces-and-lines">الأسطح والخطوط</a><a href="#tokens-text">النص</a><a href="#tokens-accent">لون التمييز</a><a href="#tokens-status-tones">نغمات الحالة</a><a href="#tokens-depth">العمق</a><a href="#tokens-radius">استدارة الأركان</a><a href="#tokens-type-family">عائلة الخط</a><a href="#tokens-type-scale">سُلّم أحجام الخط</a><a href="#tokens-spacing">التباعد</a></details>
+    <details open><summary>الأجزاء</summary><a href="#family-list-screen" class="ds-nav__group">شاشة القائمة</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">العرض</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">النموذج</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">المسار</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open><summary>أساليب الأصناف</summary><a href="#idiom-box" class="rst-mono">box</a><a href="#idiom-dropdown" class="rst-mono">dropdown</a><a href="#idiom-form-layout" class="rst-mono">form-layout</a><a href="#idiom-help" class="rst-mono">help</a><a href="#idiom-list-grid" class="rst-mono">list-grid</a><a href="#idiom-modal" class="rst-mono">modal</a><a href="#idiom-selbox" class="rst-mono">selbox</a><a href="#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open><summary>الهياكل</summary><a href="#shell-column" class="rst-mono">column</a><a href="#shell-topbar" class="rst-mono">topbar</a><a href="#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details open><summary>عروض توضيحية</summary><a href="/design-system/signal/ar/shells/column.html">الهيكل column</a><a href="/design-system/signal/ar/shells/topbar.html">الهيكل topbar</a><a href="/design-system/signal/ar/shells/sidebar.html">الهيكل sidebar</a><a href="/design-system/signal/ar/modal.html">مسار النافذة المشروطة</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
 
 <header class="ds-chrome">
   <nav class="rst-seg-tabs" aria-label="السمة"><a href="/design-system/day/ar/index.html">day</a><a href="/design-system/plain/ar/index.html">plain</a><a href="/design-system/signal/ar/index.html" aria-current="page">signal</a></nav>
@@ -63,7 +100,7 @@
   </details>
 </header>
 
-<main class="rst-page" id="main">
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
@@ -82,31 +119,32 @@
 <p class="ds-lead">الخصائص المخصّصة التي يرسم بها كل مكوّن نفسه. اللون وعائلة الخط يأتيان من السمة (‎themes/signal.css‎)، أما سُلّم أحجام الخط ودرجات التباعد فهي بنية تأتي من ‎tokens.css‎ وهي نفسها في كل سمة.</p>
 <p class="ds-swatch-note">القيم المطبوعة هنا هي قيم الوضع الفاتح. أما المجموعة الداكنة فمكتوبة يدويًّا في الملف نفسه — لا بالعكس أبدًا — ويُبقي ‎ui/contrast_test.go‎ كل زوج موثّق في المجموعتين عند حدود WCAG 2.2 AA الدنيا: 4.5:1 للنص و3:1 لحدود عناصر التحكّم. أما مربّعات اللون فتُطلى بـ ‎var()‎، فتتبع النظام الذي تقرأ فيه ولن تطابق القيم المطبوعة في الوضع الداكن.</p>
 
-<h3 class="ds-sub">الأسطح والخطوط</h3>
+<h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>الأسطح والخطوط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
 
-<h3 class="ds-sub">النص</h3>
+<h3 class="ds-sub" id="tokens-text" data-ds-anchor>النص</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#0c0e12</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#5b6270</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#454b57</span></span></li></ul>
 
-<h3 class="ds-sub">لون التمييز</h3>
+<h3 class="ds-sub" id="tokens-accent" data-ds-anchor>لون التمييز</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#1a56ff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#e9eeff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#0f3fd6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">نغمات الحالة</h3>
+<h3 class="ds-sub" id="tokens-status-tones" data-ds-anchor>نغمات الحالة</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#fbdee0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#a8121f</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#e6e8ee</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#3b414d</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#d6efe6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#08624a</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#f8e5c2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#7a4708</span></span></li></ul>
 
-<h3 class="ds-sub">العمق</h3>
+<h3 class="ds-sub" id="tokens-depth" data-ds-anchor>العمق</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(9, 11, 16, 0.55)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.45), rgba(0, 0, 0, 0.6))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.2), rgba(0, 0, 0, 0.5))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 4px 10px light-dark(rgba(12, 14, 18, 0.22), rgba(0, 0, 0, 0.62))</span></span></li></ul>
 
-<h3 class="ds-sub">استدارة الأركان</h3>
+<h3 class="ds-sub" id="tokens-radius" data-ds-anchor>استدارة الأركان</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">4px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">2px</span></span></li></ul>
 
-<h3 class="ds-sub">عائلة الخط</h3>
+<h3 class="ds-sub" id="tokens-type-family" data-ds-anchor>عائلة الخط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">&#34;Helvetica Neue&#34;, Helvetica, &#34;Segoe UI Variable Text&#34;, &#34;Segoe UI&#34;, Roboto, Arial, ui-sans-serif, system-ui, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">سُلّم أحجام الخط</h3>
+
+<h3 class="ds-sub" id="tokens-type-scale" data-ds-anchor>سُلّم أحجام الخط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">التباعد</h3>
+<h3 class="ds-sub" id="tokens-spacing" data-ds-anchor>التباعد</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
@@ -114,12 +152,12 @@
 <p class="ds-lead">كل جزء قالبي يقدّمه ui، في الحالات التي تضعه فيها شاشة حقيقية. ويأخذ كلٌّ منها قيمة بيانات واحدة بالضبط، تُبنى في مكانها بـ dict. النماذج داخل ‎rst-box‎ ذي حشو، والصفوف داخل ‎rst-list‎، لأن هذه الأجزاء تفترض ذلك — انظر القاعدتين في «أساليب الأصناف» أدناه. وثمة أمر لا حيلة للمعرض فيه: لكلٍّ من page-header و error-page عنوان h1 خاص، فتحمل هذه الصفحة عدة عناوين، بينما لا تحمل الشاشة الحقيقية إلا واحدًا.</p>
 <p class="ds-note">يبقى محتوى العيّنات بالإنجليزية في كل صفحة: فالأسماء والمسارات والتسميات في هذه العيّنات بدائل مؤقتة، وترجمتها توحي بأن الإطار يقدّم تلك الكلمات نفسها. أما عروض الهياكل والنافذة المشروطة فعلى العكس — إنها تتقمّص تطبيقًا حقيقيًّا، فيتحدث إطارها باللغة التي اخترتها.</p>
 
-<section class="ds-family">
+<section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>شاشة القائمة</h3>
 <p class="ds-lead">الشاشة التي تقضي فيها معظم التطبيقات معظم وقتها: شريط عنوان، وشريط أدوات، وسلسلة صفوف، وطريقة للمرور على بقيّتها.</p>
 
 <!-- partial: page-header -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
 <p class="ds-lead">شريط عنوان الشاشة: عنوان h1، وعنوان فرعي اختياري، وإجراء رئيسي واحد على الأكثر.</p>
 
@@ -149,7 +187,7 @@
 </article>
 
 <!-- partial: list-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
 <p class="ds-lead">شريط الأدوات أعلى بطاقة القائمة: نموذج البحث، ومتّسع إلى جانبه لتصفية.</p>
 
@@ -178,7 +216,7 @@
 </article>
 
 <!-- partial: list-bar-search -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
 <p class="ds-lead">نموذج البحث وحده، لقائمة لا تفعل غير البحث. نموذج ‎method=&#34;get&#34;‎ عادي.</p>
 
@@ -207,7 +245,7 @@
 </article>
 
 <!-- partial: list-search-submit -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-search-submit" data-ds-anchor>
 <h4 class="rst-mono">list-search-submit</h4>
 <p class="ds-lead">زر الإرسال الحقيقي لنموذج البحث: مخفيّ بصريًّا، لكنه ضمن ترتيب Tab، ويظهر حين يصله تركيز لوحة المفاتيح.</p>
 
@@ -221,7 +259,7 @@
 </article>
 
 <!-- partial: list-row-action -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
 <p class="ds-lead">صفٌّ واحد من القائمة: اسم السجل رابطًا رئيسيًا، وسطر بيانات فرعية، وإجراء ثانوي واحد على الأكثر.</p>
 
@@ -248,7 +286,7 @@
 </article>
 
 <!-- partial: seg-tabs -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
 <p class="ds-lead">عنصر مجزّأ من روابط يبنيها الخادم. التبويب الحالي ليس إلا ‎aria-current‎ على رابط، لا أكثر.</p>
 
@@ -262,7 +300,7 @@
 </article>
 
 <!-- partial: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">عنصر يُفتح ويُغلق بلا أي JavaScript: زر summary فوق لوحة من روابط عادية.</p>
 
@@ -283,7 +321,7 @@
 </article>
 
 <!-- partial: bulk-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-bulk-bar" data-ds-anchor>
 <h4 class="rst-mono">bulk-bar</h4>
 <p class="ds-lead">شريط ترويسة وضع التحديد، يحلّ محل شريط القائمة: العدد، ورابط لتوسيع التحديد، وقائمة الإجراءات.</p>
 
@@ -297,7 +335,7 @@
 </article>
 
 <!-- partial: pagination -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-pagination" data-ds-anchor>
 <h4 class="rst-mono">pagination</h4>
 <p class="ds-lead">شريط من روابط عادية مرقّمة، حتى يظل التنقّل بين الصفحات يعمل مع تعطيل JavaScript.</p>
 
@@ -319,7 +357,7 @@
 </article>
 
 <!-- partial: empty-state -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
 <p class="ds-lead">بطاقة الحالة الفارغة. الحالة الفارغة تُعلِّم: تقول ما الذي كان سيظهر هنا وكيف تصنع واحدًا.</p>
 
@@ -349,12 +387,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-display" data-ds-anchor>
 <h3>العرض</h3>
 <p class="ds-lead">القطع الصغيرة من المفردات التي تُركَّب منها الشاشة: الحالة، والهوية، والتقدّم، وشكل التنبيه الوحيد.</p>
 
 <!-- partial: status-pill -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
 <p class="ds-lead">حالة السجل في هيئة شارة ملوّنة. الحالة لا تُنقل باللون وحده أبدًا، فالتسمية نصّ ظاهر دائمًا.</p>
 
@@ -392,7 +430,7 @@
 </article>
 
 <!-- partial: badge -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-badge" data-ds-anchor>
 <h4 class="rst-mono">badge</h4>
 <p class="ds-lead">شارة محاطة بإطار بحروف كبيرة، للعلامات الصغيرة الثابتة. وهي غير ‎status-pill‎ الذي يعبّر عن حالة السجل.</p>
 
@@ -430,7 +468,7 @@
 </article>
 
 <!-- partial: meter -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
 <p class="ds-lead">شريط سعة مع رقمه. النسبة مكتوبة دائمًا، فالشريط وحده لا يحمل الرقم أبدًا.</p>
 
@@ -468,7 +506,7 @@
 </article>
 
 <!-- partial: person -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
 <p class="ds-lead">صورة بالأحرف الأولى واسم وبريد: خلية الهوية لأنواع السجلات التي هي أشخاص.</p>
 
@@ -494,7 +532,7 @@
 </article>
 
 <!-- partial: callout -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-callout" data-ds-anchor>
 <h4 class="rst-mono">callout</h4>
 <p class="ds-lead">مفردات التنبيه الوحيدة: شريط ملوّن، وأيقونة نغمة، وعنوان عريض اختياري، وفقرة متن واحدة.</p>
 
@@ -538,7 +576,7 @@
 </article>
 
 <!-- partial: detail-list -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
 <p class="ds-lead">حقائق السجل الموسومة في صورة قائمة تعريفات، وهي متن شاشة العرض. وتُعلَّم القيم ذات الطابع الآلي بـ Mono.</p>
 
@@ -561,7 +599,7 @@
 </article>
 
 <!-- partial: notice -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-notice" data-ds-anchor>
 <h4 class="rst-mono">notice</h4>
 <p class="ds-lead">تأكيد من سطر واحد بعد إعادة التوجيه. يأخذ نصًّا بسيطًا لا dict، ولا يرسم شيئًا إن كان فارغًا.</p>
 
@@ -575,7 +613,7 @@
 </article>
 
 <!-- partial: form-error -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-error" data-ds-anchor>
 <h4 class="rst-mono">form-error</h4>
 <p class="ds-lead">سطر ملخّص أخطاء النموذج، ‎role=&#34;alert&#34;‎. يأخذ نصًّا بسيطًا، ولا يرسم شيئًا حين لا يوجد خطأ.</p>
 
@@ -589,7 +627,7 @@
 </article>
 
 <!-- partial: job-status -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-job-status" data-ds-anchor>
 <h4 class="rst-mono">job-status</h4>
 <p class="ds-lead">الجزء الذي يُستقصى من مهمة تعمل في الخلفية. لا تُكتب السمة data-poll إلا أثناء تشغيل المهمة، وحذفها هو طريقة إيقاف الاستقصاء.</p>
 
@@ -628,12 +666,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-form" data-ds-anchor>
 <h3>النموذج</h3>
 <p class="ds-lead">كل عنصر تحكّم، في الحالات التي يضعه فيها نموذج حقيقي. وكلٌّ منها داخل ‎rst-box‎ ذي حشو، لأن هذه هي القاعدة التي تفترضها هذه الأجزاء.</p>
 
 <!-- partial: field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
 <p class="ds-lead">تسمية وحقل وتلميح اختياري ومساعدة وخطأ — عنصر التحكّم النصّي العام، بمعرّف صريح.</p>
 
@@ -691,7 +729,7 @@
 </article>
 
 <!-- partial: field-text -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
 <p class="ds-lead">حقل نصّي واحد بتسمية، ومعرّفاته مشتقّة من Name. نجمة الإلزام مخفيّة بـ ‎aria-hidden‎، والإشارة البرمجية هي سمة required على الحقل.</p>
 
@@ -737,7 +775,7 @@
 </article>
 
 <!-- partial: field-textarea -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-textarea" data-ds-anchor>
 <h4 class="rst-mono">field-textarea</h4>
 <p class="ds-lead">غلاف field-text حول عنصر textarea.</p>
 
@@ -783,7 +821,7 @@
 </article>
 
 <!-- partial: field-select -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-select" data-ds-anchor>
 <h4 class="rst-mono">field-select</h4>
 <p class="ds-lead">غلاف field حول عنصر select أصلي. فإذا تجاوزت الخيارات عشرة فعّل الـ select صندوق التحرير والسرد القابل للتصفية في ‎select.js‎؛ ومع ذلك يظل ما يرسله النموذج هو الـ select الأصلي.</p>
 
@@ -838,7 +876,7 @@
 </article>
 
 <!-- partial: field-check -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-check" data-ds-anchor>
 <h4 class="rst-mono">field-check</h4>
 <p class="ds-lead">آلية التبديل الوحيدة: مربّع تأشير حقيقي بمظهر مفتاح، مع بقاء لوحة المفاتيح وقارئ الشاشة على حالهما.</p>
 
@@ -864,7 +902,7 @@
 </article>
 
 <!-- partial: choice-field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-choice-field" data-ds-anchor>
 <h4 class="rst-mono">choice-field</h4>
 <p class="ds-lead">بطاقات الخيارات — الشكل المفضّل لمجموعة أزرار الاختيار أو مربّعات التأشير. يبقى Title قصيرًا، ويتولّى Desc الشرح.</p>
 
@@ -884,7 +922,7 @@
 </article>
 
 <!-- partial: field-date -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-date" data-ds-anchor>
 <h4 class="rst-mono">field-date</h4>
 <p class="ds-lead">حقل تاريخ أصلي، ومعه صندوق التحرير والسرد الذي يفعّله datetime.js ويفهم اللغة الطبيعية، ما لم يمرّر المستدعي Plain. اكتب فيه &#34;غدًا&#34;.</p>
 
@@ -930,7 +968,7 @@
 </article>
 
 <!-- partial: field-time -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-time" data-ds-anchor>
 <h4 class="rst-mono">field-time</h4>
 <p class="ds-lead">الغلاف نفسه حول حقل وقت أصلي. والتحسين هنا يقرأ ساعة لا تقويمًا.</p>
 
@@ -976,7 +1014,7 @@
 </article>
 
 <!-- partial: field-datetime -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-datetime" data-ds-anchor>
 <h4 class="rst-mono">field-datetime</h4>
 <p class="ds-lead">تاريخ ووقت في حقل واحد، وقيمة واحدة.</p>
 
@@ -1022,7 +1060,7 @@
 </article>
 
 <!-- partial: field-daterange -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
 <p class="ds-lead">بداية ونهاية في مجموعة واحدة موسومة. يجب أن يحمل النصفان اسمَي Name مختلفين، فكلٌّ يشتقّ معرّفاته من اسمه.</p>
 
@@ -1067,7 +1105,7 @@
 </article>
 
 <!-- partial: form-foot -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-foot" data-ds-anchor>
 <h4 class="rst-mono">form-foot</h4>
 <p class="ds-lead">صف الختام في النموذج: زر إرسال رئيسي واحد ورابط إلغاء اختياري. الإلغاء رابط لأن مغادرة النموذج تنقُّل بين الصفحات.</p>
 
@@ -1092,7 +1130,7 @@
 </article>
 
 <!-- partial: confirm-form -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-confirm-form" data-ds-anchor>
 <h4 class="rst-mono">confirm-form</h4>
 <p class="ds-lead">صف الإجراءات في صفحة التأكيد. للإجراءات المُتلِفة مسار خاص بها لا مربّع حوار، فلا شيء يحتاج إلى برمجة.</p>
 
@@ -1113,12 +1151,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-route" data-ds-anchor>
 <h3>المسار</h3>
 <p class="ds-lead">القطع التي تكون استجابة كاملة لا جزءًا من استجابة.</p>
 
 <!-- partial: error-page -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
 <p class="ds-lead">متن استجابة الخطأ كاملًا: الحالة، وجملة صادقة واحدة، وطريق للعودة، وفي حالة 500 الرقم المرجعي الذي يبحث عنه المشغّل بـ grep.</p>
 
@@ -1193,7 +1231,7 @@
 </article>
 
 <!-- partial: back-nav -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-back-nav" data-ds-anchor>
 <h4 class="rst-mono">back-nav</h4>
 <p class="ds-lead">رابط العودة مستوى واحدًا لأعلى، فوق شاشة العرض أو التحرير.</p>
 
@@ -1207,7 +1245,7 @@
 </article>
 
 <!-- partial: locale-menu -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-locale-menu" data-ds-anchor>
 <h4 class="rst-mono">locale-menu</h4>
 <p class="ds-lead">مبدّل اللغة: قائمة details من نماذج POST بحقل واحد إلى ‎/_locale‎، فيستقر الاختيار في ملفّ تعريف اللغة ويبقى القارئ على المسار نفسه.</p>
 
@@ -1243,7 +1281,7 @@
 <p class="ds-lead">الأشكال التي لا يستطيع الجزء أن يكونها، لأنها تلفّ متنًا لا يعرفه إلا المستدعي: بطاقة القسم، وشبكة البيانات، وقائمة الإظهار، وإطار الهياكل نفسها. يقدّم ‎tokens.css‎ الأصناف ويكتب التطبيق الشيفرة. وكل ما تحت هذا هو بالضبط العيّنة التي يعيدها ‎ui.Styleguide‎، وهي العيّنة التي تقابلها اختبارات ui بـ ‎tokens.css‎ — انسخ من هنا.</p>
 
 <!-- idiom: box -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
 <h4 class="rst-mono">box</h4>
 <p class="ds-lead">بطاقة القسم ذات الحشو، والعنوان الذي يقف خارجها.</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>أيّ بطاقة هي أيّ</strong><p>‏‎rst-list‎ و‎rst-card‎ بلا حشو عن قصد: فهما يحملان سلسلة صفوف، وكل صف يضع حشوه بنفسه. ضع فيهما مباشرةً نموذجًا أو فقرة أو شريط روابط أو أي شيء ليس صفًّا، فسيُرسم ملتصقًا بالحدّ — والنصّ الملامس للحافة هو العلامة. أما البطاقة ذات الحشو لأي محتوى فهي ‎rst-box‎، وعنوانها ‎rst-box-head‎ شقيقٌ يسبقها.</p></div></div>
@@ -1252,7 +1290,7 @@
 </article>
 
 <!-- idiom: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">قائمة ‎details/summary‎ التي تقف خلف قوائم الفائض في الترويسة وخلف تصفية شريط القائمة، ومعها تصفية مطبَّقة في هيئة شارة يمكن إزالتها.</p>
 
@@ -1267,7 +1305,7 @@
 </article>
 
 <!-- idiom: form-layout -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
 <h4 class="rst-mono">form-layout</h4>
 <p class="ds-lead">الأصناف التي تمنح النموذج إيقاعه وشريط الحفظ فيه. لا يُصدرها أي جزء، فهي تلفّ سلسلة حقول يؤلّفها المستدعي بنفسه.</p>
 
@@ -1301,7 +1339,7 @@
 </article>
 
 <!-- idiom: help -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
 <h4 class="rst-mono">help</h4>
 <p class="ds-lead">علامة استفهام محاطة بإطار تصل إلى مقالة مساعدة. تلميح CSS زينة فقط، أما الرابط فيحمل تسميته الكاملة بجملة تامة.</p>
 
@@ -1309,7 +1347,7 @@
 </article>
 
 <!-- idiom: list-grid -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h4 class="rst-mono">list-grid</h4>
 <p class="ds-lead">مفردات جداول البيانات الحقيقية: البطاقة تحدّد أعمدتها مرة واحدة، والصفوف تختار الخلايا فحسب.</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>الشاشات تتراصّ رأسيًّا</strong><p>الشاشة عمود واحد: page-header، ثم section-header مع بطاقة، ثم section-header التالي مع بطاقته، بترتيب القراءة. لا تضع عنوانًا وفقرة وزرًّا جنبًا إلى جنب في صف flex. الترتيب الأفقي محجوز للأساليب التي تحمله أصلًا: rst-box-head و rst-field-row و rst-lbar وخلايا rst-lrow و rst-seg-tabs.</p></div></div>
@@ -1328,7 +1366,7 @@
 </article>
 
 <!-- idiom: modal -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">النافذة المشروطة عنوان مستقل بذاته، لا حالة في المتصفح: الصفحة تحتها معلّمة بـ inert، واللوحة فوقها، والإغلاق رابط عادي.</p>
 
@@ -1354,7 +1392,7 @@
 </article>
 
 <!-- idiom: selbox -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
 <h4 class="rst-mono">selbox</h4>
 <p class="ds-lead">مربّع التأشير الذي يرتديه صف القائمة في وضع التحديد. وتسميته تعيد ذكر هويّة الصف.</p>
 
@@ -1362,7 +1400,7 @@
 </article>
 
 <!-- idiom: shell-sidebar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
 <h4 class="rst-mono">shell-sidebar</h4>
 <p class="ds-lead">إطار الهيكل sidebar نفسه، وينطوي دون 800px إلى عنصر details.</p>
 
@@ -1379,7 +1417,7 @@
 </article>
 
 <!-- idiom: shell-topbar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h4 class="rst-mono">shell-topbar</h4>
 <p class="ds-lead">إطار الهيكل topbar نفسه، في صورة شيفرة. يقدّمه Layout قالبًا كاملًا — وهذا ما بداخله.</p>
 
@@ -1398,7 +1436,7 @@
 </article>
 
 <!-- idiom: tblock -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
 <h4 class="rst-mono">tblock</h4>
 <p class="ds-lead">بطاقة محاطة بإطار لا يظهر متنها إلا ما دام مفتاحها مفعّلًا، عبر ‎:has()‎. المفتاح هو المرجع، والإظهار مجرد تسهيل في العرض.</p>
 
@@ -1420,21 +1458,21 @@
 <div class="ds-head"><h2 id="shells">الهياكل</h2></div>
 <p class="ds-lead">إطار الصفحة نفسه. يكتب ‎rastrillo new‎ واحدًا منها باسم ‎templates/layout.html‎؛ فتملأ الصفحة فجوة المحتوى وتتجاوز ما تحتاجه من كتل الإطار. وكل عرض أدناه صفحة كاملة على عنوانها الخاص — افتح واحدًا لتراه بعرض كامل، حيث يجد شريط sidebar وتذييل topbar متّسعًا حقيقيًّا.</p>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-column" data-ds-anchor>
 <h3>column</h3>
 <p class="ds-lead">الصفحة البسيطة المتوسّطة التي يبدأ منها كل تطبيق مولَّد حديثًا: رابط تخطٍّ، وعنوان، وعمود المحتوى.</p>
 <iframe class="ds-frame" src="/design-system/signal/ar/shells/column.html" title="الهيكل column، معروضًا بصفحة كاملة" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/signal/ar/shells/column.html">افتح الهيكل column</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
 <h3>topbar</h3>
 <p class="ds-lead">العلامة والتنقّل وقائمة الحساب عبر الأعلى، وتذييل أسفل الصفحة.</p>
 <iframe class="ds-frame" src="/design-system/signal/ar/shells/topbar.html" title="الهيكل topbar، معروضًا بصفحة كاملة" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/signal/ar/shells/topbar.html">افتح الهيكل topbar</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
 <h3>sidebar</h3>
 <p class="ds-lead">شريط تنقّل بجانب الصفحة، ينطوي دون عرض 800px إلى عنصر details. بلا JavaScript.</p>
 <iframe class="ds-frame" src="/design-system/signal/ar/shells/sidebar.html" title="الهيكل sidebar، معروضًا بصفحة كاملة" loading="lazy"></iframe>
@@ -1442,6 +1480,8 @@
 </section>
 
 
+</div>
 </main>
+</div>
 </body>
 </html>

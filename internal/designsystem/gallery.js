@@ -11,6 +11,8 @@
      the colour-scheme toggle   System / Light / Dark, written to
                                 data-theme on <html> and remembered in
                                 localStorage under rst-ds-scheme
+     the sidebar filter         type to hide the nav entries that do
+                                not match, and the sections left empty
 
    Why it is a blocking <script> in <head> rather than a deferred one at
    the foot, which is how the other three load: both of the things it
@@ -105,11 +107,98 @@
     }
   });
 
-  // ── Seam: the nav filter ────────────────────────────────────────────
-  // Task 5 adds the gallery's section nav and the type-to-filter box
-  // over it. It belongs here, below this line, on the same terms as the
-  // toggle above: it enhances a nav that is a complete list of links
-  // with scripts off, and it adds no strings of its own — every word it
-  // needs rides out on a data attribute the renderer fills from
-  // prose.go, the way select.js takes its strings from the catalog.
+  // ── The nav filter ──────────────────────────────────────────────────
+  //
+  // The sidebar is a complete list of every anchor on the page before
+  // this runs and stays one if it never does: the box is display:none
+  // until data-rst-js is set, the same deal the toggle above has, so
+  // scripts off gets the nav and no dead control.
+  //
+  // It says nothing of its own: the one sentence it can put on screen,
+  // "nothing matches", is rendered by the page in the page's language
+  // and starts out hidden, and this file only takes the attribute off
+  // it. Same deal as select.js reading its strings out of the catalog.
+  ready(function () {
+    var input = document.querySelector("[data-ds-filter]");
+    var nav = input && document.getElementById(input.getAttribute("aria-controls"));
+    if (!input || !nav) return;
+    var empty = document.querySelector("[data-ds-filter-empty]");
+    var sections = nav.querySelectorAll("details");
+
+    // Folded both sides: "seccion" finds "Sección", and the rail is
+    // headings in twelve languages. NFD splits a letter from its
+    // accents; the range is the combining marks, and dropping them is
+    // the whole of it.
+    function fold(s) {
+      return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    var links = nav.querySelectorAll("a");
+    for (var i = 0; i < links.length; i++) links[i].dsText = fold(links[i].textContent);
+
+    // What the reader had open before they typed. A query opens
+    // whatever it found something in; clearing it hands the reader
+    // their own arrangement back.
+    var chosen = null;
+
+    function run(query) {
+      var q = fold(query.trim());
+      if (q && chosen === null) {
+        chosen = [];
+        for (var i = 0; i < sections.length; i++) chosen.push(sections[i].open);
+      }
+      var found = false;
+      for (var s = 0; s < sections.length; s++) {
+        var section = sections[s];
+        var kids = section.children;
+        var shown = 0, group = null, inGroup = 0;
+        for (var k = 0; k < kids.length; k++) {
+          var el = kids[k];
+          if (el.tagName !== "A") continue;
+          // A family heading is a link like any other, but it stands
+          // for the run under it: matching the family shows the whole
+          // family, and matching nothing in it takes the heading with
+          // it rather than leaving a label over a gap.
+          if (el.classList.contains("ds-nav__group")) {
+            if (group) group.hidden = inGroup === 0;
+            group = el;
+            group.dsWhole = !q || el.dsText.indexOf(q) >= 0;
+            inGroup = group.dsWhole ? 1 : 0;
+            shown += inGroup;
+            continue;
+          }
+          var hit = !q || (group && group.dsWhole) || el.dsText.indexOf(q) >= 0;
+          el.hidden = !hit;
+          if (hit) {
+            shown++;
+            inGroup++;
+          }
+        }
+        if (group) group.hidden = inGroup === 0;
+        section.hidden = shown === 0;
+        if (shown) found = true;
+        section.open = q ? shown > 0 : chosen ? chosen[s] : section.open;
+      }
+      if (!q) chosen = null;
+      if (empty) empty.hidden = !q || found;
+    }
+
+    input.addEventListener("input", function () {
+      run(input.value);
+    });
+
+    // Escape clears a query that is there and is left alone when there
+    // is not, so the key still belongs to whatever is around the box.
+    // Focus never moves: nothing here touches it.
+    input.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || input.value === "") return;
+      event.preventDefault();
+      input.value = "";
+      run("");
+    });
+
+    // A back-navigation restores the box with a value already in it:
+    // filter to what it says, not to what the page was rendered saying.
+    if (input.value) run(input.value);
+  });
 })();

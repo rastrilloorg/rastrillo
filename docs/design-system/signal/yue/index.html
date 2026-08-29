@@ -45,6 +45,24 @@
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 </style>
 <script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
@@ -52,7 +70,26 @@
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
+<div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">跳到內容</a>
+<details class="rst-shell__chrome"><summary>選單</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">篩選呢一版</label>
+    <input id="ds-filter" type="search" placeholder="篩選呢一版" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>呢度冇嘢啱</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="呢版嘅內容">
+    <details open><summary>設計變數</summary><a href="#tokens-surfaces-and-lines">底面同線條</a><a href="#tokens-text">文字</a><a href="#tokens-accent">強調色</a><a href="#tokens-status-tones">狀態色調</a><a href="#tokens-depth">層次</a><a href="#tokens-radius">圓角</a><a href="#tokens-type-family">字體族</a><a href="#tokens-type-scale">字級</a><a href="#tokens-spacing">間距</a></details>
+    <details open><summary>模板片段</summary><a href="#family-list-screen" class="ds-nav__group">清單畫面</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">展示</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">表單</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">路由</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open><summary>類別慣用法</summary><a href="#idiom-box" class="rst-mono">box</a><a href="#idiom-dropdown" class="rst-mono">dropdown</a><a href="#idiom-form-layout" class="rst-mono">form-layout</a><a href="#idiom-help" class="rst-mono">help</a><a href="#idiom-list-grid" class="rst-mono">list-grid</a><a href="#idiom-modal" class="rst-mono">modal</a><a href="#idiom-selbox" class="rst-mono">selbox</a><a href="#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open><summary>頁面外殼</summary><a href="#shell-column" class="rst-mono">column</a><a href="#shell-topbar" class="rst-mono">topbar</a><a href="#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details open><summary>示範</summary><a href="/design-system/signal/yue/shells/column.html">column 外殼</a><a href="/design-system/signal/yue/shells/topbar.html">topbar 外殼</a><a href="/design-system/signal/yue/shells/sidebar.html">sidebar 外殼</a><a href="/design-system/signal/yue/modal.html">模態框嗰條路由</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
 
 <header class="ds-chrome">
   <nav class="rst-seg-tabs" aria-label="主題"><a href="/design-system/day/yue/index.html">day</a><a href="/design-system/plain/yue/index.html">plain</a><a href="/design-system/signal/yue/index.html" aria-current="page">signal</a></nav>
@@ -63,7 +100,7 @@
   </details>
 </header>
 
-<main class="rst-page" id="main">
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
@@ -82,31 +119,32 @@
 <p class="ds-lead">每個組件用嚟畫自己嘅自訂屬性。顏色同字體族嚟自主題（themes/signal.css）；字級同間距級數屬於結構，嚟自 tokens.css，喺每個主題都一樣。</p>
 <p class="ds-swatch-note">呢度印出嚟嘅係淺色嗰套值。深色嗰套係喺同一個檔案度手寫嘅——從來唔靠反轉——而 ui/contrast_test.go 會將兩套入面每一對有記錄嘅顏色壓住喺 WCAG 2.2 AA 嘅底線：文字 4.5:1，控制項邊框 3:1。啲色塊本身用 var() 上色，所以佢哋跟住你而家睇緊嗰套方案，喺深色模式下唔會同印出嚟嘅值夾到。</p>
 
-<h3 class="ds-sub">底面同線條</h3>
+<h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>底面同線條</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
 
-<h3 class="ds-sub">文字</h3>
+<h3 class="ds-sub" id="tokens-text" data-ds-anchor>文字</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#0c0e12</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#5b6270</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#454b57</span></span></li></ul>
 
-<h3 class="ds-sub">強調色</h3>
+<h3 class="ds-sub" id="tokens-accent" data-ds-anchor>強調色</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#1a56ff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#e9eeff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#0f3fd6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">狀態色調</h3>
+<h3 class="ds-sub" id="tokens-status-tones" data-ds-anchor>狀態色調</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#fbdee0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#a8121f</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#e6e8ee</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#3b414d</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#d6efe6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#08624a</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#f8e5c2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#7a4708</span></span></li></ul>
 
-<h3 class="ds-sub">層次</h3>
+<h3 class="ds-sub" id="tokens-depth" data-ds-anchor>層次</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(9, 11, 16, 0.55)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.45), rgba(0, 0, 0, 0.6))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.2), rgba(0, 0, 0, 0.5))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 4px 10px light-dark(rgba(12, 14, 18, 0.22), rgba(0, 0, 0, 0.62))</span></span></li></ul>
 
-<h3 class="ds-sub">圓角</h3>
+<h3 class="ds-sub" id="tokens-radius" data-ds-anchor>圓角</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">4px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">2px</span></span></li></ul>
 
-<h3 class="ds-sub">字體族</h3>
+<h3 class="ds-sub" id="tokens-type-family" data-ds-anchor>字體族</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">&#34;Helvetica Neue&#34;, Helvetica, &#34;Segoe UI Variable Text&#34;, &#34;Segoe UI&#34;, Roboto, Arial, ui-sans-serif, system-ui, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">字級</h3>
+
+<h3 class="ds-sub" id="tokens-type-scale" data-ds-anchor>字級</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">間距</h3>
+<h3 class="ds-sub" id="tokens-spacing" data-ds-anchor>間距</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
@@ -114,12 +152,12 @@
 <p class="ds-lead">ui 帶嘅每一個模板片段，都擺喺真實畫面會令佢入到嘅狀態度。每個淨係收一個資料值，用 dict 即場砌出嚟。表單擺喺有內距嘅 rst-box 度，行擺喺 rst-list 度，因為呢啲片段就係咁假設——睇下面「類別慣用法」嗰兩條規則。有一樣嘢畫廊改唔到：page-header 同 error-page 各自有一個 h1，所以呢一版有幾個，而真實畫面淨係應該有一個。</p>
 <p class="ds-note">樣本入面嘅內容喺每一版都保持英文：呢啲樣本嘅名、路由同標籤都係替身，譯咗佢哋就好似話框架本身帶住嗰啲字咁。外殼同模態框嘅示範啱啱相反——佢哋扮緊一個真嘅應用，所以佢哋個框架講嘅係你揀嗰種語言。</p>
 
-<section class="ds-family">
+<section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>清單畫面</h3>
 <p class="ds-lead">大部分應用花最多時間嘅嗰個畫面：一條標題列、一條工具列、一串行，同睇埋其餘嗰啲嘅方法。</p>
 
 <!-- partial: page-header -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
 <p class="ds-lead">畫面嘅標題列：一個 h1、一個可有可無嘅副標題，同最多一個主要動作。</p>
 
@@ -149,7 +187,7 @@
 </article>
 
 <!-- partial: list-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
 <p class="ds-lead">清單卡片頂嘅工具列：搜尋表單，旁邊留返位擺篩選。</p>
 
@@ -178,7 +216,7 @@
 </article>
 
 <!-- partial: list-bar-search -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
 <p class="ds-lead">淨係得個搜尋表單，畀淨係要搵嘢嘅清單用。就係一個普通嘅 method=&#34;get&#34; 表單。</p>
 
@@ -207,7 +245,7 @@
 </article>
 
 <!-- partial: list-search-submit -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-search-submit" data-ds-anchor>
 <h4 class="rst-mono">list-search-submit</h4>
 <p class="ds-lead">搜尋表單真正嘅提交掣：視覺上收埋咗，但喺 Tab 次序裏面，一攞到鍵盤焦點就現身。</p>
 
@@ -221,7 +259,7 @@
 </article>
 
 <!-- partial: list-row-action -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
 <p class="ds-lead">清單嘅一行：記錄名做主連結，一行輔助資料，最多一個次要動作。</p>
 
@@ -248,7 +286,7 @@
 </article>
 
 <!-- partial: seg-tabs -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
 <p class="ds-lead">由伺服器畫出嚟嘅連結組成嘅分段控制項。而家嗰個分頁只不過係某個連結上面嘅 aria-current，冇多過咁。</p>
 
@@ -262,7 +300,7 @@
 </article>
 
 <!-- partial: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">一個完全冇 JavaScript 嘅展開塊：一個 summary 掣，下面係一板普通連結。</p>
 
@@ -283,7 +321,7 @@
 </article>
 
 <!-- partial: bulk-bar -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-bulk-bar" data-ds-anchor>
 <h4 class="rst-mono">bulk-bar</h4>
 <p class="ds-lead">揀選模式嘅頂部條，代替咗清單列：數量、一個擴大揀選嘅連結，同動作選單。</p>
 
@@ -297,7 +335,7 @@
 </article>
 
 <!-- partial: pagination -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-pagination" data-ds-anchor>
 <h4 class="rst-mono">pagination</h4>
 <p class="ds-lead">一排有編號嘅普通連結，所以熄咗 JavaScript 都仲揭到頁。</p>
 
@@ -319,7 +357,7 @@
 </article>
 
 <!-- partial: empty-state -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
 <p class="ds-lead">空狀態嘅卡片。空狀態係用嚟教人嘅：佢話你知呢度本來會有咩，同點樣整一個出嚟。</p>
 
@@ -349,12 +387,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-display" data-ds-anchor>
 <h3>展示</h3>
 <p class="ds-lead">砌成一個畫面嘅嗰啲細塊講法：狀態、身分、進度，同唯一嗰種提示形狀。</p>
 
 <!-- partial: status-pill -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
 <p class="ds-lead">一筆記錄嘅狀態，做成一粒有顏色嘅藥丸標籤。狀態從來唔會淨係靠顏色——個標籤永遠都係睇得到嘅文字。</p>
 
@@ -392,7 +430,7 @@
 </article>
 
 <!-- partial: badge -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-badge" data-ds-anchor>
 <h4 class="rst-mono">badge</h4>
 <p class="ds-lead">一個大寫字母、有邊框嘅細標記，用嚟做固定嘅記號。同 status-pill 唔同，嗰個係記錄嘅狀態。</p>
 
@@ -430,7 +468,7 @@
 </article>
 
 <!-- partial: meter -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
 <p class="ds-lead">一條有數字嘅容量條。個比例一定係文字——淨係一條條唔會自己帶住個數字。</p>
 
@@ -468,7 +506,7 @@
 </article>
 
 <!-- partial: person -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
 <p class="ds-lead">首字母頭像、姓名同電郵：畀「記錄本身就係人」嗰類記錄用嘅身分格。</p>
 
@@ -494,7 +532,7 @@
 </article>
 
 <!-- partial: callout -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-callout" data-ds-anchor>
 <h4 class="rst-mono">callout</h4>
 <p class="ds-lead">提示嘅唯一一套講法：有顏色嘅條、色調圖示、可有可無嘅粗體標題，同一段正文。</p>
 
@@ -538,7 +576,7 @@
 </article>
 
 <!-- partial: detail-list -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
 <p class="ds-lead">一筆記錄嘅有標籤資料，寫成定義清單——詳情畫面嘅主體。Mono 用嚟標示機器味濃嘅值。</p>
 
@@ -561,7 +599,7 @@
 </article>
 
 <!-- partial: notice -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-notice" data-ds-anchor>
 <h4 class="rst-mono">notice</h4>
 <p class="ds-lead">重新導向之後嘅一行確認。佢收普通字串，唔係 dict，字串係空嘅就咩都唔畫。</p>
 
@@ -575,7 +613,7 @@
 </article>
 
 <!-- partial: form-error -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-error" data-ds-anchor>
 <h4 class="rst-mono">form-error</h4>
 <p class="ds-lead">表單嘅錯誤摘要行，role=&#34;alert&#34;。佢收一個普通字串；冇錯誤嗰陣咩都唔畫。</p>
 
@@ -589,7 +627,7 @@
 </article>
 
 <!-- partial: job-status -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-job-status" data-ds-anchor>
 <h4 class="rst-mono">job-status</h4>
 <p class="ds-lead">背景工作嘅輪詢片段。data-poll 屬性淨係喺工作行緊嗰陣先出——唔出佢就係停止輪詢嘅方法。</p>
 
@@ -628,12 +666,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-form" data-ds-anchor>
 <h3>表單</h3>
 <p class="ds-lead">每一個控制項，喺真實表單會令佢入到嘅狀態度。每個都擺喺有內距嘅 rst-box 入面，因為呢啲片段就係咁假設。</p>
 
 <!-- partial: field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
 <p class="ds-lead">標籤、輸入框、可有可無嘅提示、說明同錯誤——一般嘅文字類控制項，帶住一個明寫嘅 ID。</p>
 
@@ -691,7 +729,7 @@
 </article>
 
 <!-- partial: field-text -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
 <p class="ds-lead">一個有標籤嘅文字輸入框，啲 id 由 Name 推出嚟。必填嘅星號係 aria-hidden——真正嘅程式訊號係輸入框上面嘅 required 屬性。</p>
 
@@ -737,7 +775,7 @@
 </article>
 
 <!-- partial: field-textarea -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-textarea" data-ds-anchor>
 <h4 class="rst-mono">field-textarea</h4>
 <p class="ds-lead">field-text 個外殼，包住一個 textarea。</p>
 
@@ -783,7 +821,7 @@
 </article>
 
 <!-- partial: field-select -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-select" data-ds-anchor>
 <h4 class="rst-mono">field-select</h4>
 <p class="ds-lead">field 個外殼包住一個原生 select。超過十個選項嗰陣，個 select 就會開 select.js 嘅可篩選組合框；但表單提交嘅仲係嗰個原生 select。</p>
 
@@ -838,7 +876,7 @@
 </article>
 
 <!-- partial: field-check -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-check" data-ds-anchor>
 <h4 class="rst-mono">field-check</h4>
 <p class="ds-lead">切換嘅唯一做法：一個真正嘅勾選框，外表整成開關咁，鍵盤同螢幕閱讀器照常用得。</p>
 
@@ -864,7 +902,7 @@
 </article>
 
 <!-- partial: choice-field -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-choice-field" data-ds-anchor>
 <h4 class="rst-mono">choice-field</h4>
 <p class="ds-lead">選項卡片——我哋比較想你用嘅單選或多選組。Title 保持簡短；解釋交畀 Desc。</p>
 
@@ -884,7 +922,7 @@
 </article>
 
 <!-- partial: field-date -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-date" data-ds-anchor>
 <h4 class="rst-mono">field-date</h4>
 <p class="ds-lead">原生日期輸入框，加上 datetime.js 開嘅自然語言組合框（除非叫佢嗰陣傳咗 Plain）。試吓打「聽日」入去。</p>
 
@@ -930,7 +968,7 @@
 </article>
 
 <!-- partial: field-time -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-time" data-ds-anchor>
 <h4 class="rst-mono">field-time</h4>
 <p class="ds-lead">一樣嘅外殼，今次包住原生時間輸入框。呢個加強讀嘅係鐘，唔係日曆。</p>
 
@@ -976,7 +1014,7 @@
 </article>
 
 <!-- partial: field-datetime -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-datetime" data-ds-anchor>
 <h4 class="rst-mono">field-datetime</h4>
 <p class="ds-lead">一個輸入框入面有日期同時間，一個值。</p>
 
@@ -1022,7 +1060,7 @@
 </article>
 
 <!-- partial: field-daterange -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
 <p class="ds-lead">開始同結束，做成一個有標籤嘅組。兩邊一定要用唔同嘅 Name——每邊都係用自己嗰個 Name 嚟砌 id。</p>
 
@@ -1067,7 +1105,7 @@
 </article>
 
 <!-- partial: form-foot -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-form-foot" data-ds-anchor>
 <h4 class="rst-mono">form-foot</h4>
 <p class="ds-lead">表單最後嗰行：一個主要提交掣，加一個可有可無嘅取消連結。取消係連結，因為離開表單其實係去另一頁。</p>
 
@@ -1092,7 +1130,7 @@
 </article>
 
 <!-- partial: confirm-form -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-confirm-form" data-ds-anchor>
 <h4 class="rst-mono">confirm-form</h4>
 <p class="ds-lead">確認版嘅動作行。破壞性動作有自己嘅路由，唔係一個對話框，所以根本冇嘢要寫腳本。</p>
 
@@ -1113,12 +1151,12 @@
 
 </section>
 
-<section class="ds-family">
+<section class="ds-family" id="family-route" data-ds-anchor>
 <h3>路由</h3>
 <p class="ds-lead">呢啲片段本身就係一整個回應，唔係回應入面嘅一塊。</p>
 
 <!-- partial: error-page -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
 <p class="ds-lead">一個錯誤回應嘅整個主體：狀態、一句老實話、一條返去嘅路，同——如果係 500——管理員可以攞去 grep 嘅參考編號。</p>
 
@@ -1193,7 +1231,7 @@
 </article>
 
 <!-- partial: back-nav -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-back-nav" data-ds-anchor>
 <h4 class="rst-mono">back-nav</h4>
 <p class="ds-lead">上返一層嘅連結，擺喺詳情或者編輯畫面上面。</p>
 
@@ -1207,7 +1245,7 @@
 </article>
 
 <!-- partial: locale-menu -->
-<article class="ds-partial">
+<article class="ds-partial" id="partial-locale-menu" data-ds-anchor>
 <h4 class="rst-mono">locale-menu</h4>
 <p class="ds-lead">語言切換器：一個 details 選單，入面係寄去 /_locale 嘅單一欄位 POST 表單，噉揀嘅結果就會入咗 locale cookie，而讀者仲留喺同一條路徑度。</p>
 
@@ -1243,7 +1281,7 @@
 <p class="ds-lead">片段做唔到嘅形狀，因為佢哋要包住淨係呼叫方先知嘅內容：分節卡片、資料格網、展開選單、外殼自己嘅框架。tokens.css 出啲類別，標記由應用寫。下面嘅嘢就係 ui.Styleguide 回傳嘅樣本本身，亦即係 ui 嘅測試攞去同 tokens.css 對嘅樣本——由呢度抄。</p>
 
 <!-- idiom: box -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
 <h4 class="rst-mono">box</h4>
 <p class="ds-lead">有內距嘅分節卡片，同坐喺佢外面嗰個標題。</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>邊張卡片係邊種</strong><p>rst-list 同 rst-card 特登冇內距：佢哋裝嘅係一串行，每行自己有內距。將表單、段落、一排連結或者任何唔係行嘅嘢直接擺入去，就會貼實個邊框畫出嚟——文字掂到邊就係嗰個訊號。畀任意內容用嘅有內距卡片係 rst-box，佢個標題係擺喺前面嘅兄弟節點 rst-box-head。</p></div></div>
@@ -1252,7 +1290,7 @@
 </article>
 
 <!-- idiom: dropdown -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">匿喺頁首溢出選單同清單列篩選背後嘅 details/summary 選單，加埋一個可以摘走嘅已套用篩選標籤。</p>
 
@@ -1267,7 +1305,7 @@
 </article>
 
 <!-- idiom: form-layout -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
 <h4 class="rst-mono">form-layout</h4>
 <p class="ds-lead">畀表單節奏同儲存列嘅嗰啲類別。冇任何片段會出佢哋——佢哋係包住呼叫方自己砌出嚟嘅一串欄位。</p>
 
@@ -1301,7 +1339,7 @@
 </article>
 
 <!-- idiom: help -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
 <h4 class="rst-mono">help</h4>
 <p class="ds-lead">一個有邊框嘅問號，連去說明文章。佢個 CSS 提示只係裝飾；個連結自己有完整句子嘅標籤。</p>
 
@@ -1309,7 +1347,7 @@
 </article>
 
 <!-- idiom: list-grid -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h4 class="rst-mono">list-grid</h4>
 <p class="ds-lead">真正嘅資料表格講法：卡片一次過定好啲欄，行淨係揀格。</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>畫面係直住疊落嚟</strong><p>一個畫面就係一條直欄：page-header，跟住 section-header 加卡片，再跟住下一個 section-header 加卡片，順住讀嘅次序。唔好將標題、段落同掣並排擺喺一個 flex 行入面。橫向排列淨係留畀自己帶住佢嘅慣用法：rst-box-head、rst-field-row、rst-lbar、rst-lrow 嘅格、rst-seg-tabs。</p></div></div>
@@ -1328,7 +1366,7 @@
 </article>
 
 <!-- idiom: modal -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
 <h4 class="rst-mono">modal</h4>
 <p class="ds-lead">模態框有佢自己嘅網址，唔係客戶端狀態：下面嗰版標成 inert，面板喺上面，關閉係一個普通連結。</p>
 
@@ -1354,7 +1392,7 @@
 </article>
 
 <!-- idiom: selbox -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
 <h4 class="rst-mono">selbox</h4>
 <p class="ds-lead">喺揀選模式下，清單一行戴住嘅勾選框。佢個標籤會將呢行嘅身分再講多次。</p>
 
@@ -1362,7 +1400,7 @@
 </article>
 
 <!-- idiom: shell-sidebar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
 <h4 class="rst-mono">shell-sidebar</h4>
 <p class="ds-lead">sidebar 外殼自己嘅框架，細過 800px 就摺埋做一個 details 展開塊。</p>
 
@@ -1379,7 +1417,7 @@
 </article>
 
 <!-- idiom: shell-topbar -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h4 class="rst-mono">shell-topbar</h4>
 <p class="ds-lead">topbar 外殼自己嘅框架，以標記形式呈現。Layout 將佢成套當模板送出——呢度就係入面嘅嘢。</p>
 
@@ -1398,7 +1436,7 @@
 </article>
 
 <!-- idiom: tblock -->
-<article class="ds-partial">
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
 <h4 class="rst-mono">tblock</h4>
 <p class="ds-lead">一張有邊框嘅卡片，個內容淨係喺開關開咗嗰陣先用 :has() 顯示。開關先係真正嘅狀態；顯示只係方便。</p>
 
@@ -1420,21 +1458,21 @@
 <div class="ds-head"><h2 id="shells">頁面外殼</h2></div>
 <p class="ds-lead">頁面框架本身。rastrillo new 會將其中一個寫做 templates/layout.html；一版填入佢內容嘅窿，再按需要覆寫某啲框架區塊。下面每個示範都係有自己網址嘅一整版——開一個嚟睇下全闊嘅樣，喺嗰度 sidebar 條欄同 topbar 個頁尾先真係有位。</p>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-column" data-ds-anchor>
 <h3>column</h3>
 <p class="ds-lead">每個新整出嚟嘅應用起步嗰版樸素置中頁面：一個跳過連結、一個標題，同內容嗰欄。</p>
 <iframe class="ds-frame" src="/design-system/signal/yue/shells/column.html" title="column 外殼，以成版形式呈現" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/signal/yue/shells/column.html">打開 column 外殼</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
 <h3>topbar</h3>
 <p class="ds-lead">頂部橫排住品牌、導航同帳戶選單，頁面下面有頁尾。</p>
 <iframe class="ds-frame" src="/design-system/signal/yue/shells/topbar.html" title="topbar 外殼，以成版形式呈現" loading="lazy"></iframe>
 <p><a class="rst-btn" href="/design-system/signal/yue/shells/topbar.html">打開 topbar 外殼</a></p>
 </section>
 
-<section class="ds-shell">
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
 <h3>sidebar</h3>
 <p class="ds-lead">喺頁面旁邊嘅導航欄，細過 800px 就摺埋做一個 details 展開塊。冇 JavaScript。</p>
 <iframe class="ds-frame" src="/design-system/signal/yue/shells/sidebar.html" title="sidebar 外殼，以成版形式呈現" loading="lazy"></iframe>
@@ -1442,6 +1480,8 @@
 </section>
 
 
+</div>
 </main>
+</div>
 </body>
 </html>
