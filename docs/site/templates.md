@@ -53,14 +53,15 @@ a partial's built-in strings resolve in the request's locale. See
 They span the list-screen, display, form and route families:
 
 ```text
-badge           bulk-bar        callout         choice-field
-confirm-form    detail-list     dropdown        empty-state
-error-page      field           field-check     field-date
-field-daterange field-datetime  field-select    field-text
-field-textarea  field-time      form-foot       job-status
-list-bar        list-bar-search list-row-action locale-menu
-meter           page-header     pagination      person
-seg-tabs        status-pill
+back-nav      error-page       field-time          meter
+badge         field            form-error          notice
+bulk-bar      field-check      form-foot           page-header
+callout       field-date       job-status          pagination
+choice-field  field-daterange  list-bar            person
+confirm-form  field-datetime   list-bar-search     seg-tabs
+detail-list   field-select     list-row-action     status-pill
+dropdown      field-text       list-search-submit
+empty-state   field-textarea   locale-menu
 ```
 
 `locale-menu` is the language switcher; see
@@ -143,9 +144,12 @@ The keys are the ones `field-text` takes — `Name`, `Label`, `Value`,
 format the field posts, and `Plain` to emit the bare native input with
 no enhancement attributes at all.
 
-`field-daterange` takes `Legend`, an optional `LegendHidden`, `Kind`
-(`"datetime"`, the default, or `"date"`), an optional `Seed`, and
-`Start` and `End` sub-dicts each carrying a whole single-field contract.
+`field-daterange` wraps two of those. `Start` and `End` are sub-dicts,
+each carrying a whole single-field contract of its own. `Legend` names
+the pair, and `LegendHidden` keeps that name for a screen reader while
+dropping the visible heading. `Kind` picks the input both halves get —
+`"datetime"` by default, or `"date"` — and `Seed` is described below.
+
 **The two halves must have different `Name`s.** Each derives its input
 id and its hint and error ids from its own `Name`, so a shared one
 duplicates every id on the page and points both halves'
@@ -205,7 +209,7 @@ end with no date lands on the start's day.
 
 ### The searchable select
 
-`field-select` past ten options carries `data-rst-select`, and
+`field-select` carries `data-rst-select` at ten options or more, and
 `select.js` mirrors a filterable ARIA combobox onto it. Below ten,
 search over a handful of items is furniture rather than help, so nothing
 is emitted and the script finds nothing to enhance. `Plain` opts out at

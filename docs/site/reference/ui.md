@@ -160,13 +160,14 @@ and `data-busy` ([Background jobs](/docs/jobs)). `SelectJS` backs the
 enhanced select: it mirrors a `<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one
-marked `data-rst-select="false"`. `DatetimeJS` backs the date fields: it turns an input
-carrying `data-rst-date` or `data-rst-time` into a combobox that reads
-"tomorrow", "next fri 9am" or "in 2 weeks" and writes the result back
-to the native input, which stays in the form as the value carrier. It
-holds no month names, no weekday names and no English vocabulary — the
-calendar names come from `Intl` in the page's language, and the words it
-matches on arrive on `data-rst-date-words` from the request's catalog.
+marked `data-rst-select="false"`. `DatetimeJS` backs the date fields: it
+turns an input carrying `data-rst-date` or `data-rst-time` into a
+combobox that reads "tomorrow", "next fri 9am" or "in 2 weeks" and
+writes the result back to the native input, which stays in the form as
+the value carrier. It holds no month names, no weekday names and no
+English vocabulary — the calendar names come from `Intl` in the page's
+language, and the words it matches on arrive on `data-rst-date-words`
+from the request's catalog.
 Its on-screen labels have English fallbacks, the same way `select.js`
 does, for a field that reaches it without the attributes.
 

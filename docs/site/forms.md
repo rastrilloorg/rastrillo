@@ -73,10 +73,13 @@ the common thing.
 required", humanized from the field name.
 
 `Required` on `Money` and on the three date kinds is checked against the
-raw text, so `""` is required-blank while `"0"` is a present, valid
-zero. A present but unparseable value reports the parse error instead of
-the required message — telling someone a field is required when they
-filled it in would be a small lie the parser is in a position to avoid.
+raw text rather than the parsed value, so a present but unparseable
+value reports the parse error instead of the required message — telling
+someone a field is required when they filled it in would be a small lie
+the parser is in a position to avoid. For `Money` that also makes `"0"`
+a present, valid zero where `""` is required-blank; a date has no such
+pair, since `"0"` is simply not a date and reports
+`rastrillo.ui.date_invalid`.
 
 `Parse` reads through `r.PostFormValue`, which parses the form on first
 use. If you want a body-size cap or a 400 on a malformed body, wrap
@@ -110,9 +113,11 @@ starts := p.DateTime("starts")     // time.Time
 h, m, ok := p.Time("doors")        // ok=false when absent or unreadable
 ```
 
-An empty optional date is the zero `time.Time`, never an error — and so
-is an unparseable one, and so is a name you never declared. All three
-look identical from `p.Date`, so ask `p.OK()` or read `p.Errors()` to
+An empty optional date is the zero `time.Time`, and no error at all. An
+unparseable one is the zero `time.Time` too, but it does carry an error:
+`rastrillo.ui.date_invalid`. A name you never declared is the zero
+`time.Time` as well, and silently — no value, no error. All three read
+back identically from `p.Date`, so ask `p.OK()` or read `p.Errors()` to
 tell them apart rather than testing `IsZero`. `p.Time` says the same
 through its `ok`, and returns `0, 0` rather than half a reading.
 
@@ -139,7 +144,9 @@ three date kinds report `rastrillo.ui.*` keys instead —
 `rastrillo.ui.date_end_before_start` — so a French app's date error is
 in French without the app writing one.
 
-Resolving happens at render, and the generated actions already do it:
+Resolving happens at render. The generated actions wrap every field's
+error in `T` unconditionally, and a hand-written date field does the
+same:
 
 ```html
 {{template "field-datetime" dict "Name" "Starts" "Label" (T "event.field.starts")
@@ -147,19 +154,19 @@ Resolving happens at render, and the generated actions already do it:
 ```
 
 Wrapping in `T` is safe for every field, which is why the generated
-template does it unconditionally. `T` hands back a string it does not
-recognise as a key exactly as given, so "Title is required" and your own
-hand-written sentences pass straight through, and only the keys get
-looked up. The wrapping lives in the calling template rather than in the
-partial, so a hand-written caller that already passes a finished
-sentence keeps rendering it unchanged.
+template does it without asking what kind it has. `T` hands back a
+string it does not recognise as a key exactly as given, so "Title is
+required" and your own hand-written sentences pass straight through, and
+only the keys get looked up. The wrapping lives in the calling template
+rather than in the partial, so a hand-written caller that already passes
+a finished sentence keeps rendering it unchanged.
 
 ### Daylight saving
 
 `time.ParseInLocation` resolves a wall-clock time that does not exist —
 the hour a spring-forward skips — using the offset in force before the
-transition, so two different picks either side of that gap can land on
-the same instant.
+transition, so a time inside the skipped hour and the real time it
+collapses onto land on the same instant.
 
 ## Money is int64 cents
 

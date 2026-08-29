@@ -42,9 +42,11 @@ plain `form.Field{Name: "Title"}` does the common thing.
 | `DateTime` | `Parsed.DateTime` | `time.ParseInLocation` on `2006-01-02T15:04` in `Location` |
 
 `Required` on `Money`, `Date`, `Time` and `DateTime` is checked against
-the raw text, so `""` is required-blank while `"0"` is a present, valid
-zero. A present but unparseable value reports the parse error instead of
-the required message.
+the raw text rather than the parsed value, so a present but unparseable
+value reports the parse error instead of the required message. For
+`Money` that also makes `"0"` a present, valid zero where `""` is
+required-blank; a date has no such pair, because `"0"` is not a date and
+reports `rastrillo.ui.date_invalid`.
 
 The three date kinds report catalog keys rather than English:
 `rastrillo.ui.date_invalid` for an unparseable value,
@@ -125,10 +127,10 @@ instant instead of being mistaken for unset.
 
 `time.ParseInLocation` resolves a wall-clock time that does not exist —
 the hour a spring-forward skips — using the offset in force before the
-transition, which means two different picks either side of the gap can
-land on the same instant. An app scheduling across a transition should
-store the zone alongside the value and say so on screen, rather than
-trusting that two distinct readings stay distinct.
+transition, which means a time inside the skipped hour and the real time
+it collapses onto land on the same instant. An app scheduling across a
+transition should store the zone alongside the value and say so on
+screen, rather than trusting that two distinct readings stay distinct.
 
 ## Errors
 

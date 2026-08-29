@@ -261,6 +261,13 @@ unless `Plain`, and with it every string the script needs as
 `Plain`; range adds `Start`/`End` sub-dicts and `Seed` (`"session"`
 seeds end = start + 1h in the browser, as Tito Go's does).
 
+The key list shipped without `Help`: the date partials carry `Hint`
+alone (the muted line under the input), matching `field-text`'s envelope
+rather than `field-select`'s, and a range is both-`date` or
+both-`datetime` — `field-daterange`'s `Kind` picks the input type for
+both halves at once, so a mixed pair is not expressible (as built,
+2026-08-29).
+
 `data-rst-range` is wrapper-scoped rather than per-half: it sits on the
 `rst-field-row` and carries `Seed` as its own value (`data-rst-range` or
 `data-rst-range="session"`), the two armed inputs inside pairing up by
@@ -296,8 +303,14 @@ What changes:
   `date_next`, `date_last`, `date_in`, `date_ago`, `date_at`,
   `date_day`/`date_days`, `date_week`/`date_weeks`, `date_month`/
   `date_months`, `date_hour`/`date_hours`, `date_minute`/`date_minutes`,
-  `date_noon`, `date_midnight`, `date_am`, `date_pm`. A key may hold
-  several accepted spellings separated by `|` ("tomorrow|tmrw"), and
+  `date_noon`, `date_midnight`, `date_am`, `date_pm`. The unit words
+  shipped as seventeen SINGULAR keys whose values carry the plurals on
+  the same `|` the spellings use (`date_day = "day|days"`,
+  `date_minute = "minute|minutes|min|mins|m"`), not as the
+  `date_day`/`date_days` pairs listed here — one key per concept, with
+  the language's own forms inside it (as built, 2026-08-29). A key may
+  hold several accepted spellings separated by `|` ("tomorrow|tmrw"),
+  and
   the matcher is accent- and case-folded (`NFD`, strip marks, lower),
   so "amárach" and "amarach" both parse. The whole vocabulary rides on
   ONE attribute, not one per word: `{{dateWords}}` (bound to the same
@@ -323,7 +336,7 @@ Strings the user hears — the set-prompt, the hint row, the live-region
 results — come from `date_set`, `date_hint`, `date_results`,
 `date_result_one`, `date_pick` (the picker button's label), and the
 quick-pick labels `date_quick_today`, `date_quick_tomorrow`,
-`date_quick_next_monday`, `date_quick_week`, `date_quick_plus_1h`,
+~~`date_quick_next_monday`~~, ~~`date_quick_week`~~, `date_quick_plus_1h`,
 `date_quick_plus_2h`, `date_quick_end_of_day`, `date_quick_next_day`.
 
 `{example}` in `date_hint` and `{n}` in `date_results` are substituted
@@ -347,6 +360,13 @@ rule). Fixtures are one TOML table per shipped locale, each ≥20 cases
 an unparsable string that must yield nothing) with the catalog's own
 vocabulary. Twelve fixture files; a locale without one fails the gate.
 The `en` fixtures include Tito Go's regression cases verbatim.
+
+The fixtures shipped as JSON, not TOML: one
+`ui/testdata/datetime/<locale>.json` per shipped locale, read by a Node
+harness that has `JSON.parse` and no TOML parser, plus a thirteenth
+file, `regressions.json`, which is one flat list of cross-locale
+regressions with each case naming its own `lang` (as built,
+2026-08-29).
 
 ### 4.4 `form` kinds
 
