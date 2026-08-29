@@ -219,20 +219,29 @@ type railState struct {
 }
 
 // railProbe reads the whole rail in one evaluation.
+//
+// Every "is it there" question is asked of getComputedStyle, never of
+// the .hidden property. That is not fussiness: gallery.js sets the
+// property, and what actually takes a rail link off the screen is a CSS
+// rule in dsCSS outranking the shell's display:block. A probe reading
+// .hidden would be asking the script to confirm its own opinion — and
+// would pass, green, with that rule deleted and sixty "hidden" links
+// painted down the page. It did.
 const railProbe = `(() => {
+  const seen = el => getComputedStyle(el).display !== "none";
   const links = Array.from(document.querySelectorAll("#ds-nav a"));
   const secs = Array.from(document.querySelectorAll("#ds-nav details"));
   const box = document.querySelector("[data-ds-filter]");
   const empty = document.querySelector("[data-ds-filter-empty]");
   return {
     links: links.length,
-    shown: links.filter(a => !a.hidden).map(a => a.getAttribute("href")),
-    folded: secs.filter(d => d.hidden).length,
+    shown: links.filter(seen).map(a => a.getAttribute("href")),
+    folded: secs.filter(d => !seen(d)).length,
     open: secs.map(d => d.open),
-    empty: !empty.hidden,
+    empty: seen(empty),
     focused: document.activeElement ? document.activeElement.id : "",
     value: box.value,
-    boxSeen: getComputedStyle(box.closest(".ds-search")).display !== "none",
+    boxSeen: seen(box.closest(".ds-search")),
   };
 })()`
 
@@ -274,8 +283,10 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	url := rig.Origin + indexHref(RootTheme(), "en")
 
 	var (
-		fresh, scriptless, badge, family, junk, cleared, handled, restored railState
-		navWithNoJS                                                        int
+		fresh, scriptless, badge, family, titled railState
+		junk, cleared, handled, restored         railState
+		accented, unaccented                     railState
+		navWithNoJS                              int
 	)
 
 	reached := "start"
@@ -315,12 +326,13 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// rail stays exactly where it was.
 		chromedp.Evaluate(`(() => {
 		  document.documentElement.removeAttribute("data-rst-js");
+		  const seen = el => getComputedStyle(el).display !== "none";
 		  const links = Array.from(document.querySelectorAll("#ds-nav a"));
 		  const state = {
 		    links: links.length,
-		    shown: links.filter(a => !a.hidden).map(a => a.getAttribute("href")),
+		    shown: links.filter(seen).map(a => a.getAttribute("href")),
 		    folded: 0, open: [], empty: false, focused: "", value: "",
-		    boxSeen: getComputedStyle(document.querySelector(".ds-search")).display !== "none",
+		    boxSeen: seen(document.querySelector(".ds-search")),
 		  };
 		  document.documentElement.setAttribute("data-rst-js", "on");
 		  return state;
@@ -337,6 +349,13 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// keeps the whole family, heading included.
 		typing("form"), at("typed-form"),
 		chromedp.Evaluate(railProbe, &family),
+
+		// A section's own name: the whole section, and nothing from any
+		// other. "shells" is not a substring of any entry's label
+		// anywhere else in the rail, so what is left can only have come
+		// from the summary matching.
+		typing("shells"), at("typed-section-name"),
+		chromedp.Evaluate(railProbe, &titled),
 
 		// Junk: nothing left, and the page's own sentence saying so.
 		typing("zzqqxx"), at("typed-junk"),
@@ -366,6 +385,19 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		typing("badge"), at("typed-into-collapsed"),
 		chromedp.KeyEvent(kb.Escape), at("escaped-again"),
 		chromedp.Evaluate(railProbe, &restored),
+
+		// The Spanish page, for the half of the fold a monolingual
+		// journey can never reach. "Presentación" is a family heading
+		// there and "Superficies y líneas" a token group; a reader
+		// typing them off an English keyboard types neither accent, and
+		// with the fold replaced by a plain toLowerCase both queries
+		// find nothing at all.
+		chromedp.Navigate(rig.Origin+indexHref(RootTheme(), "es")), at("navigated-es"),
+		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("es-filter-visible"),
+		typing("presentacion"), at("typed-unaccented-family"),
+		chromedp.Evaluate(railProbe, &accented),
+		typing("lineas"), at("typed-unaccented-group"),
+		chromedp.Evaluate(railProbe, &unaccented),
 		at("done"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v", reached, err)
@@ -428,6 +460,13 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		t.Error(`typing "form" hid form-error, which matches on its own name`)
 	}
 
+	if !showing(titled, "#shell-column") || !showing(titled, "#shell-topbar") || !showing(titled, "#shell-sidebar") {
+		t.Errorf(`typing a section's own name ("shells") did not reveal the section: %v`, titled.Shown)
+	}
+	if len(titled.Shown) != 3 {
+		t.Errorf(`typing "shells" left %d entries on screen, want the section's 3: %v`, len(titled.Shown), titled.Shown)
+	}
+
 	if len(junk.Shown) != 0 {
 		t.Errorf("junk left %d entries on screen: %v", len(junk.Shown), junk.Shown)
 	}
@@ -456,6 +495,22 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	}
 	if len(handled.Shown) != handled.Links {
 		t.Errorf("a synthetic Escape cleared the box and left %d of %d entries hidden", handled.Links-len(handled.Shown), handled.Links)
+	}
+
+	// Both accent checks are stated as "the accented label is on
+	// screen", so a fold that has stopped folding fails as an empty
+	// rail rather than as a count nobody can read.
+	if !showing(accented, "#family-display") {
+		t.Errorf(`on the Spanish page, "presentacion" did not find "Presentación": %v`, accented.Shown)
+	}
+	if !showing(accented, "#partial-badge") {
+		t.Error(`"presentacion" found the family and not the partials under it`)
+	}
+	if showing(accented, "#family-form") {
+		t.Error(`"presentacion" left another family's heading on screen`)
+	}
+	if !showing(unaccented, "#tokens-surfaces-and-lines") {
+		t.Errorf(`on the Spanish page, "lineas" did not find "Superficies y líneas": %v`, unaccented.Shown)
 	}
 
 	if len(restored.Open) < 2 || restored.Open[1] {

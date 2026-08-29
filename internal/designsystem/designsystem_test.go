@@ -902,6 +902,7 @@ var (
 	// already holds those to files the tree contains.
 	navFragment   = regexp.MustCompile(`<a href="#([^"]*)"`)
 	navHref       = regexp.MustCompile(`<a href="([^"]*)"`)
+	elementID     = regexp.MustCompile(`\bid="([^"]*)"`)
 	partialMarker = regexp.MustCompile(`<!-- partial: (\S+) -->`)
 	idiomMarker   = regexp.MustCompile(`<!-- idiom: (\S+) -->`)
 )
@@ -935,11 +936,12 @@ func railOf(t *testing.T, name, page string) string {
 // page carries, a section rendered with no way to reach it, and a
 // reordering of one side and not the other.
 //
-// The three things it cannot see on its own, checked beside it:
-// duplicate ids (a fragment that resolves twice resolves to the first,
-// silently), the marker comments the two coverage gates use (so a
-// partial's anchor is derived from the same name they are), and the
-// rail's out-of-page links.
+// The two things it cannot see on its own, checked beside it: the
+// marker comments the two coverage gates use (so a partial's anchor is
+// derived from the same name they are), and the rail's out-of-page
+// links. The third — that a fragment resolves to one element and not
+// two — is TestNoPageCarriesTheSameIdTwice below, which is the whole
+// tree's business and not only this page's.
 func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
@@ -973,15 +975,6 @@ func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
 				}
 				if fragments[i] != anchors[i] {
 					t.Errorf("%s: sidebar entry %d links #%s, the page's %dth anchor is #%s", name, i, fragments[i], i, anchors[i])
-				}
-			}
-
-			// A duplicate id is the bug a rail full of fragments would
-			// hide: both entries scroll to the first element and the
-			// second is unreachable for ever.
-			for _, id := range anchors {
-				if n := strings.Count(page, `id="`+id+`"`); n != 1 {
-					t.Errorf("%s: id %q appears %d times; a fragment can only ever reach the first", name, id, n)
 				}
 			}
 
@@ -1083,8 +1076,54 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 					t.Errorf("%s: no sidebar section named %q", name, proseIn(locale, key))
 				}
 			}
-			if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "On this page")) + `"`; !strings.Contains(page, want) {
+			if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections and demos")) + `"`; !strings.Contains(page, want) {
 				t.Errorf("%s: the sidebar nav is not named in this page's language", name)
+			}
+		}
+	}
+}
+
+// An id is unique in the document that carries it. Every page in the
+// tree, not just the galleries: a duplicate id makes a fragment link
+// silently unreachable — both entries scroll to the first element —
+// and it is invalid HTML besides, which is the kind of thing that
+// reads fine and behaves badly for years.
+//
+// Scoped to anchored ids when the sidebar first landed, on a guess that
+// the component samples repeated form-field ids across states. They do
+// not: all 181 documents in the tree carry no duplicate at all, so the
+// gate is the whole page, which is the gate worth having.
+func TestNoPageCarriesTheSameIdTwice(t *testing.T) {
+	files := render(t)
+	names := make([]string, 0, len(files))
+	for name := range files {
+		if strings.HasSuffix(name, ".html") {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		t.Fatal("no HTML pages rendered")
+	}
+	// The escaped source blocks cannot trip this: html/template writes
+	// a sample's quotes as &#34;, so `id="` occurs only where a browser
+	// would actually build an element.
+	for _, name := range names {
+		page := string(files[name])
+		seen := map[string]int{}
+		var order []string
+		for _, m := range elementID.FindAllStringSubmatch(page, -1) {
+			if seen[m[1]] == 0 {
+				order = append(order, m[1])
+			}
+			seen[m[1]]++
+		}
+		if len(order) == 0 {
+			t.Errorf("%s: no ids at all — every page in this tree has at least main's", name)
+		}
+		for _, id := range order {
+			if seen[id] != 1 {
+				t.Errorf("%s: id %q appears %d times; a fragment can only ever reach the first, and the document is invalid", name, id, seen[id])
 			}
 		}
 	}

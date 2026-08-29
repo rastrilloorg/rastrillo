@@ -223,7 +223,7 @@ func galleryNav(theme, locale string, view pageView) []navSection {
 // function rather than being spelled out at four call sites:
 //
 //   - it is built from the ENGLISH name, so the twelve translations of
-//     a page carry the same twelve fragments and a link into the
+//     a page carry the same sixty fragments and a link into the
 //     gallery survives a change of language;
 //   - it is prefixed by kind, so a partial called "badge" and an idiom
 //     called "badge" are two ids and not one. A duplicate id is the
@@ -902,7 +902,7 @@ const dsCSS = `
 //     an element that grew an id for its own purposes is not a nav
 //     target and a section that lost one is not either. The ids
 //     themselves come out of anchorID and are built from English, so
-//     the twelve translations of this page carry the same fragments.
+//     the twelve translations of this page carry the same sixty.
 //
 // The frame is the sidebar shell, class for class: rst-shell-sidebar
 // holding the details chrome strip, the rail and the main column. That
@@ -934,7 +934,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
     <input id="ds-filter" type="search" placeholder="{{P "Filter this page"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "Nothing here matches that"}}</p>
-  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "On this page"}}">
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
 {{range .Nav}}    <details open><summary>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}>{{.Label}}</a>{{end}}</details>
 {{end}}  </nav>
 </aside>

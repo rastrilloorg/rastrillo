@@ -358,7 +358,7 @@ func preview(property, token string) template.CSS {
 //
 // ID is the group's anchor on the page, and the reason newGroup exists:
 // it is derived from the ENGLISH title, before localiseGroups touches
-// it, so /ja/index.html and /en/index.html carry the same twelve
+// it, so /ja/index.html and /en/index.html carry the same sixty
 // fragments and a link to one is a link to the same thing on all of
 // them.
 type tokenGroup struct {

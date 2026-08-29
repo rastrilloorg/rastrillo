@@ -135,6 +135,12 @@
 
     var links = nav.querySelectorAll("a");
     for (var i = 0; i < links.length; i++) links[i].dsText = fold(links[i].textContent);
+    // A section's own name is searchable too: "shells" has to land
+    // somewhere, and the reader typing it means the whole section.
+    for (var i = 0; i < sections.length; i++) {
+      var head = sections[i].querySelector("summary");
+      sections[i].dsText = head ? fold(head.textContent) : "";
+    }
 
     // What the reader had open before they typed. A query opens
     // whatever it found something in; clearing it hands the reader
@@ -152,6 +158,9 @@
         var section = sections[s];
         var kids = section.children;
         var shown = 0, group = null, inGroup = 0;
+        // The section's own name matching stands for everything under
+        // it, the same way a family heading's does for its run.
+        var whole = !q || section.dsText.indexOf(q) >= 0;
         for (var k = 0; k < kids.length; k++) {
           var el = kids[k];
           if (el.tagName !== "A") continue;
@@ -162,12 +171,12 @@
           if (el.classList.contains("ds-nav__group")) {
             if (group) group.hidden = inGroup === 0;
             group = el;
-            group.dsWhole = !q || el.dsText.indexOf(q) >= 0;
+            group.dsWhole = whole || el.dsText.indexOf(q) >= 0;
             inGroup = group.dsWhole ? 1 : 0;
             shown += inGroup;
             continue;
           }
-          var hit = !q || (group && group.dsWhole) || el.dsText.indexOf(q) >= 0;
+          var hit = whole || (group && group.dsWhole) || el.dsText.indexOf(q) >= 0;
           el.hidden = !hit;
           if (hit) {
             shown++;
