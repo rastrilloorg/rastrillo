@@ -2299,6 +2299,38 @@ func TestLayoutsParseAndRender(t *testing.T) {
 	}
 }
 
+// Every shell leaves the app a slot in <head>. It is the one extension
+// point a page frame cannot do without and the three shells did not
+// have: a favicon, an Open Graph tag, one more stylesheet, an inline
+// script that has to run before the body. Without it the only way to
+// add any of those was to stop using ui.Layout at all.
+//
+// Last in the head on purpose, and asserted so: an app's own
+// stylesheet has to come after tokens.css and the theme, or it loses
+// every tie it should win.
+func TestEveryShellLeavesTheAppASlotInTheHead(t *testing.T) {
+	for _, name := range LayoutNames() {
+		src, ok := Layout(name)
+		if !ok {
+			t.Fatalf("Layout(%q) missing", name)
+		}
+		s := string(src)
+		i := strings.Index(s, `{{block "head" .}}{{end}}`)
+		if i < 0 {
+			t.Errorf("layouts/%s.html declares no head block — an app has nowhere to put a favicon", name)
+			continue
+		}
+		head := strings.Index(s, "</head>")
+		if head < 0 || i > head {
+			t.Errorf("layouts/%s.html's head block is not inside <head>", name)
+			continue
+		}
+		if last := strings.LastIndex(s[:head], "<link"); last > i {
+			t.Errorf("layouts/%s.html loads a stylesheet after the head block; an app's own CSS would lose the tie", name)
+		}
+	}
+}
+
 // The error page renders one of the five statuses the base catalog
 // words, falls back to the generic wording for anything else, and never
 // invents navigation the app did not give it.

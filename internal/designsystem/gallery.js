@@ -13,6 +13,8 @@
                                 localStorage under rst-ds-scheme
      the sidebar filter         type to hide the nav entries that do
                                 not match, and the sections left empty
+     the preview frames         the chosen scheme again, on each of the
+                                iframes the examples are drawn in
 
    Why it is a blocking <script> in <head> rather than a deferred one at
    the foot, which is how the other three load: both of the things it
@@ -64,9 +66,30 @@
   // color-scheme: light dark, and their two toggle rules are
   // :root[data-theme="light"] and :root[data-theme="dark"]. No
   // attribute is the OS deciding, which is what System is.
-  function apply(scheme) {
-    if (scheme === "light" || scheme === "dark") root.setAttribute("data-theme", scheme);
-    else root.removeAttribute("data-theme");
+  function apply(scheme, el) {
+    el = el || root;
+    if (scheme === "light" || scheme === "dark") el.setAttribute("data-theme", scheme);
+    else el.removeAttribute("data-theme");
+  }
+
+  // Every example on this page is a document of its own inside an
+  // iframe, and an iframe does not inherit the reader's choice: a
+  // colour scheme is not propagated into an embedded document that
+  // declares one, and every preview links a theme that does. The
+  // frames are same-origin, so the fix is the attribute apply() has
+  // just written, written again on each of them. Frames are lazy and
+  // there are a hundred of them, hence the load handler as well.
+  function frames(scheme) {
+    var f = document.querySelectorAll(".ds-view__frame");
+    for (var i = 0; i < f.length; i++) paint(f[i], scheme);
+  }
+
+  function paint(frame, scheme) {
+    try {
+      apply(scheme, frame.contentDocument.documentElement);
+    } catch (e) {
+      /* not loaded yet, or not readable; its load handler will */
+    }
   }
 
   // Phase one, at parse time: the remembered scheme and the marker the
@@ -85,16 +108,24 @@
   }
 
   ready(function () {
+    var previews = document.querySelectorAll(".ds-view__frame");
+    for (var i = 0; i < previews.length; i++) {
+      previews[i].addEventListener("load", function (event) {
+        paint(event.currentTarget, stored());
+      });
+    }
+    frames(stored());
+
     var buttons = document.querySelectorAll("[data-ds-scheme]");
     if (!buttons.length) return;
 
-    function paint(scheme) {
+    function pressed(scheme) {
       for (var i = 0; i < buttons.length; i++) {
         buttons[i].setAttribute("aria-pressed", buttons[i].dataset.dsScheme === scheme ? "true" : "false");
       }
     }
 
-    paint(stored());
+    pressed(stored());
 
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].addEventListener("click", function (event) {
@@ -102,7 +133,8 @@
         if (SCHEMES.indexOf(scheme) < 0) return;
         apply(scheme);
         remember(scheme);
-        paint(scheme);
+        pressed(scheme);
+        frames(scheme);
       });
     }
   });

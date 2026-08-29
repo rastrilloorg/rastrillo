@@ -362,14 +362,31 @@ templates, and `TestDesignSystemIsCurrent` fails the build if the tree
 drifts from what's committed. It will be published at
 rastrillo.org/design-system once the website vendors it.
 
-Three samples are shown as escaped source instead of rendered inline,
-each beside a link to the page where the same markup is real. The two
-shell frames carry their own `<main>`, and the gallery page already has
-one. The modal is the sharper case: its overlay is `position: fixed`,
-so rendering it in the gallery opened a modal over the whole page the
-moment it loaded — which is the idiom saying what it needs. Its demo is
-the doctrine working: `<theme>/<locale>/modal.html`, a real URL, with
-Close a plain link back to the gallery.
+Every example on the page is shown three ways behind one control:
+**Desktop**, **Mobile** and **Code**. The two previews are one
+`<iframe>` holding a document of its own — the sample, the stylesheets,
+and nothing else — laid out at a virtual 1200px or 390px and scaled
+into whatever width you are reading at, so the desktop rendering is the
+desktop rendering on a phone. The tabs are radio inputs and `:has()`;
+no JavaScript is involved in switching them.
+
+Giving each sample a document of its own is what makes the awkward ones
+work. The two shell frames carry their own `<main>` and the gallery
+page already has one; the modal's overlay is `position: fixed`, so
+rendered in the gallery it covered the gallery; a form's save bar is
+`position: sticky`, so it stuck to the bottom of the gallery rather
+than to its own form. Each of those is correct inside its own frame.
+The shells and the modal keep their full-page demos as well — a shell
+wants a window, and a modal's whole claim is that it is a URL — and
+those links, like every "open the demo" link on the page, open in a new
+tab.
+
+The links inside a sample go nowhere on purpose. Sample markup is
+written to read like a real application (`/posts/1/edit`), and this
+site serves none of those routes, so every link is rewritten to `#`
+before it is framed and every form is aimed at a hidden sink. The Code
+tab beside the preview keeps the routes the sample was written with,
+which are the ones worth copying.
 
 Every link in that tree — stylesheets, scripts, the theme and language
 switchers, the shell and modal demos — is an absolute path under
@@ -488,12 +505,18 @@ block:
 {{define "content"}}<h1>Your notes</h1>{{end}}
 ```
 
-The blocks are `title`, `lang` and `dir` in all three shells, plus
-`brand`, `nav`, `account` and `locale` in `topbar` and `sidebar`, and
-`foot` in `topbar` only. None of them reads a field off the data, so a
-shell renders whether your handler passes a struct, a `dict`-built map
+The blocks are `title`, `lang`, `dir` and `head` in all three shells,
+plus `brand`, `nav`, `account` and `locale` in `topbar` and `sidebar`,
+and `foot` in `topbar` only. None of them reads a field off the data, so
+a shell renders whether your handler passes a struct, a `dict`-built map
 or nil — a shell can never break because a page's view model changed
 shape.
+
+`head` is the odd one out: it is not chrome, it is your slot in
+`<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
+that has to run before the body — override it and they go in, last in
+the head, so your own CSS wins the ties it should win against
+`tokens.css` and the theme.
 
 `account` is the one asymmetric block, and it is worth knowing which
 shell you are in. In `topbar` the layout owns the `<details

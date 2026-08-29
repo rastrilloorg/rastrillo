@@ -22,12 +22,15 @@ package designsystem
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"path"
+	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -518,5 +521,339 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	}
 	if len(restored.Shown) != restored.Links {
 		t.Errorf("after the search was cleared, %d of %d entries are still hidden", restored.Links-len(restored.Shown), restored.Links)
+	}
+}
+
+// ── The preview widget ───────────────────────────────────────────────
+
+// framing is one reading of one preview widget, taken from the engine.
+type framing struct {
+	// The frame's own layout: the width it lays out at (the virtual
+	// viewport its document sees) and the width it occupies on the
+	// page after the scale.
+	Virtual float64
+	Painted float64
+	// What the framed document itself reports: the width its <html>
+	// laid out to, and whether its body really has the sample in it.
+	Inner float64
+	Body  string
+	// Which panel is on screen.
+	FrameShown bool
+	CodeShown  bool
+	// The colour scheme the framed document resolved to, which is the
+	// gallery's own — color-scheme is inherited and the browser
+	// propagates the embedder's through an iframe, so a reader who
+	// chose Dark gets dark previews with nothing running inside them.
+	Scheme string
+}
+
+// TestPreviewWidgetDrivesTheWholeJourney is the drive for the widget
+// the whole page is now built out of.
+//
+// Bug classes it exists to catch, all of which leave a page that
+// renders and reads perfectly:
+//
+//   - the Desktop frame lays out at the reader's own width instead of
+//     1200px, so the "desktop rendering" is whatever the column
+//     happens to be and the mobile tab shows the same thing twice;
+//   - the scale is dropped, so the frame is 1200px wide inside a
+//     700px column and the sample is cropped;
+//   - the tabs are wired to something that needs JavaScript, so a
+//     reader with scripts off has one view and no way to say so;
+//   - the frame's document is not the theme the gallery is in, or does
+//     not follow the scheme the reader chose;
+//   - a link inside a sample still points at /posts/1/edit, so
+//     clicking one in the preview navigates the frame to a 404.
+func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancel()
+
+	url := rig.Origin + indexHref(RootTheme(), "en")
+
+	// One example, named rather than picked by position: the callout
+	// is small, has no script and no menu, and is on the page in every
+	// language.
+	const widget = `document.querySelector("#partial-callout .ds-view")`
+
+	// read measures the chosen widget. The frame is made eager first —
+	// every frame on this page is loading="lazy", and 110 documents is
+	// exactly why — and the reading waits for its document to exist.
+	read := func(sel string) string {
+		return `(() => {
+		  const v = ` + sel + `;
+		  const f = v.querySelector(".ds-view__frame");
+		  const box = v.querySelector(".ds-view__box");
+		  const stage = v.querySelector(".ds-view__stage");
+		  const code = v.querySelector(".ds-view__code");
+		  const d = f.contentDocument;
+		  return JSON.stringify({
+		    Virtual: parseFloat(getComputedStyle(f).width),
+		    Painted: box.getBoundingClientRect().width,
+		    Inner: d ? d.documentElement.getBoundingClientRect().width : -1,
+		    Body: d ? d.body.innerHTML.trim().slice(0, 120) : "",
+		    FrameShown: getComputedStyle(stage).display !== "none",
+		    CodeShown: code ? getComputedStyle(code).display !== "none" : false,
+		    Scheme: d ? getComputedStyle(d.documentElement).colorScheme + " " + getComputedStyle(d.body).backgroundColor : ""
+		  });
+		})()`
+	}
+
+	const eager = `(() => {
+	  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
+	  return "ok";
+	})()`
+
+	var desktop, mobile, code, dark, scriptless string
+	var deadLinks int
+	var mechanism bool
+
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(url),
+		chromedp.WaitVisible(`#partial-callout .ds-view__frame`, chromedp.ByQuery),
+		chromedp.Evaluate(eager, new(string)),
+		chromedp.Sleep(2*time.Second),
+
+		// 1. Desktop, the tab the page opens on with nothing clicked.
+		chromedp.Evaluate(read(widget), &desktop),
+
+		// 2. Mobile. Clicking the LABEL, the way a reader does — which
+		// is also the proof that the label/input pairing is right.
+		chromedp.Click(`#partial-callout .ds-view__tab--m`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+		chromedp.Evaluate(read(widget), &mobile),
+
+		// 3. Code.
+		chromedp.Click(`#partial-callout .ds-view__tab--c`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+		chromedp.Evaluate(read(widget), &code),
+
+		// 4. Every link in every framed document goes nowhere. Read
+		// off the documents themselves, not off the page's bytes: this
+		// is the browser's own idea of where an href points.
+		chromedp.Evaluate(`(() => {
+		  let bad = 0;
+		  for (const f of document.querySelectorAll(".ds-view__frame")) {
+		    const d = f.contentDocument;
+		    if (!d) continue;
+		    for (const a of d.querySelectorAll("a[href]")) {
+		      const href = a.getAttribute("href");
+		      if (href !== "#" && !href.startsWith("#") && !href.startsWith("/design-system/")) bad++;
+		    }
+		  }
+		  return bad;
+		})()`, &deadLinks),
+
+		// 5. The reader chooses Dark, and the previews follow without
+		// a line of script inside them.
+		chromedp.Click(`[data-ds-scheme="dark"]`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+		chromedp.Evaluate(read(widget), &dark),
+	); err != nil {
+		t.Fatalf("driving the widget: %v", err)
+	}
+
+	// 6. The same journey with JavaScript switched off at the engine.
+	// A fresh tab, because scripts have already run in the one above.
+	noJS, cancelNoJS := chromedp.NewContext(rig.Context())
+	defer cancelNoJS()
+	noJSCtx, cancelNoJSTimeout := context.WithTimeout(noJS, 120*time.Second)
+	defer cancelNoJSTimeout()
+	if err := chromedp.Run(noJSCtx,
+		chromedp.EmulateViewport(1280, 900),
+		emulation.SetScriptExecutionDisabled(true),
+		chromedp.Navigate(url),
+		chromedp.WaitVisible(`#partial-callout .ds-view__frame`, chromedp.ByQuery),
+		chromedp.Sleep(2*time.Second),
+		// The tabs are radios and labels; the click is the browser's
+		// own, and :has() does the rest.
+		chromedp.Click(`#partial-callout .ds-view__tab--c`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+		chromedp.Evaluate(`(() => {
+		  const v = document.querySelector("#partial-callout .ds-view");
+		  const stage = v.querySelector(".ds-view__stage");
+		  const code = v.querySelector(".ds-view__code");
+		  return JSON.stringify({
+		    FrameShown: getComputedStyle(stage).display !== "none",
+		    CodeShown: getComputedStyle(code).display !== "none",
+		    Body: "", Virtual: 0, Painted: 0, Inner: 0, Scheme: ""
+		  });
+		})()`, &scriptless),
+	); err != nil {
+		t.Fatalf("driving the widget with scripts off: %v", err)
+	}
+	// Evaluate itself is script execution, so the reading above is
+	// taken through the debugger with page scripts disabled — the
+	// click and the CSS are the page's own. Assert that gallery.js
+	// really was inert, or the leg proves nothing.
+	if err := chromedp.Run(noJSCtx, chromedp.Evaluate(
+		`document.documentElement.hasAttribute("data-rst-js")`, &mechanism)); err != nil {
+		t.Fatalf("checking the scriptless page: %v", err)
+	}
+	if mechanism {
+		t.Error("gallery.js ran on the scriptless page — the leg below proves nothing")
+	}
+
+	var d, m, c, dk, off framing
+	for _, p := range []struct {
+		raw  string
+		into *framing
+	}{{desktop, &d}, {mobile, &m}, {code, &c}, {dark, &dk}, {scriptless, &off}} {
+		if err := json.Unmarshal([]byte(p.raw), p.into); err != nil {
+			t.Fatalf("reading a framing (%q): %v", p.raw, err)
+		}
+	}
+
+	// Desktop: the frame lays out at 1200px whatever the column is,
+	// and is painted at the column's width instead.
+	if d.Virtual != 1200 {
+		t.Errorf("the desktop frame lays out at %gpx, want 1200 — a preview that is only the reader's own width is not a desktop preview", d.Virtual)
+	}
+	if d.Inner != 1200 {
+		t.Errorf("the framed document reports a %gpx viewport, want 1200", d.Inner)
+	}
+	if d.Painted >= 1200 || d.Painted < 200 {
+		t.Errorf("the desktop frame is painted %gpx wide in a 1280px window; it is not being scaled into its column", d.Painted)
+	}
+	if !d.FrameShown || d.CodeShown {
+		t.Error("the page does not open on the framed rendering")
+	}
+	if !strings.Contains(d.Body, "rst-callout") {
+		t.Errorf("the framed document is not the callout sample: %q", d.Body)
+	}
+
+	// Mobile: the same document, 390px wide, unscaled in this window.
+	if m.Virtual != 390 {
+		t.Errorf("the mobile frame lays out at %gpx, want 390", m.Virtual)
+	}
+	if m.Inner != 390 {
+		t.Errorf("the framed document reports a %gpx viewport on the mobile tab, want 390", m.Inner)
+	}
+	if m.Body != d.Body {
+		t.Error("Desktop and Mobile are not the same document")
+	}
+
+	// Code: the frame goes, the source arrives.
+	if c.FrameShown || !c.CodeShown {
+		t.Errorf("the Code tab shows frame=%v code=%v", c.FrameShown, c.CodeShown)
+	}
+
+	if deadLinks != 0 {
+		t.Errorf("%d links inside the preview documents still point at a route this site does not serve", deadLinks)
+	}
+
+	// The scheme. A frame does NOT inherit the reader's choice — a
+	// colour scheme is not propagated into an embedded document that
+	// declares one, and every preview links a theme that does — so
+	// gallery.js writes the attribute on each frame's own <html>. Read
+	// as the used colour scheme AND the painted background, because
+	// the first without the second passed once on a document that had
+	// resolved dark and painted nothing.
+	if !strings.HasPrefix(dk.Scheme, "dark ") {
+		t.Errorf("after choosing Dark the framed document is %q; the previews are not following the gallery", dk.Scheme)
+	}
+	if dk.Scheme == d.Scheme {
+		t.Errorf("the framed document is %q both before and after Dark was chosen — the reading proves nothing", d.Scheme)
+	}
+
+	// And the whole widget with scripts off.
+	if off.FrameShown || !off.CodeShown {
+		t.Errorf("with scripts disabled the Code tab shows frame=%v code=%v — the tabs need JavaScript", off.FrameShown, off.CodeShown)
+	}
+}
+
+// The heights in previewHeights are measurements, and this is where
+// they were measured. Every frame on the page is asked what its
+// document actually needs and held to the box the renderer gave it: a
+// frame smaller than its content is a sample a reader has to scroll
+// inside a box the size of a paragraph, which is the failure the table
+// exists to prevent.
+//
+// Only the upper bound is a failure. Several frames are deliberately
+// taller than their content at rest — a field whose script opens a
+// panel, a menu that opens downwards, the modal — so the slack is
+// logged and not gated.
+func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancel()
+
+	const measure = `(() => {
+		  const out = {};
+		  for (const f of document.querySelectorAll(".ds-view__frame")) {
+		    const section = f.closest("article, section");
+		    const id = section ? section.id : "?";
+		    const d = f.contentDocument;
+		    const need = d ? Math.ceil(Math.max(d.body.getBoundingClientRect().height, d.body.scrollHeight)) : -1;
+		    const box = Math.round(parseFloat(getComputedStyle(f).height));
+		    const was = out[id];
+		    if (!was || need > was[0]) out[id] = [need, box];
+		  }
+		  return JSON.stringify(out);
+		})()`
+
+	var desktop, mobile string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1500, 1000),
+		chromedp.Navigate(rig.Origin+indexHref(RootTheme(), "en")),
+		chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery),
+		chromedp.Evaluate(`(() => {
+		  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
+		  return "ok";
+		})()`, new(string)),
+		chromedp.Sleep(8*time.Second),
+		chromedp.Evaluate(measure, &desktop),
+		// And the same page on the other tab. The mobile height is
+		// one factor off the desktop one rather than a second table,
+		// so this is where that factor is checked.
+		chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--m input").forEach(i => i.click()); "ok"`, new(string)),
+		chromedp.Sleep(4*time.Second),
+		chromedp.Evaluate(measure, &mobile),
+	); err != nil {
+		t.Fatalf("measuring the frames: %v", err)
+	}
+
+	for _, tab := range []struct{ name, raw string }{{"Desktop", desktop}, {"Mobile", mobile}} {
+		measured(t, tab.name, tab.raw)
+	}
+}
+
+// measured holds one tab's readings: section id → [what the document
+// needs, what the frame gives it].
+func measured(t *testing.T, tab, raw string) {
+	t.Helper()
+	var got map[string][2]int
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatalf("%s: reading the measurements: %v", tab, err)
+	}
+	if len(got) < 40 {
+		t.Fatalf("%s: measured %d sections, which is not the whole page — the frames did not load", tab, len(got))
+	}
+	names := make([]string, 0, len(got))
+	for name := range got {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, id := range names {
+		name := tab + " " + id
+		need, box := got[id][0], got[id][1]
+		if need < 0 {
+			t.Errorf("%s: the frame has no document in it", name)
+			continue
+		}
+		// The 48px is the sidebar shell, and it is a property of the
+		// shell rather than of the number: its rail is
+		// block-size: 100dvh, so the page is always exactly as tall as
+		// whatever window it is in plus the margin under its content.
+		// No frame height can fit it, and chasing one is a loop —
+		// raising the box raises the requirement by the same amount.
+		// Everything else fits with room to spare.
+		if need > box+48 {
+			t.Errorf("%s: its document needs %dpx and its frame is %dpx; raise previewHeights[%q] to at least %d", name, need, box, name, need+20)
+		}
+		if box > need*4 && box-need > 120 {
+			t.Logf("%s: %dpx of frame for %dpx of document — deliberate headroom, or a number to bring down", name, box, need)
+		}
 	}
 }
