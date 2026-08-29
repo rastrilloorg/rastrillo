@@ -215,6 +215,11 @@ the form submits exactly as it always did — twice, if someone clicks
 twice. A refresh, a back button, a retried request, two tabs, someone
 with a script: none of them go through it.
 
+There is one shape to watch for on the other side of it: a submission
+that never navigates — a `204`, or a file handed to the downloads shelf
+— leaves the button disabled for good, because nothing arrives to clear
+it. Put `data-busy="false"` on those forms. `Templates` has the detail.
+
 So the server still has to be able to see the same write twice and only
 do it once. A unique index, an idempotency key on the form, a token you
 consume — whichever fits the write. The busy button is manners. The

@@ -127,8 +127,9 @@ polling below does nothing until your markup opts in:
 state by default and the attribute is only ever an opt-out — see
 [Templates](/docs/templates/#a-button-that-changes-something-says-so)
 for the rule and [Forms](/docs/forms/#the-busy-button-is-not-a-guarantee)
-for what it does not promise. Two other sections are on by default too:
-light dismiss for menus, and nothing else.
+for what it does not promise. The shim has three sections: polling, which
+you opt into with the attributes above, and two that are simply on —
+light dismiss for menus, and the busy rule.
 
 Polling repeats while the new fragment still carries `data-poll`. The
 `ui` package's `job-status` partial drops the attribute once the job is

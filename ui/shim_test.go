@@ -31,10 +31,10 @@ func TestShimContract(t *testing.T) {
 		// renders.
 		"rst-dropdown", "rst-menu-group", "rst-row-menu",
 		"closeMenus", "contains", "Escape", "summary.focus()",
-		// The busy rule: the spinner it builds, the guard flag, the
-		// submitter it reads (only the clicked button goes busy), and
-		// the cancelled-submit hand-back.
-		"rst-spin rst-btn__spin", "rstBusy", "e.submitter", "defaultPrevented",
+		// The busy rule: the spinner it builds, the submitter it reads
+		// (only the clicked button goes busy), and the cancelled-submit
+		// hand-back.
+		"rst-spin rst-btn__spin", "e.submitter", "defaultPrevented",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
@@ -109,6 +109,35 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	if n := strings.Count(js, `getAttribute("data-busy") === "false"`); n != 2 {
 		t.Errorf(`data-busy=="false" is tested %d times, want 2 (the form's opt-out and the button's)`, n)
 	}
+	// A form is [LegacyOverrideBuiltIns], so a control named "target"
+	// shadows form.target with the input element — truthy, not "_self",
+	// and the property form would silently switch the rule off for that
+	// form. Every attribute the handler reads goes through getAttribute,
+	// and the guard is the form's own aria-busy rather than an expando a
+	// control could shadow (or, under strict mode, throw on).
+	// Comments stripped first, or this gate would fire on the very
+	// sentence in the shim that explains why the property read is wrong.
+	code := js[strings.Index(js, "(function () {"):]
+	var b strings.Builder
+	for _, line := range strings.Split(code, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "//") {
+			continue
+		}
+		b.WriteString(line)
+		b.WriteByte('\n')
+	}
+	code = b.String()
+	for _, bad := range []string{"form.target", "form.rstBusy", ".rstBusy ="} {
+		if strings.Contains(code, bad) {
+			t.Errorf("the shim reads %s as a property; a control of that name shadows it — switching the rule off, or, for an assignment under strict mode, throwing", bad)
+		}
+	}
+	if !strings.Contains(js, `form.getAttribute("target")`) {
+		t.Error("the shim does not read the form's target through getAttribute")
+	}
+	if !strings.Contains(js, `if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }`) {
+		t.Error("the double-submit guard is not the form's own aria-busy attribute")
+	}
 	// The payload trap, pinned where a reader will trip over it: the
 	// two mutations that can change what the server receives — disabled
 	// and an <input type="submit">'s value — happen inside the deferred
@@ -136,13 +165,15 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 //	added, 715 of them code (one selector constant, two small
 //	functions, two addEventListener calls) and 2,166 comment.
 //
-//	12KB → 16KB, by the busy rule. 11,689 → 15,638 bytes: 3,949 added,
-//	of which 618 are CODE — busyOff, busySubmit, one addEventListener,
-//	and one selector constant deleted — and 3,331 are COMMENT: the
+//	12KB → 16KB, by the busy rule. 11,689 → 16,177 bytes: 4,488 added,
+//	of which 620 are CODE — busyOff, busySubmit, one addEventListener,
+//	and one selector constant deleted — and 3,868 are COMMENT: the
 //	header's second honesty note (two sections are now on by default,
-//	not one), the rewritten data-busy vocabulary entry, and the block
-//	that writes down the two traps in longhand, because the payload one
-//	is precisely the bug the next person will reintroduce.
+//	not one), the rewritten data-busy vocabulary entry, the block that
+//	writes down the two traps in longhand, and the note on why
+//	every attribute is read through getAttribute. Those last two are
+//	there because they are the bugs the next person will reintroduce:
+//	setting disabled a tick too early, and reaching for form.target.
 //
 // Splitting was the alternative and was rejected on the arithmetic:
 // 618 bytes of behaviour does not earn a third scaffolded file, a third
@@ -154,7 +185,7 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // The cap is still the point, and what it protects is the CODE: an app
 // owner owns this file from the moment it is scaffolded and has to be
 // able to read the whole thing in one sitting. The code in it grew from
-// 5,082 to 5,700 bytes across those 3,949 — the file got more talkative,
+// 5,082 to 5,702 bytes across those 4,488 — the file got more talkative,
 // not more complicated. Past 16KB, split something out instead.
 //
 // select.js keeps the 12KB cap it reached separately. The two files

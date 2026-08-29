@@ -167,6 +167,23 @@ anywhere, so it has nothing to be busy about. And it hands the form back
 if something downstream cancels the submit: an app handler that calls
 `preventDefault()` to do the work itself owns the feedback too.
 
+One state it cannot get itself out of. A submission that never navigates
+— a `204` or `205`, or a response the browser hands straight to the
+downloads shelf via `Content-Disposition` — leaves the page exactly as
+the submit left it, so the button stays disabled with no timeout behind
+it to rescue it. There is no honest general fix: a timer would either
+fire while a slow save was still running or be so long it never helped.
+`data-busy="false"` on that form is the escape hatch, and the same goes
+for anything that posts and stays put. Worth knowing while you are
+there: `disabled` on the focused button moves focus to `<body>`, so a
+keyboard user tabs from the top of the document, which is another reason
+a form that stays put should opt out.
+
+Going back is handled. The back/forward cache restores a page exactly as
+it was left, spinner and all, so the shim clears every busy form on
+`pageshow` — button re-enabled, label restored, spinner removed, guard
+released. A form you came back to is a form you can submit again.
+
 The spinner is `.rst-spin`, the same ring `job-status` wears, and it
 stops turning under `prefers-reduced-motion` — the ring stays, dimmed,
 because the message is "working", not "look at this". An

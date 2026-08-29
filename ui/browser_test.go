@@ -1535,7 +1535,38 @@ const quietStateJS = `(function () {
     "btn:" + (b.getAttribute("aria-busy") || "-"),
     "btn-off:" + b.disabled,
     "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
-    "guarded:" + (f.rstBusy === true),
+  ].join(" ");
+})()`
+
+// shadowStateJS proves the premise of the shadowing leg before the leg
+// asserts anything: a control named "target" really has replaced
+// form.target with itself, so the property read the shim must not make
+// really would be truthy and really would not be "_self".
+const shadowStateJS = `(function () {
+  var f = document.getElementById("shadow");
+  var b = document.getElementById("shadowgo");
+  return [
+    "shadowed:" + (f.target && f.target.tagName === "INPUT"),
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+  ].join(" ");
+})()`
+
+// backStateJS reads the form the visitor navigated away from and came
+// back to. Everything the busy state wrote has to be gone — including
+// the guard, or the form is a dead end.
+const backStateJS = `(function () {
+  var f = document.getElementById("nav");
+  var b = document.getElementById("navgo");
+  return [
+    "persisted:" + (window.__persisted === true),
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "btn-off:" + b.disabled,
+    "btn-text:" + b.textContent.trim(),
+    "idle-label:" + (b.getAttribute("data-idle-label") || "-"),
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
   ].join(" ");
 })()`
 
@@ -1586,11 +1617,28 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+	// The one endpoint that really navigates, for the back-button leg:
+	// 204 keeps the visitor where they are, and a page you never left is
+	// a page you cannot come back to.
+	mux.HandleFunc("POST /go", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		select {
+		case payloads <- r.PostForm.Encode():
+		default:
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
+			`<title>sent</title></head><body><p id="done">sent</p></body></html>`)
+	})
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>busy</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
+			// Records whether the back navigation really came out of the
+			// back/forward cache. Registered on window, so it survives
+			// the restore that does not re-run the script.
+			`<script>window.addEventListener("pageshow",function(e){window.__persisted=e.persisted;});</script>`+
 			`<script defer src="/rastrillo.js"></script></head><body>`+
 			// Two submit buttons in one form: the clicked one goes busy,
 			// the other keeps its name, its value and its wits.
@@ -1616,6 +1664,18 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`</form>`+
 			`<form id="quiet" class="rst-form" method="post" action="/submit">`+
 			`<button id="quietbtn" class="rst-btn" type="submit" name="action" value="quiet" data-busy="false">Quietly</button>`+
+			`</form>`+
+			// A control named "target" — a target amount, an ordinary
+			// field name — which shadows HTMLFormElement.target with the
+			// input itself. Reading the property instead of the
+			// attribute switches the whole rule off for this form.
+			`<form id="shadow" class="rst-form" method="post" action="/submit">`+
+			`<input type="hidden" name="target" value="42">`+
+			`<button id="shadowgo" class="rst-btn" type="submit" name="action" value="shadow">Set target</button>`+
+			`</form>`+
+			// The form that really navigates, for the back-button leg.
+			`<form id="nav" class="rst-form" method="post" action="/go">`+
+			`<button id="navgo" class="rst-btn rst-btn--primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
 			`</form>`+
 			`</body></html>`)
 	})
@@ -1739,10 +1799,40 @@ func TestBusyButtonDrive(t *testing.T) {
 	if got := took(t, payloads, "button opt-out"); got != "action=quiet" {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
 	}
-	const wantQuiet = "form:true btn:- btn-off:false spin:no guarded:true"
+	const wantQuiet = "form:true btn:- btn-off:false spin:no"
 	if quiet != wantQuiet {
 		t.Errorf(`data-busy="false" on the button reads %q, want %q`, quiet, wantQuiet)
 	}
+	// The guard is not what was opted out of, and the way to prove that
+	// is behaviour rather than a flag: ask the form to submit again and
+	// nothing may reach the server.
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("quiet").requestSubmit()`, nil), at("re-submitted-quiet"),
+	))
+	tookNothing(t, payloads, "button opt-out, second submit")
+
+	// ── 2c. A control named "target" ──────────────────────────────────
+	//
+	// HTMLFormElement is [LegacyOverrideBuiltIns], so <input
+	// name="target"> replaces form.target with the input element:
+	// truthy, and not "_self". A shim that reads the property instead of
+	// the attribute bails out here, before it arms the guard, and hands
+	// the visitor back the double submit the rule exists to prevent.
+	var shadow string
+	fail(chromedp.Run(ctx,
+		chromedp.Click(`#shadowgo`, chromedp.ByQuery), at("clicked-shadow"),
+		chromedp.Poll(`document.getElementById("shadowgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("shadow-hardened"),
+		chromedp.Evaluate(shadowStateJS, &shadow),
+		chromedp.Evaluate(`document.getElementById("shadow").requestSubmit()`, nil), at("re-submitted-shadow"),
+	))
+	if got := took(t, payloads, "shadowed target"); got != "action=shadow&target=42" {
+		t.Errorf("the shadowing form sent %q, want %q", got, "action=shadow&target=42")
+	}
+	const wantShadow = "shadowed:true form:true btn:true spin:yes"
+	if shadow != wantShadow {
+		t.Errorf("with a control named \"target\" the state is %q, want %q — reading form.target as a property switches the rule off", shadow, wantShadow)
+	}
+	tookNothing(t, payloads, "shadowed target, second submit")
 
 	// ── 3. The rule itself, and the payload ───────────────────────────
 	var busy, afterSecond string
@@ -1782,6 +1872,96 @@ func TestBusyButtonDrive(t *testing.T) {
 	tookNothing(t, payloads, "second submit")
 	if afterSecond != wantBusy {
 		t.Errorf("after the re-entrancy attempts the state is\n  %q\nwant it unchanged:\n  %q", afterSecond, wantBusy)
+	}
+
+	// ── 4b. Back ──────────────────────────────────────────────────────
+	//
+	// The back/forward cache restores a document exactly as it was left,
+	// busy button and all, so a visitor who submits and then comes back
+	// finds a dead form: disabled, wearing the busy label, refusing a
+	// second submit because the guard is still armed. The shim clears it
+	// on pageshow.
+	//
+	// This needs a response that really navigates, which is why /go is
+	// not a 204 like everything else here.
+	//
+	// chromedp.NavigateBack() cannot be used here, and the reason is the
+	// same fact the leg is about: a page restored from the back/forward
+	// cache fires no load event, because it was never re-loaded — so the
+	// action waits for one until the deadline. Ask the PAGE to go back
+	// and then poll for the element, tolerating the evaluations that
+	// error while the document is being swapped.
+	var back string
+	// settle polls one page expression until it is true, tolerating the
+	// evaluations that error while a document is being swapped in.
+	// Whether it times out is deliberately not an error: the assertions
+	// after it are the report. A shim that never clears the busy state
+	// would make this wait ten seconds and then fail on what it reads,
+	// which says what went wrong; failing here would only say "timeout".
+	settle := func(expr string, hard bool) chromedp.Action {
+		return chromedp.ActionFunc(func(c context.Context) error {
+			deadline := time.Now().Add(10 * time.Second)
+			for time.Now().Before(deadline) {
+				var yes bool
+				if err := chromedp.Evaluate(expr, &yes).Do(c); err == nil && yes {
+					return nil
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			if hard {
+				return fmt.Errorf("never became true within 10s: %s", expr)
+			}
+			return nil
+		})
+	}
+	waitForID := func(id string) chromedp.Action {
+		return settle(`!!document.getElementById("`+id+`")`, true)
+	}
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-back"),
+		chromedp.WaitVisible(`#navgo`, chromedp.ByQuery), at("page-visible-for-back"),
+		chromedp.Click(`#navgo`, chromedp.ByQuery), at("clicked-nav"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("landed-on-response"),
+		// Deferred a tick so the evaluation returns before the
+		// navigation it starts.
+		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-go-back"),
+		waitForID("navgo"), at("back-on-the-form"),
+		// The element exists the instant the document is swapped in,
+		// which is BEFORE pageshow's listeners run — so reading here
+		// races the very handler the leg is about. Give the reset its
+		// dispatch, then read.
+		settle(`document.getElementById("nav").getAttribute("aria-busy") === null`, false), at("reset-settled"),
+		chromedp.Evaluate(backStateJS, &back),
+	))
+	if got := took(t, payloads, "back: first submit"); got != "action=nav" {
+		t.Errorf("the navigating form sent %q, want %q", got, "action=nav")
+	}
+	// The premise, first and fatally: if the browser re-fetched the page
+	// instead of restoring it, everything below would be clean for a
+	// reason that has nothing to do with the shim, and the leg would
+	// pass while pinning nothing at all.
+	if !strings.HasPrefix(back, "persisted:true ") {
+		t.Fatalf("after going back the page reads %q — it was not restored from the back/forward cache, so this leg proves nothing about the pageshow reset", back)
+	}
+	const wantBack = "persisted:true form:- btn:- btn-off:false btn-text:Send idle-label:- spin:no"
+	if back != wantBack {
+		t.Errorf("after going back the form reads\n  %q\nwant\n  %q\n— a restored page must not still be wearing the busy state", back, wantBack)
+	}
+	// Enabled and clean is not the same as usable: the guard has to be
+	// cleared too, or the form looks fine and silently refuses.
+	//
+	// Clicked through the page rather than with chromedp.Click, for the
+	// same reason NavigateBack could not be used above: a restored
+	// document raises no DOM.documentUpdated, so chromedp's node cache
+	// still describes the response page and a selector query retries
+	// until the deadline. What this leg is about is the guard, not mouse
+	// input, and element.click() submits the form exactly the same way.
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("navgo").click()`, nil), at("re-submitted-after-back"),
+		waitForID("done"), at("landed-again"),
+	))
+	if got := took(t, payloads, "back: re-submit"); got != "action=nav" {
+		t.Errorf("re-submitting after going back sent %q, want %q — the guard survived the restore and the form is a dead end", got, "action=nav")
 	}
 
 	// ── 5. Reduced motion ─────────────────────────────────────────────

@@ -831,26 +831,46 @@ which should look like a submission. Both are driven.
 **CSS.** `.rst-spin` already carried its `prefers-reduced-motion` branch
 (`animation: none; opacity: 0.5`), so nothing was added for it. New in
 `tokens.css`: `.rst-btn[aria-busy="true"], .rst-btn:disabled { cursor: default }`,
-`.rst-btn:disabled { opacity: 0.72 }`, and `.rst-btn__spin { align-self: center;
-flex: none }`. `.rst-btn`'s own `gap` spaces the ring from the label.
+`.rst-btn:disabled { opacity: 0.8 }`, and `.rst-btn__spin { align-self: center;
+flex: none }`. `.rst-btn`'s own `gap` spaces the ring from the label. 0.8 rather
+than a heavier dim: a disabled control is incidental under WCAG 1.4.3 and exempt
+from the contrast minimum, but this one is disabled while someone is waiting on
+it, so the label stays comfortably readable.
+
+**Shadowing.** `HTMLFormElement` is `[LegacyOverrideBuiltIns]`, so a control
+named `target` — a target amount, a target date; an ordinary field name —
+replaces `form.target` with the input element, which is truthy and is not
+`"_self"`. Reading the property rather than the attribute makes the handler bail
+out BEFORE it arms the guard, so that one form silently loses the whole rule and
+double-submits. Every attribute the handler reads therefore goes through
+`getAttribute`, and the guard is the form's own `aria-busy` rather than an
+expando a control could shadow — and, under strict mode, throw on assigning to.
+Driven with `<input name="target">`, premise asserted first.
 
 **Budget.** The shim's cap rose 12KB → 16KB, once, with the arithmetic in
-`TestShimIsSmall`: 11,689 → 15,638 bytes, of which 618 are code and 3,331 are
-comment. Splitting was rejected on those numbers — 618 bytes of behaviour does
+`TestShimIsSmall`: 11,689 → 16,177 bytes, of which 620 are code and 3,868 are
+comment. Splitting was rejected on those numbers — 620 bytes of behaviour does
 not earn a third scaffolded file and a third `<script>` tag on every page.
 select.js keeps its own 12KB; the shared number was a coincidence of history.
 
 **Gates.** `TestBusyRuleIsTheDefault` (Go) pins the delegated listener, the
 absence of the opt-in scan, both readings of `data-busy="false"`, and the
 sync/deferred split of the payload-affecting mutations.
-`TestBusyButtonDrive` (`-tags browser`) drives a real engine through seven
-legs: the refused form, the form-level opt-out, the button-level opt-out (form
-still guarded), the busy state with the payload the server actually received,
-re-entrancy from three directions, `prefers-reduced-motion` (computed
-`animation-name: none`, ring still shown), and scripts disabled. The endpoint
-answers **204 No Content**, which is defined not to navigate — that is what
-keeps the busy state on the page long enough to assert against instead of
-racing a response.
+`TestBusyButtonDrive` (`-tags browser`) drives a real engine through nine legs:
+the refused form, the form-level opt-out, the button-level opt-out (form still
+guarded, proven by behaviour rather than a flag), the form with a control named
+`target`, the busy state with the payload the server actually received,
+re-entrancy from three directions, the back/forward-cache restore,
+`prefers-reduced-motion` (computed `animation-name: none`, ring still shown),
+and scripts disabled. Most of it hangs on the endpoint answering **204 No
+Content**, which is defined not to navigate — that is what keeps the busy state
+on the page long enough to assert against instead of racing a response. The
+back leg is the exception and needs a response that really does navigate, so it
+posts to a second endpoint; it asserts `pageshow`'s `persisted` flag first and
+fails fatally if the browser re-fetched the page, since a leg that reads a fresh
+document proves nothing about the restore. Coming back has to leave the form not
+merely clean but usable, so the leg submits it again and checks the server heard
+it.
 
 **Gallery.** `form-foot` gains an idle/working pair, the second a `Raw` sample
 because it is not a state the partial can be asked for, with the rule and its

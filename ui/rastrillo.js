@@ -29,9 +29,8 @@
                            never leaves the timer path
      data-busy="false"     on a <form> or on one submit button: opt OUT
                            of the busy rule below. The rule is the
-                           default, so this attribute is only ever an
-                           opt-out; any other value (data-busy alone
-                           included) changes nothing
+                           default, so any other value — data-busy on
+                           its own included — changes nothing
      data-busy-label="…"   on the form or on the button: replacement
                            button text while it works
 
@@ -169,7 +168,6 @@
   //     attribute) go on synchronously, while disabled and an
   //     <input type="submit">'s value (which IS what it submits) wait.
   function busyOff(form) {
-    form.rstBusy = false;
     form.removeAttribute("aria-busy");
     form.querySelectorAll('[aria-busy="true"]').forEach(function (b) {
       b.disabled = false;
@@ -189,9 +187,19 @@
     if (form.getAttribute("data-busy") === "false") return;
     // A form whose result opens elsewhere leaves this page sitting
     // where it is, with nothing to be busy about.
-    if (form.target && form.target !== "_self") return;
-    if (form.rstBusy) { e.preventDefault(); return; }
-    form.rstBusy = true;
+    //
+    // getAttribute, NOT form.target — and this is not style. A form is
+    // [LegacyOverrideBuiltIns]: a control named "target" (a target
+    // amount, a target date — an ordinary field name) shadows the IDL
+    // attribute with the input itself, which is truthy and is not
+    // "_self", so the property form silently switches the rule off and
+    // hands back the double submit it exists to prevent. The busy flag
+    // below is the form's own aria-busy for the same reason: an expando
+    // is shadowable, and under strict mode assigning to a shadowed one
+    // throws.
+    var to = form.getAttribute("target");
+    if (to && to !== "_self") return;
+    if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }
     form.setAttribute("aria-busy", "true");
     // The button the browser submitted with: the one clicked, or — for
     // Enter in a field — the default one it implicitly clicked. Only
