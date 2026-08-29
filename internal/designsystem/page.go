@@ -864,14 +864,14 @@ const shellTemplate = `
 {{define "locale"}}<details class="rst-dropdown rst-locale" name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{define "foot"}}<a href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
-{{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" "Write a post" "ActionIcon" "plus"}}
+{{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
 <div class="rst-box-head"><h2>{{P "This page"}}</h2><a class="rst-btn" href="{{.Index}}">{{P "Back to the design system"}}</a></div>
 <section class="rst-box"><p>{{P "This is the {shell} shell, one of the three ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
 <div class="rst-box-head"><h2>Recent</h2></div>
 <div class="rst-card" style="--rst-cols: 2fr 110px 32px">
 <div class="rst-lrow rst-lrow--head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" "Published"}}</span><span></span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#">Why we moved off the old runner<small>Draft</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" "Draft"}}</span><span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Published")}}</span><span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#">Why we moved off the old runner<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
 </div>
 <p class="rst-count-line">Displaying <strong>1–2</strong> of <strong>412</strong></p>
 {{end}}

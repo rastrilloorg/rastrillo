@@ -608,6 +608,26 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 // bare word proves nothing either way.
 const proseLeakFloor = 12
 
+// proseFixtureCollisions names the prose keys that are ALSO sample data
+// somewhere in the tree, against the page kind the fixture lives on.
+// The sweep skips such a key on those pages and keeps checking it
+// everywhere else, so the guard stays where the prose actually is
+// rather than being dropped for the whole tree.
+//
+// It exists because the shell demos and the gallery draw the same
+// words in two different roles, and only the page they are on tells
+// the two apart. Prefer this to widening proseLeakFloor: a floor
+// exempts every short key at once, and this exempts one key on one
+// kind of page, in writing.
+var proseFixtureCollisions = map[string]string{
+	// The shell demos' sample screen says this as its own chrome and
+	// translates it (page.go's shellTemplate). samples.go passes the
+	// same words as page-header's ActionLabel, as fixture, on every
+	// gallery index — so on an index page an English "Write a post" is
+	// the fixture doing its job, and on a shell demo it would be a leak.
+	"Write a post": "index.html",
+}
+
 // escapedSource strips the <pre class="ds-src"> blocks out of a page.
 // They hold ui.Styleguide's samples verbatim — English markup a reader
 // is meant to copy — so English inside them is the point, not a leak.
@@ -700,6 +720,9 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 			}
 		}
 		for _, key := range sentences {
+			if on, ok := proseFixtureCollisions[key]; ok && strings.HasSuffix(name, on) {
+				continue
+			}
 			if strings.Contains(page, key) {
 				t.Errorf("%s carries the English %q", name, key)
 			}
@@ -835,15 +858,32 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 // key is translated, the other checks no key's English reaches a
 // translated page. Neither can see a sentence that was never a key —
 // an author who writes <p>Some new English.</p> straight into a
-// template has added a string the page says in twelve languages'
-// worth of pages and in one language, and nothing notices.
+// template has added a string the page says in one language and
+// renders on a hundred and sixty-five pages that are in another, and
+// nothing notices. Extending the leak sweep to the modal and shell
+// demos does not help: there is no key to sweep for.
 //
-// That is the hole this gate closes, and it closes it at the source
-// rather than in the output: every run of visible English in the
-// three page templates must either go through P, or be named below as
-// fixture. Extending the leak sweep to the modal and shell demos —
-// which was the other half of this fix — does not help here, because
-// there is no key to sweep for.
+// That is the hole the gate below closes, at the source rather than in
+// the output. What it covers, exactly — the first version of this
+// comment claimed more than the code did, and the difference was two
+// strings shipping untranslated on 99 pages:
+//
+//   - text between tags;
+//   - the values of the four attributes a person reads or hears
+//     (title, aria-label, alt, placeholder);
+//   - the literal string values of dict arguments inside a template
+//     invocation — {{template "status-pill" dict "Label" "Published"}}
+//     was invisible to the first two passes, because the whole action
+//     is nulled before either of them runs, and "Published" is what a
+//     reader of that page reads.
+//
+// What it does NOT cover, stated so nobody has to rediscover it:
+// anything inside a parenthesised sub-expression in an action (the
+// paren reader takes it as one opaque token), any string a Go
+// identifier in this package hands to the template rather than the
+// template writing it (samples.go's data, idiomBlurbs and friends —
+// those reach the page through proseIn, which the parity gate covers),
+// and any template outside the three named in the test.
 
 var (
 	// A template action. Non-greedy over any character, because the
@@ -862,13 +902,16 @@ var (
 )
 
 // templateFixtures is every run of English the three page templates are
-// allowed to write literally: the sample screen's own content, the
-// product's name, and the type specimen. It is the complete inventory
-// of English that stays English on a Japanese page, which makes it
-// worth reading as documentation and not only as an allowlist.
+// allowed to write between their tags: the sample screens' own record
+// data, the product's name, and the type specimen. Seventeen entries,
+// and worth reading as documentation rather than only as an allowlist
+// — with dictFixtures below, it is the inventory of English that stays
+// English on a Japanese page, as far as these three templates go.
 //
 // Adding to it is a decision — this string is data, not the page
-// speaking — and it should be a rare one. Everything the page says in
+// speaking — and it should be a rare one. "Draft" came OUT of it when
+// the status pill beside it was translated and left the row's meta
+// line saying the same word in English. Everything the page says in
 // its own voice goes through P instead.
 var templateFixtures = map[string]bool{
 	// The product's name, in the shell demos' brand slot.
@@ -886,7 +929,6 @@ var templateFixtures = map[string]bool{
 	"Release notes, August":           true,
 	"Published 2 August":              true,
 	"Why we moved off the old runner": true,
-	"Draft":                           true,
 	"Displaying":                      true,
 	"of":                              true,
 	// The modal demo's sample screen: the section it is settings for,
@@ -895,6 +937,116 @@ var templateFixtures = map[string]bool{
 	"Profile":       true,
 	"Billing":       true,
 	"Notifications": true,
+}
+
+// dictFixtures is the literal English a dict argument is allowed to
+// carry, on the same terms as templateFixtures and kept apart from it
+// on purpose. The two positions are not interchangeable: "Draft" is
+// legitimate prose in the row's meta line and would have been a leak
+// as a status-pill Label, and one shared allowlist would have let the
+// second through on the strength of the first. Both entries here are
+// the name of a fictional screen.
+var dictFixtures = map[string]bool{
+	"Posts":    true, // the shell demos' sample screen
+	"Settings": true, // the modal demo's
+}
+
+// dictMachineArgs are the argument names whose value is a machine's,
+// never a reader's: a tone identifier, an icon slug, a URL, a form
+// field's name, a CSS class, an element id. Their values are checked
+// by nothing, which is the point — "positive" and "plus" are the
+// strings the code wants, and translating either would break the
+// component.
+//
+// A name allowlist rather than a value heuristic because the two are
+// genuinely indistinguishable as strings: "plus" is an icon slug and
+// "Draft" is a label, and only the argument they arrive under says
+// which. Adding a name here is therefore a claim — that this argument
+// can never carry something a person reads — so keep it to arguments
+// whose partial actually uses them as identifiers.
+var dictMachineArgs = map[string]bool{
+	"Tone": true, "Icon": true, "ActionIcon": true,
+	"Href": true, "ActionHref": true, "HomeHref": true, "BackHref": true,
+	"Name": true, "ID": true, "Class": true, "Value": true,
+}
+
+// dictArguments returns the name/value pairs of every dict call in a
+// template whose value is a bare literal string. A value that is a
+// parenthesised expression — (P "…"), which is what prose looks like
+// here — or a field reference is not a literal and is not returned.
+//
+// Hand-tokenised rather than regexped because a dict argument list is
+// a sequence of three different shapes (quoted string, parenthesised
+// expression, bare word) and their alternation is the whole signal:
+// the name is always the odd token, the value always the even one, and
+// a regex that just grabbed every quoted string in the action would
+// report every argument NAME as English too.
+func dictArguments(action string) [][2]string {
+	i := strings.Index(action, "dict ")
+	if i < 0 {
+		return nil
+	}
+	rest := action[i+len("dict "):]
+
+	type token struct {
+		text    string
+		literal bool
+	}
+	var tokens []token
+	for p := 0; p < len(rest); {
+		switch c := rest[p]; {
+		case c == ' ' || c == '\t' || c == '\n' || c == '\r':
+			p++
+		case c == '"':
+			q := p + 1
+			for q < len(rest) && rest[q] != '"' {
+				if rest[q] == '\\' {
+					q++
+				}
+				q++
+			}
+			if q >= len(rest) {
+				return nil // unterminated: not something to guess about
+			}
+			tokens = append(tokens, token{rest[p+1 : q], true})
+			p = q + 1
+		case c == '(':
+			depth, q := 0, p
+			for ; q < len(rest); q++ {
+				if rest[q] == '(' {
+					depth++
+				} else if rest[q] == ')' {
+					if depth--; depth == 0 {
+						break
+					}
+				}
+			}
+			if q >= len(rest) {
+				return nil
+			}
+			tokens = append(tokens, token{rest[p : q+1], false})
+			p = q + 1
+		default:
+			q := p
+			for q < len(rest) && rest[q] != ' ' && rest[q] != '\t' && rest[q] != '\n' && rest[q] != '\r' {
+				q++
+			}
+			tokens = append(tokens, token{rest[p:q], false})
+			p = q
+		}
+	}
+
+	var out [][2]string
+	for j := 0; j+1 < len(tokens); j += 2 {
+		name, value := tokens[j], tokens[j+1]
+		if !name.literal {
+			break // not a dict argument list after all; stop guessing
+		}
+		if value.literal {
+			out = append(out, [2]string{name.text, value.text})
+		}
+	}
+	return out
 }
 
 // literalText pulls every run of visible English out of one template:
@@ -940,6 +1092,26 @@ func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
 			}
 			t.Errorf("%s writes %q literally. If the page is saying it, wrap it in {{P …}} and translate it in prose.go; "+
 				"if it is sample data, add it to templateFixtures and say what it is.", tt.name, s)
+		}
+
+		// The pass literalText cannot make: the action is nulled before
+		// it runs, so a component's label handed over as a dict
+		// argument reaches the page without passing anything.
+		var pairs int
+		for _, action := range templateAction.FindAllString(tt.src, -1) {
+			for _, kv := range dictArguments(action) {
+				pairs++
+				name, value := kv[0], kv[1]
+				if dictMachineArgs[name] || dictFixtures[value] || !templateLetter.MatchString(value) {
+					continue
+				}
+				t.Errorf("%s passes %q as %s in a dict. If the page is saying it, wrap it in (P …) and translate it in prose.go; "+
+					"if it is a machine's value, its argument name belongs in dictMachineArgs; "+
+					"if it is sample data, add it to dictFixtures and say what it is.", tt.name, value, name)
+			}
+		}
+		if pairs == 0 {
+			t.Errorf("%s: no literal dict arguments found at all — the tokeniser has stopped working, and this pass with it", tt.name)
 		}
 	}
 }
