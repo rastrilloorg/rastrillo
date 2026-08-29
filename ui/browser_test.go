@@ -488,3 +488,274 @@ func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 
 	rig.Screen("body", "after the date journey")
 }
+
+// groupPage serves one form carrying two hand-written selects: a
+// grouped one that should enhance, and a large one that says no.
+//
+// Hand-written rather than rendered through field-select, because
+// field-select's Options are flat — the partial has no optgroup to
+// emit. Grouped selects are exactly the case an app writes by hand, so
+// that is what the drive drives.
+func groupPage(t *testing.T) (http.Handler, chan string) {
+	t.Helper()
+
+	got := make(chan string, 1)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /select.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(SelectJS())
+	})
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		select {
+		case got <- r.PostFormValue("city"):
+		default:
+		}
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>ok</title></head><body><p id="done">received</p></body></html>`)
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		var body strings.Builder
+		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+			`<title>groups</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css">` +
+			`<script defer src="/select.js"></script></head><body>` +
+			`<form method="post" action="/submit">` +
+			`<label class="rst-field__label" for="city">City</label>` +
+			`<select class="rst-input" id="city" name="city" data-rst-select` +
+			` data-rst-select-filter="Type to filter"` +
+			` data-rst-select-results="{n} results"` +
+			` data-rst-select-result-one="1 result">` +
+			`<option value="">Choose a city</option>` +
+			`<optgroup label="Ireland">` +
+			`<option value="dub">Dublin</option>` +
+			`<option value="cor">Cork</option>` +
+			`<option value="gal">Galway</option>` +
+			`</optgroup>` +
+			`<optgroup label="Spain">` +
+			`<option value="mad">Madrid</option>` +
+			`<option value="bcn">Barcelona</option>` +
+			`</optgroup>` +
+			`</select>` +
+			// The markup-side opt-out, on a select far past the size that
+			// would otherwise enhance: it must stay a plain native select.
+			`<label class="rst-field__label" for="team">Team</label>` +
+			`<select class="rst-input" id="team" name="team" data-rst-select="false">`)
+		for i := 1; i <= 40; i++ {
+			fmt.Fprintf(&body, `<option value="%d">Team %d</option>`, i, i)
+		}
+		body.WriteString(`</select>` +
+			`<button type="submit" id="go">Save</button></form></body></html>`)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, body.String())
+	})
+	return mux, got
+}
+
+// TestGroupedSelectRendersItsGroups drives the two things a Go test
+// cannot see: that a grouped select keeps its groups on the way into
+// the combobox, and that a select saying data-rst-select="false" is
+// left alone.
+//
+// Bug classes it exists to catch — each renders perfectly and says
+// nothing wrong:
+//
+//   - the mirror flattens native.options, so the headings the author
+//     wrote to make a long list readable silently vanish;
+//   - a group whose options all filter out keeps its heading, leaving a
+//     heading over nothing;
+//   - the headings join the keyboard order, so arrowing down lands on a
+//     heading and Enter commits the wrong option — or nothing;
+//   - the opt-out is read as a truthy attribute (it is present, after
+//     all) and the select enhances anyway.
+//
+// It shares the select drive's KNOWN LIMITATION above: real CDP input
+// under machine load can deliver a keystroke while focus has drifted.
+// Read the reported step before believing a failure.
+func TestGroupedSelectRendersItsGroups(t *testing.T) {
+	mux, submitted := groupPage(t)
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancelTimeout()
+
+	var (
+		comboCount, optOutEnhanced            int
+		optOutVisible                         bool
+		groupLabels, headings                 string
+		headingsAreOptions                    int
+		openGroups, openOptions               int
+		narrowedGroups, narrowedOptions       int
+		narrowedHeadings                      string
+		activeText, nativeValue, carrierShape string
+	)
+
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+	// Poll rather than sample: the list is redrawn on every keystroke,
+	// and under load a probe fired straight after SendKeys reads the
+	// list as it was. Waiting on the observable state turns a drifted
+	// keystroke into a fast failure at the step that did not happen.
+	until := func(name, js string) chromedp.Action {
+		return chromedp.ActionFunc(func(ctx context.Context) error {
+			deadline := time.Now().Add(10 * time.Second)
+			for {
+				var ok bool
+				if err := chromedp.Evaluate(js, &ok).Do(ctx); err != nil {
+					return err
+				}
+				if ok {
+					return nil
+				}
+				if time.Now().After(deadline) {
+					var snap string
+					_ = chromedp.Evaluate(`JSON.stringify({
+						options: document.querySelectorAll('[role="option"]').length,
+						groups: document.querySelectorAll('[role="group"]').length,
+						headings: Array.from(document.querySelectorAll('.rst-select__group')).map(function (h) { return h.textContent }),
+						inputValue: (function (i) { return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
+					})`, &snap).Do(ctx)
+					return fmt.Errorf("%s never became true within 10s; widget state: %s", name, snap)
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(100 * time.Millisecond):
+				}
+			}
+		})
+	}
+
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
+		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+
+		// Exactly one enhancement on a page holding two selects, both of
+		// which carry the attribute.
+		chromedp.Evaluate(`document.querySelectorAll('input[role="combobox"]').length`, &comboCount),
+		chromedp.Evaluate(`document.querySelectorAll('select[name="team"][data-rst-enhanced]').length`, &optOutEnhanced),
+		// Untouched means untouched: still a real, visible native select.
+		chromedp.Evaluate(`(document.querySelector('select[name="team"]')?.getBoundingClientRect().width ?? 0) > 40`, &optOutVisible),
+		// The grouped native survives as the carrier, groups and all.
+		chromedp.Evaluate(`(function () {
+			var s = document.querySelector('select[name="city"]');
+			if (!s) return "no-select";
+			return s.querySelectorAll('optgroup').length + "/" + s.options.length;
+		})()`, &carrierShape),
+
+		// Open it: focus draws the unfiltered list.
+		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
+		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]').length === 5`),
+		at("list-drawn"),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &openGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &openOptions),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`, &groupLabels),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('.rst-select__group')).map(function (h) { return h.textContent }).join(',')`, &headings),
+		// A heading is furniture, never a pick.
+		chromedp.Evaluate(`document.querySelectorAll('.rst-select__group[role="option"]').length`, &headingsAreOptions),
+
+		// Filter to "a": Galway in one group, Madrid and Barcelona in the
+		// other. Both groups survive, so the keyboard has a boundary to
+		// cross.
+		chromedp.SendKeys(`input[role="combobox"]`, "a", chromedp.ByQuery), at("typed-a"),
+		until("the list narrows to three", `document.querySelectorAll('[role="option"]').length === 3`),
+		at("narrowed-to-three"),
+		// Two arrows: the second lands on the first option of the SECOND
+		// group. If the headings were in the keyboard order it would land
+		// on the "Spain" heading instead.
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down-1"),
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down-2"),
+		until("a row is highlighted", `document.querySelectorAll('[role="option"].is-active').length === 1`),
+		at("row-highlighted"),
+		chromedp.Evaluate(`document.querySelector('[role="option"].is-active')?.textContent ?? ''`, &activeText),
+
+		// Extend the filter to "ad": only Madrid matches, so the Ireland
+		// group empties — and must take its heading with it.
+		chromedp.SendKeys(`input[role="combobox"]`, "d", chromedp.ByQuery), at("typed-d"),
+		until("the list narrows to one", `document.querySelectorAll('[role="option"]').length === 1`),
+		at("narrowed-to-one"),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &narrowedGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &narrowedOptions),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('.rst-select__group')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+
+		// The sole match commits on Enter, and mirrors onto the carrier.
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
+		until("the mirror commits", `(document.querySelector('select[name="city"]')?.value ?? '') !== ''`),
+		at("read-mirrored-value"),
+		chromedp.Evaluate(`document.querySelector('select[name="city"]')?.value ?? ''`, &nativeValue),
+
+		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+	); err != nil {
+		t.Fatalf("drive failed after %q: %v\n  groupLabels=%q headings=%q activeText=%q nativeValue=%q",
+			reached, err, groupLabels, headings, activeText, nativeValue)
+	}
+
+	if comboCount != 1 {
+		t.Errorf("expected exactly one combobox, found %d", comboCount)
+	}
+	if optOutEnhanced != 0 {
+		t.Errorf(`data-rst-select="false" enhanced anyway (%d enhanced selects): the opt-out is being read as a present attribute`, optOutEnhanced)
+	}
+	if !optOutVisible {
+		t.Error(`the opted-out select is no longer a visible native select; "false" must leave it entirely alone`)
+	}
+	if carrierShape != "2/6" {
+		t.Errorf("the native carrier reads %q, want %q: enhancement must not touch the select", carrierShape, "2/6")
+	}
+	if openGroups != 2 {
+		t.Errorf("the open list holds %d ARIA groups, want 2: the optgroups were flattened away", openGroups)
+	}
+	if openOptions != 5 {
+		t.Errorf("the open list holds %d options, want 5", openOptions)
+	}
+	if groupLabels != "Ireland,Spain" {
+		t.Errorf("group aria-labels are %q, want %q: the optgroup labels did not carry over", groupLabels, "Ireland,Spain")
+	}
+	if headings != "Ireland,Spain" {
+		t.Errorf("visible group headings are %q, want %q", headings, "Ireland,Spain")
+	}
+	if headingsAreOptions != 0 {
+		t.Errorf("%d group headings carry role=option; a heading is furniture, not a pick", headingsAreOptions)
+	}
+	// Two arrows from nothing highlighted lands on the second match,
+	// which lives in the second group. A heading in the keyboard order
+	// would leave "Galway" here (or nothing highlighted at all).
+	if activeText != "Madrid" {
+		t.Errorf("two ArrowDowns highlighted %q, want %q: the keyboard order is not skipping the group headings", activeText, "Madrid")
+	}
+	if narrowedGroups != 1 || narrowedOptions != 1 {
+		t.Errorf("filtering to one match left %d groups and %d options, want 1 and 1", narrowedGroups, narrowedOptions)
+	}
+	if narrowedHeadings != "Spain" {
+		t.Errorf("after filtering the headings read %q, want %q: an emptied group kept its heading", narrowedHeadings, "Spain")
+	}
+	if nativeValue != "mad" {
+		t.Errorf("the carrier holds %q, want %q — the pick inside a group did not mirror back", nativeValue, "mad")
+	}
+
+	select {
+	case v := <-submitted:
+		if v != nativeValue {
+			t.Errorf("server received city=%q, the select held %q", v, nativeValue)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the form never reached the server")
+	}
+
+	rig.Screen("body", "after the grouped journey")
+}
