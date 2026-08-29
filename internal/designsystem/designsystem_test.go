@@ -27,7 +27,7 @@ import (
 // Same shape as ui/datetime_test.go's fixturesComplete, for the same
 // reason: a gate that is temporarily unenforceable says so in one
 // named constant instead of quietly not running.
-const treeCommitted = false
+const treeCommitted = true
 
 // treeDir is docs/design-system, relative to this package.
 const treeDir = "../../docs/design-system"
