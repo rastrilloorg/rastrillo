@@ -677,3 +677,28 @@ and `form.Range`, one for the twelve base locales. Budget 18,000;
 - Persisting locale without JavaScript on the *static* site (there is
   no server there; links suffice).
 - Writing the cookie for apps that route their own locale prefix.
+
+## 6-v2. Second iteration (2026-08-29, Paul's review of the live page)
+
+Requirements, verbatim in intent: (1) the language switcher moves top-right
+and changes ALL text on the page, page prose included; (2) a searchable
+sidebar nav with collapsible sections linking to every item; (3) the
+default theme becomes generic-personable — white background, greys, an
+everyday palette — renamed **day**; (4) the second theme is **plain**, a
+minimal skeleton to build on; (5) the third is personality-led,
+impeccable-style, modern/slick/assertive (**signal**), and every theme is
+authored light+dark with a scheme switcher in the gallery; (6) semantic
+elements for the main interactive idioms (`<nav>`, `<dialog>`, `<search>`);
+(7) the visual bugs Paul screenshotted (field-row alignment with errors,
+grow/short proportions, date-button placement, dead space); (8) every
+example gets Desktop/Mobile/Code previews — desktop always renders the
+desktop layout via a scaled iframe, the technique also covering modals;
+full examples stay linked, in new tabs; (9) tito CSS.md principles adopted
+where they fit: `light-dark()` single-declaration theming, descriptive
+variable layering, semantic-first markup, alphabetised rules — custom
+elements replacing the `rst-*` vocabulary are explicitly DEFERRED, a
+doctrine question for another day; (10) sample links go nowhere (`#`)
+instead of 404ing; (11) opening a dropdown closes other open dropdowns by
+default (native `<details name>`, nested groups excepted). Theme axis
+grows to colour + type + shape (radius/shadow tokens move into themes).
+Plan: docs/superpowers/plans/2026-08-29-design-system-v2.md.
