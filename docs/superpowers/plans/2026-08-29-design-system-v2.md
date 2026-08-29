@@ -104,6 +104,18 @@ From Paul's screenshots (reproduce each in the browser rig first — screenshot,
 
 ---
 
+### Task 6b: The accessibility gate
+
+**Files:** `ui/testdata/axe/axe.min.js` (vendored, version pinned in a README beside it), `ui/browser_test.go` or a new `ui/a11y_test.go` (build tag `browser`), `internal/designsystem` only if findings force markup changes. Regenerate tree if markup changes.
+
+- Vendor axe-core (pin the version; record sha256). In the browser rig, load representative COMMITTED gallery pages (root index, plain/en, signal/en, day/ar, one modal demo, one shell demo) in both schemes (set data-theme), inject axe, run with the `wcag2a, wcag2aa, wcag21aa, wcag22aa` tags, and FAIL on any violation, printing rule id + selector per finding. Plus: a 320px-viewport reflow check (no horizontal scrollbar on the index) and a keyboard walk (Tab through the first N interactive elements of the index; assert focus visible — computed outline/box-shadow changes — and no keyboard trap).
+- Fix what the scan finds in the source that owns it (renderer, partials, tokens.css — pins!); anything ruled-not-fixed gets a documented, named exemption list in the test with the reason (mirror colorMixSkip's convention).
+- Docs: one honest sentence in templates.md's design-system section: the gallery is scanned to WCAG 2.2 AA by axe-core in CI; automated scanning covers roughly half the criteria, the rest is reviewed by hand.
+
+- [ ] Vendor → scan RED (expect findings) → fix/rule → GREEN → Commit `design-system: the gallery is scanned to WCAG 2.2 AA`.
+
+---
+
 ### Task 7: Docs, SKILL.md, spec as-built
 
 **Files:** `docs/site/templates.md` (themes section rewrite: day/plain/signal, light-dark format, shape-in-theme; semantic elements; exclusivity default), `cli.md`, `reference/ui.md`, `forms.md` if field-row guidance changes, `SKILL.md` (theme names + one sentence on exclusivity default; budget), spec §6-v2 as-built sentences (incl. the CSS.md adoption boundary and the custom-elements deferral), `AGENTS.md`?? no. Gates: docsite; all suites; examples.
@@ -119,4 +131,4 @@ From Paul's screenshots (reproduce each in the browser rig first — screenshot,
 
 ## Self-review
 
-Every user requirement maps: switcher-changes-everything + top-right → T4; sidebar+search → T5; ink→day → T1; plain → T1; impeccable theme (light+dark, switcher in preview) → T1 (+T4 scheme toggle); semantic elements → T2; visual hiccups → T3; preview desktop/mobile/code + iframe scaling + modal preview + keep links out → T6; CSS.md → T1 (light-dark, layering) + T2 (semantic) + spec boundary (T7); dead links → T6; new-tab → T6; dropdown exclusivity → T2. Order: T1 before T4/T6 (themes feed srcdoc + scheme toggle); T2 before T6 (markup feeds previews); T3 independent after T1 (pins). One PR, one deploy.
+Every user requirement maps: AA verification → T6b; switcher-changes-everything + top-right → T4; sidebar+search → T5; ink→day → T1; plain → T1; impeccable theme (light+dark, switcher in preview) → T1 (+T4 scheme toggle); semantic elements → T2; visual hiccups → T3; preview desktop/mobile/code + iframe scaling + modal preview + keep links out → T6; CSS.md → T1 (light-dark, layering) + T2 (semantic) + spec boundary (T7); dead links → T6; new-tab → T6; dropdown exclusivity → T2. Order: T1 before T4/T6 (themes feed srcdoc + scheme toggle); T2 before T6 (markup feeds previews); T3 independent after T1 (pins). One PR, one deploy.
