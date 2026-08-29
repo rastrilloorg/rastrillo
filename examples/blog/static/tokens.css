@@ -772,10 +772,13 @@ small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.4
 .rst-field-row > .rst-field { flex: 0 1 auto; min-inline-size: 8rem; }
 .rst-field-row > .rst-grow { flex: 1 1 12rem; }
 /* A field in a row with no label reserves the label's line anyway, so
-   its control still lines up with a labelled sibling's. One line of
-   .rst-field__label: its font-size at the body's 1.5 line-height, plus
-   the label's own bottom margin. */
-.rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: calc(var(--rst-fs-sm) * 1.5); content: ""; display: block; margin-block-end: 0.2rem; }
+   its control still lines up with a labelled sibling's. It measures
+   that line rather than restating it: the same font-size .rst-field__label
+   declares, one lh of the line-height both of them inherit, and the
+   label's own bottom margin. Written as calc(...* 1.5) this would have
+   been the body's line-height copied out of the base block above, and a
+   copy that far from its original is a copy that goes stale. */
+.rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: 1lh; content: ""; display: block; font-size: var(--rst-fs-sm); margin-block-end: 0.2rem; }
 /* A row is sized by its controls, never by its messages: contain keeps a
    long error out of the field's max-content width, so the sentence wraps
    under its own control instead of stretching the column it belongs to
@@ -801,9 +804,20 @@ small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.4
    field margin on top of the card's own padding, at both ends. The gap
    is now the rhythm (the same var(--rst-sp-5) .rst-form-flow uses
    between its fields) and the blocks contribute no margin of their
-   own. */
+   own.
+
+   Stated as a rule over every child rather than as a list of the
+   classes we happen to ship: a list is a promise this file cannot keep,
+   because it cannot name .rst-callout's successor, and it cannot name
+   an app's own div at all — and a child the list forgot lands at gap
+   plus its own two margins, which is the bug this rule exists to
+   prevent. So: the form owns the block rhythm, full stop, and the two
+   deliberate exceptions are exempted here where they can be read.
+   .rst-form__foot and .rst-form-foot both set a block-start margin that
+   is not rhythm — it is the extra air that separates a closing action
+   row from the last question above it. */
 .rst-form { display: flex; flex-direction: column; gap: var(--rst-sp-5); max-inline-size: 44rem; }
-.rst-form > :is(.rst-field, .rst-field-row, .rst-field-range, .rst-choice, .rst-tblock) { margin-block: 0; }
+.rst-form > *:not(.rst-form__foot, .rst-form-foot) { margin-block: 0; }
 .rst-form__foot { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
 
 @media (prefers-reduced-motion: reduce) {
