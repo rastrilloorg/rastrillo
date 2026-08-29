@@ -546,13 +546,28 @@ locale from the framework catalogs.
 renders the whole tree into `docs/design-system/` — static HTML, the
 three theme files, `tokens.css`, `select.js`, `datetime.js`,
 `rastrillo.js`. No build step on the site side; the site vendors the
-tree as it vendors markdown. As built, the root `index.html` is not a
-copy of `ink/en/index.html`: `dsgen` calls the same page renderer a
-second time with a different pair of path prefixes (`Root`, to the tree
-root, and `Self`, to the page's own theme/locale directory), so the two
-files are independently generated and only incidentally identical —
-`TestRootIndexIsInkEnglishAtTheTreeRoot` confirms it by blanking every
-`href`/`src` and diffing what's left (as built, 2026-08-29).
+tree as it vendors markdown.
+
+~~As built, the root `index.html` is not a copy of `ink/en/index.html`:
+`dsgen` calls the same page renderer a second time with a different
+pair of path prefixes (`Root`, to the tree root, and `Self`, to the
+page's own theme/locale directory), so the two files are independently
+generated and only incidentally identical.~~ Withdrawn, and with it the
+claim that the tree works at any mount path. **Every URL the renderer
+emits is an absolute path under `/design-system/`**, from one
+`mountPath` constant in `internal/designsystem`: stylesheets, scripts,
+iframe sources, the theme and language switchers, the shell demo links
+and the shells' back-links. The CARLOS static edge serves a directory
+index at its slash-less URL as a 200 with no redirect — `/design-system`
+and `/design-system/` both return the same document — so a relative
+href resolved against a different base on each, and the slash-less
+visit, which is the one a person types, loaded no stylesheet and
+carried a navigation pointing one directory too high. The tree is now
+bound to the path the site serves it from, which is the trade. With no
+depth prefixes left, the root `index.html` and `ink/en/index.html` are
+the same bytes; `TestRootIndexIsInkEnglishAtTheTreeRoot` asserts that
+byte-identity outright rather than blanking hrefs to compare the rest
+(as built, 2026-08-29).
 
 ```
 docs/design-system/
@@ -586,10 +601,16 @@ fences) are extended to the HTML pages for `/docs/` links only.~~ Not
 built: `internal/docsite`'s gates read only `docs/site/`'s Markdown and
 `ui.Templates()`; nothing in tasks 2–4 points them at
 `docs/design-system/`'s HTML. `TestEveryPageIsAWholeLocalisedDocument`
-covers the rendered pages' own structural integrity instead (one
-doctype, no leaked catalog keys, no absolute asset paths), which is a
-different check than a docsite-gate link/anchor pass. Flagging as
-deferred, not silently dropped (as built, 2026-08-29).
+covers the rendered pages' own structural integrity instead: one
+doctype, the right `lang`/`dir`, no leaked catalog keys, and — since
+the absolute-path fix — every `<link>`, `<script src>`, `<iframe src>`
+and every anchor pointing into the tree checked to be an absolute path
+under `/design-system/` that names a file the tree actually renders.
+That last clause is the cross-page link pass PR 5 deferred, arriving
+early and from the renderer's own file map rather than from a crawl;
+the sample hrefs inside the partials (`/orders/AB3PX` and friends) are
+content, not chrome, and are exempt by not starting with the mount
+prefix (as built, 2026-08-29).
 
 ### 5.3 The site
 

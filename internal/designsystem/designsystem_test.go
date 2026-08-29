@@ -192,25 +192,64 @@ func TestDesignSystemIsCurrent(t *testing.T) {
 	}
 }
 
-// linkTarget matches an href or src attribute value, so two pages can
-// be compared with their paths blanked out.
-var linkTarget = regexp.MustCompile(`(href|src)="[^"]*"`)
-
-func pathless(page string) string {
-	return linkTarget.ReplaceAllString(page, `$1=""`)
-}
-
 var (
 	langAttr      = regexp.MustCompile(`<html lang="([^"]*)" dir="([^"]*)"`)
-	scriptSrcAbs  = regexp.MustCompile(`src="/`)
-	styleHrefAbs  = regexp.MustCompile(`<link[^>]+href="/`)
 	unresolvedKey = "rastrillo.ui."
 )
 
+// chromeLinks finds the URLs the renderer itself emits into a page's
+// chrome: the stylesheets, the scripts and the shell iframes. Every one
+// of them has to be an absolute path under /design-system/, because the
+// static edge serves this tree's directory indexes at their slash-less
+// URL without redirecting and a relative path resolves against the
+// wrong base there.
+//
+// The escaped shell source in the <pre> blocks is invisible to these:
+// it reaches the page as &lt;link …, not as markup.
+var chromeLinks = []struct {
+	what string
+	re   *regexp.Regexp
+}{
+	{"stylesheet link", regexp.MustCompile(`<link[^>]*\shref="([^"]*)"`)},
+	{"script src", regexp.MustCompile(`<script[^>]*\ssrc="([^"]*)"`)},
+	{"iframe src", regexp.MustCompile(`<iframe[^>]*\ssrc="([^"]*)"`)},
+}
+
+// anchorHref finds every <a href>. Anchors are mixed: the switchers,
+// the shell demo links and the back-links are the renderer's own and
+// must resolve, while the hrefs inside the samples are content —
+// /orders/AB3PX and friends, sample data pointing at routes no static
+// site serves. The rule that separates them without marking up either
+// is the mount prefix: an href under /design-system/ is a link into
+// this tree and must hit a file, and an href that is not is a sample.
+var anchorHref = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
+
+// mountPrefix is where every internal link starts.
+const mountPrefix = mountPath + "/"
+
+// resolves reports whether an absolute in-tree URL names a file the
+// renderer actually produces.
+func resolves(files map[string][]byte, href string) bool {
+	target := strings.TrimPrefix(href, mountPrefix)
+	if i := strings.IndexAny(target, "#?"); i >= 0 {
+		target = target[:i]
+	}
+	_, ok := files[target]
+	return ok
+}
+
 // Every page is a whole document in the right language, with no
-// unresolved catalog key and no absolute asset path — the tree is
-// served from a subdirectory of rastrillo.org, so an asset link
-// starting with "/" would resolve to the site root and 404.
+// unresolved catalog key; every asset it loads and every link it makes
+// into this tree is an absolute path under /design-system/ that names a
+// file the tree contains.
+//
+// The absolute half of that is the fix for the live bug: rastrillo.org
+// served /design-system unstyled, because the edge returns the
+// directory index at the slash-less URL with no redirect and every
+// relative href on it then resolved one directory too high. The
+// resolves half is new coverage the relative scheme never had — it
+// catches a switcher pointing at a locale the tree does not ship, or a
+// shell demo link naming a file that moved.
 func TestEveryPageIsAWholeLocalisedDocument(t *testing.T) {
 	files := render(t)
 	names := make([]string, 0, len(files))
@@ -254,11 +293,26 @@ func TestEveryPageIsAWholeLocalisedDocument(t *testing.T) {
 		if strings.Contains(body, unresolvedKey) {
 			t.Errorf("%s: an unresolved catalog key leaked into the page", name)
 		}
-		if styleHrefAbs.MatchString(body) {
-			t.Errorf("%s: an absolute stylesheet link", name)
+		for _, kind := range chromeLinks {
+			for _, m := range kind.re.FindAllStringSubmatch(body, -1) {
+				href := m[1]
+				if !strings.HasPrefix(href, mountPrefix) {
+					t.Errorf("%s: %s %q is not an absolute path under %s", name, kind.what, href, mountPrefix)
+					continue
+				}
+				if !resolves(files, href) {
+					t.Errorf("%s: %s %q names nothing in the tree", name, kind.what, href)
+				}
+			}
 		}
-		if scriptSrcAbs.MatchString(body) {
-			t.Errorf("%s: an absolute script src", name)
+		for _, m := range anchorHref.FindAllStringSubmatch(body, -1) {
+			href := m[1]
+			if !strings.HasPrefix(href, mountPrefix) {
+				continue // sample content, or a fragment
+			}
+			if !resolves(files, href) {
+				t.Errorf("%s: link %q names nothing in the tree", name, href)
+			}
 		}
 	}
 }
@@ -303,7 +357,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			path := fmt.Sprintf("%s/%s/index.html", theme, locale)
-			if want := `href="../../theme-` + theme + `.css"`; !strings.Contains(string(files[path]), want) {
+			if want := `href="` + mountPrefix + `theme-` + theme + `.css"`; !strings.Contains(string(files[path]), want) {
 				t.Errorf("%s does not link its own theme (%s)", path, want)
 			}
 		}
@@ -313,28 +367,29 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	}
 }
 
-// The root index is ink/en with every relative path rewritten for the
-// tree root — same page, different depth, generated rather than copied.
+// The root index is ink/en, byte for byte. It used to be a second
+// render at a shallower depth whose every path came out different, and
+// this gate blanked the hrefs to compare the rest; with absolute paths
+// there is no difference left to allow for, so the gate asserts the
+// stronger thing directly.
 func TestRootIndexIsInkEnglishAtTheTreeRoot(t *testing.T) {
 	files := render(t)
 	root, nested := string(files["index.html"]), string(files["ink/en/index.html"])
 	if root == "" || nested == "" {
 		t.Fatal("root or ink/en index missing")
 	}
-	if !strings.Contains(root, `href="tokens.css"`) {
-		t.Error("root index does not link tokens.css at the tree root")
+	if !strings.Contains(root, `href="`+mountPrefix+`tokens.css"`) {
+		t.Errorf("root index does not link %stokens.css", mountPrefix)
 	}
-	if !strings.Contains(nested, `href="../../tokens.css"`) {
-		t.Error("ink/en index does not link tokens.css two levels up")
+	if root != nested {
+		t.Error("the root index is not byte-identical to ink/en/index.html")
 	}
-	if strings.Contains(root, "../../") {
-		t.Error("root index still carries a two-levels-up path")
-	}
-	// Same page otherwise. Blanking every href and src leaves exactly
-	// what the two copies must share — a prefix parameter is allowed to
-	// change where a link points and nothing else.
-	if pathless(nested) != pathless(root) {
-		t.Error("the root index differs from ink/en by more than its paths")
+	// No page in the tree may climb with a relative path, wherever it
+	// sits: that is the whole of the bug this shape fixes.
+	for name, body := range files {
+		if strings.HasSuffix(name, ".html") && strings.Contains(string(body), `="../`) {
+			t.Errorf("%s carries a relative up-path", name)
+		}
 	}
 }
 
