@@ -648,6 +648,12 @@ a.rst-nm:hover { color: var(--rst-accent); }
    a/button rule above. */
 .rst-dropdown__menu button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); margin: 0; padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
 .rst-dropdown__menu button:hover { background: var(--rst-accent-soft); }
+/* The same content-box bug the inputs had, in the three menu panels:
+   a full-width button inside a 0.25rem-padded panel measured 100% of
+   the content box and then added its own 0.65rem of side padding, so
+   every hover highlight bled ~20.8px past the panel's rounded edge.
+   One rule for all three panels, because it is one cause. */
+.rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-dropdown__menu button { box-sizing: border-box; }
 .rst-dropdown__menu .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 .rst-dropdown__menu .rst-menu-group > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
 .rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker { display: none; }
@@ -775,10 +781,18 @@ small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.4
    its control still lines up with a labelled sibling's. It measures
    that line rather than restating it: the same font-size .rst-field__label
    declares, one lh of the line-height both of them inherit, and the
-   label's own bottom margin. Written as calc(...* 1.5) this would have
-   been the body's line-height copied out of the base block above, and a
-   copy that far from its original is a copy that goes stale. */
-.rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: 1lh; content: ""; display: block; font-size: var(--rst-fs-sm); margin-block-end: 0.2rem; }
+   label's own bottom margin.
+
+   The two block-size declarations are one value with a fallback, not a
+   duplicate: an engine that has :has() but not the lh unit drops the
+   second line and keeps the calc. That window is real — :has() shipped
+   in Chrome 105 and Safari 15.4, lh in Chrome 109 and Safari 16.4 — so
+   Chrome 105-108 and Safari 15.4-16.3 render this rule and would
+   otherwise reserve a zero-height line. They get the body's 1.5
+   line-height as a number; everything newer measures the line itself
+   and the copy stops mattering. Firefox never sees the calc: :has()
+   and lh both landed there in 121. */
+.rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: calc(var(--rst-fs-sm) * 1.5); block-size: 1lh; content: ""; display: block; font-size: var(--rst-fs-sm); margin-block-end: 0.2rem; }
 /* A row is sized by its controls, never by its messages: contain keeps a
    long error out of the field's max-content width, so the sentence wraps
    under its own control instead of stretching the column it belongs to

@@ -25,6 +25,7 @@
 package designsystem
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"regexp"
@@ -34,6 +35,24 @@ import (
 	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/ui"
 )
+
+// galleryJS is the gallery's own script, embedded from the file beside
+// this one so it is edited as JavaScript — with a syntax highlighter
+// and a linter — rather than as a Go string constant.
+//
+// It lives here and not in ui/ because it is not part of the framework:
+// no scaffold writes it, no app receives it, and the only page that
+// loads it is the one this package renders. Its header comment is its
+// contract; TestGalleryScriptStaysInertAndFirstParty holds the two
+// honest.
+//
+//go:embed gallery.js
+var galleryJS []byte
+
+// GalleryJS returns gallery.js's raw bytes. Exported for the same
+// reason ui.ShimJS is: the gates read it, and a caller embedding this
+// tree somewhere else needs the asset as well as the pages.
+func GalleryJS() []byte { return append([]byte(nil), galleryJS...) }
 
 // mountPath is where this tree is served: rastrillo.org/design-system.
 // Every URL the renderer emits — stylesheet, script, iframe, switcher,
@@ -57,7 +76,8 @@ const mountPath = "/design-system"
 //	<theme>/<locale>/modal.html           36 modal demos, one per index
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
-//	rastrillo.js select.js datetime.js    the three scripts, once each
+//	rastrillo.js select.js datetime.js    the framework's three scripts
+//	gallery.js                            the gallery's own script, once
 //
 // The assets are shared by every page rather than copied per theme, so
 // the tree's size is 180 documents plus one copy of the library.
@@ -67,6 +87,7 @@ func Render() (map[string][]byte, error) {
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
+		"gallery.js":   GalleryJS(),
 	}
 	for _, theme := range ui.ThemeNames() {
 		css, ok := ui.ThemeCSS(theme)
@@ -188,8 +209,20 @@ func interpolate(s string, args []any) string {
 // — so the Clone discipline ui.FuncsWith documents buys nothing here.
 func partialTree(locale string) (*template.Template, error) {
 	return template.New("designsystem").
-		Funcs(ui.Funcs(ui.WithT(translator(locale)))).
+		Funcs(galleryFuncs(locale)).
 		ParseFS(ui.Templates(), "*.html")
+}
+
+// galleryFuncs is ui's own func map plus P, the gallery's own
+// translator. T resolves the framework's catalog — the strings a
+// component emits — and P resolves prose.go, the strings this page says
+// in its own voice. Two functions rather than one table because the two
+// sets have different owners: an app can override a rastrillo.ui.* key,
+// and nothing outside this package has any business in prose.go.
+func galleryFuncs(locale string) template.FuncMap {
+	funcs := ui.Funcs(ui.WithT(translator(locale)))
+	funcs["P"] = func(key string, args ...any) string { return proseIn(locale, key, args...) }
+	return funcs
 }
 
 // partialNames lists the partials ui defines, sorted: the templates that

@@ -20,6 +20,18 @@ import "github.com/carlosframework/rastrillo"
 // The partial strings a sample does NOT set are the point of several of
 // them: the framework's own defaults resolve through T, so an unset
 // Label renders in the page's language rather than in English.
+//
+// Every English string in this file — a family's Title and Blurb, a
+// partial's Blurb, a state's State and Note — is the page speaking in
+// its own voice, and the page speaks twelve languages. The renderer
+// passes each of them through proseIn, so the string you write here is
+// BOTH the English and the lookup key: add a state with a note and
+// TestEveryProseKeyIsTranslated fails until prose.go carries the eleven
+// translations. That is why the English stays here, in among the data
+// it labels, rather than moving out to a table of slugs — see prose.go
+// for the whole of that argument. Sample DATA is exempt and stays
+// English on every page: a person is called Grace Hopper in Japanese
+// too, and a route is /posts/new in Arabic.
 
 // wrapper is the container a sample needs around it, per the rules in
 // docs/site/templates.md: rst-list and rst-card hold rows only, and a

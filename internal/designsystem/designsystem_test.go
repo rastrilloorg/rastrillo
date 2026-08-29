@@ -394,7 +394,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "select.js", "datetime.js",
+		"tokens.css", "rastrillo.js", "select.js", "datetime.js", "gallery.js",
 	}
 	for _, theme := range ui.ThemeNames() {
 		want = append(want, "theme-"+theme+".css")
@@ -467,5 +467,327 @@ func TestEnhancedControlsAreOnThePage(t *testing.T) {
 	}
 	if !strings.Contains(page, "<optgroup") {
 		t.Error("no hand-written optgroup'd select on the page")
+	}
+}
+
+// ── The gallery's own words ──────────────────────────────────────────
+
+// nonEnglish is the eleven locales prose.go has to carry a translation
+// for. en is the twelfth and is the key itself, so it is not in the
+// table — see prose.go's header.
+func nonEnglish() []string {
+	out := make([]string, 0, len(rastrillo.BaseLocales())-1)
+	for _, code := range rastrillo.BaseLocales() {
+		if code != "en" {
+			out = append(out, code)
+		}
+	}
+	return out
+}
+
+// placeholderNames pulls the {name} placeholders out of a string.
+var placeholderNames = regexp.MustCompile(`\{([a-z]+)\}`)
+
+// proseKeysRendered is every prose key one full Render actually asks
+// for. Read off the renderer rather than off a list beside prose.go: a
+// list would go stale the first time a sample gained a note, and this
+// cannot.
+func proseKeysRendered(t *testing.T) []string {
+	t.Helper()
+	asked := map[string]bool{}
+	stop := setProseTrace(func(en string) { asked[en] = true })
+	defer stop()
+	if _, err := Render(); err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	keys := make([]string, 0, len(asked))
+	for k := range asked {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	if len(keys) == 0 {
+		t.Fatal("the renderer asked for no prose at all — the tracer is not wired up")
+	}
+	return keys
+}
+
+// Every string the page says in its own voice exists in all twelve
+// shipped locales, non-empty, with its placeholders intact — the same
+// promise TestBaseCatalogsShareOneKeySet makes for the framework's own
+// catalog, made for the gallery's own words.
+//
+// The key set is the one a real Render asks for, so a sample added to
+// samples.go with an English note fails here on the day it lands, not
+// on the day somebody notices the Japanese page still reading English.
+// The gate runs the other way too: an entry nothing renders is a
+// translation of a sentence the page no longer says, and it goes.
+func TestEveryProseKeyIsTranslated(t *testing.T) {
+	keys := proseKeysRendered(t)
+	shipped := map[string]bool{}
+	for _, code := range rastrillo.BaseLocales() {
+		shipped[code] = true
+	}
+
+	for _, key := range keys {
+		row, ok := prose[key]
+		if !ok {
+			t.Errorf("prose.go has no entry for %q — every string the page says has to be translated", key)
+			continue
+		}
+		for _, locale := range rastrillo.BaseLocales() {
+			if strings.TrimSpace(proseIn(locale, key)) == "" {
+				t.Errorf("%s renders empty for %q", locale, key)
+			}
+		}
+		for _, locale := range nonEnglish() {
+			if strings.TrimSpace(row[locale]) == "" {
+				t.Errorf("prose.go: %q has no %s translation", key, locale)
+			}
+		}
+		for code := range row {
+			if !shipped[code] {
+				t.Errorf("prose.go: %q carries %q, which is not a shipped locale", key, code)
+			}
+			if code == "en" {
+				t.Errorf("prose.go: %q carries an en value; en is the key", key)
+			}
+		}
+		// A placeholder that a translator dropped or misspelled is the
+		// one kind of damage the page cannot show honestly: interpolate
+		// leaves an unmatched {name} on the page, and a missing one
+		// silently deletes the value the sentence was built around.
+		for _, m := range placeholderNames.FindAllStringSubmatch(key, -1) {
+			for _, locale := range nonEnglish() {
+				if !strings.Contains(row[locale], m[0]) {
+					t.Errorf("prose.go: the %s translation of %q lost the %s placeholder", locale, key, m[0])
+				}
+			}
+		}
+	}
+
+	rendered := map[string]bool{}
+	for _, k := range keys {
+		rendered[k] = true
+	}
+	stale := make([]string, 0)
+	for k := range prose {
+		if !rendered[k] {
+			stale = append(stale, k)
+		}
+	}
+	sort.Strings(stale)
+	for _, k := range stale {
+		t.Errorf("prose.go carries %q, which nothing on the page renders any more", k)
+	}
+	t.Logf("%d prose keys × %d locales", len(keys), len(rastrillo.BaseLocales()))
+}
+
+// proseLeakFloor is the length above which an English prose string is a
+// sentence and below which it is a word. Only the sentences are gated.
+//
+// The four keys under the floor — "On", "Full", "Failed", "Display" —
+// all occur on the Japanese page as sample data rather than as the
+// page's own voice: "Failed" and "Full" are status-pill labels a
+// fixture chose, "Display" is inside the count line's "Displaying
+// 1–20", and "On" is a substring of half the English in the escaped
+// markup. Gating them would fail on fixtures, which is the opposite of
+// what this gate is for. Twelve characters is the shortest key that is
+// a phrase; below it, matching a bare word proves nothing either way.
+const proseLeakFloor = 12
+
+// escapedSource strips the <pre class="ds-src"> blocks out of a page.
+// They hold ui.Styleguide's samples verbatim — English markup a reader
+// is meant to copy — so English inside them is the point, not a leak.
+// Two of prose.go's own keys appear in there, because the modal sample
+// and this package's own modal demo say the same sentences.
+func escapedSource(page string) string {
+	for {
+		i := strings.Index(page, `<pre class="ds-src`)
+		if i < 0 {
+			return page
+		}
+		j := strings.Index(page[i:], "</pre>")
+		if j < 0 {
+			return page[:i]
+		}
+		page = page[:i] + page[i+j+len("</pre>"):]
+	}
+}
+
+// proseSentinels are three English strings that must be on the English
+// page and must not be on any other. They are named here, rather than
+// left to the sweep below, because a sweep can be weakened by accident
+// — drop a key from prose.go and it stops being checked — and these
+// three cannot be: the gate asserts they are present in English first.
+var proseSentinels = []string{
+	"Every partial, class idiom and design token the framework ships, on one page.",
+	"The links in these samples go nowhere",
+	"Screens stack vertically",
+}
+
+// No English the page says in its own voice reaches a translated page.
+// This is the gate the whole of prose.go exists to pass, and it is
+// strong precisely because prose.go's keys ARE the English: every
+// sentence the renderer can emit is a sentinel, not just the three
+// named above.
+//
+// Sample data is exempt and deliberately so — the fixtures are English
+// names, English routes and English record titles, and translating
+// "Grace Hopper" would be a different and worse kind of dishonesty. So
+// is the escaped source, which is markup to copy.
+func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
+	files := render(t)
+	keys := proseKeysRendered(t)
+	en := string(files[RootTheme()+"/en/index.html"])
+	if en == "" {
+		t.Fatal("no English index page")
+	}
+	for _, s := range proseSentinels {
+		if !strings.Contains(en, s) {
+			t.Errorf("sentinel %q is not on the English page — it has been reworded, and this gate has been checking nothing", s)
+		}
+	}
+
+	for _, locale := range nonEnglish() {
+		page := escapedSource(string(files[RootTheme()+"/"+locale+"/index.html"]))
+		if page == "" {
+			t.Errorf("no %s index page", locale)
+			continue
+		}
+		for _, s := range proseSentinels {
+			if strings.Contains(page, s) {
+				t.Errorf("%s page still says %q", locale, s)
+			}
+		}
+		for _, key := range keys {
+			if len([]rune(key)) < proseLeakFloor {
+				continue
+			}
+			if strings.Contains(page, key) {
+				t.Errorf("%s page carries the English %q", locale, key)
+			}
+		}
+	}
+}
+
+// ── The chrome ───────────────────────────────────────────────────────
+
+// The three switchers sit in the gallery's own <header>, above main,
+// and each says which of its options is the current one. The scheme
+// toggle's server-rendered answer is System, because System is the only
+// state a page with no JavaScript can be in.
+func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			name := theme + "/" + locale + "/index.html"
+			page := string(files[name])
+			// The chrome is read out of the page by its own element,
+			// not by cutting at main: the <style> block in the head
+			// mentions aria-pressed in a selector, and a looser slice
+			// counted the stylesheet as a fourth button.
+			_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
+			if !ok {
+				t.Errorf("%s: no gallery header", name)
+				continue
+			}
+			chrome, rest, ok := strings.Cut(after, "</header>")
+			if !ok {
+				t.Errorf("%s: the gallery header never closes", name)
+				continue
+			}
+			if !strings.HasPrefix(strings.TrimSpace(rest), `<main class="rst-page"`) {
+				t.Errorf("%s: the gallery header is not the element immediately before main", name)
+			}
+			// The theme switcher: one link per theme, exactly one current.
+			if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
+				t.Errorf("%s: %d themes marked current, want 1", name, n)
+			}
+			// The language switcher: one link per locale, exactly one current.
+			if n := strings.Count(chrome, `aria-current="true"`); n != 1 {
+				t.Errorf("%s: %d locales marked current, want 1", name, n)
+			}
+			if n := strings.Count(chrome, `<a href="`+mountPrefix); n != len(ui.ThemeNames())+len(rastrillo.BaseLocales()) {
+				t.Errorf("%s: the chrome has %d in-tree links, want one per theme and one per locale", name, n)
+			}
+			// The scheme toggle: three buttons, System pressed.
+			for _, value := range []string{"system", "light", "dark"} {
+				if !strings.Contains(chrome, `data-ds-scheme="`+value+`"`) {
+					t.Errorf("%s: the scheme toggle has no %s button", name, value)
+				}
+			}
+			if n := strings.Count(chrome, `aria-pressed="true"`); n != 1 {
+				t.Errorf("%s: %d scheme buttons pressed, want exactly 1 (System)", name, n)
+			}
+			if n := strings.Count(chrome, `aria-pressed="false"`); n != 2 {
+				t.Errorf("%s: %d scheme buttons unpressed, want 2", name, n)
+			}
+			if !strings.Contains(chrome, `data-ds-scheme="system" aria-pressed="true"`) {
+				t.Errorf("%s: System is not the pressed scheme with no JavaScript", name)
+			}
+			// Every one of the three is named, in this page's language.
+			for _, label := range []string{
+				proseIn(locale, "Theme"),
+				proseIn(locale, "Colour scheme"),
+			} {
+				if !strings.Contains(chrome, `aria-label="`+template.HTMLEscapeString(label)+`"`) {
+					t.Errorf("%s: the chrome has no group labelled %q", name, label)
+				}
+			}
+		}
+	}
+}
+
+// gallery.js is loaded before the body so the remembered scheme is
+// applied and the toggle revealed in the same parse — a deferred script
+// would flash the system scheme at a reader who chose Dark, and pop the
+// control into a bar they are already looking at.
+func TestGalleryScriptLoadsBeforeTheBody(t *testing.T) {
+	page := string(render(t)[RootTheme()+"/en/index.html"])
+	tag := `<script src="` + mountPrefix + `gallery.js"></script>`
+	i := strings.Index(page, tag)
+	if i < 0 {
+		t.Fatalf("no blocking gallery.js tag on the page (want %s)", tag)
+	}
+	if body := strings.Index(page, "<body>"); i > body {
+		t.Error("gallery.js loads after <body> — the scheme it restores will flash")
+	}
+	if strings.Contains(page, `<script defer src="`+mountPrefix+`gallery.js"></script>`) {
+		t.Error("gallery.js is deferred; see its header comment for why it is not")
+	}
+}
+
+// gallery.js is first-party on the same terms as the three framework
+// scripts: no network, no dependency, no build step. TestScriptsAreSelfContained
+// in ui/ holds the other three; this is the fourth, which does not live
+// in ui/ because no app is ever given it.
+func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
+	js := string(GalleryJS())
+	for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
+		if strings.Contains(js, bad) {
+			t.Errorf("gallery.js reaches outside the page (%q)", bad)
+		}
+	}
+	if strings.Contains(js, "\t") {
+		t.Error("gallery.js uses two-space indentation, not tabs")
+	}
+	if n := len(js); n > 8*1024 {
+		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
+	}
+	// The two halves of the scriptless story: the toggle is hidden
+	// until this file says otherwise, and System removes the attribute
+	// rather than setting a third value.
+	if !strings.Contains(js, `setAttribute("data-rst-js"`) {
+		t.Error("gallery.js does not set data-rst-js — the toggle stays display:none and nothing works")
+	}
+	if !strings.Contains(js, `removeAttribute("data-theme")`) {
+		t.Error("gallery.js never removes data-theme — System would not be reachable")
+	}
+	page := string(render(t)[RootTheme()+"/en/index.html"])
+	if !strings.Contains(page, ".ds-scheme { display: none; }") {
+		t.Error("the page does not hide the scheme toggle by default — with scripts off it would look like a control that works")
+	}
+	if !strings.Contains(page, `:root[data-rst-js] .ds-scheme`) {
+		t.Error("the page never reveals the scheme toggle for a reader who has JavaScript")
 	}
 }

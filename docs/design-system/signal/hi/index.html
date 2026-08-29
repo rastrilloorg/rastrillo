@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rastrillo design system — signal</title>
+<title>rastrillo डिज़ाइन सिस्टम — signal</title>
 <link rel="stylesheet" href="/design-system/tokens.css">
 <link rel="stylesheet" href="/design-system/theme-signal.css">
 <style>
@@ -12,7 +12,17 @@
 .ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
 .ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
 .ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
-.ds-switch .rst-dropdown { position: relative; }
+.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-chrome .rst-dropdown { position: relative; }
+.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+ 
+.ds-scheme { display: none; }
+:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 .ds-family { margin: var(--rst-sp-6) 0 0; }
 .ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
 .ds-partial { margin: var(--rst-sp-5) 0; }
@@ -36,79 +46,85 @@
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
 </style>
+<script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
 <script defer src="/design-system/select.js"></script>
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
-<a class="rst-skip" href="#main">Skip to content</a>
+<a class="rst-skip" href="#main">सामग्री पर जाएँ</a>
+
+<header class="ds-chrome">
+  <nav class="rst-seg-tabs" aria-label="थीम"><a href="/design-system/day/hi/index.html">day</a><a href="/design-system/plain/hi/index.html">plain</a><a href="/design-system/signal/hi/index.html" aria-current="page">signal</a></nav>
+  <div class="ds-scheme" role="group" aria-label="रंग योजना"><button type="button" data-ds-scheme="system" aria-pressed="true">सिस्टम</button><button type="button" data-ds-scheme="light" aria-pressed="false">हल्का</button><button type="button" data-ds-scheme="dark" aria-pressed="false">गहरा</button></div>
+  <details class="rst-dropdown rst-locale" name="rst-menus">
+    <summary>भाषा<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">, अभी हिन्दी</span></summary>
+    <div class="rst-dropdown__menu"><a href="/design-system/signal/en/index.html" lang="en" dir="ltr">English</a><a href="/design-system/signal/ga/index.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/signal/zh-Hans/index.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/signal/es/index.html" lang="es" dir="ltr">Español</a><a href="/design-system/signal/hi/index.html" lang="hi" dir="ltr" aria-current="true">हिन्दी</a><a href="/design-system/signal/pt/index.html" lang="pt" dir="ltr">Português</a><a href="/design-system/signal/bn/index.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/signal/ru/index.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/signal/ja/index.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/signal/yue/index.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/signal/vi/index.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/signal/ar/index.html" lang="ar" dir="rtl">العربية</a></div>
+  </details>
+</header>
+
 <main class="rst-page" id="main">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
-    <h1>rastrillo design system</h1>
-    <p class="rst-page-header__sub">Every partial, class idiom and design token the framework ships, on one page. The theme is <strong>signal</strong> and the components speak <strong lang="hi">हिन्दी</strong>; the prose around them stays in English.</p>
+    <h1>rastrillo डिज़ाइन सिस्टम</h1>
+    <p class="rst-page-header__sub">फ़्रेमवर्क के साथ आने वाला हर पार्शियल, हर क्लास मुहावरा और हर डिज़ाइन टोकन, एक ही पृष्ठ पर। थीम है <strong>signal</strong> और घटक <strong lang="hi">हिन्दी</strong> बोलते हैं।</p>
   </div>
 </header>
 
 <div class="ds-switch">
-  <nav class="rst-seg-tabs" aria-label="Theme"><a href="/design-system/day/hi/index.html">day</a><a href="/design-system/plain/hi/index.html">plain</a><a href="/design-system/signal/hi/index.html" aria-current="page">signal</a></nav>
-  <details class="rst-dropdown rst-locale" name="rst-menus">
-    <summary>Language<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">, currently हिन्दी</span></summary>
-    <div class="rst-dropdown__menu"><a href="/design-system/signal/en/index.html" lang="en" dir="ltr">English</a><a href="/design-system/signal/ga/index.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/signal/zh-Hans/index.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/signal/es/index.html" lang="es" dir="ltr">Español</a><a href="/design-system/signal/hi/index.html" lang="hi" dir="ltr" aria-current="true">हिन्दी</a><a href="/design-system/signal/pt/index.html" lang="pt" dir="ltr">Português</a><a href="/design-system/signal/bn/index.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/signal/ru/index.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/signal/ja/index.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/signal/yue/index.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/signal/vi/index.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/signal/ar/index.html" lang="ar" dir="rtl">العربية</a></div>
-  </details>
-  <nav class="rst-seg-tabs" aria-label="Sections"><a href="#tokens">Tokens</a><a href="#partials">Partials</a><a href="#idioms">Class idioms</a><a href="#shells">Shells</a></nav>
+  <nav class="rst-seg-tabs" aria-label="खंड"><a href="#tokens">टोकन</a><a href="#partials">पार्शियल</a><a href="#idioms">क्लास मुहावरे</a><a href="#shells">शेल</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>The links in these samples go nowhere</strong><p>This is a static page. Every href below is sample data chosen to read like a real application, so the markup is the markup an app would ship — but nothing here is served by anything, and following one lands on a missing page.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>इन नमूनों के लिंक कहीं नहीं ले जाते</strong><p>यह एक स्थिर पृष्ठ है। नीचे का हर href नमूना डेटा है, जिसे इस तरह चुना गया है कि वह असली ऐप्लिकेशन जैसा पढ़ा जाए, इसलिए मार्कअप वही है जो कोई ऐप्लिकेशन भेजती — पर यहाँ कुछ भी किसी सर्वर से नहीं आता, और किसी लिंक पर जाने से एक ग़ायब पृष्ठ मिलता है।</p></div></div>
 
-<div class="ds-head"><h2 id="tokens">Tokens</h2></div>
-<p class="ds-lead">The custom properties every component paints itself with. Colour and the type family come from the theme (themes/signal.css); the type scale, the spacing steps and the radii are structure and come from tokens.css, the same on every theme.</p>
-<p class="ds-swatch-note">The values printed here are the light ones. The dark set is authored by hand in the same file — never inverted — and ui/contrast_test.go holds every documented pair in both sets to the WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. The chips themselves are painted with var(), so they follow whichever scheme you are reading in, and they will not match the printed values in dark mode.</p>
+<div class="ds-head"><h2 id="tokens">टोकन</h2></div>
+<p class="ds-lead">वे कस्टम प्रॉपर्टी जिनसे हर घटक ख़ुद को रंगता है। रंग और टाइप फ़ैमिली थीम से आते हैं (themes/signal.css); टाइप स्केल और स्पेसिंग के चरण संरचना हैं और tokens.css से आते हैं, हर थीम पर एक जैसे।</p>
+<p class="ds-swatch-note">यहाँ छपे मान हल्के वाले हैं। गहरा सेट उसी फ़ाइल में हाथ से लिखा गया है — कभी उलटकर नहीं — और ui/contrast_test.go दोनों सेटों की हर दर्ज जोड़ी को WCAG 2.2 AA की न्यूनतम सीमाओं पर कसता है: पाठ के लिए 4.5:1, नियंत्रण की किनारियों के लिए 3:1। रंग के टुकड़े ख़ुद var() से रंगे जाते हैं, इसलिए वे उसी योजना का पालन करते हैं जिसमें आप पढ़ रहे हैं, और गहरे मोड में छपे मानों से मेल नहीं खाएँगे।</p>
 
-<h3 class="ds-sub">Surfaces and lines</h3>
+<h3 class="ds-sub">सतहें और रेखाएँ</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
 
-<h3 class="ds-sub">Text</h3>
+<h3 class="ds-sub">पाठ</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#0c0e12</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#5b6270</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#454b57</span></span></li></ul>
 
-<h3 class="ds-sub">Accent</h3>
+<h3 class="ds-sub">उभार रंग</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#1a56ff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#e9eeff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#0f3fd6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">Status tones</h3>
+<h3 class="ds-sub">स्थिति के टोन</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#fbdee0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#a8121f</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#e6e8ee</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#3b414d</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#d6efe6</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#08624a</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#f8e5c2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#7a4708</span></span></li></ul>
 
-<h3 class="ds-sub">Depth</h3>
+<h3 class="ds-sub">गहराई</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(9, 11, 16, 0.55)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.45), rgba(0, 0, 0, 0.6))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 2px light-dark(rgba(12, 14, 18, 0.2), rgba(0, 0, 0, 0.5))</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 4px 10px light-dark(rgba(12, 14, 18, 0.22), rgba(0, 0, 0, 0.62))</span></span></li></ul>
 
-<h3 class="ds-sub">Radius</h3>
+<h3 class="ds-sub">कोने की त्रिज्या</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">4px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">2px</span></span></li></ul>
 
-<h3 class="ds-sub">Type family</h3>
+<h3 class="ds-sub">टाइप फ़ैमिली</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">&#34;Helvetica Neue&#34;, Helvetica, &#34;Segoe UI Variable Text&#34;, &#34;Segoe UI&#34;, Roboto, Arial, ui-sans-serif, system-ui, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">Type scale</h3>
+<h3 class="ds-sub">टाइप स्केल</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">Spacing</h3>
+<h3 class="ds-sub">अंतराल</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
-<div class="ds-head"><h2 id="partials">Partials</h2></div>
-<p class="ds-lead">Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below. One thing a gallery cannot help: page-header and error-page each own an h1, so this page carries several, where a real screen has exactly one.</p>
+<div class="ds-head"><h2 id="partials">पार्शियल</h2></div>
+<p class="ds-lead">ui के साथ आने वाला हर टेम्पलेट पार्शियल, उन्हीं स्थितियों में जिनमें कोई असली स्क्रीन उसे रखती है। हर एक ठीक एक डेटा मान लेता है, जो dict से वहीं बनाया गया है। फ़ॉर्म पैडिंग वाले rst-box में और पंक्तियाँ rst-list में बैठती हैं, क्योंकि ये पार्शियल यही मानते हैं — नीचे क्लास मुहावरों वाले दो नियम देखिए। एक बात जो गैलरी में सुधारी नहीं जा सकती: page-header और error-page दोनों के पास अपना h1 है, इसलिए इस पृष्ठ पर कई हैं, जबकि असली स्क्रीन पर ठीक एक होता है।</p>
 
 <section class="ds-family">
-<h3>List screen</h3>
-<p class="ds-lead">The screen most apps spend most of their time on: a title bar, a toolbar, a run of rows, and a way through the rest of them.</p>
+<h3>सूची स्क्रीन</h3>
+<p class="ds-lead">वह स्क्रीन जिस पर ज़्यादातर ऐप्लिकेशन अपना ज़्यादातर समय बिताती हैं: एक शीर्षक पट्टी, एक टूलबार, पंक्तियों की एक क़तार, और बाक़ी तक पहुँचने का रास्ता।</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial">
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">The screen&#39;s title bar: an h1, an optional subhead, and at most one primary action.</p>
+<p class="ds-lead">स्क्रीन की शीर्षक पट्टी: एक h1, एक वैकल्पिक उपशीर्षक, और अधिक से अधिक एक मुख्य क्रिया।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Title, subhead and a primary action</p>
+<p class="ds-state">शीर्षक, उपशीर्षक और एक मुख्य क्रिया</p>
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>Posts</h1>
@@ -120,7 +136,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Title only</p>
+<p class="ds-state">सिर्फ़ शीर्षक</p>
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>Settings</h1>
@@ -134,11 +150,11 @@
 <!-- partial: list-bar -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">The toolbar at the top of a list card: the search form, and room to its right for a filter.</p>
+<p class="ds-lead">सूची कार्ड के ऊपर की टूलबार: खोज फ़ॉर्म, और उसके बग़ल में फ़िल्टर के लिए जगह।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Search with a filter dropdown</p>
+<p class="ds-state">खोज, साथ में फ़िल्टर ड्रॉपडाउन</p>
 <div class="rst-list"><div class="rst-lbar">
   <search><form class="rst-search" method="get" action="/posts">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -163,11 +179,11 @@
 <!-- partial: list-bar-search -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">The search form on its own, for a list that only searches. An ordinary method=&#34;get&#34; form.</p>
+<p class="ds-lead">अकेला खोज फ़ॉर्म, उस सूची के लिए जो सिर्फ़ खोजती है। एक साधारण method=&#34;get&#34; फ़ॉर्म।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">With a query already applied</p>
+<p class="ds-state">पहले से लागू खोज-शब्द के साथ</p>
 <div class="rst-list"><search><form class="rst-search" method="get" action="/comments">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" value="spam" placeholder="Search comments" aria-label="Search comments">
@@ -178,13 +194,13 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Empty, accessible name from the catalog</p>
+<p class="ds-state">ख़ाली, सुगम्य नाम कैटलॉग से</p>
 <div class="rst-list"><search><form class="rst-search" method="get" action="/comments">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" aria-label="खोजें">
   <button class="rst-sr-only" type="submit">खोजें</button>
 </form></search></div>
-<p class="ds-note">No Placeholder, so the input&#39;s accessible name comes from the framework catalog in this page&#39;s language.</p>
+<p class="ds-note">कोई Placeholder नहीं, इसलिए इनपुट का सुगम्य नाम फ़्रेमवर्क कैटलॉग से, इसी पृष्ठ की भाषा में आता है।</p>
 </div>
 
 </article>
@@ -192,13 +208,13 @@
 <!-- partial: list-search-submit -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-search-submit</h4>
-<p class="ds-lead">The search form&#39;s real submit button: visually hidden, in the tab order, and it un-hides on keyboard focus.</p>
+<p class="ds-lead">खोज फ़ॉर्म का असली सबमिट बटन: दिखने में छिपा, पर Tab क्रम में मौजूद, और कीबोर्ड फ़ोकस मिलते ही सामने आ जाता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Default label</p>
+<p class="ds-state">डिफ़ॉल्ट लेबल</p>
 <section class="rst-box"><button class="rst-sr-only" type="submit">खोजें</button></section>
-<p class="ds-note">Nothing is visible here until you tab into it — that is the whole component.</p>
+<p class="ds-note">जब तक आप Tab से यहाँ नहीं पहुँचते, कुछ दिखता नहीं — यही पूरा घटक है।</p>
 </div>
 
 </article>
@@ -206,11 +222,11 @@
 <!-- partial: list-row-action -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">One list row: the record&#39;s name as the primary link, a meta line, and at most one secondary action.</p>
+<p class="ds-lead">सूची की एक पंक्ति: रिकॉर्ड का नाम मुख्य लिंक के रूप में, एक मेटा पंक्ति, और अधिक से अधिक एक गौण क्रिया।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Lead marker, status and an action</p>
+<p class="ds-state">आरंभिक निशान, स्थिति और एक क्रिया</p>
 <div class="rst-list"><div class="rst-row">
   <span class="rst-row__lead" data-lead="accent" aria-hidden="true">RN</span>
   <span class="rst-row__main"><a href="/posts/1">Release notes, August</a><small class="rst-row__sub">Published 2 August · 4 min read</small></span>
@@ -221,7 +237,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Name and meta line only</p>
+<p class="ds-state">सिर्फ़ नाम और मेटा पंक्ति</p>
 <div class="rst-list"><div class="rst-row">
   <span class="rst-row__main"><a href="/posts/2">Why we moved off the old runner</a><small class="rst-row__sub">Draft · saved 20 minutes ago</small></span>
 </div></div>
@@ -233,11 +249,11 @@
 <!-- partial: seg-tabs -->
 <article class="ds-partial">
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">A segmented control of server-rendered links. The current tab is aria-current on a link, nothing more.</p>
+<p class="ds-lead">सर्वर पर बने लिंक का खंडित नियंत्रण। मौजूदा टैब बस किसी लिंक पर aria-current है, इससे ज़्यादा कुछ नहीं।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Two sections</p>
+<p class="ds-state">दो खंड</p>
 <nav class="rst-seg-tabs" aria-label="Post sections"><a href="?tab=basics" aria-current="page">Basics</a><a href="?tab=advanced">Advanced</a></nav>
 
 </div>
@@ -247,11 +263,11 @@
 <!-- partial: dropdown -->
 <article class="ds-partial">
 <h4 class="rst-mono">dropdown</h4>
-<p class="ds-lead">A zero-JavaScript disclosure: a summary button over a panel of plain links.</p>
+<p class="ds-lead">बिना JavaScript का डिस्क्लोज़र: एक summary बटन, उसके नीचे सादे लिंक का पैनल।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">A filter menu with one choice applied</p>
+<p class="ds-state">एक चुनाव लागू किए हुए फ़िल्टर मेन्यू</p>
 <details class="rst-dropdown" name="rst-menus">
   <summary class="rst-btn rst-dropdown__summary" aria-label="Sort posts: newest first">Newest <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
   <div class="rst-dropdown__menu">
@@ -268,13 +284,13 @@
 <!-- partial: bulk-bar -->
 <article class="ds-partial">
 <h4 class="rst-mono">bulk-bar</h4>
-<p class="ds-lead">Select mode&#39;s header strip, replacing the list bar: the count, an escalate link, and the actions menu.</p>
+<p class="ds-lead">चयन मोड की शीर्ष पट्टी, जो सूची पट्टी की जगह लेती है: गिनती, चयन बढ़ाने वाला लिंक, और क्रियाओं का मेन्यू।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Three rows selected</p>
+<p class="ds-state">तीन पंक्तियाँ चुनी हुई</p>
 <div class="rst-list"><div class="rst-bulkbar"><a class="rst-bulkbar__close" href="/posts" aria-label="चयन पूर्ण"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a><span class="rst-bulkbar__count">3 selected</span><a class="rst-bulkbar__escalate" href="/posts?select=all">Select all 412 matching</a><details class="rst-dropdown" name="rst-menus"><summary>Actions<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="rst-dropdown__menu"><button type="submit" name="action" value="export">Export</button><button type="submit" name="action" value="unpublish">Unpublish</button><button type="submit" name="action" value="delete" class="rst-danger">Delete…</button></div></details></div></div>
-<p class="ds-note">The destructive item is last: the first entry is the surrounding form&#39;s implicit-Enter default.</p>
+<p class="ds-note">विनाशकारी विकल्प सबसे आख़िर में रहता है: पहली प्रविष्टि ही वह है जिसे घेरने वाला फ़ॉर्म Enter पर चुपचाप चला देता है।</p>
 </div>
 
 </article>
@@ -282,21 +298,21 @@
 <!-- partial: pagination -->
 <article class="ds-partial">
 <h4 class="rst-mono">pagination</h4>
-<p class="ds-lead">A numbered strip of ordinary links, so paging survives JavaScript being off.</p>
+<p class="ds-lead">साधारण लिंक की क्रमांकित पट्टी, ताकि JavaScript बंद होने पर भी पेजिंग चलती रहे।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Middle of a long list</p>
+<p class="ds-state">लंबी सूची के बीच में</p>
 <nav class="rst-pagination" aria-label="Posts pages"><a href="/posts?page=3">Previous</a><a href="/posts?page=1">1</a><span class="rst-pagination__gap" aria-hidden="true">…</span><a href="/posts?page=3">3</a><span aria-current="page">4</span><a href="/posts?page=5">5</a><span class="rst-pagination__gap" aria-hidden="true">…</span><a href="/posts?page=9">9</a><a href="/posts?page=5">Next</a>
 </nav>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">First page, default accessible name</p>
+<p class="ds-state">पहला पृष्ठ, डिफ़ॉल्ट सुगम्य नाम</p>
 <nav class="rst-pagination" aria-label="पृष्ठांकन"><span class="rst-pagination__disabled">Previous</span><span aria-current="page">1</span><a href="/posts?page=2">2</a><a href="/posts?page=2">Next</a>
 </nav>
-<p class="ds-note">No Label, so the nav&#39;s accessible name comes from the catalog.</p>
+<p class="ds-note">कोई Label नहीं, इसलिए nav का सुगम्य नाम कैटलॉग से आता है।</p>
 </div>
 
 </article>
@@ -304,11 +320,11 @@
 <!-- partial: empty-state -->
 <article class="ds-partial">
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">The blank-state card. An empty state teaches: it says what would be here and how to make one.</p>
+<p class="ds-lead">ख़ाली अवस्था का कार्ड। ख़ाली अवस्था सिखाती है: वह बताती है कि यहाँ क्या होता और उसे बनाया कैसे जाए।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">With a POST call to action</p>
+<p class="ds-state">POST वाली कार्रवाई-बुलावे के साथ</p>
 <div class="rst-empty">
   <h2 class="rst-empty__title">Nothing here yet</h2>
   <p class="rst-empty__body">No posts yet. Your first one is a good place to start.</p>
@@ -321,7 +337,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Sentence only</p>
+<p class="ds-state">सिर्फ़ वाक्य</p>
 <div class="rst-empty">
   <p class="rst-empty__body">No comments on this post yet.</p>
 </div>
@@ -333,17 +349,17 @@
 </section>
 
 <section class="ds-family">
-<h3>Display</h3>
-<p class="ds-lead">The small pieces of vocabulary a screen is assembled from: status, identity, progress and the one alert shape.</p>
+<h3>प्रदर्शन</h3>
+<p class="ds-lead">वे छोटे शब्दावली टुकड़े जिनसे स्क्रीन जुड़ती है: स्थिति, पहचान, प्रगति, और चेतावनी का इकलौता रूप।</p>
 
 <!-- partial: status-pill -->
 <article class="ds-partial">
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">A record&#39;s status as a tinted pill. State is never colour alone — the label is always visible text.</p>
+<p class="ds-lead">रिकॉर्ड की स्थिति, रंगी हुई गोली के रूप में। स्थिति कभी सिर्फ़ रंग से नहीं बताई जाती — लेबल हमेशा दिखने वाला पाठ होता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Default tone (neutral)</p>
+<p class="ds-state">डिफ़ॉल्ट टोन (neutral)</p>
 <span class="rst-status" data-tone="neutral">Draft</span>
 
 </div>
@@ -377,11 +393,11 @@
 <!-- partial: badge -->
 <article class="ds-partial">
 <h4 class="rst-mono">badge</h4>
-<p class="ds-lead">An uppercase bordered chip for small static markers. Distinct from status-pill, which is record status.</p>
+<p class="ds-lead">बड़े अक्षरों वाला किनारेदार छोटा चिप, स्थिर निशानों के लिए। यह status-pill से अलग है, जो रिकॉर्ड की स्थिति बताता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">No tone (the quiet default)</p>
+<p class="ds-state">कोई टोन नहीं (शांत डिफ़ॉल्ट)</p>
 <span class="rst-badge">Draft</span>
 
 </div>
@@ -415,37 +431,37 @@
 <!-- partial: meter -->
 <article class="ds-partial">
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">A capacity bar with its number. The fraction is always text — a bar never carries the number alone.</p>
+<p class="ds-lead">क्षमता की पट्टी, अपने अंक के साथ। अनुपात हमेशा पाठ में होता है — अकेली पट्टी कभी अंक नहीं बताती।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Empty</p>
+<p class="ds-state">ख़ाली</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 0%"></i></span><span class="rst-meter__num">0/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Part way</p>
+<p class="ds-state">कुछ हद तक भरा</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 42%"></i></span><span class="rst-meter__num">210/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Nearly full</p>
+<p class="ds-state">लगभग भरा हुआ</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 82%"></i></span><span class="rst-meter__num">412/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Full</p>
+<p class="ds-state">भरा हुआ</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 100%"></i></span><span class="rst-meter__num">500/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Over budget</p>
+<p class="ds-state">तय सीमा से ऊपर</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 100%"></i></span><span class="rst-meter__num">700/500</span></span>
-<p class="ds-note">The fill is clamped to 100% in the partial; the number tells the truth.</p>
+<p class="ds-note">पार्शियल में भराव 100% पर रोक दिया जाता है; सच्चाई अंक बताता है।</p>
 </div>
 
 </article>
@@ -453,23 +469,23 @@
 <!-- partial: person -->
 <article class="ds-partial">
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">Initials avatar, name and email: the identity cell for record types that are people.</p>
+<p class="ds-lead">आद्याक्षरों वाला अवतार, नाम और ईमेल: उन रिकॉर्ड प्रकारों के लिए पहचान कोशिका जो लोग हैं।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Name and email</p>
+<p class="ds-state">नाम और ईमेल</p>
 <a class="rst-person" href="/people/1"><span class="rst-person__av" aria-hidden="true">G</span><span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span><span class="rst-person__email">grace@example.com</span></span></a>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Large, the show-header size</p>
+<p class="ds-state">बड़ा, दिखाने वाली स्क्रीन के शीर्ष का आकार</p>
 <a class="rst-person rst-person--lg" href="/people/2"><span class="rst-person__av" aria-hidden="true">A</span><span class="rst-person__meta"><span class="rst-person__name">Ada Lovelace</span><span class="rst-person__email">ada@example.com</span></span></a>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">No initial</p>
+<p class="ds-state">बिना आद्याक्षर</p>
 <a class="rst-person" href="/people/3"><span class="rst-person__av rst-person__av--empty" aria-hidden="true"></span><span class="rst-person__meta"><span class="rst-person__name">Unclaimed invitation</span><span class="rst-person__email">invited@example.com</span></span></a>
 
 </div>
@@ -479,11 +495,11 @@
 <!-- partial: callout -->
 <article class="ds-partial">
 <h4 class="rst-mono">callout</h4>
-<p class="ds-lead">The one alert vocabulary: tinted strip, tone icon, optional bold title, one body paragraph.</p>
+<p class="ds-lead">चेतावनी की इकलौती शब्दावली: रंगी हुई पट्टी, टोन का चिह्न, वैकल्पिक मोटा शीर्षक, और एक अनुच्छेद।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Default tone (info), no title</p>
+<p class="ds-state">डिफ़ॉल्ट टोन (info), बिना शीर्षक</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><p>Posts are visible to members only until the site is published.</p></div></div>
 
 </div>
@@ -513,9 +529,9 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">negative, announced as an alert</p>
+<p class="ds-state">negative, चेतावनी के रूप में घोषित</p>
 <div class="rst-callout" data-tone="negative" role="alert"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div class="rst-callout__body"><strong>The import stopped</strong><p>Nothing was changed. Fix row 91 and try again.</p></div></div>
-<p class="ds-note">Alert adds role=&#34;alert&#34;. Reserve it for live problems, not ambient notes.</p>
+<p class="ds-note">Alert जोड़ता है role=&#34;alert&#34;। इसे चल रही समस्याओं के लिए रखिए, आम टिप्पणियों के लिए नहीं।</p>
 </div>
 
 </article>
@@ -523,11 +539,11 @@
 <!-- partial: detail-list -->
 <article class="ds-partial">
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">A record&#39;s labelled facts as a definition list — the show screen&#39;s body. Mono marks machine-ish values.</p>
+<p class="ds-lead">किसी रिकॉर्ड के लेबल वाले तथ्य, परिभाषा सूची के रूप में — दिखाने वाली स्क्रीन का मुख्य भाग। Mono मशीनी क़िस्म के मानों को चिह्नित करता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Four facts, one of them machine-ish</p>
+<p class="ds-state">चार तथ्य, जिनमें एक मशीनी क़िस्म का</p>
 <section class="rst-box"><dl class="rst-detail">
   <dt>Audience</dt>
   <dd>Members</dd>
@@ -546,11 +562,11 @@
 <!-- partial: notice -->
 <article class="ds-partial">
 <h4 class="rst-mono">notice</h4>
-<p class="ds-lead">A one-line confirmation after a redirect. Takes a plain string, not a dict, and renders nothing for an empty one.</p>
+<p class="ds-lead">रीडायरेक्ट के बाद एक पंक्ति की पुष्टि। यह dict नहीं, सादा स्ट्रिंग लेती है, और ख़ाली होने पर कुछ नहीं दिखाती।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">A saved message</p>
+<p class="ds-state">सहेजे जाने का संदेश</p>
 <p class="rst-notice" role="status">Post saved.</p>
 
 </div>
@@ -560,11 +576,11 @@
 <!-- partial: form-error -->
 <article class="ds-partial">
 <h4 class="rst-mono">form-error</h4>
-<p class="ds-lead">A form&#39;s summary error line, role=&#34;alert&#34;. Takes a plain string; renders nothing when there is no error.</p>
+<p class="ds-lead">फ़ॉर्म की त्रुटि सारांश पंक्ति, role=&#34;alert&#34;। यह सादा स्ट्रिंग लेती है; त्रुटि न हो तो कुछ नहीं दिखाती।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">A rejected submission</p>
+<p class="ds-state">अस्वीकृत सबमिशन</p>
 <p class="rst-form-error" role="alert">That title is already taken.</p>
 
 </div>
@@ -574,21 +590,21 @@
 <!-- partial: job-status -->
 <article class="ds-partial">
 <h4 class="rst-mono">job-status</h4>
-<p class="ds-lead">A background job&#39;s polled fragment. The data-poll attribute is emitted only while the job runs — omitting it is how polling stops.</p>
+<p class="ds-lead">पृष्ठभूमि के काम का पोल किया जाने वाला हिस्सा। data-poll विशेषता तभी निकलती है जब काम चल रहा हो — उसे न देना ही पोलिंग रोकने का तरीका है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Running</p>
+<p class="ds-state">चल रहा है</p>
 
 <div class="rst-job" data-poll="/jobs/1/fragment" data-poll-every="2">
   <span class="rst-spin" aria-hidden="true"></span> <strong>Import</strong> is running — 128 of 400…
 </div>
 
-<p class="ds-note">This one polls: it is the only sample on the page that asks the network for anything, and on a static site it simply never resolves.</p>
+<p class="ds-note">यह वाला पोल करता है: यह पृष्ठ का इकलौता नमूना है जो नेटवर्क से कुछ माँगता है, और स्थिर साइट पर उसका उत्तर कभी नहीं आता।</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Finished</p>
+<p class="ds-state">पूरा हुआ</p>
 
 <div class="rst-job">
   <strong>Import</strong> finished.
@@ -598,7 +614,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Failed</p>
+<p class="ds-state">विफल</p>
 
 <div class="rst-job">
   <strong>Import</strong> failed: row 91: no such column &#34;published&#34;
@@ -612,17 +628,17 @@
 </section>
 
 <section class="ds-family">
-<h3>Form</h3>
-<p class="ds-lead">Every control, in the states a real form puts it in. Each one sits in a padded rst-box, because that is the rule these partials assume.</p>
+<h3>फ़ॉर्म</h3>
+<p class="ds-lead">हर नियंत्रण, उन्हीं स्थितियों में जिनमें कोई असली फ़ॉर्म उसे रखता है। हर एक पैडिंग वाले rst-box में बैठता है, क्योंकि ये पार्शियल यही मानकर चलते हैं।</p>
 
 <!-- partial: field -->
 <article class="ds-partial">
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">Label, input, optional hint, help and error — the general text-like control, with an explicit ID.</p>
+<p class="ds-lead">लेबल, इनपुट, वैकल्पिक संकेत, सहायता और त्रुटि — सामान्य पाठ-जैसा नियंत्रण, स्पष्ट ID के साथ।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Bare</p>
+<p class="ds-state">सादा</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_bare">Title</label>
 <input class="rst-input" type="text" id="f_bare" name="f_bare">
 </div></form></section>
@@ -630,7 +646,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With a hint</p>
+<p class="ds-state">एक संकेत के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_hint">Slug <span class="rst-field__hint">(lowercase, no spaces)</span></label>
 <input class="rst-input" type="text" id="f_hint" name="f_hint">
 </div></form></section>
@@ -638,7 +654,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With help under the control</p>
+<p class="ds-state">नियंत्रण के नीचे सहायता के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_help">Email</label>
 <input class="rst-input" type="email" id="f_help" name="f_help" autocomplete="email" aria-describedby="f_help-help">
 <p class="rst-field__help" id="f_help-help">We only use this to send you replies.</p>
@@ -647,7 +663,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required</p>
+<p class="ds-state">अनिवार्य</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_required">Full name</label>
 <input class="rst-input" type="text" id="f_required" name="f_required" required>
 </div></form></section>
@@ -655,7 +671,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With an error</p>
+<p class="ds-state">त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_error">Email</label>
 <input class="rst-input" type="email" id="f_error" name="f_error" value="grace@" aria-invalid="true" aria-describedby="f_error-error">
 <p class="rst-field__error" id="f_error-error" role="alert">That does not look like an email address.</p>
@@ -664,7 +680,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Short</p>
+<p class="ds-state">छोटा</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_short">Postcode</label>
 <input class="rst-input rst-input--short" type="text" id="f_short" name="f_short" value="D02 XY45">
 </div></form></section>
@@ -676,11 +692,11 @@
 <!-- partial: field-text -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">One labelled text input, ids derived from Name. The required marker&#39;s star is aria-hidden — the input&#39;s required attribute is the programmatic signal.</p>
+<p class="ds-lead">एक लेबल वाला पाठ इनपुट, जिसकी id Name से बनती हैं। अनिवार्यता का तारा aria-hidden है — असली प्रोग्रामी संकेत इनपुट का required गुण है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Bare</p>
+<p class="ds-state">सादा</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_bare">Title</label>
   <input class="rst-input" id="ft_bare" name="ft_bare" type="text">
@@ -689,7 +705,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With a hint</p>
+<p class="ds-state">एक संकेत के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_hint">Headline</label>
   <input class="rst-input" id="ft_hint" name="ft_hint" type="text" aria-describedby="ft_hint-hint">
@@ -699,7 +715,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required</p>
+<p class="ds-state">अनिवार्य</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_required">Display name <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="ft_required" name="ft_required" type="text" autocomplete="nickname" required>
@@ -708,7 +724,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With an error</p>
+<p class="ds-state">त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_error">Title</label>
   <input class="rst-input" id="ft_error" name="ft_error" type="text" value="Release notes" aria-invalid="true" aria-describedby="ft_error-error">
@@ -722,11 +738,11 @@
 <!-- partial: field-textarea -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-textarea</h4>
-<p class="ds-lead">field-text&#39;s wrapper around a textarea.</p>
+<p class="ds-lead">field-text का आवरण, एक textarea के चारों ओर।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Bare</p>
+<p class="ds-state">सादा</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_bare">Notes</label>
   <textarea class="rst-textarea" id="ta_bare" name="ta_bare" rows="3"></textarea>
@@ -735,7 +751,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With a hint</p>
+<p class="ds-state">एक संकेत के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_hint">Bio</label>
   <textarea class="rst-textarea" id="ta_hint" name="ta_hint" rows="3" aria-describedby="ta_hint-hint"></textarea>
@@ -745,7 +761,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With an error</p>
+<p class="ds-state">त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_error">Summary</label>
   <textarea class="rst-textarea" id="ta_error" name="ta_error" rows="3" aria-invalid="true" aria-describedby="ta_error-error">…</textarea>
@@ -755,7 +771,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required</p>
+<p class="ds-state">अनिवार्य</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_required">Reason for refund <span class="rst-field__required" aria-hidden="true">*</span></label>
   <textarea class="rst-textarea" id="ta_required" name="ta_required" rows="3" required></textarea>
@@ -768,11 +784,11 @@
 <!-- partial: field-select -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-select</h4>
-<p class="ds-lead">field&#39;s envelope around a native select. Past ten options the select arms the filterable combobox in select.js; the native select is still what the form submits.</p>
+<p class="ds-lead">मूल select के चारों ओर field का आवरण। दस से ज़्यादा विकल्प होने पर select, select.js का छाँटने योग्य कॉम्बोबॉक्स चालू कर देता है; फ़ॉर्म फिर भी वही मूल select भेजता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Three options — a native select</p>
+<p class="ds-state">तीन विकल्प — मूल select</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_few">Role</label>
 <select class="rst-input" id="sel_few" name="sel_few"><option value="Admin" selected>Admin</option><option value="Editor">Editor</option><option value="Member">Member</option></select>
 </div></form></section>
@@ -780,16 +796,16 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Twelve options — the filterable combobox</p>
+<p class="ds-state">बारह विकल्प — छाँटने योग्य कॉम्बोबॉक्स</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_many">City</label>
 <select class="rst-input" id="sel_many" name="sel_many" data-rst-select data-rst-select-filter="फ़िल्टर करने के लिए टाइप करें" data-rst-select-results="{n} परिणाम" data-rst-select-result-one="1 परिणाम" aria-describedby="sel_many-help"><option value="Dublin" selected>Dublin</option><option value="Lisbon">Lisbon</option><option value="Madrid">Madrid</option><option value="Berlin">Berlin</option><option value="Rome">Rome</option><option value="Athens">Athens</option><option value="Helsinki">Helsinki</option><option value="Reykjavík">Reykjavík</option><option value="Warsaw">Warsaw</option><option value="Zagreb">Zagreb</option><option value="Tallinn">Tallinn</option><option value="Valletta">Valletta</option></select>
 <p class="rst-field__help" id="sel_many-help">Start typing to filter.</p>
 </div></form></section>
-<p class="ds-note">Past ten options the partial arms select.js. Below ten it does not: search over a handful of items is furniture, not help.</p>
+<p class="ds-note">दस से ज़्यादा विकल्प होने पर पार्शियल select.js चालू कर देता है। दस से कम पर नहीं: मुट्ठी भर चीज़ों में खोज सजावट है, मदद नहीं।</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Twelve options, Plain — the enhancement opted out</p>
+<p class="ds-state">बारह विकल्प, Plain — संवर्धन से मना कर दिया गया</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_plain">City</label>
 <select class="rst-input" id="sel_plain" name="sel_plain"><option value="Dublin" selected>Dublin</option><option value="Lisbon">Lisbon</option><option value="Madrid">Madrid</option><option value="Berlin">Berlin</option><option value="Rome">Rome</option><option value="Athens">Athens</option><option value="Helsinki">Helsinki</option><option value="Reykjavík">Reykjavík</option><option value="Warsaw">Warsaw</option><option value="Zagreb">Zagreb</option><option value="Tallinn">Tallinn</option><option value="Valletta">Valletta</option></select>
 </div></form></section>
@@ -797,7 +813,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">अनिवार्य, त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_error">Role</label>
 <select class="rst-input" id="sel_error" name="sel_error" required aria-invalid="true" aria-describedby="sel_error-error"><option value="Admin" selected>Admin</option><option value="Editor">Editor</option><option value="Member">Member</option></select>
 <p class="rst-field__error" id="sel_error-error" role="alert">Pick a role for this person.</p>
@@ -806,7 +822,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Hand-written, with optgroups</p>
+<p class="ds-state">हाथ से लिखा हुआ, optgroup के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_grouped">Region</label>
 <select class="rst-input" id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="फ़िल्टर करने के लिए टाइप करें" data-rst-select-results="{n} परिणाम" data-rst-select-result-one="1 परिणाम">
 <optgroup label="Europe"><option value="dublin" selected>Dublin</option><option value="lisbon">Lisbon</option><option value="warsaw">Warsaw</option></optgroup>
@@ -815,7 +831,7 @@
 <optgroup label="Africa"><option value="accra">Accra</option><option value="nairobi">Nairobi</option><option value="tunis">Tunis</option></optgroup>
 </select>
 </div></form></section>
-<p class="ds-note">Options here is a flat list, so grouped choices are markup the app writes. select.js renders the groups rather than dropping them; a hand-written select can also refuse the enhancement outright with data-rst-select=&#34;false&#34;.</p>
+<p class="ds-note">यहाँ Options एक सपाट सूची है, इसलिए समूहबद्ध विकल्प वह मार्कअप हैं जो ऐप्लिकेशन ख़ुद लिखता है। select.js समूहों को गिराने के बजाय दिखाता है; हाथ से लिखा select चाहे तो data-rst-select=&#34;false&#34; से संवर्धन पूरी तरह मना कर सकता है।</p>
 </div>
 
 </article>
@@ -823,23 +839,23 @@
 <!-- partial: field-check -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-check</h4>
-<p class="ds-lead">The one toggle mechanism: a real checkbox skinned as a switch, keyboard and screen-reader intact.</p>
+<p class="ds-lead">टॉगल का इकलौता तरीक़ा: एक असली चेकबॉक्स, जिसे स्विच जैसा दिखाया गया है, कीबोर्ड और स्क्रीन रीडर ज्यों के त्यों।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">On</p>
+<p class="ds-state">चालू</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><label class="rst-switch"><input type="checkbox" name="notify_on" checked><span class="rst-switch__track" aria-hidden="true"></span> Email me about replies</label></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Off</p>
+<p class="ds-state">बंद</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><label class="rst-switch"><input type="checkbox" name="notify_off"><span class="rst-switch__track" aria-hidden="true"></span> Email me about mentions</label></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Disabled</p>
+<p class="ds-state">निष्क्रिय</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><label class="rst-switch"><input type="checkbox" name="notify_disabled" disabled><span class="rst-switch__track" aria-hidden="true"></span> Email me a weekly digest</label></form></section>
 
 </div>
@@ -849,17 +865,17 @@
 <!-- partial: choice-field -->
 <article class="ds-partial">
 <h4 class="rst-mono">choice-field</h4>
-<p class="ds-lead">Option cards — the preferred radio or checkbox group. Title stays short; Desc explains.</p>
+<p class="ds-lead">विकल्प कार्ड — रेडियो या चेकबॉक्स समूह का पसंदीदा रूप। Title छोटा रहता है; समझाने का काम Desc करता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Pick one</p>
+<p class="ds-state">एक चुनें</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-choice"><legend>Plan</legend><div class="rst-choice__cards"><label><input type="radio" name="plan" value="free"><span><span class="rst-choice__title">Free</span><span class="rst-choice__desc">One project, community support.</span></span></label><label><input type="radio" name="plan" value="pro" checked><span><span class="rst-choice__title">Pro</span><span class="rst-choice__desc">Unlimited projects and a support inbox.</span></span></label></div></fieldset></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Pick any</p>
+<p class="ds-state">जितने चाहें चुनें</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-choice"><legend>Send me</legend><div class="rst-choice__cards"><label><input type="checkbox" name="digest" value="replies" checked><span><span class="rst-choice__title">Replies</span><span class="rst-choice__desc">As they happen.</span></span></label><label><input type="checkbox" name="digest" value="weekly"><span><span class="rst-choice__title">Weekly digest</span><span class="rst-choice__desc">Monday mornings.</span></span></label></div></fieldset></form></section>
 
 </div>
@@ -869,21 +885,21 @@
 <!-- partial: field-date -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-date</h4>
-<p class="ds-lead">A native date input, plus the natural-language combobox datetime.js arms unless the caller passes Plain. Type &#34;tomorrow&#34; into it.</p>
+<p class="ds-lead">एक मूल तारीख़ इनपुट, और उसके साथ datetime.js का सहज-भाषा कॉम्बोबॉक्स — जब तक बुलाने वाला Plain न भेजे। इसमें &#34;कल&#34; लिखकर देखें।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Enhanced — type &#34;tomorrow&#34;, or &#34;in 3 weeks&#34;</p>
+<p class="ds-state">बेहतर किया हुआ — &#34;कल&#34; या &#34;3 सप्ताह में&#34; लिखिए</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_live">Publish on</label>
   <input class="rst-input" id="field-date_live" name="field-date_live" type="date" value="2026-09-04" aria-describedby="field-date_live-hint" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
   <small class="rst-field__hint" id="field-date_live-hint">The day it goes live.</small>
 </div></form></section>
-<p class="ds-note">The words it parses ride out on data-rst-date-words, resolved through this page&#39;s catalog: the field parses the language the page is in.</p>
+<p class="ds-note">जिन शब्दों को वह पढ़ता है, वे data-rst-date-words पर बाहर जाते हैं, इसी पृष्ठ के कैटलॉग से हल किए हुए: फ़ील्ड उसी भाषा को पढ़ता है जिसमें पृष्ठ है।</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">अनिवार्य, त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_error">Publish on <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="field-date_error" name="field-date_error" type="date" required aria-invalid="true" aria-describedby="field-date_error-error" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -893,7 +909,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Bounded</p>
+<p class="ds-state">सीमाओं के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_bounded">Within this year</label>
   <input class="rst-input" id="field-date_bounded" name="field-date_bounded" type="date" value="2026-09-04" min="2026-01-01" max="2026-12-31" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -902,12 +918,12 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Plain — the bare native input</p>
+<p class="ds-state">Plain — बिना कुछ जोड़े मूल इनपुट</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_plain">Publish on</label>
   <input class="rst-input" id="field-date_plain" name="field-date_plain" type="date" value="2026-09-04">
 </div></form></section>
-<p class="ds-note">No enhancement attributes at all, so datetime.js has nothing to find. The native picker still opens.</p>
+<p class="ds-note">कोई भी संवर्धन विशेषता नहीं, इसलिए datetime.js को कुछ नहीं मिलता। मूल पिकर फिर भी खुलता है।</p>
 </div>
 
 </article>
@@ -915,11 +931,11 @@
 <!-- partial: field-time -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-time</h4>
-<p class="ds-lead">The same envelope around a native time input. The enhancement reads a clock rather than a calendar.</p>
+<p class="ds-lead">वही आवरण, इस बार मूल समय इनपुट के चारों ओर। यह संवर्धन कैलेंडर नहीं, घड़ी पढ़ता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Enhanced — type &#34;half seven&#34;, or &#34;noon&#34;</p>
+<p class="ds-state">बेहतर किया हुआ — &#34;19:30&#34; या &#34;दोपहर&#34; लिखिए</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_live">Doors open</label>
   <input class="rst-input" id="time_live" name="time_live" type="time" value="19:30" aria-describedby="time_live-hint" data-rst-time data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -929,7 +945,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">अनिवार्य, त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_error">Doors open <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="time_error" name="time_error" type="time" required aria-invalid="true" aria-describedby="time_error-error" data-rst-time data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -939,7 +955,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Bounded</p>
+<p class="ds-state">सीमाओं के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_bounded">Between nine and eleven</label>
   <input class="rst-input" id="time_bounded" name="time_bounded" type="time" value="19:30" min="09:00" max="23:00" data-rst-time data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -948,7 +964,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Plain — the bare native input</p>
+<p class="ds-state">Plain — बिना कुछ जोड़े मूल इनपुट</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_plain">Doors open</label>
   <input class="rst-input" id="time_plain" name="time_plain" type="time" value="19:30">
@@ -961,21 +977,21 @@
 <!-- partial: field-datetime -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-datetime</h4>
-<p class="ds-lead">A date and a time in one input, one value.</p>
+<p class="ds-lead">एक ही इनपुट में तारीख़ और समय, एक ही मान।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Enhanced — type &#34;tomorrow&#34;, or &#34;in 3 weeks&#34;</p>
+<p class="ds-state">बेहतर किया हुआ — &#34;कल&#34; या &#34;3 सप्ताह में&#34; लिखिए</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_live">Publish on</label>
   <input class="rst-input" id="field-datetime_live" name="field-datetime_live" type="datetime-local" value="2026-09-04T19:30" aria-describedby="field-datetime_live-hint" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
   <small class="rst-field__hint" id="field-datetime_live-hint">When it goes live.</small>
 </div></form></section>
-<p class="ds-note">The words it parses ride out on data-rst-date-words, resolved through this page&#39;s catalog: the field parses the language the page is in.</p>
+<p class="ds-note">जिन शब्दों को वह पढ़ता है, वे data-rst-date-words पर बाहर जाते हैं, इसी पृष्ठ के कैटलॉग से हल किए हुए: फ़ील्ड उसी भाषा को पढ़ता है जिसमें पृष्ठ है।</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">अनिवार्य, त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_error">Publish on <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="field-datetime_error" name="field-datetime_error" type="datetime-local" required aria-invalid="true" aria-describedby="field-datetime_error-error" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -985,7 +1001,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Bounded</p>
+<p class="ds-state">सीमाओं के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_bounded">Within this year</label>
   <input class="rst-input" id="field-datetime_bounded" name="field-datetime_bounded" type="datetime-local" value="2026-09-04T19:30" min="2026-01-01T00:00" max="2026-12-31T23:59" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;पहले&#34;,&#34;am&#34;:&#34;सुबह|पूर्वाह्न|am&#34;,&#34;at&#34;:&#34;बजे|पर&#34;,&#34;day&#34;:&#34;दिन&#34;,&#34;hour&#34;:&#34;घंटा|घंटे&#34;,&#34;in&#34;:&#34;में|बाद&#34;,&#34;last&#34;:&#34;पिछला|पिछले|पिछली&#34;,&#34;midnight&#34;:&#34;मध्यरात्रि|आधी रात&#34;,&#34;minute&#34;:&#34;मिनट&#34;,&#34;month&#34;:&#34;महीना|महीने|माह&#34;,&#34;next&#34;:&#34;अगला|अगले|अगली&#34;,&#34;noon&#34;:&#34;दोपहर&#34;,&#34;pm&#34;:&#34;शाम|अपराह्न|pm|रात&#34;,&#34;today&#34;:&#34;आज&#34;,&#34;tomorrow&#34;:&#34;कल&#34;,&#34;week&#34;:&#34;सप्ताह|हफ़्ता|हफ्ता|हफ़्ते|हफ्ते&#34;,&#34;yesterday&#34;:&#34;बीता कल|गुज़रा कल&#34;}" data-rst-date-set="सेट करें" data-rst-date-hint="आज़माएँ: {example}" data-rst-date-pick="कैलेंडर खोलें" data-rst-date-results="{n} सुझाव" data-rst-date-result-one="1 सुझाव" data-rst-date-quick-today="आज" data-rst-date-quick-tomorrow="कल" data-rst-date-quick-next-week="एक सप्ताह बाद" data-rst-date-quick-plus-1h="एक घंटे बाद" data-rst-date-quick-plus-2h="दो घंटे बाद" data-rst-date-quick-end-of-day="उस दिन के अंत में" data-rst-date-quick-next-day="अगले दिन उसी समय">
@@ -994,12 +1010,12 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Plain — the bare native input</p>
+<p class="ds-state">Plain — बिना कुछ जोड़े मूल इनपुट</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_plain">Publish on</label>
   <input class="rst-input" id="field-datetime_plain" name="field-datetime_plain" type="datetime-local" value="2026-09-04T19:30">
 </div></form></section>
-<p class="ds-note">No enhancement attributes at all, so datetime.js has nothing to find. The native picker still opens.</p>
+<p class="ds-note">कोई भी संवर्धन विशेषता नहीं, इसलिए datetime.js को कुछ नहीं मिलता। मूल पिकर फिर भी खुलता है।</p>
 </div>
 
 </article>
@@ -1007,11 +1023,11 @@
 <!-- partial: field-daterange -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">A start and an end as one labelled group. The two halves must carry different Names — each derives its ids from its own.</p>
+<p class="ds-lead">शुरुआत और अंत, एक ही लेबल वाले समूह के रूप में। दोनों हिस्सों के Name अलग होने चाहिए — हर हिस्सा अपनी id अपने ही Name से बनाता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Date and time, seeded</p>
+<p class="ds-state">तारीख़ और समय, पहले से भरे हुए</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-field-range">
   <legend>When</legend>
   <div class="rst-field-row" data-rst-range="session">
@@ -1025,11 +1041,11 @@
 </div>
   </div>
 </fieldset></form></section>
-<p class="ds-note">Commit the start with the end still empty and the browser fills the end in an hour later. Nothing is seeded server-side.</p>
+<p class="ds-note">अंत ख़ाली रहते हुए शुरुआत तय कीजिए, और ब्राउज़र अंत को एक घंटे बाद का भर देता है। सर्वर की ओर से कुछ भी पहले से नहीं भरा जाता।</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Dates only, with an error on the end</p>
+<p class="ds-state">सिर्फ़ तारीख़ें, अंत वाले हिस्से में त्रुटि के साथ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-field-range">
   <legend>Booking</legend>
   <div class="rst-field-row" data-rst-range>
@@ -1052,11 +1068,11 @@
 <!-- partial: form-foot -->
 <article class="ds-partial">
 <h4 class="rst-mono">form-foot</h4>
-<p class="ds-lead">A form&#39;s closing row: one primary submit and an optional cancel link. Cancel is an anchor, because leaving a form is navigation.</p>
+<p class="ds-lead">फ़ॉर्म की आख़िरी पंक्ति: एक मुख्य सबमिट और वैकल्पिक रद्द लिंक। रद्द एक लिंक है, क्योंकि फ़ॉर्म से बाहर जाना नेविगेशन है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Save and cancel</p>
+<p class="ds-state">सहेजें और रद्द करें</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
   <button class="rst-btn rst-btn--primary" type="submit">Save post</button>
   <a class="rst-btn" href="/posts">Back to posts</a>
@@ -1065,7 +1081,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Submit only</p>
+<p class="ds-state">सिर्फ़ सबमिट</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
   <button class="rst-btn rst-btn--primary" type="submit">Send invitation</button>
 </div></form></section>
@@ -1077,19 +1093,19 @@
 <!-- partial: confirm-form -->
 <article class="ds-partial">
 <h4 class="rst-mono">confirm-form</h4>
-<p class="ds-lead">The confirm page&#39;s action row. Destructive actions get their own route rather than a dialog, so there is nothing to script.</p>
+<p class="ds-lead">पुष्टि पृष्ठ की क्रिया पंक्ति। विनाशकारी क्रियाओं का अपना रूट होता है, कोई डायलॉग नहीं, इसलिए स्क्रिप्ट लिखने को कुछ बचता ही नहीं।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Destructive</p>
+<p class="ds-state">विनाशकारी</p>
 <section class="rst-box"><form class="rst-form-actions" method="post" action="/posts/1/delete"><input type="hidden" name="csrf" value="tok-123"><input type="hidden" name="id" value="1"><a class="rst-btn rst-btn--ghost" href="/posts/1">रद्द करें</a><button type="submit" class="rst-btn rst-btn--danger">Delete this post</button></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Ordinary, default cancel wording</p>
+<p class="ds-state">सामान्य, रद्द के डिफ़ॉल्ट शब्दों के साथ</p>
 <section class="rst-box"><form class="rst-form-actions" method="post" action="/posts/1/publish"><a class="rst-btn rst-btn--ghost" href="/posts/1">रद्द करें</a><button type="submit" class="rst-btn rst-btn--primary">Publish</button></form></section>
-<p class="ds-note">No CancelLabel, so the cancel link is worded from the catalog.</p>
+<p class="ds-note">कोई CancelLabel नहीं, इसलिए रद्द लिंक के शब्द कैटलॉग से आते हैं।</p>
 </div>
 
 </article>
@@ -1097,17 +1113,17 @@
 </section>
 
 <section class="ds-family">
-<h3>Route</h3>
-<p class="ds-lead">The pieces that are a whole response rather than a piece of one.</p>
+<h3>रूट</h3>
+<p class="ds-lead">वे टुकड़े जो पूरा उत्तर हैं, किसी उत्तर का हिस्सा नहीं।</p>
 
 <!-- partial: error-page -->
 <article class="ds-partial">
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">The whole body of an error response: the status, one honest sentence, a way back, and — for a 500 — the reference an operator can grep for.</p>
+<p class="ds-lead">त्रुटि उत्तर का पूरा भाग: स्थिति, एक ईमानदार वाक्य, लौटने का रास्ता, और — 500 के लिए — वह संदर्भ जिसे संचालक grep कर सकता है।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">404 — not found</p>
+<p class="ds-state">404 — नहीं मिला</p>
 <div class="rst-error">
   <p class="rst-error__status">404</p>
   <h1 class="rst-error__title">वह पृष्ठ नहीं मिला</h1>
@@ -1118,7 +1134,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">403 — forbidden</p>
+<p class="ds-state">403 — पहुँच नहीं</p>
 <div class="rst-error">
   <p class="rst-error__status">403</p>
   <h1 class="rst-error__title">आप इसे नहीं देख सकते</h1>
@@ -1129,7 +1145,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">422 — unprocessable</p>
+<p class="ds-state">422 — संसाधित नहीं हो सका</p>
 <div class="rst-error">
   <p class="rst-error__status">422</p>
   <h1 class="rst-error__title">यह भेजा नहीं जा सका</h1>
@@ -1140,7 +1156,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">500 — server error</p>
+<p class="ds-state">500 — सर्वर त्रुटि</p>
 <div class="rst-error">
   <p class="rst-error__status">500</p>
   <h1 class="rst-error__title">हमारी ओर से कुछ गड़बड़ हो गई</h1>
@@ -1148,11 +1164,11 @@
   <p class="rst-error__cta"><a class="rst-btn rst-btn--primary" href="/">आरंभ पृष्ठ</a></p>
   <p class="rst-error__ref rst-mono" dir="auto">संदर्भ: k3f9tq</p>
 </div>
-<p class="ds-note">A 500 is the one status with a reference: an operator can grep the logs for it.</p>
+<p class="ds-note">500 अकेली ऐसी स्थिति है जिसके साथ संदर्भ आता है: संचालक उसे लॉग में grep कर सकता है।</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">503 — unavailable</p>
+<p class="ds-state">503 — उपलब्ध नहीं</p>
 <div class="rst-error">
   <p class="rst-error__status">503</p>
   <h1 class="rst-error__title">हम थोड़ी देर के लिए उपलब्ध नहीं हैं</h1>
@@ -1163,14 +1179,14 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Anything else — the generic pair</p>
+<p class="ds-state">बाक़ी सब कुछ — सामान्य जोड़ी</p>
 <div class="rst-error">
   <p class="rst-error__status">418</p>
   <h1 class="rst-error__title">कुछ ठीक नहीं है</h1>
   <p class="rst-error__body">वह अनुरोध पूरा नहीं हो सका। वापस जाकर फिर कोशिश करें।</p>
   <p class="rst-error__cta"><a class="rst-btn rst-btn--primary" href="/">आरंभ पृष्ठ</a></p>
 </div>
-<p class="ds-note">Five statuses are worded in the framework catalog. A sixth falls back to the generic pair rather than rendering a missing key&#39;s name at a reader.</p>
+<p class="ds-note">पाँच स्थितियों के शब्द फ़्रेमवर्क कैटलॉग में लिखे हैं। छठी सामान्य जोड़ी पर लौट आती है, बजाय इसके कि पाठक के सामने कोई ग़ायब कुंजी का नाम रख दिया जाए।</p>
 </div>
 
 </article>
@@ -1178,11 +1194,11 @@
 <!-- partial: back-nav -->
 <article class="ds-partial">
 <h4 class="rst-mono">back-nav</h4>
-<p class="ds-lead">The link back up one level, above a show or edit screen.</p>
+<p class="ds-lead">एक स्तर ऊपर लौटने वाला लिंक, दिखाने या संपादन स्क्रीन के ऊपर।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Back to a record</p>
+<p class="ds-state">किसी रिकॉर्ड पर वापस</p>
 <nav class="rst-back-nav"><a href="/orders/1">← Order AB3PX</a></nav>
 
 </div>
@@ -1192,11 +1208,11 @@
 <!-- partial: locale-menu -->
 <article class="ds-partial">
 <h4 class="rst-mono">locale-menu</h4>
-<p class="ds-lead">The language switcher: a details menu of one-field POST forms to /_locale, so the choice lands in the locale cookie and the reader stays on the same path.</p>
+<p class="ds-lead">भाषा बदलने वाला: एक details मेन्यू, जिसमें /_locale को भेजे जाने वाले एक-फ़ील्ड POST फ़ॉर्म हैं, ताकि चुनाव locale कुकी में जा बैठे और पाठक उसी पथ पर बना रहे।</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Twelve languages, the current one marked</p>
+<p class="ds-state">बारह भाषाएँ, मौजूदा वाली चिह्नित</p>
 <details class="rst-dropdown rst-locale" name="rst-menus">
   <summary>भाषा<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
   <div class="rst-dropdown__menu">
@@ -1214,7 +1230,7 @@
     <form method="post" action="/_locale"><input type="hidden" name="locale" value="ar"><input type="hidden" name="return" value="/design-system/"><button type="submit" lang="ar">العربية</button></form>
   </div>
 </details>
-<p class="ds-note">This one posts to /_locale, which a static page has no server for — the switcher in this page&#39;s own header is the links-only version.</p>
+<p class="ds-note">यह वाला /_locale पर POST करता है, जिसके लिए स्थिर पृष्ठ के पास कोई सर्वर नहीं है — इसी पृष्ठ के शीर्ष में जो स्विचर है, वही सिर्फ़-लिंक वाला संस्करण है।</p>
 </div>
 
 </article>
@@ -1222,14 +1238,14 @@
 </section>
 
 
-<div class="ds-head"><h2 id="idioms">Class idioms</h2></div>
-<p class="ds-lead">The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css — copy from here.</p>
+<div class="ds-head"><h2 id="idioms">क्लास मुहावरे</h2></div>
+<p class="ds-lead">वे आकार जो कोई पार्शियल हो ही नहीं सकता, क्योंकि वे उस भीतरी हिस्से को लपेटते हैं जिसे सिर्फ़ बुलाने वाला जानता है: खंड कार्ड, डेटा ग्रिड, डिस्क्लोज़र मेन्यू, शेल का अपना ढाँचा। क्लास tokens.css देता है और मार्कअप ऐप्लिकेशन लिखती है। नीचे जो कुछ है, वह ठीक वही नमूना है जो ui.Styleguide लौटाता है, यानी वही नमूना जिसे ui के परीक्षण tokens.css के सामने रखते हैं — यहीं से नक़ल कीजिए।</p>
 
 <!-- idiom: box -->
 <article class="ds-partial">
 <h4 class="rst-mono">box</h4>
-<p class="ds-lead">The padded section card, and the heading that sits outside it.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Which card is which</strong><p>rst-list and rst-card have no padding by design: they hold a run of rows, and each row pads itself. Put a form, a paragraph, a strip of links or anything else that is not a row straight into one and it renders flush against the border — the text touching the edge is the tell. The padded card for arbitrary content is rst-box, with its heading as a sibling rst-box-head before it.</p></div></div>
+<p class="ds-lead">पैडिंग वाला खंड कार्ड, और वह शीर्षक जो उसके बाहर बैठता है।</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>कौन-सा कार्ड कौन-सा है</strong><p>rst-list और rst-card में जान-बूझकर कोई पैडिंग नहीं है: वे पंक्तियों की क़तार रखते हैं, और हर पंक्ति ख़ुद को पैड करती है। इनमें कोई फ़ॉर्म, अनुच्छेद, लिंक की पट्टी या कोई भी ग़ैर-पंक्ति चीज़ सीधे डालिए और वह किनारे से सटी हुई दिखेगी — किनारे को छूता पाठ ही वह संकेत है। किसी भी सामग्री के लिए पैडिंग वाला कार्ड rst-box है, और उसका शीर्षक उससे पहले भाई-नोड rst-box-head के रूप में आता है।</p></div></div>
 <div class="ds-sample"><div class="rst-box-head"><h2>Payout</h2><a class="rst-btn" href="/payout/edit">Edit</a></div>
 <section class="rst-box"><p>Everything on a screen sits inside boxes.</p><div class="rst-box-foot">Last updated 2 hours ago</div></section></div>
 </article>
@@ -1237,7 +1253,7 @@
 <!-- idiom: dropdown -->
 <article class="ds-partial">
 <h4 class="rst-mono">dropdown</h4>
-<p class="ds-lead">The details/summary menu behind header overflow menus and a list bar&#39;s filter, plus an applied filter as a removable chip.</p>
+<p class="ds-lead">हेडर के अतिरिक्त मेन्यू और सूची पट्टी के फ़िल्टर के पीछे बैठा details/summary मेन्यू, और साथ में लागू फ़िल्टर एक हटाने योग्य चिप के रूप में।</p>
 
 <div class="ds-sample"><details class="rst-dropdown" name="rst-menus">
   <summary>Filter<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">Filter orders: Paid</span></summary>
@@ -1252,7 +1268,7 @@
 <!-- idiom: form-layout -->
 <article class="ds-partial">
 <h4 class="rst-mono">form-layout</h4>
-<p class="ds-lead">The classes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.</p>
+<p class="ds-lead">वे क्लास जो फ़ॉर्म को उसकी लय और सहेजने की पट्टी देती हैं। कोई पार्शियल इन्हें नहीं निकालता — ये उन फ़ील्ड की क़तार को लपेटती हैं जिसे बुलाने वाला ख़ुद जोड़ता है।</p>
 
 <div class="ds-sample"><form class="rst-form-flow" method="post" action="/settings">
   <div class="rst-field">
@@ -1286,7 +1302,7 @@
 <!-- idiom: help -->
 <article class="ds-partial">
 <h4 class="rst-mono">help</h4>
-<p class="ds-lead">A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.</p>
+<p class="ds-lead">किनारेदार प्रश्नचिह्न, जो सहायता लेख से जुड़ता है। उसका CSS टूलटिप सजावट है; लिंक अपना पूरा वाक्य वाला लेबल खुद रखता है।</p>
 
 <div class="ds-sample"><a class="rst-help rst-tip" href="/help/orders" target="_blank" rel="noopener" aria-label="Help: orders" data-tip="About orders"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a></div>
 </article>
@@ -1294,8 +1310,8 @@
 <!-- idiom: list-grid -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-grid</h4>
-<p class="ds-lead">The real data-table vocabulary: the card sets its columns once, rows only choose cells.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Screens stack vertically</strong><p>A screen is a column: page-header, then section-header &#43; card, then the next section-header &#43; card, in reading order. Do not compose a heading, a paragraph and a button side by side in a flex row. Horizontal arrangement is reserved for the idioms that ship it: rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.</p></div></div>
+<p class="ds-lead">डेटा तालिका की असली शब्दावली: कार्ड अपने स्तंभ एक बार तय करता है, पंक्तियाँ बस कोशिकाएँ चुनती हैं।</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>स्क्रीनें ऊपर से नीचे जमती हैं</strong><p>स्क्रीन एक स्तंभ है: page-header, फिर section-header &#43; कार्ड, फिर अगला section-header &#43; कार्ड, पढ़ने के क्रम में। शीर्षक, अनुच्छेद और बटन को एक flex पंक्ति में अग़ल-बग़ल मत रखिए। क्षैतिज व्यवस्था उन्हीं मुहावरों के लिए है जो उसे साथ लाते हैं: rst-box-head, rst-field-row, rst-lbar, rst-lrow की कोशिकाएँ, rst-seg-tabs।</p></div></div>
 <div class="ds-sample"><div class="rst-card" style="--rst-cols: 2fr 110px 32px">
   <div class="rst-lrow rst-lrow--head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div class="rst-lrow">
@@ -1313,7 +1329,7 @@
 <!-- idiom: modal -->
 <article class="ds-partial">
 <h4 class="rst-mono">modal</h4>
-<p class="ds-lead">A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.</p>
+<p class="ds-lead">मोडल का अपना URL होता है, वह क्लाइंट की स्थिति नहीं है: नीचे का पृष्ठ inert चिह्नित, उसके ऊपर पैनल, और बंद करने के लिए एक सादा लिंक।</p>
 
 <pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-backdrop&#34; inert&gt;
   &lt;div class=&#34;rst-page&#34;&gt;&lt;h1&gt;Settings&lt;/h1&gt;&lt;/div&gt;
@@ -1332,14 +1348,14 @@
     &lt;/section&gt;
   &lt;/dialog&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: the overlay is fixed to the viewport, so rendering it here opened a modal over the whole gallery the moment this page loaded. That is the idiom telling you what it wants — a modal is its own URL, and this is not it. <a href="/design-system/signal/hi/modal.html">See it live at the URL it belongs to</a>.</p>
+<p class="ds-note">स्रोत के रूप में दिखाया गया है, रेंडर नहीं किया गया: ओवरले व्यूपोर्ट से चिपका होता है, इसलिए इसे यहाँ रेंडर करने पर पृष्ठ लोड होते ही पूरी गैलरी के ऊपर एक मोडल खुल जाता था। यह मुहावरा ख़ुद बता रहा है कि उसे क्या चाहिए — मोडल का अपना URL होता है, और यह वह नहीं है। <a href="/design-system/signal/hi/modal.html">उसे उसी URL पर चलते हुए देखिए जहाँ उसका होना बनता है</a>.</p>
 
 </article>
 
 <!-- idiom: selbox -->
 <article class="ds-partial">
 <h4 class="rst-mono">selbox</h4>
-<p class="ds-lead">The selection checkbox a list row wears in select mode. Its label restates the row&#39;s identity.</p>
+<p class="ds-lead">चयन मोड में सूची पंक्ति जो चेकबॉक्स पहनती है। उसका लेबल पंक्ति की पहचान दोहराता है।</p>
 
 <div class="ds-sample"><label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label></div>
 </article>
@@ -1347,7 +1363,7 @@
 <!-- idiom: shell-sidebar -->
 <article class="ds-partial">
 <h4 class="rst-mono">shell-sidebar</h4>
-<p class="ds-lead">The sidebar shell&#39;s chrome, collapsing below 800px into a details disclosure.</p>
+<p class="ds-lead">sidebar शेल का अपना ढाँचा, जो 800px से नीचे सिमटकर details डिस्क्लोज़र बन जाता है।</p>
 
 <pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-shell-sidebar&#34;&gt;
   &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
@@ -1357,14 +1373,14 @@
   &lt;/aside&gt;
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/signal/hi/shells/sidebar.html">Open the sidebar shell demo, where the same markup is a real page</a>.</p>
+<p class="ds-note">स्रोत के रूप में दिखाया गया है, रेंडर नहीं किया गया: यह नमूना ख़ुद एक पूरा पृष्ठ ढाँचा है जिसका अपना main लैंडमार्क है, और वह एक दूसरे के भीतर बैठा है। <a href="/design-system/signal/hi/shells/sidebar.html">sidebar शेल का डेमो खोलिए, जहाँ वही मार्कअप एक असली पृष्ठ है</a>.</p>
 
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial">
 <h4 class="rst-mono">shell-topbar</h4>
-<p class="ds-lead">The topbar shell&#39;s own chrome, as markup. Layout ships it as a whole template — this is what is inside.</p>
+<p class="ds-lead">topbar शेल का अपना ढाँचा, मार्कअप के रूप में। Layout उसे पूरे टेम्पलेट के रूप में देता है — यह उसके भीतर का हिस्सा है।</p>
 
 <pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-shell-topbar&#34;&gt;
   &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
@@ -1376,14 +1392,14 @@
   &lt;main class=&#34;rst-page&#34; id=&#34;main&#34;&gt;Content.&lt;/main&gt;
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/signal/hi/shells/topbar.html">Open the topbar shell demo, where the same markup is a real page</a>.</p>
+<p class="ds-note">स्रोत के रूप में दिखाया गया है, रेंडर नहीं किया गया: यह नमूना ख़ुद एक पूरा पृष्ठ ढाँचा है जिसका अपना main लैंडमार्क है, और वह एक दूसरे के भीतर बैठा है। <a href="/design-system/signal/hi/shells/topbar.html">topbar शेल का डेमो खोलिए, जहाँ वही मार्कअप एक असली पृष्ठ है</a>.</p>
 
 </article>
 
 <!-- idiom: tblock -->
 <article class="ds-partial">
 <h4 class="rst-mono">tblock</h4>
-<p class="ds-lead">A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.</p>
+<p class="ds-lead">किनारेदार कार्ड, जिसका भीतरी हिस्सा :has() के ज़रिए तभी दिखता है जब उसका स्विच चालू हो। स्विच ही असली स्थिति है; दिखना बस सुविधा है।</p>
 
 <div class="ds-sample"><div class="rst-tblock">
   <label class="rst-tblock__head"><input type="checkbox" name="notify" checked>
@@ -1400,28 +1416,28 @@
 </article>
 
 
-<div class="ds-head"><h2 id="shells">Shells</h2></div>
-<p class="ds-lead">The page frame itself. rastrillo new writes one of these as templates/layout.html; a page fills its content hole and overrides whichever chrome blocks it needs. Each demo below is a whole page at its own URL — open one to see it at full width, where the sidebar's rail and the topbar's footer actually have room.</p>
+<div class="ds-head"><h2 id="shells">शेल</h2></div>
+<p class="ds-lead">पृष्ठ का ढाँचा ख़ुद। rastrillo new इनमें से एक को templates/layout.html के रूप में लिखता है; पृष्ठ उसका सामग्री वाला छेद भरता है और जिन ढाँचा ब्लॉकों की ज़रूरत हो उन्हें बदल देता है। नीचे का हर डेमो अपने URL पर एक पूरा पृष्ठ है — एक खोलिए और उसे पूरी चौड़ाई में देखिए, जहाँ sidebar की पट्टी और topbar के फ़ुटर को सचमुच जगह मिलती है।</p>
 
 <section class="ds-shell">
 <h3>column</h3>
-<p class="ds-lead">The plain centred page every scaffolded app starts on: a skip link, a title, and the content column.</p>
-<iframe class="ds-frame" src="/design-system/signal/hi/shells/column.html" title="The column shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="/design-system/signal/hi/shells/column.html">Open the column shell</a></p>
+<p class="ds-lead">वह सादा, केंद्रित पृष्ठ जिससे हर नई बनी ऐप्लिकेशन शुरू होती है: एक स्किप लिंक, एक शीर्षक, और सामग्री का स्तंभ।</p>
+<iframe class="ds-frame" src="/design-system/signal/hi/shells/column.html" title="column शेल, पूरे पृष्ठ पर दिखाया गया" loading="lazy"></iframe>
+<p><a class="rst-btn" href="/design-system/signal/hi/shells/column.html">column शेल खोलें</a></p>
 </section>
 
 <section class="ds-shell">
 <h3>topbar</h3>
-<p class="ds-lead">Brand, navigation and an account menu across the top, with a footer under the page.</p>
-<iframe class="ds-frame" src="/design-system/signal/hi/shells/topbar.html" title="The topbar shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="/design-system/signal/hi/shells/topbar.html">Open the topbar shell</a></p>
+<p class="ds-lead">ऊपर की पट्टी में ब्रांड, नेविगेशन और खाता मेन्यू, और पृष्ठ के नीचे फ़ुटर।</p>
+<iframe class="ds-frame" src="/design-system/signal/hi/shells/topbar.html" title="topbar शेल, पूरे पृष्ठ पर दिखाया गया" loading="lazy"></iframe>
+<p><a class="rst-btn" href="/design-system/signal/hi/shells/topbar.html">topbar शेल खोलें</a></p>
 </section>
 
 <section class="ds-shell">
 <h3>sidebar</h3>
-<p class="ds-lead">A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.</p>
-<iframe class="ds-frame" src="/design-system/signal/hi/shells/sidebar.html" title="The sidebar shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="/design-system/signal/hi/shells/sidebar.html">Open the sidebar shell</a></p>
+<p class="ds-lead">पृष्ठ के बग़ल में नेविगेशन पट्टी, जो 800px से नीचे सिमटकर details वाला डिस्क्लोज़र बन जाती है। कोई JavaScript नहीं।</p>
+<iframe class="ds-frame" src="/design-system/signal/hi/shells/sidebar.html" title="sidebar शेल, पूरे पृष्ठ पर दिखाया गया" loading="lazy"></iframe>
+<p><a class="rst-btn" href="/design-system/signal/hi/shells/sidebar.html">sidebar शेल खोलें</a></p>
 </section>
 
 

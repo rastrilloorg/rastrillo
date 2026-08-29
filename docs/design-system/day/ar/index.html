@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rastrillo design system — day</title>
+<title>نظام تصميم rastrillo — day</title>
 <link rel="stylesheet" href="/design-system/tokens.css">
 <link rel="stylesheet" href="/design-system/theme-day.css">
 <style>
@@ -12,7 +12,17 @@
 .ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
 .ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
 .ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
-.ds-switch .rst-dropdown { position: relative; }
+.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-chrome .rst-dropdown { position: relative; }
+.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+ 
+.ds-scheme { display: none; }
+:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 .ds-family { margin: var(--rst-sp-6) 0 0; }
 .ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
 .ds-partial { margin: var(--rst-sp-5) 0; }
@@ -36,79 +46,85 @@
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
 </style>
+<script src="/design-system/gallery.js"></script>
 <script defer src="/design-system/rastrillo.js"></script>
 <script defer src="/design-system/select.js"></script>
 <script defer src="/design-system/datetime.js"></script>
 </head>
 <body>
-<a class="rst-skip" href="#main">Skip to content</a>
+<a class="rst-skip" href="#main">الانتقال إلى المحتوى</a>
+
+<header class="ds-chrome">
+  <nav class="rst-seg-tabs" aria-label="السمة"><a href="/design-system/day/ar/index.html" aria-current="page">day</a><a href="/design-system/plain/ar/index.html">plain</a><a href="/design-system/signal/ar/index.html">signal</a></nav>
+  <div class="ds-scheme" role="group" aria-label="نظام الألوان"><button type="button" data-ds-scheme="system" aria-pressed="true">حسب النظام</button><button type="button" data-ds-scheme="light" aria-pressed="false">فاتح</button><button type="button" data-ds-scheme="dark" aria-pressed="false">داكن</button></div>
+  <details class="rst-dropdown rst-locale" name="rst-menus">
+    <summary>اللغة<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">، حاليًا العربية</span></summary>
+    <div class="rst-dropdown__menu"><a href="/design-system/day/en/index.html" lang="en" dir="ltr">English</a><a href="/design-system/day/ga/index.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/day/zh-Hans/index.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/day/es/index.html" lang="es" dir="ltr">Español</a><a href="/design-system/day/hi/index.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/day/pt/index.html" lang="pt" dir="ltr">Português</a><a href="/design-system/day/bn/index.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/day/ru/index.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/day/ja/index.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/day/yue/index.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/day/vi/index.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/day/ar/index.html" lang="ar" dir="rtl" aria-current="true">العربية</a></div>
+  </details>
+</header>
+
 <main class="rst-page" id="main">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
-    <h1>rastrillo design system</h1>
-    <p class="rst-page-header__sub">Every partial, class idiom and design token the framework ships, on one page. The theme is <strong>day</strong> and the components speak <strong lang="ar">العربية</strong>; the prose around them stays in English.</p>
+    <h1>نظام تصميم rastrillo</h1>
+    <p class="rst-page-header__sub">كل جزء وكل أسلوب أصناف وكل رمز تصميم يقدّمه الإطار، في صفحة واحدة. السمة هي <strong>day</strong>، والمكوّنات تتحدث <strong lang="ar">العربية</strong>.</p>
   </div>
 </header>
 
 <div class="ds-switch">
-  <nav class="rst-seg-tabs" aria-label="Theme"><a href="/design-system/day/ar/index.html" aria-current="page">day</a><a href="/design-system/plain/ar/index.html">plain</a><a href="/design-system/signal/ar/index.html">signal</a></nav>
-  <details class="rst-dropdown rst-locale" name="rst-menus">
-    <summary>Language<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">, currently العربية</span></summary>
-    <div class="rst-dropdown__menu"><a href="/design-system/day/en/index.html" lang="en" dir="ltr">English</a><a href="/design-system/day/ga/index.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/day/zh-Hans/index.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/day/es/index.html" lang="es" dir="ltr">Español</a><a href="/design-system/day/hi/index.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/day/pt/index.html" lang="pt" dir="ltr">Português</a><a href="/design-system/day/bn/index.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/day/ru/index.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/day/ja/index.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/day/yue/index.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/day/vi/index.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/day/ar/index.html" lang="ar" dir="rtl" aria-current="true">العربية</a></div>
-  </details>
-  <nav class="rst-seg-tabs" aria-label="Sections"><a href="#tokens">Tokens</a><a href="#partials">Partials</a><a href="#idioms">Class idioms</a><a href="#shells">Shells</a></nav>
+  <nav class="rst-seg-tabs" aria-label="الأقسام"><a href="#tokens">الرموز</a><a href="#partials">الأجزاء</a><a href="#idioms">أساليب الأصناف</a><a href="#shells">الهياكل</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>The links in these samples go nowhere</strong><p>This is a static page. Every href below is sample data chosen to read like a real application, so the markup is the markup an app would ship — but nothing here is served by anything, and following one lands on a missing page.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>روابط هذه العيّنات لا تؤدّي إلى شيء</strong><p>هذه صفحة ساكنة. كل ‎href‎ أدناه بيانات عيّنة اختيرت لتُقرأ كتطبيق حقيقي، فالشيفرة هي ذاتها التي سيرسلها تطبيق — غير أن لا شيء هنا يخدمه خادم، ومتابعة أي رابط تُفضي إلى صفحة غير موجودة.</p></div></div>
 
-<div class="ds-head"><h2 id="tokens">Tokens</h2></div>
-<p class="ds-lead">The custom properties every component paints itself with. Colour and the type family come from the theme (themes/day.css); the type scale, the spacing steps and the radii are structure and come from tokens.css, the same on every theme.</p>
-<p class="ds-swatch-note">The values printed here are the light ones. The dark set is authored by hand in the same file — never inverted — and ui/contrast_test.go holds every documented pair in both sets to the WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. The chips themselves are painted with var(), so they follow whichever scheme you are reading in, and they will not match the printed values in dark mode.</p>
+<div class="ds-head"><h2 id="tokens">الرموز</h2></div>
+<p class="ds-lead">الخصائص المخصّصة التي يرسم بها كل مكوّن نفسه. اللون وعائلة الخط يأتيان من السمة (‎themes/day.css‎)، أما سُلّم أحجام الخط ودرجات التباعد فهي بنية تأتي من ‎tokens.css‎ وهي نفسها في كل سمة.</p>
+<p class="ds-swatch-note">القيم المطبوعة هنا هي قيم الوضع الفاتح. أما المجموعة الداكنة فمكتوبة يدويًّا في الملف نفسه — لا بالعكس أبدًا — ويُبقي ‎ui/contrast_test.go‎ كل زوج موثّق في المجموعتين عند حدود WCAG 2.2 AA الدنيا: 4.5:1 للنص و3:1 لحدود عناصر التحكّم. أما مربّعات اللون فتُطلى بـ ‎var()‎، فتتبع النظام الذي تقرأ فيه ولن تطابق القيم المطبوعة في الوضع الداكن.</p>
 
-<h3 class="ds-sub">Surfaces and lines</h3>
+<h3 class="ds-sub">الأسطح والخطوط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e5e7eb</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#7f8792</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f6f7f8</span></span></li></ul>
 
-<h3 class="ds-sub">Text</h3>
+<h3 class="ds-sub">النص</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text</span><span class="ds-tok__value">#1a1d21</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-faint)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-faint</span><span class="ds-tok__value">#656c78</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-text-muted)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-text-muted</span><span class="ds-tok__value">#4b5563</span></span></li></ul>
 
-<h3 class="ds-sub">Accent</h3>
+<h3 class="ds-sub">لون التمييز</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent</span><span class="ds-tok__value">#2464e0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-soft)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-soft</span><span class="ds-tok__value">#eef3fe</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-accent-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-accent-strong</span><span class="ds-tok__value">#1a4fc0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-on-accent)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-on-accent</span><span class="ds-tok__value">#ffffff</span></span></li></ul>
 
-<h3 class="ds-sub">Status tones</h3>
+<h3 class="ds-sub">نغمات الحالة</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-bg</span><span class="ds-tok__value">#fee2e2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-negative-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-negative-fg</span><span class="ds-tok__value">#b91c1c</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-bg</span><span class="ds-tok__value">#eef0f2</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-neutral-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-neutral-fg</span><span class="ds-tok__value">#374151</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-bg</span><span class="ds-tok__value">#dcfce7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-positive-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-positive-fg</span><span class="ds-tok__value">#166534</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-bg</span><span class="ds-tok__value">#fef3c7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-tone-warning-fg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-tone-warning-fg</span><span class="ds-tok__value">#854d0e</span></span></li></ul>
 
-<h3 class="ds-sub">Depth</h3>
+<h3 class="ds-sub">العمق</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-overlay)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-overlay</span><span class="ds-tok__value">rgba(0, 0, 0, 0.45)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-knob)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-knob</span><span class="ds-tok__value">0 1px 2px rgba(0, 0, 0, 0.3)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-lift)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-lift</span><span class="ds-tok__value">0 1px 2px rgba(0, 0, 0, 0.08)</span></span></li><li class="ds-tok"><span class="ds-chip" style="box-shadow: var(--rst-shadow-pop)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-shadow-pop</span><span class="ds-tok__value">0 8px 24px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5))</span></span></li></ul>
 
-<h3 class="ds-sub">Radius</h3>
+<h3 class="ds-sub">استدارة الأركان</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius</span><span class="ds-tok__value">8px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-pill)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-pill</span><span class="ds-tok__value">999px</span></span></li><li class="ds-tok"><span class="ds-chip" style="border-radius: var(--rst-radius-sm)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-radius-sm</span><span class="ds-tok__value">6px</span></span></li></ul>
 
-<h3 class="ds-sub">Type family</h3>
+<h3 class="ds-sub">عائلة الخط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-font</span><span class="ds-tok__value">system-ui, -apple-system, &#34;Segoe UI&#34;, Roboto, &#34;Helvetica Neue&#34;, Arial, sans-serif</span></span></li></ul>
 
-<h3 class="ds-sub">Type scale</h3>
+<h3 class="ds-sub">سُلّم أحجام الخط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-base)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-base</span><span class="ds-tok__value">0.875rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-sm)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-sm</span><span class="ds-tok__value">0.78125rem</span></span></li><li class="ds-tok"><span class="ds-type" style="font-size: var(--rst-fs-xs)">Ag</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-fs-xs</span><span class="ds-tok__value">0.71875rem</span></span></li></ul>
 
-<h3 class="ds-sub">Spacing</h3>
+<h3 class="ds-sub">التباعد</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-1)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-1</span><span class="ds-tok__value">0.25rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-2</span><span class="ds-tok__value">0.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-3)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-3</span><span class="ds-tok__value">0.75rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-4)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-4</span><span class="ds-tok__value">1rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-5)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-5</span><span class="ds-tok__value">1.5rem</span></span></li><li class="ds-tok"><span class="ds-bar" style="inline-size: var(--rst-sp-6)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-sp-6</span><span class="ds-tok__value">2.5rem</span></span></li></ul>
 
 
-<div class="ds-head"><h2 id="partials">Partials</h2></div>
-<p class="ds-lead">Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below. One thing a gallery cannot help: page-header and error-page each own an h1, so this page carries several, where a real screen has exactly one.</p>
+<div class="ds-head"><h2 id="partials">الأجزاء</h2></div>
+<p class="ds-lead">كل جزء قالبي يقدّمه ui، في الحالات التي تضعه فيها شاشة حقيقية. ويأخذ كلٌّ منها قيمة بيانات واحدة بالضبط، تُبنى في مكانها بـ dict. النماذج داخل ‎rst-box‎ ذي حشو، والصفوف داخل ‎rst-list‎، لأن هذه الأجزاء تفترض ذلك — انظر القاعدتين في «أساليب الأصناف» أدناه. وثمة أمر لا حيلة للمعرض فيه: لكلٍّ من page-header و error-page عنوان h1 خاص، فتحمل هذه الصفحة عدة عناوين، بينما لا تحمل الشاشة الحقيقية إلا واحدًا.</p>
 
 <section class="ds-family">
-<h3>List screen</h3>
-<p class="ds-lead">The screen most apps spend most of their time on: a title bar, a toolbar, a run of rows, and a way through the rest of them.</p>
+<h3>شاشة القائمة</h3>
+<p class="ds-lead">الشاشة التي تقضي فيها معظم التطبيقات معظم وقتها: شريط عنوان، وشريط أدوات، وسلسلة صفوف، وطريقة للمرور على بقيّتها.</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial">
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">The screen&#39;s title bar: an h1, an optional subhead, and at most one primary action.</p>
+<p class="ds-lead">شريط عنوان الشاشة: عنوان h1، وعنوان فرعي اختياري، وإجراء رئيسي واحد على الأكثر.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Title, subhead and a primary action</p>
+<p class="ds-state">عنوان وعنوان فرعي وإجراء رئيسي</p>
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>Posts</h1>
@@ -120,7 +136,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Title only</p>
+<p class="ds-state">العنوان وحده</p>
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>Settings</h1>
@@ -134,11 +150,11 @@
 <!-- partial: list-bar -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">The toolbar at the top of a list card: the search form, and room to its right for a filter.</p>
+<p class="ds-lead">شريط الأدوات أعلى بطاقة القائمة: نموذج البحث، ومتّسع إلى جانبه لتصفية.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Search with a filter dropdown</p>
+<p class="ds-state">بحث مع قائمة تصفية منسدلة</p>
 <div class="rst-list"><div class="rst-lbar">
   <search><form class="rst-search" method="get" action="/posts">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -163,11 +179,11 @@
 <!-- partial: list-bar-search -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">The search form on its own, for a list that only searches. An ordinary method=&#34;get&#34; form.</p>
+<p class="ds-lead">نموذج البحث وحده، لقائمة لا تفعل غير البحث. نموذج ‎method=&#34;get&#34;‎ عادي.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">With a query already applied</p>
+<p class="ds-state">مع استعلام مطبَّق سلفًا</p>
 <div class="rst-list"><search><form class="rst-search" method="get" action="/comments">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" value="spam" placeholder="Search comments" aria-label="Search comments">
@@ -178,13 +194,13 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Empty, accessible name from the catalog</p>
+<p class="ds-state">فارغ، والاسم الوصفي من الفهرس</p>
 <div class="rst-list"><search><form class="rst-search" method="get" action="/comments">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" aria-label="بحث">
   <button class="rst-sr-only" type="submit">بحث</button>
 </form></search></div>
-<p class="ds-note">No Placeholder, so the input&#39;s accessible name comes from the framework catalog in this page&#39;s language.</p>
+<p class="ds-note">لا يوجد Placeholder، فيأتي الاسم الوصفي للحقل من فهرس الإطار بلغة هذه الصفحة.</p>
 </div>
 
 </article>
@@ -192,13 +208,13 @@
 <!-- partial: list-search-submit -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-search-submit</h4>
-<p class="ds-lead">The search form&#39;s real submit button: visually hidden, in the tab order, and it un-hides on keyboard focus.</p>
+<p class="ds-lead">زر الإرسال الحقيقي لنموذج البحث: مخفيّ بصريًّا، لكنه ضمن ترتيب Tab، ويظهر حين يصله تركيز لوحة المفاتيح.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Default label</p>
+<p class="ds-state">التسمية الافتراضية</p>
 <section class="rst-box"><button class="rst-sr-only" type="submit">بحث</button></section>
-<p class="ds-note">Nothing is visible here until you tab into it — that is the whole component.</p>
+<p class="ds-note">لا يظهر هنا شيء حتى تصل إليه بمفتاح Tab — وهذا هو المكوّن كله.</p>
 </div>
 
 </article>
@@ -206,11 +222,11 @@
 <!-- partial: list-row-action -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">One list row: the record&#39;s name as the primary link, a meta line, and at most one secondary action.</p>
+<p class="ds-lead">صفٌّ واحد من القائمة: اسم السجل رابطًا رئيسيًا، وسطر بيانات فرعية، وإجراء ثانوي واحد على الأكثر.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Lead marker, status and an action</p>
+<p class="ds-state">علامة في المقدّمة وحالة وإجراء واحد</p>
 <div class="rst-list"><div class="rst-row">
   <span class="rst-row__lead" data-lead="accent" aria-hidden="true">RN</span>
   <span class="rst-row__main"><a href="/posts/1">Release notes, August</a><small class="rst-row__sub">Published 2 August · 4 min read</small></span>
@@ -221,7 +237,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Name and meta line only</p>
+<p class="ds-state">الاسم وسطر البيانات الفرعية فقط</p>
 <div class="rst-list"><div class="rst-row">
   <span class="rst-row__main"><a href="/posts/2">Why we moved off the old runner</a><small class="rst-row__sub">Draft · saved 20 minutes ago</small></span>
 </div></div>
@@ -233,11 +249,11 @@
 <!-- partial: seg-tabs -->
 <article class="ds-partial">
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">A segmented control of server-rendered links. The current tab is aria-current on a link, nothing more.</p>
+<p class="ds-lead">عنصر مجزّأ من روابط يبنيها الخادم. التبويب الحالي ليس إلا ‎aria-current‎ على رابط، لا أكثر.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Two sections</p>
+<p class="ds-state">قسمان</p>
 <nav class="rst-seg-tabs" aria-label="Post sections"><a href="?tab=basics" aria-current="page">Basics</a><a href="?tab=advanced">Advanced</a></nav>
 
 </div>
@@ -247,11 +263,11 @@
 <!-- partial: dropdown -->
 <article class="ds-partial">
 <h4 class="rst-mono">dropdown</h4>
-<p class="ds-lead">A zero-JavaScript disclosure: a summary button over a panel of plain links.</p>
+<p class="ds-lead">عنصر يُفتح ويُغلق بلا أي JavaScript: زر summary فوق لوحة من روابط عادية.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">A filter menu with one choice applied</p>
+<p class="ds-state">قائمة تصفية بخيار واحد مطبَّق</p>
 <details class="rst-dropdown" name="rst-menus">
   <summary class="rst-btn rst-dropdown__summary" aria-label="Sort posts: newest first">Newest <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
   <div class="rst-dropdown__menu">
@@ -268,13 +284,13 @@
 <!-- partial: bulk-bar -->
 <article class="ds-partial">
 <h4 class="rst-mono">bulk-bar</h4>
-<p class="ds-lead">Select mode&#39;s header strip, replacing the list bar: the count, an escalate link, and the actions menu.</p>
+<p class="ds-lead">شريط ترويسة وضع التحديد، يحلّ محل شريط القائمة: العدد، ورابط لتوسيع التحديد، وقائمة الإجراءات.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Three rows selected</p>
+<p class="ds-state">ثلاثة صفوف محدَّدة</p>
 <div class="rst-list"><div class="rst-bulkbar"><a class="rst-bulkbar__close" href="/posts" aria-label="تم التحديد"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a><span class="rst-bulkbar__count">3 selected</span><a class="rst-bulkbar__escalate" href="/posts?select=all">Select all 412 matching</a><details class="rst-dropdown" name="rst-menus"><summary>Actions<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="rst-dropdown__menu"><button type="submit" name="action" value="export">Export</button><button type="submit" name="action" value="unpublish">Unpublish</button><button type="submit" name="action" value="delete" class="rst-danger">Delete…</button></div></details></div></div>
-<p class="ds-note">The destructive item is last: the first entry is the surrounding form&#39;s implicit-Enter default.</p>
+<p class="ds-note">العنصر المُتلِف يأتي أخيرًا: فالمدخل الأول هو ما يشغّله النموذج المحيط ضمنيًّا عند ضغط Enter.</p>
 </div>
 
 </article>
@@ -282,21 +298,21 @@
 <!-- partial: pagination -->
 <article class="ds-partial">
 <h4 class="rst-mono">pagination</h4>
-<p class="ds-lead">A numbered strip of ordinary links, so paging survives JavaScript being off.</p>
+<p class="ds-lead">شريط من روابط عادية مرقّمة، حتى يظل التنقّل بين الصفحات يعمل مع تعطيل JavaScript.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Middle of a long list</p>
+<p class="ds-state">في وسط قائمة طويلة</p>
 <nav class="rst-pagination" aria-label="Posts pages"><a href="/posts?page=3">Previous</a><a href="/posts?page=1">1</a><span class="rst-pagination__gap" aria-hidden="true">…</span><a href="/posts?page=3">3</a><span aria-current="page">4</span><a href="/posts?page=5">5</a><span class="rst-pagination__gap" aria-hidden="true">…</span><a href="/posts?page=9">9</a><a href="/posts?page=5">Next</a>
 </nav>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">First page, default accessible name</p>
+<p class="ds-state">الصفحة الأولى، بالاسم الوصفي الافتراضي</p>
 <nav class="rst-pagination" aria-label="ترقيم الصفحات"><span class="rst-pagination__disabled">Previous</span><span aria-current="page">1</span><a href="/posts?page=2">2</a><a href="/posts?page=2">Next</a>
 </nav>
-<p class="ds-note">No Label, so the nav&#39;s accessible name comes from the catalog.</p>
+<p class="ds-note">لا يوجد Label، فيأتي الاسم الوصفي لعنصر nav من الفهرس.</p>
 </div>
 
 </article>
@@ -304,11 +320,11 @@
 <!-- partial: empty-state -->
 <article class="ds-partial">
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">The blank-state card. An empty state teaches: it says what would be here and how to make one.</p>
+<p class="ds-lead">بطاقة الحالة الفارغة. الحالة الفارغة تُعلِّم: تقول ما الذي كان سيظهر هنا وكيف تصنع واحدًا.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">With a POST call to action</p>
+<p class="ds-state">مع دعوة إلى إجراء عبر POST</p>
 <div class="rst-empty">
   <h2 class="rst-empty__title">Nothing here yet</h2>
   <p class="rst-empty__body">No posts yet. Your first one is a good place to start.</p>
@@ -321,7 +337,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Sentence only</p>
+<p class="ds-state">الجملة وحدها</p>
 <div class="rst-empty">
   <p class="rst-empty__body">No comments on this post yet.</p>
 </div>
@@ -333,17 +349,17 @@
 </section>
 
 <section class="ds-family">
-<h3>Display</h3>
-<p class="ds-lead">The small pieces of vocabulary a screen is assembled from: status, identity, progress and the one alert shape.</p>
+<h3>العرض</h3>
+<p class="ds-lead">القطع الصغيرة من المفردات التي تُركَّب منها الشاشة: الحالة، والهوية، والتقدّم، وشكل التنبيه الوحيد.</p>
 
 <!-- partial: status-pill -->
 <article class="ds-partial">
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">A record&#39;s status as a tinted pill. State is never colour alone — the label is always visible text.</p>
+<p class="ds-lead">حالة السجل في هيئة شارة ملوّنة. الحالة لا تُنقل باللون وحده أبدًا، فالتسمية نصّ ظاهر دائمًا.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Default tone (neutral)</p>
+<p class="ds-state">النغمة الافتراضية (neutral)</p>
 <span class="rst-status" data-tone="neutral">Draft</span>
 
 </div>
@@ -377,11 +393,11 @@
 <!-- partial: badge -->
 <article class="ds-partial">
 <h4 class="rst-mono">badge</h4>
-<p class="ds-lead">An uppercase bordered chip for small static markers. Distinct from status-pill, which is record status.</p>
+<p class="ds-lead">شارة محاطة بإطار بحروف كبيرة، للعلامات الصغيرة الثابتة. وهي غير ‎status-pill‎ الذي يعبّر عن حالة السجل.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">No tone (the quiet default)</p>
+<p class="ds-state">بلا نغمة (الافتراضي الهادئ)</p>
 <span class="rst-badge">Draft</span>
 
 </div>
@@ -415,37 +431,37 @@
 <!-- partial: meter -->
 <article class="ds-partial">
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">A capacity bar with its number. The fraction is always text — a bar never carries the number alone.</p>
+<p class="ds-lead">شريط سعة مع رقمه. النسبة مكتوبة دائمًا، فالشريط وحده لا يحمل الرقم أبدًا.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Empty</p>
+<p class="ds-state">فارغ</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 0%"></i></span><span class="rst-meter__num">0/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Part way</p>
+<p class="ds-state">في منتصف الطريق</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 42%"></i></span><span class="rst-meter__num">210/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Nearly full</p>
+<p class="ds-state">يكاد يمتلئ</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 82%"></i></span><span class="rst-meter__num">412/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Full</p>
+<p class="ds-state">ممتلئ</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 100%"></i></span><span class="rst-meter__num">500/500</span></span>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Over budget</p>
+<p class="ds-state">تجاوز الحدّ</p>
 <span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 100%"></i></span><span class="rst-meter__num">700/500</span></span>
-<p class="ds-note">The fill is clamped to 100% in the partial; the number tells the truth.</p>
+<p class="ds-note">يُقصَر الملء عند 100% داخل الجزء، والرقم هو الذي يقول الحقيقة.</p>
 </div>
 
 </article>
@@ -453,23 +469,23 @@
 <!-- partial: person -->
 <article class="ds-partial">
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">Initials avatar, name and email: the identity cell for record types that are people.</p>
+<p class="ds-lead">صورة بالأحرف الأولى واسم وبريد: خلية الهوية لأنواع السجلات التي هي أشخاص.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Name and email</p>
+<p class="ds-state">الاسم والبريد</p>
 <a class="rst-person" href="/people/1"><span class="rst-person__av" aria-hidden="true">G</span><span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span><span class="rst-person__email">grace@example.com</span></span></a>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Large, the show-header size</p>
+<p class="ds-state">كبير، وهو مقاس ترويسة شاشة العرض</p>
 <a class="rst-person rst-person--lg" href="/people/2"><span class="rst-person__av" aria-hidden="true">A</span><span class="rst-person__meta"><span class="rst-person__name">Ada Lovelace</span><span class="rst-person__email">ada@example.com</span></span></a>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">No initial</p>
+<p class="ds-state">بلا حرف أول</p>
 <a class="rst-person" href="/people/3"><span class="rst-person__av rst-person__av--empty" aria-hidden="true"></span><span class="rst-person__meta"><span class="rst-person__name">Unclaimed invitation</span><span class="rst-person__email">invited@example.com</span></span></a>
 
 </div>
@@ -479,11 +495,11 @@
 <!-- partial: callout -->
 <article class="ds-partial">
 <h4 class="rst-mono">callout</h4>
-<p class="ds-lead">The one alert vocabulary: tinted strip, tone icon, optional bold title, one body paragraph.</p>
+<p class="ds-lead">مفردات التنبيه الوحيدة: شريط ملوّن، وأيقونة نغمة، وعنوان عريض اختياري، وفقرة متن واحدة.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Default tone (info), no title</p>
+<p class="ds-state">النغمة الافتراضية (info)، بلا عنوان</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><p>Posts are visible to members only until the site is published.</p></div></div>
 
 </div>
@@ -513,9 +529,9 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">negative, announced as an alert</p>
+<p class="ds-state">negative، ويُعلَن بوصفه تنبيهًا</p>
 <div class="rst-callout" data-tone="negative" role="alert"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div class="rst-callout__body"><strong>The import stopped</strong><p>Nothing was changed. Fix row 91 and try again.</p></div></div>
-<p class="ds-note">Alert adds role=&#34;alert&#34;. Reserve it for live problems, not ambient notes.</p>
+<p class="ds-note">يضيف Alert السمة ‎role=&#34;alert&#34;‎. احتفظ به للمشكلات الجارية لا للملاحظات العابرة.</p>
 </div>
 
 </article>
@@ -523,11 +539,11 @@
 <!-- partial: detail-list -->
 <article class="ds-partial">
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">A record&#39;s labelled facts as a definition list — the show screen&#39;s body. Mono marks machine-ish values.</p>
+<p class="ds-lead">حقائق السجل الموسومة في صورة قائمة تعريفات، وهي متن شاشة العرض. وتُعلَّم القيم ذات الطابع الآلي بـ Mono.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Four facts, one of them machine-ish</p>
+<p class="ds-state">أربع حقائق، إحداها ذات طابع آلي</p>
 <section class="rst-box"><dl class="rst-detail">
   <dt>Audience</dt>
   <dd>Members</dd>
@@ -546,11 +562,11 @@
 <!-- partial: notice -->
 <article class="ds-partial">
 <h4 class="rst-mono">notice</h4>
-<p class="ds-lead">A one-line confirmation after a redirect. Takes a plain string, not a dict, and renders nothing for an empty one.</p>
+<p class="ds-lead">تأكيد من سطر واحد بعد إعادة التوجيه. يأخذ نصًّا بسيطًا لا dict، ولا يرسم شيئًا إن كان فارغًا.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">A saved message</p>
+<p class="ds-state">رسالة حفظ</p>
 <p class="rst-notice" role="status">Post saved.</p>
 
 </div>
@@ -560,11 +576,11 @@
 <!-- partial: form-error -->
 <article class="ds-partial">
 <h4 class="rst-mono">form-error</h4>
-<p class="ds-lead">A form&#39;s summary error line, role=&#34;alert&#34;. Takes a plain string; renders nothing when there is no error.</p>
+<p class="ds-lead">سطر ملخّص أخطاء النموذج، ‎role=&#34;alert&#34;‎. يأخذ نصًّا بسيطًا، ولا يرسم شيئًا حين لا يوجد خطأ.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">A rejected submission</p>
+<p class="ds-state">إرسال مرفوض</p>
 <p class="rst-form-error" role="alert">That title is already taken.</p>
 
 </div>
@@ -574,21 +590,21 @@
 <!-- partial: job-status -->
 <article class="ds-partial">
 <h4 class="rst-mono">job-status</h4>
-<p class="ds-lead">A background job&#39;s polled fragment. The data-poll attribute is emitted only while the job runs — omitting it is how polling stops.</p>
+<p class="ds-lead">الجزء الذي يُستقصى من مهمة تعمل في الخلفية. لا تُكتب السمة data-poll إلا أثناء تشغيل المهمة، وحذفها هو طريقة إيقاف الاستقصاء.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Running</p>
+<p class="ds-state">قيد التنفيذ</p>
 
 <div class="rst-job" data-poll="/jobs/1/fragment" data-poll-every="2">
   <span class="rst-spin" aria-hidden="true"></span> <strong>Import</strong> is running — 128 of 400…
 </div>
 
-<p class="ds-note">This one polls: it is the only sample on the page that asks the network for anything, and on a static site it simply never resolves.</p>
+<p class="ds-note">هذه العيّنة تستقصي: وهي الوحيدة في الصفحة التي تطلب شيئًا من الشبكة، وفي موقع ساكن لا يأتيها ردّ أبدًا.</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Finished</p>
+<p class="ds-state">انتهى</p>
 
 <div class="rst-job">
   <strong>Import</strong> finished.
@@ -598,7 +614,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Failed</p>
+<p class="ds-state">فشل</p>
 
 <div class="rst-job">
   <strong>Import</strong> failed: row 91: no such column &#34;published&#34;
@@ -612,17 +628,17 @@
 </section>
 
 <section class="ds-family">
-<h3>Form</h3>
-<p class="ds-lead">Every control, in the states a real form puts it in. Each one sits in a padded rst-box, because that is the rule these partials assume.</p>
+<h3>النموذج</h3>
+<p class="ds-lead">كل عنصر تحكّم، في الحالات التي يضعه فيها نموذج حقيقي. وكلٌّ منها داخل ‎rst-box‎ ذي حشو، لأن هذه هي القاعدة التي تفترضها هذه الأجزاء.</p>
 
 <!-- partial: field -->
 <article class="ds-partial">
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">Label, input, optional hint, help and error — the general text-like control, with an explicit ID.</p>
+<p class="ds-lead">تسمية وحقل وتلميح اختياري ومساعدة وخطأ — عنصر التحكّم النصّي العام، بمعرّف صريح.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Bare</p>
+<p class="ds-state">مجرّد</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_bare">Title</label>
 <input class="rst-input" type="text" id="f_bare" name="f_bare">
 </div></form></section>
@@ -630,7 +646,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With a hint</p>
+<p class="ds-state">مع تلميح</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_hint">Slug <span class="rst-field__hint">(lowercase, no spaces)</span></label>
 <input class="rst-input" type="text" id="f_hint" name="f_hint">
 </div></form></section>
@@ -638,7 +654,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With help under the control</p>
+<p class="ds-state">مع مساعدة أسفل عنصر التحكّم</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_help">Email</label>
 <input class="rst-input" type="email" id="f_help" name="f_help" autocomplete="email" aria-describedby="f_help-help">
 <p class="rst-field__help" id="f_help-help">We only use this to send you replies.</p>
@@ -647,7 +663,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required</p>
+<p class="ds-state">مطلوب</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_required">Full name</label>
 <input class="rst-input" type="text" id="f_required" name="f_required" required>
 </div></form></section>
@@ -655,7 +671,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With an error</p>
+<p class="ds-state">مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_error">Email</label>
 <input class="rst-input" type="email" id="f_error" name="f_error" value="grace@" aria-invalid="true" aria-describedby="f_error-error">
 <p class="rst-field__error" id="f_error-error" role="alert">That does not look like an email address.</p>
@@ -664,7 +680,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Short</p>
+<p class="ds-state">قصير</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="f_short">Postcode</label>
 <input class="rst-input rst-input--short" type="text" id="f_short" name="f_short" value="D02 XY45">
 </div></form></section>
@@ -676,11 +692,11 @@
 <!-- partial: field-text -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">One labelled text input, ids derived from Name. The required marker&#39;s star is aria-hidden — the input&#39;s required attribute is the programmatic signal.</p>
+<p class="ds-lead">حقل نصّي واحد بتسمية، ومعرّفاته مشتقّة من Name. نجمة الإلزام مخفيّة بـ ‎aria-hidden‎، والإشارة البرمجية هي سمة required على الحقل.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Bare</p>
+<p class="ds-state">مجرّد</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_bare">Title</label>
   <input class="rst-input" id="ft_bare" name="ft_bare" type="text">
@@ -689,7 +705,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With a hint</p>
+<p class="ds-state">مع تلميح</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_hint">Headline</label>
   <input class="rst-input" id="ft_hint" name="ft_hint" type="text" aria-describedby="ft_hint-hint">
@@ -699,7 +715,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required</p>
+<p class="ds-state">مطلوب</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_required">Display name <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="ft_required" name="ft_required" type="text" autocomplete="nickname" required>
@@ -708,7 +724,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With an error</p>
+<p class="ds-state">مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ft_error">Title</label>
   <input class="rst-input" id="ft_error" name="ft_error" type="text" value="Release notes" aria-invalid="true" aria-describedby="ft_error-error">
@@ -722,11 +738,11 @@
 <!-- partial: field-textarea -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-textarea</h4>
-<p class="ds-lead">field-text&#39;s wrapper around a textarea.</p>
+<p class="ds-lead">غلاف field-text حول عنصر textarea.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Bare</p>
+<p class="ds-state">مجرّد</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_bare">Notes</label>
   <textarea class="rst-textarea" id="ta_bare" name="ta_bare" rows="3"></textarea>
@@ -735,7 +751,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With a hint</p>
+<p class="ds-state">مع تلميح</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_hint">Bio</label>
   <textarea class="rst-textarea" id="ta_hint" name="ta_hint" rows="3" aria-describedby="ta_hint-hint"></textarea>
@@ -745,7 +761,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">With an error</p>
+<p class="ds-state">مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_error">Summary</label>
   <textarea class="rst-textarea" id="ta_error" name="ta_error" rows="3" aria-invalid="true" aria-describedby="ta_error-error">…</textarea>
@@ -755,7 +771,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required</p>
+<p class="ds-state">مطلوب</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="ta_required">Reason for refund <span class="rst-field__required" aria-hidden="true">*</span></label>
   <textarea class="rst-textarea" id="ta_required" name="ta_required" rows="3" required></textarea>
@@ -768,11 +784,11 @@
 <!-- partial: field-select -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-select</h4>
-<p class="ds-lead">field&#39;s envelope around a native select. Past ten options the select arms the filterable combobox in select.js; the native select is still what the form submits.</p>
+<p class="ds-lead">غلاف field حول عنصر select أصلي. فإذا تجاوزت الخيارات عشرة فعّل الـ select صندوق التحرير والسرد القابل للتصفية في ‎select.js‎؛ ومع ذلك يظل ما يرسله النموذج هو الـ select الأصلي.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Three options — a native select</p>
+<p class="ds-state">ثلاثة خيارات — عنصر select أصلي</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_few">Role</label>
 <select class="rst-input" id="sel_few" name="sel_few"><option value="Admin" selected>Admin</option><option value="Editor">Editor</option><option value="Member">Member</option></select>
 </div></form></section>
@@ -780,16 +796,16 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Twelve options — the filterable combobox</p>
+<p class="ds-state">اثنا عشر خيارًا — صندوق التحرير والسرد القابل للتصفية</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_many">City</label>
 <select class="rst-input" id="sel_many" name="sel_many" data-rst-select data-rst-select-filter="اكتب للتصفية" data-rst-select-results="{n} نتائج" data-rst-select-result-one="نتيجة واحدة" aria-describedby="sel_many-help"><option value="Dublin" selected>Dublin</option><option value="Lisbon">Lisbon</option><option value="Madrid">Madrid</option><option value="Berlin">Berlin</option><option value="Rome">Rome</option><option value="Athens">Athens</option><option value="Helsinki">Helsinki</option><option value="Reykjavík">Reykjavík</option><option value="Warsaw">Warsaw</option><option value="Zagreb">Zagreb</option><option value="Tallinn">Tallinn</option><option value="Valletta">Valletta</option></select>
 <p class="rst-field__help" id="sel_many-help">Start typing to filter.</p>
 </div></form></section>
-<p class="ds-note">Past ten options the partial arms select.js. Below ten it does not: search over a handful of items is furniture, not help.</p>
+<p class="ds-note">إذا تجاوزت الخيارات عشرة فعّل الجزء select.js، وإن قلّت عن عشرة فلا: البحث بين حفنة عناصر أثاث لا عون.</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Twelve options, Plain — the enhancement opted out</p>
+<p class="ds-state">اثنا عشر خيارًا، Plain — مع رفض التحسين</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_plain">City</label>
 <select class="rst-input" id="sel_plain" name="sel_plain"><option value="Dublin" selected>Dublin</option><option value="Lisbon">Lisbon</option><option value="Madrid">Madrid</option><option value="Berlin">Berlin</option><option value="Rome">Rome</option><option value="Athens">Athens</option><option value="Helsinki">Helsinki</option><option value="Reykjavík">Reykjavík</option><option value="Warsaw">Warsaw</option><option value="Zagreb">Zagreb</option><option value="Tallinn">Tallinn</option><option value="Valletta">Valletta</option></select>
 </div></form></section>
@@ -797,7 +813,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">مطلوب، مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_error">Role</label>
 <select class="rst-input" id="sel_error" name="sel_error" required aria-invalid="true" aria-describedby="sel_error-error"><option value="Admin" selected>Admin</option><option value="Editor">Editor</option><option value="Member">Member</option></select>
 <p class="rst-field__error" id="sel_error-error" role="alert">Pick a role for this person.</p>
@@ -806,7 +822,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Hand-written, with optgroups</p>
+<p class="ds-state">مكتوب يدويًا، مع optgroup</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field"><label class="rst-field__label" for="sel_grouped">Region</label>
 <select class="rst-input" id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="اكتب للتصفية" data-rst-select-results="{n} نتائج" data-rst-select-result-one="نتيجة واحدة">
 <optgroup label="Europe"><option value="dublin" selected>Dublin</option><option value="lisbon">Lisbon</option><option value="warsaw">Warsaw</option></optgroup>
@@ -815,7 +831,7 @@
 <optgroup label="Africa"><option value="accra">Accra</option><option value="nairobi">Nairobi</option><option value="tunis">Tunis</option></optgroup>
 </select>
 </div></form></section>
-<p class="ds-note">Options here is a flat list, so grouped choices are markup the app writes. select.js renders the groups rather than dropping them; a hand-written select can also refuse the enhancement outright with data-rst-select=&#34;false&#34;.</p>
+<p class="ds-note">Options هنا قائمة مسطّحة، فالخيارات المجمّعة شيفرة يكتبها التطبيق نفسه. ويرسم select.js المجموعات بدل إسقاطها، كما يمكن لـ select مكتوب يدويًا أن يرفض التحسين كلّيًا بـ ‎data-rst-select=&#34;false&#34;‎.</p>
 </div>
 
 </article>
@@ -823,23 +839,23 @@
 <!-- partial: field-check -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-check</h4>
-<p class="ds-lead">The one toggle mechanism: a real checkbox skinned as a switch, keyboard and screen-reader intact.</p>
+<p class="ds-lead">آلية التبديل الوحيدة: مربّع تأشير حقيقي بمظهر مفتاح، مع بقاء لوحة المفاتيح وقارئ الشاشة على حالهما.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">On</p>
+<p class="ds-state">مُشغَّل</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><label class="rst-switch"><input type="checkbox" name="notify_on" checked><span class="rst-switch__track" aria-hidden="true"></span> Email me about replies</label></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Off</p>
+<p class="ds-state">مُطفأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><label class="rst-switch"><input type="checkbox" name="notify_off"><span class="rst-switch__track" aria-hidden="true"></span> Email me about mentions</label></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Disabled</p>
+<p class="ds-state">معطَّل</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><label class="rst-switch"><input type="checkbox" name="notify_disabled" disabled><span class="rst-switch__track" aria-hidden="true"></span> Email me a weekly digest</label></form></section>
 
 </div>
@@ -849,17 +865,17 @@
 <!-- partial: choice-field -->
 <article class="ds-partial">
 <h4 class="rst-mono">choice-field</h4>
-<p class="ds-lead">Option cards — the preferred radio or checkbox group. Title stays short; Desc explains.</p>
+<p class="ds-lead">بطاقات الخيارات — الشكل المفضّل لمجموعة أزرار الاختيار أو مربّعات التأشير. يبقى Title قصيرًا، ويتولّى Desc الشرح.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Pick one</p>
+<p class="ds-state">اختر واحدًا</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-choice"><legend>Plan</legend><div class="rst-choice__cards"><label><input type="radio" name="plan" value="free"><span><span class="rst-choice__title">Free</span><span class="rst-choice__desc">One project, community support.</span></span></label><label><input type="radio" name="plan" value="pro" checked><span><span class="rst-choice__title">Pro</span><span class="rst-choice__desc">Unlimited projects and a support inbox.</span></span></label></div></fieldset></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Pick any</p>
+<p class="ds-state">اختر ما شئت</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-choice"><legend>Send me</legend><div class="rst-choice__cards"><label><input type="checkbox" name="digest" value="replies" checked><span><span class="rst-choice__title">Replies</span><span class="rst-choice__desc">As they happen.</span></span></label><label><input type="checkbox" name="digest" value="weekly"><span><span class="rst-choice__title">Weekly digest</span><span class="rst-choice__desc">Monday mornings.</span></span></label></div></fieldset></form></section>
 
 </div>
@@ -869,21 +885,21 @@
 <!-- partial: field-date -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-date</h4>
-<p class="ds-lead">A native date input, plus the natural-language combobox datetime.js arms unless the caller passes Plain. Type &#34;tomorrow&#34; into it.</p>
+<p class="ds-lead">حقل تاريخ أصلي، ومعه صندوق التحرير والسرد الذي يفعّله datetime.js ويفهم اللغة الطبيعية، ما لم يمرّر المستدعي Plain. اكتب فيه &#34;غدًا&#34;.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Enhanced — type &#34;tomorrow&#34;, or &#34;in 3 weeks&#34;</p>
+<p class="ds-state">مُحسَّن — اكتب &#34;غدًا&#34; أو &#34;بعد 3 أسابيع&#34;</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_live">Publish on</label>
   <input class="rst-input" id="field-date_live" name="field-date_live" type="date" value="2026-09-04" aria-describedby="field-date_live-hint" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
   <small class="rst-field__hint" id="field-date_live-hint">The day it goes live.</small>
 </div></form></section>
-<p class="ds-note">The words it parses ride out on data-rst-date-words, resolved through this page&#39;s catalog: the field parses the language the page is in.</p>
+<p class="ds-note">الكلمات التي يحلّلها تخرج على ‎data-rst-date-words‎ مأخوذةً من فهرس هذه الصفحة: فالحقل يحلّل اللغة التي كُتبت بها الصفحة.</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">مطلوب، مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_error">Publish on <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="field-date_error" name="field-date_error" type="date" required aria-invalid="true" aria-describedby="field-date_error-error" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -893,7 +909,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Bounded</p>
+<p class="ds-state">بحدّين</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_bounded">Within this year</label>
   <input class="rst-input" id="field-date_bounded" name="field-date_bounded" type="date" value="2026-09-04" min="2026-01-01" max="2026-12-31" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -902,12 +918,12 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Plain — the bare native input</p>
+<p class="ds-state">Plain — الحقل الأصلي كما هو</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-date_plain">Publish on</label>
   <input class="rst-input" id="field-date_plain" name="field-date_plain" type="date" value="2026-09-04">
 </div></form></section>
-<p class="ds-note">No enhancement attributes at all, so datetime.js has nothing to find. The native picker still opens.</p>
+<p class="ds-note">لا توجد أي سمات تحسين، فلا يجد datetime.js شيئًا. ومع ذلك يظل المنتقي الأصلي يفتح.</p>
 </div>
 
 </article>
@@ -915,11 +931,11 @@
 <!-- partial: field-time -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-time</h4>
-<p class="ds-lead">The same envelope around a native time input. The enhancement reads a clock rather than a calendar.</p>
+<p class="ds-lead">الغلاف نفسه حول حقل وقت أصلي. والتحسين هنا يقرأ ساعة لا تقويمًا.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Enhanced — type &#34;half seven&#34;, or &#34;noon&#34;</p>
+<p class="ds-state">مُحسَّن — اكتب &#34;19:30&#34; أو &#34;الظهر&#34;</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_live">Doors open</label>
   <input class="rst-input" id="time_live" name="time_live" type="time" value="19:30" aria-describedby="time_live-hint" data-rst-time data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -929,7 +945,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">مطلوب، مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_error">Doors open <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="time_error" name="time_error" type="time" required aria-invalid="true" aria-describedby="time_error-error" data-rst-time data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -939,7 +955,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Bounded</p>
+<p class="ds-state">بحدّين</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_bounded">Between nine and eleven</label>
   <input class="rst-input" id="time_bounded" name="time_bounded" type="time" value="19:30" min="09:00" max="23:00" data-rst-time data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -948,7 +964,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Plain — the bare native input</p>
+<p class="ds-state">Plain — الحقل الأصلي كما هو</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="time_plain">Doors open</label>
   <input class="rst-input" id="time_plain" name="time_plain" type="time" value="19:30">
@@ -961,21 +977,21 @@
 <!-- partial: field-datetime -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-datetime</h4>
-<p class="ds-lead">A date and a time in one input, one value.</p>
+<p class="ds-lead">تاريخ ووقت في حقل واحد، وقيمة واحدة.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Enhanced — type &#34;tomorrow&#34;, or &#34;in 3 weeks&#34;</p>
+<p class="ds-state">مُحسَّن — اكتب &#34;غدًا&#34; أو &#34;بعد 3 أسابيع&#34;</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_live">Publish on</label>
   <input class="rst-input" id="field-datetime_live" name="field-datetime_live" type="datetime-local" value="2026-09-04T19:30" aria-describedby="field-datetime_live-hint" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
   <small class="rst-field__hint" id="field-datetime_live-hint">When it goes live.</small>
 </div></form></section>
-<p class="ds-note">The words it parses ride out on data-rst-date-words, resolved through this page&#39;s catalog: the field parses the language the page is in.</p>
+<p class="ds-note">الكلمات التي يحلّلها تخرج على ‎data-rst-date-words‎ مأخوذةً من فهرس هذه الصفحة: فالحقل يحلّل اللغة التي كُتبت بها الصفحة.</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Required, with an error</p>
+<p class="ds-state">مطلوب، مع خطأ</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_error">Publish on <span class="rst-field__required" aria-hidden="true">*</span></label>
   <input class="rst-input" id="field-datetime_error" name="field-datetime_error" type="datetime-local" required aria-invalid="true" aria-describedby="field-datetime_error-error" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -985,7 +1001,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Bounded</p>
+<p class="ds-state">بحدّين</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_bounded">Within this year</label>
   <input class="rst-input" id="field-datetime_bounded" name="field-datetime_bounded" type="datetime-local" value="2026-09-04T19:30" min="2026-01-01T00:00" max="2026-12-31T23:59" data-rst-date data-rst-date-words="{&#34;ago&#34;:&#34;قبل|منذ&#34;,&#34;am&#34;:&#34;صباحا|صباحاً|ص|am&#34;,&#34;at&#34;:&#34;في|الساعة&#34;,&#34;day&#34;:&#34;يوم|أيام|ايام|يومين&#34;,&#34;hour&#34;:&#34;ساعة|ساعات|س|ساعتين&#34;,&#34;in&#34;:&#34;خلال|بعد&#34;,&#34;last&#34;:&#34;الماضي|الماضية|السابق|السابقة&#34;,&#34;midnight&#34;:&#34;منتصف الليل&#34;,&#34;minute&#34;:&#34;دقيقة|دقائق|د|دقيقتين&#34;,&#34;month&#34;:&#34;شهر|الشهر|أشهر|اشهر|شهور|شهرين&#34;,&#34;next&#34;:&#34;القادم|القادمة|المقبل|المقبلة&#34;,&#34;noon&#34;:&#34;الظهر|ظهرا|ظهراً&#34;,&#34;pm&#34;:&#34;مساء|مساءً|م|pm&#34;,&#34;today&#34;:&#34;اليوم&#34;,&#34;tomorrow&#34;:&#34;غدا|غداً|بكرة|غدًا&#34;,&#34;week&#34;:&#34;أسبوع|الأسبوع|اسبوع|أسابيع|اسابيع|أسبوعين&#34;,&#34;yesterday&#34;:&#34;أمس|امس|البارحة&#34;}" data-rst-date-set="تعيين" data-rst-date-hint="جرّب: {example}" data-rst-date-pick="فتح التقويم" data-rst-date-results="{n} اقتراحات" data-rst-date-result-one="اقتراح واحد" data-rst-date-quick-today="اليوم" data-rst-date-quick-tomorrow="غدًا" data-rst-date-quick-next-week="بعد أسبوع" data-rst-date-quick-plus-1h="بعد ساعة" data-rst-date-quick-plus-2h="بعد ساعتين" data-rst-date-quick-end-of-day="نهاية ذلك اليوم" data-rst-date-quick-next-day="الوقت نفسه في اليوم التالي">
@@ -994,12 +1010,12 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Plain — the bare native input</p>
+<p class="ds-state">Plain — الحقل الأصلي كما هو</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-field">
   <label class="rst-field__label" for="field-datetime_plain">Publish on</label>
   <input class="rst-input" id="field-datetime_plain" name="field-datetime_plain" type="datetime-local" value="2026-09-04T19:30">
 </div></form></section>
-<p class="ds-note">No enhancement attributes at all, so datetime.js has nothing to find. The native picker still opens.</p>
+<p class="ds-note">لا توجد أي سمات تحسين، فلا يجد datetime.js شيئًا. ومع ذلك يظل المنتقي الأصلي يفتح.</p>
 </div>
 
 </article>
@@ -1007,11 +1023,11 @@
 <!-- partial: field-daterange -->
 <article class="ds-partial">
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">A start and an end as one labelled group. The two halves must carry different Names — each derives its ids from its own.</p>
+<p class="ds-lead">بداية ونهاية في مجموعة واحدة موسومة. يجب أن يحمل النصفان اسمَي Name مختلفين، فكلٌّ يشتقّ معرّفاته من اسمه.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Date and time, seeded</p>
+<p class="ds-state">تاريخ ووقت، بقيم مبدئية</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-field-range">
   <legend>When</legend>
   <div class="rst-field-row" data-rst-range="session">
@@ -1025,11 +1041,11 @@
 </div>
   </div>
 </fieldset></form></section>
-<p class="ds-note">Commit the start with the end still empty and the browser fills the end in an hour later. Nothing is seeded server-side.</p>
+<p class="ds-note">ثبّت البداية والنهاية ما تزال فارغة، فيملأ المتصفح النهاية بعد ساعة. ولا شيء مُعبّأ مسبقًا من الخادم.</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Dates only, with an error on the end</p>
+<p class="ds-state">تواريخ فقط، مع خطأ على طرف النهاية</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><fieldset class="rst-field-range">
   <legend>Booking</legend>
   <div class="rst-field-row" data-rst-range>
@@ -1052,11 +1068,11 @@
 <!-- partial: form-foot -->
 <article class="ds-partial">
 <h4 class="rst-mono">form-foot</h4>
-<p class="ds-lead">A form&#39;s closing row: one primary submit and an optional cancel link. Cancel is an anchor, because leaving a form is navigation.</p>
+<p class="ds-lead">صف الختام في النموذج: زر إرسال رئيسي واحد ورابط إلغاء اختياري. الإلغاء رابط لأن مغادرة النموذج تنقُّل بين الصفحات.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Save and cancel</p>
+<p class="ds-state">الحفظ والإلغاء</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
   <button class="rst-btn rst-btn--primary" type="submit">Save post</button>
   <a class="rst-btn" href="/posts">Back to posts</a>
@@ -1065,7 +1081,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Submit only</p>
+<p class="ds-state">الإرسال فقط</p>
 <section class="rst-box"><form class="rst-form" method="post" action="#"><div class="rst-form__foot">
   <button class="rst-btn rst-btn--primary" type="submit">Send invitation</button>
 </div></form></section>
@@ -1077,19 +1093,19 @@
 <!-- partial: confirm-form -->
 <article class="ds-partial">
 <h4 class="rst-mono">confirm-form</h4>
-<p class="ds-lead">The confirm page&#39;s action row. Destructive actions get their own route rather than a dialog, so there is nothing to script.</p>
+<p class="ds-lead">صف الإجراءات في صفحة التأكيد. للإجراءات المُتلِفة مسار خاص بها لا مربّع حوار، فلا شيء يحتاج إلى برمجة.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Destructive</p>
+<p class="ds-state">إجراء مُتلِف</p>
 <section class="rst-box"><form class="rst-form-actions" method="post" action="/posts/1/delete"><input type="hidden" name="csrf" value="tok-123"><input type="hidden" name="id" value="1"><a class="rst-btn rst-btn--ghost" href="/posts/1">إلغاء</a><button type="submit" class="rst-btn rst-btn--danger">Delete this post</button></form></section>
 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Ordinary, default cancel wording</p>
+<p class="ds-state">الحالة العادية، بصياغة الإلغاء الافتراضية</p>
 <section class="rst-box"><form class="rst-form-actions" method="post" action="/posts/1/publish"><a class="rst-btn rst-btn--ghost" href="/posts/1">إلغاء</a><button type="submit" class="rst-btn rst-btn--primary">Publish</button></form></section>
-<p class="ds-note">No CancelLabel, so the cancel link is worded from the catalog.</p>
+<p class="ds-note">لا يوجد CancelLabel، فتأتي صياغة رابط الإلغاء من الفهرس.</p>
 </div>
 
 </article>
@@ -1097,17 +1113,17 @@
 </section>
 
 <section class="ds-family">
-<h3>Route</h3>
-<p class="ds-lead">The pieces that are a whole response rather than a piece of one.</p>
+<h3>المسار</h3>
+<p class="ds-lead">القطع التي تكون استجابة كاملة لا جزءًا من استجابة.</p>
 
 <!-- partial: error-page -->
 <article class="ds-partial">
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">The whole body of an error response: the status, one honest sentence, a way back, and — for a 500 — the reference an operator can grep for.</p>
+<p class="ds-lead">متن استجابة الخطأ كاملًا: الحالة، وجملة صادقة واحدة، وطريق للعودة، وفي حالة 500 الرقم المرجعي الذي يبحث عنه المشغّل بـ grep.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">404 — not found</p>
+<p class="ds-state">404 — غير موجود</p>
 <div class="rst-error">
   <p class="rst-error__status">404</p>
   <h1 class="rst-error__title">لم نعثر على تلك الصفحة</h1>
@@ -1118,7 +1134,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">403 — forbidden</p>
+<p class="ds-state">403 — ممنوع</p>
 <div class="rst-error">
   <p class="rst-error__status">403</p>
   <h1 class="rst-error__title">لا يمكنك الاطلاع على هذا</h1>
@@ -1129,7 +1145,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">422 — unprocessable</p>
+<p class="ds-state">422 — تعذّرت المعالجة</p>
 <div class="rst-error">
   <p class="rst-error__status">422</p>
   <h1 class="rst-error__title">لم يتم إرسال ذلك</h1>
@@ -1140,7 +1156,7 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">500 — server error</p>
+<p class="ds-state">500 — خطأ في الخادم</p>
 <div class="rst-error">
   <p class="rst-error__status">500</p>
   <h1 class="rst-error__title">حدث خطأ من جانبنا</h1>
@@ -1148,11 +1164,11 @@
   <p class="rst-error__cta"><a class="rst-btn rst-btn--primary" href="/">صفحة البداية</a></p>
   <p class="rst-error__ref rst-mono" dir="auto">الرقم المرجعي: k3f9tq</p>
 </div>
-<p class="ds-note">A 500 is the one status with a reference: an operator can grep the logs for it.</p>
+<p class="ds-note">الحالة 500 هي الوحيدة التي تحمل رقمًا مرجعيًا: يمكن لمن يدير النظام البحث عنه في السجلات بـ grep.</p>
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">503 — unavailable</p>
+<p class="ds-state">503 — غير متاح</p>
 <div class="rst-error">
   <p class="rst-error__status">503</p>
   <h1 class="rst-error__title">الخدمة غير متاحة لفترة قصيرة</h1>
@@ -1163,14 +1179,14 @@
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Anything else — the generic pair</p>
+<p class="ds-state">أي حالة أخرى — الزوج العام</p>
 <div class="rst-error">
   <p class="rst-error__status">418</p>
   <h1 class="rst-error__title">هناك خطأ ما</h1>
   <p class="rst-error__body">تعذّر إتمام هذا الطلب. ارجع وحاول مرة أخرى.</p>
   <p class="rst-error__cta"><a class="rst-btn rst-btn--primary" href="/">صفحة البداية</a></p>
 </div>
-<p class="ds-note">Five statuses are worded in the framework catalog. A sixth falls back to the generic pair rather than rendering a missing key&#39;s name at a reader.</p>
+<p class="ds-note">خمس حالات مصاغة في فهرس الإطار. أما السادسة فترتدّ إلى الزوج العام بدل أن تعرض على القارئ اسم مفتاح مفقود.</p>
 </div>
 
 </article>
@@ -1178,11 +1194,11 @@
 <!-- partial: back-nav -->
 <article class="ds-partial">
 <h4 class="rst-mono">back-nav</h4>
-<p class="ds-lead">The link back up one level, above a show or edit screen.</p>
+<p class="ds-lead">رابط العودة مستوى واحدًا لأعلى، فوق شاشة العرض أو التحرير.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Back to a record</p>
+<p class="ds-state">العودة إلى سجل</p>
 <nav class="rst-back-nav"><a href="/orders/1">← Order AB3PX</a></nav>
 
 </div>
@@ -1192,11 +1208,11 @@
 <!-- partial: locale-menu -->
 <article class="ds-partial">
 <h4 class="rst-mono">locale-menu</h4>
-<p class="ds-lead">The language switcher: a details menu of one-field POST forms to /_locale, so the choice lands in the locale cookie and the reader stays on the same path.</p>
+<p class="ds-lead">مبدّل اللغة: قائمة details من نماذج POST بحقل واحد إلى ‎/_locale‎، فيستقر الاختيار في ملفّ تعريف اللغة ويبقى القارئ على المسار نفسه.</p>
 
 
 <div class="ds-sample">
-<p class="ds-state">Twelve languages, the current one marked</p>
+<p class="ds-state">اثنتا عشرة لغة، والحالية معلَّمة</p>
 <details class="rst-dropdown rst-locale" name="rst-menus">
   <summary>اللغة<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
   <div class="rst-dropdown__menu">
@@ -1214,7 +1230,7 @@
     <form method="post" action="/_locale"><input type="hidden" name="locale" value="ar"><input type="hidden" name="return" value="/design-system/"><button type="submit" lang="ar" aria-current="true">العربية</button></form>
   </div>
 </details>
-<p class="ds-note">This one posts to /_locale, which a static page has no server for — the switcher in this page&#39;s own header is the links-only version.</p>
+<p class="ds-note">هذه ترسل POST إلى ‎/_locale‎، ولا خادم لذلك في صفحة ساكنة — والمبدّل في ترويسة هذه الصفحة نفسها هو النسخة المبنيّة على الروابط وحدها.</p>
 </div>
 
 </article>
@@ -1222,14 +1238,14 @@
 </section>
 
 
-<div class="ds-head"><h2 id="idioms">Class idioms</h2></div>
-<p class="ds-lead">The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css — copy from here.</p>
+<div class="ds-head"><h2 id="idioms">أساليب الأصناف</h2></div>
+<p class="ds-lead">الأشكال التي لا يستطيع الجزء أن يكونها، لأنها تلفّ متنًا لا يعرفه إلا المستدعي: بطاقة القسم، وشبكة البيانات، وقائمة الإظهار، وإطار الهياكل نفسها. يقدّم ‎tokens.css‎ الأصناف ويكتب التطبيق الشيفرة. وكل ما تحت هذا هو بالضبط العيّنة التي يعيدها ‎ui.Styleguide‎، وهي العيّنة التي تقابلها اختبارات ui بـ ‎tokens.css‎ — انسخ من هنا.</p>
 
 <!-- idiom: box -->
 <article class="ds-partial">
 <h4 class="rst-mono">box</h4>
-<p class="ds-lead">The padded section card, and the heading that sits outside it.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Which card is which</strong><p>rst-list and rst-card have no padding by design: they hold a run of rows, and each row pads itself. Put a form, a paragraph, a strip of links or anything else that is not a row straight into one and it renders flush against the border — the text touching the edge is the tell. The padded card for arbitrary content is rst-box, with its heading as a sibling rst-box-head before it.</p></div></div>
+<p class="ds-lead">بطاقة القسم ذات الحشو، والعنوان الذي يقف خارجها.</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>أيّ بطاقة هي أيّ</strong><p>‏‎rst-list‎ و‎rst-card‎ بلا حشو عن قصد: فهما يحملان سلسلة صفوف، وكل صف يضع حشوه بنفسه. ضع فيهما مباشرةً نموذجًا أو فقرة أو شريط روابط أو أي شيء ليس صفًّا، فسيُرسم ملتصقًا بالحدّ — والنصّ الملامس للحافة هو العلامة. أما البطاقة ذات الحشو لأي محتوى فهي ‎rst-box‎، وعنوانها ‎rst-box-head‎ شقيقٌ يسبقها.</p></div></div>
 <div class="ds-sample"><div class="rst-box-head"><h2>Payout</h2><a class="rst-btn" href="/payout/edit">Edit</a></div>
 <section class="rst-box"><p>Everything on a screen sits inside boxes.</p><div class="rst-box-foot">Last updated 2 hours ago</div></section></div>
 </article>
@@ -1237,7 +1253,7 @@
 <!-- idiom: dropdown -->
 <article class="ds-partial">
 <h4 class="rst-mono">dropdown</h4>
-<p class="ds-lead">The details/summary menu behind header overflow menus and a list bar&#39;s filter, plus an applied filter as a removable chip.</p>
+<p class="ds-lead">قائمة ‎details/summary‎ التي تقف خلف قوائم الفائض في الترويسة وخلف تصفية شريط القائمة، ومعها تصفية مطبَّقة في هيئة شارة يمكن إزالتها.</p>
 
 <div class="ds-sample"><details class="rst-dropdown" name="rst-menus">
   <summary>Filter<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">Filter orders: Paid</span></summary>
@@ -1252,7 +1268,7 @@
 <!-- idiom: form-layout -->
 <article class="ds-partial">
 <h4 class="rst-mono">form-layout</h4>
-<p class="ds-lead">The classes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.</p>
+<p class="ds-lead">الأصناف التي تمنح النموذج إيقاعه وشريط الحفظ فيه. لا يُصدرها أي جزء، فهي تلفّ سلسلة حقول يؤلّفها المستدعي بنفسه.</p>
 
 <div class="ds-sample"><form class="rst-form-flow" method="post" action="/settings">
   <div class="rst-field">
@@ -1286,7 +1302,7 @@
 <!-- idiom: help -->
 <article class="ds-partial">
 <h4 class="rst-mono">help</h4>
-<p class="ds-lead">A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.</p>
+<p class="ds-lead">علامة استفهام محاطة بإطار تصل إلى مقالة مساعدة. تلميح CSS زينة فقط، أما الرابط فيحمل تسميته الكاملة بجملة تامة.</p>
 
 <div class="ds-sample"><a class="rst-help rst-tip" href="/help/orders" target="_blank" rel="noopener" aria-label="Help: orders" data-tip="About orders"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a></div>
 </article>
@@ -1294,8 +1310,8 @@
 <!-- idiom: list-grid -->
 <article class="ds-partial">
 <h4 class="rst-mono">list-grid</h4>
-<p class="ds-lead">The real data-table vocabulary: the card sets its columns once, rows only choose cells.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Screens stack vertically</strong><p>A screen is a column: page-header, then section-header &#43; card, then the next section-header &#43; card, in reading order. Do not compose a heading, a paragraph and a button side by side in a flex row. Horizontal arrangement is reserved for the idioms that ship it: rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.</p></div></div>
+<p class="ds-lead">مفردات جداول البيانات الحقيقية: البطاقة تحدّد أعمدتها مرة واحدة، والصفوف تختار الخلايا فحسب.</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>الشاشات تتراصّ رأسيًّا</strong><p>الشاشة عمود واحد: page-header، ثم section-header مع بطاقة، ثم section-header التالي مع بطاقته، بترتيب القراءة. لا تضع عنوانًا وفقرة وزرًّا جنبًا إلى جنب في صف flex. الترتيب الأفقي محجوز للأساليب التي تحمله أصلًا: rst-box-head و rst-field-row و rst-lbar وخلايا rst-lrow و rst-seg-tabs.</p></div></div>
 <div class="ds-sample"><div class="rst-card" style="--rst-cols: 2fr 110px 32px">
   <div class="rst-lrow rst-lrow--head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div class="rst-lrow">
@@ -1313,7 +1329,7 @@
 <!-- idiom: modal -->
 <article class="ds-partial">
 <h4 class="rst-mono">modal</h4>
-<p class="ds-lead">A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.</p>
+<p class="ds-lead">النافذة المشروطة عنوان مستقل بذاته، لا حالة في المتصفح: الصفحة تحتها معلّمة بـ inert، واللوحة فوقها، والإغلاق رابط عادي.</p>
 
 <pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-backdrop&#34; inert&gt;
   &lt;div class=&#34;rst-page&#34;&gt;&lt;h1&gt;Settings&lt;/h1&gt;&lt;/div&gt;
@@ -1332,14 +1348,14 @@
     &lt;/section&gt;
   &lt;/dialog&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: the overlay is fixed to the viewport, so rendering it here opened a modal over the whole gallery the moment this page loaded. That is the idiom telling you what it wants — a modal is its own URL, and this is not it. <a href="/design-system/day/ar/modal.html">See it live at the URL it belongs to</a>.</p>
+<p class="ds-note">معروض بوصفه شيفرة لا مرسومًا: الطبقة مثبّتة على إطار العرض، فرسمها هنا كان يفتح نافذة فوق المعرض كله لحظة تحميل الصفحة. هذا هو الأسلوب يخبرك بما يريد — للنافذة عنوان خاص بها، وهذه ليست إياه. <a href="/design-system/day/ar/modal.html">شاهده حيًّا على العنوان الذي ينتمي إليه</a>.</p>
 
 </article>
 
 <!-- idiom: selbox -->
 <article class="ds-partial">
 <h4 class="rst-mono">selbox</h4>
-<p class="ds-lead">The selection checkbox a list row wears in select mode. Its label restates the row&#39;s identity.</p>
+<p class="ds-lead">مربّع التأشير الذي يرتديه صف القائمة في وضع التحديد. وتسميته تعيد ذكر هويّة الصف.</p>
 
 <div class="ds-sample"><label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label></div>
 </article>
@@ -1347,7 +1363,7 @@
 <!-- idiom: shell-sidebar -->
 <article class="ds-partial">
 <h4 class="rst-mono">shell-sidebar</h4>
-<p class="ds-lead">The sidebar shell&#39;s chrome, collapsing below 800px into a details disclosure.</p>
+<p class="ds-lead">إطار الهيكل sidebar نفسه، وينطوي دون 800px إلى عنصر details.</p>
 
 <pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-shell-sidebar&#34;&gt;
   &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
@@ -1357,14 +1373,14 @@
   &lt;/aside&gt;
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/day/ar/shells/sidebar.html">Open the sidebar shell demo, where the same markup is a real page</a>.</p>
+<p class="ds-note">معروض بوصفه شيفرة لا مرسومًا: هذه العيّنة إطار صفحة كامل له معلَم main خاص به، وهو الآن داخل معلَم مثله. <a href="/design-system/day/ar/shells/sidebar.html">افتح عرض الهيكل sidebar، حيث تكون هذه الشيفرة نفسها صفحة حقيقية</a>.</p>
 
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial">
 <h4 class="rst-mono">shell-topbar</h4>
-<p class="ds-lead">The topbar shell&#39;s own chrome, as markup. Layout ships it as a whole template — this is what is inside.</p>
+<p class="ds-lead">إطار الهيكل topbar نفسه، في صورة شيفرة. يقدّمه Layout قالبًا كاملًا — وهذا ما بداخله.</p>
 
 <pre class="ds-src rst-mono"><code>&lt;div class=&#34;rst-shell-topbar&#34;&gt;
   &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
@@ -1376,14 +1392,14 @@
   &lt;main class=&#34;rst-page&#34; id=&#34;main&#34;&gt;Content.&lt;/main&gt;
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
-<p class="ds-note">Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one. <a href="/design-system/day/ar/shells/topbar.html">Open the topbar shell demo, where the same markup is a real page</a>.</p>
+<p class="ds-note">معروض بوصفه شيفرة لا مرسومًا: هذه العيّنة إطار صفحة كامل له معلَم main خاص به، وهو الآن داخل معلَم مثله. <a href="/design-system/day/ar/shells/topbar.html">افتح عرض الهيكل topbar، حيث تكون هذه الشيفرة نفسها صفحة حقيقية</a>.</p>
 
 </article>
 
 <!-- idiom: tblock -->
 <article class="ds-partial">
 <h4 class="rst-mono">tblock</h4>
-<p class="ds-lead">A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.</p>
+<p class="ds-lead">بطاقة محاطة بإطار لا يظهر متنها إلا ما دام مفتاحها مفعّلًا، عبر ‎:has()‎. المفتاح هو المرجع، والإظهار مجرد تسهيل في العرض.</p>
 
 <div class="ds-sample"><div class="rst-tblock">
   <label class="rst-tblock__head"><input type="checkbox" name="notify" checked>
@@ -1400,28 +1416,28 @@
 </article>
 
 
-<div class="ds-head"><h2 id="shells">Shells</h2></div>
-<p class="ds-lead">The page frame itself. rastrillo new writes one of these as templates/layout.html; a page fills its content hole and overrides whichever chrome blocks it needs. Each demo below is a whole page at its own URL — open one to see it at full width, where the sidebar's rail and the topbar's footer actually have room.</p>
+<div class="ds-head"><h2 id="shells">الهياكل</h2></div>
+<p class="ds-lead">إطار الصفحة نفسه. يكتب ‎rastrillo new‎ واحدًا منها باسم ‎templates/layout.html‎؛ فتملأ الصفحة فجوة المحتوى وتتجاوز ما تحتاجه من كتل الإطار. وكل عرض أدناه صفحة كاملة على عنوانها الخاص — افتح واحدًا لتراه بعرض كامل، حيث يجد شريط sidebar وتذييل topbar متّسعًا حقيقيًّا.</p>
 
 <section class="ds-shell">
 <h3>column</h3>
-<p class="ds-lead">The plain centred page every scaffolded app starts on: a skip link, a title, and the content column.</p>
-<iframe class="ds-frame" src="/design-system/day/ar/shells/column.html" title="The column shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="/design-system/day/ar/shells/column.html">Open the column shell</a></p>
+<p class="ds-lead">الصفحة البسيطة المتوسّطة التي يبدأ منها كل تطبيق مولَّد حديثًا: رابط تخطٍّ، وعنوان، وعمود المحتوى.</p>
+<iframe class="ds-frame" src="/design-system/day/ar/shells/column.html" title="الهيكل column، معروضًا بصفحة كاملة" loading="lazy"></iframe>
+<p><a class="rst-btn" href="/design-system/day/ar/shells/column.html">افتح الهيكل column</a></p>
 </section>
 
 <section class="ds-shell">
 <h3>topbar</h3>
-<p class="ds-lead">Brand, navigation and an account menu across the top, with a footer under the page.</p>
-<iframe class="ds-frame" src="/design-system/day/ar/shells/topbar.html" title="The topbar shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="/design-system/day/ar/shells/topbar.html">Open the topbar shell</a></p>
+<p class="ds-lead">العلامة والتنقّل وقائمة الحساب عبر الأعلى، وتذييل أسفل الصفحة.</p>
+<iframe class="ds-frame" src="/design-system/day/ar/shells/topbar.html" title="الهيكل topbar، معروضًا بصفحة كاملة" loading="lazy"></iframe>
+<p><a class="rst-btn" href="/design-system/day/ar/shells/topbar.html">افتح الهيكل topbar</a></p>
 </section>
 
 <section class="ds-shell">
 <h3>sidebar</h3>
-<p class="ds-lead">A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.</p>
-<iframe class="ds-frame" src="/design-system/day/ar/shells/sidebar.html" title="The sidebar shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="/design-system/day/ar/shells/sidebar.html">Open the sidebar shell</a></p>
+<p class="ds-lead">شريط تنقّل بجانب الصفحة، ينطوي دون عرض 800px إلى عنصر details. بلا JavaScript.</p>
+<iframe class="ds-frame" src="/design-system/day/ar/shells/sidebar.html" title="الهيكل sidebar، معروضًا بصفحة كاملة" loading="lazy"></iframe>
+<p><a class="rst-btn" href="/design-system/day/ar/shells/sidebar.html">افتح الهيكل sidebar</a></p>
 </section>
 
 
