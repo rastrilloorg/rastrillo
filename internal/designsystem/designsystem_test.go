@@ -614,11 +614,23 @@ const proseLeakFloor = 12
 // everywhere else, so the guard stays where the prose actually is
 // rather than being dropped for the whole tree.
 //
-// It exists because the shell demos and the gallery draw the same
-// words in two different roles, and only the page they are on tells
-// the two apart. Prefer this to widening proseLeakFloor: a floor
-// exempts every short key at once, and this exempts one key on one
-// kind of page, in writing.
+// ── The boundary this map sits on ────────────────────────────────────
+//
+// Sample content stays English on every page: the names, the routes and
+// the labels in the component samples are stand-ins, and translating
+// them would suggest the framework ships those words. The shell and
+// modal demos are the other way round — they impersonate a real
+// application, so their chrome speaks the language the reader chose.
+// The page says this out loud too, under Partials, in all twelve
+// languages; this comment is the same sentence where a maintainer meets
+// it rather than a reader.
+//
+// So this is not a bug to be tidied away by translating the fixture.
+// The shell demos and the gallery genuinely draw the same words in two
+// different roles, and only the page they are on tells the two apart.
+// Prefer this to widening proseLeakFloor: a floor exempts every short
+// key at once, and this exempts one key on one kind of page, in
+// writing.
 var proseFixtureCollisions = map[string]string{
 	// The shell demos' sample screen says this as its own chrome and
 	// translates it (page.go's shellTemplate). samples.go passes the

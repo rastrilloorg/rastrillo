@@ -799,6 +799,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 
 <div class="ds-head"><h2 id="partials">{{P "Partials"}}</h2></div>
 <p class="ds-lead">{{P "Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below. One thing a gallery cannot help: page-header and error-page each own an h1, so this page carries several, where a real screen has exactly one."}}</p>
+<p class="ds-note">{{P "Sample content stays English on every page: the names, the routes and the labels in these samples are stand-ins, and translating them would suggest the framework ships those words. The shell and modal demos are the other way round — they impersonate a real application, so their chrome speaks the language you chose."}}</p>
 {{range .Families}}
 <section class="ds-family">
 <h3>{{.Title}}</h3>
