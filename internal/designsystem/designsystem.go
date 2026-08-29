@@ -1,7 +1,7 @@
 // Package designsystem renders rastrillo.org/design-system: one static
 // page per theme × locale showing every partial, every class idiom and
 // every design token the framework ships, plus a full-page demo of each
-// of the three shells.
+// of the three shells and one of the modal route.
 //
 // It exists because a component library nobody can look at is a
 // specification, not a library. The page is the only place the whole
@@ -18,7 +18,7 @@
 // page that renders it. That is the point of committing it rather than
 // building it on the website.
 //
-// Determinism is a contract, not a nicety: 144 pages regenerated on
+// Determinism is a contract, not a nicety: 180 pages regenerated on
 // every partial change are only reviewable if the diff is the change.
 // Every map in here — Styleguide's samples, BaseCatalogs, the parsed
 // token blocks — is sorted before anything reaches output.
@@ -54,12 +54,13 @@ const mountPath = "/design-system"
 //
 //	index.html                            ink, en, assets at the tree root
 //	<theme>/<locale>/index.html           the same page, 36 times
+//	<theme>/<locale>/modal.html           36 modal demos, one per index
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
 //	rastrillo.js select.js datetime.js    the three scripts, once each
 //
 // The assets are shared by every page rather than copied per theme, so
-// the tree's size is 144 documents plus one copy of the library.
+// the tree's size is 180 documents plus one copy of the library.
 func Render() (map[string][]byte, error) {
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
@@ -83,6 +84,11 @@ func Render() (map[string][]byte, error) {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"index.html", err)
 			}
 			out[dir+"index.html"] = page
+			modal, err := renderModal(theme, locale)
+			if err != nil {
+				return nil, fmt.Errorf("designsystem: %s: %w", dir+"modal.html", err)
+			}
+			out[dir+"modal.html"] = modal
 			for _, shell := range ui.LayoutNames() {
 				demo, err := renderShell(theme, locale, shell)
 				if err != nil {
@@ -169,8 +175,8 @@ func interpolate(s string, args []any) string {
 
 // partialTree parses ui's whole partial set with T bound to one locale.
 // A fresh tree per locale rather than one tree cloned per request: this
-// runs 36 times at generate time, so the Clone discipline ui.FuncsWith
-// documents buys nothing here.
+// runs 72 times at generate time — an index page and a modal demo each
+// — so the Clone discipline ui.FuncsWith documents buys nothing here.
 func partialTree(locale string) (*template.Template, error) {
 	return template.New("designsystem").
 		Funcs(ui.Funcs(ui.WithT(translator(locale)))).

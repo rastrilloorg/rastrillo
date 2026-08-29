@@ -55,7 +55,7 @@ func render(t *testing.T) map[string][]byte {
 // (Styleguide's samples, BaseCatalogs, the parsed token blocks) is
 // sorted before it can reach output. Without this gate a Go map's
 // randomised iteration order would show up as a churning diff in a
-// committed tree of 144 pages.
+// committed tree of 180 pages.
 func TestRenderIsDeterministic(t *testing.T) {
 	first, second := render(t), render(t)
 	if !reflect.DeepEqual(first, second) {
@@ -327,6 +327,65 @@ func localeOfPath(p string) string {
 	return parts[1]
 }
 
+// No index page may render a live modal. `.rst-modal-overlay` is
+// `position: fixed; inset: 0; z-index: 10` and
+// `body:has(.rst-backdrop) { overflow: hidden }`, so the modal sample
+// rendered inline did not sit in the gallery's flow at all: every index
+// page loaded with a full-viewport modal over it, the content behind it
+// unscrollable, and its Close link — the sample's own `/settings` —
+// a 404. That was the live bug on rastrillo.org/design-system.
+//
+// The cure is the shells': escaped source in a <pre>, with the markup
+// live at its own URL. Escaped source cannot trip this gate, which is
+// what makes a plain string match the right instrument —
+// html/template writes the sample's quotes as &#34; inside the <code>
+// element, so `class="rst-modal-overlay"` occurs only where a browser
+// would actually lay the overlay out.
+//
+// The second half of the gate is the one that matters a year from now:
+// the source and the demo link have to be there. A gate that only
+// forbade the live markup would pass just as happily on a page that had
+// dropped the modal idiom altogether.
+func TestNoIndexPageOpensAModalOverTheGallery(t *testing.T) {
+	files := render(t)
+	names := make([]string, 0, len(files))
+	for name := range files {
+		if strings.HasSuffix(name, "index.html") {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		t.Fatal("no index pages rendered")
+	}
+	for _, name := range names {
+		body := string(files[name])
+		for _, live := range []string{`class="rst-modal-overlay"`, `class="rst-backdrop"`} {
+			if strings.Contains(body, live) {
+				t.Errorf("%s renders a live %s — the overlay is fixed to the viewport and covers the page", name, live)
+			}
+		}
+		if !strings.Contains(body, `class=&#34;rst-modal-overlay&#34;`) {
+			t.Errorf("%s does not show the modal sample as escaped source", name)
+		}
+		theme, locale := themeLocaleOfPath(name)
+		if href := modalHref(theme, locale); !strings.Contains(body, `href="`+href+`"`) {
+			t.Errorf("%s does not link its modal demo (%s)", name, href)
+		}
+	}
+}
+
+// themeLocaleOfPath reads a page's theme and locale out of its path.
+// The tree root is ink/en by definition, the same way localeOfPath
+// treats it.
+func themeLocaleOfPath(p string) (theme, locale string) {
+	parts := strings.Split(path.Clean(p), "/")
+	if len(parts) < 3 {
+		return "ink", "en"
+	}
+	return parts[0], parts[1]
+}
+
 // Every theme × locale × shell combination is present, plus the root
 // index and the seven shared assets — the tree's shape is part of its
 // contract with the website's sync script.
@@ -340,6 +399,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 		want = append(want, "theme-"+theme+".css")
 		for _, locale := range rastrillo.BaseLocales() {
 			want = append(want, fmt.Sprintf("%s/%s/index.html", theme, locale))
+			want = append(want, fmt.Sprintf("%s/%s/modal.html", theme, locale))
 			for _, shell := range ui.LayoutNames() {
 				want = append(want, fmt.Sprintf("%s/%s/shells/%s.html", theme, locale, shell))
 			}
