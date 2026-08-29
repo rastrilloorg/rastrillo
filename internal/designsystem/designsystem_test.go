@@ -583,16 +583,29 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 }
 
 // proseLeakFloor is the length above which an English prose string is a
-// sentence and below which it is a word. Only the sentences are gated.
+// sentence and below which it is a word. Only the sentences are swept
+// for; at the time of writing that is 148 of the 190 keys, and the
+// other 42 — "Theme", "Tokens", "Sections", "Shells", "Required",
+// "Type scale", "Pick one", every switcher label and every one-word
+// state — are not swept for at all.
 //
-// The four keys under the floor — "On", "Full", "Failed", "Display" —
-// all occur on the Japanese page as sample data rather than as the
-// page's own voice: "Failed" and "Full" are status-pill labels a
-// fixture chose, "Display" is inside the count line's "Displaying
-// 1–20", and "On" is a substring of half the English in the escaped
-// markup. Gating them would fail on fixtures, which is the opposite of
-// what this gate is for. Twelve characters is the shortest key that is
-// a phrase; below it, matching a bare word proves nothing either way.
+// That is a smaller hole than it sounds, because a short label is the
+// PARITY gate's job, not this one's. TestEveryProseKeyIsTranslated
+// walks every key in all twelve locales, so a switcher label with no
+// Japanese translation fails the build there. What the floor gives up
+// is only the second, belt-and-braces proof that the translation
+// reached the page — for the strings where that proof cannot be had.
+//
+// It cannot be had because a bare English word occurs on a translated
+// page for reasons that are nothing to do with prose. Four keys
+// actually collide today, and they are the justification for the floor
+// rather than an exhaustive list of what it exempts: "Failed" and
+// "Full" are status-pill labels a fixture chose, "Display" is inside
+// the count line's "Displaying 1–20", and "On" is a substring of half
+// the English in the page's sample data. Gating those would fail on
+// fixtures, which is the opposite of what this gate is for. Twelve
+// characters is the shortest key that is a phrase; below it, matching a
+// bare word proves nothing either way.
 const proseLeakFloor = 12
 
 // escapedSource strips the <pre class="ds-src"> blocks out of a page.
@@ -648,23 +661,47 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 		}
 	}
 
-	for _, locale := range nonEnglish() {
-		page := escapedSource(string(files[RootTheme()+"/"+locale+"/index.html"]))
+	// Every page in a language that is not English, not just the
+	// galleries: the modal demo and the three shell demos are 144 of
+	// the tree's 181 documents, and they say prose of their own. A
+	// sweep over the index pages alone let a brand-new English sentence
+	// in modalTemplate through every gate in this file.
+	names := make([]string, 0, len(files))
+	for name := range files {
+		if strings.HasSuffix(name, ".html") && localeOfPath(name) != "en" {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	// Asserted, not assumed: a refactor that quietly narrowed what this
+	// loop walks would leave the gate passing over fewer pages, which
+	// is the failure mode it was just extended to fix. Per theme, per
+	// non-English locale: an index, a modal demo and one page per shell.
+	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (2 + len(ui.LayoutNames())); len(names) != want {
+		t.Errorf("sweeping %d translated pages, want %d", len(names), want)
+	}
+
+	sentences := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if len([]rune(key)) >= proseLeakFloor {
+			sentences = append(sentences, key)
+		}
+	}
+
+	for _, name := range names {
+		page := escapedSource(string(files[name]))
 		if page == "" {
-			t.Errorf("no %s index page", locale)
+			t.Errorf("%s is empty", name)
 			continue
 		}
 		for _, s := range proseSentinels {
 			if strings.Contains(page, s) {
-				t.Errorf("%s page still says %q", locale, s)
+				t.Errorf("%s still says %q", name, s)
 			}
 		}
-		for _, key := range keys {
-			if len([]rune(key)) < proseLeakFloor {
-				continue
-			}
+		for _, key := range sentences {
 			if strings.Contains(page, key) {
-				t.Errorf("%s page carries the English %q", locale, key)
+				t.Errorf("%s carries the English %q", name, key)
 			}
 		}
 	}
@@ -789,5 +826,120 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	}
 	if !strings.Contains(page, `:root[data-rst-js] .ds-scheme`) {
 		t.Error("the page never reveals the scheme toggle for a reader who has JavaScript")
+	}
+}
+
+// ── English that never reaches a gate at all ─────────────────────────
+//
+// The two gates above both work off the prose TABLE: one checks every
+// key is translated, the other checks no key's English reaches a
+// translated page. Neither can see a sentence that was never a key —
+// an author who writes <p>Some new English.</p> straight into a
+// template has added a string the page says in twelve languages'
+// worth of pages and in one language, and nothing notices.
+//
+// That is the hole this gate closes, and it closes it at the source
+// rather than in the output: every run of visible English in the
+// three page templates must either go through P, or be named below as
+// fixture. Extending the leak sweep to the modal and shell demos —
+// which was the other half of this fix — does not help here, because
+// there is no key to sweep for.
+
+var (
+	// A template action. Non-greedy over any character, because the
+	// argument to P routinely contains a single brace: {language} in
+	// the switcher's screen-reader text, {theme} in the tokens lead.
+	templateAction = regexp.MustCompile(`(?s)\{\{.*?\}\}`)
+	// A style or script element, taken whole. Stripped first: dsCSS is
+	// concatenated into indexTemplate, and CSS is full of the > and {
+	// characters the passes below are looking for.
+	templateBlock = regexp.MustCompile(`(?s)<(style|script)\b.*?</(style|script)>`)
+	templateTag   = regexp.MustCompile(`<[^>]*>`)
+	// The attributes whose values a person reads or hears. Everything
+	// else in a tag is machinery.
+	templateSpokenAttr = regexp.MustCompile(`\b(title|aria-label|alt|placeholder)="([^"]*)"`)
+	templateLetter     = regexp.MustCompile(`\p{L}`)
+)
+
+// templateFixtures is every run of English the three page templates are
+// allowed to write literally: the sample screen's own content, the
+// product's name, and the type specimen. It is the complete inventory
+// of English that stays English on a Japanese page, which makes it
+// worth reading as documentation and not only as an allowlist.
+//
+// Adding to it is a decision — this string is data, not the page
+// speaking — and it should be a rare one. Everything the page says in
+// its own voice goes through P instead.
+var templateFixtures = map[string]bool{
+	// The product's name, in the shell demos' brand slot.
+	"rastrillo": true,
+	// The type specimen beside each font-size token.
+	"Ag": true,
+	// The shell demos' sample screen: its nav, its section headings,
+	// its column headers, its rows, and its count line.
+	"Posts":                           true,
+	"Comments":                        true,
+	"Settings":                        true,
+	"Recent":                          true,
+	"Post":                            true,
+	"Status":                          true,
+	"Release notes, August":           true,
+	"Published 2 August":              true,
+	"Why we moved off the old runner": true,
+	"Draft":                           true,
+	"Displaying":                      true,
+	"of":                              true,
+	// The modal demo's sample screen: the section it is settings for,
+	// and the three tabs in the panel's rail.
+	"Account":       true,
+	"Profile":       true,
+	"Billing":       true,
+	"Notifications": true,
+}
+
+// literalText pulls every run of visible English out of one template:
+// the text between tags, and the values of the attributes a person
+// reads or hears. Punctuation and digits are dropped — an em dash, a
+// full stop and "1–2" are not English.
+func literalText(src string) []string {
+	s := templateBlock.ReplaceAllString(src, "\x00")
+	s = templateAction.ReplaceAllString(s, "\x00")
+	var out []string
+	keep := func(chunk string) {
+		if c := strings.TrimSpace(chunk); c != "" && templateLetter.MatchString(c) {
+			out = append(out, strings.Join(strings.Fields(c), " "))
+		}
+	}
+	for _, m := range templateSpokenAttr.FindAllStringSubmatch(s, -1) {
+		keep(m[2])
+	}
+	for _, chunk := range strings.Split(templateTag.ReplaceAllString(s, "\x00"), "\x00") {
+		keep(chunk)
+	}
+	return out
+}
+
+// Every word the page templates say out loud goes through P, or is
+// named as fixture. This is the gate that catches a new English
+// sentence written straight into a template — the one thing the prose
+// table's own gates cannot see, because a string nobody registered is
+// not a key.
+func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
+	for _, tt := range []struct{ name, src string }{
+		{"indexTemplate", indexTemplate},
+		{"modalTemplate", modalTemplate},
+		{"shellTemplate", shellTemplate},
+	} {
+		found := literalText(tt.src)
+		if len(found) == 0 {
+			t.Errorf("%s: no literal text found at all — the extractor has stopped working, and this gate with it", tt.name)
+		}
+		for _, s := range found {
+			if templateFixtures[s] {
+				continue
+			}
+			t.Errorf("%s writes %q literally. If the page is saying it, wrap it in {{P …}} and translate it in prose.go; "+
+				"if it is sample data, add it to templateFixtures and say what it is.", tt.name, s)
+		}
 	}
 }
