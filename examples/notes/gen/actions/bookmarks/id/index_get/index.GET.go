@@ -18,18 +18,18 @@ import (
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	sess, ok := sessions.Current(r)
 	if !ok {
-		http.Error(w, "signed out", http.StatusForbidden)
+		view.Forbidden(ctx, w, r)
 		return
 	}
 	store := bookmarksstore.New(ctx.DB)
 	n, err := store.GetBookmark(r.Context(), bookmarksstore.GetBookmarkParams{ID: id, Owner: sess.Subject})
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	if err != nil {

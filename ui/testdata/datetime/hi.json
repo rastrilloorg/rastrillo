@@ -1,0 +1,43 @@
+[
+  {"id": "today", "input": "आज", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "kal-alone-is-tomorrow", "input": "कल", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday-is-spelled-out", "input": "बीता कल", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "yesterday-second-spelling", "input": "गुज़रा कल", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+
+  {"id": "in-3-days", "input": "3 दिन बाद", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-3-days-in-devanagari-digits", "input": "३ दिन बाद", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks", "input": "2 सप्ताह बाद", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago", "input": "2 दिन पहले", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "2 घंटे बाद", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "30 मिनट बाद", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "अगला सप्ताह", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "पिछला सप्ताह", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "अगला महीना", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "शुक्र", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "अगला सोमवार", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "पिछला सोमवार", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+
+  {"id": "day-month", "input": "25 दिसंबर", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-in-devanagari-digits", "input": "२५ दिसंबर", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-year", "input": "25 दिसंबर 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "दिसंबर 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+
+  {"id": "noon", "input": "दोपहर", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "मध्यरात्रि", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "multi-word-midnight", "input": "आधी रात", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "आधी रात कल", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "the-at-particle-follows-the-hour", "input": "कल 6 बजे", "now": "2026-08-28T10:30", "expected": "2026-08-29T06:00"},
+  {"id": "evening-marker", "input": "6 शाम", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-marker", "input": "9 सुबह", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+  {"id": "tomorrow-and-a-clock", "input": "कल 18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
+]

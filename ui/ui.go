@@ -204,6 +204,9 @@ var shimJS []byte
 //go:embed select.js
 var selectJS []byte
 
+//go:embed datetime.js
+var datetimeJS []byte
+
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
 // layout:
@@ -264,6 +267,24 @@ func ShimJS() []byte { return shimJS }
 // enough to read in one sitting. An app that never renders a select past
 // ten options can delete it and the script tag; nothing else changes.
 func SelectJS() []byte { return selectJS }
+
+// DatetimeJS returns datetime.js — the date fields' natural-language
+// combobox, on exactly the same terms as ShimJS and SelectJS:
+// delivered once by rastrillo new, app-owned from then on, inert until
+// an input opts in with data-rst-date or data-rst-time, which
+// field-date, field-time, field-datetime and field-daterange emit
+// unless the caller passes Plain.
+//
+// It is the largest of the three because it carries a parser, and it is
+// still its own file for the same reason the other two are: an app that
+// never renders a date field can delete it and its script tag, and an
+// app that keeps it can read the whole thing. It holds no month names,
+// no weekday names and no English vocabulary — the calendar names come
+// from Intl in the page's own language, and the words it matches on
+// ("tomorrow", "next", "in") ride out on data-rst-date-words from the
+// request's catalog. Like select.js it does keep English fallbacks for
+// the labels it renders, for the field that arrives without them.
+func DatetimeJS() []byte { return datetimeJS }
 
 // layoutNames lists the shipped shells, column first: it is the plain
 // centred page every scaffolded app starts on, and the two chrome

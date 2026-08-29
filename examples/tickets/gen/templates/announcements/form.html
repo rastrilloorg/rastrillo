@@ -14,7 +14,9 @@
                        for New
        Errors          map[string]string, optional — a validation
                        message per field name, set only on a 400
-                       re-render
+                       re-render; each value is resolved through T,
+                       so a catalog key localises and a plain
+                       sentence renders as written
        BasicsAction    string, required when !IsNew — the
                        edit-basics POST target (this resource has
                        no Advanced fields, so there is no second
@@ -22,14 +24,14 @@
 {{define "content"}}
 {{if .IsNew}}
 <form class="rst-form" method="post" action="/admin/announcements">
-{{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" .Errors.Title "Required" true}}
-{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
+{{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" (T (index .Errors "Title")) "Required" true}}
+{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" (T (index .Errors "Body"))}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T "ui.cancel")}}
 </form>
 {{else}}
 <form class="rst-form" method="post" action="{{.BasicsAction}}">
-{{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" .Errors.Title "Required" true}}
-{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
+{{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" (T (index .Errors "Title")) "Required" true}}
+{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" (T (index .Errors "Body"))}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T "ui.cancel")}}
 </form>
 {{end}}

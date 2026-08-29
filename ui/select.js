@@ -7,12 +7,15 @@
 
    It is a separate file rather than more of rastrillo.js so that both
    stay small enough for an app owner to read in one sitting — the shim
-   holds itself to 8KB and a full ARIA combobox would have doubled it.
+   holds itself to 8KB and a full ARIA combobox would have doubled it;
+   this one holds itself to 12KB.
    Both are app-owned from the moment they are scaffolded.
 
    Vocabulary:
      data-rst-select                 on a <select>: mirror a filterable
                                      ARIA 1.2 combobox onto it
+     data-rst-select="false"         never; stay a native select at any
+                                     size
      data-rst-select-filter          placeholder for the filter input
      data-rst-select-results         live-region text, {n} substituted
      data-rst-select-result-one      live-region text for exactly one
@@ -39,7 +42,19 @@ function combo(native) {
   if (native.dataset.rstEnhanced) return; // idempotent: safe to re-scan
   native.dataset.rstEnhanced = "true";
 
-  var options = Array.prototype.slice.call(native.options);
+  // The list mirrors the select's own shape rather than flattening it:
+  // an <optgroup> the author wrote to make a long list readable becomes
+  // a group in the popup, and loose <option> children sit at the top
+  // level as a group with no label. native.options would have been
+  // shorter and would have silently thrown the headings away.
+  var groups = [];
+  Array.prototype.forEach.call(native.children, function (el) {
+    if (el.tagName === "OPTGROUP") {
+      groups.push({ label: el.label, options: Array.prototype.slice.call(el.querySelectorAll("option")) });
+    } else if (el.tagName === "OPTION") {
+      groups.push({ label: "", options: [el] });
+    }
+  });
   var id = native.id;
   var listId = id + "-listbox";
   var filterLabel = native.getAttribute("data-rst-select-filter") || "Type to filter";
@@ -114,24 +129,58 @@ function combo(native) {
     close();
   }
 
+  // One pickable row. Its index is its position in `shown`, which is
+  // the keyboard order — headings never enter it, so arrowing down
+  // steps option to option straight across a group boundary.
+  function row(o) {
+    var li = document.createElement("li");
+    li.id = listId + "-" + shown.length;
+    li.className = "rst-combo__option";
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", o.value === native.value ? "true" : "false");
+    li.textContent = o.text;
+    li.addEventListener("mousedown", function (e) {
+      e.preventDefault(); // keep focus; blur would undo the pick
+      commit(o);
+    });
+    shown.push(o);
+    return li;
+  }
+
   function draw(filter) {
     var needle = filter.trim().toLowerCase();
-    shown = options.filter(function (o) {
-      return o.value !== "" && o.text.toLowerCase().indexOf(needle) !== -1;
-    });
+    shown = [];
     list.innerHTML = "";
-    shown.forEach(function (o, i) {
-      var li = document.createElement("li");
-      li.id = listId + "-" + i;
-      li.className = "rst-combo__option";
-      li.setAttribute("role", "option");
-      li.setAttribute("aria-selected", o.value === native.value ? "true" : "false");
-      li.textContent = o.text;
-      li.addEventListener("mousedown", function (e) {
-        e.preventDefault(); // keep focus; blur would undo the pick
-        commit(o);
+    groups.forEach(function (g) {
+      var matched = g.options.filter(function (o) {
+        return o.value !== "" && o.text.toLowerCase().indexOf(needle) !== -1;
       });
-      list.appendChild(li);
+      // A group filtered down to nothing takes its heading with it: a
+      // heading over no rows is a lie about what is there.
+      if (!matched.length) return;
+      var into = list;
+      if (g.label) {
+        // The group's name lives on aria-label, so the heading itself is
+        // furniture — hidden from the accessibility tree, out of the
+        // keyboard order, announced once as the group it names.
+        var box = document.createElement("li");
+        box.setAttribute("role", "group");
+        box.setAttribute("aria-label", g.label);
+        // <li> cannot hold <li>, so the rows nest in a list of their
+        // own; role=none keeps it out of the accessibility tree, which
+        // leaves the options owned by the group.
+        into = document.createElement("ul");
+        into.className = "rst-combo__rows";
+        into.setAttribute("role", "none");
+        var head = document.createElement("li");
+        head.className = "rst-select__group";
+        head.setAttribute("aria-hidden", "true");
+        head.textContent = g.label;
+        into.appendChild(head);
+        box.appendChild(into);
+        list.appendChild(box);
+      }
+      matched.forEach(function (o) { into.appendChild(row(o)); });
     });
     list.hidden = shown.length === 0;
     input.setAttribute("aria-expanded", shown.length ? "true" : "false");
@@ -146,7 +195,9 @@ function combo(native) {
     if (list.hidden) draw(input.value);
     if (!shown.length) return;
     active = (active + delta + shown.length) % shown.length;
-    Array.prototype.forEach.call(list.children, function (li, i) {
+    // The rows, not list.children: a grouped list's children are the
+    // groups, and the headings inside them are not stops.
+    list.querySelectorAll('[role="option"]').forEach(function (li, i) {
       li.classList.toggle("is-active", i === active);
     });
     input.setAttribute("aria-activedescendant", listId + "-" + active);
@@ -192,7 +243,14 @@ function combo(native) {
 // the shim swaps in a polled fragment. Today nothing does: a select
 // arriving inside a replacement stays native — correct, not enhanced.
 function scan() {
-  document.querySelectorAll("select[data-rst-select]").forEach(combo);
+  document.querySelectorAll("select[data-rst-select]").forEach(function (el) {
+    // data-rst-select="false" is the markup-side opt-out: a select that
+    // says no stays native at any size. It has to be checked rather
+    // than selected against, because to CSS the attribute is simply
+    // present. field-select opts out the other way, by never emitting
+    // the attribute at all; this is for markup written by hand.
+    if (el.dataset.rstSelect !== "false") combo(el);
+  });
 }
 
 if (document.readyState === "loading") {

@@ -1,0 +1,43 @@
+{{/* field-daterange — a start and an end as one labelled group: a
+     fieldset for the pair, two of the singular date partials inside a
+     rst-field-row, and the data-rst-range marker that tells
+     ui/datetime.js the two inputs belong together.
+
+     Composition works here where it does not in the field family: this
+     partial passes a whole sub-dict straight through to another define
+     ({{template "field-datetime" .Start}}), which Go templates do
+     support — what they cannot do is capture a rendered fragment into a
+     variable, which is what a shared wrapper would need.
+
+     Seed is a browser-side convenience, not a default value: with
+     "session", committing a start with the end still empty fills the end
+     in an hour later. Server-side nothing is seeded, so a submission
+     with scripts off is exactly what the person typed.
+
+     Keys:
+       Legend        string, required — the group's name
+       LegendHidden  bool, optional — keep the accessible name, drop the
+                     visible heading
+       Kind          string, optional — "datetime" (default) or "date",
+                     the input type both halves get
+       Seed          string, optional — "session" seeds end = start + 1h
+                     once the start is committed
+       Start, End    dicts, required — each the single-field contract of
+                     field-datetime/field-date (Name, Label, Value, Min,
+                     Max, Required, Hint, Error, Plain). Their Names must
+                     differ: each half derives its input id and its
+                     hint/error ids from its own Name, so a shared Name
+                     duplicates every id and points both halves'
+                     aria-describedby at the wrong messages. */}}
+{{define "field-daterange"}}<fieldset class="rst-field-range">
+  <legend{{if .LegendHidden}} class="rst-sr-only"{{end}}>{{.Legend}}</legend>
+  <div class="rst-field-row" data-rst-range{{with .Seed}}="{{.}}"{{end}}>
+    {{- if eq (or .Kind "datetime") "date"}}
+    {{template "field-date" .Start}}
+    {{template "field-date" .End}}
+    {{- else}}
+    {{template "field-datetime" .Start}}
+    {{template "field-datetime" .End}}
+    {{- end}}
+  </div>
+</fieldset>{{end}}

@@ -3,6 +3,7 @@ package form
 import (
 	"net/http"
 	"strings"
+	"time"
 )
 
 // Kind is how a Field's submitted text is read. The zero value is
@@ -21,6 +22,20 @@ const (
 	// what it refuses). The echo keeps the raw text so a rejected
 	// "12.345" re-renders as typed, and an empty optional Money is 0.
 	Money Kind = "money"
+	// Date parses the wire format "2006-01-02" (time.DateOnly) via
+	// time.ParseInLocation in Field.Location (nil = time.UTC). The
+	// echo keeps the raw text; an empty optional Date is the zero
+	// time.Time, never an error.
+	Date Kind = "date"
+	// Time parses the wire format "15:04" — a bare clock reading, no
+	// location involved. The echo keeps the raw text; an empty
+	// optional Time reports ok=false from Parsed.Time, never an error.
+	Time Kind = "time"
+	// DateTime parses the wire format "2006-01-02T15:04" via
+	// time.ParseInLocation in Field.Location (nil = time.UTC), same as
+	// Date. The echo keeps the raw text; an empty optional DateTime is
+	// the zero time.Time, never an error.
+	DateTime Kind = "datetime"
 )
 
 // Field declares one form field for Parse.
@@ -28,6 +43,9 @@ type Field struct {
 	Name     string
 	Kind     Kind
 	Required bool
+	// Location is the zone Date and DateTime parse their wire value
+	// in; nil means time.UTC. Time is clock-only and ignores it.
+	Location *time.Location
 }
 
 // Parsed is Parse's result: the per-field values, the echo map for a
@@ -37,8 +55,13 @@ type Field struct {
 type Parsed struct {
 	strings map[string]string
 	cents   map[string]int64
-	echo    map[string]string
-	errs    Errors
+	// dates holds both Date and DateTime results, keyed by field
+	// name — a field is only ever one Kind, so the two accessors
+	// (Date, DateTime) never collide reading the same map.
+	dates map[string]time.Time
+	times map[string][2]int // Time results: [hour, minute]
+	echo  map[string]string
+	errs  Errors
 }
 
 // Parse reads and validates r's submitted fields in one pass — the
@@ -52,6 +75,18 @@ type Parsed struct {
 //     RAW text — "" is required-blank, while "0" is a present, valid
 //     zero — and a present-but-unparseable value reports the parse
 //     error, never the required message.
+//   - Date, Time and DateTime each parse their exact wire format via
+//     time.ParseInLocation (Date/DateTime honour Field.Location, nil
+//     = UTC; Time is a bare clock reading with no location). Required
+//     is checked against the RAW text, same as Money. A present but
+//     unparseable value reports "rastrillo.ui.date_invalid" — a
+//     catalog key, not English, resolved by the renderer via T — and
+//     never the required message. An empty optional value parses to
+//     the zero time.Time (or ok=false for Time), never an error.
+//   - The Required message for Date, Time and DateTime is the catalog
+//     key "rastrillo.ui.field_required", unlike Text/Textarea/Money's
+//     humanized English above — a deliberate, scoped-to-these-three
+//     behaviour change (see form/datetime.go).
 //
 // Parse reads via r.PostFormValue (which parses the form on first
 // use); callers that want a body-size cap or a 400 on a malformed
@@ -61,6 +96,8 @@ func Parse(r *http.Request, fields ...Field) *Parsed {
 	p := &Parsed{
 		strings: map[string]string{},
 		cents:   map[string]int64{},
+		dates:   map[string]time.Time{},
+		times:   map[string][2]int{},
 		echo:    map[string]string{},
 		errs:    Errors{},
 	}
@@ -75,6 +112,45 @@ func Parse(r *http.Request, fields ...Field) *Parsed {
 				p.errs[f.Name] = Humanize(f.Name) + " is required"
 			} else if err != nil {
 				p.errs[f.Name] = err.Error()
+			}
+		case Date:
+			p.echo[f.Name] = raw
+			if raw == "" {
+				if f.Required {
+					p.errs[f.Name] = fieldRequiredKey
+				}
+				continue
+			}
+			if t, err := time.ParseInLocation(dateLayout, raw, location(f)); err != nil {
+				p.errs[f.Name] = dateInvalidKey
+			} else {
+				p.dates[f.Name] = t
+			}
+		case Time:
+			p.echo[f.Name] = raw
+			if raw == "" {
+				if f.Required {
+					p.errs[f.Name] = fieldRequiredKey
+				}
+				continue
+			}
+			if t, err := time.Parse(timeLayout, raw); err != nil {
+				p.errs[f.Name] = dateInvalidKey
+			} else {
+				p.times[f.Name] = [2]int{t.Hour(), t.Minute()}
+			}
+		case DateTime:
+			p.echo[f.Name] = raw
+			if raw == "" {
+				if f.Required {
+					p.errs[f.Name] = fieldRequiredKey
+				}
+				continue
+			}
+			if t, err := time.ParseInLocation(dateTimeLayout, raw, location(f)); err != nil {
+				p.errs[f.Name] = dateInvalidKey
+			} else {
+				p.dates[f.Name] = t
 			}
 		case Textarea:
 			p.strings[f.Name] = raw

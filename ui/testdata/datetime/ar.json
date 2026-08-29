@@ -1,0 +1,44 @@
+[
+  {"id": "today", "input": "اليوم", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "tomorrow", "input": "غدا", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "tomorrow-with-tanween", "input": "غداً", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "أمس", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "space-insensitive", "input": "  غدا  ", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "in-3-days", "input": "بعد 3 أيام", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-3-days-in-arabic-indic-digits", "input": "بعد ٣ أيام", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks", "input": "خلال 2 أسابيع", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago", "input": "قبل 2 أيام", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "بعد 2 ساعات", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "بعد 30 دقيقة", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "الأسبوع القادم", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "الأسبوع الماضي", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "الشهر القادم", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "الجمعة", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "الاثنين القادم", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "الاثنين الماضي", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+
+  {"id": "day-month", "input": "25 ديسمبر", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-in-arabic-indic-digits", "input": "٢٥ ديسمبر", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-year", "input": "25 ديسمبر 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "ديسمبر 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+
+  {"id": "noon", "input": "الظهر", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "multi-word-midnight", "input": "منتصف الليل", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "منتصف الليل غدا", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "arabic-comma-separates", "input": "غدا، 6 مساء", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "tomorrow-at-a-clock", "input": "غدا الساعة 18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "evening-marker", "input": "6 مساء", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-marker", "input": "9 صباحا", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "clock-ltr-inside-rtl-text", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+  {"id": "clock-in-arabic-indic-digits", "input": "١٤:٣٠", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+
+  {"id": "an-unknown-word-is-refused", "input": "غداغد", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
+]

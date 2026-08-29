@@ -28,9 +28,14 @@ declare. Concretely:
   hardcoded. Every one is a `rastrillo.ui.*` key resolved through `T`
   at render time, or carried to the browser on a `data-` attribute
   when the markup is built there.
-- The date parser has **no English in it**. Its relative-word
+- The date parser has **no English vocabulary in it**. Its relative-word
   vocabulary comes from the catalog; its weekday and month names come
-  from `Intl.DateTimeFormat` for the page's `lang`.
+  from `Intl.DateTimeFormat` for the page's `lang`. "No English
+  vocabulary", not "no English": as built the file keeps English
+  fallbacks for the eleven labels it puts on screen, the convention
+  `select.js` already set, so a field that reaches it without its
+  attributes still works — not one word the PARSER matches on is
+  written there (as built, 2026-08-29).
 - The framework ships twelve base catalogs (§3) so a single-locale app
   in any of them gets correctly-worded components without writing a
   catalog, and a multi-locale app gets a language switcher (§2.4) it
@@ -256,6 +261,20 @@ unless `Plain`, and with it every string the script needs as
 `Plain`; range adds `Start`/`End` sub-dicts and `Seed` (`"session"`
 seeds end = start + 1h in the browser, as Tito Go's does).
 
+The key list shipped without `Help`: the date partials carry `Hint`
+alone (the muted line under the input), matching `field-text`'s envelope
+rather than `field-select`'s, and a range is both-`date` or
+both-`datetime` — `field-daterange`'s `Kind` picks the input type for
+both halves at once, so a mixed pair is not expressible (as built,
+2026-08-29).
+
+`data-rst-range` is wrapper-scoped rather than per-half: it sits on the
+`rst-field-row` and carries `Seed` as its own value (`data-rst-range` or
+`data-rst-range="session"`), the two armed inputs inside pairing up by
+DOM order — first is the start, second the end — so neither half needs a
+`"start"`/`"end"` marker and the two halves stay byte-identical to the
+singular partials they compose (as built, 2026-08-29).
+
 Timezone is not a date field's concern: an app that needs one renders
 a `field-select` of zones beside it and parses in that location (§4.4),
 which is what Tito Go does and what the events example will show.
@@ -284,10 +303,20 @@ What changes:
   `date_next`, `date_last`, `date_in`, `date_ago`, `date_at`,
   `date_day`/`date_days`, `date_week`/`date_weeks`, `date_month`/
   `date_months`, `date_hour`/`date_hours`, `date_minute`/`date_minutes`,
-  `date_noon`, `date_midnight`, `date_am`, `date_pm`. A key may hold
-  several accepted spellings separated by `|` ("tomorrow|tmrw"), and
+  `date_noon`, `date_midnight`, `date_am`, `date_pm`. The unit words
+  shipped as seventeen SINGULAR keys whose values carry the plurals on
+  the same `|` the spellings use (`date_day = "day|days"`,
+  `date_minute = "minute|minutes|min|mins|m"`), not as the
+  `date_day`/`date_days` pairs listed here — one key per concept, with
+  the language's own forms inside it (as built, 2026-08-29). A key may
+  hold several accepted spellings separated by `|` ("tomorrow|tmrw"),
+  and
   the matcher is accent- and case-folded (`NFD`, strip marks, lower),
-  so "amárach" and "amarach" both parse.
+  so "amárach" and "amarach" both parse. The whole vocabulary rides on
+  ONE attribute, not one per word: `{{dateWords}}` (bound to the same
+  translator `T` is, so it localises per request) resolves the
+  seventeen keys and JSON-encodes them into `data-rst-date-words` (as
+  built, 2026-08-29).
 - **Weekdays and months from Intl.** Long and short forms for the
   page's `lang`, via `formatToParts`, which Tito Go already does for
   read-back. So "mar 3", "3 mars", "3月3日" and "٣ مارس" all parse with
@@ -307,8 +336,19 @@ Strings the user hears — the set-prompt, the hint row, the live-region
 results — come from `date_set`, `date_hint`, `date_results`,
 `date_result_one`, `date_pick` (the picker button's label), and the
 quick-pick labels `date_quick_today`, `date_quick_tomorrow`,
-`date_quick_next_monday`, `date_quick_week`, `date_quick_plus_1h`,
+~~`date_quick_next_monday`~~, ~~`date_quick_week`~~, `date_quick_plus_1h`,
 `date_quick_plus_2h`, `date_quick_end_of_day`, `date_quick_next_day`.
+
+`{example}` in `date_hint` and `{n}` in `date_results` are substituted
+in the BROWSER, not at render: the hint travels as its raw template so
+the example date is written by the locale's own formatter, and an app
+that rebinds `T` to `rastrillo.T(r, key)` — which ignores arguments —
+would otherwise print "{example}" at a person (as built, 2026-08-29).
+The quick picks shipped as seven, not eight: `date_quick_next_week`
+replaced `date_quick_next_monday` and `date_quick_week`, and
+`field-time` shares `date_pick` with the calendar fields, so a time
+input's picker button reads "Open the calendar" (as built,
+2026-08-29).
 
 ### 4.3 Testing the parser
 
@@ -320,6 +360,13 @@ rule). Fixtures are one TOML table per shipped locale, each ≥20 cases
 an unparsable string that must yield nothing) with the catalog's own
 vocabulary. Twelve fixture files; a locale without one fails the gate.
 The `en` fixtures include Tito Go's regression cases verbatim.
+
+The fixtures shipped as JSON, not TOML: one
+`ui/testdata/datetime/<locale>.json` per shipped locale, read by a Node
+harness that has `JSON.parse` and no TOML parser, plus a thirteenth
+file, `regressions.json`, which is one flat list of cross-locale
+regressions with each case naming its own `lang` (as built,
+2026-08-29).
 
 ### 4.4 `form` kinds
 
@@ -352,6 +399,16 @@ Errors are keys, not English: `Errors` gains `Key` beside `Message`,
 and the partials resolve through `T`. Today's `Required` message moves
 to `rastrillo.ui.field_required` on the same terms.
 
+`Errors` kept its `map[string]string` shape — the VALUE is the key, and
+the calling template resolves it, `"Error" (T (index .Errors "Starts"))`
+in the generated forms — because `T` returns an unrecognised string
+verbatim, which makes the wrapping safe on every field and lets a
+hand-written caller's finished sentence pass straight through; the
+`Required`-message change is scoped to `Date`, `Time` and `DateTime`
+only, so `Text`, `Textarea` and `Money` keep their humanised English
+until a later sweep routes all rendering through `T` (as built,
+2026-08-29).
+
 ### 4.5 The filterable select
 
 Already shipped: `field-select` past ten options carries
@@ -363,7 +420,12 @@ onto it. Two things from Tito Go's `searchable-select.js` come across:
   enough for them to matter. Tito Go refuses to enhance such a select;
   rastrillo will instead render the listbox with a `role="group"` and
   a labelled heading per optgroup, so grouped selects are enhanced
-  rather than skipped.
+  rather than skipped. Built as specified: each `<optgroup>` renders as
+  a `role="group"` whose `aria-label` is the group's own label (the
+  visible heading is `aria-hidden` furniture), loose options stay at
+  the top level with no wrapper at all, and a group filtered down to
+  nothing takes its heading with it — where Tito Go refused the select
+  outright, rastrillo renders it (as built, 2026-08-29).
 - `data-rst-select="false"` opts a large select out from the markup
   side, as `Plain` does from the Go side, for hand-written selects.
 
@@ -420,7 +482,7 @@ statuses above, `error_generic_title`/`_body` for any other, `error_back`,
 
 - `rastrillo.Ctx` gains `ErrorPage func(w http.ResponseWriter, r *http.Request, status int, ref string)` — set by the scaffold's render helper to render `error-page` inside the layout. Nil falls back to today's text. The scaffold wires `Options.ErrorPage` only; `Ctx.ErrorPage` is the app's own to set, because the mux scaffold has no ctx factory to hang it off (as built, 2026-08-28).
 - `view.Fail` mints a `ref` (6 chars, base32 of 4 random bytes), logs it beside the error, and calls `ctx.ErrorPage(w, r, 500, ref)`.
-- `view.NotFound(ctx, w, r)` and `view.Forbidden(ctx, w, r)` replace the bare `http.NotFound`/`http.Error` calls in the generated actions and the auth/password/passkey packages where a `Ctx` is in reach. The generated-actions and identity-plugin adoption of the two helpers moves to PR 3; only `Fail`'s signature sweep landed with this PR (as built, 2026-08-28). Sites without a `Ctx` (the framework's own `/healthz`-tier routes) stay plain — they are never a user's screen.
+- `view.NotFound(ctx, w, r)` and `view.Forbidden(ctx, w, r)` replace the bare `http.NotFound`/`http.Error` calls in the generated actions and the auth/password/passkey packages where a `Ctx` is in reach. The generated-actions and identity-plugin adoption of the two helpers moves to PR 3; only `Fail`'s signature sweep landed with this PR (as built, 2026-08-28). The generated actions adopted both in PR 3, but the identity plugins keep their plain `http.Error`/`http.NotFound` responses: `auth`, `password` and `passkey` are configured plugins with no `Ctx` in reach, so styling their errors needs a per-plugin `ErrorPage` seam of their own — deferred, not forgotten (as built, 2026-08-29). Sites without a `Ctx` (the framework's own `/healthz`-tier routes) stay plain — they are never a user's screen.
 - `rastrillo.Serve` gains panic recovery: a recovered panic logs the stack with a ref and renders the 500 page through `Options.ErrorPage` (the same function, hoisted to Options so the recovery wrapper outside any `Ctx` can reach it). Today a panic is a dropped connection.
 - The scaffold's `templates/errors.html` defines `content` for `error-page` so an app can restyle it by editing a file it owns. The three shells render it at full page; the design-system page shows all five statuses in every theme.
 - `Accept: application/json` requests get `{"status":404,"ref":"…"}` — the generated actions' JSON paths already exist and just gain the ref.

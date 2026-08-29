@@ -20,6 +20,14 @@
      furniture, not help, so nothing is emitted and the script has
      nothing to find. Plain opts out at any size.
 
+     A select written by hand rather than rendered here opts out the
+     other way: data-rst-select="false" is never enhanced, whatever its
+     size. This partial never emits that — Plain simply emits nothing —
+     but select.js honours it, so a hand-written select can say no.
+     Hand-written markup is also where <optgroup> lives, since Options
+     here is flat; select.js renders those groups rather than dropping
+     them.
+
      The native <select> stays the control either way — it is what the
      form submits, and the screen works with scripts disabled. */}}
 {{define "field-select"}}<div class="rst-field"><label class="rst-field__label" for="{{.ID}}">{{.Label}}{{with .Hint}} <span class="rst-field__hint">({{.}})</span>{{end}}</label>

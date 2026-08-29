@@ -206,7 +206,25 @@ if !p.OK() {
 before rendering; the helper writes none. Money is `int64` cents:
 `form.Money`, read `p.Cents`, parse `form.ParseCents` (no `$`, two
 decimals max, `""` = zero), seed `form.FormatCentsPlain`, display
-`form.FormatCents`. After a mutation: `flash.Set(w, "notice", "...")`,
+`form.FormatCents`.
+
+`form.Date`/`Time`/`DateTime` parse `2006-01-02`, `15:04` and
+`2006-01-02T15:04` exactly — nothing looser — in `Field.Location` (nil =
+UTC; `Time` ignores it); read `p.Date`/`p.Time`/`p.DateTime`, and
+`form.Range(p, "starts", "ends")` for the end-before-start check. An
+empty optional date, an unparseable one and an undeclared name all read
+back as the zero time, so ask `p.OK()`, never `IsZero`. Their error
+values are `rastrillo.ui.*` **keys**, not sentences: render
+`"Error" (T (index .Errors "Starts"))`, which is safe on every field
+because `T` returns an unrecognised string verbatim, so the older kinds'
+plain English passes through. The partials are `field-date`,
+`field-time`, `field-datetime` and `field-daterange` (its two halves
+need distinct `Name`s); `datetime.js` enhances them into a combobox that
+reads "next fri 9am" in the page's own language — vocabulary from the
+catalog on one JSON attribute, month names from `Intl`, no English
+vocabulary in the file.
+
+After a mutation: `flash.Set(w, "notice", "...")`,
 then 303; the render helper calls `flash.Take(w, r)` once per page and
 the layout renders it.
 

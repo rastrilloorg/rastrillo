@@ -1,0 +1,41 @@
+[
+  {"id": "today", "input": "inniu", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "tomorrow", "input": "amárach", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "accent-may-be-left-off", "input": "amarach", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "inné", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "case-and-space-insensitive", "input": "  Amárach  ", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "multi-word-in-3-days", "input": "i gceann 3 lá", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "multi-word-in-2-weeks", "input": "i gceann 2 seachtain", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "in-without-the-particle", "input": "gceann 2 seachtain", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "multi-word-days-ago", "input": "2 lá ó shin", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "i gceann 2 uair", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "i gceann 30 nóiméad", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "multi-word-next-week", "input": "seachtain seo chugainn", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "multi-word-last-week", "input": "seachtain seo caite", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "multi-word-next-month", "input": "mí seo chugainn", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "aoine", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "luan seo chugainn", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "luan seo caite", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+
+  {"id": "day-month-clock", "input": "25 noll 18:00", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
+  {"id": "day-month-year", "input": "25 nollaig 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "noll 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+
+  {"id": "noon", "input": "meánlae", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "meánoíche", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "meánoíche amárach", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "tomorrow-at-a-clock", "input": "amárach ag 18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "evening-marker", "input": "6 i.n.", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "article-is-not-in-the-vocabulary", "input": "an tseachtain seo chugainn", "now": "2026-08-28T10:30", "expected": null}
+]

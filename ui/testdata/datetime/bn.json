@@ -1,0 +1,42 @@
+[
+  {"id": "today", "input": "আজ", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "kal-alone-is-tomorrow", "input": "কাল", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "tomorrow-spelled-in-full", "input": "আগামীকাল", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "গতকাল", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+
+  {"id": "in-3-days-in-bengali-digits", "input": "৩ দিন পরে", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-3-days-in-ascii-digits", "input": "3 দিন পরে", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks", "input": "২ সপ্তাহ পরে", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago", "input": "২ দিন আগে", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "২ ঘণ্টা পরে", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "৩০ মিনিট পরে", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "পরের সপ্তাহ", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "গত সপ্তাহ", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "পরের মাস", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "শুক্র", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "পরের সোমবার", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "গত সোমবার", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+
+  {"id": "day-month-in-bengali-digits", "input": "২৫ ডিসেম্বর", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-in-ascii-digits", "input": "25 ডিসেম্বর", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-year", "input": "২৫ ডিসেম্বর ২০২৭", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "ডিসেম্বর ২৫", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+
+  {"id": "noon", "input": "দুপুর", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "মধ্যরাত", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "মধ্যরাত কাল", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "the-at-particle-follows-the-hour", "input": "৬ টায়", "now": "2026-08-28T10:30", "expected": "2026-08-28T06:00"},
+  {"id": "evening-marker", "input": "৬ সন্ধ্যা", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-marker", "input": "৯ সকাল", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "clock-in-bengali-digits", "input": "১৪:৩০", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+  {"id": "tomorrow-and-a-clock", "input": "কাল ১৮:০০", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first-in-bengali-digits", "input": "২৫/১২/২০২৬", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year-in-bengali-digits", "input": "২০৩০", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+
+  {"id": "an-unknown-word-is-refused", "input": "আজগুবি", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock-in-bengali-digits", "input": "২৫:০০", "now": "2026-08-28T10:30", "expected": null}
+]

@@ -1,0 +1,49 @@
+[
+  {"id": "today", "input": "hoy", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "tomorrow", "input": "mañana", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "ayer", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "case-and-space-insensitive", "input": "  Mañana  ", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "accent-may-be-left-off", "input": "manana", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "in-3-days", "input": "en 3 días", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks", "input": "en 2 semanas", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago", "input": "hace 2 días", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "en 2 horas", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "en 30 minutos", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "próxima semana", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "semana pasada", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "próximo mes", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "vie", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "próximo lunes", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "lunes pasado", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+  {"id": "weekday-full-name", "input": "sábado", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "day-month-clock", "input": "25 dic 18:00", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
+  {"id": "day-month-year", "input": "25 diciembre 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "dic 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "the-de-linker-is-how-a-person-writes-it", "input": "25 de marzo", "now": "2026-08-28T10:30", "expected": "2027-03-25T09:00"},
+  {"id": "homograph-with-a-day-is-the-month", "input": "25 mar", "now": "2026-08-28T10:30", "expected": "2027-03-25T09:00"},
+  {"id": "homograph-alone-is-the-weekday", "input": "mar", "now": "2026-08-28T10:30", "expected": "2026-09-01T09:00"},
+
+  {"id": "noon", "input": "mediodía", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "medianoche", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "medianoche mañana", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "tomorrow-at-a-clock", "input": "mañana a las 18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "afternoon-is-the-pm-word", "input": "3 tarde", "now": "2026-08-28T10:30", "expected": "2026-08-28T15:00"},
+  {"id": "am", "input": "9 am", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+  {"id": "own-display-reads-back", "input": "vie, 25 dic 2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-display-with-a-homograph-twice", "input": "mar, 3 mar 2026", "now": "2026-08-28T10:30", "expected": "2026-03-03T09:00"},
+
+  {"id": "range-end-time-only-lands-on-the-start-day", "input": "17:00", "now": "2026-08-28T10:30", "prev": "2026-08-20T09:00", "base": "2026-12-25T10:00", "expected": "2026-12-25T17:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "spelled-out-quantity", "input": "en dos semanas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
+]

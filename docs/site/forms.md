@@ -55,7 +55,7 @@ seed-back map at once if your view is map-shaped.
 Nothing gets retyped on a validation failure. That is the point of the
 echo: a rejected form comes back populated.
 
-## The three kinds
+## The kinds
 
 The zero value is `Text`, so a plain `form.Field{Name: "Title"}` does
 the common thing.
@@ -65,20 +65,108 @@ the common thing.
 | `Text` (zero value) | `p.String` | Trimmed; value and echo are both the trimmed text |
 | `Textarea` | `p.String` | Kept exactly as typed, whitespace included; only the required check trims |
 | `Money` | `p.Cents` | Parsed to integer cents; the echo keeps the raw text |
+| `Date` | `p.Date` | `2006-01-02`, parsed in `Location` |
+| `Time` | `p.Time` | `15:04` — a clock reading, no location |
+| `DateTime` | `p.DateTime` | `2006-01-02T15:04`, parsed in `Location` |
 
 `Required` on a blank `Text` or `Textarea` reports "<Field name> is
 required", humanized from the field name.
 
-`Required` on `Money` is checked against the raw text, so `""` is
-required-blank while `"0"` is a present, valid zero. A present but
-unparseable value reports the parse error instead of the required
-message — telling someone a field is required when they filled it in
-would be a small lie the parser is in a position to avoid.
+`Required` on `Money` and on the three date kinds is checked against the
+raw text rather than the parsed value, so a present but unparseable
+value reports the parse error instead of the required message — telling
+someone a field is required when they filled it in would be a small lie
+the parser is in a position to avoid. For `Money` that also makes `"0"`
+a present, valid zero where `""` is required-blank; a date has no such
+pair, since `"0"` is simply not a date and reports
+`rastrillo.ui.date_invalid`.
 
 `Parse` reads through `r.PostFormValue`, which parses the form on first
 use. If you want a body-size cap or a 400 on a malformed body, wrap
 `r.Body` and call `r.ParseForm` yourself first, the way the generated
 actions do.
+
+## Dates and times
+
+The three date kinds parse one exact wire format each and nothing
+looser, because the browser has already normalised whatever the person
+typed:
+
+```go
+p := form.Parse(r,
+	form.Field{Name: "starts", Kind: form.DateTime, Required: true, Location: tz},
+	form.Field{Name: "ends", Kind: form.DateTime, Required: true, Location: tz},
+	form.Field{Name: "doors", Kind: form.Time})
+form.Range(p, "starts", "ends")
+```
+
+`Location` is the zone `Date` and `DateTime` parse in; leave it nil and
+it is UTC. `Time` is a bare clock reading and ignores it. A timezone is
+not a date field's concern — an app that needs one renders a
+`field-select` of zones beside the field and hands the chosen location
+to `Parse`.
+
+Reading back:
+
+```go
+starts := p.DateTime("starts")     // time.Time
+h, m, ok := p.Time("doors")        // ok=false when absent or unreadable
+```
+
+An empty optional date is the zero `time.Time`, and no error at all. An
+unparseable one is the zero `time.Time` too, but it does carry an error:
+`rastrillo.ui.date_invalid`. A name you never declared is the zero
+`time.Time` as well, and silently — no value, no error. All three read
+back identically from `p.Date`, so ask `p.OK()` or read `p.Errors()` to
+tell them apart rather than testing `IsZero`. `p.Time` says the same
+through its `ok`, and returns `0, 0` rather than half a reading.
+
+### form.Range
+
+`Range` is the two-field check `Parse` cannot do, because `Parse` takes
+one declaration per field:
+
+```go
+form.Range(p, "starts", "ends")
+```
+
+It puts an error on `ends` when its instant precedes `starts`. Equal
+instants are fine. If either side is blank or unparseable, `Range` says
+nothing at all — `Parse` has already named that field's problem, and
+stacking a second message on top of it only crowds the screen. Either
+kind works on either side, and the two can be mixed.
+
+### Errors are catalog keys
+
+`Text`, `Textarea` and `Money` report finished English sentences. The
+three date kinds report `rastrillo.ui.*` keys instead —
+`rastrillo.ui.date_invalid`, `rastrillo.ui.field_required`,
+`rastrillo.ui.date_end_before_start` — so a French app's date error is
+in French without the app writing one.
+
+Resolving happens at render. The generated actions wrap every field's
+error in `T` unconditionally, and a hand-written date field does the
+same:
+
+```html
+{{template "field-datetime" dict "Name" "Starts" "Label" (T "event.field.starts")
+	"Value" .Fields.Starts "Error" (T (index .Errors "Starts"))}}
+```
+
+Wrapping in `T` is safe for every field, which is why the generated
+template does it without asking what kind it has. `T` hands back a
+string it does not recognise as a key exactly as given, so "Title is
+required" and your own hand-written sentences pass straight through, and
+only the keys get looked up. The wrapping lives in the calling template
+rather than in the partial, so a hand-written caller that already passes
+a finished sentence keeps rendering it unchanged.
+
+### Daylight saving
+
+`time.ParseInLocation` resolves a wall-clock time that does not exist —
+the hour a spring-forward skips — using the offset in force before the
+transition, so a time inside the skipped hour and the real time it
+collapses onto land on the same instant.
 
 ## Money is int64 cents
 

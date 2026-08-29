@@ -21,7 +21,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 
 ## Template functions
 
-`ui.Funcs()` registers `dict`, `list`, `icon` and `T`.
+`ui.Funcs()` registers `dict`, `list`, `icon`, `iconAssets`, `T`, `Tf`
+and `dateWords`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -52,13 +53,15 @@ a partial's built-in strings resolve in the request's locale. See
 They span the list-screen, display, form and route families:
 
 ```text
-badge          bulk-bar       callout        choice-field
-confirm-form   detail-list    dropdown       empty-state
-field          field-check    field-select   field-text
-field-textarea form-foot      job-status     list-bar
-list-bar-search list-row-action locale-menu   meter
-page-header    pagination     person         seg-tabs
-status-pill
+back-nav      error-page       field-time          meter
+badge         field            form-error          notice
+bulk-bar      field-check      form-foot           page-header
+callout       field-date       job-status          pagination
+choice-field  field-daterange  list-bar            person
+confirm-form  field-datetime   list-bar-search     seg-tabs
+detail-list   field-select     list-row-action     status-pill
+dropdown      field-text       list-search-submit
+empty-state   field-textarea   locale-menu
 ```
 
 `locale-menu` is the language switcher; see
@@ -117,6 +120,111 @@ call to action is either a `callout` whose body ends in a link, or a
 holding the explanation. Horizontal arrangement is reserved for the
 idioms that ship it: `rst-box-head`, `rst-field-row`, `rst-lbar`,
 `rst-lrow` cells, `rst-seg-tabs`.
+
+## Date and time fields
+
+Four partials, each `field-text`'s envelope — label, hint, error, the
+same `aria-describedby` wiring — around a native input:
+
+| Partial | Input | Posts |
+|---|---|---|
+| `field-date` | `<input type="date">` | `2006-01-02` |
+| `field-time` | `<input type="time">` | `15:04` |
+| `field-datetime` | `<input type="datetime-local">` | `2006-01-02T15:04` |
+| `field-daterange` | two of the above in a `rst-field-row` | both halves |
+
+```html
+{{template "field-datetime" dict "Name" "Starts" "Label" "Starts"
+	"Value" .Fields.Starts "Required" true
+	"Error" (T (index .Errors "Starts"))}}
+```
+
+The keys are the ones `field-text` takes — `Name`, `Label`, `Value`,
+`Required`, `Hint`, `Error` — plus `Min` and `Max` in the same wire
+format the field posts, and `Plain` to emit the bare native input with
+no enhancement attributes at all.
+
+`field-daterange` wraps two of those. `Start` and `End` are sub-dicts,
+each carrying a whole single-field contract of its own. `Legend` names
+the pair, and `LegendHidden` keeps that name for a screen reader while
+dropping the visible heading. `Kind` picks the input both halves get —
+`"datetime"` by default, or `"date"` — and `Seed` is described below.
+
+**The two halves must have different `Name`s.** Each derives its input
+id and its hint and error ids from its own `Name`, so a shared one
+duplicates every id on the page and points both halves'
+`aria-describedby` at the wrong messages.
+
+`Seed` is a browser-side convenience, not a default: `"session"` moves
+an empty or backwards end to an hour after the start, once the start is
+committed. Nothing is seeded server-side, so a submission with scripts
+off is exactly what the person typed.
+
+Parse the other end with `form.Date`, `form.Time` or `form.DateTime`,
+and check a range with `form.Range` — see [Forms](/docs/forms).
+
+### What the enhancement adds
+
+`datetime.js` turns an armed input into a combobox that reads
+"tomorrow", "next fri 9am", "25 Dec 6pm" or "in 2 weeks". The native
+input never leaves the DOM: it keeps its name and its wire value, so the
+POST is byte-identical to the un-enhanced form and the server parses it
+with the same code either way. With scripts off the field is an ordinary
+date input, and the browser's own picker still opens.
+
+It holds no English vocabulary. Not one word the parser matches on is
+written in the file:
+
+- **The relative words come from the catalog.** `{{dateWords}}`
+  resolves all seventeen — today, tomorrow, next, in, ago, at, noon, am
+  and the rest — through the bound `T` and encodes them as one JSON
+  object on `data-rst-date-words`. One attribute, not seventeen. Because
+  the helper is bound the same way `T` is, an app that rebinds `T` per
+  request gets the request's language in the vocabulary too: a field
+  enhanced in Japanese parses Japanese. A key may list several accepted
+  spellings separated by `|`, and matching is case- and accent-folded.
+- **Weekday and month names come from `Intl`**, in the page's own
+  `lang`, along with the locale's digits folded to ASCII. So "3 mars",
+  "3月3日" and "٣ مارس" all parse with no catalog entry behind them.
+- **The visible strings ride out on `data-rst-date-*` attributes**, each
+  resolved through `T` at render, because this markup is built in the
+  browser where the catalog is out of reach. The file keeps English
+  fallbacks for the eleven labels it puts on screen, the way `select.js`
+  does, so a field that arrives without an attribute still works.
+- **`{example}` and `{n}` are substituted in the browser**, not at
+  render. The hint travels as its raw template so the example date is
+  formatted by the locale's own formatter; the results line counts rows
+  that only exist once the list is built.
+
+Unreadable text is not a value. Type something the parser cannot read
+and the field puts the old value back rather than guessing, so nothing
+is committed that nobody chose. The picker button is a real labelled
+button calling `showPicker()` — the browser's own calendar or clock
+grid, rather than a hand-built one to keep accessible.
+
+A range pairs by DOM order: two armed inputs inside one
+`[data-rst-range]` wrapper are the start and the end, in that order. The
+end's quick picks are relative to the start, and a time typed into the
+end with no date lands on the start's day.
+
+### The searchable select
+
+`field-select` carries `data-rst-select` at ten options or more, and
+`select.js` mirrors a filterable ARIA combobox onto it. Below ten,
+search over a handful of items is furniture rather than help, so nothing
+is emitted and the script finds nothing to enhance. `Plain` opts out at
+any size.
+
+`Options` is flat here, so `<optgroup>` is a hand-written-markup thing —
+and `select.js` renders those groups rather than flattening them: each
+optgroup becomes a `role="group"` with its label as the group's
+accessible name, and loose options sit at the top level. A group
+filtered down to nothing takes its heading with it.
+
+A hand-written select opts out from the markup side with
+`data-rst-select="false"`, which is never enhanced whatever its size.
+This partial never emits it — `Plain` simply emits nothing — but
+`select.js` honours it, so a select you wrote yourself can say no.
 
 ## Styling
 

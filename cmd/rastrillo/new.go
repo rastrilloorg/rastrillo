@@ -142,6 +142,11 @@ func runNew(args []string) error {
 		// field-select emits past ten options — so an app that never has
 		// a select that big can delete this and its script tag.
 		filepath.Join(appDir, "static", "select.js"): string(ui.SelectJS()),
+		// The date fields' natural-language combobox, on the same
+		// terms again. Inert until an input opts in with data-rst-date
+		// or data-rst-time, which the date field partials emit — so an
+		// app with no date field can delete this and its script tag.
+		filepath.Join(appDir, "static", "datetime.js"): string(ui.DatetimeJS()),
 		// The test harness, delivered once like tokens.css: app-owned
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
@@ -729,6 +734,7 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 		"theme.css":    themeCSS,
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
+		"datetime.js":  ui.DatetimeJS(),
 	} {
 		vendored, err := os.ReadFile(filepath.Join("..", "%[1]s", "static", name))
 		if err != nil {

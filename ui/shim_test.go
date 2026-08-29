@@ -79,7 +79,26 @@ func TestSelectContract(t *testing.T) {
 	if !strings.Contains(js, "rstEnhanced") {
 		t.Error("select.js is not idempotent; re-scanning would double-enhance")
 	}
-	if n := len(SelectJS()); n > 8*1024 {
+	// The markup-side opt-out, and the groups.
+	if !strings.Contains(js, `!== "false"`) {
+		t.Error(`select.js does not honour data-rst-select="false"; a hand-written select cannot opt out`)
+	}
+	for _, want := range []string{"OPTGROUP", `"group"`, "rst-select__group"} {
+		if !strings.Contains(js, want) {
+			t.Errorf("select.js does not mention %q; a grouped select would be flattened", want)
+		}
+	}
+	// Raised from 8KB to 12KB, once, by optgroups and the markup
+	// opt-out. Flattening native.options was a line shorter and silently
+	// threw away the headings an author wrote to make a long list
+	// readable; rendering the groups costs a nested list, an ARIA group
+	// per optgroup, and a filter that hides a heading when its rows all
+	// go. That is the trade, and it is a decision, not a drift.
+	//
+	// The cap is still the point: this file exists apart from the shim
+	// so the app owner who now owns it can read the whole thing in one
+	// sitting. Past 12KB, split something out instead.
+	if n := len(SelectJS()); n > 12*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
@@ -87,10 +106,14 @@ func TestSelectContract(t *testing.T) {
 	}
 }
 
-// Neither file may reach off-origin: both are vendored, first-party and
-// dependency-free.
+// No scaffolded script may reach off-origin: all three are vendored,
+// first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
-	for name, js := range map[string]string{"rastrillo.js": string(ShimJS()), "select.js": string(SelectJS())} {
+	for name, js := range map[string]string{
+		"rastrillo.js": string(ShimJS()),
+		"select.js":    string(SelectJS()),
+		"datetime.js":  string(DatetimeJS()),
+	} {
 		for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
 			if strings.Contains(js, bad) {
 				t.Errorf("%s reaches outside the page (%q)", name, bad)
