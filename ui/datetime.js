@@ -130,6 +130,36 @@
     return dt;
   }
 
+  // The numbering systems a person may type in, probed against the
+  // locale and unioned into the fold. The locale's default is not
+  // enough on its own: this ICU resolves plain "ar" and plain "hi" to
+  // latn, so those fields read "25" and refused ٢٥ and २५ — the digits
+  // their keyboards make. Unioning DIGITS is safe in a way that unioning
+  // words never is: a digit means the same number in every language, so
+  // an English field that also takes ٢٥ has guessed nothing. Systems
+  // that spell a number a word at a time are absent on purpose; they
+  // cannot be read back a character at a time either.
+  var NUMBERING = ["arab", "arabext", "beng", "deva"];
+
+  // One system's ten digits, merged in. False where it adds nothing, or
+  // cannot be folded at all: more than a character to a digit, a digit
+  // written twice, or a fold contradicting one already agreed.
+  function foldDigits(nf, map) {
+    var i, parts, k, digit, add = {}, differs = false;
+    for (i = 0; i <= 9; i++) {
+      parts = nf.formatToParts(i);
+      digit = "";
+      for (k = 0; k < parts.length; k++) if (parts[k].type === "integer") digit = parts[k].value;
+      if (digit.length !== 1) return false;
+      if (add[digit] !== undefined) return false;
+      if (map[digit] !== undefined && map[digit] !== String(i)) return false;
+      if (digit !== String(i)) differs = true;
+      add[digit] = String(i);
+    }
+    for (digit in add) if (Object.prototype.hasOwnProperty.call(add, digit)) map[digit] = add[digit];
+    return differs;
+  }
+
   // The ten digits this locale writes, mapped back to ASCII. ar-EG
   // counts in "١٢٣", which neither \d nor unary + accepts, and a
   // NumberFormat in that locale printing 0-9 IS the table. null where
@@ -137,20 +167,26 @@
   // does not spell a number one digit at a time — it cannot be read
   // back one digit at a time either.
   function digitFolder(locale) {
-    var nf, map = {}, differs = false, i, parts, k, digit;
+    var map = {}, differs = false, base, root, i;
     try {
-      nf = new Intl.NumberFormat(locale, { useGrouping: false });
+      base = new Intl.NumberFormat(locale, { useGrouping: false });
     } catch (e) {
       return null;
     }
-    for (i = 0; i <= 9; i++) {
-      parts = nf.formatToParts(i);
-      digit = "";
-      for (k = 0; k < parts.length; k++) if (parts[k].type === "integer") digit = parts[k].value;
-      if (digit.length !== 1) return null;
-      if (map[digit] !== undefined) return null;
-      if (digit !== String(i)) differs = true;
-      map[digit] = String(i);
+    if (foldDigits(base, map)) differs = true;
+    // The tag the probes hang off, with any -u- extension the resolver
+    // already added trimmed off: a second one is an ill-formed tag.
+    try {
+      root = base.resolvedOptions().locale.split("-u-")[0];
+    } catch (e) {
+      root = "";
+    }
+    for (i = 0; root && i < NUMBERING.length; i++) {
+      try {
+        if (foldDigits(new Intl.NumberFormat(root + "-u-nu-" + NUMBERING[i], { useGrouping: false }), map)) differs = true;
+      } catch (e) {
+        /* a numbering system this engine does not know folds nothing */
+      }
     }
     if (!differs) return null;
     return function (s) {
@@ -180,11 +216,21 @@
   // because a table per language is precisely the thing this file
   // exists not to keep.
   function nameTable(locale, type, dates, fold) {
-    var widths = ["long", "short"], out = [], i, w, opts, fmt, parts, k, value;
+    var widths = ["long", "short"], out = [], i, c, w, opts, fmt, parts, k, value;
+    // Two shapes of every month name, because a month is not one word
+    // in every language: a Russian calendar header says декабрь and a
+    // Russian typing a date writes 25 декабря, and Intl only hands over
+    // that second form when a DAY is in the format. Asking both ways
+    // and keeping both answers is how a DERIVED table covers a case the
+    // grammar decides — no genitive is written down here, and Ukrainian
+    // and Greek are fixed by the same two lines.
+    var contexts = type === "month" ? [null, "numeric"] : [null];
     for (i = 0; i < dates.length; i++) out.push([]);
+    for (c = 0; c < contexts.length; c++)
     for (w = 0; w < widths.length; w++) {
       opts = { timeZone: "UTC" };
       opts[type] = widths[w];
+      if (contexts[c]) opts.day = contexts[c];
       try {
         fmt = new Intl.DateTimeFormat(locale, opts);
       } catch (e) {
@@ -242,6 +288,12 @@
       months: nameTable(loc, "month", monthDates, fold),
       weekdays: nameTable(loc, "weekday", weekDates, fold)
     };
+    // Does this locale call its months anything at all? Japanese does
+    // not — it numbers them, and nameTable will not hold a bare digit
+    // as a name — so the table is empty and the grammar reads 12月25日
+    // another way. Derived: no list of numbering calendars kept here.
+    t.namedMonths = false;
+    for (i = 0; i < t.months.length; i++) if (t.months[i].length) t.namedMonths = true;
     TABLES[key] = t;
     return t;
   }
@@ -309,20 +361,31 @@
   }
 
   function scan(s, idx) {
-    var toks = [], pos = 0, n = s.length, m, hit, start;
+    var toks = [], pos = 0, n = s.length, m, hit, start, glued = false;
+    // Whether nothing at all stood between this token and the one
+    // before it. A counter glued to its number belongs to that number
+    // (12月, 25日); the same word with a space in front of it is a noun
+    // being counted ("3 months"). A fact about the typing, not about
+    // any language, which is why it can be recorded without knowing
+    // which language was typed.
+    function push(tok) {
+      tok.glued = glued;
+      toks.push(tok);
+      glued = true;
+    }
     while (pos < n) {
-      if (BREAKS.test(s.charAt(pos))) { pos++; continue; }
+      if (BREAKS.test(s.charAt(pos))) { pos++; glued = false; continue; }
       m = /^(\d{1,2}):(\d{2})/.exec(s.slice(pos));
       if (m) {
-        toks.push({ t: "clock", h: +m[1], mi: +m[2] });
+        push({ t: "clock", h: +m[1], mi: +m[2] });
         pos += m[0].length;
         continue;
       }
       hit = matchAt(s, pos, idx);
-      if (hit) { toks.push(hit.tok); pos += hit.len; continue; }
+      if (hit) { push(hit.tok); pos += hit.len; continue; }
       m = /^\d+/.exec(s.slice(pos));
       if (m) {
-        toks.push({ t: "num", n: +m[0], digits: m[0].length });
+        push({ t: "num", n: +m[0], digits: m[0].length });
         pos += m[0].length;
         continue;
       }
@@ -332,7 +395,7 @@
         pos++;
       }
       if (pos === start) pos++;
-      toks.push({ t: "other", raw: s.slice(start, pos) });
+      push({ t: "other", raw: s.slice(start, pos) });
     }
     return toks;
   }
@@ -405,8 +468,15 @@
       return -1;
     }
     function findRole(role) {
-      for (var k = 0; k < toks.length; k++)
-        if (!used[k] && toks[k].t === "word" && toks[k][role] >= 0) return k;
+      for (var k = 0; k < toks.length; k++) {
+        if (used[k] || toks[k].t !== "word" || toks[k][role] < 0) continue;
+        // A weekday name being counted is not a weekday: nobody writes
+        // a date by putting a number in front of one. A MONTH name is
+        // the opposite case and is left alone — "25dec" is how people
+        // type one.
+        if (role === "weekday" && k > 0 && toks[k].glued && isCounter(k, k - 1)) continue;
+        return k;
+      }
       return -1;
     }
     function findKind(t) {
@@ -427,8 +497,44 @@
       }
       return null;
     }
+    // Is the name at k being counted rather than named? A number in
+    // front of it says so, and so does a next/last particle written
+    // straight onto a word that is a unit as well as a name: 来月 is
+    // next MONTH and 翌日 is the next DAY, and both asked for a weekday
+    // until this line, because 月 and 日 are also how Japanese
+    // abbreviates Monday and Sunday.
+    function isCounter(k, p) {
+      if (toks[p].t === "num") return true;
+      if (toks[p].t !== "word") return false;
+      if (!toks[p].kinds.next && !toks[p].kinds.last) return false;
+      return !!(toks[k].kinds.day || toks[k].kinds.week || toks[k].kinds.month);
+    }
     function isWord(k, kind) {
       return k >= 0 && toks[k].t === "word" && !!toks[k].kinds[kind];
+    }
+    // The counter glued to a number already claimed — the 日 of 25日,
+    // the 号 of 25号. It belongs to that number, and leaving it behind
+    // failed the leftover check on a date written correctly. Glued is
+    // the whole test: "3 days" has a space and stays a duration.
+    function claimCounter(at, kind) {
+      var nx = at >= 0 ? after(at) : -1;
+      if (nx < 0 || toks[nx].t !== "word" || !toks[nx].glued) return false;
+      if (!toks[nx].kinds[kind]) return false;
+      used[nx] = true;
+      return true;
+    }
+    // A number glued to the month counter where months have no names:
+    // the 12 of 12月25日. Gated on the empty table so no language that
+    // CALLS its months something reaches here — without it, English
+    // "3months" would read as March.
+    function counterMonth() {
+      if (tbl.namedMonths) return -1;
+      for (var k = 0; k < toks.length; k++) {
+        if (used[k] || toks[k].t !== "num" || toks[k].digits > 2) continue;
+        var nx = after(k);
+        if (nx >= 0 && toks[nx].t === "word" && toks[nx].glued && toks[nx].kinds.month) return k;
+      }
+      return -1;
     }
 
     var date = null, hasDate = false, hasTime = false, h = 0, mi = 0;
@@ -513,11 +619,16 @@
                 used[mn] = true;
                 if (after(mn) >= 0) used[after(mn)] = true;
               }
-            } else if (isWord(pv, "at")) {
+            } else if (isWord(pv, "at") || isWord(nx, "at")) {
+              // The particle sits on either side of the hour: English
+              // and Spanish put it in front ("at 6", "a las 6") and
+              // Hindi, Bengali and Japanese put it behind (6 बजे, ৬ টায়,
+              // 6時に). Reading only the front one refused half the
+              // world's ordinary way of naming a time.
               h = toks[i].n;
               mi = 0;
               used[i] = true;
-              used[pv] = true;
+              used[isWord(pv, "at") ? pv : nx] = true;
               hasTime = true;
             }
           }
@@ -559,7 +670,7 @@
       else if (tod >= 0) { date = midnight(now); used[tod] = true; hasDate = true; }
     }
     if (!hasDate) {
-      var next = find("next"), last = find("last");
+      var next = find("next"), last = find("last"), cm;
       var wi = findRole("weekday");
       var mo = findRole("month");
       if (wi >= 0 && mo >= 0) {
@@ -593,7 +704,7 @@
       } else {
         if (mo >= 0) {
           used[mo] = true;
-          var dnum = -1, ynum = -1, k;
+          var dnum = -1, ynum = -1, dat = -1, k;
           for (k = 0; k < toks.length; k++) {
             if (used[k] || toks[k].t !== "num") continue;
             if (toks[k].digits === 4) {
@@ -602,6 +713,7 @@
               used[k] = true;
             } else if (dnum < 0) {
               dnum = toks[k].n;
+              dat = k;
               used[k] = true;
             } else if (ynum < 0) {
               ynum = toks[k].n < 100 ? 2000 + toks[k].n : toks[k].n;
@@ -609,8 +721,27 @@
             } else break;
           }
           if (dnum < 0) return null;
+          claimCounter(dat, "day");
           date = makeDate(ynum >= 0 ? ynum : inferYear(now, toks[mo].month, dnum),
             toks[mo].month, dnum, 0, 0);
+          if (!date) return null;
+          hasDate = true;
+        } else if ((cm = counterMonth()) >= 0) {
+          // A calendar that numbers its months writes the number with
+          // its counter, and the counter is doing the work a name does
+          // everywhere else. The day beside it is written the same way,
+          // with or without its own counter.
+          var cmon = toks[cm].n - 1, cday = -1, ck;
+          used[cm] = true;
+          used[cm + 1] = true;
+          ck = after(cm + 1);
+          if (ck >= 0 && toks[ck].t === "num" && toks[ck].digits <= 2) {
+            cday = toks[ck].n;
+            used[ck] = true;
+            claimCounter(ck, "day");
+          }
+          if (cday < 0) return null;
+          date = makeDate(inferYear(now, cmon, cday), cmon, cday, 0, 0);
           if (!date) return null;
           hasDate = true;
         } else if (next >= 0 || last >= 0) {

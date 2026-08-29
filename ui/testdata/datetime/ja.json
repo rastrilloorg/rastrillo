@@ -1,0 +1,44 @@
+[
+  {"id": "today", "input": "今日", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "today-in-kana", "input": "きょう", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "tomorrow", "input": "明日", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "昨日", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+
+  {"id": "in-3-days-affixed", "input": "3日後", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks-affixed", "input": "2週間後", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago-affixed", "input": "2日前", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours-affixed", "input": "2時間後", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes-affixed", "input": "30分後", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+  {"id": "in-2-months-affixed", "input": "2か月後", "now": "2026-08-28T10:30", "expected": "2026-10-28T09:00"},
+
+  {"id": "next-week", "input": "来週", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "先週", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month-is-a-month-not-monday", "input": "来月", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+  {"id": "the-next-day-is-a-day-not-sunday", "input": "翌日", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "金曜日", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "abbreviated-weekday", "input": "金", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "weekday-monday", "input": "月曜日", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+
+  {"id": "counter-words-are-the-calendar", "input": "12月25日", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "counter-date-and-a-half-day-clock", "input": "12月25日午後6時", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
+  {"id": "counter-date-and-a-wire-clock", "input": "12月25日18:00", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
+
+  {"id": "noon", "input": "正午", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "深夜", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "afternoon-hour", "input": "午後6時", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-hour-and-minute", "input": "午前9時30分", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:30"},
+  {"id": "zero-hour-in-the-morning-is-midnight", "input": "午前0時", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "tomorrow-and-an-afternoon-hour", "input": "明日午後6時", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "ideographic-comma-separates", "input": "明日、午後6時", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year-is-not-a-month", "input": "2025", "now": "2026-08-28T10:30", "expected": "2025-08-28T09:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-hour-with-a-meridiem", "input": "午後25時", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-day-in-a-counter-date", "input": "12月32日", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-month-in-a-counter-date", "input": "13月1日", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "slashed-year-first-is-not-read", "input": "2026/12/25", "now": "2026-08-28T10:30", "expected": null}
+]

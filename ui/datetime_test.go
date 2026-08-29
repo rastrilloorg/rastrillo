@@ -12,12 +12,12 @@ import (
 	"github.com/carlosframework/rastrillo"
 )
 
-// fixturesComplete flips to true in the task that lands a fixture file
-// for every shipped locale. Until then
-// TestEveryShippedLocaleHasADatetimeFixture skips rather than fails, so
-// this commit is honestly green instead of quietly excused — and the
-// gate it will become is already written, not a note in a plan.
-const fixturesComplete = false
+// fixturesComplete flipped true the day every shipped locale got a
+// fixture file. TestEveryShippedLocaleHasADatetimeFixture is a gate
+// from here on: a new locale in locales/ with no fixture beside it
+// fails the build, because a catalog nobody has typed a date into is a
+// language this parser has not been shown to read.
+const fixturesComplete = true
 
 // vocabStdin is what the browser reads off data-rst-date-words, built
 // the same way {{dateWords}} builds it: the framework's own catalog for
@@ -182,7 +182,19 @@ func TestDatetimeContract(t *testing.T) {
 	// so the next few hundred bytes are a decision rather than a drift
 	// — a file an app owner has to page through is a file they stop
 	// owning.
-	if n := len(DatetimeJS()); n > 48*1024 {
+	//
+	// Raised from 48KB to 54KB, once, by the twelve-locale fixtures:
+	// writing a real date in each of the eleven other languages bought
+	// four capabilities this parser did not have. It now folds the
+	// digits an Arabic or Hindi keyboard makes (plain "ar" resolves to
+	// latn in ICU, so the locale's default numbering system was not
+	// enough); it holds the month name Intl only gives up when a day is
+	// in the format, which is the form a Russian actually types; it
+	// reads a date written with counter words rather than month names
+	// (12月25日); and it tells a counted 月 from Monday. Six kilobytes
+	// for eleven languages that could not previously type a date is the
+	// trade, and it is a decision, not a drift.
+	if n := len(DatetimeJS()); n > 54*1024 {
 		t.Fatalf("datetime.js is %d bytes; split something out before it stops being readable", n)
 	}
 }

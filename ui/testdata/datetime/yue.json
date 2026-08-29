@@ -1,0 +1,40 @@
+[
+  {"id": "today", "input": "今日", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "tomorrow", "input": "聽日", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "tomorrow-second-spelling", "input": "明日", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "尋日", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "yesterday-second-spelling", "input": "琴日", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+
+  {"id": "in-3-days-affixed", "input": "3日後", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks-affixed", "input": "2星期後", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago-affixed", "input": "2日前", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours-affixed", "input": "2小時後", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-3-hours-with-the-classifier", "input": "3個鐘後", "now": "2026-08-28T10:30", "expected": "2026-08-28T13:30"},
+  {"id": "in-30-minutes-affixed", "input": "30分鐘後", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "下星期", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "上星期", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "下個月", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "星期五", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+
+  {"id": "numbered-month-and-a-day-counter", "input": "12月25日", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "the-hou-day-counter", "input": "12月25號", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "counter-date-and-a-half-day-clock", "input": "12月25日下午6點", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
+
+  {"id": "noon", "input": "中午", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "noon-in-cantonese", "input": "晏晝", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "午夜", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "afternoon-hour", "input": "下午6點", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-hour-and-minute", "input": "上午9點30分", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:30"},
+  {"id": "tomorrow-and-an-afternoon-hour", "input": "聽日下午6點", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+  {"id": "tomorrow-and-a-wire-clock", "input": "聽日18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year-is-not-a-month", "input": "2025", "now": "2026-08-28T10:30", "expected": "2025-08-28T09:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-hour-with-a-meridiem", "input": "下午25點", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-month-in-a-counter-date", "input": "13月1日", "now": "2026-08-28T10:30", "expected": null}
+]

@@ -1,0 +1,40 @@
+[
+  {"id": "multi-word-today", "input": "hôm nay", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "multi-word-tomorrow", "input": "ngày mai", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "tomorrow-short", "input": "mai", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "multi-word-yesterday", "input": "hôm qua", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "case-and-space-insensitive", "input": "  Ngày mai  ", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "in-3-days", "input": "3 ngày nữa", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks", "input": "2 tuần nữa", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago", "input": "2 ngày trước", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "2 giờ nữa", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "30 phút nữa", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "tuần sau", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "tuần trước", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "tháng sau", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "thứ 6", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "thứ hai tới", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "thứ hai trước", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+
+  {"id": "day-and-a-numbered-month", "input": "25 tháng 12", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-year", "input": "25 tháng 12 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "tháng 12 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+
+  {"id": "multi-word-noon", "input": "giữa trưa", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "multi-word-midnight", "input": "nửa đêm", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "nửa đêm ngày mai", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "tomorrow-at-a-clock", "input": "ngày mai lúc 18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "afternoon-marker-after-the-hour-word", "input": "6 giờ chiều", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-marker-after-the-hour-word", "input": "9 giờ sáng", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
+]

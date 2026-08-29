@@ -1,0 +1,42 @@
+[
+  {"id": "today", "input": "сегодня", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "tomorrow", "input": "завтра", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday", "input": "вчера", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "case-and-space-insensitive", "input": "  Завтра  ", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+
+  {"id": "in-3-days", "input": "через 3 дня", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "in-2-weeks", "input": "через 2 недели", "now": "2026-08-28T10:30", "expected": "2026-09-11T09:00"},
+  {"id": "days-ago", "input": "2 дня назад", "now": "2026-08-28T10:30", "expected": "2026-08-26T09:00"},
+  {"id": "in-2-hours", "input": "через 2 часа", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:30"},
+  {"id": "in-30-minutes", "input": "через 30 минут", "now": "2026-08-28T10:30", "expected": "2026-08-28T11:00"},
+
+  {"id": "next-week", "input": "следующая неделя", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "last-week", "input": "прошлая неделя", "now": "2026-08-28T10:30", "expected": "2026-08-21T09:00"},
+  {"id": "next-month", "input": "следующий месяц", "now": "2026-08-28T10:30", "expected": "2026-09-28T09:00"},
+
+  {"id": "bare-weekday-never-today", "input": "пт", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
+  {"id": "next-monday", "input": "следующий понедельник", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"},
+  {"id": "last-monday", "input": "прошлый понедельник", "now": "2026-08-28T10:30", "expected": "2026-08-24T09:00"},
+
+  {"id": "nominative-month", "input": "25 декабрь", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "genitive-month-is-what-people-type", "input": "25 декабря", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "day-month-clock", "input": "25 дек 18:00", "now": "2026-08-28T10:30", "expected": "2026-12-25T18:00"},
+  {"id": "day-month-year", "input": "25 декабря 2027", "now": "2026-08-28T10:30", "expected": "2027-12-25T09:00"},
+  {"id": "month-day", "input": "дек 25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+
+  {"id": "noon", "input": "полдень", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "midnight", "input": "полночь", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "midnight-tomorrow", "input": "полночь завтра", "now": "2026-08-28T10:30", "expected": "2026-08-29T00:00"},
+  {"id": "tomorrow-at-a-clock", "input": "завтра в 18:00", "now": "2026-08-28T10:30", "expected": "2026-08-29T18:00"},
+  {"id": "evening-marker", "input": "6 вечера", "now": "2026-08-28T10:30", "expected": "2026-08-28T18:00"},
+  {"id": "morning-marker", "input": "9 утра", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
+  {"id": "clock", "input": "14:30", "now": "2026-08-28T10:30", "expected": "2026-08-28T14:30"},
+
+  {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "numeric-day-first-with-dots", "input": "25.12.2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
+
+  {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "spelled-out-quantity", "input": "через две недели", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null}
+]
