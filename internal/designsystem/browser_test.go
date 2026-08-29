@@ -540,10 +540,12 @@ type framing struct {
 	// Which panel is on screen.
 	FrameShown bool
 	CodeShown  bool
-	// The colour scheme the framed document resolved to, which is the
-	// gallery's own — color-scheme is inherited and the browser
-	// propagates the embedder's through an iframe, so a reader who
-	// chose Dark gets dark previews with nothing running inside them.
+	// The colour scheme the framed document resolved to, and the
+	// background it painted with it. It should be the gallery's own —
+	// not by inheritance, which does not reach a framed document that
+	// declares a scheme of its own, but because gallery.js writes the
+	// attribute on each frame. See the assertion at the foot of this
+	// test for the whole of that argument.
 	Scheme string
 }
 
@@ -604,7 +606,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	  return "ok";
 	})()`
 
-	var desktop, mobile, code, dark, scriptless string
+	var desktop, mobile, code, dark, scriptless, resized string
 	var deadLinks int
 	var mechanism bool
 
@@ -645,7 +647,33 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		  return bad;
 		})()`, &deadLinks),
 
-		// 5. The reader chooses Dark, and the previews follow without
+		// 5. Back to Desktop — the grip is a control on the frame, and
+		// the frame is not on screen while Code is. Which is also a
+		// second reading of the Desktop tab, this time arrived at by
+		// clicking rather than by the checked attribute.
+		chromedp.Click(`#partial-callout .ds-view__tab:first-of-type`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+
+		// The grip. resize: vertical is a visible control, so it
+		// has to do something: the box is what the reader drags, and
+		// the frame takes its height back off the box, so the
+		// document inside really does get taller. It did not, once —
+		// a fixed height on the frame left 300px of empty box under an
+		// unchanged rendering, which is the bug this leg pins.
+		chromedp.Evaluate(`(() => {
+		  const box = document.querySelector("#partial-callout .ds-view__box");
+		  const f = document.querySelector("#partial-callout .ds-view__frame");
+		  const before = f.contentDocument.documentElement.clientHeight;
+		  box.style.height = Math.round(box.getBoundingClientRect().height * 2) + "px";
+		  return JSON.stringify({
+		    before: before,
+		    after: f.contentDocument.documentElement.clientHeight,
+		    painted: Math.round(f.getBoundingClientRect().height),
+		    box: Math.round(box.getBoundingClientRect().height)
+		  });
+		})()`, &resized),
+
+		// 6. The reader chooses Dark, and the previews follow without
 		// a line of script inside them.
 		chromedp.Click(`[data-ds-scheme="dark"]`, chromedp.ByQuery),
 		chromedp.Sleep(400*time.Millisecond),
@@ -654,7 +682,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		t.Fatalf("driving the widget: %v", err)
 	}
 
-	// 6. The same journey with JavaScript switched off at the engine.
+	// 7. The same journey with JavaScript switched off at the engine.
 	// A fresh tab, because scripts have already run in the one above.
 	noJS, cancelNoJS := chromedp.NewContext(rig.Context())
 	defer cancelNoJS()
@@ -737,6 +765,19 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	// Code: the frame goes, the source arrives.
 	if c.FrameShown || !c.CodeShown {
 		t.Errorf("the Code tab shows frame=%v code=%v", c.FrameShown, c.CodeShown)
+	}
+
+	var grip struct{ Before, After, Painted, Box int }
+	if err := json.Unmarshal([]byte(resized), &grip); err != nil {
+		t.Fatalf("reading the resize (%q): %v", resized, err)
+	}
+	if grip.After <= grip.Before {
+		t.Errorf("the box was dragged to %dpx and the framed document's viewport stayed %dpx; the grip moves the box and not the document", grip.Box, grip.After)
+	}
+	// And the rendering fills what was dragged, rather than leaving
+	// empty box under it.
+	if grip.Painted < grip.Box-4 {
+		t.Errorf("after the drag the box is %dpx and the rendering in it is %dpx; %dpx of it is empty", grip.Box, grip.Painted, grip.Box-grip.Painted)
 	}
 
 	if deadLinks != 0 {

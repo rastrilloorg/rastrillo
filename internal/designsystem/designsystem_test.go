@@ -681,6 +681,26 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	files := render(t)
 	page := string(files[RootTheme()+"/en/index.html"])
+	// The link half. TestEveryPageIsAWholeLocalisedDocument holds the
+	// whole tree to this, srcdocs included, and would fail first — but
+	// a gate named for links that did not look at one is a gate that
+	// can be quietly narrowed to nothing, so it looks.
+	var links int
+	for i, doc := range srcdocs(page) {
+		for _, m := range anchorHref.FindAllStringSubmatch(doc, -1) {
+			links++
+			// "#" is what a dead route becomes; a fragment that names
+			// something — the shell samples' own skip link, #main —
+			// is a link inside the sample and stays one.
+			if href := m[1]; !strings.HasPrefix(href, "#") && !strings.HasPrefix(href, mountPrefix) {
+				t.Errorf("preview %d still links %q; a sample route is rewritten to \"#\" so following it cannot 404", i, href)
+			}
+		}
+	}
+	if links == 0 {
+		t.Fatal("no links in any preview document — the samples have no link in them at all, and this half is checking nothing")
+	}
+
 	var forms, sinks int
 	for i, doc := range srcdocs(page) {
 		n := strings.Count(doc, "<form")
@@ -1144,24 +1164,23 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 		t.Error("gallery.js uses two-space indentation, not tabs")
 	}
 	// 8 KiB was the budget when this file did one thing, and 10 KiB
-	// when it did two — the toggle and the sidebar filter. The last
-	// version of this comment said a third feature would be a
-	// conversation and not a bump, so here is the conversation.
+	// when it did two — the toggle and the sidebar filter. It stays
+	// 10 KiB, and the reason is worth a line, because the third entry
+	// in the header nearly moved it.
 	//
-	// The third entry in the header is not a third feature: it is the
-	// first one following the page. Every example is now drawn in an
-	// iframe of its own, and a colour scheme is not propagated into an
-	// embedded document that declares one — so a reader who chose Dark
-	// got a dark gallery full of light previews. The toggle reaching
-	// the frames it now has is the same job it always did. It cost
-	// 1,160 bytes: about 300 of code (two short functions, a load
-	// listener, one call in the click handler) and the rest the
-	// paragraph saying why an iframe needs telling. 12 KiB from 10.
+	// Every example is now drawn in an iframe of its own, and a colour
+	// scheme is not propagated into an embedded document that declares
+	// one — so a reader who chose Dark got a dark gallery full of
+	// light previews, and the toggle had to reach the frames. That is
+	// not a third feature; it is the first one following the page. It
+	// cost 1,273 bytes, about 300 of them code (two short functions, a
+	// load listener, one call in the click handler) and the rest the
+	// paragraph saying why an iframe needs telling.
 	//
-	// The ceiling still means what it meant. A fourth thing on this
-	// page is a conversation, and so is a bump that buys code rather
-	// than the comments that are this file's documentation.
-	if n := len(js); n > 12*1024 {
+	// It fit, with 32 bytes to spare. That is uncomfortably close, and
+	// it is the honest number: the next thing here needs the ceiling
+	// raised, and raising it should buy comments rather than code.
+	if n := len(js); n > 10*1024 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
 	// The two halves of the scriptless story: the toggle is hidden
@@ -1397,8 +1416,17 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 //
 // Scoped to anchored ids when the sidebar first landed, on a guess that
 // the component samples repeated form-field ids across states. They do
-// not: all 181 documents in the tree carry no duplicate at all, so the
-// gate is the whole page, which is the gate worth having.
+// not, so the gate became every id on the page — and then the samples
+// moved into preview frames, where their ids are escaped and this gate
+// could no longer see them.
+//
+// So it walks both: the 181 files, and the 3,959 documents the frames
+// carry. Every one of them is a document in its own right, and a
+// duplicate inside one is exactly as broken as a duplicate out here —
+// with the difference that a reader who opens a Code tab is being
+// shown it as markup to copy. They are all clean today; the point of
+// checking is that a field id repeated across two states of one
+// partial would have been invisible otherwise.
 func TestNoPageCarriesTheSameIdTwice(t *testing.T) {
 	files := render(t)
 	names := make([]string, 0, len(files))
@@ -1413,24 +1441,42 @@ func TestNoPageCarriesTheSameIdTwice(t *testing.T) {
 	}
 	// The escaped source blocks cannot trip this: html/template writes
 	// a sample's quotes as &#34;, so `id="` occurs only where a browser
-	// would actually build an element.
+	// would actually build an element. That is also why the preview
+	// documents have to be unescaped before they can be looked at.
+	var framed int
 	for _, name := range names {
 		page := string(files[name])
-		seen := map[string]int{}
-		var order []string
-		for _, m := range elementID.FindAllStringSubmatch(page, -1) {
-			if seen[m[1]] == 0 {
-				order = append(order, m[1])
-			}
-			seen[m[1]]++
+		uniqueIDs(t, name, page, true)
+		for i, doc := range srcdocs(page) {
+			framed++
+			uniqueIDs(t, fmt.Sprintf("%s srcdoc %d", name, i), doc, false)
 		}
-		if len(order) == 0 {
-			t.Errorf("%s: no ids at all — every page in this tree has at least main's", name)
+	}
+	if framed == 0 {
+		t.Error("no preview documents found at all — the srcdoc extractor has stopped working, and half this gate with it")
+	}
+}
+
+// uniqueIDs holds one document to one id each. mustHaveOne is the
+// difference between a page of this tree, which always carries at
+// least main's, and a preview document, where a sample with no id in
+// it is an ordinary thing for a sample to be.
+func uniqueIDs(t *testing.T, name, doc string, mustHaveOne bool) {
+	t.Helper()
+	seen := map[string]int{}
+	var order []string
+	for _, m := range elementID.FindAllStringSubmatch(doc, -1) {
+		if seen[m[1]] == 0 {
+			order = append(order, m[1])
 		}
-		for _, id := range order {
-			if seen[id] != 1 {
-				t.Errorf("%s: id %q appears %d times; a fragment can only ever reach the first, and the document is invalid", name, id, seen[id])
-			}
+		seen[m[1]]++
+	}
+	if len(order) == 0 && mustHaveOne {
+		t.Errorf("%s: no ids at all — every page in this tree has at least main's", name)
+	}
+	for _, id := range order {
+		if seen[id] != 1 {
+			t.Errorf("%s: id %q appears %d times; a fragment can only ever reach the first, and the document is invalid", name, id, seen[id])
 		}
 	}
 }

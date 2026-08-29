@@ -628,7 +628,9 @@ type previewView struct {
 
 // previewStyle writes one example's two virtual heights. The frame is a
 // window, not a fit: a sample taller than its box scrolls inside it,
-// and the box carries resize: vertical so a reader can drag it open.
+// and the box carries resize: vertical so a reader can drag it open —
+// the frame reads its height back off the box, so dragging really does
+// show more of the document rather than more of the box.
 //
 // Mobile is a quarter taller than desktop, one factor for every
 // example rather than a second table of numbers. The same measuring
@@ -749,10 +751,18 @@ var srcdocScripts = []struct {
 // srcdoc builds the document one example is previewed in: the tree's own
 // stylesheets by absolute path (so the browser has them cached from the
 // gallery), the example, and nothing else. No script unless the example
-// needs one, and no colour-scheme handling of its own — color-scheme is
-// an inherited property and the browser propagates the embedder's
-// through the <iframe>, so a reader who chose Dark in the gallery gets
-// dark previews with nothing running.
+// needs one.
+//
+// Nothing in here follows the reader's colour scheme, and it cannot.
+// color-scheme is an inherited property and a browser does propagate
+// the embedder's through an <iframe> — but only into a document that
+// has not declared one of its own, and this one links a theme, and
+// every theme declares color-scheme: light dark. The declaration wins,
+// the propagated value is ignored, and the frame resolves against the
+// reader's OS instead of against the gallery. So the gallery paints
+// it: gallery.js writes data-theme on each frame's own <html>, on load
+// and on every toggle. See its "the previews" section, and the drive
+// leg that measured the two apart.
 func srcdoc(theme, locale, body string) string {
 	var b strings.Builder
 	b.WriteString("<!doctype html>\n")
@@ -803,6 +813,14 @@ var (
 // already a fragment or a page of this tree becomes href="#", which
 // goes nowhere and looks like the link it is; every form is aimed at
 // the sink iframe srcdoc appends.
+//
+// A form's ACTION is deliberately left alone — nineteen of them still
+// name a real route — because the target is what decides where the
+// answer goes, and the target is the sink. The request is made and
+// lands nowhere the reader can see, which is closer to what the sample
+// says it does than a form posting to "#" would be. It also keeps the
+// action a reader reads in the preview the same as the one in the Code
+// tab beside it.
 //
 // Only the LIVE rendering is treated. The Code tab beside it shows the
 // sample as it was written, routes and all, because those are the
@@ -1154,9 +1172,16 @@ const dsCSS = `
    1200px page clipped to the column: smaller, not broken.
 
    --ds-h is the frame's virtual height, written per example by
-   previewStyle. The box is a window on a document, not a fit to it: a
-   taller sample scrolls inside its frame, and resize: vertical lets a
-   reader drag the window open. */
+   previewStyle. It sizes the BOX; the frame takes its height back off
+   the box, 100% / --ds-k, which is the same number until a reader
+   drags the resize grip and then is whatever they dragged it to. Doing
+   it the other way round — a fixed height on the frame — gave the grip
+   nothing to move: the box grew and the document inside it stayed the
+   size it was, leaving 300px of empty box under a 255px rendering.
+
+   The box is a window on a document, not a fit to it: a taller sample
+   scrolls inside its frame, and the grip is there for the ones a
+   reader wants more of. */
 .ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
 .ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
 .ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
@@ -1169,7 +1194,7 @@ const dsCSS = `
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .ds-view__stage { container-type: inline-size; }
 .ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
-.ds-view__frame { block-size: var(--ds-h); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
 @supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
   .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
 }
