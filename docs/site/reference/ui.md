@@ -144,6 +144,25 @@ pin, no vendoring test — so overriding a block, or rewriting the file
 outright, is expected on day one. [Templates](/docs/templates) has the
 block contract with a worked override.
 
+## Styleguide
+
+```go
+func Styleguide() map[string]string
+```
+
+The canonical markup for the class idioms — structural components with
+an arbitrary caller body, such as the section box, the list-grid card,
+the modal route and the page shells, that a `html/template` partial
+can't wrap because it doesn't know that body's shape in advance.
+`tokens.css` ships the class vocabulary; `Styleguide` is the exercised
+markup that goes with it, keyed by idiom name (`box`, `list-grid`,
+`dropdown`, `form-layout`, `tblock`, `modal`, `help`, `selbox`,
+`shell-topbar`, `shell-sidebar`). The design-system page renders every
+sample it returns, and `ui_test.go`'s `TestIdiomClassesAreStyled` holds
+them honest against `tokens.css` in both directions: a sample can't use
+a class the stylesheet doesn't style, and an idiom class can't ship
+undemonstrated. The returned map is a copy, safe to mutate.
+
 ## The vendored assets
 
 ```go

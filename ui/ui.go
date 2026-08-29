@@ -75,7 +75,7 @@
 // only wrap data it already knows the shape of. For these, tokens.css
 // ships the class vocabulary and this doc shows the markup; the app
 // writes the HTML itself. The canonical, exercised versions of every
-// sample below live in ui_test.go's styleguideSamples, rendered by
+// sample below are returned by Styleguide, rendered by
 // TestStyleguideSamplesRender — copy from there, not from here, if the
 // two ever disagree.
 //
@@ -175,7 +175,7 @@
 // rst-shell-sidebar wraps a rst-shell__rail of rst-shell__group-labelled
 // nav beside rst-shell__main, collapsing below 800px into a
 // <details class="rst-shell__chrome"> — no JavaScript. Both carry
-// rst-skip, the skip link. The canonical markup is styleguideSamples'
+// rst-skip, the skip link. The canonical markup is Styleguide's
 // "shell-topbar" and "shell-sidebar", and an app does not usually write
 // any of it by hand: Layout ships the three shells as whole templates
 // and rastrillo new writes the chosen one as templates/layout.html.
