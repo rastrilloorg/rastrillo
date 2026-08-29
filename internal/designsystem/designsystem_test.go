@@ -112,9 +112,9 @@ func definedPartials(t *testing.T) []string {
 // would break every time a partial's markup is tidied, and this gate
 // is about coverage, not markup.
 func TestEveryPartialAppearsOnThePage(t *testing.T) {
-	page := string(render(t)["ink/en/index.html"])
+	page := string(render(t)[RootTheme()+"/en/index.html"])
 	if page == "" {
-		t.Fatal("no ink/en/index.html in the rendered tree")
+		t.Fatalf("no %s/en/index.html in the rendered tree", RootTheme())
 	}
 	for _, name := range definedPartials(t) {
 		if !strings.Contains(page, "<!-- partial: "+name+" -->") {
@@ -126,9 +126,9 @@ func TestEveryPartialAppearsOnThePage(t *testing.T) {
 // Every class idiom ui.Styleguide ships is rendered on the page, same
 // marker mechanism.
 func TestEveryStyleguideSampleAppears(t *testing.T) {
-	page := string(render(t)["ink/en/index.html"])
+	page := string(render(t)[RootTheme()+"/en/index.html"])
 	if page == "" {
-		t.Fatal("no ink/en/index.html in the rendered tree")
+		t.Fatalf("no %s/en/index.html in the rendered tree", RootTheme())
 	}
 	names := make([]string, 0, len(ui.Styleguide()))
 	for name := range ui.Styleguide() {
@@ -318,7 +318,8 @@ func TestEveryPageIsAWholeLocalisedDocument(t *testing.T) {
 }
 
 // localeOfPath reads the locale a page is for out of its path:
-// "<theme>/<locale>/…", and the root index is ink/en by definition.
+// "<theme>/<locale>/…", and the root index is the default theme's
+// English page by definition.
 func localeOfPath(p string) string {
 	parts := strings.Split(path.Clean(p), "/")
 	if len(parts) < 2 {
@@ -376,12 +377,12 @@ func TestNoIndexPageOpensAModalOverTheGallery(t *testing.T) {
 }
 
 // themeLocaleOfPath reads a page's theme and locale out of its path.
-// The tree root is ink/en by definition, the same way localeOfPath
-// treats it.
+// The tree root is the default theme in English by definition, the same
+// way localeOfPath treats it.
 func themeLocaleOfPath(p string) (theme, locale string) {
 	parts := strings.Split(path.Clean(p), "/")
 	if len(parts) < 3 {
-		return "ink", "en"
+		return RootTheme(), "en"
 	}
 	return parts[0], parts[1]
 }
@@ -427,22 +428,23 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	}
 }
 
-// The root index is ink/en, byte for byte. It used to be a second
-// render at a shallower depth whose every path came out different, and
-// this gate blanked the hrefs to compare the rest; with absolute paths
-// there is no difference left to allow for, so the gate asserts the
-// stronger thing directly.
-func TestRootIndexIsInkEnglishAtTheTreeRoot(t *testing.T) {
+// The root index is the default theme's English page, byte for byte. It
+// used to be a second render at a shallower depth whose every path came
+// out different, and this gate blanked the hrefs to compare the rest;
+// with absolute paths there is no difference left to allow for, so the
+// gate asserts the stronger thing directly.
+func TestRootIndexIsTheDefaultThemeInEnglishAtTheTreeRoot(t *testing.T) {
 	files := render(t)
-	root, nested := string(files["index.html"]), string(files["ink/en/index.html"])
+	nestedPath := RootTheme() + "/en/index.html"
+	root, nested := string(files["index.html"]), string(files[nestedPath])
 	if root == "" || nested == "" {
-		t.Fatal("root or ink/en index missing")
+		t.Fatalf("root or %s index missing", nestedPath)
 	}
 	if !strings.Contains(root, `href="`+mountPrefix+`tokens.css"`) {
 		t.Errorf("root index does not link %stokens.css", mountPrefix)
 	}
 	if root != nested {
-		t.Error("the root index is not byte-identical to ink/en/index.html")
+		t.Errorf("the root index is not byte-identical to %s", nestedPath)
 	}
 	// No page in the tree may climb with a relative path, wherever it
 	// sits: that is the whole of the bug this shape fixes.
@@ -457,7 +459,7 @@ func TestRootIndexIsInkEnglishAtTheTreeRoot(t *testing.T) {
 // natural-language date combobox both boot from the JavaScript the tree
 // ships, so the page has to give them something to boot on.
 func TestEnhancedControlsAreOnThePage(t *testing.T) {
-	page := string(render(t)["ink/en/index.html"])
+	page := string(render(t)[RootTheme()+"/en/index.html"])
 	for _, want := range []string{"data-rst-select", "data-rst-date", "data-rst-time", "data-rst-range"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("no %s on the page — the enhancement has nothing to boot on", want)

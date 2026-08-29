@@ -26,7 +26,7 @@ own tests, and serves, before you have written anything. It runs
 | `--icons` | `lucide`, `font-awesome` | `lucide` |
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
-| `--theme` | `ink`, `teal`, `warm` | `ink` |
+| `--theme` | `day`, `plain`, `signal` | `day` |
 | `--shell` | `column`, `topbar`, `sidebar` | `column` |
 
 All six set × delivery combinations scaffold, compile and pass
@@ -37,7 +37,7 @@ re-reads the profile name afterwards. [Icons](/docs/icons) explains what
 each delivery mode costs, including the one worth repeating: with `js`,
 icons do not render at all without JavaScript.
 
-`--theme` picks the colour-and-type stylesheet written as
+`--theme` picks the colour, type and shape stylesheet written as
 `static/theme.css`, and `--shell` picks the page frame written as
 `templates/layout.html`. Both are copied in verbatim and are yours from
 that moment — the theme like `tokens.css`, the layout like every other

@@ -37,7 +37,7 @@ func runNew(args []string) error {
 	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
 	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
 	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
-	theme := fset.String("theme", "ink", "colour theme: "+strings.Join(ui.ThemeNames(), ", "))
+	theme := fset.String("theme", "day", "colour, type and shape theme: "+strings.Join(ui.ThemeNames(), ", "))
 	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
 	if err := fset.Parse(args); err != nil {
 		return err

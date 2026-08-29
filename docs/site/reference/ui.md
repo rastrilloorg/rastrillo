@@ -100,23 +100,26 @@ func ThemeNames() []string
 func ThemeCSS(name string) ([]byte, bool)
 ```
 
-The three shipped themes, `ink` first: `ink`, `teal`, `warm`.
+The three shipped themes, `day` first: `day`, `plain`, `signal`.
 `ThemeCSS` returns one theme's bytes and reports `false` for a name that
 is not shipped — `rastrillo new --theme` calls it before it writes
 anything.
 
-A theme is colour and type family only; the structure is `tokens.css`.
-It declares its tokens three times — light, dark under
-`prefers-color-scheme`, and again under `[data-theme]` so an explicit
-toggle wins in both directions — and carries its own measured WCAG 2.2
-AA contrast table in its header comment. `ui`'s `contrast_test.go`
-recomputes every pair, so a theme that drifts fails the build rather
-than shipping.
+A theme is colour, type family and shape; the structure is `tokens.css`.
+It is one `:root` block under `color-scheme: light dark`, with every
+colour declared once as `light-dark(<light>, <dark>)` and two toggle
+rules at the foot setting nothing but `color-scheme`, so an explicit
+`[data-theme]` choice wins in both directions without restating a
+colour. Each file carries its own measured WCAG 2.2 AA contrast table in
+its header comment, for both schemes; `ui`'s `contrast_test.go` splits
+the `light-dark()` calls back apart and recomputes every pair, so a
+theme that drifts fails the build rather than shipping.
 
 The chosen theme lands as `static/theme.css` and is app-owned from that
 moment. Swapping in a hand-written one means replacing that file; the
-whole surface a theme has to satisfy is the token set `ink` declares,
-which `TestThemesDeclareIdenticalTokenSets` holds every theme to.
+whole surface a theme has to satisfy is the token set `day` declares —
+which now includes the radii and the four depth tokens — and
+`TestThemesDeclareIdenticalTokenSets` holds every theme to it.
 
 ## Shells
 

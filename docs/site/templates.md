@@ -267,9 +267,9 @@ you meant to, rather than at an upgrade. Delete or update that test when
 you intend to diverge. See [Assets](/docs/assets).
 
 Two stylesheets, not one. `tokens.css` is structure — layout, spacing,
-radius, the type scale, and every `rst-` component class. A theme,
-written beside it as `static/theme.css`, is the colour and the type
-family those classes paint themselves with. The split is what makes a
+the type scale, and every `rst-` component class. A theme, written
+beside it as `static/theme.css`, is the colour, the type family and the
+shape those classes paint themselves with. The split is what makes a
 restyle cheap: swapping one file changes how everything looks, and
 nothing about how anything is laid out.
 
@@ -277,34 +277,55 @@ nothing about how anything is laid out.
 
 Three ship, and `rastrillo new --theme=<name>` writes the one you pick:
 
-| Theme  | The look                                                            |
-|--------|---------------------------------------------------------------------|
-| `ink`  | iron-gall violet on cool-violet neutrals (default)                  |
-| `teal` | workbench teal on green-grey neutrals, monospace-leaning type       |
-| `warm` | rust on cream paper neutrals — closer to letters than to a dashboard |
+| Theme    | The look                                                           |
+|----------|--------------------------------------------------------------------|
+| `day`    | an everyday blue on white and grey; soft corners (default)         |
+| `plain`  | the skeleton: greyscale, system type, almost no shape              |
+| `signal` | graphite and one live cobalt; milled corners, short dense shadows  |
 
-A theme file holds custom properties and a `color-scheme`, declared
-three times: once for light, once under `prefers-color-scheme: dark`,
-and once more under `[data-theme]` so an explicit toggle beats the OS in
-both directions. Both modes are authored — the dark set is not the light
-set inverted.
+A theme file is one `:root` block. It sets `color-scheme: light dark`,
+then declares every colour once as `light-dark(<light>, <dark>)`;
+single-valued tokens — the font stack, the radii — are written plain.
+Two rules at the foot of the file are the whole explicit toggle:
+
+```css
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+```
+
+Setting `color-scheme` re-resolves every `light-dark()` in the file at
+once, in both directions, so a toggle beats the OS without restating a
+single colour. Both schemes are authored — the dark set is not the light
+set inverted — and there is no second copy of the palette to keep in
+sync.
+
+One caveat worth knowing: `light-dark()` is a colour function, so it may
+only stand where a colour is expected. A shadow token wraps its colour
+and writes the geometry outside the call —
+`0 8px 24px light-dark(a, b)`, never `light-dark(0 8px 24px a, …)`.
+
+Shape is part of the theme, not the structure. `--rst-radius`,
+`--rst-radius-sm`, `--rst-radius-pill` and the four depth tokens
+(`--rst-shadow-pop`, `--rst-shadow-knob`, `--rst-shadow-lift`,
+`--rst-overlay`) live in the theme file, which is why `plain` can be
+nearly square and `signal` can be milled while `tokens.css` stays the
+same bytes.
 
 Each file carries its own contrast table in the header comment: every
-text-on-background and border-on-background pair with the measured
-ratio beside the WCAG 2.2 AA requirement it has to clear. `ui`'s
-contrast gate recomputes every pair from the hex values in the file and
-fails if one has dropped under its AA floor — 4.5:1 for text, 3:1 for a
-control border. What it does not check is the printed number. A row can
-go stale and the build stays green, so if you edit a colour, edit the
-row: nothing else will.
+text-on-background and border-on-background pair, in both schemes, with
+the measured ratio beside the WCAG 2.2 AA requirement it has to clear.
+`ui`'s contrast gate splits every `light-dark()` back into two tables and
+recomputes every pair, failing if one has dropped under its AA floor —
+4.5:1 for text, 3:1 for a control border. What it does not check is the
+printed number. A row can go stale and the build stays green, so if you
+edit a colour, edit the row: nothing else will.
 
 Swapping in a theme of your own is replacing `static/theme.css`. The
-only contract is the token set: declare every colour name `ink` declares
-in each of the three blocks — `--rst-font` is declared once, in its own
-`:root` — and every component class already knows what to do with it.
-The scaffold's `vendored_test.go` pins `theme.css` to the library copy
-exactly as it pins `tokens.css`, so delete its line there when the edit
-is deliberate.
+only contract is the token set: declare every name `day` declares, and
+every component class already knows what to do with it. The scaffold's
+`vendored_test.go` pins `theme.css` to the library copy exactly as it
+pins `tokens.css`, so delete its line there when the edit is
+deliberate.
 
 ## Shells
 

@@ -51,41 +51,54 @@ declare. Concretely:
 
 ### 1.1 What a theme is
 
-A theme is colour and type: the light `:root` block, the
-`@media (prefers-color-scheme: dark)` block, the two `[data-theme]`
-override blocks, and `--rst-font`. Nothing structural. Today those
-blocks live inside `ui/tokens.css`; they move out.
+AS BUILT (v2, 2026-08-29). A theme is colour, type family and shape:
+one `:root` block setting `color-scheme: light dark`, every colour
+declared once as `light-dark(<light>, <dark>)`, single-valued tokens
+(`--rst-font`, the radii) written plain, and exactly two toggle rules —
+`:root[data-theme="light"] { color-scheme: light; }` and
+`:root[data-theme="dark"] { color-scheme: dark; }` — which re-resolve
+every `light-dark()` in the file at once, in both directions.
+`light-dark()` is a colour function, so a shadow token wraps only its
+colour and writes the geometry outside the call. Nothing structural.
+Those blocks used to live inside `ui/tokens.css`; they moved out in v1,
+and the shape tokens (`--rst-radius`, `--rst-radius-sm`,
+`--rst-radius-pill`, `--rst-shadow-pop`, `--rst-shadow-knob`,
+`--rst-shadow-lift`, `--rst-overlay`) followed them in v2.
 
 ```
-ui/tokens.css           structure only: spacing, radii, every component class
-ui/themes/ink.css       the current palette, unchanged — iron-gall violet on cool-violet neutrals
-ui/themes/teal.css      amadan's teal (#0b6e63) on green-grey neutrals, monospace-first --rst-font
-ui/themes/warm.css      messenger's paper (#efe3d6 / #fbf6ee) neutrals, rust accent (~#a3452a), warm charcoal dark
+ui/tokens.css           structure only: spacing, the type scale, every component class
+ui/themes/day.css       the default — an everyday blue (#2464e0) on white and grey, 8/6px radii
+ui/themes/plain.css     the skeleton — greyscale, accent = text colour, 4/3px radii, hairline shadows
+ui/themes/signal.css    graphite neutrals, one electric cobalt (#1a56ff), 4/2px radii, short dense shadows
 ```
+
+(v1 shipped `ink`, `teal` and `warm`; §6-v2 replaced all three.)
 
 Each theme file carries the same custom-property set — a gate asserts
 the three declare identical property names — and its own WCAG 2.2 AA
-table in the header, computed from its hex values.
-`ui/contrast_test.go` parameterises over `ThemeNames()` and asserts
-every documented pair; a new theme that fails a pair does not ship.
+table in the header, in BOTH schemes, computed from its hex values.
+`ui/contrast_test.go` parameterises over `ThemeNames()` × {light, dark},
+splitting each `light-dark()` back into two per-scheme tables, and
+asserts every documented pair; a new theme that fails a pair does not
+ship.
 
 ### 1.2 API
 
 ```go
-func ThemeNames() []string            // "ink", "teal", "warm" — ink first, the default
+func ThemeNames() []string            // "day", "plain", "signal" — day first, the default
 func ThemeCSS(name string) ([]byte, bool)
 ```
 
 ### 1.3 Delivery
 
-`rastrillo new --theme=ink` (default `ink`) writes `static/tokens.css`
+`rastrillo new --theme=day` (default `day`) writes `static/tokens.css`
 and `static/theme.css`. The file is always named `theme.css`, whatever
 theme it holds: the layout links one fixed name, and switching theme
 later is replacing one small file. The scaffold's vendored-pin test
 gains a line for `theme.css`, keyed to the chosen theme name recorded
 in the test's map.
 
-The examples keep `ink` and their pins.
+The examples keep the default theme and their pins (`day` since v2).
 
 ## 2. Shells
 

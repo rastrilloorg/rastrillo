@@ -27,7 +27,7 @@ internal/<app>/render.go     embedded templates, flash/session-aware page data
 cmd/<app>/main.go            Resolve -> db.Open -> App -> Serve
 ```
 
-`rastrillo new --theme=ink|teal|warm --shell=column|topbar|sidebar <name>`
+`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar <name>`
 scaffolds all of it (also `--icons`, `--icon-delivery`, `--ux`): the theme
 lands as `static/theme.css`, the shell as `templates/layout.html`, both
 app-owned from that moment. docs/site/templates.md

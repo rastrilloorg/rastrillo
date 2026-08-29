@@ -99,19 +99,28 @@ func Render() (map[string][]byte, error) {
 		}
 	}
 
-	// The tree root is ink/en again. It used to be a second render at a
-	// different depth, because every path on it needed rewriting for
-	// the shallower directory; with absolute paths there is nothing
-	// left to rewrite, so the two files are the same bytes and saying
-	// so is more honest than a second call that could only ever return
-	// them. Copied, not aliased: callers get one slice per path.
-	nested, ok := out["ink/en/index.html"]
+	// The tree root is the default theme in English again — day/en since
+	// v2, and named through ui.ThemeNames() rather than spelled out, so
+	// renaming the default theme moves the root with it. It used to be a
+	// second render at a different depth, because every path on it needed
+	// rewriting for the shallower directory; with absolute paths there is
+	// nothing left to rewrite, so the two files are the same bytes and
+	// saying so is more honest than a second call that could only ever
+	// return them. Copied, not aliased: callers get one slice per path.
+	rootPage := RootTheme() + "/en/index.html"
+	nested, ok := out[rootPage]
 	if !ok {
-		return nil, fmt.Errorf("designsystem: index.html: no ink/en page to serve as the tree root")
+		return nil, fmt.Errorf("designsystem: index.html: no %s page to serve as the tree root", rootPage)
 	}
 	out["index.html"] = append([]byte(nil), nested...)
 	return out, nil
 }
+
+// RootTheme is the theme the tree root serves: the first name
+// ui.ThemeNames() reports, which is the same theme rastrillo new
+// scaffolds by default. Exported so the gates can say "the root index is
+// this theme's English page" without repeating the name.
+func RootTheme() string { return ui.ThemeNames()[0] }
 
 // translator binds T (and Tf, which ui.WithT sets to the same function)
 // to one locale's framework catalog: the locale's own value, English if
@@ -384,35 +393,99 @@ func structuralGroups() ([]tokenGroup, error) {
 		}
 		return out
 	}
+	// No Radius group: the radii moved into the themes in v2, so they are
+	// part of the palette below, not of the structure every page shares.
 	return []tokenGroup{
 		{Title: "Type scale", Kind: "type", Rows: pick("--rst-fs-", "font-size")},
 		{Title: "Spacing", Kind: "space", Rows: pick("--rst-sp-", "inline-size")},
-		{Title: "Radius", Kind: "radius", Rows: pick("--rst-radius", "border-radius")},
 	}, nil
 }
 
-// themePalette reads one theme's light block plus the type family it
-// declares above it. Dark values are not on the page: they live in the
-// same file, and the page says so rather than showing a second set of
-// chips nobody can compare side by side anyway.
+// lightHalf resolves a v2 theme value for the light scheme: the first
+// argument of a whole-value light-dark(<light>, <dark>) call, or the
+// value unchanged when it is not one. The split is paren-aware, because
+// both halves are usually rgba() calls carrying commas of their own.
+//
+// A value that merely contains a light-dark() somewhere inside it — a
+// shadow, "0 8px 24px light-dark(a, b)" — is left whole on purpose: the
+// page shows shadows as a shadow worn by a card, not as a colour chip,
+// so the whole declaration is what a reader needs to see.
+func lightHalf(v string) string {
+	const prefix = "light-dark("
+	if !strings.HasPrefix(v, prefix) || !strings.HasSuffix(v, ")") {
+		return v
+	}
+	inner := v[len(prefix) : len(v)-1]
+	depth := 0
+	for i := 0; i < len(inner); i++ {
+		switch inner[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth < 0 {
+				return v
+			}
+		case ',':
+			if depth == 0 {
+				return strings.TrimSpace(inner[:i])
+			}
+		}
+	}
+	return v
+}
+
+// themePalette reads one theme's single :root block: the colours
+// resolved to their light halves, the shape tokens as their own group,
+// and the type family. Dark values are not on the page: they live in the
+// same declaration, and the page says so rather than showing a second
+// set of chips nobody can compare side by side anyway.
 func themePalette(theme string) (colours []tokenGroup, font tokenRow, err error) {
 	raw, ok := ui.ThemeCSS(theme)
 	if !ok {
 		return nil, tokenRow{}, fmt.Errorf("no theme %q", theme)
 	}
 	css := string(raw)
-	light, err := blockBody(css, `:root[data-theme="light"] {`)
+	// ":root {" cannot match the two toggle rules at the foot of the
+	// file, whose selectors are ":root[data-theme=…] {".
+	body, err := blockBody(css, ":root {")
 	if err != nil {
 		return nil, tokenRow{}, fmt.Errorf("themes/%s.css: %w", theme, err)
 	}
-	family, err := blockBody(css, ":root {")
-	if err != nil {
-		return nil, tokenRow{}, fmt.Errorf("themes/%s.css: %w", theme, err)
-	}
-	for _, row := range parseTokens(family) {
-		if row.Name == "--rst-font" {
+
+	var palette []tokenRow
+	var radii []tokenRow
+	for _, row := range parseTokens(body) {
+		switch {
+		case row.Name == "--rst-font":
 			font = row
+		case strings.HasPrefix(row.Name, "--rst-radius"):
+			row.Preview = preview("border-radius", row.Name)
+			radii = append(radii, row)
+		default:
+			palette = append(palette, resolveLight(row))
 		}
 	}
-	return colourGroups(parseTokens(light)), font, nil
+	groups := colourGroups(palette)
+	if len(radii) > 0 {
+		groups = append(groups, tokenGroup{Title: "Radius", Kind: "radius", Rows: radii})
+	}
+	return groups, font, nil
+}
+
+// resolveLight rewrites one row to the light scheme: the displayed value
+// loses its light-dark() wrapper, and a value that only became a colour
+// once resolved (every palette token, since v2) gets its chip back.
+func resolveLight(row tokenRow) tokenRow {
+	row.Value = lightHalf(row.Value)
+	row.Colour = colourValue.MatchString(row.Value)
+	switch {
+	case row.Shadow:
+		row.Preview = preview("box-shadow", row.Name)
+	case row.Colour:
+		row.Preview = preview("background", row.Name)
+	default:
+		row.Preview = ""
+	}
+	return row
 }

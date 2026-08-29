@@ -60,8 +60,9 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 		t.Fatal("TokensCSS() is empty")
 	}
 	for _, want := range []string{
-		"--rst-sp-4", "--rst-fs-base", "--rst-radius",
+		"--rst-sp-4", "--rst-fs-base",
 		"var(--rst-bg)", "var(--rst-text)", "var(--rst-accent)", "var(--rst-font)",
+		"var(--rst-radius)", "var(--rst-shadow-pop)",
 		".rst-status", ".rst-sr-only",
 	} {
 		if !strings.Contains(string(css), want) {
@@ -70,18 +71,23 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 	}
 	// The colour blocks are the theme's now. tokens.css naming one again
 	// means a palette leaked back into the structural file, where a
-	// theme swap could no longer reach it.
+	// theme swap could no longer reach it. The shape tokens joined them
+	// in v2: a "--rst-radius:" or "--rst-shadow-pop:" *declaration* here
+	// would silently outrank nothing and confuse everything, since every
+	// theme declares its own.
 	for _, gone := range []string{
 		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+		"--rst-radius:", "--rst-radius-sm:", "--rst-radius-pill:",
+		"--rst-shadow-pop:", "--rst-shadow-knob:", "--rst-shadow-lift:", "--rst-overlay:",
 	} {
 		if strings.Contains(string(css), gone) {
-			t.Errorf("tokens.css declares theme block %q; colour belongs in themes/", gone)
+			t.Errorf("tokens.css declares %q; colour and shape belong in themes/", gone)
 		}
 	}
 }
 
-// Every shipped theme is a whole theme: the colour blocks, the type
-// family, and the three-block structure the contrast gate parses.
+// Every shipped theme is a whole theme: the palette, the type family,
+// the shape tokens, and the one-block structure the contrast gate parses.
 func TestThemeCSSIsEmbedded(t *testing.T) {
 	for _, name := range ThemeNames() {
 		css, ok := ThemeCSS(name)
@@ -90,28 +96,54 @@ func TestThemeCSSIsEmbedded(t *testing.T) {
 		}
 		for _, want := range []string{
 			"--rst-bg", "--rst-surface", "--rst-text", "--rst-accent",
-			"--rst-tone-positive-fg", "--rst-font",
-			"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+			"--rst-tone-positive-fg", "--rst-font", "--rst-radius", "--rst-shadow-pop",
+			"color-scheme: light dark", "light-dark(",
+			`:root[data-theme="dark"] { color-scheme: dark; }`,
+			`:root[data-theme="light"] { color-scheme: light; }`,
 		} {
 			if !strings.Contains(string(css), want) {
 				t.Errorf("themes/%s.css is missing %q", name, want)
 			}
 		}
+		// The v2 format is one :root block plus exactly two toggle rules,
+		// and the toggle rules carry nothing but color-scheme. A theme
+		// that grew a second palette block (a prefers-color-scheme media
+		// query, say, or colours restated under [data-theme]) has a copy
+		// of itself to keep in sync again, which is the failure
+		// light-dark() was adopted to make impossible.
+		if strings.Contains(string(css), "prefers-color-scheme") {
+			t.Errorf("themes/%s.css declares a prefers-color-scheme block; the scheme split is light-dark()'s job now", name)
+		}
+		if got := strings.Count(string(css), ":root {"); got != 1 {
+			t.Errorf("themes/%s.css opens %d bare :root blocks, want exactly 1", name, got)
+		}
+		for _, prop := range []string{"--rst-bg:", "--rst-text:", "--rst-accent:", "--rst-radius:"} {
+			if got := strings.Count(string(css), prop); got != 1 {
+				t.Errorf("themes/%s.css declares %s %d times, want exactly 1 (one block, both schemes)", name, prop, got)
+			}
+		}
 	}
-	for _, bad := range []string{"nope", "", "ink.css", "../tokens"} {
+	for _, bad := range []string{"nope", "", "day.css", "../tokens"} {
 		if _, ok := ThemeCSS(bad); ok {
 			t.Errorf("ThemeCSS(%q) reports a theme that is not shipped", bad)
 		}
 	}
 }
 
-// Both themes are authored, never inverted: every themed token is
-// declared three times — light, dark-by-OS, and dark-by-toggle. A
-// half-authored dark theme is the classic way a token file rots, and
-// after the split it is the classic way a *new* theme ships half-done,
-// so this runs over every theme rather than over tokens.css.
-func TestBothThemesDeclareEveryColourToken(t *testing.T) {
-	themed := []string{
+// Both schemes are authored, never inverted. Before v2 that meant
+// counting three copies of every colour block; now it means every themed
+// colour is declared exactly once, as a light-dark() call with two
+// distinct-or-deliberate halves. A theme that wrote a bare hex where a
+// light-dark() belongs has a dark scheme that is just the light one
+// showing through, which is the modern shape of the same rot.
+//
+// The shadows and the overlay are exempt from the light-dark()
+// requirement but not from being declared: a shadow whose two schemes
+// are genuinely identical (day's knob and lift) is allowed to say so
+// once, and light-dark() may only wrap the colour inside a shadow value
+// anyway, never the whole thing.
+func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
+	needsLightDark := []string{
 		"--rst-bg", "--rst-surface", "--rst-surface-2", "--rst-line", "--rst-line-strong",
 		"--rst-text", "--rst-text-muted", "--rst-text-faint",
 		"--rst-accent", "--rst-accent-strong", "--rst-accent-soft", "--rst-on-accent",
@@ -119,19 +151,39 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		"--rst-tone-positive-fg", "--rst-tone-positive-bg",
 		"--rst-tone-warning-fg", "--rst-tone-warning-bg",
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
-		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
+		"--rst-overlay",
 	}
+	declaredOnce := append([]string{
+		"--rst-font", "--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift",
+	}, needsLightDark...)
+
 	for _, name := range ThemeNames() {
 		raw, ok := ThemeCSS(name)
 		if !ok {
 			t.Fatalf("ThemeCSS(%q) missing", name)
 		}
 		css := string(raw)
-		for _, prop := range themed {
+		decl := regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
+		values := map[string]string{}
+		for _, m := range decl.FindAllStringSubmatch(css, -1) {
+			values[m[1]] = strings.TrimSpace(m[2])
+		}
+		for _, prop := range declaredOnce {
 			// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
 			// trailing colon counts declarations only.
-			if got := strings.Count(css, prop+":"); got != 3 {
-				t.Errorf("themes/%s.css declares %s %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", name, prop, got)
+			if got := strings.Count(css, prop+":"); got != 1 {
+				t.Errorf("themes/%s.css declares %s %d times, want exactly 1", name, prop, got)
+			}
+		}
+		for _, prop := range needsLightDark {
+			light, dark, ok := splitLightDark(values[prop])
+			if !ok {
+				t.Errorf("themes/%s.css: %s is %q, want a whole-value light-dark(<light>, <dark>)", name, prop, values[prop])
+				continue
+			}
+			if light == dark {
+				t.Errorf("themes/%s.css: %s declares %s for both schemes; that is an inverted dark theme wearing light-dark()'s clothes", name, prop, light)
 			}
 		}
 	}
@@ -1943,20 +1995,30 @@ func TestLocaleMenuRenders(t *testing.T) {
 }
 
 // Every theme file must declare exactly the same set of --rst-*
-// properties as ink, the reference theme. A theme that forgets a token
+// properties as day, the reference theme. A theme that forgets a token
 // does not fail loudly at render time — it silently falls back to
 // whatever the cascade already had, which in a scaffolded app is
 // nothing at all, so the affected element renders unstyled rather than
-// wrong. Names only: values are the theme's whole point, and their
-// contrast is contrast_test.go's job.
+// wrong. Since v2 that set includes the shape tokens (the radii and the
+// four depth values), which used to be tokens.css's and are now part of
+// what a theme has to answer for. Names only: values are the theme's
+// whole point, and their contrast is contrast_test.go's job.
 func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 	names := ThemeNames()
-	if len(names) == 0 || names[0] != "ink" {
-		t.Fatalf("ThemeNames = %v; ink must exist and come first", names)
+	if len(names) == 0 || names[0] != "day" {
+		t.Fatalf("ThemeNames = %v; day must exist and come first", names)
 	}
-	want := themePropSet(t, "ink")
+	want := themePropSet(t, "day")
 	if len(want) == 0 {
-		t.Fatal("ink declares no --rst- properties")
+		t.Fatal("day declares no --rst- properties")
+	}
+	for _, shape := range []string{
+		"--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
+	} {
+		if !want[shape] {
+			t.Errorf("day does not declare %s; the shape axis is the theme's since v2", shape)
+		}
 	}
 	for _, n := range names[1:] {
 		got := themePropSet(t, n)
@@ -1967,7 +2029,7 @@ func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 		}
 		for p := range got {
 			if !want[p] {
-				t.Errorf("theme %s declares %s, which ink does not", n, p)
+				t.Errorf("theme %s declares %s, which day does not", n, p)
 			}
 		}
 	}

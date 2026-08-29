@@ -33,7 +33,7 @@ func TestVendoredTokensCSSMatchesTheLibrary(t *testing.T) {
 // The blog is scaffolded with ink — swap static/theme.css and this
 // constant together.
 func TestVendoredThemeCSSMatchesTheLibrary(t *testing.T) {
-	const vendoredTheme = "ink"
+	const vendoredTheme = "day"
 	lib, ok := ui.ThemeCSS(vendoredTheme)
 	if !ok {
 		t.Fatalf("ui.ThemeCSS(%q) reports no such theme", vendoredTheme)

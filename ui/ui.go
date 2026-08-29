@@ -51,9 +51,9 @@
 //
 // Styling comes from two stylesheets rastrillo new writes once into a
 // new app's static/ directory: tokens.css, which is structure — layout,
-// spacing, radius, the type scale and the component classes — and a
-// theme (see ThemeCSS), which is the colour and the type family those
-// classes paint themselves with. rastrillo.Serve never serves either:
+// spacing, the type scale and the component classes — and a theme (see
+// ThemeCSS), which is the colour, the type family and the shape (radii,
+// shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
 // static files the app is free to edit in place. rastrillo.js, the fragment shim behind
 // data-poll and data-busy, ships the same way, landing beside it. It
@@ -229,23 +229,37 @@ func Templates() fs.FS {
 // beside it — see ThemeCSS.
 func TokensCSS() []byte { return tokensCSS }
 
-// themeNames lists the shipped themes, ink first: it is the reference
-// theme, the one every other theme's token set is checked against
-// (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice matches
-// the files in themes/ exactly — adding a theme means adding both.
-var themeNames = []string{"ink", "teal", "warm"}
+// themeNames lists the shipped themes, day first: it is the default and
+// the reference theme, the one every other theme's token set is checked
+// against (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice
+// matches the files in themes/ exactly — adding a theme means adding
+// both.
+//
+//	day     the everyday default: an ordinary blue on white and grey
+//	plain   the skeleton: greyscale, system type, almost no shape
+//	signal  graphite and one live cobalt; milled corners, dense shadows
+var themeNames = []string{"day", "plain", "signal"}
 
-// ThemeNames returns the shipped theme names, ink first. The returned
+// ThemeNames returns the shipped theme names, day first. The returned
 // slice is a copy, so a caller sorting or truncating it cannot reorder
 // the library's own list.
 func ThemeNames() []string { return append([]string(nil), themeNames...) }
 
-// ThemeCSS returns one theme's raw bytes — the colour tokens and the
-// type family tokens.css paints its component classes with — reporting
+// ThemeCSS returns one theme's raw bytes — the colour, type-family and
+// shape tokens tokens.css paints its component classes with — reporting
 // false for a name that is not shipped. rastrillo new writes the chosen
 // theme once as static/theme.css, beside tokens.css and on exactly the
 // same terms: app-owned from then on, and swappable for a hand-written
 // one without touching the structural stylesheet.
+//
+// A theme file is one :root block. Every colour is declared once as
+// light-dark(<light>, <dark>) under color-scheme: light dark, and the two
+// rules at the bottom — :root[data-theme="light"] and
+// :root[data-theme="dark"], each setting nothing but color-scheme — are
+// the whole explicit toggle: changing color-scheme re-resolves every
+// light-dark() in the file at once, in both directions. Radii and shadows
+// live here too, so a theme can change how an app feels and not only what
+// colour it is.
 func ThemeCSS(name string) ([]byte, bool) {
 	b, err := fs.ReadFile(themesFS, "themes/"+name+".css")
 	return b, err == nil

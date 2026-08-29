@@ -16,11 +16,20 @@
    not a wish (ui_test.go, TestTokensCSSIsSelfContained) — which is also
    why this comment cannot spell those constructs out literally.
 
-   Colour and the type family are not here: they live in themes/ink.css,
-   which rastrillo new writes beside this file as static/theme.css. This
-   file is structure — layout, spacing, radius, the type scale, and the
-   component classes, every one of them painted with var(--rst-*). Swap
-   the theme file and the app changes palette; nothing here is touched.
+   Colour, the type family and shape are not here: they live in
+   themes/day.css (or whichever theme was scaffolded), which rastrillo new
+   writes beside this file as static/theme.css. This file is structure —
+   layout, spacing, the type scale, and the component classes, every one
+   of them painted with var(--rst-*). Swap the theme file and the app
+   changes palette, corner and depth; nothing here is touched.
+
+   Radius and shadow used to live in the scale block below. They moved to
+   the themes in v2, because a theme that can only change colour cannot
+   change how an app feels: day is soft (8px/6px, wide low-alpha
+   shadows), plain is nearly square (4px/3px, one hairline layer) and
+   signal is milled (4px/2px, short dense shadows). tokens.css still
+   paints with var(--rst-radius*) and var(--rst-shadow-*) everywhere; it
+   just no longer decides what they are.
 
    Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
    WCAG 2.2): pagination chips measure about 30px, row action pills
@@ -32,7 +41,8 @@
    reason. Anything you add here should follow suit.
    ──────────────────────────────────────────────────────────────────── */
 
-/* ── Scale: type, spacing, radius. Theme-independent. ─────────────── */
+/* ── Scale: type and spacing. Theme-independent. Radius is not here —
+      it is part of the theme's shape axis; see themes/. ────────────── */
 :root {
   --rst-fs-base: 0.875rem;   /* 14px at the browser default */
   --rst-fs-sm: 0.78125rem;   /* 12.5px */
@@ -44,10 +54,6 @@
   --rst-sp-4: 1rem;
   --rst-sp-5: 1.5rem;
   --rst-sp-6: 2.5rem;
-
-  --rst-radius: 10px;
-  --rst-radius-sm: 7px;
-  --rst-radius-pill: 999px;
 }
 
 /* ── Base. Three rules, so a freshly scaffolded app looks finished
@@ -138,19 +144,19 @@ body {
    4.5:1 as a filled background against --rst-on-accent's label colour
    in both themes, so no new custom properties are needed — computed
    with the same WCAG relative-luminance formula as each theme file's
-   own contrast table (ink's values, shown; every theme's own pair is
-   gated the same way):
-     light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#93262f)   8.21:1
-     dark   --rst-on-accent (#1a1030) on --rst-tone-negative-fg (#f58c95)   7.81:1
+   own contrast table (day's values, shown; every theme's own pair is
+   gated the same way, in both schemes):
+     light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#b91c1c)   6.47:1
+     dark   --rst-on-accent (#0b1220) on --rst-tone-negative-fg (#f79aa0)   8.99:1
    Hover darkens via filter rather than a themed "negative-strong"
    token: brightness() scales every channel of the already-themed fill
    (and, being a post-paint filter, the label too), so one rule works
    in both themes without a new pair of colours to maintain. Re-checked
    with the label included in the scaled result, both still clear
-   4.5:1 by a wide margin (ink's values again; a post-paint filter
+   4.5:1 by a wide margin (day's values again; a post-paint filter
    result, so these two rows are illustrative rather than gated):
-     light  0.9× fill (#84222a) vs 0.9× label (#e6e6e6)   7.50:1
-     dark   0.9× fill (#dc7e86) vs 0.9× label (#170e2b)   6.50:1
+     light  0.9× fill (#a61919) vs 0.9× label (#e6e6e6)   6.06:1
+     dark   0.9× fill (#de8a90) vs 0.9× label (#0a101c)   7.38:1
    background/border-color/color are restated on :hover, matching
    .rst-btn--primary:hover's pattern exactly — .rst-btn:hover (same
    0,2,0 specificity, an earlier rule) sets border-color/color to the
