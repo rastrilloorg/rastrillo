@@ -90,6 +90,26 @@ From Paul's screenshots (reproduce each in the browser rig first — screenshot,
 
 ---
 
+### Task 5c: The busy-button rule
+
+**User requirement (2026-08-29):** "any button that does an action e.g. saves something rather than e.g. does something immediate like a disclosure or dropdown … should get a loading state, and we can default that to disabling the button and showing a loading spinner."
+
+**Files:** `ui/rastrillo.js` (the default; existing `data-busy` form opt-in subsumed), `ui/tokens.css` (+pins) for the busy button's spinner, `ui/partials/form-foot.html`/button docs if the markup needs a hook, `internal/designsystem/samples.go` + `page.go` (an idle/busy sample pair and the rule text beside it), `prose.go` keys, `ui/browser_test.go` (drives), `docs/site/{forms,templates,jobs}.md`, `SKILL.md`, spec §6-v2.
+
+**The rule, as documented:** a button that CHANGES something gets a loading state; a button that only reveals something (disclosure, dropdown, tab) does not. Default ON for every submit button in a form; opt out with `data-busy="false"` on the form or the button.
+
+**Binding implementation constraints:**
+- The button's `name`/`value` must still reach the server — so do NOT set `disabled` before the payload is built (that drops it and can cancel the submit in some engines). Set `aria-busy="true"` + the spinner state synchronously, guard the form against a second submit with a flag, and only harden to `disabled` after the submission is under way (post-tick) if at all.
+- A second click must not double-submit; the guard is the point of the rule.
+- `data-busy-label` keeps working (custom busy text). An app that already sets `data-busy` on a form keeps working; the change is that omitting it no longer opts out — a documented behaviour change.
+- `prefers-reduced-motion`: the spinner must not spin; show a static/pulse-free indicator instead.
+- Zero-JS: no busy state, form submits exactly as today. The rule is an enhancement, not a correctness claim — say so in the docs (server-side idempotency is still the app's job).
+- Reuse `.rst-spin`; keep the shim under its 12KB cap or raise honestly.
+
+- [ ] Drives: click submit → busy attrs + visible spinner + the button's name/value present in the submitted payload + a second click submits nothing new; reduced-motion → no spin; scriptless → unchanged. Gallery shows both states with the rule beside them. Commit `ui: a button that changes something says so while it works`.
+
+---
+
 ### Task 6: Preview widgets, dead links, new tabs
 
 **Files:** `internal/designsystem/page.go`, `samples.go`, `designsystem_test.go`, `ui/styleguide.go` untouched (source stays canonical). Regenerate tree.

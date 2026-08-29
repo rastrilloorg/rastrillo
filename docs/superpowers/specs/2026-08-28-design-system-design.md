@@ -777,3 +777,14 @@ shared group closing a header dropdown when a row menu opens, a submenu
 NOT closing its parent, outside-click and Escape dismissal, chrome and
 tblock untouched, and `:modal` false on the panel — the assertion that
 the zero-JS promise holds.
+
+### §6-v2 addendum (2026-08-29): the busy-button rule
+
+(12) A button that changes something gets a loading state — disabled-in-effect
+plus a spinner — by default; a button that only reveals something (disclosure,
+dropdown, tab) does not. The framework's `data-busy` form opt-in becomes the
+default for submit buttons, with `data-busy="false"` as the opt-out and
+`data-busy-label` unchanged. The guard against double submission is the
+substance of the rule; the spinner is how it tells the truth to the person
+waiting. Zero-JS: unchanged submit, no busy state — idempotency stays the
+app's job. Plan: Task 5c.
