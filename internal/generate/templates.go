@@ -48,7 +48,8 @@
 //
 //	form.html: IsNew bool; Fields map[string]string (current values,
 //	empty for New); Errors map[string]string, optional (a 400
-//	re-render's per-field message); BasicsAction/AdvancedAction string,
+//	re-render's per-field message, resolved through T so that a
+//	catalog key localises); BasicsAction/AdvancedAction string,
 //	meaningful only when !IsNew (Edit's two POST targets — Advanced's
 //	only exists in the template at all when the resource declares
 //	Advanced fields).
@@ -309,12 +310,30 @@ func showHTML(r rastrillo.Resource) []byte {
 // omits the key entirely rather than emitting "Required" false, which
 // is what keeps this call byte-identical to before Required existed
 // for every field that doesn't declare it.
+//
+// The error value goes through T on its way into the partial. form's
+// date/time/datetime parsers report a catalog key ("rastrillo.ui.
+// date_invalid") rather than a sentence, so the app's locale decides
+// the wording; the older parsers still report plain English, and T
+// hands back an unknown key verbatim, so those pass through unchanged.
+// The partials render .Error as given — wrapping here rather than in
+// field-text.html/field-textarea.html leaves a hand-written caller
+// that already passes a finished sentence exactly as it was.
+//
+// index .Errors, not .Errors.<Name>: a field with no error (and the
+// nil Errors map every non-400 render passes) makes the field lookup
+// an *invalid* reflect.Value, which text/template will hand to a
+// func(...any) like dict as a nil but refuses to hand to T, whose
+// parameter is a string ("invalid value; expected string"). index
+// yields the map element type's zero value instead, so the no-error
+// case reaches T as the empty string and the partial's {{if .Error}}
+// stays false.
 func formField(r rastrillo.Resource, f rastrillo.Field) string {
 	required := ""
 	if f.Required {
 		required = " \"Required\" true"
 	}
-	return fmt.Sprintf("{{template %q dict \"Name\" %q \"Label\" (T %q) \"Value\" .Fields.%s \"Error\" .Errors.%s%s}}\n",
+	return fmt.Sprintf("{{template %q dict \"Name\" %q \"Label\" (T %q) \"Value\" .Fields.%s \"Error\" (T (index .Errors %q))%s}}\n",
 		fieldPartial(f.Kind), f.Name, resourceKey(r.Name, "field."+sqlName(f.Name)), f.Name, f.Name, required)
 }
 
@@ -350,7 +369,9 @@ func formHTML(r rastrillo.Resource) []byte {
 	b.WriteString("                       for New\n")
 	b.WriteString("       Errors          map[string]string, optional — a validation\n")
 	b.WriteString("                       message per field name, set only on a 400\n")
-	b.WriteString("                       re-render\n")
+	b.WriteString("                       re-render; each value is resolved through T,\n")
+	b.WriteString("                       so a catalog key localises and a plain\n")
+	b.WriteString("                       sentence renders as written\n")
 	if hasAdvanced {
 		b.WriteString("       BasicsAction    string, required when !IsNew — the\n")
 		b.WriteString("                       edit-basics POST target\n")

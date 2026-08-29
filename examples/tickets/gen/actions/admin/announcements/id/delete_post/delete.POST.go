@@ -16,12 +16,12 @@ import (
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	store := announcementsstore.New(ctx.DB)
 	if _, err := store.GetAnnouncement(r.Context(), id); errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	} else if err != nil {
 		view.Fail(ctx, w, r, "announcements: loading announcements", err)

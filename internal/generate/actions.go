@@ -433,14 +433,17 @@ func actionImportLines(r rastrillo.Resource, needsForm, needsSession bool) strin
 // scoped routes behind sessions.Require / auth.RequireSession, which
 // already redirect page requests; this refusal is the defense-in-depth
 // backstop for an app that forgot, matching sessions' own answer for
-// a non-page request. Empty for an unscoped resource.
+// a non-page request. It goes through view.Forbidden, so the app's
+// error page (or a JSON client's JSON) answers it the same way
+// view.NotFound answers a missing record. Empty for an unscoped
+// resource.
 func sessionStmts(r rastrillo.Resource) string {
 	if !scoped(r) {
 		return ""
 	}
 	return `sess, ok := sessions.Current(r)
 	if !ok {
-		http.Error(w, "signed out", http.StatusForbidden)
+		view.Forbidden(ctx, w, r)
 		return
 	}
 `
@@ -1020,7 +1023,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1028,7 +1031,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1069,7 +1072,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1077,7 +1080,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1146,7 +1149,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	}
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1159,7 +1162,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		fmt.Fprintf(&b, "_, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	}
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1281,7 +1284,7 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1289,7 +1292,7 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
 	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
@@ -1338,14 +1341,14 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 `)
 	b.WriteString(sessionStmts(r))
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), %s); errors.Is(err, sql.ErrNoRows) {\n", singular, recordArg(r, alias, "Get", singular))
-	b.WriteString("\thttp.NotFound(w, r)\n\treturn\n")
+	b.WriteString("\tview.NotFound(ctx, w, r)\n\treturn\n")
 	fmt.Fprintf(&b, "} else if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), %s); err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", singular, recordArg(r, alias, "Delete", singular), failWhat(r, "deleting "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, %q, http.StatusSeeOther)\n}\n", r.Route)

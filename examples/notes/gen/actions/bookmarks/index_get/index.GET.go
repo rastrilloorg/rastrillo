@@ -19,7 +19,7 @@ import (
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	sess, ok := sessions.Current(r)
 	if !ok {
-		http.Error(w, "signed out", http.StatusForbidden)
+		view.Forbidden(ctx, w, r)
 		return
 	}
 	search := strings.TrimSpace(r.URL.Query().Get("q"))

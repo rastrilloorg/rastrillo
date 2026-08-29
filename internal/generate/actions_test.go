@@ -202,13 +202,13 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	store := notesstore.New(ctx.DB)
 	_, err := store.GetNote(r.Context(), id)
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	if err != nil {
@@ -262,13 +262,13 @@ import (
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	store := notesstore.New(ctx.DB)
 	n, err := store.GetNote(r.Context(), id)
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	if err != nil {
@@ -333,13 +333,13 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	store := notesstore.New(ctx.DB)
 	n, err := store.GetNote(r.Context(), id)
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	if err != nil {
@@ -759,13 +759,13 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	store := eventsstore.New(ctx.DB)
 	n, err := store.GetEvent(r.Context(), id)
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	if err != nil {
@@ -873,7 +873,7 @@ import (
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	sess, ok := sessions.Current(r)
 	if !ok {
-		http.Error(w, "signed out", http.StatusForbidden)
+		view.Forbidden(ctx, w, r)
 		return
 	}
 	search := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -1018,7 +1018,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 
 	sess, ok := sessions.Current(r)
 	if !ok {
-		http.Error(w, "signed out", http.StatusForbidden)
+		view.Forbidden(ctx, w, r)
 		return
 	}
 	p := form.Parse(r,
@@ -1079,17 +1079,17 @@ import (
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	sess, ok := sessions.Current(r)
 	if !ok {
-		http.Error(w, "signed out", http.StatusForbidden)
+		view.Forbidden(ctx, w, r)
 		return
 	}
 	store := bookmarksstore.New(ctx.DB)
 	if _, err := store.GetBookmark(r.Context(), bookmarksstore.GetBookmarkParams{ID: id, Owner: sess.Subject}); errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	} else if err != nil {
 		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)

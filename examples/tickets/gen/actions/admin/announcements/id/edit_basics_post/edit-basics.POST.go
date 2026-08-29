@@ -24,13 +24,13 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 	id, ok := view.ParseID(r)
 	if !ok {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	store := announcementsstore.New(ctx.DB)
 	n, err := store.GetAnnouncement(r.Context(), id)
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		view.NotFound(ctx, w, r)
 		return
 	}
 	if err != nil {
