@@ -18,8 +18,20 @@
        Items  list, required — one dict per choice:
                 Href     string, required — the link target
                 Label    string, required — the visible text
-                Current  bool, optional — marks the applied choice */}}
-{{define "dropdown"}}<details class="rst-dropdown">
+                Current  bool, optional — marks the applied choice
+       MenuGroup  string, optional — the <details name> exclusivity
+              group, read through the menuGroup template func so it stays
+              optional for a struct data value as well as a dict.
+              Default "rst-menus", the one group every dropdown
+              and row-menu in the library shares, so opening any of them
+              closes whichever was open — the behaviour a menu bar has
+              everywhere else, for free and with no script. Pass your own
+              name to carve a dropdown out into a group of its own; the
+              nested rst-menu-group submenu MUST use a different name
+              from its parent, because <details name> exclusivity is
+              document-wide, not sibling-only, so a submenu sharing the
+              parent's name closes the parent the moment it opens. */}}
+{{define "dropdown"}}<details class="rst-dropdown" name="{{menuGroup .}}">
   <summary class="rst-btn rst-dropdown__summary"{{if .Aria}} aria-label="{{.Aria}}"{{end}}>{{.Label}} {{icon "chevron-down"}}</summary>
   <div class="rst-dropdown__menu">
     {{- range .Items}}

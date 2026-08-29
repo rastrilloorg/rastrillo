@@ -22,6 +22,12 @@ func TestShimContract(t *testing.T) {
 		// header-driven navigation, and the bfcache restore that
 		// re-enables a busy form.
 		"403", "404", "localPath", "pageshow",
+		// Light dismiss: the menu classes it answers to, the containment
+		// test that keeps the menu being used open, the Escape key, and
+		// the focus hand-back to the summary. Delegated on the document,
+		// so the count of addEventListener calls stays at two however
+		// many menus a page renders.
+		"rst-dropdown", "rst-row-menu", "closeMenus", "contains", "Escape", "summary.focus()",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
@@ -40,10 +46,48 @@ func TestShimContract(t *testing.T) {
 	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") {
 		t.Error("shim must stay CSP-clean")
 	}
+	// Light dismiss is delegated, not bound per element: a menu that
+	// arrives inside a polled fragment has to be covered the moment it
+	// lands, and re-scanning must never double-bind. A querySelectorAll
+	// over the menus inside scan() would be exactly that bug, so pin the
+	// listeners to the document and pin scan() to the two data-attribute
+	// vocabularies it has always answered.
+	if !strings.Contains(js, `document.addEventListener("click", dismissMenus, true)`) ||
+		!strings.Contains(js, `document.addEventListener("keydown", dismissMenus, true)`) {
+		t.Error("light dismiss is not two delegated document listeners")
+	}
+	// Three mentions and no more: the definition and the two listeners.
+	// A fourth would mean someone started binding it per element again.
+	if n := strings.Count(js, "dismissMenus"); n != 3 {
+		t.Errorf("dismissMenus appears %d times, want 3 (one definition, two document listeners)", n)
+	}
+	// Shell chrome and the toggle-block stay out of it: neither is a
+	// menu, and dismissing them on an outside click would fight the user.
+	for _, bad := range []string{"rst-shell__chrome", "rst-tblock"} {
+		if strings.Contains(js, bad) {
+			t.Errorf("shim reaches for %q; light dismiss covers menus only", bad)
+		}
+	}
 }
 
+// Raised from 8KB to 12KB, once, by the menu light-dismiss section —
+// the same move select.js made below, and to the same number, so the two
+// sibling files now share one cap.
+//
+// The arithmetic, so this is a decision and not a drift. The file went
+// from 7,542 to 10,423 bytes: 2,881 added, of which 715 are code (one
+// selector constant, two small functions, two addEventListener calls)
+// and 2,166 are comment — the header's honesty note that this one
+// section is class-driven rather than data-attribute opt-in, the
+// vocabulary entry, and the block's own reasoning. There was 650 bytes
+// of headroom under 8KB, so even the code alone would not have fitted.
+//
+// The cap is still the point: an app owner owns this file from the
+// moment it is scaffolded and has to be able to read the whole thing in
+// one sitting. Past 12KB, split something out instead — that is what
+// select.js already is.
 func TestShimIsSmall(t *testing.T) {
-	if n := len(ShimJS()); n > 8*1024 {
+	if n := len(ShimJS()); n > 12*1024 {
 		t.Fatalf("shim is %d bytes; the point is that an app owner can read it in one sitting — trim it", n)
 	}
 	if bytes.Contains(ShimJS(), []byte("\t")) {

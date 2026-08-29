@@ -244,13 +244,19 @@ body {
   gap: var(--rst-sp-3);
   padding: var(--rst-sp-2) var(--rst-sp-3);
 }
+/* list-bar-search wraps its form in <search>, the landmark element, so
+   the strip's flex child is the <search>, not the form. Both are sized
+   here: an app that hand-writes a bare <form class="rst-search"> into
+   its own .rst-lbar keeps the layout it had before the element landed. */
+.rst-lbar > search,
 .rst-lbar > .rst-search {
   flex: 0 1 20rem;
 }
 
 /* list-bar-search renders this form, which is the field box itself. Used
    on its own inside a .rst-list card it just needs margin; inside a
-   .rst-lbar the strip supplies the padding. */
+   .rst-lbar the strip supplies the padding. The <search> around it is a
+   plain block box — it draws nothing, so the form remains the field. */
 .rst-search {
   align-items: center;
   background: var(--rst-surface);
@@ -261,6 +267,7 @@ body {
   margin: 0;
   padding: 0.3rem 0.55rem;
 }
+.rst-list > search,
 .rst-list > .rst-search {
   margin: var(--rst-sp-3);
 }
@@ -552,6 +559,7 @@ body {
 
 /* ── Narrow screens ───────────────────────────────────────────────── */
 @media (max-width: 34rem) {
+  .rst-lbar > search,
   .rst-lbar > .rst-search {
     flex: 1 1 100%;
   }
@@ -765,6 +773,15 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 body:has(.rst-backdrop) { overflow: hidden; }
 .rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
 .rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
+/* The panel is a <dialog open>: the rendered-open, NON-modal dialog is
+   exactly what a modal-as-a-URL is — the server sends the page with the
+   dialog already open, and nothing calls showModal(). So ::backdrop is
+   never painted (it only exists for the top layer) and .rst-modal-overlay
+   stays the scrim, as it was. What the element does bring is a UA block
+   this idiom has to undo: absolute positioning with auto inline insets,
+   auto margins, 1em of padding and the Canvas colour pair. Reset them
+   and the panel lays out as the ordinary flex item it already was. */
+dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 0; padding: 0; position: static; }
 .rst-modal-panel > nav { border-inline-end: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
 .rst-modal-panel > nav a { border-radius: 8px; color: inherit; padding: 0.4rem 0.65rem; text-decoration: none; }
 .rst-modal-panel > nav a:hover { background: var(--rst-accent-soft); }

@@ -19,9 +19,21 @@
      across the GET, and the submit control above.
 
      An ordinary form method="get", so it works with JavaScript
-     disabled. This renders the <form> alone, with no wrapper: drop it
-     straight into a <div class="rst-list"> card for a list that only
-     searches, or let list-bar wrap it in a toolbar strip.
+     disabled. The form sits inside a <search> element — the HTML
+     landmark for exactly this, baseline since 2023 — so the search
+     region is a real element rather than a role bolted onto a form.
+     role="search" is deliberately NOT also on the form: <search> already
+     carries that role implicitly, and both would announce two nested
+     search landmarks for one search box. An engine too old to know the
+     element treats it as an unknown inline box, which changes nothing
+     about the form inside it; tokens.css sizes `.rst-lbar > search`
+     and `.rst-lbar > .rst-search` alike, so a hand-written bare form
+     still lays out correctly in a toolbar strip.
+
+     This renders the <search> and the form it wraps, with no other
+     wrapper: drop it straight into a <div class="rst-list"> card for a
+     list that only searches, or let list-bar wrap it in a toolbar
+     strip.
 
      Keys:
        Action       string, optional — the form's GET target
@@ -41,11 +53,11 @@
                     page size)
        Label        string, optional — passed through to
                     list-search-submit as its screen-reader text */}}
-{{define "list-bar-search"}}<form class="rst-search" role="search" method="get"{{if .Action}} action="{{.Action}}"{{end}}>
+{{define "list-bar-search"}}<search><form class="rst-search" method="get"{{if .Action}} action="{{.Action}}"{{end}}>
   {{icon "search"}}
   <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}">
   {{- if .Hidden}}{{range .Hidden}}
   <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">
   {{- end}}{{end}}
   {{template "list-search-submit" .}}
-</form>{{end}}
+</form></search>{{end}}

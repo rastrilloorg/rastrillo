@@ -672,7 +672,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 
 <div class="ds-switch">
   <nav class="rst-seg-tabs" aria-label="Theme">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
-  <details class="rst-dropdown rst-locale">
+  <details class="rst-dropdown rst-locale" name="rst-menus">
     <summary>Language<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">, currently {{.LocaleName}}</span></summary>
     <div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
   </details>
@@ -759,7 +759,7 @@ const shellTemplate = `
 {{define "brand"}}<a class="rst-shell__brand" href="{{.Index}}">rastrillo</a>{{end}}
 {{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
-{{define "locale"}}<details class="rst-dropdown rst-locale"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{define "locale"}}<details class="rst-dropdown rst-locale" name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{define "foot"}}<a href="{{.Index}}">Back to the design system</a>{{end}}
 {{define "content"}}
 {{template "page-header" dict "Title" "Posts" "Sub" "A representative screen, so the chrome around it has something to frame." "ActionHref" "#" "ActionLabel" "Write a post" "ActionIcon" "plus"}}
@@ -790,6 +790,10 @@ const shellTemplate = `
 //   - Close returns to the gallery rather than to the backdrop's own
 //     screen, which does not have a URL of its own here. The panel says
 //     so, rather than leaving a reader to wonder.
+//
+// The panel is <dialog open>, exactly as the sample is: rendered open,
+// never showModal()'d, so it never enters the top layer, ::backdrop
+// never paints, and .rst-modal-overlay stays the scrim.
 const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
@@ -808,7 +812,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 </main>
 </div>
 <div class="rst-modal-overlay">
-  <div class="rst-modal-panel">
+  <dialog class="rst-modal-panel" open>
     <nav>
       <a href="{{.Self}}" aria-current="page">Profile</a>
       <a href="{{.Self}}">Billing</a>
@@ -822,7 +826,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
       <p>In an application the ✕ would return you to the screen in the backdrop. Here it returns you to the gallery you opened this demo from, because that is the page that exists.</p>
       <p><a class="rst-btn" href="{{.Index}}">Back to the design system</a></p>
     </section>
-  </div>
+  </dialog>
 </div>
 </body>
 </html>

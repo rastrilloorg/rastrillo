@@ -547,12 +547,19 @@ func TestEmptyStatePostCTAWithoutHidden(t *testing.T) {
 func TestListBarSearchMinimalFixture(t *testing.T) {
 	got := render(t, "list-bar-search", map[string]any{"Action": "/posts"})
 	for _, want := range []string{
-		`<form class="rst-search"`, `role="search"`, `method="get"`, `action="/posts"`,
-		`type="search"`, `name="q"`, `<svg`, `type="submit"`,
+		`<search><form class="rst-search"`, `method="get"`, `action="/posts"`,
+		`type="search"`, `name="q"`, `<svg`, `type="submit"`, `</form></search>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
 		}
+	}
+	// <search> already carries the search role. Keeping role="search" on
+	// the form as well would announce two nested search landmarks for one
+	// search box, so exactly one of them may be present — and it is the
+	// element, not the attribute.
+	if strings.Contains(got, `role="search"`) {
+		t.Errorf("<search> and role=\"search\" both present: that is two nested search landmarks: %s", got)
 	}
 	// No Query, no Placeholder: neither attribute should appear empty.
 	if strings.Contains(got, `value=""`) || strings.Contains(got, `placeholder=""`) {
@@ -624,7 +631,7 @@ func TestListBarWrapsTheSearchFormInAToolbarStrip(t *testing.T) {
 		"Hidden":       [][2]string{{"sort", "newest"}},
 	})
 	for _, want := range []string{
-		`<div class="rst-lbar">`, `<form class="rst-search"`,
+		`<div class="rst-lbar">`, `<search><form class="rst-search"`,
 		`action="/posts"`, `value="notes"`, `placeholder="Search posts"`,
 		`<input type="hidden" name="sort" value="newest">`,
 	} {
@@ -652,7 +659,7 @@ func TestListBarRendersAFilterDropdownWhenGivenOne(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<details class="rst-dropdown">`,
+		`<details class="rst-dropdown" name="rst-menus">`,
 		`aria-label="Filter by status: All"`,
 		`<a href="/admin/posts?status=draft">Drafts</a>`,
 	} {
@@ -1406,7 +1413,7 @@ func TestConfirmFormShape(t *testing.T) {
 
 func TestBackNavRendersArrowLink(t *testing.T) {
 	got := render(t, "back-nav", fixtureFor(t, "back-nav"))
-	if !strings.Contains(got, `<p class="rst-back-nav">`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
+	if !strings.Contains(got, `<nav class="rst-back-nav">`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
 		t.Errorf("missing back-nav shape: %s", got)
 	}
 }
@@ -1493,7 +1500,11 @@ func TestStyleguideSamplesRender(t *testing.T) {
 		if strings.Contains(out, "<script") {
 			t.Errorf("%s: reaches for <script>; this vocabulary is zero-JS: %s", name, out)
 		}
-		for _, tag := range []string{"div", "details", "section", "a", "span"} {
+		// dialog, nav and search joined the list when the interactive
+		// idioms stopped being divs playing those roles: an unbalanced
+		// <dialog> is the one that would silently swallow the rest of a
+		// page rather than merely look wrong.
+		for _, tag := range []string{"div", "details", "section", "a", "span", "dialog", "nav", "search"} {
 			open, closed := countOpenTags(out, tag), strings.Count(out, "</"+tag+">")
 			if open != closed {
 				t.Errorf("%s: <%s> is unbalanced: %d opened, %d closed", name, tag, open, closed)
@@ -1696,9 +1707,9 @@ func TestJobStatusPartialClassesAreStyled(t *testing.T) {
 	}
 }
 
-// The dropdown's exclusivity between siblings (only one open at a time)
-// is the native <details name> attribute, not JavaScript — this pins
-// both halves of that promise.
+// The dropdown's exclusivity (only one open at a time) is the native
+// <details name> attribute, not JavaScript — this pins both halves of
+// that promise.
 func TestDropdownExclusivityIsNative(t *testing.T) {
 	sample := Styleguide()["dropdown"]
 	if !strings.Contains(sample, `<details class="rst-dropdown" name=`) {
@@ -1706,6 +1717,180 @@ func TestDropdownExclusivityIsNative(t *testing.T) {
 	}
 	if strings.Contains(sample, "<script") {
 		t.Errorf("dropdown sample reaches for <script>; exclusivity must stay native: %s", sample)
+	}
+}
+
+// cssComment matches a whole /* … */ block, so a check can read
+// tokens.css's selectors without its prose about them.
+var cssComment = regexp.MustCompile(`(?s)/\*.*?\*/`)
+
+// detailsNamePattern reads the name attribute off a <details> open tag,
+// whichever order the attributes are written in.
+var detailsNamePattern = regexp.MustCompile(`<details [^>]*name="([^"]*)"`)
+
+// Every menu the library emits joins one shared exclusivity group by
+// default, so opening a row menu closes an open header dropdown without
+// a line of script. The default is a value, not an absence: a <details>
+// with no name is in no group at all and would stay open beside the one
+// the user just opened, which is the bug this defends.
+func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
+	const group = `name="rst-menus"`
+
+	for _, c := range []struct {
+		partial string
+		data    map[string]any
+	}{
+		{"dropdown", map[string]any{"Label": "Sort", "Items": []any{
+			map[string]any{"Href": "/x", "Label": "Newest"}}}},
+		{"locale-menu", map[string]any{"Items": []rastrillo.LocaleItem{{Code: "ga", Name: "Gaeilge", Href: "/ga"}}}},
+		{"bulk-bar", map[string]any{
+			"DoneHref": "/x", "Count": "3 selected", "MenuLabel": "Actions",
+			"Actions": []any{map[string]any{"Value": "archive", "Label": "Archive"}}}},
+	} {
+		got := render(t, c.partial, c.data)
+		if !strings.Contains(got, group) {
+			t.Errorf("%s renders no %s, so it is in no exclusivity group: %s", c.partial, group, got)
+		}
+	}
+
+	// The topbar shell's account menu is a dropdown the layout owns
+	// rather than a partial, so it needs the same default written into
+	// the layout — otherwise the one menu a user meets on every screen is
+	// the one that never closes.
+	layout, ok := Layout("topbar")
+	if !ok {
+		t.Fatal(`Layout("topbar") reports no such layout`)
+	}
+	if !strings.Contains(string(layout), `rst-shell__account" `+group) {
+		t.Errorf("the topbar shell's account dropdown is outside the exclusivity group:\n%s", layout)
+	}
+
+	// The class idioms carry it in their canonical samples, which is the
+	// only place an app copying markup by hand will read it from.
+	for _, name := range []string{"dropdown", "list-grid", "shell-topbar"} {
+		if !strings.Contains(Styleguide()[name], group) {
+			t.Errorf("styleguide sample %q shows a menu outside the exclusivity group", name)
+		}
+	}
+
+	// And the two <details> that are NOT menus stay out of it. The
+	// sidebar's chrome strip is the narrow-screen nav rail: closing it
+	// because a filter opened would take the whole navigation away.
+	sidebar, ok := Layout("sidebar")
+	if !ok {
+		t.Fatal(`Layout("sidebar") reports no such layout`)
+	}
+	if strings.Contains(string(sidebar), group) {
+		t.Errorf("the sidebar shell's chrome strip joined the menu exclusivity group:\n%s", sidebar)
+	}
+	if strings.Contains(Styleguide()["shell-sidebar"], group) ||
+		strings.Contains(Styleguide()["tblock"], group) {
+		t.Error("shell chrome or the toggle-block joined the menu exclusivity group")
+	}
+}
+
+// A caller who wants a menu in a group of its own says so, and their
+// name wins over the default everywhere the default is offered.
+func TestMenuGroupOverrideWins(t *testing.T) {
+	for _, c := range []struct {
+		partial string
+		data    map[string]any
+	}{
+		{"dropdown", map[string]any{"MenuGroup": "list-controls", "Label": "Sort",
+			"Items": []any{map[string]any{"Href": "/x", "Label": "Newest"}}}},
+		{"locale-menu", map[string]any{"MenuGroup": "list-controls",
+			"Items": []rastrillo.LocaleItem{{Code: "ga", Name: "Gaeilge", Href: "/ga"}}}},
+		{"bulk-bar", map[string]any{"MenuGroup": "list-controls",
+			"DoneHref": "/x", "Count": "3 selected", "MenuLabel": "Actions",
+			"Actions": []any{map[string]any{"Value": "archive", "Label": "Archive"}}}},
+	} {
+		got := render(t, c.partial, c.data)
+		if !strings.Contains(got, `name="list-controls"`) {
+			t.Errorf("%s ignored MenuGroup: %s", c.partial, got)
+		}
+		if strings.Contains(got, `name="rst-menus"`) {
+			t.Errorf("%s emitted both the override and the default: %s", c.partial, got)
+		}
+	}
+}
+
+// The submenu trap, pinned. <details name> exclusivity is DOCUMENT-wide,
+// not sibling-scoped: two elements sharing a name close each other even
+// when one is inside the other. A nested rst-menu-group that inherited
+// its parent's group would therefore close the parent the instant it
+// opened — the submenu flashes and the whole menu vanishes under the
+// pointer. The nested sample must carry a name of its own, and it must
+// not be the parent's.
+func TestNestedMenuGroupNeverSharesItsParentsName(t *testing.T) {
+	sample := Styleguide()["dropdown"]
+	names := detailsNamePattern.FindAllStringSubmatch(sample, -1)
+	if len(names) != 2 {
+		t.Fatalf("expected two named <details> in the dropdown sample, found %d: %s", len(names), sample)
+	}
+	if !strings.Contains(sample, "rst-menu-group") {
+		t.Fatalf("the dropdown sample no longer nests an rst-menu-group: %s", sample)
+	}
+	if names[0][1] == names[1][1] {
+		t.Errorf("the nested rst-menu-group shares its parent's group %q; opening it would close the parent", names[0][1])
+	}
+}
+
+// The modal panel is <dialog open>: the rendered-open, non-modal dialog,
+// which is exactly what a modal-as-a-URL already was. Nothing calls
+// showModal(), so nothing enters the top layer, ::backdrop never paints,
+// and the overlay div stays the scrim. The UA's own dialog block has to
+// be undone or the panel lays out absolutely positioned with 1em of
+// padding.
+func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
+	sample := Styleguide()["modal"]
+	for _, want := range []string{
+		`<dialog class="rst-modal-panel" open>`, `</dialog>`,
+		`<div class="rst-modal-overlay">`, `<div class="rst-backdrop" inert>`,
+	} {
+		if !strings.Contains(sample, want) {
+			t.Errorf("modal sample missing %q: %s", want, sample)
+		}
+	}
+	if strings.Contains(sample, `<div class="rst-modal-panel">`) {
+		t.Errorf("the modal panel is still a div: %s", sample)
+	}
+	// Comments stripped first: this file explains ::backdrop and names
+	// the reset rule in prose, and a check that cannot tell a selector
+	// from a sentence about one is not a check.
+	css := cssComment.ReplaceAllString(string(TokensCSS()), "")
+	i := strings.Index(css, "dialog.rst-modal-panel")
+	if i < 0 {
+		t.Fatal("tokens.css has no scoped dialog reset; the UA dialog block would position the panel absolutely")
+	}
+	rule := css[i:]
+	rule = rule[:strings.Index(rule, "}")]
+	for _, want := range []string{"position: static", "padding: 0", "margin: 0", "color: inherit"} {
+		if !strings.Contains(rule, want) {
+			t.Errorf("the dialog reset does not undo the UA block's %q: %s", want, rule)
+		}
+	}
+	// ::backdrop belongs to the top layer, which a rendered-open dialog
+	// never reaches. Styling it would be dead CSS that reads as if the
+	// scrim came from the element.
+	if strings.Contains(css, "::backdrop") {
+		t.Error("tokens.css styles ::backdrop; a rendered-open dialog never paints one — the overlay div is the scrim")
+	}
+}
+
+// The search form is inside a <search> landmark, the element HTML added
+// for exactly this, and the toolbar strip sizes the landmark rather than
+// the form it now wraps — the direct-child selector that used to reach
+// the form no longer does.
+func TestSearchFormSitsInASearchLandmark(t *testing.T) {
+	got := render(t, "list-bar", map[string]any{"SearchAction": "/posts"})
+	if !strings.Contains(got, "<search><form") || !strings.Contains(got, "</form></search>") {
+		t.Errorf("the search form is not wrapped in a <search> landmark: %s", got)
+	}
+	css := string(TokensCSS())
+	for _, want := range []string{".rst-lbar > search", ".rst-list > search"} {
+		if !strings.Contains(css, want) {
+			t.Errorf("tokens.css has no %q rule; wrapping the form broke the layout it used to size", want)
+		}
 	}
 }
 
@@ -1719,7 +1904,7 @@ func TestDropdownRendersADetailsMenuOfLinks(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<details class="rst-dropdown">`,
+		`<details class="rst-dropdown" name="rst-menus">`,
 		`<summary class="rst-btn rst-dropdown__summary" aria-label="Filter by status: All">All`,
 		`<a href="/admin/posts" aria-current="true">All`,
 		`<a href="/admin/posts?status=draft">Drafts</a>`,

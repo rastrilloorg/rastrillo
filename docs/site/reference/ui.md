@@ -42,13 +42,30 @@ belong to your page markup: `<div class="rst-page">`,
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-Registers `dict`, `list`, `icon` and `T`.
+Registers `dict`, `list`, `menuGroup`, `icon`, `iconAssets`, `T`, `Tf`
+and `dateWords`.
 
 `dict` builds a partial's single data value at the call site:
 
 ```html
 {{template "badge" dict "Label" "Draft" "Tone" "muted"}}
 ```
+
+## MenuGroupDefault
+
+```go
+const MenuGroupDefault = "rst-menus"
+```
+
+The `<details name>` exclusivity group every menu the library emits
+joins unless its caller names another, so opening one menu closes
+whichever was open — native, no script. `dropdown`, `locale-menu` and
+`bulk-bar` take a `MenuGroup` key to override it; the `menuGroup`
+template func resolves that key and falls back here.
+
+A nested `rst-menu-group` must **not** use this value. `<details name>`
+exclusivity is document-wide rather than sibling-scoped, so a submenu
+sharing its parent's group closes that parent the moment it opens.
 
 ## Option, WithIcons, WithT
 

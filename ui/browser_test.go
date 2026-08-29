@@ -759,3 +759,314 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 
 	rig.Screen("body", "after the grouped journey")
 }
+
+// ── The menu idioms: exclusivity, light dismiss, and the dialog panel ──
+
+// menuPage serves one page carrying every menu shape at once, plus the
+// two <details> that must stay OUT of the exclusivity group, plus the
+// real shim. Everything on it is the library's own markup: the shell
+// account dropdown from the topbar layout's sample, a row menu from the
+// list grid, a nested rst-menu-group inside the dropdown, the sidebar's
+// chrome strip and a toggle-block.
+//
+// Hand-assembled rather than rendered from Styleguide() because the two
+// shell samples are whole page frames that cannot both be on one page,
+// and because the drive needs stable ids to click.
+func menuPage(t *testing.T) http.Handler {
+	t.Helper()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /rastrillo.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(ShimJS())
+	})
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
+			`<title>menus</title><link rel="stylesheet" href="/tokens.css">`+
+			`<link rel="stylesheet" href="/theme.css">`+
+			`<script defer src="/rastrillo.js"></script></head><body>`+
+			// The header dropdown, in the shared group.
+			`<header class="rst-shell__bar">`+
+			`<details class="rst-dropdown rst-shell__account" name="`+MenuGroupDefault+`" id="account">`+
+			`<summary id="account-summary">Account</summary>`+
+			`<div class="rst-dropdown__menu"><a id="account-item" href="#settings">Settings</a></div>`+
+			`</details></header>`+
+			// A list-bar filter dropdown with a nested submenu whose group
+			// is deliberately different. The search form is here for the
+			// same reason it is in a real list bar: it takes the strip's
+			// first 20rem, which puts the filter far enough along that its
+			// menu — right-aligned to the summary, 176px wide — opens
+			// inside the viewport instead of off the left edge, where
+			// nothing can click it.
+			`<div class="rst-lbar">`+
+			`<search><form class="rst-search" method="get">`+
+			`<input type="search" name="q" aria-label="Search"></form></search>`+
+			`<details class="rst-dropdown" name="`+MenuGroupDefault+`" id="filter">`+
+			`<summary id="filter-summary">Filter</summary>`+
+			`<div class="rst-dropdown__menu">`+
+			`<a id="filter-item" href="#paid">Paid</a>`+
+			`<details class="rst-menu-group" name="rst-menus-price" id="submenu">`+
+			`<summary id="submenu-summary">Price</summary>`+
+			`<div><a href="#free">Free</a></div></details>`+
+			`</div></details></div>`+
+			// A row menu, in the shared group.
+			`<div class="rst-card" style="--rst-cols: 1fr 32px">`+
+			`<div class="rst-lrow"><a class="rst-nm" href="#row">Grace Hopper</a>`+
+			`<details class="rst-row-menu" name="`+MenuGroupDefault+`" id="rowmenu">`+
+			`<summary id="rowmenu-summary" aria-label="Actions for Grace Hopper">…</summary>`+
+			`<div class="rst-row-menu__panel"><a href="#view">View</a></div>`+
+			`</details></div></div>`+
+			// Outside the group, both of them: the sidebar's chrome strip
+			// and a toggle-block. Neither is a menu.
+			`<details class="rst-shell__chrome" id="chrome" open><summary id="chrome-summary">Menu</summary></details>`+
+			`<div class="rst-tblock"><label class="rst-tblock__head">`+
+			`<input type="checkbox" id="tblock-input" name="notify" checked>`+
+			`<span class="rst-switch__track" aria-hidden="true"></span>`+
+			`<span><span class="rst-tblock__title">Email notifications</span></span></label>`+
+			`<div class="rst-tblock__body">Body.</div></div>`+
+			// Somewhere unambiguous to click that is not inside any menu.
+			`<main class="rst-page" id="main"><p id="elsewhere">Nothing here.</p></main>`+
+			`</body></html>`)
+	})
+	return mux
+}
+
+// openState reads which of the page's <details> are open, as one string,
+// so a failure names the whole state rather than one boolean.
+const openStateJS = `["account","filter","submenu","rowmenu","chrome"].` +
+	`filter(function (id) { return document.getElementById(id).open }).join(",")`
+
+// TestMenuExclusivityAndDropdownDismissDrive is the browser drive for
+// the two halves of the menu contract that no Go test can reach: the
+// native <details name> group, which needs a real engine implementing
+// it, and the shim's light dismiss, which needs real clicks and real
+// focus.
+//
+// Bug classes it exists to catch — every one of them renders perfectly
+// and reports nothing wrong:
+//
+//   - a menu emitted with no name attribute at all, so two menus sit
+//     open on top of each other;
+//   - the nested rst-menu-group sharing its parent's group, so opening a
+//     submenu closes the menu around it and the submenu vanishes with
+//     it — the exact trap the partial docs warn about;
+//   - light dismiss closing the menu the user is clicking inside, so
+//     every menu item click misses;
+//   - light dismiss bound per element, so a menu that arrived after load
+//     never dismisses;
+//   - shell chrome or the toggle-block swept into the group or the
+//     dismiss, so the narrow-screen nav rail closes when a filter opens.
+func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return menuPage(t) })
+
+	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancel()
+
+	// The same last-step breadcrumb the select drive keeps: a bare
+	// deadline names nothing.
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+	var (
+		afterAccount, afterRow, afterSubmenu string
+		afterOutside, afterInside, afterEsc  string
+		focusAfterEsc                        string
+		tblockOpenAfter                      bool
+	)
+
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
+		chromedp.WaitVisible(`#account-summary`, chromedp.ByQuery), at("page-visible"),
+
+		// 1. Open the header dropdown.
+		chromedp.Click(`#account-summary`, chromedp.ByQuery), at("opened-account"),
+		chromedp.Evaluate(openStateJS, &afterAccount),
+
+		// 2. Open a row menu. The header dropdown must close, natively:
+		//    same name, one group, no script involved.
+		chromedp.Click(`#rowmenu-summary`, chromedp.ByQuery), at("opened-rowmenu"),
+		chromedp.Evaluate(openStateJS, &afterRow),
+
+		// 3. Open the filter dropdown, then the submenu inside it. The
+		//    parent MUST still be open: <details name> exclusivity is
+		//    document-wide, so a shared name here would have closed it.
+		chromedp.Click(`#filter-summary`, chromedp.ByQuery), at("opened-filter"),
+		chromedp.Click(`#submenu-summary`, chromedp.ByQuery), at("opened-submenu"),
+		chromedp.Evaluate(openStateJS, &afterSubmenu),
+
+		// 4. Click somewhere that is not a menu. Everything in the group
+		//    closes; the chrome strip does not.
+		chromedp.Click(`#elsewhere`, chromedp.ByQuery), at("clicked-outside"),
+		chromedp.Evaluate(openStateJS, &afterOutside),
+
+		// 5. Reopen, then click an item INSIDE the open menu. It must
+		//    survive: a light dismiss that fires on its own menu's items
+		//    makes every one of them unclickable.
+		chromedp.Click(`#account-summary`, chromedp.ByQuery), at("reopened-account"),
+		chromedp.Click(`#account-item`, chromedp.ByQuery), at("clicked-inside"),
+		chromedp.Evaluate(openStateJS, &afterInside),
+
+		// 6. Escape closes it and hands focus back to the summary, rather
+		//    than stranding the keyboard user at the top of the document.
+		chromedp.KeyEvent(kb.Escape), at("pressed-escape"),
+		chromedp.Evaluate(openStateJS, &afterEsc),
+		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusAfterEsc),
+
+		// The toggle-block is not a <details> at all, so nothing above can
+		// have touched it — but it is the other thing the brief holds
+		// outside the group, so read it rather than assume it.
+		chromedp.Evaluate(`document.getElementById("tblock-input").checked`, &tblockOpenAfter),
+	); err != nil {
+		t.Fatalf("drive failed after %q: %v", reached, err)
+	}
+
+	if afterAccount != "account,chrome" {
+		t.Errorf("after opening the account menu, open = %q, want %q", afterAccount, "account,chrome")
+	}
+	if afterRow != "rowmenu,chrome" {
+		t.Errorf("after opening a row menu, open = %q, want %q — the shared <details name> group did not close the header dropdown", afterRow, "rowmenu,chrome")
+	}
+	if afterSubmenu != "filter,submenu,chrome" {
+		t.Errorf("after opening the submenu, open = %q, want %q — a nested rst-menu-group sharing its parent's group closes the parent", afterSubmenu, "filter,submenu,chrome")
+	}
+	if afterOutside != "submenu,chrome" {
+		t.Errorf("after a click outside, open = %q, want %q — light dismiss must close the menus and leave shell chrome alone", afterOutside, "submenu,chrome")
+	}
+	if afterInside != "account,submenu,chrome" {
+		t.Errorf("after clicking an item inside the open menu, open = %q, want %q — light dismiss closed the menu being used", afterInside, "account,submenu,chrome")
+	}
+	if afterEsc != "submenu,chrome" {
+		t.Errorf("after Escape, open = %q, want %q", afterEsc, "submenu,chrome")
+	}
+	if focusAfterEsc != "account-summary" {
+		t.Errorf("focus after Escape is %q, want the summary that opened the menu", focusAfterEsc)
+	}
+	if !tblockOpenAfter {
+		t.Error("the toggle-block's switch was flipped by the menu handling; it is not a menu")
+	}
+
+	rig.Screen("body", "after the menu journey")
+}
+
+// modalPage serves the modal sample as a real page, exactly as
+// Styleguide()["modal"] writes it, so the drive reads the shipped markup
+// rather than a copy of it.
+func modalPage(t *testing.T) http.Handler {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
+			`<title>modal</title><link rel="stylesheet" href="/tokens.css">`+
+			`<link rel="stylesheet" href="/theme.css"></head><body>`+
+			Styleguide()["modal"]+`</body></html>`)
+	})
+	return mux
+}
+
+// TestModalDialogPanelDrive proves the <dialog open> panel is a rendered
+// dialog and not a modal one, and that the scoped resets in tokens.css
+// actually undo the UA dialog block.
+//
+// Bug classes it exists to catch — all of which look fine in the markup:
+//
+//   - the UA dialog block left in place, so the panel is absolutely
+//     positioned with 1em of padding and sits wherever the viewport puts
+//     it instead of centred in the overlay;
+//   - the panel reaching the top layer (a showModal() creeping in), which
+//     would put it above the scrim's stacking context, paint a ::backdrop
+//     nobody styled, and trap Escape;
+//   - the dialog rendering with Canvas colours instead of the theme's,
+//     which reads as "the panel ignores the theme".
+func TestModalDialogPanelDrive(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return modalPage(t) })
+
+	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancel()
+
+	var (
+		tag, position, padding string
+		isOpen, inTopLayer     bool
+		centred, insideOverlay bool
+		backdropInert          bool
+	)
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`.rst-modal-panel`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").tagName`, &tag),
+		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").open === true`, &isOpen),
+		// matches(":modal") is true only for a dialog in the top layer,
+		// which is what showModal() does and a rendered-open one never
+		// does. This is the assertion that the zero-JS promise holds.
+		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").matches(":modal")`, &inTopLayer),
+		chromedp.Evaluate(`getComputedStyle(document.querySelector(".rst-modal-panel")).position`, &position),
+		chromedp.Evaluate(`getComputedStyle(document.querySelector(".rst-modal-panel")).paddingTop`, &padding),
+		chromedp.Evaluate(`document.querySelector(".rst-modal-overlay").contains(document.querySelector(".rst-modal-panel"))`, &insideOverlay),
+		// Centred inside the overlay's flex box, within a pixel: the UA
+		// block's absolute positioning and auto margins would put it
+		// somewhere else entirely.
+		chromedp.Evaluate(`(function () {
+			var o = document.querySelector(".rst-modal-overlay").getBoundingClientRect();
+			var p = document.querySelector(".rst-modal-panel").getBoundingClientRect();
+			return Math.abs((o.left + o.right) / 2 - (p.left + p.right) / 2) < 2;
+		})()`, &centred),
+		chromedp.Evaluate(`document.querySelector(".rst-backdrop").hasAttribute("inert")`, &backdropInert),
+	); err != nil {
+		t.Fatalf("modal drive failed: %v", err)
+	}
+
+	if tag != "DIALOG" {
+		t.Errorf("the modal panel is a <%s>, want <dialog>", strings.ToLower(tag))
+	}
+	if !isOpen {
+		t.Error("the dialog is not open; a modal route renders it already open, since nothing here can open it")
+	}
+	if inTopLayer {
+		t.Error("the panel is in the top layer: something called showModal(), and the idiom is zero-JS")
+	}
+	if position != "static" {
+		t.Errorf("the panel's position is %q, want %q — the UA dialog block was not reset", position, "static")
+	}
+	if padding != "0px" {
+		t.Errorf("the panel's padding-top is %q, want %q — the UA dialog block's 1em survived", padding, "0px")
+	}
+	if !insideOverlay {
+		t.Error("the panel is no longer inside the overlay div, which is the scrim")
+	}
+	if !centred {
+		t.Error("the panel is not centred in the overlay; the UA dialog block is still positioning it")
+	}
+	if !backdropInert {
+		t.Error("the page behind the panel lost its inert attribute")
+	}
+
+	rig.Screen(".rst-modal-panel", "the open modal")
+}

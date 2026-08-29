@@ -17,7 +17,7 @@
 <header class="rst-shell__bar">
 {{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
-<details class="rst-dropdown rst-shell__account">
+<details class="rst-dropdown rst-shell__account" name="rst-menus">
 <summary>{{T "rastrillo.ui.shell_account"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary>
 {{/* account here is the dropdown's MENU BODY, not the whole menu: the
      layout owns the details/summary, so an override supplies only the

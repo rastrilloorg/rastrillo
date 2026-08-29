@@ -14,8 +14,10 @@
        Items   []rastrillo.LocaleItem, required — from rastrillo.LocaleItems(r)
        Return  string, optional — current path+query to come back to;
                omit and the switch lands on the locale's home
-       Action  string, optional — default /_locale (rastrillo.LocaleSwitchPath) */}}
-{{define "locale-menu"}}{{if .Items}}<details class="rst-dropdown rst-locale">
+       Action  string, optional — default /_locale (rastrillo.LocaleSwitchPath)
+       MenuGroup  string, optional — the <details name> exclusivity
+               group, default "rst-menus" (see dropdown) */}}
+{{define "locale-menu"}}{{if .Items}}<details class="rst-dropdown rst-locale" name="{{menuGroup .}}">
   <summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary>
   <div class="rst-dropdown__menu">
   {{- $action := or .Action "/_locale"}}{{$return := .Return}}

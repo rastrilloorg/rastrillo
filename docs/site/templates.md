@@ -71,6 +71,68 @@ Each partial's file carries its data contract in a comment above the
 `{{define}}`, and `ui_test.go`'s `TestAllPartialsAreDefined` is the
 authoritative list.
 
+### The elements they use
+
+Where HTML has an element for what a component is, the component is that
+element rather than a div wearing a role:
+
+| Idiom | Element |
+|---|---|
+| `list-bar-search` | `<search>` around the `method="get"` form |
+| `pagination`, `seg-tabs`, `back-nav` | `<nav>` |
+| the modal panel | `<dialog open>` |
+| every menu | `<details>` / `<summary>` |
+
+`<search>` carries the search role itself, so the form inside it no
+longer sets `role="search"` — two nested search landmarks for one search
+box helps nobody. The strip sizes the landmark (`.rst-lbar > search`) as
+well as a bare form, so hand-written markup keeps the layout it had.
+
+The modal panel is a `<dialog open>`, which is not a change of idiom: a
+rendered-open, non-modal dialog is exactly what a modal-as-a-URL already
+was. Nothing calls `showModal()`, so nothing enters the top layer,
+`::backdrop` never paints, and the `rst-modal-overlay` div stays the
+scrim. `tokens.css` undoes the browser's own dialog block — absolute
+positioning, auto margins, `1em` of padding — so the panel lays out as
+before.
+
+Two things stay divs on purpose. The `rst-lrow` grid is a **layout
+grid**, not a table: its columns come from one `--rst-cols` custom
+property on the card, and CSS grid on real `<table>` markup means
+`display: grid` on the table and its rows, which throws away the table
+semantics you converted for. Use a `<table>` when the content is a data
+table you want announced as one; `rst-lrow` is for list screens whose
+rows are links. A list row (`list-row-action`'s `rst-row`) is a div for
+the same reason — it lives in a `rst-list` card your own page markup
+writes, and a `<li>` needs a list around it that the partial does not
+own.
+
+### Menus close each other
+
+Every `dropdown`, row menu and `locale-menu` the library emits carries
+`name="rst-menus"`, so opening one closes whichever was open. That is
+the native `<details name>` group and costs no JavaScript. Pass
+`MenuGroup` to `dropdown`, `locale-menu` or `bulk-bar` to put a menu in
+a group of its own.
+
+A nested `rst-menu-group` **must** use a different name from the menu
+around it. `<details name>` exclusivity is document-wide, not
+sibling-scoped, so a submenu sharing its parent's group closes that
+parent the moment it opens.
+
+The sidebar shell's `rst-shell__chrome` strip and the toggle-block are
+deliberately outside the group: neither is a menu, and closing the
+narrow-screen nav rail because someone opened a filter would take the
+navigation away.
+
+Closing an open menu on a click elsewhere, or on Escape, is the one part
+native `<details>` cannot express, so `rastrillo.js` does it — two
+delegated listeners on the document, no per-element wiring, menus that
+arrive in a polled fragment covered for free. Delete that section of the
+file to opt out; with no script at all the menus still open, still close
+on a second click of their own summary, and still keep one open at a
+time.
+
 ### Three containers the partials assume
 
 They belong to your page markup, so the library does not emit them:
@@ -298,6 +360,14 @@ once, in both directions, so a toggle beats the OS without restating a
 single colour. Both schemes are authored — the dark set is not the light
 set inverted — and there is no second copy of the palette to keep in
 sync.
+
+`light-dark()` needs a recent engine: Chrome and Edge 123, Safari 17.5,
+Firefox 120, all of them 2024. Older ones do not fall back to the light
+half — they cannot parse the function at all, so every declaration using
+it is dropped and the app renders with no palette rather than a
+monochrome one. If you have to support an engine below that floor, write
+a theme with a plain `:root` palette and a `prefers-color-scheme` block
+instead; the token names are the only contract, so nothing else changes.
 
 One caveat worth knowing: `light-dark()` is a colour function, so it may
 only stand where a colour is expected. A shadow token wraps its colour

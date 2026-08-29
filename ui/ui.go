@@ -58,9 +58,14 @@
 // static files the app is free to edit in place. rastrillo.js, the fragment shim behind
 // data-poll and data-busy, ships the same way, landing beside it. It
 // never replaces a native idiom — every "no JavaScript" idiom above
-// still works with scripts disabled; the shim exists only for the one
-// kind of work a native idiom cannot do, work that finishes after the
-// response has already been sent, such as a background job's progress.
+// still works with scripts disabled; the shim exists only for the kinds
+// of work a native idiom cannot do. Two of them: work that finishes
+// after the response has already been sent, such as a background job's
+// progress, and light dismiss for the menus — closing an open dropdown
+// on an outside click or on Escape, which native <details> has no way to
+// express. Without the shim the menus still open, still close on a
+// second click of their own summary, and still keep one open at a time
+// through the <details name> group.
 //
 // Errors follow ordinary html/template semantics (nothing is
 // special-cased). With dict-built map data a key the caller forgot to set
@@ -85,7 +90,13 @@
 //	<div class="rst-box-head"><h2>Payout</h2><a class="rst-btn" href="/payout/edit">Edit</a></div>
 //	<section class="rst-box"><p>…</p><div class="rst-box-foot">Last updated 2 hours ago</div></section>
 //
-// list grid — the real data-table vocabulary. The card sets its columns
+// list grid — the real data-table vocabulary. It is a layout grid of
+// divs on purpose, not a <table>: the columns come from one --rst-cols
+// custom property on the card, and CSS grid over real table markup means
+// display: grid on the table and its rows, which throws away the table
+// semantics the conversion would be for. Reach for a <table> when the
+// content is a data table you want announced as one; this is for list
+// screens whose rows are links. The card sets its columns
 // once with the --rst-cols custom property (trailing 32px reserved for a
 // kebab); rows only choose cells. A head row carries rst-lrow--head; a
 // data row's identity cell is rst-nm, a column hidden below 800px is
@@ -97,23 +108,37 @@
 //	  <div class="rst-lrow">
 //	    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
 //	    <span class="rst-m-hide rst-cell-mut">Paid</span>
-//	    <details class="rst-row-menu"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
+//	    <details class="rst-row-menu" name="rst-menus"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
 //	      <div class="rst-row-menu__panel"><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
 //	    </details>
 //	  </div>
 //	</div>
 //
 // dropdown — the details/summary menu vocabulary behind header overflow
-// menus and a list-bar's Filter/Sort controls. A dropdown's exclusivity
-// with its siblings (only one open at a time) is the native <details
-// name> attribute, never JavaScript; rst-menu-group nests a submenu the
-// same way. rst-caret is the disclosure arrow that flips on [open]:
+// menus and a list-bar's Filter/Sort controls. Only one menu is open at
+// a time, and that is the native <details name> attribute rather than
+// JavaScript: every dropdown, row-menu and locale menu the library emits
+// defaults to the group "rst-menus", so opening a row's kebab closes the
+// account menu in the header without a line of script. The dropdown,
+// locale-menu and bulk-bar partials all take a MenuGroup key to carve a
+// menu into a group of its own.
 //
-//	<details class="rst-dropdown" name="list-controls">
+// A nested rst-menu-group MUST use a different name from the menu around
+// it. <details name> exclusivity is document-wide, not sibling-scoped,
+// so a submenu sharing its parent's group closes that parent the instant
+// it opens — the submenu flashes and the whole menu vanishes.
+//
+// Shell chrome and the toggle-block stay out of the group on purpose:
+// neither is a menu, and closing the narrow-screen nav rail because
+// someone opened a filter would take the navigation away.
+//
+// rst-caret is the disclosure arrow that flips on [open]:
+//
+//	<details class="rst-dropdown" name="rst-menus">
 //	  <summary>Filter<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">Filter orders: Paid</span></summary>
 //	  <div class="rst-dropdown__menu">
 //	    <a aria-current="true" href="/orders?status=paid">Paid</a>
-//	    <details class="rst-menu-group" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
+//	    <details class="rst-menu-group" name="rst-menus-price" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
 //	  </div>
 //	</details>
 //
@@ -144,14 +169,21 @@
 // user cannot reach it while the panel is open), then the overlay and
 // panel on top. Closing is a plain link back to that same URL — never
 // JavaScript, so there is nothing to wire up and nothing that can get
-// out of sync with the page underneath:
+// out of sync with the page underneath.
+//
+// The panel is a <dialog open>. A rendered-open, non-modal dialog is
+// exactly what a modal-as-a-URL already was: the server sends the page
+// with the dialog open and nothing ever calls showModal(), so the idiom
+// keeps its zero-JS promise while the panel gains the element's dialog
+// role. Because nothing enters the top layer, ::backdrop never paints —
+// the rst-modal-overlay div is still the scrim, as it always was:
 //
 //	<div class="rst-backdrop" inert>…the page a Close click returns to…</div>
 //	<div class="rst-modal-overlay">
-//	  <div class="rst-modal-panel">
+//	  <dialog class="rst-modal-panel" open>
 //	    <nav><a href="/settings/profile" aria-current="page">Profile</a><a href="/settings/billing">Billing</a></nav>
 //	    <section><a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>…</section>
-//	  </div>
+//	  </dialog>
 //	</div>
 //
 // help — a bordered "?" icon-link to a help article, opening in a new

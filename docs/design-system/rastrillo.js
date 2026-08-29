@@ -1,9 +1,15 @@
 /* rastrillo.js — the fragment shim. First-party, dependency-free, and
-   inert by default: only elements that opt in with a data attribute
-   get behavior, and everything it enhances also works with scripts
-   disabled (a status page's <noscript> meta refresh). This file is
-   app-owned from the moment it is scaffolded — edit it like any other
-   static file.
+   almost entirely inert: everything below the menu section answers only
+   to an opt-in data attribute, and everything it enhances also works
+   with scripts disabled (a status page's <noscript> meta refresh). This
+   file is app-owned from the moment it is scaffolded — edit it like any
+   other static file.
+
+   The one exception is light dismiss for the menu idioms, which keys off
+   the rst-dropdown / rst-row-menu classes rather than a data attribute:
+   there is no per-instance decision to make, and a menu that closes on
+   an outside click on one screen and not the next is worse than either
+   rule applied everywhere. Delete the section to opt the whole app out.
 
    Vocabulary:
      data-poll="URL"       fetch URL for an HTML fragment, replace this
@@ -30,6 +36,11 @@
    marks the request as a shim poll so a handler can tell it apart from
    direct navigation. Reserved: the framework's own handlers do not
    read it today.
+
+   Menus (no attribute — see above): an open <details class="rst-dropdown">
+   or <details class="rst-row-menu"> closes on a click outside it and on
+   Escape. Which of them is open at once is still the native <details
+   name> group, with no script involved at all.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -160,6 +171,56 @@
       });
     });
   }
+
+  // Light dismiss — the one behaviour the native disclosure genuinely
+  // cannot do, which is the shim's whole admission rule. A <details>
+  // menu closes on a second click of its own summary and on nothing
+  // else: not on a click elsewhere on the page, not on Escape. Both are
+  // what every menu anywhere else does, and neither is expressible in
+  // HTML or CSS.
+  //
+  // Two delegated listeners on the document, never one per element, so a
+  // dropdown that arrives inside a polled fragment is covered the moment
+  // it lands and re-scanning can never double-bind. Capture phase, so a
+  // page whose own handler stops propagation cannot leave a menu stuck
+  // open.
+  //
+  // The scriptless baseline is untouched: with this file removed, the
+  // menus still toggle and the native <details name> group still keeps
+  // one open at a time.
+  //
+  // Shell chrome and the toggle-block are deliberately absent from
+  // MENUS. A sidebar's disclosure strip and a settings switch are not
+  // menus; closing them because a click landed elsewhere would fight the
+  // user rather than help.
+  var MENUS = "details.rst-dropdown[open], details.rst-row-menu[open]";
+
+  // except is the clicked node: the menu containing it stays open, which
+  // is what keeps a click on a menu item — or on the summary of a menu
+  // being opened right now — from closing the thing being used.
+  function closeMenus(except) {
+    document.querySelectorAll(MENUS).forEach(function (d) {
+      if (!except || !d.contains(except)) d.open = false;
+    });
+  }
+
+  function dismissMenus(e) {
+    if (e.type === "click") { closeMenus(e.target); return; }
+    if (e.key !== "Escape") return;
+    // Focus is about to be inside a subtree that is no longer rendered,
+    // which strands a keyboard user at the top of the document. Hand it
+    // back to the summary that opened the menu.
+    var el = document.activeElement;
+    var host = el && el.closest ? el.closest(MENUS) : null;
+    closeMenus(null);
+    if (host) {
+      var summary = host.querySelector("summary");
+      if (summary) summary.focus();
+    }
+  }
+
+  document.addEventListener("click", dismissMenus, true);
+  document.addEventListener("keydown", dismissMenus, true);
 
   function scan() {
     document.querySelectorAll("[data-poll]").forEach(poll);

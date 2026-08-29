@@ -715,3 +715,65 @@ instead of 404ing; (11) opening a dropdown closes other open dropdowns by
 default (native `<details name>`, nested groups excepted). Theme axis
 grows to colour + type + shape (radius/shadow tokens move into themes).
 Plan: docs/superpowers/plans/2026-08-29-design-system-v2.md.
+
+### 6-v2.1 Semantic elements and menu exclusivity — AS BUILT (2026-08-29)
+
+Requirements (6) and (11), as they landed.
+
+**Elements.** `list-bar-search` renders `<search>` around its
+`method="get"` form, and the form's `role="search"` is gone with it —
+`<search>` carries that role, and both would announce two nested search
+landmarks for one box. `tokens.css` sizes `.rst-lbar > search` and
+`.rst-list > search` alongside the `.rst-search` selectors they replace,
+so hand-written bare forms keep their layout. `back-nav` became a
+`<nav>`; `pagination` and `seg-tabs` already were, and the shells' link
+clusters already used `<nav class="rst-shell__nav">`. The modal panel
+became `<dialog class="rst-modal-panel" open>`: a rendered-open,
+non-modal dialog is exactly what a modal-as-a-URL already was, nothing
+calls `showModal()`, nothing reaches the top layer, `::backdrop` never
+paints, and the `rst-modal-overlay` div stays the scrim. `tokens.css`
+gains one scoped reset (`dialog.rst-modal-panel`) undoing the UA dialog
+block — absolute positioning, auto margins, `1em` padding, the Canvas
+colour pair.
+
+**Deliberate non-changes.** The `rst-lrow` grid stays divs: its columns
+come from one `--rst-cols` custom property on the card, and CSS grid over
+real `<table>` markup means `display: grid` on the table and its rows,
+which discards the table semantics the conversion was for. A list row
+(`rst-row`) stays a div for a related reason — it lives inside a
+`rst-list` card the app's own page markup writes, so a `<li>` would need
+a list the partial does not own. `job-status`'s `rst-job` div is not
+given a live-region role here: the shim replaces that element wholesale
+on every poll, and whether a replaced host announces reliably is a
+behaviour question, not an element one.
+
+**Exclusivity.** Every menu the library emits defaults to the
+`<details name>` group `rst-menus` — `dropdown`, `locale-menu`,
+`bulk-bar`, the row menus in the list grid, the generated filter
+dropdown, and the topbar shell's account menu. The `dropdown`,
+`locale-menu` and `bulk-bar` partials take a `MenuGroup` key to override
+it, resolved through a new `menuGroup` template func rather than
+`{{if .MenuGroup}}`: the partials accept a Go struct as well as a dict,
+and a template action reading a field a struct does not have is an
+Execute error, so the inline form would have 500'd every existing struct
+caller (`examples/blog`'s `blog.Filter`, which it did, loudly, in that
+example's own suite). A nested `rst-menu-group` MUST carry a different
+name: `<details name>` exclusivity is document-wide, not sibling-scoped.
+The sidebar's `rst-shell__chrome` strip and the toggle-block stay out of
+the group.
+
+**Light dismiss.** Closing an open menu on an outside click or on Escape
+is beyond the native disclosure, so `rastrillo.js` does it: two
+delegated capture-phase listeners on the document, no per-element
+binding, so menus arriving in a polled fragment are covered. Escape
+returns focus to the summary that opened the menu. Scriptless behaviour
+is unchanged — toggling and the name group still work with the file
+removed. The shim's size cap rose from 8KB to 12KB, matching select.js;
+the arithmetic is in `TestShimIsSmall`'s comment.
+
+**Gates.** `TestMenuExclusivityAndDropdownDismissDrive` and
+`TestModalDialogPanelDrive` (`-tags browser`) drive a real engine: the
+shared group closing a header dropdown when a row menu opens, a submenu
+NOT closing its parent, outside-click and Escape dismissal, chrome and
+tblock untouched, and `:modal` false on the panel — the assertion that
+the zero-JS promise holds.

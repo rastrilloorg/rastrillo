@@ -69,17 +69,89 @@ func TestListWithNoItemsIsEmptyNotNil(t *testing.T) {
 	}
 }
 
-func TestFuncsRegistersDictListIconIconAssetsTTfAndDateWords(t *testing.T) {
+// menuGroup is the reason the MenuGroup key can be optional at all.
+// ui's partials take either a dict-built map or a Go struct (the package
+// doc offers the struct precisely so a caller gets missing-field
+// detection), and a template action reading .MenuGroup off a struct
+// without that field is an Execute error — so a plain {{if .MenuGroup}}
+// in the markup would 500 every existing struct caller's list screen.
+// examples/blog's blog.Filter is exactly that caller, and did.
+func TestMenuGroupIsOptionalForEveryDataShape(t *testing.T) {
+	type noField struct {
+		Label string
+		Items []string
+	}
+	type withField struct {
+		Label     string
+		MenuGroup string
+	}
+	empty := ""
+	own := "list-controls"
+
+	for _, c := range []struct {
+		name string
+		data any
+		want string
+	}{
+		{"nil", nil, MenuGroupDefault},
+		{"empty dict", map[string]any{}, MenuGroupDefault},
+		{"dict without the key", map[string]any{"Label": "Sort"}, MenuGroupDefault},
+		{"dict with an empty value", map[string]any{"MenuGroup": ""}, MenuGroupDefault},
+		{"dict with a non-string value", map[string]any{"MenuGroup": 7}, MenuGroupDefault},
+		{"dict with a value", map[string]any{"MenuGroup": "list-controls"}, "list-controls"},
+		{"map[string]string", map[string]string{"MenuGroup": "list-controls"}, "list-controls"},
+		{"struct without the field", noField{Label: "Sort"}, MenuGroupDefault},
+		{"pointer to a struct without the field", &noField{Label: "Sort"}, MenuGroupDefault},
+		{"nil pointer", (*noField)(nil), MenuGroupDefault},
+		{"struct with the field set", withField{MenuGroup: "list-controls"}, "list-controls"},
+		{"struct with the field empty", withField{}, MenuGroupDefault},
+		{"pointer value", map[string]any{"MenuGroup": &own}, "list-controls"},
+		{"pointer to empty", map[string]any{"MenuGroup": &empty}, MenuGroupDefault},
+		{"nil interface value", map[string]any{"MenuGroup": nil}, MenuGroupDefault},
+	} {
+		if got := menuGroup(c.data); got != c.want {
+			t.Errorf("menuGroup(%s) = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// The struct path end to end: a struct shaped to the dropdown partial's
+// key contract but written before MenuGroup existed must still render,
+// and must land in the shared group.
+func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
+	type item struct {
+		Href, Label string
+		Current     bool
+	}
+	type filter struct {
+		Label string
+		Aria  string
+		Items []item
+	}
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+	var b strings.Builder
+	if err := tmpl.ExecuteTemplate(&b, "dropdown", filter{
+		Label: "All", Aria: "Filter by status: All",
+		Items: []item{{Href: "/posts", Label: "All", Current: true}},
+	}); err != nil {
+		t.Fatalf("a struct caller predating MenuGroup must still render: %v", err)
+	}
+	if !strings.Contains(b.String(), `name="`+MenuGroupDefault+`"`) {
+		t.Errorf("struct caller landed outside the shared group: %s", b.String())
+	}
+}
+
+func TestFuncsRegistersDictListMenuGroupIconIconAssetsTTfAndDateWords(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf", "dateWords"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "icon", "iconAssets", "T", "Tf", "dateWords"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 7 {
-		t.Errorf("Funcs() has %d entries, want exactly 7", len(f))
+	if len(f) != 8 {
+		t.Errorf("Funcs() has %d entries, want exactly 8", len(f))
 	}
 }
 
@@ -138,13 +210,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "icon", "iconAssets", "T", "Tf", "dateWords"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "icon", "iconAssets", "T", "Tf", "dateWords"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 7 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 7", len(f))
+	if len(f) != 8 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 8", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {

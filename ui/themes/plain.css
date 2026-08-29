@@ -6,8 +6,8 @@
    that shows you the structure and none of the taste, so the first
    colour you add is visibly yours. There is no accent hue: the accent
    is near-black in light and near-white in dark, which is to say a link
-   reads as text with an underline and a primary button reads as a
-   filled rectangle. That is deliberate. Add the hue.
+   reads as text with an underline on hover and a primary button reads as
+   a filled rectangle. That is deliberate. Add the hue.
 
    Status still has to signal. A skeleton that renders an error the same
    grey as a success is not minimal, it is broken, so the four tone
@@ -134,8 +134,9 @@
   --rst-text-muted: light-dark(#4a4a4a, #b3b3b3);
   --rst-text-faint: light-dark(#636363, #a0a0a0);
 
-  /* Accent: none. The "accent" is the text colour, so a link is an
-     underline and a primary button is a filled rectangle. */
+  /* Accent: none. The "accent" is the text colour, so a link is text
+     that underlines on hover and a primary button is a filled
+     rectangle. */
   --rst-accent: light-dark(#111111, #f2f2f2);
   --rst-accent-strong: light-dark(#000000, #ffffff);
   --rst-accent-soft: light-dark(#ededed, #242424);

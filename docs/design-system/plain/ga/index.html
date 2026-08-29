@@ -53,7 +53,7 @@
 
 <div class="ds-switch">
   <nav class="rst-seg-tabs" aria-label="Theme"><a href="/design-system/day/ga/index.html">day</a><a href="/design-system/plain/ga/index.html" aria-current="page">plain</a><a href="/design-system/signal/ga/index.html">signal</a></nav>
-  <details class="rst-dropdown rst-locale">
+  <details class="rst-dropdown rst-locale" name="rst-menus">
     <summary>Language<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">, currently Gaeilge</span></summary>
     <div class="rst-dropdown__menu"><a href="/design-system/plain/en/index.html" lang="en" dir="ltr">English</a><a href="/design-system/plain/ga/index.html" lang="ga" dir="ltr" aria-current="true">Gaeilge</a><a href="/design-system/plain/zh-Hans/index.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/plain/es/index.html" lang="es" dir="ltr">Español</a><a href="/design-system/plain/hi/index.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/plain/pt/index.html" lang="pt" dir="ltr">Português</a><a href="/design-system/plain/bn/index.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/plain/ru/index.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/plain/ja/index.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/plain/yue/index.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/plain/vi/index.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/plain/ar/index.html" lang="ar" dir="rtl">العربية</a></div>
   </details>
@@ -140,13 +140,13 @@
 <div class="ds-sample">
 <p class="ds-state">Search with a filter dropdown</p>
 <div class="rst-list"><div class="rst-lbar">
-  <form class="rst-search" role="search" method="get" action="/posts">
+  <search><form class="rst-search" method="get" action="/posts">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" value="release" placeholder="Search posts" aria-label="Search posts">
   <input type="hidden" name="sort" value="newest">
   <button class="rst-sr-only" type="submit">Cuardaigh</button>
-</form>
-  <details class="rst-dropdown">
+</form></search>
+  <details class="rst-dropdown" name="rst-menus">
   <summary class="rst-btn rst-dropdown__summary" aria-label="Filter by status: Paid">Paid <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
   <div class="rst-dropdown__menu">
     <a href="/posts">All</a>
@@ -168,22 +168,22 @@
 
 <div class="ds-sample">
 <p class="ds-state">With a query already applied</p>
-<div class="rst-list"><form class="rst-search" role="search" method="get" action="/comments">
+<div class="rst-list"><search><form class="rst-search" method="get" action="/comments">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" value="spam" placeholder="Search comments" aria-label="Search comments">
   <input type="hidden" name="page" value="1">
   <button class="rst-sr-only" type="submit">Cuardaigh</button>
-</form></div>
+</form></search></div>
 
 </div>
 
 <div class="ds-sample">
 <p class="ds-state">Empty, accessible name from the catalog</p>
-<div class="rst-list"><form class="rst-search" role="search" method="get" action="/comments">
+<div class="rst-list"><search><form class="rst-search" method="get" action="/comments">
   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   <input type="search" name="q" aria-label="Cuardaigh">
   <button class="rst-sr-only" type="submit">Cuardaigh</button>
-</form></div>
+</form></search></div>
 <p class="ds-note">No Placeholder, so the input&#39;s accessible name comes from the framework catalog in this page&#39;s language.</p>
 </div>
 
@@ -252,7 +252,7 @@
 
 <div class="ds-sample">
 <p class="ds-state">A filter menu with one choice applied</p>
-<details class="rst-dropdown">
+<details class="rst-dropdown" name="rst-menus">
   <summary class="rst-btn rst-dropdown__summary" aria-label="Sort posts: newest first">Newest <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
   <div class="rst-dropdown__menu">
     <a href="/posts?sort=newest" aria-current="true">Newest <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></a>
@@ -273,7 +273,7 @@
 
 <div class="ds-sample">
 <p class="ds-state">Three rows selected</p>
-<div class="rst-list"><div class="rst-bulkbar"><a class="rst-bulkbar__close" href="/posts" aria-label="Roghnú críochnaithe"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a><span class="rst-bulkbar__count">3 selected</span><a class="rst-bulkbar__escalate" href="/posts?select=all">Select all 412 matching</a><details class="rst-dropdown"><summary>Actions<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="rst-dropdown__menu"><button type="submit" name="action" value="export">Export</button><button type="submit" name="action" value="unpublish">Unpublish</button><button type="submit" name="action" value="delete" class="rst-danger">Delete…</button></div></details></div></div>
+<div class="rst-list"><div class="rst-bulkbar"><a class="rst-bulkbar__close" href="/posts" aria-label="Roghnú críochnaithe"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a><span class="rst-bulkbar__count">3 selected</span><a class="rst-bulkbar__escalate" href="/posts?select=all">Select all 412 matching</a><details class="rst-dropdown" name="rst-menus"><summary>Actions<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="rst-dropdown__menu"><button type="submit" name="action" value="export">Export</button><button type="submit" name="action" value="unpublish">Unpublish</button><button type="submit" name="action" value="delete" class="rst-danger">Delete…</button></div></details></div></div>
 <p class="ds-note">The destructive item is last: the first entry is the surrounding form&#39;s implicit-Enter default.</p>
 </div>
 
@@ -1183,7 +1183,7 @@
 
 <div class="ds-sample">
 <p class="ds-state">Back to a record</p>
-<p class="rst-back-nav"><a href="/orders/1">← Order AB3PX</a></p>
+<nav class="rst-back-nav"><a href="/orders/1">← Order AB3PX</a></nav>
 
 </div>
 
@@ -1197,7 +1197,7 @@
 
 <div class="ds-sample">
 <p class="ds-state">Twelve languages, the current one marked</p>
-<details class="rst-dropdown rst-locale">
+<details class="rst-dropdown rst-locale" name="rst-menus">
   <summary>Teanga<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
   <div class="rst-dropdown__menu">
     <form method="post" action="/_locale"><input type="hidden" name="locale" value="en"><input type="hidden" name="return" value="/design-system/"><button type="submit" lang="en">English</button></form>
@@ -1239,11 +1239,11 @@
 <h4 class="rst-mono">dropdown</h4>
 <p class="ds-lead">The details/summary menu behind header overflow menus and a list bar&#39;s filter, plus an applied filter as a removable chip.</p>
 
-<div class="ds-sample"><details class="rst-dropdown" name="list-controls">
+<div class="ds-sample"><details class="rst-dropdown" name="rst-menus">
   <summary>Filter<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">Filter orders: Paid</span></summary>
   <div class="rst-dropdown__menu">
     <a aria-current="true" href="/orders?status=paid">Paid</a>
-    <details class="rst-menu-group" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
+    <details class="rst-menu-group" name="rst-menus-price" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
   </div>
 </details>
 <span class="rst-ftok"><span class="rst-ftok__k">Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span></div>
@@ -1301,7 +1301,7 @@
   <div class="rst-lrow">
     <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
     <span class="rst-m-hide rst-cell-mut">Paid</span>
-    <details class="rst-row-menu"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
+    <details class="rst-row-menu" name="rst-menus"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
       <div class="rst-row-menu__panel"><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
     </details>
   </div>
@@ -1319,7 +1319,7 @@
   &lt;div class=&#34;rst-page&#34;&gt;&lt;h1&gt;Settings&lt;/h1&gt;&lt;/div&gt;
 &lt;/div&gt;
 &lt;div class=&#34;rst-modal-overlay&#34;&gt;
-  &lt;div class=&#34;rst-modal-panel&#34;&gt;
+  &lt;dialog class=&#34;rst-modal-panel&#34; open&gt;
     &lt;nav&gt;
       &lt;a href=&#34;/settings/profile&#34; aria-current=&#34;page&#34;&gt;Profile&lt;/a&gt;
       &lt;a href=&#34;/settings/billing&#34;&gt;Billing&lt;/a&gt;
@@ -1330,7 +1330,7 @@
       &lt;h2&gt;Profile&lt;/h2&gt;
       &lt;p&gt;Update the name and photo shown across the account.&lt;/p&gt;
     &lt;/section&gt;
-  &lt;/div&gt;
+  &lt;/dialog&gt;
 &lt;/div&gt;</code></pre>
 <p class="ds-note">Shown as source, not rendered: the overlay is fixed to the viewport, so rendering it here opened a modal over the whole gallery the moment this page loaded. That is the idiom telling you what it wants — a modal is its own URL, and this is not it. <a href="/design-system/plain/ga/modal.html">See it live at the URL it belongs to</a>.</p>
 
@@ -1370,7 +1370,7 @@
   &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
   &lt;header class=&#34;rst-shell__bar&#34;&gt;&lt;a class=&#34;rst-shell__brand&#34; href=&#34;/&#34;&gt;Notes&lt;/a&gt;
     &lt;nav class=&#34;rst-shell__nav&#34;&gt;&lt;a href=&#34;/&#34; aria-current=&#34;page&#34;&gt;Home&lt;/a&gt;&lt;a href=&#34;/archive&#34;&gt;Archive&lt;/a&gt;&lt;/nav&gt;
-    &lt;details class=&#34;rst-dropdown rst-shell__account&#34;&gt;&lt;summary&gt;Account&lt;span class=&#34;rst-caret&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;m6 9 6 6 6-6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/summary&gt;
+    &lt;details class=&#34;rst-dropdown rst-shell__account&#34; name=&#34;rst-menus&#34;&gt;&lt;summary&gt;Account&lt;span class=&#34;rst-caret&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;m6 9 6 6 6-6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/summary&gt;
       &lt;div class=&#34;rst-dropdown__menu&#34;&gt;&lt;a href=&#34;/settings&#34;&gt;Settings&lt;/a&gt;&lt;/div&gt;&lt;/details&gt;
   &lt;/header&gt;
   &lt;main class=&#34;rst-page&#34; id=&#34;main&#34;&gt;Content.&lt;/main&gt;
