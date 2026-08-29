@@ -1,0 +1,976 @@
+/* rastrillo/ui — design tokens and the component classes the shipped
+   partials use (see ui_test.go's TestAllPartialsAreDefined for the
+   current, authoritative list — deliberately not counted here, so this
+   comment cannot go stale as the set grows).
+
+   rastrillo new writes this file once into your app's static/ directory.
+   From then on it is yours: edit it, replace it, delete rules you do not
+   want. Nothing regenerates it, and rastrillo.Serve never serves it —
+   your app's own static handler does.
+
+   Every class and custom property is prefixed rst- — except the single
+   .icon rule, which styles the class rastrillo.Icon emits — so dropping
+   this file into an app with existing CSS has exactly one known
+   collision surface. There are no imports, no remote assets and no webfont:
+   this stylesheet fetches nothing, from anywhere, ever. That is a test,
+   not a wish (ui_test.go, TestTokensCSSIsSelfContained) — which is also
+   why this comment cannot spell those constructs out literally.
+
+   Colour and the type family are not here: they live in themes/ink.css,
+   which rastrillo new writes beside this file as static/theme.css. This
+   file is structure — layout, spacing, radius, the type scale, and the
+   component classes, every one of them painted with var(--rst-*). Swap
+   the theme file and the app changes palette; nothing here is touched.
+
+   Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
+   WCAG 2.2): pagination chips measure about 30px, row action pills
+   about 27px and buttons about 34px on their smaller axis, all clear of
+   the 24px minimum. Do not shrink them without re-measuring.
+
+   Type sizes are rem, not px, so the whole scale tracks a reader who has
+   raised their browser's default font size. Spacing is rem for the same
+   reason. Anything you add here should follow suit.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* ── Scale: type, spacing, radius. Theme-independent. ─────────────── */
+:root {
+  --rst-fs-base: 0.875rem;   /* 14px at the browser default */
+  --rst-fs-sm: 0.78125rem;   /* 12.5px */
+  --rst-fs-xs: 0.71875rem;   /* 11.5px */
+
+  --rst-sp-1: 0.25rem;
+  --rst-sp-2: 0.5rem;
+  --rst-sp-3: 0.75rem;
+  --rst-sp-4: 1rem;
+  --rst-sp-5: 1.5rem;
+  --rst-sp-6: 2.5rem;
+
+  --rst-radius: 10px;
+  --rst-radius-sm: 7px;
+  --rst-radius-pill: 999px;
+}
+
+/* ── Base. Three rules, so a freshly scaffolded app looks finished
+      before it has any CSS of its own. Delete them if your app owns
+      its own base styles. ──────────────────────────────────────────── */
+body {
+  margin: 0;
+  background: var(--rst-bg);
+  color: var(--rst-text);
+  font-family: var(--rst-font);
+  font-size: var(--rst-fs-base);
+  line-height: 1.5;
+}
+
+/* The content column every screen sits in. Your page markup emits this;
+   no partial does. */
+.rst-page {
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 52rem;
+  padding: var(--rst-sp-5) var(--rst-sp-4) var(--rst-sp-6);
+}
+
+/* rastrillo.Icon emits class="icon" with no width or height, so the icon
+   sizes from here and tracks the text beside it. */
+.icon {
+  block-size: 1em;
+  flex: none;
+  inline-size: 1em;
+}
+
+/* Focus is visible everywhere inside the app column (.rst-page) and
+   inside any component rendered outside one. :where() contributes no
+   specificity, so any rule below can override it. */
+:where(.rst-page, .rst-page-header, .rst-list, .rst-lbar, .rst-search, .rst-empty, .rst-pagination) :focus-visible {
+  outline: 2px solid var(--rst-accent);
+  outline-offset: 2px;
+}
+
+
+/* ── Buttons: page-header's primary action, empty-state's CTA. ────── */
+.rst-btn {
+  align-items: center;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-line-strong);
+  border-radius: var(--rst-radius-sm);
+  color: var(--rst-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: var(--rst-fs-sm);
+  font-weight: 600;
+  gap: var(--rst-sp-2);
+  line-height: 1.4;
+  padding: 0.45rem 0.75rem;
+  text-decoration: none;
+}
+.rst-btn:hover {
+  border-color: var(--rst-accent);
+  color: var(--rst-accent);
+}
+.rst-btn--primary {
+  background: var(--rst-accent);
+  border-color: var(--rst-accent);
+  color: var(--rst-on-accent);
+}
+.rst-btn--primary:hover {
+  background: var(--rst-accent-strong);
+  border-color: var(--rst-accent-strong);
+  color: var(--rst-on-accent);
+}
+
+/* ghost — a quiet Cancel beside a primary/danger action: no fill, a
+   muted label, and it darkens toward the ordinary text colour on hover
+   rather than picking up the accent (the accent means "this navigates
+   somewhere new"; a ghost Cancel does not). */
+.rst-btn--ghost {
+  background: transparent;
+  color: var(--rst-text-muted);
+}
+.rst-btn--ghost:hover {
+  border-color: var(--rst-line-strong);
+  color: var(--rst-text);
+}
+
+/* danger — a solid fill for a destructive submit (confirm-form,
+   bulk-bar's actions menu). --rst-tone-negative-fg already clears
+   4.5:1 as a filled background against --rst-on-accent's label colour
+   in both themes, so no new custom properties are needed — computed
+   with the same WCAG relative-luminance formula as each theme file's
+   own contrast table (ink's values, shown; every theme's own pair is
+   gated the same way):
+     light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#93262f)   8.21:1
+     dark   --rst-on-accent (#1a1030) on --rst-tone-negative-fg (#f58c95)   7.81:1
+   Hover darkens via filter rather than a themed "negative-strong"
+   token: brightness() scales every channel of the already-themed fill
+   (and, being a post-paint filter, the label too), so one rule works
+   in both themes without a new pair of colours to maintain. Re-checked
+   with the label included in the scaled result, both still clear
+   4.5:1 by a wide margin (ink's values again; a post-paint filter
+   result, so these two rows are illustrative rather than gated):
+     light  0.9× fill (#84222a) vs 0.9× label (#e6e6e6)   7.50:1
+     dark   0.9× fill (#dc7e86) vs 0.9× label (#170e2b)   6.50:1
+   background/border-color/color are restated on :hover, matching
+   .rst-btn--primary:hover's pattern exactly — .rst-btn:hover (same
+   0,2,0 specificity, an earlier rule) sets border-color/color to the
+   accent, and a filter-only :hover rule wins nothing for properties it
+   never declares, so without this restatement the label silently
+   cascades to accent-on-red (~1.05:1) at the exact moment a user
+   commits to a destructive action. */
+.rst-btn--danger {
+  background: var(--rst-tone-negative-fg);
+  border-color: var(--rst-tone-negative-fg);
+  color: var(--rst-on-accent);
+}
+.rst-btn--danger:hover {
+  background: var(--rst-tone-negative-fg);
+  border-color: var(--rst-tone-negative-fg);
+  color: var(--rst-on-accent);
+  filter: brightness(0.9);
+}
+
+/* ── page-header ──────────────────────────────────────────────────── */
+.rst-page-header {
+  align-items: baseline;
+  border-bottom: 1px solid var(--rst-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+  justify-content: space-between;
+  margin: 0 0 var(--rst-sp-5);
+  padding-bottom: var(--rst-sp-3);
+  position: relative;
+}
+/* The rake line: one short accent stroke laid over the header's rule.
+   The library's one flourish — the tool it is named for, drawn once per
+   screen and nowhere else. Absolutely positioned, so it is not a flex
+   item. */
+.rst-page-header::after {
+  background: var(--rst-accent);
+  block-size: 2px;
+  content: "";
+  inline-size: 2.5rem;
+  inset-block-end: -1px;
+  inset-inline-start: 0;
+  position: absolute;
+}
+.rst-page-header__titles {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+.rst-page-header h1 {
+  color: var(--rst-text);
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin: 0;
+}
+.rst-page-header__sub {
+  color: var(--rst-text-muted);
+  font-size: var(--rst-fs-sm);
+  margin: var(--rst-sp-1) 0 0;
+  max-inline-size: 44rem;
+}
+
+/* ── The list card, its toolbar, and its search field ─────────────── */
+/* No padding here, on purpose: a list card holds rows, and each row pads
+   itself. A form, prose or a strip of links does NOT go in here — it
+   goes in .rst-box, the padded section card. Text touching the border
+   is the sign that content landed in the wrong card. */
+.rst-list {
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-line);
+  border-radius: var(--rst-radius);
+  overflow: hidden;
+}
+
+/* list-bar: the toolbar strip. The search field is capped at 20rem so
+   the space to its right stays reserved — that is where the filter and
+   sort controls attach when the dropdown slice lands. */
+.rst-lbar {
+  align-items: center;
+  background: var(--rst-surface-2);
+  border-bottom: 1px solid var(--rst-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+}
+.rst-lbar > .rst-search {
+  flex: 0 1 20rem;
+}
+
+/* list-bar-search renders this form, which is the field box itself. Used
+   on its own inside a .rst-list card it just needs margin; inside a
+   .rst-lbar the strip supplies the padding. */
+.rst-search {
+  align-items: center;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-line-strong);
+  border-radius: var(--rst-radius-sm);
+  display: flex;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0.3rem 0.55rem;
+}
+.rst-list > .rst-search {
+  margin: var(--rst-sp-3);
+}
+.rst-search .icon {
+  color: var(--rst-text-faint);
+}
+.rst-search input[type="search"] {
+  background: transparent;
+  border: 0;
+  color: var(--rst-text);
+  flex: 1;
+  font-family: inherit;
+  font-size: var(--rst-fs-sm);
+  min-inline-size: 0;
+  padding: 0.2rem 0;
+}
+.rst-search input[type="search"]::placeholder {
+  color: var(--rst-text-faint);
+}
+/* The field box carries the focus indicator for the whole control, so
+   the input's own default outline would only double it up. */
+.rst-search input[type="search"]:focus-visible {
+  outline: none;
+}
+.rst-search:focus-within {
+  border-color: var(--rst-accent);
+  outline: 2px solid var(--rst-accent);
+  outline-offset: 1px;
+}
+
+/* ── list-row-action ──────────────────────────────────────────────── */
+.rst-row {
+  align-items: center;
+  border-top: 1px solid var(--rst-line);
+  display: flex;
+  gap: var(--rst-sp-3);
+  padding: var(--rst-sp-3);
+  position: relative;
+}
+.rst-row:first-child {
+  border-top: 0;
+}
+/* The toolbar strip already draws the line under itself. */
+.rst-lbar + .rst-row {
+  border-top: 0;
+}
+.rst-row:hover {
+  background: var(--rst-surface-2);
+}
+.rst-row__lead {
+  align-items: center;
+  background: var(--rst-tone-neutral-bg);
+  block-size: 1.9rem;
+  border-radius: 50%;
+  color: var(--rst-tone-neutral-fg);
+  display: flex;
+  flex: none;
+  font-size: var(--rst-fs-xs);
+  font-weight: 600;
+  inline-size: 1.9rem;
+  justify-content: center;
+}
+.rst-row__lead[data-lead="positive"] {
+  background: var(--rst-tone-positive-bg);
+  color: var(--rst-tone-positive-fg);
+}
+.rst-row__lead[data-lead="warning"] {
+  background: var(--rst-tone-warning-bg);
+  color: var(--rst-tone-warning-fg);
+}
+.rst-row__lead[data-lead="negative"] {
+  background: var(--rst-tone-negative-bg);
+  color: var(--rst-tone-negative-fg);
+}
+.rst-row__lead[data-lead="accent"] {
+  background: var(--rst-accent-soft);
+  color: var(--rst-accent);
+}
+.rst-row__main {
+  flex: 1;
+  min-inline-size: 0;
+}
+/* The name link's overlay makes the whole row clickable without nesting
+   one anchor inside another. The action pill sits above it. */
+.rst-row__main > a {
+  color: var(--rst-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.rst-row__main > a::after {
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+.rst-row__main > a:hover {
+  text-decoration: underline;
+}
+.rst-row__sub {
+  color: var(--rst-text-muted);
+  display: block;
+  font-size: var(--rst-fs-sm);
+  margin-block-start: 0.1rem;
+}
+.rst-row__action {
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-line-strong);
+  border-radius: var(--rst-radius-pill);
+  color: var(--rst-text-muted);
+  flex: none;
+  font-size: var(--rst-fs-sm);
+  padding: 0.2rem 0.7rem;
+  position: relative;
+  text-decoration: none;
+  z-index: 1;
+}
+.rst-row__action:hover {
+  border-color: var(--rst-accent);
+  color: var(--rst-accent);
+}
+
+/* A status pill inside a row sits above the name link's overlay, like
+   the action pill does. */
+.rst-row .rst-status {
+  flex: none;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── status-pill. The dot is decoration; the label is the state. ──── */
+.rst-status {
+  align-items: center;
+  background: var(--rst-tone-neutral-bg);
+  border-radius: var(--rst-radius-pill);
+  color: var(--rst-tone-neutral-fg);
+  display: inline-flex;
+  font-size: var(--rst-fs-xs);
+  font-weight: 600;
+  gap: 0.35rem;
+  line-height: 1.6;
+  padding: 0.15rem 0.55rem;
+}
+.rst-status::before {
+  background: currentColor;
+  block-size: 0.375rem;
+  border-radius: 50%;
+  content: "";
+  flex: none;
+  inline-size: 0.375rem;
+}
+.rst-status[data-tone="positive"] {
+  background: var(--rst-tone-positive-bg);
+  color: var(--rst-tone-positive-fg);
+}
+.rst-status[data-tone="warning"] {
+  background: var(--rst-tone-warning-bg);
+  color: var(--rst-tone-warning-fg);
+}
+.rst-status[data-tone="negative"] {
+  background: var(--rst-tone-negative-bg);
+  color: var(--rst-tone-negative-fg);
+}
+
+/* ── empty-state ──────────────────────────────────────────────────── */
+.rst-empty {
+  background: var(--rst-surface);
+  border: 1px dashed var(--rst-line-strong);
+  border-radius: var(--rst-radius);
+  padding: var(--rst-sp-6) var(--rst-sp-4);
+  text-align: center;
+}
+/* Class-based, so it styles the partial's <h2> without inheriting any
+   <h2> default: an empty state's heading is a real heading in the
+   document outline, not a paragraph dressed up as one. */
+.rst-empty__title {
+  color: var(--rst-text);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0 0 var(--rst-sp-2);
+}
+.rst-empty__body {
+  color: var(--rst-text-muted);
+  margin: 0 auto;
+  max-inline-size: 34rem;
+}
+.rst-empty__cta {
+  margin: var(--rst-sp-4) 0 0;
+}
+
+/* ── pagination. The current page is a filled chip AND aria-current AND
+      bolder — three signals, so it never rests on colour alone. ────── */
+.rst-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+  gap: var(--rst-sp-1);
+  margin: var(--rst-sp-4) 0;
+}
+.rst-pagination a,
+.rst-pagination span {
+  border: 1px solid var(--rst-line);
+  border-radius: var(--rst-radius-sm);
+  color: var(--rst-text-muted);
+  display: inline-block;
+  font-size: var(--rst-fs-sm);
+  min-inline-size: 2rem;
+  padding: 0.3rem 0.6rem;
+  text-align: center;
+  text-decoration: none;
+}
+.rst-pagination a:hover {
+  background: var(--rst-accent-soft);
+  border-color: var(--rst-accent);
+  color: var(--rst-text);
+}
+.rst-pagination [aria-current="page"] {
+  background: var(--rst-accent);
+  border-color: var(--rst-accent);
+  color: var(--rst-on-accent);
+  font-weight: 600;
+}
+.rst-pagination .rst-pagination__disabled {
+  border-style: dashed;
+  color: var(--rst-text-faint);
+}
+.rst-pagination .rst-pagination__gap {
+  border-color: transparent;
+  min-inline-size: 0;
+  padding-inline: var(--rst-sp-1);
+}
+
+/* badge — uppercase bordered chip; tones reuse the pill tone pairs. */
+.rst-badge {
+  border: 1px solid var(--rst-line);
+  border-radius: var(--rst-radius-sm);
+  color: var(--rst-text-muted);
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.4rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.rst-badge--positive { background: var(--rst-tone-positive-bg); border-color: var(--rst-tone-positive-fg); color: var(--rst-tone-positive-fg); }
+.rst-badge--warning { background: var(--rst-tone-warning-bg); border-color: var(--rst-tone-warning-fg); color: var(--rst-tone-warning-fg); }
+.rst-badge--negative { background: var(--rst-tone-negative-bg); border-color: var(--rst-tone-negative-fg); color: var(--rst-tone-negative-fg); }
+.rst-badge--neutral { background: var(--rst-tone-neutral-bg); border-color: var(--rst-tone-neutral-fg); color: var(--rst-tone-neutral-fg); }
+
+/* meter — 4px capacity bar; the number rides beside it as text. */
+.rst-meter { align-items: center; color: var(--rst-text-muted); display: inline-flex; font-size: var(--rst-fs-xs); gap: var(--rst-sp-2); }
+.rst-meter__bar { background: var(--rst-accent-soft); border-radius: 2px; flex: 1; height: 4px; min-width: 34px; overflow: hidden; }
+.rst-meter__bar i { background: var(--rst-accent); border-radius: 2px; display: block; height: 100%; width: var(--rst-meter-fill, 0%); }
+.rst-meter__num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* person — avatar + name + email; avatar is decoration, text is identity. */
+.rst-person { align-items: center; color: inherit; display: inline-flex; gap: 0.7rem; min-width: 0; text-decoration: none; }
+.rst-person__av { align-items: center; background: var(--rst-accent); border-radius: 50%; color: var(--rst-on-accent); display: flex; flex: none; font-size: 0.6875rem; font-weight: 600; height: 28px; justify-content: center; width: 28px; }
+.rst-person__av--empty { background: transparent; border: 1px dashed var(--rst-line-strong); color: transparent; }
+.rst-person__meta { min-width: 0; }
+.rst-person__name { display: block; font-weight: 550; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rst-person__email { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rst-person:hover .rst-person__name { color: var(--rst-accent); }
+.rst-person--lg .rst-person__av { font-size: 1.0625rem; height: 46px; width: 46px; }
+
+/* callout — the one alert vocabulary; icon sized to the first text line. */
+.rst-callout { align-items: flex-start; background: var(--rst-surface-2); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); display: flex; gap: 0.6rem; margin: var(--rst-sp-4) 0; padding: 0.85rem 1rem; }
+.rst-callout__ic { align-items: center; color: var(--rst-accent); display: inline-flex; flex: none; height: 1.5rem; justify-content: center; width: 1.25rem; }
+.rst-callout__ic svg, .rst-callout__ic .icon { display: block; height: 1.25rem; width: 1.25rem; }
+.rst-callout__body { line-height: 1.5; min-width: 0; }
+.rst-callout__body > strong { display: block; font-weight: 600; }
+.rst-callout__body > p { color: var(--rst-text-muted); margin: 0.15rem 0 0; }
+.rst-callout__body > p:only-child { color: inherit; margin: 0; }
+.rst-callout__body > ul { color: var(--rst-text-muted); margin: 0.15rem 0 0; padding-inline-start: 1.1rem; }
+.rst-callout[data-tone="positive"] { background: var(--rst-tone-positive-bg); border-color: var(--rst-tone-positive-fg); }
+.rst-callout[data-tone="positive"] > .rst-callout__ic { color: var(--rst-tone-positive-fg); }
+.rst-callout[data-tone="warning"] { background: var(--rst-tone-warning-bg); border-color: var(--rst-tone-warning-fg); }
+.rst-callout[data-tone="warning"] > .rst-callout__ic { color: var(--rst-tone-warning-fg); }
+.rst-callout[data-tone="negative"] { background: var(--rst-tone-negative-bg); border-color: var(--rst-tone-negative-fg); }
+.rst-callout[data-tone="negative"] > .rst-callout__ic { color: var(--rst-tone-negative-fg); }
+
+/* detail-list — a record's labelled facts as a definition list; the
+   partial emits .rst-detail, .rst-mono marking machine-ish values. */
+.rst-detail { display: grid; gap: var(--rst-sp-2) var(--rst-sp-5); grid-template-columns: max-content 1fr; margin: var(--rst-sp-4) 0; }
+.rst-detail dt { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 600; }
+.rst-detail dd { margin: 0; }
+.rst-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--rst-fs-sm); }
+
+/* ── Narrow screens ───────────────────────────────────────────────── */
+@media (max-width: 34rem) {
+  .rst-lbar > .rst-search {
+    flex: 1 1 100%;
+  }
+  .rst-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .rst-page-header h1 {
+    font-size: 1.25rem;
+  }
+}
+
+/* ── The structural idioms: box, list grid, row-menu, dropdown, ftok ── */
+
+/* box — the section card. Its heading (rst-box-head) is a SIBLING
+   before the box, never inside it: a screen is a stack of
+   section-header + card. A box-head action is a compact real button,
+   never a pill. */
+.rst-box { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-4) 0; padding: 1.1rem 1.25rem; }
+.rst-box > :first-child { margin-top: 0; }
+.rst-box > :last-child { margin-bottom: 0; }
+.rst-box-head { align-items: baseline; display: flex; gap: var(--rst-sp-4); justify-content: space-between; margin: 1.5rem 0 0.5rem; }
+.rst-box-head:first-child { margin-top: 0; }
+.rst-box-head + .rst-box { margin-top: 0; }
+.rst-box-head h2 { font-size: var(--rst-fs-base); margin: 0; }
+.rst-box-foot { border-top: 1px solid var(--rst-line); color: var(--rst-text-muted); margin-top: var(--rst-sp-4); padding-top: 0.75rem; }
+.rst-box > .rst-detail { margin: 0; }
+
+/* The list grid — the real data-table vocabulary. The card sets the
+   columns once (--rst-cols, inline, trailing 32px for the kebab);
+   rows only choose cells. Hover fill only on rows that contain the
+   identity link — a display-only row must never look clickable.
+   Like .rst-list, .rst-card has no padding: rows only. Anything that
+   is not a row belongs in .rst-box. */
+.rst-card { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); }
+.rst-lrow { align-items: center; border-bottom: 1px solid var(--rst-line); display: grid; gap: 0.85rem; grid-template-columns: var(--rst-cols, 1fr); padding: 0.68rem 1rem; position: relative; }
+.rst-lrow:last-child { border-bottom: 0; }
+.rst-lrow--head { color: var(--rst-text-faint); font-size: 0.71875rem; font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
+.rst-lrow:not(.rst-lrow--head):has(> .rst-nm, > .rst-person):hover { background: var(--rst-accent-soft); }
+.rst-nm { border-radius: var(--rst-radius-sm); color: inherit; font-weight: 550; min-width: 0; text-align: start; text-decoration: none; }
+a.rst-nm:hover { color: var(--rst-accent); }
+.rst-nm small { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); font-weight: 400; }
+.rst-cell-mut { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rst-no-match { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding: 1.6rem 1rem; text-align: center; }
+.rst-no-match a { color: var(--rst-accent); }
+.rst-count-line { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); margin: 0.7rem 0 0; }
+@media (max-width: 800px) {
+  .rst-m-hide { display: none; }
+  .rst-lrow, .rst-lrow--head { grid-template-columns: minmax(0, 1fr) auto 32px; }
+}
+
+/* row-menu — the per-row kebab: native details/summary, no JS. The
+   destructive item sits last, class rst-danger, label ending "…". */
+.rst-row-menu { justify-self: end; position: relative; }
+.rst-row-menu > summary { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-faint); cursor: pointer; display: flex; height: 26px; justify-content: center; list-style: none; width: 26px; }
+.rst-row-menu > summary::-webkit-details-marker { display: none; }
+.rst-row-menu > summary:hover, .rst-row-menu[open] > summary { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-row-menu__panel { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; min-width: 176px; padding: 0.25rem; position: absolute; top: calc(100% + 4px); z-index: 40; }
+.rst-row-menu__panel a, .rst-row-menu__panel button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); font-weight: 450; margin: 0; padding: 0.4rem 0.65rem; text-align: start; text-decoration: none; width: 100%; }
+.rst-row-menu__panel a:hover, .rst-row-menu__panel button:hover { background: var(--rst-accent-soft); }
+.rst-row-menu__panel hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
+.rst-danger { color: var(--rst-tone-negative-fg); }
+.rst-row-menu__panel .rst-danger:hover { background: var(--rst-tone-negative-bg); }
+
+/* dropdown — the details/summary menu vocabulary (header overflow,
+   list-bar Filter/Sort). Exclusivity between siblings is the native
+   details name attribute — zero JS. */
+.rst-dropdown { position: relative; }
+.rst-dropdown > summary { align-items: center; color: var(--rst-text-muted); cursor: pointer; display: flex; gap: 0.3rem; list-style: none; padding: 0.4rem 0.6rem; white-space: nowrap; }
+.rst-dropdown > summary::-webkit-details-marker { display: none; }
+.rst-dropdown > summary:hover, .rst-dropdown[open] > summary { color: var(--rst-text); }
+.rst-dropdown__menu { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; margin-top: 4px; min-width: 176px; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
+.rst-dropdown__menu a { border-radius: var(--rst-radius-sm); color: inherit; display: block; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-decoration: none; }
+.rst-dropdown__menu a:hover, .rst-dropdown__menu a[aria-current] { background: var(--rst-accent-soft); }
+/* locale-menu — the language switcher is a dropdown whose items are
+   one-field POST forms (spec §2.4), so the button inside each form
+   takes the menu-link styling. Autonyms keep their own script, so no
+   text-transform here, ever. */
+.rst-locale form { margin: 0; }
+.rst-locale button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
+.rst-locale button:hover { background: var(--rst-accent-soft); }
+.rst-locale button[aria-current] { color: var(--rst-accent); font-weight: 600; }
+/* Task 2's menu only ever held links; bulk-bar's actions menu (Task 4)
+   is real submit buttons on the surrounding form, so the same panel
+   needs button styling too — mirrors .rst-row-menu__panel's combined
+   a/button rule above. */
+.rst-dropdown__menu button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); margin: 0; padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
+.rst-dropdown__menu button:hover { background: var(--rst-accent-soft); }
+.rst-dropdown__menu .rst-danger:hover { background: var(--rst-tone-negative-bg); }
+.rst-dropdown__menu .rst-menu-group > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
+.rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker { display: none; }
+.rst-dropdown__menu .rst-menu-group > div { padding-inline-start: 0.6rem; }
+.rst-caret { align-items: center; color: var(--rst-text-faint); display: inline-flex; font-size: 0.8em; transition: transform 0.15s; }
+.rst-caret svg, .rst-caret .icon { display: block; height: 1em; width: 1em; }
+details[open] > summary > .rst-caret { transform: rotate(180deg); }
+
+/* ftok — an applied filter as a removable chip; the × is a plain link
+   to the unfiltered URL, so removing a filter is just navigation. */
+.rst-ftok { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0.1rem; padding-inline: 0.6rem 0.3rem; }
+.rst-ftok .rst-ftok__k { color: var(--rst-text-muted); }
+.rst-ftok a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 17px; justify-content: center; text-decoration: none; width: 17px; }
+.rst-ftok a:hover { background: var(--rst-tone-negative-bg); color: var(--rst-tone-negative-fg); }
+
+/* Reduced motion: the caret's rotate transition is the only new
+   animation this batch adds. Everything else here (hover fills, colour
+   changes) is not a "large motion" trigger under 2.3.3, so it does not
+   need a rule here too. */
+@media (prefers-reduced-motion: reduce) {
+  .rst-caret { transition: none; }
+}
+
+/* ── The form family: field, switch, choice cards, seg-tabs, layout ── */
+
+/* fields — bare on the page, one column; a card in a form is reserved
+   for collections, toggle blocks, and choice cards. */
+.rst-field { margin: var(--rst-sp-4) 0; }
+.rst-field__label { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); margin: 0 0 0.2rem; }
+.rst-field__hint { color: var(--rst-text-faint); font-weight: 400; }
+.rst-input { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
+.rst-input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.rst-input--short { width: 6.5rem; }
+textarea.rst-input { min-height: 5rem; resize: vertical; }
+/* field-text/field-textarea (the interim pair the manifest generator
+   emits) mark a required label with * and put the textarea on its own
+   class; styled here so both field families render finished. */
+.rst-field__required { color: var(--rst-tone-negative-fg); }
+.rst-textarea { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
+.rst-textarea:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.rst-field__help { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+.rst-field__error { color: var(--rst-tone-negative-fg); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+
+/* switch — the one toggle mechanism: real checkbox, visible track. The
+   knob's left: 2px is deliberately physical, not inset-inline-start: it
+   is the origin of a physical translateX, so the pair has to travel the
+   same axis in either writing mode or the knob leaves the track. What
+   that gives up: the knob therefore always travels left-to-right, so a
+   mirrored switch would need a direction-scoped rule of its own. */
+.rst-switch { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
+.rst-switch input { height: 1px; opacity: 0; position: absolute; width: 1px; }
+.rst-switch__track { background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; transition: background 0.15s; width: 34px; }
+.rst-switch__track::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
+.rst-switch:has(input:checked) .rst-switch__track { background: var(--rst-accent); }
+.rst-switch:has(input:checked) .rst-switch__track::after { transform: translateX(15px); }
+.rst-switch:has(input:focus-visible) .rst-switch__track { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.rst-switch:has(input:disabled) { cursor: default; opacity: 0.55; }
+
+/* choice cards — whole-card target, native input visible. */
+.rst-choice { border: 0; margin: var(--rst-sp-4) 0; padding: 0; }
+.rst-choice > legend { font-size: var(--rst-fs-sm); font-weight: 600; margin: 0 0 0.45rem; padding: 0; }
+.rst-choice__cards { display: grid; gap: 0.5rem; }
+.rst-choice__cards label { align-items: flex-start; border: 1px solid var(--rst-line); border-radius: var(--rst-radius); cursor: pointer; display: flex; gap: 0.7rem; margin: 0; padding: 0.75rem 0.95rem; }
+.rst-choice__cards label:hover { border-color: var(--rst-accent); }
+.rst-choice__cards input { accent-color: var(--rst-accent); flex: none; margin-top: 0.18rem; }
+.rst-choice__title { display: block; font-size: var(--rst-fs-sm); font-weight: 550; line-height: 1.35; }
+.rst-choice__desc { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); line-height: 1.4; }
+.rst-choice__cards label:has(input:checked) { background: var(--rst-accent-soft); border-color: var(--rst-accent); }
+.rst-choice__cards label:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+
+/* seg-tabs — filled pill inside a soft track; current is aria-current. */
+.rst-seg-tabs { background: var(--rst-accent-soft); border-radius: 8px; display: flex; gap: 2px; padding: 2px; width: max-content; }
+.rst-seg-tabs a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
+.rst-seg-tabs a:hover { color: var(--rst-text); }
+.rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
+
+/* form layout — the interview rhythm and the save bar. */
+.rst-form-flow > .rst-field + .rst-field { margin-top: var(--rst-sp-5); }
+.rst-field-row { align-items: end; display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
+.rst-field-row .rst-field { margin: 0; }
+.rst-field-row > .rst-grow { flex: 1; min-width: 0; }
+/* field-daterange — the fieldset reset the grouped start/end pair needs,
+   with the legend sized like a field label. Its own selector rather than
+   a share of .rst-choice: the two groups look alike today, and a card
+   tweak there must not silently reshape a date range. */
+.rst-field-range { border: 0; margin: var(--rst-sp-4) 0; padding: 0; }
+.rst-field-range > legend { font-size: var(--rst-fs-sm); font-weight: 600; margin: 0 0 0.45rem; padding: 0; }
+.rst-field-range > .rst-field-row { margin: 0; }
+.rst-form-foot { align-items: center; background: var(--rst-bg); border-top: 1px solid var(--rst-line); bottom: 0; display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.75rem; padding: 0.8rem 0; position: sticky; z-index: 5; }
+.rst-form-foot .rst-form-foot__note { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin-inline-end: auto; }
+.rst-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+/* form/form-foot — the container the form-foot partial's callers wrap
+   fields in, and the closing action row form-foot itself emits. */
+.rst-form { display: flex; flex-direction: column; gap: var(--rst-sp-2); max-inline-size: 44rem; }
+.rst-form__foot { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rst-switch__track, .rst-switch__track::after { transition: none; }
+}
+
+/* ── The routes family: confirm, toggle-block, modal shells, bulk-bar,
+      help ────────────────────────────────────────────────────────── */
+
+/* toggle-block — a bordered card whose head is a switch; the body
+   reveals via :has(), zero JS. The switch is authoritative: the server
+   treats off as off, whatever the revealed (still-POSTed) fields say. */
+.rst-tblock { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: 0.7rem 0; overflow: hidden; }
+.rst-tblock > .rst-tblock__head { align-items: flex-start; cursor: pointer; display: flex; gap: 0.85rem; margin: 0; padding: 0.9rem 1.05rem; }
+.rst-tblock > .rst-tblock__head:hover { background: var(--rst-accent-soft); }
+.rst-tblock .rst-tblock__title { display: block; font-size: var(--rst-fs-sm); font-weight: 550; }
+.rst-tblock .rst-tblock__desc { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); }
+.rst-tblock .rst-tblock__head input { height: 1px; opacity: 0; position: absolute; width: 1px; }
+.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track { background: var(--rst-accent); }
+.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track::after { transform: translateX(15px); }
+.rst-tblock:has(.rst-tblock__head input:focus-visible) .rst-switch__track { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.rst-tblock > .rst-tblock__body { display: none; }
+.rst-tblock:has(.rst-tblock__head input:checked) > .rst-tblock__body { background: var(--rst-surface-2); border-radius: 0 0 var(--rst-radius) var(--rst-radius); border-top: 1px solid var(--rst-line); display: block; padding: 0.9rem 1.05rem 1.05rem; }
+
+/* modal route — its own URL: the response renders the page you'll
+   return to inside an inert backdrop, then the overlay. Closing is a
+   plain link to that page. */
+.rst-backdrop { display: contents; }
+body:has(.rst-backdrop) { overflow: hidden; }
+.rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
+.rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
+.rst-modal-panel > nav { border-inline-end: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
+.rst-modal-panel > nav a { border-radius: 8px; color: inherit; padding: 0.4rem 0.65rem; text-decoration: none; }
+.rst-modal-panel > nav a:hover { background: var(--rst-accent-soft); }
+.rst-modal-panel > nav a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.rst-modal-panel > section { flex: 1; min-width: 0; overflow-y: auto; padding: 1.5rem 2rem 2rem; position: relative; }
+.rst-modal-close { color: var(--rst-text-muted); font-size: 1.5rem; inset-inline-end: 1.1rem; line-height: 1; position: absolute; text-decoration: none; top: 1rem; }
+.rst-modal-close:hover { color: inherit; }
+@media (max-width: 800px) {
+  .rst-modal-overlay { padding: 0.75rem; }
+  .rst-modal-panel { flex-direction: column; max-height: 92vh; }
+  .rst-modal-panel > nav { border-bottom: 1px solid var(--rst-line); border-inline-end: 0; flex-direction: row; width: auto; }
+}
+
+/* help — a bordered ? icon-link to a section's help article: plain <a>,
+   new tab, CSS tooltip. The tooltip is NOT the accessible name — the
+   link must carry a full aria-label of its own. */
+.rst-help { align-items: center; border: 1px solid var(--rst-line-strong); border-radius: 7px; color: var(--rst-text-muted); display: inline-flex; height: 28px; justify-content: center; position: relative; width: 28px; }
+.rst-help:hover { border-color: var(--rst-text-faint); color: var(--rst-text); }
+.rst-help svg, .rst-help .icon { height: 15px; width: 15px; }
+.rst-tip::after { background: var(--rst-text); border-radius: var(--rst-radius-sm); color: var(--rst-bg); content: attr(data-tip); font-size: 0.71875rem; font-weight: 500; inset-inline-end: 0; opacity: 0; padding: 3px 8px; pointer-events: none; position: absolute; top: calc(100% + 6px); transition: opacity 0.12s; white-space: nowrap; z-index: 35; }
+.rst-tip:hover::after, .rst-tip:focus-visible::after { opacity: 1; }
+
+/* bulk-bar + selbox — select mode as server-rendered state. */
+.rst-bulkbar { align-items: center; background: var(--rst-accent-soft); border-bottom: 1px solid var(--rst-line); display: flex; gap: 0.7rem; min-height: 46px; padding-block: 0; padding-inline: 0.6rem 0.85rem; }
+.rst-bulkbar__close { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); display: inline-flex; height: 26px; justify-content: center; text-decoration: none; width: 26px; }
+.rst-bulkbar__close:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-bulkbar__close svg, .rst-bulkbar__close .icon { height: 15px; width: 15px; }
+.rst-bulkbar__count { font-size: var(--rst-fs-sm); font-weight: 600; }
+.rst-bulkbar__escalate { color: var(--rst-accent); font-size: var(--rst-fs-xs); font-weight: 550; text-decoration: none; }
+.rst-bulkbar__escalate:hover { text-decoration: underline; }
+.rst-bulkbar .rst-dropdown { margin-inline-start: auto; }
+.rst-bulkbar .rst-dropdown > summary { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; font-size: var(--rst-fs-xs); font-weight: 550; padding: 0.22rem 0.6rem; }
+.rst-selbox { align-items: center; display: flex; margin: 0; }
+.rst-selbox input { accent-color: var(--rst-accent); cursor: pointer; height: 16px; margin: 0; width: 16px; }
+.rst-selbox input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+
+.rst-back-nav { margin: 0 0 var(--rst-sp-3); }
+.rst-back-nav a { color: var(--rst-text-muted); text-decoration: none; }
+.rst-back-nav a:hover { color: var(--rst-accent); }
+.rst-notice { background: var(--rst-tone-positive-bg); border-radius: var(--rst-radius-sm); color: var(--rst-tone-positive-fg); font-size: var(--rst-fs-sm); padding: 0.5rem 0.75rem; }
+.rst-form-error { color: var(--rst-tone-negative-fg); font-size: var(--rst-fs-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rst-tip::after { transition: none; }
+}
+
+/* rst-spin — the working indicator a status page or busy button wears.
+   Pure CSS; reduced-motion users get a steady dimmed ring instead of
+   rotation. */
+.rst-spin {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  /* Physical on purpose: the gap in a ring that rotates a full turn
+     every 0.8s has no start or end side to mirror. */
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: rst-spin 0.8s linear infinite;
+}
+@keyframes rst-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .rst-spin { animation: none; opacity: 0.5; }
+}
+
+/* field-select's combobox, built by rastrillo.js past ten options. The
+   popup deliberately borrows .rst-dropdown__menu's shape so the two
+   overlays read as one system. Nothing here styles the native <select>:
+   it keeps .rst-input and is simply moved out of sight by .rst-sr-only. */
+.rst-combo { position: relative; }
+.rst-combo__list { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-top: 4px; max-block-size: 15rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
+.rst-combo__option { border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; }
+.rst-combo__option:hover, .rst-combo__option.is-active { background: var(--rst-accent-soft); }
+/* The committed option is marked in the accessibility tree by
+   aria-selected; this is the matching visual, never the only signal. */
+.rst-combo__option[aria-selected="true"] { font-weight: 600; }
+/* A grouped <select> keeps its groups: each <optgroup> becomes an ARIA
+   group holding its own list of rows, under a heading that is furniture
+   only — the group's aria-label is what a screen reader announces.
+   Same faint uppercase recipe as .rst-lrow--head, for the same reason:
+   it names a run of rows without competing with them. */
+.rst-combo__rows { list-style: none; margin: 0; padding: 0; }
+.rst-select__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; padding-block: 0.4rem 0.2rem; padding-inline: 0.65rem; text-transform: uppercase; }
+
+/* The date fields' combobox, built by datetime.js on any input carrying
+   data-rst-date or data-rst-time. Same shape as .rst-combo above, plus
+   a picker button anchored in the field and two kinds of row: the
+   reading of what was typed (with its Set affordance) and the quick
+   picks under it. The native input is not styled here either — it keeps
+   its value and its name and is simply moved out of sight by
+   .rst-sr-only, because it is what the form submits. */
+.rst-dtp { position: relative; }
+.rst-dtp__input { padding-inline-end: 2.25rem; }
+.rst-dtp__pick { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block-start: 0.3rem; inset-inline-end: 0.35rem; justify-content: center; padding: 0; position: absolute; }
+.rst-dtp__pick:hover { color: var(--rst-text); }
+.rst-dtp__pick svg { block-size: 1rem; inline-size: 1rem; }
+.rst-dtp__list { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-block-start: 4px; max-block-size: 17rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 40; }
+.rst-dtp__row { align-items: baseline; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: flex; font-size: var(--rst-fs-sm); gap: 0.5rem; justify-content: space-between; padding: 0.4rem 0.65rem; }
+.rst-dtp__row:hover, .rst-dtp__row.is-active { background: var(--rst-accent-soft); }
+.rst-dtp__row--set .rst-dtp__label { font-weight: 600; }
+.rst-dtp__quick .rst-dtp__set { color: var(--rst-muted); }
+/* The committed value is marked in the accessibility tree by
+   aria-selected; this is the matching visual, never the only signal. */
+.rst-dtp__row[aria-selected="true"] .rst-dtp__label { font-weight: 600; }
+.rst-dtp__set { flex: none; font-size: var(--rst-fs-xs); color: var(--rst-muted); }
+.rst-dtp__hint { color: var(--rst-muted); font-size: var(--rst-fs-xs); padding: 0.35rem 0.65rem 0.15rem; }
+
+/* ── Shells: the page frames an app's layout template wraps .rst-page
+      in — topbar and sidebar. Written in logical properties throughout,
+      so a right-to-left locale gets a mirrored shell for free: the rail
+      moves to the inline end, the account menu with it, and nothing
+      here needs a second rule. ─────────────────────────────────────── */
+
+/* skip link — first in the DOM of every shell, out of sight until it
+   takes focus, then a real chip at the block/inline start. A keyboard
+   user must be able to jump the nav; this is the whole mechanism. */
+.rst-skip { block-size: 1px; clip-path: inset(50%); inline-size: 1px; overflow: hidden; position: absolute; white-space: nowrap; }
+.rst-skip:focus-visible { background: var(--rst-surface); block-size: auto; border: 1px solid var(--rst-accent); border-radius: var(--rst-radius-sm); clip-path: none; color: var(--rst-text); inline-size: auto; inset-block-start: var(--rst-sp-2); inset-inline-start: var(--rst-sp-2); overflow: visible; padding: 0.4rem 0.7rem; text-decoration: none; z-index: 60; }
+
+/* topbar shell — brand, nav and an account menu on one bar, the page
+   column beneath it, a footer under that. The account dropdown is
+   pushed to the inline end by auto margin, not by order or float. */
+.rst-shell-topbar .rst-shell__bar { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-4); padding-block: 0.5rem; padding-inline: var(--rst-sp-4); }
+.rst-shell__brand { color: inherit; font-weight: 650; text-decoration: none; }
+.rst-shell__nav { display: flex; gap: var(--rst-sp-4); }
+.rst-shell__nav a { border-block-end: 2px solid transparent; color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding-block: 0.3rem; text-decoration: none; }
+.rst-shell__nav a:hover { color: var(--rst-text); }
+.rst-shell__nav a[aria-current] { border-block-end-color: var(--rst-accent); color: var(--rst-text); font-weight: 550; }
+.rst-shell__account { margin-inline-start: auto; }
+/* an account menu whose block was never overridden has an empty menu; hide the whole control rather than show a dead summary. */
+.rst-shell__account:has(> .rst-dropdown__menu:empty) { display: none; }
+.rst-shell__foot { border-block-start: 1px solid var(--rst-line); color: var(--rst-text-muted); font-size: var(--rst-fs-xs); padding-block: var(--rst-sp-4); padding-inline: var(--rst-sp-4); text-align: center; }
+/* the topbar shell emits a foot even when the block is un-overridden; an empty one is a stray rule and padding, so draw nothing. */
+.rst-shell__foot:empty { display: none; }
+
+/* sidebar shell — a rail beside the page. Below 800px the rail is
+   hidden behind a <details> chrome strip and, opened, becomes an
+   ordinary full-width block above the content: the open state is the
+   native element's own, so the shell stays zero-JS like every idiom
+   above it. The main column carries min-inline-size: 0 so a wide child
+   (a list grid, a <pre>) scrolls itself instead of stretching the grid
+   track. */
+.rst-shell__main { min-inline-size: 0; }
+.rst-shell-sidebar > .rst-shell__rail { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+.rst-shell-sidebar > .rst-shell__chrome > summary { align-items: center; border-block-end: 1px solid var(--rst-line); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.3rem; list-style: none; padding-block: 0.55rem; padding-inline: var(--rst-sp-4); }
+.rst-shell-sidebar > .rst-shell__chrome > summary::-webkit-details-marker { display: none; }
+.rst-shell-sidebar > .rst-shell__chrome[open] + .rst-shell__rail { display: flex; }
+.rst-shell__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block: var(--rst-sp-3) 0.2rem; text-transform: uppercase; }
+.rst-shell-sidebar .rst-shell__nav { flex-direction: column; gap: 2px; }
+.rst-shell-sidebar .rst-shell__nav a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
+.rst-shell-sidebar .rst-shell__nav a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-shell-sidebar .rst-shell__nav a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+@media (min-width: 800px) {
+  .rst-shell-sidebar { display: grid; grid-template-columns: 15rem 1fr; }
+  .rst-shell-sidebar > .rst-shell__chrome { display: none; }
+  .rst-shell-sidebar > .rst-shell__rail { block-size: 100dvh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
+}
+
+/* error page — one centred column, whatever shell it lands in: the
+   status as a quiet label above the sentence, one or two ways out, and
+   the reference last, where an operator asked to quote it will find it.
+   Logical properties throughout, so an RTL locale mirrors it with no
+   second rule. */
+.rst-error { margin-inline: auto; max-inline-size: 28rem; padding-block: 4rem var(--rst-sp-6); padding-inline: var(--rst-sp-4); text-align: center; }
+.rst-error__status { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 600; letter-spacing: 0.08em; margin: 0; }
+.rst-error__title { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin-block: var(--rst-sp-2) 0; }
+.rst-error__body { color: var(--rst-text-muted); margin-block: var(--rst-sp-3) 0; }
+.rst-error__cta { display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); justify-content: center; margin-block: var(--rst-sp-5) 0; }
+.rst-error__ref { color: var(--rst-text-faint); margin-block: 2rem 0; }
+
+/* ---------------------------------------------------------------------
+   Utilities, last on purpose.
+
+   .rst-sr-only competes with component rules of the same specificity —
+   both are single class selectors — so the cascade falls to source
+   order. Declared earlier it LOSES: .rst-input's width:100% beat its
+   inline-size:1px. Keep this block at the end of the file so the utility
+   wins wherever it is applied; a test asserts it stays here.
+
+   What that does NOT buy: a replaced element such as <select> has an
+   intrinsic minimum size, so inline-size:1px does not shrink it to 1px
+   whoever wins — measured at ~21px in Chromium. clip-path is what
+   actually hides these, and position:absolute is what keeps them out of
+   flow. Code that wants a genuinely minimal box (select.js does) should
+   drop the component class rather than rely on this.
+   --------------------------------------------------------------------- */
+
+/* Visually hidden, but in the DOM and the tab order — and it un-hides on
+   keyboard focus, because a focused control a sighted keyboard user
+   cannot see is a trap. */
+.rst-sr-only {
+  clip-path: inset(50%);
+  block-size: 1px;
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+.rst-sr-only:focus-visible {
+  background: var(--rst-accent);
+  border: 0;
+  border-radius: var(--rst-radius-sm);
+  block-size: auto;
+  clip-path: none;
+  color: var(--rst-on-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--rst-fs-sm);
+  inline-size: auto;
+  overflow: visible;
+  padding: 0.3rem 0.6rem;
+  position: static;
+  white-space: normal;
+}

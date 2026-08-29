@@ -332,8 +332,10 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 - **UI: `rst-list`/`rst-card` hold rows only (unpadded by design).** A
   form, prose or links go in `rst-box` with a sibling `rst-box-head`.
   Screens stack vertically — never heading, paragraph and button in one
-  flex row; a notice with a CTA is a `callout` ending in a link.
-  docs/site/templates.md
+  flex row; a notice with a CTA is a `callout` ending in a link. The
+  full vocabulary will be browsable at rastrillo.org/design-system
+  (PR 5); regenerate `docs/design-system` with `go generate ./...` after
+  changing `ui`. docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the
   `ref` on the log line. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a

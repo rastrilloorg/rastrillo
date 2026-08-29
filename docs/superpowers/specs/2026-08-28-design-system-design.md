@@ -494,20 +494,45 @@ statuses above, `error_generic_title`/`_body` for any other, `error_back`,
 One page per theme × locale, `index.html` for `ink`/`en`, showing:
 
 - **Tokens** — every custom property as a swatch, with the contrast
-  table rendered from the theme's header, and the type scale.
+  table rendered from the theme's header, and the type scale. As built,
+  the swatches are the **light** block's values only; a sentence beside
+  them says so, names `ui/contrast_test.go` as the gate holding every
+  documented pair to the AA floors, and warns that a reader in dark mode
+  will see the chips painted in their own scheme while the printed
+  values stay the light ones — the dark set is authored by hand in the
+  same theme file and isn't rendered a second time here (as built,
+  2026-08-29).
 - **Every partial**, rendered with sample data, in every state it has
   (tones, required, error, help, disabled, enhanced and `Plain`),
-  including the five error pages.
-- **Every class idiom** from `styleguideSamples` — box, list grid,
-  dropdown, form layout, toggle block, modal, help, selection box,
-  and the three shells' chrome.
+  including the five error pages. As built, coverage is a gate, not an
+  eyeball check: every partial section carries a `<!-- partial: NAME
+  -->` marker (built in Go and injected as `template.HTML`, since
+  `html/template` strips literal HTML comments during escaping), and
+  `TestEveryPartialAppearsOnThePage` fails by name if one goes missing
+  — the same mechanism covers the class idioms below via `<!-- idiom:
+  NAME -->` (as built, 2026-08-29).
+- **Every class idiom** from ~~`styleguideSamples`~~ `ui.Styleguide()`
+  (moved from a test-only var to exported package API in the same PR —
+  as built, 2026-08-29) — box, list grid, dropdown, form layout, toggle
+  block, modal, help, selection box, ~~and the three shells' chrome~~
+  and two of the three shells' chrome: `shell-topbar` and
+  `shell-sidebar` are idiom entries, `column` is not, because its shell
+  has no bespoke chrome classes beyond what the full-page demo already
+  shows (as built, 2026-08-29). The two shell idioms render as escaped
+  source in a `<pre>`, not live markup: rendered inline they nested a
+  second `<main>` landmark inside the page's own, so the fix pass moved
+  them to source-plus-a-link-to-the-real-page instead (as built,
+  2026-08-29).
 - **The three shells** at full page, each its own URL
   (`shells/topbar.html`), shown inline in an `<iframe>` and linked.
 - **The date and time fields and the filterable select** live — this
   is the one place rastrillo.org serves JavaScript, and only here.
 - **The rules** from PR #98 — which card is padded, screens stack
-  vertically — beside the components they govern, with the wrong
-  version shown struck through.
+  vertically — beside the components they govern, ~~with the wrong
+  version shown struck through~~. As built, each rule is an info
+  `callout` quoting the rule's own words from `docs/site/templates.md`
+  verbatim, placed beside the idiom it governs; no deliberately-broken
+  markup is rendered on the page (as built, 2026-08-29).
 - A **theme** switcher (three links) and the **language** switcher
   (§2.4's markup, links only — no cookie route on a static site), so
   the page is itself the RTL and CJK proof.
@@ -521,7 +546,13 @@ locale from the framework catalogs.
 renders the whole tree into `docs/design-system/` — static HTML, the
 three theme files, `tokens.css`, `select.js`, `datetime.js`,
 `rastrillo.js`. No build step on the site side; the site vendors the
-tree as it vendors markdown.
+tree as it vendors markdown. As built, the root `index.html` is not a
+copy of `ink/en/index.html`: `dsgen` calls the same page renderer a
+second time with a different pair of path prefixes (`Root`, to the tree
+root, and `Self`, to the page's own theme/locale directory), so the two
+files are independently generated and only incidentally identical —
+`TestRootIndexIsInkEnglishAtTheTreeRoot` confirms it by blanking every
+`href`/`src` and diffing what's left (as built, 2026-08-29).
 
 ```
 docs/design-system/
@@ -531,15 +562,34 @@ docs/design-system/
   tokens.css  theme-{ink,teal,warm}.css  select.js  datetime.js  rastrillo.js
 ```
 
-36 pages plus 108 shell pages; each is ~100 KB; the tree is ~15 MB and
-committed. That is the price of no-Go-on-the-website, and it is
-reviewable: a partial change shows as a diff in every page that renders
-it, which is the point.
+~~36 pages plus 108 shell pages; each is ~100 KB; the tree is ~15 MB and
+committed.~~ As built: 152 files (36 index pages + 108 shell pages + the
+root index + 7 shared assets), 4,303,299 bytes — 4.10 MiB, well under
+the ~15 MB estimate. `TestTreeStaysUnderTheSizeGate` holds the whole
+rendered tree to a 20 MB ceiling, logging the exact byte count each run
+(as built, 2026-08-29). Committed regardless of size; that is the price
+of no-Go-on-the-website, and it is reviewable: a partial change shows as
+a diff in every page that renders it, which is the point.
+
+`dsgen` (`internal/designsystem/cmd/dsgen`) is the generator `go
+generate` invokes. Before it deletes anything it refuses to run unless
+its output root is an absolute path ending `docs/design-system` whose
+repo root two levels up holds a `go.mod` declaring
+`github.com/carlosframework/rastrillo` — a guard added after a
+throwaway debug run once wrote 152 files into
+`internal/designsystem/` itself (as built, 2026-08-29).
 
 Gate `TestDesignSystemIsCurrent` renders to memory and diffs against
 the committed tree, failing with the first differing path. `go
-generate` is the fix. The existing docsite gates (links, anchors,
-fences) are extended to the HTML pages for `/docs/` links only.
+generate` is the fix. ~~The existing docsite gates (links, anchors,
+fences) are extended to the HTML pages for `/docs/` links only.~~ Not
+built: `internal/docsite`'s gates read only `docs/site/`'s Markdown and
+`ui.Templates()`; nothing in tasks 2–4 points them at
+`docs/design-system/`'s HTML. `TestEveryPageIsAWholeLocalisedDocument`
+covers the rendered pages' own structural integrity instead (one
+doctype, no leaked catalog keys, no absolute asset paths), which is a
+different check than a docsite-gate link/anchor pass. Flagging as
+deferred, not silently dropped (as built, 2026-08-29).
 
 ### 5.3 The site
 
