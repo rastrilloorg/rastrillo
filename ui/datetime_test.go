@@ -124,9 +124,12 @@ func TestDatetimeParserFixtures(t *testing.T) {
 //
 // So this drives datetime_node.mjs's --round-trip mode: format three
 // instants per kind with the display's own options, parse each back,
-// and compare. The harness names any locale that does not survive the
-// trip and fails below eleven of twelve — see roundTrip in
-// ui/datetime_node.mjs for why eleven rather than twelve.
+// and compare. All twelve have to survive the trip. The first cut of
+// this gate allowed eleven, which meant a single-locale regression
+// exited 0 and left its only trace in a t.Log — a passing test nobody
+// reads. The harness now exits non-zero the moment one locale fails and
+// names the languages on the FAIL line, which is what lands in the
+// t.Fatalf below.
 func TestDatetimeReadsItsOwnDisplayBack(t *testing.T) {
 	node, err := exec.LookPath("node")
 	if err != nil {

@@ -107,17 +107,25 @@ const roundTrip = () => {
       broken.push(lang);
     }
   }
-  // Eleven of twelve, not twelve of twelve: a locale whose display Intl
-  // changes under us should be reported by name rather than block the
-  // build on a CLDR bump. The names are in the output either way.
-  const want = 11;
-  const good = Object.keys(catalogs).length - broken.length;
+  // Every locale, not all-but-one. An earlier version of this gate
+  // allowed eleven of twelve so a CLDR bump could not block the build,
+  // and that is exactly the hole a reviewer walked through: one locale
+  // could stop reading its own writing, the harness would still exit 0,
+  // and the only trace was a name in a t.Log nobody reads on a passing
+  // test. A language that cannot re-read its own date is broken for the
+  // people who speak it, whoever caused it, so it fails — and the
+  // failure line names the languages rather than making anyone go and
+  // count the columns.
+  const langs = Object.keys(catalogs).length;
+  const good = langs - broken.length;
   process.stdout.write(
-    `own-display read-back: ${good} of ${Object.keys(catalogs).length} locales round-trip fully\n` +
+    `own-display read-back: ${good} of ${langs} locales round-trip fully\n` +
       `${lines.join("\n")}\n` +
-      (broken.length ? `  not round-tripping: ${broken.join(", ")}\n` : ""),
+      (broken.length
+        ? `FAIL: ${broken.length} locale(s) cannot read their own display back: ${broken.join(", ")}\n`
+        : ""),
   );
-  process.exit(good >= want ? 0 : 1);
+  process.exit(broken.length ? 1 : 0);
 };
 
 if (fixturePath === "--round-trip") roundTrip();
