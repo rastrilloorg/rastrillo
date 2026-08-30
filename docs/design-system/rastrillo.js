@@ -10,9 +10,9 @@
    off the rst-dropdown / rst-row-menu classes: a menu that closes on an
    outside click on one screen and not the next is worse than either rule
    applied everywhere. The busy rule keys off nothing at all — every
-   submit button in every form is covered, because a button that changes
-   something should say so while it works, everywhere, and a form that
-   double-submits because someone clicked twice is a bug on every screen.
+   submit button in every form that goes somewhere is covered, because
+   a button that changes something should say so while it works, and a
+   form that double-submits on a second click is a bug on every screen.
    Delete either section to opt the whole app out of it.
 
    Vocabulary:
@@ -144,15 +144,13 @@
   // default, with no attribute to remember: the submitted button gets
   // aria-busy, a spinner and — once the submission is under way —
   // disabled, and its form gets aria-busy and a guard against a second
-  // submit. data-busy="false" on the form or on the button opts out;
-  // data-busy-label replaces the button's text.
+  // submit. The data-busy vocabulary above opts out of either half.
   //
   // The guard is the substance, the spinner is the manners, and neither
   // is a promise: with scripts off the form submits exactly as it
   // always did, twice if the visitor clicks twice. Idempotency stays
-  // the server's job. One delegated capture-phase listener, like light
-  // dismiss above, so a form arriving in a polled fragment is covered
-  // the moment it lands and re-scanning can never double-bind.
+  // the server's job. One delegated capture-phase listener, for the
+  // reasons light dismiss gives below: fragments, and never double-bind.
   //
   // Two traps this shape exists to avoid:
   //
@@ -167,9 +165,13 @@
   //     <button>'s TEXT (never submitted — a button submits its value
   //     attribute) go on synchronously, while disabled and an
   //     <input type="submit">'s value (which IS what it submits) wait.
+  //
+  // Every busy element in the DOCUMENT, then the ownership test: a
+  // form="id" submit button is owned by a form it does not live in.
   function busyOff(form) {
     form.removeAttribute("aria-busy");
-    form.querySelectorAll('[aria-busy="true"]').forEach(function (b) {
+    document.querySelectorAll('[aria-busy="true"]').forEach(function (b) {
+      if (b.form !== form && !form.contains(b)) return;
       b.disabled = false;
       b.removeAttribute("aria-busy");
       var spin = b.querySelector(".rst-btn__spin");
@@ -185,8 +187,8 @@
     var form = e.target;
     if (!form || form.tagName !== "FORM") return;
     if (form.getAttribute("data-busy") === "false") return;
-    // A form whose result opens elsewhere leaves this page sitting
-    // where it is, with nothing to be busy about.
+    // A form that opens its result elsewhere, or that closes a dialog
+    // and stays put, has nothing to be busy about and nothing to clear.
     //
     // getAttribute, NOT form.target — and this is not style. A form is
     // [LegacyOverrideBuiltIns]: a control named "target" (a target
@@ -199,6 +201,7 @@
     // throws.
     var to = form.getAttribute("target");
     if (to && to !== "_self") return;
+    if (/^dialog$/i.test(form.getAttribute("method"))) return;
     if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }
     form.setAttribute("aria-busy", "true");
     // The button the browser submitted with: the one clicked, or — for

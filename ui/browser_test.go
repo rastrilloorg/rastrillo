@@ -1570,8 +1570,45 @@ const backStateJS = `(function () {
   ].join(" ");
 })()`
 
-// busyPage serves the four forms the busy drive needs and a submit
-// endpoint that answers 204.
+// dialogStateJS reads the standard dialog close pattern: a <dialog>
+// holding <form method="dialog"><button>Close</button></form>. Nothing
+// about it may end up busy, because nothing about it is on its way
+// anywhere — and the dialog's open state is the assertion that says so
+// in behaviour rather than in flags.
+const dialogStateJS = `(function () {
+  var d = document.getElementById("dlg");
+  var f = document.getElementById("dlgform");
+  var b = document.getElementById("dlgclose");
+  return [
+    "open:" + d.open,
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "btn-off:" + b.disabled,
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+  ].join(" ");
+})()`
+
+// extBackStateJS is backStateJS for the form whose submit button lives
+// OUTSIDE it and belongs to it through form="ext" — the toolbar Save
+// the form attribute exists for. The button is not a descendant of the
+// form, so a reset that sweeps the form's own subtree never reaches it.
+const extBackStateJS = `(function () {
+  var f = document.getElementById("ext");
+  var b = document.getElementById("extgo");
+  return [
+    "persisted:" + (window.__persisted === true),
+    "inside:" + f.contains(b),
+    "form:" + (f.getAttribute("aria-busy") || "-"),
+    "btn:" + (b.getAttribute("aria-busy") || "-"),
+    "btn-off:" + b.disabled,
+    "btn-text:" + b.textContent.trim(),
+    "idle-label:" + (b.getAttribute("data-idle-label") || "-"),
+    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+  ].join(" ");
+})()`
+
+// busyPage serves the forms the busy drive needs and a submit endpoint
+// that answers 204.
 //
 // The 204 is the whole trick. A form whose response navigates leaves
 // nothing on the screen to look at — the busy state is gone with the
@@ -1673,6 +1710,22 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`<input type="hidden" name="target" value="42">`+
 			`<button id="shadowgo" class="rst-btn" type="submit" name="action" value="shadow">Set target</button>`+
 			`</form>`+
+			// The standard dialog close pattern. It submits nowhere:
+			// method="dialog" closes the <dialog> and leaves the page
+			// exactly where it was, so nothing would ever clear a busy
+			// state armed here and the dialog would be wedged shut.
+			`<dialog id="dlg"><p>A dialog.</p>`+
+			`<form id="dlgform" method="dialog">`+
+			`<button id="dlgclose" class="rst-btn" type="submit">Close</button>`+
+			`</form></dialog>`+
+			// A submit button that belongs to a form it does not live
+			// in — the toolbar/sticky-header Save the form attribute
+			// exists for. It navigates, so the back-button leg covers
+			// it too.
+			`<form id="ext" class="rst-form" method="post" action="/go"></form>`+
+			`<div class="rst-form__foot">`+
+			`<button id="extgo" class="rst-btn rst-btn--primary" type="submit" form="ext" name="action" value="ext" data-busy-label="Sending…">Save</button>`+
+			`</div>`+
 			// The form that really navigates, for the back-button leg.
 			`<form id="nav" class="rst-form" method="post" action="/go">`+
 			`<button id="navgo" class="rst-btn rst-btn--primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
@@ -1834,6 +1887,38 @@ func TestBusyButtonDrive(t *testing.T) {
 	}
 	tookNothing(t, payloads, "shadowed target, second submit")
 
+	// ── 2d. A dialog's own close form ─────────────────────────────────
+	//
+	// <form method="dialog"><button>Close</button></form> is the
+	// standard way to close a <dialog>, and it is the one submit that
+	// goes nowhere at all: the dialog closes and the page stays exactly
+	// where it stood. So nothing ever navigates or reloads to clear a
+	// busy state armed here — the close button ends up disabled with the
+	// guard still up, and the next time the dialog opens it cannot be
+	// closed through its form at all. A modal still takes Esc; a
+	// non-modal one has no way out.
+	//
+	// The second close is the assertion. A wedged dialog closes once,
+	// looks fine, and never closes again.
+	var dialogFirst, dialogSecond string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("dlg").showModal()`, nil), at("opened-dialog"),
+		chromedp.Evaluate(`document.getElementById("dlgclose").click()`, nil), at("clicked-dialog-close"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(dialogStateJS, &dialogFirst),
+		chromedp.Evaluate(`document.getElementById("dlg").showModal()`, nil), at("reopened-dialog"),
+		chromedp.Evaluate(`document.getElementById("dlgclose").click()`, nil), at("clicked-dialog-close-again"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(dialogStateJS, &dialogSecond),
+	))
+	const wantDialog = "open:false form:- btn:- btn-off:false spin:no"
+	if dialogFirst != wantDialog {
+		t.Errorf("after closing the dialog once the state is\n  %q\nwant\n  %q\n— method=\"dialog\" submits nowhere, so nothing may be left looking busy", dialogFirst, wantDialog)
+	}
+	if dialogSecond != wantDialog {
+		t.Errorf("after reopening and closing the dialog again the state is\n  %q\nwant\n  %q\n— the close button is dead and the dialog is wedged open", dialogSecond, wantDialog)
+	}
+
 	// ── 3. The rule itself, and the payload ───────────────────────────
 	var busy, afterSecond string
 	fail(chromedp.Run(ctx,
@@ -1962,6 +2047,51 @@ func TestBusyButtonDrive(t *testing.T) {
 	))
 	if got := took(t, payloads, "back: re-submit"); got != "action=nav" {
 		t.Errorf("re-submitting after going back sent %q, want %q — the guard survived the restore and the form is a dead end", got, "action=nav")
+	}
+
+	// ── 4c. Back, with the submit button OUTSIDE its form ─────────────
+	//
+	// <button form="ext"> belongs to a form it does not live in, which
+	// is the whole reason the form attribute exists: a sticky header's
+	// Save, a toolbar's Publish. The submit event's submitter is that
+	// button, so the rule busies it exactly as it busies any other — but
+	// a reset that sweeps the FORM's own subtree never finds it again.
+	// The visitor comes back from the bfcache to a button that is still
+	// disabled, still wearing the busy label and still spinning, with no
+	// way out short of a reload. That is precisely the state the
+	// back-button requirement forbids.
+	var extBack string
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-ext-back"),
+		chromedp.WaitVisible(`#extgo`, chromedp.ByQuery), at("page-visible-for-ext-back"),
+		chromedp.Click(`#extgo`, chromedp.ByQuery), at("clicked-ext"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("landed-on-response-ext"),
+		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-go-back-ext"),
+		waitForID("extgo"), at("back-on-the-ext-form"),
+		settle(`document.getElementById("extgo").disabled === false`, false), at("ext-reset-settled"),
+		chromedp.Evaluate(extBackStateJS, &extBack),
+	))
+	if got := took(t, payloads, "external button: first submit"); got != "action=ext" {
+		t.Errorf("the form with an external submit button sent %q, want %q", got, "action=ext")
+	}
+	// Two premises, both fatal: the page really came out of the
+	// back/forward cache, and the button really does live outside the
+	// form. Without either, this leg pins nothing.
+	if !strings.HasPrefix(extBack, "persisted:true inside:false ") {
+		t.Fatalf("after going back the page reads %q — it either was not restored from the back/forward cache or the button is inside its form after all, so this leg proves nothing", extBack)
+	}
+	const wantExtBack = "persisted:true inside:false form:- btn:- btn-off:false " +
+		"btn-text:Save idle-label:- spin:no"
+	if extBack != wantExtBack {
+		t.Errorf("after going back the external submit button reads\n  %q\nwant\n  %q\n— a button that went busy must never come back disabled and spinning", extBack, wantExtBack)
+	}
+	// Clean is not the same as usable: the guard has to be gone too.
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("extgo").click()`, nil), at("re-submitted-ext-after-back"),
+		waitForID("done"), at("landed-again-ext"),
+	))
+	if got := took(t, payloads, "external button: re-submit"); got != "action=ext" {
+		t.Errorf("re-submitting the external button after going back sent %q, want %q — the guard survived the restore and the form is a dead end", got, "action=ext")
 	}
 
 	// ── 5. Reduced motion ─────────────────────────────────────────────

@@ -138,6 +138,30 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	if !strings.Contains(js, `if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }`) {
 		t.Error("the double-submit guard is not the form's own aria-busy attribute")
 	}
+	// A form that submits NOWHERE must not be guarded, and there are two
+	// of them. target="_blank" leaves this page where it is; so does
+	// <form method="dialog">, the standard close button inside a
+	// <dialog>. The dialog is the worse of the two: nothing ever
+	// navigates or reloads afterwards, so a guard armed there is never
+	// cleared — the close button ends up disabled and the dialog cannot
+	// be closed through its form again, ever. The attribute, not
+	// form.method, for the [LegacyOverrideBuiltIns] reason above, and
+	// case-insensitively because method is an enumerated attribute.
+	if !strings.Contains(js, `if (/^dialog$/i.test(form.getAttribute("method"))) return;`) {
+		t.Error(`the busy rule does not bail out of <form method="dialog">; a dialog's own close form arms a guard nothing will ever clear`)
+	}
+	// The reset has to reach a submit button that belongs to the form
+	// through form="id" while living somewhere else in the document — a
+	// sticky header's Save. busySubmit busies it (it is the submit
+	// event's submitter, wherever it sits), so a reset that swept the
+	// form's own subtree left it disabled and spinning after every
+	// bfcache restore, for good. Sweep the document and test ownership.
+	if strings.Contains(js, `form.querySelectorAll('[aria-busy="true"]')`) {
+		t.Error(`busyOff sweeps the form's descendants; a submit button associated through form="id" is not one, and never comes back`)
+	}
+	if !strings.Contains(js, `if (b.form !== form && !form.contains(b)) return;`) {
+		t.Error("busyOff does not test ownership, so it would clear busy state belonging to another form")
+	}
 	// The payload trap, pinned where a reader will trip over it: the
 	// two mutations that can change what the server receives — disabled
 	// and an <input type="submit">'s value — happen inside the deferred
@@ -174,6 +198,21 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 //	every attribute is read through getAttribute. Those last two are
 //	there because they are the bugs the next person will reintroduce:
 //	setting disabled a tick too early, and reaching for form.target.
+//
+// Not raised a third time, and this is the round that nearly forced it.
+// Two busy-rule defects — a <form method="dialog"> the guard wedged
+// shut, and a form="id" submit button living outside its form that the
+// reset could not reach — cost 98 bytes of CODE and would have cost
+// another 300 in the comment voice the rest of this file is written in.
+// 16,177 → 16,349: 172 added, of which 98 are code and 74 net comment,
+// paid for by two sentences that were already written somewhere else
+// (the data-busy opt-out, which the vocabulary block at the top states,
+// and the delegated-listener rationale, which light dismiss states in
+// full — and which pointed the reader "above" at a section that is
+// below it). 35 bytes are left under the cap. That is the warning, in
+// arithmetic: the next behaviour this file gains does not fit, and the
+// reasoning for these two lives in TestBusyRuleIsTheDefault above and
+// in browser_test.go's legs 2d and 4c because it did not fit here.
 //
 // Splitting was the alternative and was rejected on the arithmetic:
 // 618 bytes of behaviour does not earn a third scaffolded file, a third
