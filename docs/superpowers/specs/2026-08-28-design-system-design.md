@@ -1349,3 +1349,74 @@ they move with it.
   asked for the design; its recommendation lands in
   `.superpowers/sdd/2026-08-29-design-system-v2/fable-markup-recommendation.md`.
   Not started until Paul has read it.
+
+---
+
+## 6-v3. The markup migration (2026-08-30) — RULED, not yet started
+
+Fable's design recommendation, with the migration counts and a worked
+side-by-side, is at
+`.superpowers/sdd/2026-08-29-design-system-v2/fable-markup-recommendation.md`.
+Read it before planning this. The grammar it recommends, and which is
+hereby ratified:
+
+- **Kind is an attribute.** `<div rst-list>`, `<details rst-dropdown>`.
+- **Variant is the attribute's value, matched with `~=`.** `<button
+  rst-btn="primary">`, and `~=` gives class-like space-separated tokens,
+  so `rst-btn="primary compact"` composes with no new mechanism.
+- **The value slot NEVER names a part.** `rst-dropdown="summary"` would
+  make identical syntax mean "variant" on one attribute and "part-of" on
+  another in the same tag. Parts are styled structurally
+  (`[rst-dropdown] > summary`) or get a flat attribute
+  (`rst-dropdown-menu`). Note that `rst-dropdown__summary` has no rule
+  at all today, so it is deleted rather than renamed.
+- **`class` is for utilities and the app's own CSS** — `rst-sr-only`,
+  `rst-mono`, `rst-grow`.
+- **`data-tone` becomes `rst-tone`**, which also unifies it with the
+  four `rst-badge--*` classes that spell the same four tones a second
+  way today. `data-*` stays for runtime state (`data-busy`,
+  `data-theme`).
+- **One spelling, not two.** No permanent class fallback. This
+  vocabulary is taught to LLMs through `SKILL.md`; two spellings means
+  every example picks one anyway, and what comes back is a mix.
+- **No `<rst-list>` custom elements.** §7's deferral stands, and Fable
+  independently agrees: the library's best pieces are native `details`,
+  `summary` and `search` elements, which attributes annotate and custom
+  elements would have to wrap or replace.
+
+### RULED 2026-08-30 by Paul: bare attributes, not `data-rst-*`
+
+> I think bare `rst-list` is fine. Later we could add tooling to prefix
+> with `data-` if we wanted to.
+
+Fable named this the one unrevisitable decision, on the grounds that
+generated apps carry the attribute forever. Paul's answer holds, and the
+reasoning is recorded here so nobody relitigates it: the escape hatch is
+the same staged mechanism Fable already proposed for the class→attribute
+flip — ship a `tokens.css` matching both spellings, run a codemod, drop
+the old selectors. A mechanism that works once works twice. The decision
+costs one extra staged release to reverse, not permanence.
+
+### The risk that is real
+
+`tokens.css` is written into each app's `static/` at scaffold time and
+frozen there, while partials upgrade with the module. A straight flip
+breaks apps mid-upgrade. The staged path is therefore mandatory, not
+optional: ratify the grammar → ship a release whose `tokens.css` pairs
+both selectors (non-breaking) → flip the partials atomically and
+regenerate the gallery (the breaking release, whose notes mandate a
+`tokens.css` refresh) → drop the class selectors before 1.0.
+
+### Measured migration surface
+
+~585 live `class="rst-` instances: partials 127, layouts 20,
+`styleguide.go` 76, scaffold 17, `internal/designsystem` 82, examples
+74, `docs/site` 16, `ui` test literals ~170. Plus 451 selector
+occurrences of 145 distinct classes in `tokens.css`, 83 `rst-`
+references across the three JS files, and 12,444 instances in the
+189-file gallery, which regenerate for free. Every `--rst-*` custom
+property is untouched.
+
+The teaching surface — `SKILL.md` (17,602/18,000), `docs/site`, the
+styleguide, the scaffold and the gates — must flip in the same commit as
+the partials, or an LLM reading a half-migrated corpus emits a mix.
