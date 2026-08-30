@@ -4,10 +4,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
-	"io/fs"
-	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"slices"
@@ -19,76 +16,72 @@ import (
 	"github.com/carlosframework/rastrillo/ui"
 )
 
-// treeCommitted flips true the day docs/design-system lands in the
-// repository (task 3 of the design-system-tree plan). Until then
-// TestDesignSystemIsCurrent skips loudly rather than failing on a
-// directory nobody has generated yet; from then on it is a hard gate —
-// a hand-edited page, or a partial changed without re-running
-// `go generate ./...`, fails the build.
-//
-// Same shape as ui/datetime_test.go's fixturesComplete, for the same
-// reason: a gate that is temporarily unenforceable says so in one
-// named constant instead of quietly not running.
-const treeCommitted = true
-
 // mountPath is the mount every gate in this package renders at: the one
 // rastrillo.org publishes. Render takes it as an argument now, so a gate
 // that spelled a different one would be testing a tree nobody serves.
 const mountPath = DefaultMount
 
-// treeDir is docs/design-system, relative to this package.
-const treeDir = "../../docs/design-system"
-
-// maxTreeBytes is the ceiling the whole rendered tree has to stay
-// under. The spec budgets ~15 MB; 20 MB is the line where "committed
-// static HTML" stops being reviewable and starts being a binary blob.
+// maxPageBytes is what one page of this gallery may weigh.
 //
-// The previews cost most of what is now in it, and the arithmetic is
-// worth writing down because the next feature will be asked the same
-// question. The tree was 5.4 MiB when every sample was rendered inline
-// once. Each sample is now written twice — as the escaped document its
-// frame carries, and as the escaped source its Code tab shows — and
-// attribute-escaping a run of markup costs about 40% on top, because
-// every quote in it becomes six characters. Add ~360 bytes of document
-// preamble and ~450 of widget markup per example, 110 examples per
-// gallery, 36 galleries: 14.5 MiB, which is where it sat before the
-// split.
+// It replaces a 20 MB ceiling on the whole tree. That number was a proxy
+// for a different question — whether a machine-generated artifact
+// belonged in the repository at all — and now that the tree is generated
+// at the website's build instead of committed, the question it stood in
+// for has been answered and the ceiling has nothing left to hold. What
+// is left is the thing a reader actually experiences, which is one page
+// at a time.
 //
-// The split added 2.6 MiB and no content. The samples did not move
-// twice; what is repeated is the FRAME — the head with its inlined
-// dsCSS, the chrome, and the 7.6 KiB rail that is now the same on every
-// page — four more times per directory: 144 extra pages at ~19 KiB of
-// furniture each. 17,891,845 bytes, which is 85% of this ceiling.
+// 128 KiB is a little under twice the heaviest page that is not
+// components.html (primitives.html at 67,507 bytes, in the widest
+// locale), so a new section has room to land without an argument, and it
+// is small enough that the page is on screen rather than arriving.
+//
+// components.html DOES NOT PASS IT. It is 332,827 bytes in day/en and
+// 387,029 in signal/hi — three times the budget, and 5.7 times the next
+// heaviest page. It is the page the ruling was about. It is recorded in
+// pageBudgetDebt below rather than fixed here, because fixing it is a
+// change to what the page contains and this commit is a change to what
+// is gated.
+//
+// ── Where the weight is, because the next page will be asked ─────────
+//
+// Each sample is written into the page twice: as the escaped document
+// its preview frame carries, and as the escaped source its Code tab
+// shows. Attribute-escaping a run of markup costs about 40% on top,
+// because every quote in it becomes six characters. Add ~360 bytes of
+// document preamble and ~450 of widget markup per example, and
+// components.html carries most of the 110 examples in the gallery.
 //
 // ── The two dsCSS numbers, because there are two ─────────────────────
 //
 // len(dsCSS) is 11,380 bytes and what reaches a page is 7,765. Neither
 // is a typo for the other: html/template's CSS sanitiser strips the
-// comments out of <style> text, and better than a third of that
-// constant is the comments explaining the preview widget's scaling and
-// the scriptless story. Measure the constant and you get the first
-// number; measure a rendered page and you get the second. The one that
-// costs disk is 7,765.
+// comments out of <style> text, and better than a third of that constant
+// is the comments explaining the preview widget's scaling and the
+// scriptless story. Measure the constant and you get the first number;
+// measure a rendered page and you get the second. The one a reader waits
+// for is 7,765, on every page, inline — which is the lever to reach for
+// before this ceiling if a page ever sits just over it.
+const maxPageBytes = 128 << 10
+
+// pageBudgetDebt names the pages over maxPageBytes, with the ceiling
+// each is held to until it is fixed. Same convention as a11y_test.go's
+// axeExempt and ui/contrast_test.go's colorMixSkip: a gate that is not
+// enforcing something says so in a named table instead of quietly not
+// enforcing it.
 //
-// ── The budget for the next page kind ────────────────────────────────
+// Keyed by file name, so it applies to that page in every theme and
+// locale — the weight is the page's content, and the widest locale is
+// the honest number to hold.
 //
-// Headroom is 1,933,158 bytes (1.84 MiB) — it was 2.94 MiB when this
-// paragraph was written, and the §6-v2.1b work spent the difference.
-// Two more page kinds are planned — icons and getting started — and 72
-// more pages at the Overview stub's 19,281 bytes, which is furniture
-// and nothing else, costs 1.32 MiB. That leaves about 0.5 MiB for what
-// those pages actually say, where it used to be 1.62. The icons page is
-// still not the threat it looks — rastrillo.Icon answers 11 slugs and
-// 2,487 bytes of SVG in total — but the room for a getting-started page
-// with real prose in it is now the thing to watch.
-//
-// If a later page does not, the lever is the stylesheet before the
-// ceiling. dsCSS reaches all 181 gallery pages (180 plus the root
-// index, which is a copy of one of them) as the same 7,765 bytes every
-// time: 1.34 MiB gross, ~1.32 MiB net once a shared asset and a <link>
-// per page are paid for. Raising maxTreeBytes is the last resort, not
-// the first.
-const maxTreeBytes = 20 << 20
+// An entry that is no longer needed fails the gate, so this table
+// shrinks on its own once the page it names is fixed. Empty is the goal.
+var pageBudgetDebt = map[string]int{
+	// 387,029 bytes at its worst (signal/hi). The fix is not a bigger
+	// number: it is the Code tabs, which write every sample into the
+	// page a second time for a tab most readers never open.
+	"components.html": 400 << 10,
+}
 
 // render is Render() with the error already fatal — every test here
 // starts the same way.
@@ -270,54 +263,39 @@ func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {
 	}
 }
 
-// The whole tree is committed, so its size is a review cost, not just a
-// disk cost.
-func TestTreeStaysUnderTheSizeGate(t *testing.T) {
-	var total int
-	for _, b := range render(t) {
-		total += len(b)
-	}
-	if total > maxTreeBytes {
-		t.Errorf("rendered tree is %d bytes, over the %d-byte gate", total, maxTreeBytes)
-	}
-	t.Logf("rendered tree: %d files, %d bytes (%.2f MiB)", len(render(t)), total, float64(total)/(1<<20))
-}
-
-// The tree the repository carries must be exactly what Render()
-// produces: `go generate ./...` is the only way it changes.
-func TestDesignSystemIsCurrent(t *testing.T) {
-	if !treeCommitted {
-		t.Skip("docs/design-system is not committed yet — task 3 generates it " +
-			"and flips treeCommitted in internal/designsystem/designsystem_test.go; " +
-			"until then this gate cannot run and the tree cannot drift, " +
-			"because there is no tree")
-	}
-	want := render(t)
-	for name, body := range want {
-		got, err := os.ReadFile(filepath.Join(treeDir, filepath.FromSlash(name)))
-		if err != nil {
-			t.Fatalf("%s: %v (run `go generate ./...`)", name, err)
+// A page's weight is what a reader waits for, so it is gated per page
+// rather than in total. The tree's total is logged because it is worth
+// knowing and worth nothing as a ceiling: it is the website's build
+// output now, not the repository's contents.
+func TestEveryPageStaysUnderItsBudget(t *testing.T) {
+	files := render(t)
+	var total, heaviest int
+	var heaviestName string
+	used := map[string]bool{}
+	for name, body := range files {
+		total += len(body)
+		if !strings.HasSuffix(name, ".html") {
+			continue
 		}
-		if string(got) != string(body) {
-			t.Fatalf("%s differs from the committed tree (run `go generate ./...`)", name)
+		if len(body) > heaviest {
+			heaviest, heaviestName = len(body), name
+		}
+		limit, what := maxPageBytes, "budget"
+		if debt, ok := pageBudgetDebt[path.Base(name)]; ok {
+			limit, what = debt, "recorded debt"
+			used[path.Base(name)] = true
+		}
+		if len(body) > limit {
+			t.Errorf("%s is %d bytes, over its %d-byte %s", name, len(body), limit, what)
 		}
 	}
-	root := os.DirFS(treeDir)
-	err := fs.WalkDir(root, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
+	for name := range pageBudgetDebt {
+		if !used[name] {
+			t.Errorf("pageBudgetDebt names %q, and no page of that name is over %d bytes: delete the entry", name, maxPageBytes)
 		}
-		if d.IsDir() {
-			return nil
-		}
-		if _, ok := want[p]; !ok {
-			t.Errorf("%s is committed but nothing renders it (run `go generate ./...`)", p)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("walking %s: %v", treeDir, err)
 	}
+	t.Logf("heaviest page: %s at %d bytes; whole tree: %d files, %d bytes (%.2f MiB)",
+		heaviestName, heaviest, len(files), total, float64(total)/(1<<20))
 }
 
 var (
@@ -2505,7 +2483,7 @@ func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
 
 // TestVendoredAxeStaysOutOfTheTree is the other half of the containment
 // gate in ui/axe_test.go. That one holds the library's shipped assets;
-// this one holds the 189 files the gallery publishes. The scanner is
+// this one holds the 369 files the gallery renders. The scanner is
 // read off disk by the browser-tagged accessibility drive and injected
 // at run time, and that is the only place it is allowed to exist.
 func TestVendoredAxeStaysOutOfTheTree(t *testing.T) {
@@ -2515,20 +2493,10 @@ func TestVendoredAxeStaysOutOfTheTree(t *testing.T) {
 			t.Errorf("%s carries the vendored axe-core: the scanner must not ship with the thing it scans", name)
 		}
 	}
-	if !treeCommitted {
-		return
-	}
-	err := fs.WalkDir(os.DirFS(treeDir), ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
+	for name := range render(t) {
+		if strings.Contains(name, "axe") {
+			t.Errorf("the tree renders %s, which looks like the vendored scanner", name)
 		}
-		if strings.Contains(p, "axe") {
-			t.Errorf("%s is committed under %s and looks like the vendored scanner", p, treeDir)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("walking %s: %v", treeDir, err)
 	}
 }
 

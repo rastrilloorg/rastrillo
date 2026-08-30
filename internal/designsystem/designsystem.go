@@ -11,15 +11,16 @@
 // (select.js's filterable combobox, datetime.js's natural-language date
 // field) actually run.
 //
-// Render returns the whole tree in memory, keyed by path relative to
-// docs/design-system. `go generate ./...` writes it; the
-// TestDesignSystemIsCurrent gate holds the committed tree to what this
-// package renders, so a partial that changes shows up as a diff in every
-// page that renders it. That is the point of committing it rather than
-// building it on the website.
+// Render returns the whole tree in memory, keyed by path relative to the
+// tree root. Nothing in this repository holds a copy of it: cmd/dsgen
+// writes it, and the website that publishes it runs cmd/dsgen at build
+// time against a pinned version. `go generate ./...` writes a copy into
+// a git-ignored directory for looking at locally, and that copy is
+// disposable — the render is the artifact.
 //
-// Determinism is a contract, not a nicety: 180 pages regenerated on
-// every partial change are only reviewable if the diff is the change.
+// Determinism is a contract, not a nicety: every gate here compares two
+// renders, and a site that rebuilds the gallery on every deploy should
+// get the same bytes from the same version.
 // Every map in here — Styleguide's samples, BaseCatalogs, the parsed
 // token blocks — is sorted before anything reaches output.
 package designsystem

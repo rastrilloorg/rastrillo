@@ -43,6 +43,13 @@ import (
 // expect. Every URL in a page is absolute under /design-system/, so
 // serving it anywhere else would 404 the stylesheet and the script and
 // the drive would be measuring an unstyled, unscripted page.
+//
+// It serves Render's output rather than a directory, which is now the
+// only thing there is to serve: the tree is not committed, and the site
+// generates it at build time. That is stricter than reading a copy off
+// disk as well as simpler — the accessibility gate in a11y_test.go, which
+// used to scan the committed files, now scans the exact bytes dsgen
+// would write.
 func treeHandler(t *testing.T) http.Handler {
 	t.Helper()
 	files, err := Render(mountPath)

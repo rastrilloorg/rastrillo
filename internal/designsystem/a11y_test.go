@@ -3,8 +3,9 @@
 // The accessibility gate.
 //
 // "And everything is WCAG 2.2 AA, right?" — this file is the half of
-// that answer a machine can give. It boots the committed tree in a real
-// Chromium, injects the vendored axe-core, and runs it over a
+// that answer a machine can give. It serves what Render produces in a
+// real Chromium — the exact bytes dsgen would publish, not a copy of
+// them — injects the vendored axe-core, and runs it over a
 // representative set of pages with the WCAG 2.2 AA tag set. Any
 // violation fails the build, printing rule id, impact and the offending
 // selector, so a regression names itself.
@@ -124,19 +125,6 @@ func mustJSON(s string) string {
 		panic(err)
 	}
 	return string(b)
-}
-
-// committedTree serves docs/design-system — the bytes in the
-// repository, not a fresh Render(). The freshness gate
-// (TestDesignSystemIsCurrent) already proves the two are the same, so
-// scanning the committed copy costs nothing and means something more:
-// what CI publishes is what CI scanned.
-func committedTree(t *testing.T) http.Handler {
-	t.Helper()
-	if _, err := os.Stat(treeDir); err != nil {
-		t.Fatalf("the committed tree is missing: %v (run `go generate ./...`)", err)
-	}
-	return http.StripPrefix(mountPath, http.FileServer(http.Dir(treeDir)))
 }
 
 // ── The scan ─────────────────────────────────────────────────────────
@@ -362,7 +350,7 @@ var a11ySchemes = []string{"light", "dark"}
 //     at it;
 //   - anything the next partial adds that nobody thought to check.
 func TestA11yScansTheGallery(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 1200*time.Second)
 	defer cancel()
 
@@ -409,7 +397,7 @@ func TestA11yScansTheGallery(t *testing.T) {
 // tag set this gate runs, and both summaries are new or newly
 // icon-bearing, so measure them here rather than assume.
 func TestA11yScansTheShellsCollapsed(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 600*time.Second)
 	defer cancel()
 
@@ -560,7 +548,7 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 // component lays itself out with. Frames are loading="lazy", so each is
 // scrolled into view and waited for.
 func TestA11yScansThePreviewDocuments(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 900*time.Second)
 	defer cancel()
 
@@ -698,7 +686,7 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 // column is meant to scroll inside its box), and a <pre> of source is
 // another. Those are allowed to scroll; the page is not.
 func TestA11yReflowsAt320(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
 
@@ -904,7 +892,7 @@ const walkJS = `(() => {
 // are covered: they are the same anchors on every page, and the axe
 // scan reads the rail on all twelve of its targets.
 func TestA11yWalksTheKeyboard(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 	defer cancel()
 

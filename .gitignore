@@ -7,3 +7,8 @@
 # The copy-review gate's string index and result, written at the repo
 # root by the skill that serves them.
 copy-review/
+
+# `go generate ./...` renders the design-system gallery here so it can be
+# looked at locally. The gallery is not committed — the website builds it
+# with cmd/dsgen at a pinned version — and this copy is disposable.
+.design-system/
