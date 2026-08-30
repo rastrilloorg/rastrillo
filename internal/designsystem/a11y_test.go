@@ -331,6 +331,46 @@ func a11yTargets() []a11yTarget {
 	}
 }
 
+// TestEveryPageKindHasAnAccessibilityTarget holds the curated list to
+// the table.
+//
+// a11yTargets() is a REPRESENTATIVE sample with a written reason per
+// entry, and that is worth keeping: scanning 253 pages would say
+// nothing the twelve do not, and the reasons are what make the sample
+// arguable. What it must not be is a list that quietly stops covering
+// something.
+//
+// A page kind added to pageKinds() whose author forgets an entry here
+// is never axe-scanned at all, and the only evidence is that a log line
+// says "16 pages" where it used to say 14 — a number nobody reads.
+// TestA11yReflowsAt320 already walks pageKinds(); this is the same
+// assurance for the scan, without giving up the curation: the entry
+// still has to be written by hand, with its own reason, and this says
+// so when it has not been.
+//
+// The check is on the FILE, not on a theme or a locale, because which
+// theme and language a page kind is best scanned in is exactly the
+// judgement the list exists to record.
+func TestEveryPageKindHasAnAccessibilityTarget(t *testing.T) {
+	targets := a11yTargets()
+	if len(targets) == 0 {
+		t.Fatal("a11yTargets() is empty; the scan is scanning nothing")
+	}
+	for _, pk := range pageKinds() {
+		found := ""
+		for _, tc := range targets {
+			if strings.Contains(tc.href, "/"+pk.File) {
+				found = tc.name
+				break
+			}
+		}
+		if found == "" {
+			t.Errorf("no axe target covers %s (page kind %q). Every page kind is scanned: add an entry to a11yTargets() "+
+				"naming the theme and locale you chose and the reason that page is worth a scan of its own.", pk.File, pk.Kind)
+		}
+	}
+}
+
 // a11ySchemes is both halves of every theme. Light and dark are
 // authored by hand in the same file — never inverted — so they are two
 // palettes, and a scan of one says nothing about the other.

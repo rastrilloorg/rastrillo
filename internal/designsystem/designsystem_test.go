@@ -37,12 +37,17 @@ const mountPath = DefaultMount
 // locale), so a new section has room to land without an argument, and it
 // is small enough that the page is on screen rather than arriving.
 //
-// components.html DOES NOT PASS IT. It is 332,827 bytes in day/en and
-// 387,029 in signal/hi — three times the budget, and 5.7 times the next
-// heaviest page. It is the page the ruling was about. It is recorded in
-// pageBudgetDebt below rather than fixed here, because fixing it is a
-// change to what the page contains and this commit is a change to what
-// is gated.
+// components.html DOES NOT PASS IT: roughly three times the budget, and
+// several times the next heaviest page. It is the page the ruling was
+// about. It is recorded in pageBudgetDebt below rather than fixed here,
+// because fixing it is a change to what the page contains and this
+// commit is a change to what is gated.
+//
+// The exact figure is deliberately not written here. It moved 2,759
+// bytes in the two days this comment first carried it, which is the
+// species of number this package spent a whole task removing.
+// TestEveryPageStaysUnderItsBudget logs the heaviest page and the tree
+// total on every run; read it there.
 //
 // ── Where the weight is, because the next page will be asked ─────────
 //
@@ -85,9 +90,10 @@ const maxPageBytes = 128 << 10
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
 var pageBudgetDebt = map[string]int{
-	// 387,029 bytes at its worst (signal/hi). The fix is not a bigger
-	// number: it is the Code tabs, which write every sample into the
-	// page a second time for a tab most readers never open.
+	// Its worst is in the widest locale, and the gate's own log says
+	// what it is today. The fix is not a bigger number: it is the Code
+	// tabs, which write every sample into the page a second time for a
+	// tab most readers never open.
 	"components.html": 400 << 10,
 }
 
@@ -1277,7 +1283,7 @@ var proseSentinels = []string{
 func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	files := render(t)
 	keys := proseKeysRendered(t)
-	// All five English pages of the root theme, joined: the three
+	// Every English page of the root theme, joined: the three
 	// sentinels are on three different pages since the split — the
 	// opening sentence on every one of them, the dead-link callout on
 	// the pages that frame samples, and the list-grid rule under UI
@@ -2217,6 +2223,15 @@ func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
 // Rewording either sentence means editing it here too. That is the
 // cost, and it is the point: the numbers in them are claims about
 // IconSlugs(), and a claim wants a gate.
+// provenanceLine pulls the address the page printed under each icon out
+// of the rendered HTML, and lucideNameShape says what a name may look
+// like. Together they are the half of the provenance check that does not
+// go back through iconsets.LucideName — see the gate's own comment.
+var (
+	provenanceLine  = regexp.MustCompile(`lucide\.dev/icons/([^<]*)</span>`)
+	lucideNameShape = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+)
+
 const (
 	iconsLeadProse  = "{total} slugs, vendored as inline SVG and compiled into the binary: no build step, no second origin, and they work with no network at all. Each one is sized from the text beside it by tokens.css's own .icon rule, which is the size you are looking at here. A slug nothing answers renders nothing, so a typo costs a missing icon rather than a page that died mid-response."
 	iconsVocabProse = "{renamed} of the {total} differ from the name lucide.dev publishes, so even the Lucide set carries a translation of its own. Where the last line under an icon does not repeat its name, that is one of them. The payoff is that one call means the same glyph whichever set an app scaffolds, and the shipped partials never change when the set does."
@@ -2243,6 +2258,31 @@ const (
 //
 // A thirteenth slug therefore fails NOTHING here if the page is derived
 // (it just appears) and fails three separate assertions if it is not.
+//
+// ── What this gate can and cannot see about provenance ───────────────
+//
+// The address beside each slug is checked TWICE, and the two checks are
+// worth telling apart because a review found the first one alone
+// overclaiming.
+//
+// The first is against iconsets.LucideName — the same function
+// buildIcons called to render it. That holds the PAGE to the function,
+// which is the bug this page could plausibly grow (a row that lost its
+// provenance, a page that stopped calling it), and it cannot see the
+// function itself being wrong: strip a glyph's class marker and both
+// sides agree on the same empty answer.
+//
+// The second is independent of that function entirely. Every address
+// the page actually rendered is pulled back out of the HTML and read as
+// a name: non-empty, and shaped like a slug. That is what catches the
+// failure the function's own bug produces — 36 pages of dangling
+// "lucide.dev/icons/" — without needing a second source of truth for
+// what Lucide calls things.
+//
+// A wrong-but-well-formed name is the one thing neither check can see,
+// and it is not this package's to see: internal/iconsets holds
+// LucideName against the vendored glyph data, the five renamed slugs
+// and kebab by name. Two packages, one CI line.
 func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 	files := render(t)
 	slugs := rastrillo.IconSlugs()
@@ -2279,6 +2319,20 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 			}
 			if got := len(drawn.FindAllString(page, -1)); got != len(slugs) {
 				t.Errorf("%s draws %d icons, the framework answers %d slugs", name, got, len(slugs))
+			}
+			// Read back what the page actually printed, without asking
+			// LucideName what it should have been. A dangling address
+			// is the shape a broken provenance takes on a published
+			// page, and it is visible from here alone.
+			printed := provenanceLine.FindAllStringSubmatch(page, -1)
+			if len(printed) != len(slugs) {
+				t.Errorf("%s prints %d provenance addresses, want one per slug (%d)", name, len(printed), len(slugs))
+			}
+			for _, m := range printed {
+				if !lucideNameShape.MatchString(m[1]) {
+					t.Errorf("%s prints the address %q, which names no icon — a reader is being sent to a dangling lucide.dev/icons/",
+						name, "lucide.dev/icons/"+m[1])
+				}
 			}
 			for _, tc := range []struct {
 				what string
