@@ -2090,6 +2090,32 @@ keep already-allocated hues out of a new allocation; collisions then
 only happen past the set's capacity, which is the honest limit rather
 than an accident.
 
+**The whole algorithm, because naming the loser is not enough.** Docs
+proposed the total order — displace whichever opaque key sorts later
+lexicographically over its bytes — which is client-independent and
+correct as far as it goes. It stops one level short: it says who moves
+and not where they move to, and two implementations that agree on the
+loser and disagree on its destination produce exactly the bug the order
+was introduced to prevent, one level down.
+
+So the displacement target is specified too, and the allocation is
+deterministic open addressing over the sorted set:
+
+1. Sort the key set lexicographically over the keys' bytes.
+2. For each key in that order, probe `(hash(key) + i) mod N` for
+   increasing `i`, taking the first hue that is neither already taken in
+   this pass nor in `avoid`.
+
+The first key to want a hue keeps it, which preserves the globally
+stable allocation for the lexicographically earliest holder; every
+displacement afterwards is a pure function of the sorted set. Chains
+resolve because the probe is deterministic — with A, B and C colliding
+in sequence, C's destination cannot depend on the order it happened to
+be observed in.
+
+`avoid` is applied inside the probe rather than before it, so an avoided
+hue displaces exactly like a taken one and the two cannot disagree.
+
 ### The key is opaque and the framework knows nothing about users
 
 Callers pass a stable opaque key and own what it means. Docs has
