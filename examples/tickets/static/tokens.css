@@ -694,8 +694,9 @@ details[open] > summary > .rst-caret { transform: rotate(180deg); }
    to the unfiltered URL, so removing a filter is just navigation.
    The × is 24px square because WCAG 2.2 AA 2.5.8 says a target is, and
    it was 17px until the accessibility gate measured it. The chip lost
-   its block padding in the same breath, so the row it sits in is a
-   couple of pixels taller rather than eight. */
+   its block padding in the same breath to pay for most of that: the
+   chip measures 26.0px tall now against 22.4px before, and would have
+   been 29.2px if the padding had stayed. */
 .rst-ftok { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0; padding-inline: 0.6rem 0.2rem; }
 .rst-ftok .rst-ftok__k { color: var(--rst-text-muted); }
 .rst-ftok a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 24px; justify-content: center; text-decoration: none; width: 24px; }

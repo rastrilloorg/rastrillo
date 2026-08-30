@@ -396,17 +396,25 @@ serves `/design-system` and `/design-system/` as the same page without
 redirecting between them, and a relative href resolves differently on
 each.
 
-The gallery is scanned to WCAG 2.2 AA on every CI run. `go test -tags
-browser ./internal/designsystem/` injects a pinned copy of axe-core into
-a real browser and fails the build on any violation, across three
-themes, both colour schemes, an RTL page, the modal and shell demos, and
-the preview documents the components actually live in — plus two checks
-axe cannot make: that nothing scrolls sideways in a 320px viewport, and
-that a Tab through the page shows a focus ring at every stop and never
-gets stuck. That is a floor, not a certificate: automated scanning
-reaches roughly half of the WCAG success criteria, and the other half —
-whether alt text says something true, whether the reading order makes
-sense, whether a label means what it says — is read by a person.
+The gallery is scanned to WCAG 2.2 AA on every CI run — the
+`browser-tagged tests` job runs `./internal/designsystem/`, and a
+violation fails the build. Locally it is `go test -tags browser -p 1
+./internal/designsystem/` (the `-p 1` matters: two Chromium-heavy
+packages starting together contend badly enough to blow a drive's
+deadline). It injects a pinned copy of axe-core into a real browser and
+runs it over the committed tree: the index in each of the three themes
+in both colour schemes, an RTL page, the modal and a shell demo, and the
+preview documents the components actually live in — those in every theme
+and scheme too. Plus two checks axe cannot make: that nothing scrolls
+sideways in a 320px viewport, and that a Tab through the page shows a
+focus ring at every stop and never gets stuck.
+
+That is a floor, not a certificate. Automated scanning reaches roughly
+half of the WCAG success criteria, and the other half — whether alt text
+says something true, whether the reading order makes sense, whether a
+label means what it says — is read by a person. And it is a sample: six
+pages of a hundred and eighty, eight previews of a hundred and ten,
+chosen for what they would catch rather than for coverage.
 
 ## Styling
 

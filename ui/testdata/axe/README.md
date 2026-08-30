@@ -16,8 +16,11 @@ and not from the network.
 It is read by `internal/designsystem/a11y_test.go` (build tag `browser`), which
 injects it into a headless Chromium and scans the committed gallery. It is not
 embedded, not served, not part of `ui.ShimJS()`, and never reaches
-`docs/design-system/`. `TestVendoredAxeStaysOutOfTheShippedTree` asserts all of
-that, so the day somebody adds a `//go:embed testdata` the gate says so.
+`docs/design-system/`. Two untagged tests assert all of that, so they run on
+every `go test ./...` and not only when a browser is around:
+`TestVendoredAxeIsNotAShippedAsset` in `ui/axe_test.go` holds the library's
+assets and the embedded template tree, and `TestVendoredAxeStaysOutOfTheTree`
+in `internal/designsystem` holds the 189 published files.
 
 ## Upgrading
 

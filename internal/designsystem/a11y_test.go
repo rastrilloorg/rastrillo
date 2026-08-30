@@ -82,6 +82,10 @@ var axeExempt = map[string]string{
 // stops where "nothing visible changed" is the browser's doing and not
 // the page's, named with the reason. Same convention as colorMixSkip in
 // ui/contrast_test.go — the gate says out loud what it is not checking.
+//
+// Keyed by the focused element's tag name, and looked up as a map: an
+// element of any other kind with no ring is a failure, and adding a
+// second kind here is a ruling somebody has to write down.
 var focusRingExempt = map[string]string{
 	"iframe": "Chromium makes a scrollable frame a tab stop of its own, and it paints " +
 		"nothing on it. No author CSS can, either: probed on this tree, an iframe with " +
@@ -91,6 +95,11 @@ var focusRingExempt = map[string]string{
 		"— the sample's own links, inputs and buttons — is walked and held to 2.4.7 " +
 		"normally, because the walk follows focus into the frame's document.",
 }
+
+// axeFloor is the least number of axe rules a real scan runs to
+// completion. See the comment at its use in scan() for the measured
+// numbers it sits under.
+const axeFloor = 5
 
 // axeFile is the vendored engine, pinned and checksummed in
 // ui/testdata/axe/README.md. Test data: it is never embedded, never
@@ -213,9 +222,20 @@ func scan(t *testing.T, bctx context.Context, where, engine, target, iframes str
 	// A scan that examined nothing reports no violations, which is the
 	// one way this gate could go green while being switched off — a
 	// selector that matches no frame, an engine that failed to reach a
-	// document. The count of rules that ran is the proof it did.
-	if out.Passed == 0 {
-		t.Errorf("%s: axe ran no rules to completion — the scan reached no content", where)
+	// document. The count of rules that ran to completion is the proof
+	// it did.
+	//
+	// The floor is five rather than one because one is not a floor:
+	// axe scoped to a single element still clears it (measured: one to
+	// two rules pass on a lone button), so a context that had collapsed
+	// to one node would look like a scan. What the real scans measure,
+	// on this tree: 30 rules on an index page, 15 on the modal, 13 on
+	// the sidebar shell, and 6 on the smallest preview document — the
+	// status-pill sample, which is a span of text and nothing else.
+	// Five is under the smallest real one and over the degenerate ones.
+	if out.Passed < axeFloor {
+		t.Errorf("%s: only %d axe rules ran to completion, under the floor of %d — the scan reached almost no content",
+			where, out.Passed, axeFloor)
 	}
 	t.Logf("%s: %d axe rules passed [%s]", where, out.Passed, out.Doc)
 	sort.Slice(out.Violations, func(i, j int) bool { return out.Violations[i].ID < out.Violations[j].ID })
@@ -356,6 +376,67 @@ func TestA11yScansTheGallery(t *testing.T) {
 	}
 }
 
+// previewFrame is one preview widget picked for scanning, and the
+// section it belongs to.
+type previewFrame struct{ Sel, Of string }
+
+// pickPreviewFrames chooses the frames to scan on the page the browser
+// is on, and says what it chose. EVERY family section, plus the first
+// four idioms — not "the first eight of whatever the DOM hands back",
+// which is what this did until a reviewer pointed out that a fifth
+// family would silently push a preview off the end of the list.
+//
+// The family half is the part that must not rot: a family is the axis
+// the samples are grouped on, so one frame per family is the smallest
+// sample that touches every kind of component, and a family added
+// tomorrow is scanned tomorrow. The idiom half is capped, because the
+// idioms are a flat list of a dozen and scanning all of them in six
+// theme-scheme combinations buys less than it costs.
+func pickPreviewFrames(t *testing.T, bctx context.Context) []previewFrame {
+	t.Helper()
+	const pick = `(() => {
+	  const mark = (sec, out) => {
+	    const f = sec.querySelector("iframe.ds-view__frame");
+	    if (!f) return;
+	    f.id = f.id || ("a11y-" + sec.id);
+	    out.push({Sel: "#" + f.id, Of: sec.id});
+	  };
+	  const families = [], idioms = [];
+	  const famSections = document.querySelectorAll("section.ds-family");
+	  famSections.forEach(sec => mark(sec, families));
+	  const idiomArticles = [];
+	  document.querySelectorAll("article.ds-partial").forEach(a => {
+	    if (!a.closest("section.ds-family")) idiomArticles.push(a);
+	  });
+	  idiomArticles.slice(0, 4).forEach(a => mark(a, idioms));
+	  return JSON.stringify({families, idioms, familySections: famSections.length, idiomArticles: idiomArticles.length});
+	})()`
+	var raw string
+	if err := chromedp.Run(bctx, chromedp.Evaluate(pick, &raw)); err != nil {
+		t.Fatalf("picking preview frames: %v", err)
+	}
+	var got struct {
+		Families, Idioms              []previewFrame
+		FamilySections, IdiomArticles int
+	}
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatalf("decoding the frame list: %v", err)
+	}
+	// Every family on the page produced a frame. A family whose first
+	// example is not a framed preview would silently drop out of the
+	// scan otherwise, and that is a hole nobody would notice.
+	if len(got.Families) != got.FamilySections {
+		t.Fatalf("%d family sections on the page but only %d gave up a preview frame", got.FamilySections, len(got.Families))
+	}
+	if got.FamilySections < len(families()) {
+		t.Fatalf("samples.go declares %d families; the page has %d sections", len(families()), got.FamilySections)
+	}
+	if len(got.Idioms) < 4 {
+		t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Idioms), got.IdiomArticles)
+	}
+	return append(got.Families, got.Idioms...)
+}
+
 // TestA11yScansThePreviewDocuments scans inside the frames.
 //
 // This is where the components actually live. Every example on an index
@@ -367,135 +448,136 @@ func TestA11yScansTheGallery(t *testing.T) {
 // Scanned in the frame, not extracted and re-served: a component's
 // accessible name and its contrast are properties of the document it is
 // in, and lifting the markup out to a page of our own would be scanning
-// something the reader never sees. axe descends into a same-origin
-// frame when it is loaded there too, which the boot script below
-// arranges.
+// something the reader never sees.
 //
-// One frame per family, plus the first idiom — the families are the
-// axis the samples are grouped on, so one per family is the smallest
-// sample that touches every kind of component. The frames are
-// loading="lazy", so each is scrolled into view and waited for.
+// The axis is the point, and it is the same axis the page scan uses:
+// three themes × two schemes, plus an RTL page. A component's contrast
+// is a property of the palette it is painted in, so "the field sample
+// is clean" is a claim about one theme in one scheme until it has been
+// scanned in the others; and dir=rtl reverses every logical property a
+// component lays itself out with. Frames are loading="lazy", so each is
+// scrolled into view and waited for.
 func TestA11yScansThePreviewDocuments(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 600*time.Second)
+	ctx, cancel := context.WithTimeout(rig.Context(), 900*time.Second)
 	defer cancel()
 
 	axeJS := axeSource(t)
-	if err := chromedp.Run(ctx,
-		chromedp.Navigate(rig.Origin+indexHref("day", "en")),
-		chromedp.WaitReady("body"),
-	); err != nil {
-		t.Fatalf("loading the index: %v", err)
+	pages := []struct{ theme, locale string }{
+		{"day", "en"}, {"plain", "en"}, {"signal", "en"}, {"day", "ar"},
 	}
 
-	// The frames to scan: the first preview in each family section, and
-	// the first idiom. Selected in the page rather than hard-coded, so
-	// a new family is scanned the day it is added.
-	const pick = `(() => {
-	  const out = [];
-	  document.querySelectorAll("section.ds-family, article.ds-partial").forEach(sec => {
-	    if (sec.matches("article.ds-partial") && sec.closest("section.ds-family")) return;
-	    const f = sec.querySelector("iframe.ds-view__frame");
-	    if (f) { f.id = f.id || ("a11y-" + sec.id); out.push({sel: "#" + f.id, of: sec.id}); }
-	  });
-	  return JSON.stringify(out.slice(0, 8));
-	})()`
-	var picked string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(pick, &picked)); err != nil {
-		t.Fatalf("picking preview frames: %v", err)
-	}
-	var frames []struct{ Sel, Of string }
-	if err := json.Unmarshal([]byte(picked), &frames); err != nil {
-		t.Fatalf("decoding the frame list: %v", err)
-	}
-	if len(frames) < 4 {
-		t.Fatalf("expected a preview frame per family, picked %d: %s", len(frames), picked)
-	}
+	total, scans := 0, 0
+	for _, pg := range pages {
+		if err := chromedp.Run(ctx,
+			chromedp.Navigate(rig.Origin+indexHref(pg.theme, pg.locale)),
+			chromedp.WaitReady("body"),
+		); err != nil {
+			t.Fatalf("loading the %s/%s index: %v", pg.theme, pg.locale, err)
+		}
+		frames := pickPreviewFrames(t, ctx)
 
-	// Every picked frame is taken off lazy loading in one mutation,
-	// before any of them is waited for. Setting loading="eager" on a
-	// frame the viewport has already reached restarts its load, and a
-	// restart landing between "this document is ready" and "scan it" is
-	// a scan of a half-built document. That is not a hypothetical: the
-	// first version of this test reported four different preview pages
-	// as having no <title>, four different pages on each run, every one
-	// of which plainly had one. One mutation, then wait for stability,
-	// then scan.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(
-		`document.querySelectorAll("iframe.ds-view__frame[id^=a11y-]").forEach(f => { f.loading = "eager"; })`, nil)); err != nil {
-		t.Fatalf("taking the preview frames off lazy loading: %v", err)
-	}
+		// Every picked frame is taken off lazy loading in one mutation,
+		// before any of them is waited for. Setting loading="eager" on
+		// a frame the viewport has already reached restarts its load,
+		// and a restart landing between "this document is ready" and
+		// "scan it" is a scan of a half-built document. That is not a
+		// hypothetical: the first version of this test reported four
+		// different preview pages as having no <title>, four different
+		// pages on each run, every one of which plainly had one. One
+		// mutation, then wait for stability, then scan.
+		if err := chromedp.Run(ctx, chromedp.Evaluate(
+			`document.querySelectorAll("iframe.ds-view__frame[id^=a11y-]").forEach(f => { f.loading = "eager"; })`, nil)); err != nil {
+			t.Fatalf("taking the preview frames off lazy loading: %v", err)
+		}
 
-	total := 0
-	for _, f := range frames {
-		// Stable, not merely ready: the same document object twice,
-		// 150ms apart, complete and populated both times. A frame still
-		// being replaced fails the second look and the poll goes round.
-		ready := fmt.Sprintf(`(async () => {
-		  const f = document.querySelector(%q);
-		  f.scrollIntoView({block: "center"});
-		  const settled = () => {
-		    const d = f.contentDocument;
-		    return d && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
-		  };
-		  for (let i = 0; i < 200; i++) {
-		    const d = settled();
-		    if (d) {
-		      await new Promise(r => setTimeout(r, 150));
-		      if (settled() === d) return "ok " + JSON.stringify(d.title);
-		    }
-		    await new Promise(r => setTimeout(r, 50));
-		  }
-		  return "never settled";
-		})()`, f.Sel)
-		var state string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(ready, &state,
-			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
-			t.Fatalf("%s: waiting for the frame: %v", f.Of, err)
+		titles := make([]string, len(frames))
+		for i, f := range frames {
+			// Stable, not merely ready: the same document object twice,
+			// 150ms apart, complete and populated both times. A frame
+			// still being replaced fails the second look and the poll
+			// goes round.
+			ready := fmt.Sprintf(`(async () => {
+			  const f = document.querySelector(%q);
+			  f.scrollIntoView({block: "center"});
+			  const settled = () => {
+			    const d = f.contentDocument;
+			    return d && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
+			  };
+			  for (let i = 0; i < 200; i++) {
+			    const d = settled();
+			    if (d) {
+			      await new Promise(r => setTimeout(r, 150));
+			      if (settled() === d) return "ok " + JSON.stringify(d.title);
+			    }
+			    await new Promise(r => setTimeout(r, 50));
+			  }
+			  return "never settled";
+			})()`, f.Sel)
+			var state string
+			if err := chromedp.Run(ctx, chromedp.Evaluate(ready, &state,
+				func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+				t.Fatalf("%s: waiting for the frame: %v", f.Of, err)
+			}
+			if !strings.HasPrefix(state, "ok") {
+				t.Fatalf("%s: preview frame %s %s", f.Of, f.Sel, state)
+			}
+			titles[i] = state[3:]
+
+			// The engine goes in here, into the document that just
+			// settled, rather than as a boot script the browser replays
+			// into every document a page creates. Two reasons, both
+			// learned the hard way. A boot script would parse half a
+			// megabyte of engine into all hundred-odd preview frames the
+			// index holds, most of which are never scanned. And an
+			// engine installed at document creation is bound to the
+			// document that existed then: when a lazy frame reloaded
+			// underneath it, the engine stayed attached to the empty
+			// document it was born in and cheerfully reported the sample
+			// as having no title, no headings and nothing to check.
+			// Injecting after the document has settled binds the two
+			// together by construction.
+			inject := fmt.Sprintf(`(() => {
+			  const d = document.querySelector(%q).contentDocument;
+			  const s = d.createElement("script");
+			  s.textContent = %s;
+			  d.head.appendChild(s);
+			  return typeof d.defaultView.axe;
+			})()`, f.Sel, mustJSON(axeJS))
+			var loaded string
+			if err := chromedp.Run(ctx, chromedp.Evaluate(inject, &loaded)); err != nil {
+				t.Fatalf("%s: injecting axe into the frame: %v", f.Of, err)
+			}
+			if loaded != "object" {
+				t.Fatalf("%s: axe did not load in the frame (typeof axe = %s)", f.Of, loaded)
+			}
 		}
-		if !strings.HasPrefix(state, "ok") {
-			t.Fatalf("%s: preview frame %s %s", f.Of, f.Sel, state)
+
+		for _, scheme := range a11ySchemes {
+			// paint reaches into every frame's own <html>, which is what
+			// gallery.js does and the only way a frame gets the page's
+			// scheme: a frame declares color-scheme of its own, so the
+			// embedder's value is ignored.
+			paint(t, ctx, scheme)
+			for i, f := range frames {
+				// The frame's OWN engine, on the frame's own document.
+				// axe can reach into a frame from the embedder by
+				// postMessage, but that path went quiet after the third
+				// frame on a page holding a hundred of them and reported
+				// the empty result as a clean one — which is precisely
+				// the failure this gate exists to notice. Same-origin
+				// srcdoc means contentWindow.axe is right there, so the
+				// scan runs where the document is.
+				where := fmt.Sprintf("%s/%s %s preview %s %s", pg.theme, pg.locale, scheme, f.Of, titles[i])
+				engine := fmt.Sprintf("document.querySelector(%q).contentWindow.axe", f.Sel)
+				target := fmt.Sprintf("document.querySelector(%q).contentDocument", f.Sel)
+				total += report(t, where, scan(t, ctx, where, engine, target, "false"))
+				scans++
+			}
 		}
-		// The engine goes in here, into the document that just
-		// settled, rather than as a boot script the browser replays
-		// into every document a page creates. Two reasons, both
-		// learned the hard way. A boot script would parse half a
-		// megabyte of engine into all hundred-odd preview frames the
-		// index holds, most of which are never scanned. And an engine
-		// installed at document creation is bound to the document that
-		// existed then: when a lazy frame reloaded underneath it, the
-		// engine stayed attached to the empty document it was born in
-		// and cheerfully reported the sample as having no title, no
-		// headings and nothing to check. Injecting after the document
-		// has settled binds the two together by construction.
-		inject := fmt.Sprintf(`(() => {
-		  const d = document.querySelector(%q).contentDocument;
-		  const s = d.createElement("script");
-		  s.textContent = %s;
-		  d.head.appendChild(s);
-		  return typeof d.defaultView.axe;
-		})()`, f.Sel, mustJSON(axeJS))
-		var loaded string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(inject, &loaded)); err != nil {
-			t.Fatalf("%s: injecting axe into the frame: %v", f.Of, err)
-		}
-		if loaded != "object" {
-			t.Fatalf("%s: axe did not load in the frame (typeof axe = %s)", f.Of, loaded)
-		}
-		// The frame's OWN engine, on the frame's own document. axe can
-		// reach into a frame from the embedder by postMessage, but that
-		// path went quiet after the third frame on a page holding a
-		// hundred of them and reported the empty result as a clean one —
-		// which is precisely the failure this gate exists to notice.
-		// Same-origin srcdoc means contentWindow.axe is right there, so
-		// the scan runs where the document is.
-		where := "preview in " + f.Of + " " + state[3:]
-		engine := fmt.Sprintf("document.querySelector(%q).contentWindow.axe", f.Sel)
-		target := fmt.Sprintf("document.querySelector(%q).contentDocument", f.Sel)
-		total += report(t, where, scan(t, ctx, where, engine, target, "false"))
 	}
 	if total == 0 {
-		t.Logf("clean: %d preview documents, %v", len(frames), axeTags)
+		t.Logf("clean: %d preview scans over %d pages × %d schemes, %v", scans, len(pages), len(a11ySchemes), axeTags)
 	}
 }
 
@@ -604,19 +686,60 @@ const walkJS = `(() => {
   }
   if (!el || el === document.body || el === document.documentElement) return JSON.stringify({tag: "body"});
   const uaFrame = el.tagName === "IFRAME";
+  // ── Is there a ring, really ───────────────────────────────────────
+  //
+  // A first version of this compared raw computed values and was
+  // fooled twice, both times passing a page with no visible focus at
+  // all:
+  //
+  //   - outline-offset counts for nothing on its own. Chromium reports
+  //     an offset on an element whose outline is "none", and the value
+  //     changes with focus, so "outline: none" showed a ring.
+  //   - a ring you cannot see is not a ring. "outline-color:
+  //     transparent" is a different colour string from the unfocused
+  //     one, so a page where every indicator was invisible scored 29
+  //     of 30.
+  //
+  // So every property is normalised to present-and-visible or absent
+  // before anything is compared. Absent means: outline with style
+  // none, zero width, or a fully transparent colour; box-shadow of
+  // none, or one drawn entirely in transparent colours; a border with
+  // no width or no visible colour; a transparent background or text
+  // colour. Offset rides along inside the outline, where it is a real
+  // difference, and contributes nothing when there is no outline.
+  const clear = v => {
+    v = (v || "").trim();
+    if (v === "transparent") return true;
+    const m = /^rgba?\(([^)]*)\)$/.exec(v);
+    if (!m) return false;
+    const parts = m[1].split(/[\s,\/]+/).filter(Boolean);
+    return parts.length > 3 && parseFloat(parts[3]) === 0;
+  };
+  const anyVisible = v => (String(v).match(/rgba?\([^)]*\)/g) || []).some(c => !clear(c));
+  const widest = v => Math.max(...String(v).split(/\s+/).map(parseFloat).map(n => isNaN(n) ? 0 : n), 0);
   const one = e => {
     if (!e) return "";
     const s = (e.ownerDocument.defaultView || window).getComputedStyle(e);
-    return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.outlineOffset,
-            s.boxShadow, s.borderColor, s.borderWidth, s.backgroundColor,
-            s.color, s.textDecorationLine].join("|");
+    const bits = [];
+    if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0 && !clear(s.outlineColor)) {
+      bits.push("outline:" + s.outlineStyle + " " + s.outlineWidth + " " + s.outlineColor + " " + s.outlineOffset);
+    }
+    if (s.boxShadow && s.boxShadow !== "none" && anyVisible(s.boxShadow)) {
+      bits.push("shadow:" + s.boxShadow);
+    }
+    if (widest(s.borderWidth) > 0 && anyVisible(s.borderColor)) {
+      bits.push("border:" + s.borderWidth + " " + s.borderColor);
+    }
+    if (!clear(s.backgroundColor)) bits.push("bg:" + s.backgroundColor);
+    if (!clear(s.color)) bits.push("fg:" + s.color);
+    if (s.textDecorationLine && s.textDecorationLine !== "none") bits.push("dec:" + s.textDecorationLine);
+    return bits.join(" ");
   };
   // The element and two ancestors, because a ring is not always painted
   // on the thing that has focus: a wrapper with :focus-within or :has()
-  // is a normal way to do it, and the gallery's preview boxes do
-  // exactly that — the frame is scaled and clipped, so the outline goes
-  // on the box around it.
-  const snap = e => [one(e), one(e.parentElement), one(e.parentElement && e.parentElement.parentElement)].join("||");
+  // is a normal way to do it, and this tree does it — a switch's track,
+  // a choice card's label, a preview tab's box.
+  const snap = e => [one(e), one(e.parentElement), one(e.parentElement && e.parentElement.parentElement)].join(" || ");
   const focused = snap(el);
   el.blur();
   const blurred = snap(el);
@@ -628,6 +751,9 @@ const walkJS = `(() => {
   window.__prev = el;
   return JSON.stringify({
     tag: label,
+    kind: el.tagName.toLowerCase(),
+    focused: focused,
+    blurred: blurred,
     ring: focused !== blurred,
     restored: snap(el) === focused,
     same: same,
@@ -675,7 +801,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 			t.Fatalf("tab %d: %v", i+1, err)
 		}
 		var s struct {
-			Tag                                    string
+			Tag, Kind, Focused, Blurred            string
 			Ring, Restored, Same, StillOn, UAFrame bool
 		}
 		if err := json.Unmarshal([]byte(raw), &s); err != nil {
@@ -692,11 +818,12 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 				i+1, s.Tag, s.StillOn, s.Restored)
 		}
 		if !s.Ring {
-			if reason, ok := focusRingExempt["iframe"]; ok && s.UAFrame {
+			if reason, ok := focusRingExempt[s.Kind]; ok {
 				t.Logf("EXEMPT tab %d: %s — %s", i+1, s.Tag, reason)
 				continue
 			}
-			t.Errorf("tab %d: %s has no visible focus indicator — outline, shadow, border and colours all compute the same focused and unfocused (WCAG 2.4.7)", i+1, s.Tag)
+			t.Errorf("tab %d: %s has no visible focus indicator (WCAG 2.4.7)\n    focused: %s\n    blurred: %s",
+				i+1, s.Tag, s.Focused, s.Blurred)
 			continue
 		}
 		rings++

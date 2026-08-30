@@ -170,11 +170,26 @@ jobs:
       # suite already ran in the test job, and -tags browser ./...
       # would rerun all of it here for nothing. -p 1 serialises the
       # packages — parallel Chromium cold-starts contend for the
-      # runner. The ui select drive is deliberately absent: it is
-      # deterministic-green locally but 0-for-5 on this runner, where
-      # the Enter that commits the selection reaches the form instead
-      # and submits the page out from under the drive (issue #86 has
-      # the captured widget-state evidence). It stays a deliberate
-      # local run, as it was before this job existed.
+      # runner, and the contention is real: the ui select drive has
+      # been seen to blow its 180s deadline when two Chromium-heavy
+      # packages start together.
+      #
+      # ./internal/designsystem/ carries the accessibility gate
+      # (a11y_test.go: axe-core over the committed gallery, the 320px
+      # reflow check and the keyboard walk) alongside the gallery's own
+      # drives. docs/site/templates.md tells readers the gallery is
+      # scanned to WCAG 2.2 AA on every CI run; this line is the whole
+      # of what makes that sentence true, so removing it means editing
+      # that paragraph in the same commit.
+      #
+      # ./ui/ is still deliberately absent, for the reason it always
+      # was: the select drive is deterministic-green locally but
+      # 0-for-5 on this runner, where the Enter that commits the
+      # selection reaches the form instead and submits the page out
+      # from under the drive (issue #86 has the captured widget-state
+      # evidence). It stays a deliberate local run. Nothing in the
+      # accessibility gate lives there — the vendored engine does, and
+      # the untagged tests that keep it out of the shipped tree run in
+      # the plain suite.
       - name: browser-tagged tests
-        run: go test -tags browser -p 1 ./harness/ ./webauthn/ -count=1
+        run: go test -tags browser -p 1 ./harness/ ./webauthn/ ./internal/designsystem/ -count=1
