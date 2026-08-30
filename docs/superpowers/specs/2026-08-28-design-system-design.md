@@ -2023,6 +2023,45 @@ blocks "are direct children of the bar again".
 
 ---
 
+## 0. What is shipped, what is merged, what is only ruled
+
+**Read this before building on anything below.** Two CARLOS apps have
+now written specs against this document, and one of them built on a
+section that is a ruling rather than an API — because nothing here said
+which was which. That is this document's fault, not theirs.
+
+Three states, and the difference between the first two matters more than
+it looks:
+
+| State | Means | How to check |
+|---|---|---|
+| **RELEASED** | in the latest tag; `go get` gives it to you | `git show v0.19.0:ui/ui.go` |
+| **ON MAIN** | merged, unreleased — you get it only by tracking `main` | `git show origin/main:ui/ui.go` |
+| **RULED** | decided and written down. **No code exists.** | it is only in this file |
+
+As of 2026-08-30, with **17 commits on main since v0.19.0 was tagged on
+2026-08-24**:
+
+- `ui.TokensCSS()` — **RELEASED** (v0.19.0, `ui/ui.go:192`).
+- `ui.ThemeCSS(name)`, `ui.ThemeNames()`, `ui.Layout(name)`,
+  `ui.LayoutNames()`, the three themes, the twelve locales, the busy
+  rule, the gallery — **ON MAIN, not released**. An app that runs
+  `go get` today gets a framework with none of the themes this document
+  describes.
+- The bare-attribute grammar of §6-v3 — **RULED**. It exists in no Go
+  source and on no branch. The shipped and merged `ui` package styles
+  `class="rst-*"` and nothing else. An app writing `<div rst-list>`
+  today renders unstyled.
+- `Pair`, the allocation entry point, `rastrillo doctor`, the semantic
+  elements of §6-v2.4, the tinted header rule — **RULED**.
+
+**The gap between RELEASED and ON MAIN is the one that will bite**, and
+it is currently six days and seventeen commits wide. A downstream app
+reading this document and running `go get` gets neither the themes nor
+the shells. That is an argument for releasing, not for footnotes.
+
+---
+
 ## 6-v2.2b. The colour engine (2026-08-30) — designed with two downstream callers
 
 §6-v2.2 ruled a mood-driven palette generator constrained by the contrast
