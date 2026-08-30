@@ -362,6 +362,31 @@ templates, and `TestDesignSystemIsCurrent` fails the build if the tree
 drifts from what's committed. It will be published at
 rastrillo.org/design-system once the website vendors it.
 
+The page is laid out in the `sidebar` shell, because that shell is one
+of the things it exists to show. The rail carries a search box over a
+nav that links every section, every partial and every class idiom on the
+page — `TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives that
+list from the same markers the coverage gates read, so a new partial
+appears in the nav without anyone editing the nav. Typing in the box
+hides the entries that do not match, and any section left empty. Below
+800px the rail folds into the shell's own `<details>` chrome strip, with
+no script involved.
+
+**Every word on the page is translated**, not only the components. The
+gallery's own headings, leads and notes go through one helper against a
+catalog of its own, in the same twelve locales the framework ships, so
+the language switcher changes the prose as well as the samples.
+`TestEveryProseKeyIsTranslated` fails on a missing entry, and
+`TestNoEnglishProseReachesATranslatedPage` fails on an English string
+that reached a page in another language.
+
+Sample content is the deliberate exception. The names, routes and labels
+inside a component sample are stand-ins, and translating them would
+suggest the framework ships those words, so they stay English on every
+page. The shell and modal demos go the other way — they impersonate a
+real application, so their chrome speaks the language you picked. The
+page says so itself, under Partials, in all twelve languages.
+
 Every example on the page is shown three ways behind one control:
 **Desktop**, **Mobile** and **Code**. The two previews are one
 `<iframe>` holding a document of its own — the sample, the stylesheets,
@@ -387,6 +412,26 @@ site serves none of those routes, so every link is rewritten to `#`
 before it is framed and every form is aimed at a hidden sink. The Code
 tab beside the preview keeps the routes the sample was written with,
 which are the ones worth copying.
+
+Three switchers sit in the header, top right. **Theme** is three links,
+one per theme, landing on the same page in that theme's palette.
+**Language** is the `locale-menu` dropdown, twelve entries, each keeping
+you on the page you were reading. **Colour scheme** is System / Light /
+Dark, and it is the only one of the three that needs JavaScript: it
+writes `data-theme` on `<html>`, remembers the choice in
+`localStorage`, and writes the same attribute onto every preview frame,
+because a colour scheme is not propagated into an embedded document that
+declares one of its own.
+
+That script is `gallery.js`, the only JavaScript in the tree that is not
+part of the framework — furniture for the page rather than something an
+app is ever given, which is why it lives beside the renderer instead of
+in `ui`. It follows the same rules as its three neighbours anyway:
+first-party, no dependencies, no network, and inert-safe. The scheme
+toggle and the filter box are both `display: none` until the file sets
+`data-rst-js`, so with scripts off you get the nav and the theme's own
+`color-scheme: light dark` rather than two controls that cannot do
+anything.
 
 Every link in that tree — stylesheets, scripts, the theme and language
 switchers, the shell and modal demos — is an absolute path under
@@ -467,6 +512,18 @@ it is dropped and the app renders with no palette rather than a
 monochrome one. If you have to support an engine below that floor, write
 a theme with a plain `:root` palette and a `prefers-color-scheme` block
 instead; the token names are the only contract, so nothing else changes.
+
+`tokens.css` has a floor of its own, lower and far less brittle. It uses
+`:has()` — Chrome 105, Safari 15.4, Firefox 121 — and the `lh` unit,
+Chrome 109, Safari 16.4, Firefox 120. On Chrome and Safari `lh` is the
+newer of the two, which is why the phantom label that reserves a line in
+a field row writes a `calc()` fallback ahead of its `1lh`; on Firefox
+`:has()` arrived last, so no engine there ever sees that fallback.
+Neither degrades badly — a `:has()` selector an engine cannot parse
+simply does not apply — so take the highest of all three and the floor
+for `tokens.css` plus a shipped theme is Chrome 123, Safari 17.5,
+Firefox 121: `light-dark()` sets it everywhere except Firefox, where
+`:has()` does.
 
 One caveat worth knowing: `light-dark()` is a colour function, so it may
 only stand where a colour is expected. A shadow token wraps its colour

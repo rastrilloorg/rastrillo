@@ -827,8 +827,9 @@ small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.4
    Chrome 105-108 and Safari 15.4-16.3 render this rule and would
    otherwise reserve a zero-height line. They get the body's 1.5
    line-height as a number; everything newer measures the line itself
-   and the copy stops mattering. Firefox never sees the calc: :has()
-   and lh both landed there in 121. */
+   and the copy stops mattering. Firefox never sees the calc: lh landed
+   there in 120 and :has() in 121, so any Firefox that matches this
+   selector already has the unit. */
 .rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: calc(var(--rst-fs-sm) * 1.5); block-size: 1lh; content: ""; display: block; font-size: var(--rst-fs-sm); margin-block-end: 0.2rem; }
 /* A row is sized by its controls, never by its messages: contain keeps a
    long error out of the field's max-content width, so the sentence wraps

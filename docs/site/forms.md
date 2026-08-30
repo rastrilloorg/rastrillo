@@ -197,6 +197,63 @@ Both handle negatives correctly, writing the sign once against the
 absolute value. Formatting a negative directly produces `"$-1.-50"`,
 since Go's `/` and `%` both truncate toward zero.
 
+## Two fields on one row
+
+`rst-field-row` is the wrapper for fields that belong side by side — a
+city and a postcode, a start and an end. `field-daterange` emits one;
+everywhere else you write it yourself around a run of `field` partials:
+
+```html
+<div class="rst-field-row">
+  <div class="rst-field rst-grow">…City…</div>
+  <div class="rst-field">…<input class="rst-input rst-input--short">…</div>
+</div>
+```
+
+**The row aligns by the control line, not the bottom.** A field carrying
+an error is taller than the one beside it, and bottom-aligning the two
+lifted its control clear of its neighbour's and dropped the message
+across the field next door. Aligning at the top keeps every control on
+one line and lets each message flow under its own column, shifting
+nothing. A field with no label reserves the label's line anyway, so an
+unlabelled control still lines up with a labelled sibling's; a field
+whose label is long enough to wrap is a field that wants its own row.
+
+**Every field in a row has an 8rem floor**, and `rst-input--short` is
+8rem wide rather than an unbounded shrink. A row that runs out of width
+therefore wraps rather than squeezing its fields into slivers.
+
+**`rst-grow` is `flex: 1 1 12rem`, not `flex: 1`.** `flex: 1` is
+`flex: 1 1 0%` — a grown field with no basis, which collapses on a
+narrow screen instead of taking the next line. 12rem is the width it
+wraps at.
+
+A long error message never buys its column extra width — the messages
+are `contain: inline-size`, so the sentence wraps under its own control
+rather than stretching the column and squeezing the field beside it.
+
+### The form owns the block rhythm
+
+`rst-form` is a flex column with a `var(--rst-sp-5)` gap — 24px, the
+same rhythm `rst-form-flow` uses — and it zeroes the block margins of
+every child it holds. That is one spacing mechanism rather
+than two: fields carry margins of their own for use outside a form, and
+inside one those margins used to add to the gap, so two fields sat 40px
+apart and the form gained 16px of dead air at each end where nothing was
+being separated from anything.
+
+It is stated as a rule over every child rather than a list of the
+classes the library happens to ship, because a list cannot name your own
+`<div>` and a child the list forgets lands at exactly the spacing the
+rule exists to prevent. The two exceptions are written into the
+selector: `rst-form__foot` and `rst-form-foot` keep their block-start
+margin, which is not rhythm but the extra air separating a closing
+action row from the last question above it.
+
+If you mean to override it, the rule is `.rst-form > *`, so an app class
+at one level of specificity loses. Say `.rst-form > .whatever` and you
+win.
+
 ## The busy button is not a guarantee
 
 `rastrillo.js` gives every submit button a loading state while its form

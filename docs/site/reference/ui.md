@@ -152,11 +152,16 @@ centred page, `topbar` adds a header bar with nav and an account menu,
 reports `false` for a name that is not shipped.
 
 A shell executes `{{template "content" .}}` for the page body and wraps
-it in chrome made of blocks with working defaults: `title`, `lang` and
-`dir` in all three, plus `brand`, `nav`, `account` and `locale` in the
-two chrome shells, and `foot` in `topbar`. No block reads a field off
-the data, so a shell renders the same whether a handler passes a struct,
-a `dict`-built map, or nil.
+it in chrome made of blocks with working defaults: `title`, `lang`,
+`dir` and `head` in all three, plus `brand`, `nav`, `account` and
+`locale` in the two chrome shells, and `foot` in `topbar`. No block
+reads a field off the data, so a shell renders the same whether a
+handler passes a struct, a `dict`-built map, or nil.
+
+`head` is the one that is not chrome: it is an empty slot at the foot of
+`<head>`, for a favicon, a meta tag, an extra stylesheet or a script
+that must run before the body. Being last means an app's own CSS wins
+the ties it should against `tokens.css` and the theme.
 
 `rastrillo new --shell` writes the chosen one as
 `templates/layout.html`. It is an ordinary template from then on — no
@@ -194,8 +199,13 @@ func DatetimeJS() []byte
 
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
 into the app's `static/`. `ShimJS` is `rastrillo.js` — the
-progressive-enhancement shim that drives `data-poll`, `data-poll-push`
-and `data-busy` ([Background jobs](/docs/jobs)). `SelectJS` backs the
+progressive-enhancement shim. It drives `data-poll` and
+`data-poll-push` ([Background jobs](/docs/jobs)); it gives every submit
+button a busy state and every form a double-submit guard by default,
+with `data-busy="false"` as the opt-out and `data-busy-label` as the
+label swap; and it closes an open `<details>` menu on an outside click
+or Escape, which is the one part of the menu idiom the native element
+cannot express. `SelectJS` backs the
 enhanced select: it mirrors a `<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one
