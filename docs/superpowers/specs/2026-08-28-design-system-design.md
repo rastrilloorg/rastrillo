@@ -1680,3 +1680,43 @@ bug rather than a redundancy: two affordances, one of which lies.
   branch; an ✕ tucked inside a field is exactly that shape.
 - It needs a new catalog key for its accessible name — twelve locales,
   and a trip through the copy gate with the rest of the new prose.
+
+### 7. The rail overflows the viewport by its own padding — REGRESSION, 2026-08-30
+
+Paul, with the live sidebar shell: *"Sidebar shell left nav is going off
+the edge of the viewport"* — the person at the rail's foot is clipped.
+
+Shipped this morning with the rail-foot change. `tokens.css:1133` gives
+the rail `padding: var(--rst-sp-4)` (1rem); `:1163` gives it
+`block-size: 100dvh`; and box-sizing is **deliberately not global** in
+this file (`:787` records why — it is set per component rather than in a
+`*` reset). So the rail is content-box: its border box is 100dvh + 32px,
+`position: sticky` at `inset-block-start: 0`, and the last 32px hang
+below the window. `overflow-y: auto` cannot help — the content fits the
+content box, so no scrollbar appears; the box is simply taller than the
+viewport.
+
+**Why the gate passed, which is the part worth keeping.** The drive
+asserts the person sits at the foot OF THE RAIL, and measured the rail
+at **932px in a 900px viewport**. That number is in the passing test's
+own output: 932 = 900 + 2×16. The assertion was true and the frame was
+wrong. Re-frame it against the viewport — the rail's border box must not
+exceed it — and the same drive would have failed on the day it landed.
+
+Fix per this file's convention: `box-sizing: border-box` on the rail
+itself, beside the components that already declare it, not a `*` reset.
+
+### 8. The collapsed rail needs a menu icon — RULED 2026-08-30 by Paul
+
+*"The sidebar shell should also provide a kebab / hamburger icon beside
+'Menu'."* — the `<summary>` of the disclosed rail below 800px, which is
+text-only today.
+
+**Vendor Lucide `menu`, do not reuse `kebab`.** The set is eleven slugs
+and has no hamburger. `kebab` means "more actions on this row"
+everywhere else in this system, and spending it on navigation blurs a
+distinction the vocabulary currently keeps. Add `menu` to `icons.go` and
+`IconSlugs()`; the Icons page (§6-v2.1 Task 5) derives from `IconSlugs()`
+rather than a literal list, so it picks the new icon up with no edit.
+
+`aria-hidden`, since it sits beside a visible text label.
