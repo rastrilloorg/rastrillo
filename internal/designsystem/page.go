@@ -15,7 +15,7 @@ import (
 //
 // Every URL on a page is an absolute path under mountPath: an asset is
 // /design-system/tokens.css, a shell demo is
-// /design-system/ink/en/shells/topbar.html, wherever the page holding
+// /design-system/day/en/shells/topbar.html, wherever the page holding
 // the link sits in the tree. There used to be a pair of "../../" depth
 // prefixes here instead; designsystem.go's mountPath comment has the
 // edge behaviour that made them wrong.
@@ -23,7 +23,7 @@ import (
 // The one thing absolute paths cost: a page can no longer link to
 // "itself" as a bare filename, so the theme and locale switchers point
 // their current entry at that page's canonical address. From
-// index.html that address is ink/en/index.html — a different file
+// index.html that address is day/en/index.html — a different file
 // holding the same bytes, which is what the tree root is.
 
 type navLink struct {
@@ -373,7 +373,7 @@ func subhead(locale, theme, localeName string) template.HTML {
 
 // indexHref is one theme × locale page's canonical address. Every
 // switcher entry uses it, the current one included: the tree root is a
-// copy of ink/en, so "the page you are on" and "this page's address"
+// copy of day/en, so "the page you are on" and "this page's address"
 // are the same document even when they are two files.
 func indexHref(theme, locale string) string {
 	return mountPath + "/" + theme + "/" + locale + "/index.html"
@@ -736,14 +736,23 @@ func heightOf(id string) int {
 }
 
 // srcdocScripts names the framework scripts one sample needs, by the
-// attribute each of them boots on. A sample that needs none — most of
-// them — gets a document with no script in it at all, which is both
-// smaller and the truth about that component.
+// attribute — or, for the menus, the class — each of them boots on. A
+// sample that needs none — most of them — gets a document with no
+// script in it at all, which is both smaller and the truth about that
+// component.
+//
+// The menu classes are here because light dismiss is the one thing a
+// <details> menu cannot do by itself, and a preview that cannot do it
+// teaches the opposite of what the shim exists for: a reader who clicks
+// away from an open menu in the frame and watches it stay open has been
+// told, by the page, that menus do not close. It costs one script tag
+// in each frame that holds a menu: 20,202 bytes across the whole tree
+// when it was added, 0.13% of it, against a ceiling still 5.3 MiB away.
 var srcdocScripts = []struct {
 	asset string
 	hooks []string
 }{
-	{"rastrillo.js", []string{"data-poll"}},
+	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
 	{"select.js", []string{"data-rst-select"}},
 	{"datetime.js", []string{"data-rst-date", "data-rst-time", "data-rst-range"}},
 }

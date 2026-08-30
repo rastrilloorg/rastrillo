@@ -887,10 +887,13 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 
 // proseLeakFloor is the length above which an English prose string is a
 // sentence and below which it is a word. Only the sentences are swept
-// for; at the time of writing that is 148 of the 190 keys, and the
-// other 42 — "Theme", "Tokens", "Sections", "Shells", "Required",
-// "Type scale", "Pick one", every switcher label and every one-word
-// state — are not swept for at all.
+// for; today that is 158 of the 207 keys, and the other 49 — "Theme",
+// "Tokens", "Sections", "Shells", "Required", "Type scale", "Pick one",
+// every switcher label and every one-word state — are not swept for at
+// all. Those three numbers are len([]rune(key)) >= proseLeakFloor over
+// proseKeysRendered, which is the same arithmetic the sweep below does:
+// count them again rather than believe this sentence, because they move
+// every time the page gains or loses a line of prose.
 //
 // That is a smaller hole than it sounds, because a short label is the
 // PARITY gate's job, not this one's. TestEveryProseKeyIsTranslated

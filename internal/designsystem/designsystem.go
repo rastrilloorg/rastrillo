@@ -71,7 +71,7 @@ const mountPath = "/design-system"
 // Render builds the whole design-system tree in memory: path relative to
 // docs/design-system → file content.
 //
-//	index.html                            ink, en, assets at the tree root
+//	index.html                            day, en, assets at the tree root
 //	<theme>/<locale>/index.html           the same page, 36 times
 //	<theme>/<locale>/modal.html           36 modal demos, one per index
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos

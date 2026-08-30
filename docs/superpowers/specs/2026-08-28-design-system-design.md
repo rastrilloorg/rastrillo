@@ -623,7 +623,8 @@ docs/design-system/
 committed.~~ ~~As built: 188 files … 4,427,216 bytes — 4.22 MiB, well
 under the ~15 MB estimate.~~ As built after v2: **189 files** (36 index
 pages + 36 modal demos + 108 shell pages + the root index + 8 shared
-assets — `gallery.js` is the eighth), **15,335,806 bytes / 14.63 MiB**.
+assets — `gallery.js` is the eighth), **15,356,180 bytes / 14.64 MiB**
+(15,335,806 before the menu previews gained the shim).
 The estimate was right after all; the previews are what closed the gap,
 since every example on an index page carries two `srcdoc` documents of
 its own. `TestTreeStaysUnderTheSizeGate` holds the whole rendered tree
@@ -1038,8 +1039,8 @@ and the button under each shell demo. The theme and language switchers
 deliberately stay in the tab you are reading, and
 `TestEveryDemoLinkOpensInANewTab` says which is which and why.
 
-**Cost.** 4.95 MiB → 14.63 MiB (5,185,476 bytes at `4eaeb39`), index
-page 110,703 → 374,287 bytes, under
+**Cost.** 4.95 MiB → 14.64 MiB (5,185,476 bytes at `4eaeb39`), index
+page 110,703 → 374,833 bytes, under
 the unchanged 20 MiB ceiling, with the arithmetic in the gate's comment:
 each sample is written twice (escaped `srcdoc` plus escaped source) and
 attribute escaping costs ~40% because every quote becomes six
