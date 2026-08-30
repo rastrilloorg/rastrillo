@@ -56,9 +56,14 @@ type partialView struct {
 	States []stateView
 }
 
+// familyView is one family of partials — and, since the split, one
+// PAGE of the gallery. Key is the family's row in samples.go, which is
+// what pageKinds() names the page after and what familyNav matches on;
+// Title and Blurb are the page's own heading and its opening sentence,
+// already localised.
 type familyView struct {
+	Key      string
 	Title    string
-	ID       string
 	Blurb    string
 	Partials []partialView
 }
@@ -143,6 +148,14 @@ type pageView struct {
 	Idioms    []idiomView
 	Shells    []shellView
 
+	// Family is the one family this page IS, where the page is a
+	// component family, and nil on every other page. Families beside
+	// it stays the whole list on every page, because the rail is the
+	// same on all of them and lists all of them; this is the narrowing
+	// the body renders. See renderGallery, which is the only thing that
+	// sets it.
+	Family *familyView
+
 	// Prev and Next are the pair of links at the foot of the page, in
 	// pageKinds() order. Either is nil at the ends of the sequence:
 	// the Overview has no previous and the last page has no next.
@@ -193,9 +206,6 @@ type pageView struct {
 // family, a shell's name — which the rail draws in the mono face for
 // the same reason the headings on the page do.
 //
-// Group marks a family heading inside the Partials section: a link like
-// any other, drawn as the rail's own group label, and hidden by the
-// filter when everything under it has gone.
 // Blank marks the entries that leave this document — the demo pages,
 // the only off-page links the rail has. They open in a new tab for the
 // reason every other demo link on this page does: a reader is in the
@@ -205,7 +215,6 @@ type navItem struct {
 	Label string
 	Href  string
 	Code  bool
-	Group bool
 	Blank bool
 
 	// Aria is the accessible name, where it has to differ from the
@@ -276,7 +285,7 @@ type pageKind struct {
 }
 
 func pageKinds() []pageKind {
-	return []pageKind{
+	kinds := []pageKind{
 		{Kind: "overview", File: "index.html", Title: "Overview"},
 		{Kind: "getting-started", File: "getting-started.html", Title: "Getting started", Nav: assetNav,
 			Blurb: "The two stylesheets and three scripts the framework ships, what each one is for, and what each one weighs."},
@@ -284,13 +293,46 @@ func pageKinds() []pageKind {
 			Blurb: "Every custom property the system is built out of: the theme's colour and type, and the scales for size, spacing and radius."},
 		{Kind: "icons", File: "icons.html", Title: "Icons", Nav: iconNav,
 			Blurb: "Every icon slug the framework answers, drawn at the size a component draws it, with the call to copy and the name lucide.dev publishes it under."},
-		{Kind: "components", File: "components.html", Title: "Components", Nav: componentNav,
-			Blurb: "The framework's template partials, each one rendered in every state it ships with, with the markup beside it."},
-		{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
-			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
-		{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
-			Blurb: "The three page frames rastrillo new can scaffold, each of them openable as a whole page at full width."},
 	}
+	// The component families, where the one components page used to be.
+	kinds = append(kinds, componentPages()...)
+	return append(kinds,
+		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
+			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
+		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
+			Blurb: "The three page frames rastrillo new can scaffold, each of them openable as a whole page at full width."},
+	)
+}
+
+// componentPages is one page per family in samples.go: the split that
+// took components.html from 97 preview frames to five pages of roughly
+// twenty.
+//
+// Read off families() rather than written out here, which is what makes
+// a family a page and not a page a family. A row added to samples.go is
+// a page in the tree, an entry in the rail, a tab in the strip, a step
+// in the prev/next sequence and a route off the Overview, with nothing
+// to remember on this side — and its Title and Blurb, which samples.go
+// already writes as prose keys, are the page's name and the sentence
+// the Overview routes to it with. That is why the split cost no new
+// English beyond the one family it added.
+//
+// Kind is the family key, so the file is form.html and the rail entry
+// is Form. The keys are not the other kinds' names and cannot become
+// them by accident: TestNoTwoPageKindsShareAName holds that.
+func componentPages() []pageKind {
+	fams := families()
+	out := make([]pageKind, 0, len(fams))
+	for _, fam := range fams {
+		out = append(out, pageKind{
+			Kind:  fam.Key,
+			File:  fam.Key + ".html",
+			Title: fam.Title,
+			Blurb: fam.Blurb,
+			Nav:   familyNav(fam.Key),
+		})
+	}
+	return out
 }
 
 // fileOf is one page kind's filename. It panics on a kind that is not
@@ -326,16 +368,29 @@ func tokenNav(mount, theme, locale string, view pageView) []navItem {
 	return items
 }
 
-func componentNav(mount, theme, locale string, view pageView) []navItem {
-	file := fileOf("components")
-	var items []navItem
-	for _, fam := range view.Families {
-		items = append(items, navItem{Label: fam.Title, Href: anchorHrefIn(mount, theme, locale, file, fam.ID), Group: true})
-		for _, p := range fam.Partials {
-			items = append(items, navItem{Label: p.Name, Href: anchorHrefIn(mount, theme, locale, file, p.ID), Code: true})
+// familyNav is one family page's rail entries: its own partials, by
+// name, on its own page.
+//
+// It closes over the family key rather than reading the page being
+// rendered, because the rail is the same on every page — every family's
+// section lists that family's partials wherever the reader is standing.
+// A key with no family renders an empty section rather than panicking:
+// pageKinds() builds both sides off families(), so that cannot happen
+// without the table having changed underneath.
+func familyNav(key string) func(mount, theme, locale string, view pageView) []navItem {
+	return func(mount, theme, locale string, view pageView) []navItem {
+		file := fileOf(key)
+		var items []navItem
+		for _, fam := range view.Families {
+			if fam.Key != key {
+				continue
+			}
+			for _, p := range fam.Partials {
+				items = append(items, navItem{Label: p.Name, Href: anchorHrefIn(mount, theme, locale, file, p.ID), Code: true})
+			}
 		}
+		return items
 	}
-	return items
 }
 
 func primitiveNav(mount, theme, locale string, view pageView) []navItem {
@@ -636,6 +691,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		view := base
 		view.Kind = pk.Kind
 		view.Title = proseIn(locale, pk.Title)
+		view.Family = familyOf(families, pk.Kind)
 		view.Pages = pageTabs(mount, theme, locale, pk.Kind)
 		view.Themes = themeLinks(mount, theme, locale, pk.File)
 		view.Locales = localeLinks(mount, theme, locale, pk.File)
@@ -667,15 +723,29 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 // TestNoUnregisteredEnglishInThePageTemplates can sweep this list
 // rather than a second one written beside it.
 func bodyTemplates() []struct{ kind, src string } {
-	return []struct{ kind, src string }{
+	out := []struct{ kind, src string }{
 		{"overview", overviewBody},
 		{"getting-started", gettingStartedBody},
 		{"tokens", tokensBody},
 		{"icons", iconsBody},
-		{"components", componentsBody},
 		{"primitives", primitivesBody},
 		{"shells", shellsBody},
+		// The one family body, under a name no page kind has, so
+		// renderBody never reaches it directly.
+		{"family", familyBody},
 	}
+	// Every family page renders that same body against its own
+	// pageView.Family. renderBody looks a body up as "ds-body-"+kind,
+	// so each family needs a name of its own; the alternative — five
+	// copies of a 20-line template, or a {{if eq .Kind}} chain inside
+	// one — is five things to keep in step for the same output.
+	for _, pk := range componentPages() {
+		out = append(out, struct{ kind, src string }{
+			pk.Kind,
+			fmt.Sprintf(`{{define "ds-body-%s"}}{{template "ds-family" .}}{{end}}`, pk.Kind),
+		})
+	}
+	return out
 }
 
 // renderBody executes one page's section body against the finished
@@ -851,16 +921,26 @@ func modalHref(mount, theme, locale string) string {
 
 // ── Partial samples ──────────────────────────────────────────────────
 
-// buildFamilies renders every sample in samples.go, then sweeps up any
-// partial ui defines that no family claims. A partial with no sample is
-// a gap in the documentation, not a reason to drop it off the page: it
-// gets its own section, its marker comment (so the coverage gate still
-// sees it), and a visible note saying it has no sample data yet.
+// familyOf is the family a page kind is, or nil where the page is not a
+// family page. The kind IS the family key — see componentPages — so
+// this is a lookup and not a second table.
+func familyOf(fams []familyView, kind string) *familyView {
+	for i := range fams {
+		if fams[i].Key == kind {
+			return &fams[i]
+		}
+	}
+	return nil
+}
+
+// buildFamilies renders every sample in samples.go and holds the table
+// to ui: a partial samples.go documents that ui does not define, and a
+// partial ui defines that no family claims, are both errors here.
 func buildFamilies(mount string, tmpl *template.Template, theme, locale string) ([]familyView, error) {
 	claimed := map[string]bool{}
-	out := make([]familyView, 0, len(families())+1)
+	out := make([]familyView, 0, len(families()))
 	for _, fam := range families() {
-		view := familyView{Title: proseIn(locale, fam.Title), ID: anchorID("family", fam.Title), Blurb: proseIn(locale, fam.Blurb)}
+		view := familyView{Key: fam.Key, Title: proseIn(locale, fam.Title), Blurb: proseIn(locale, fam.Blurb)}
 		for _, doc := range fam.Partials {
 			if tmpl.Lookup(doc.Name) == nil {
 				return nil, fmt.Errorf("samples.go documents %q, which ui does not define", doc.Name)
@@ -897,28 +977,21 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 		}
 	}
 	sort.Strings(orphans)
+	// A partial no family claims used to get an "Ungrouped" section at
+	// the foot of the one components page: listed rather than dropped,
+	// because a component nobody documented is still a component apps
+	// can call.
+	//
+	// There is no such page any more. A family IS a page, so a partial
+	// with no family has nowhere to be, and the choices were a page
+	// that exists only on the days something is broken or a failure
+	// that says so. This is the failure. It is stricter than what it
+	// replaces — the old sweep let a partial reach the gallery with no
+	// sample and no thought — and it fails at build rather than in a
+	// coverage gate, so the message can name the file to edit.
 	if len(orphans) > 0 {
-		view := familyView{
-			Title: proseIn(locale, "Ungrouped"),
-			ID:    anchorID("family", "Ungrouped"),
-			Blurb: proseIn(locale, "Partials ui defines that samples.go has not been taught to render yet. They are listed rather than dropped, because a component nobody documented is still a component apps can call."),
-		}
-		for _, name := range orphans {
-			pv := partialView{Name: name, ID: anchorID("partial", name), Marker: marker("partial", name), Blurb: proseIn(locale, "No sample data yet — add one in internal/designsystem/samples.go.")}
-			// Many partials guard every optional field, so an empty
-			// dict renders something honest. One that does not simply
-			// shows its heading and the note above.
-			if html, err := renderSample(tmpl, name, 0, sample{Data: map[string]any{}}, locale); err == nil {
-				pv.States = append(pv.States, stateView{
-					State: proseIn(locale, "Rendered from an empty data value"),
-					Preview: newPreview(mount, theme, locale, pv.ID+"-0",
-						previewTitle(locale, name, "Rendered from an empty data value"),
-						string(html), heightOf(pv.ID)),
-				})
-			}
-			view.Partials = append(view.Partials, pv)
-		}
-		out = append(out, view)
+		return nil, fmt.Errorf("ui defines %d partial(s) no family in samples.go claims: %s — every partial belongs to a family, because a family is a page of this gallery; add them to families() in internal/designsystem/samples.go",
+			len(orphans), strings.Join(orphans, ", "))
 	}
 	return out, nil
 }
@@ -1963,8 +2036,6 @@ const dsCSS = `
 .ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
 .ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
-.ds-family { margin: var(--rst-sp-6) 0 0; }
-.ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
 .ds-partial { margin: var(--rst-sp-5) 0; }
 .ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
 .ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
@@ -2094,7 +2165,6 @@ const dsCSS = `
 .ds-nav__page:hover { color: var(--rst-text); }
 .ds-nav > details > summary:hover { color: var(--rst-text); }
 .ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
 /* The filter hides a link by setting [hidden] on it, and the shell
    paints every rail link display: block — which the browser's own
    [hidden] rule loses to. This selector outranks it rather than
@@ -2196,7 +2266,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
-{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
+{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
 {{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a>
 {{end}}{{end}}  </nav>
 </aside>
@@ -2355,21 +2425,31 @@ const tokensBody = `{{define "ds-body-tokens"}}
 {{end}}
 {{end}}`
 
-const componentsBody = `{{define "ds-body-components"}}
-<div class="ds-head"><h2 id="components">{{P "Components"}}</h2></div>
+// familyBody is every component page: the family whose page this is,
+// its partials, and the four sentences that are true of all of them.
+//
+// One template for five pages rather than five: the pages differ in
+// which family they are and in nothing else, and the four notes below
+// belong on each of them — a reader who lands on Form from a search has
+// not read the Display page's preamble.
+//
+// The shape is the primitives page's shape, one heading level shallower
+// than the old components page: the family is the h2 now that it is the
+// page, and a partial is an h3 rather than an h4 under a family h3 that
+// repeated the page's own title.
+const familyBody = `{{define "ds-family"}}{{with .Family}}
+<div class="ds-head"><h2>{{.Title}}</h2></div>
+<p class="ds-lead">{{.Blurb}}</p>
+{{end}}
 <p class="ds-lead">{{P "Components give you pre-built, consistent UI elements, rendered server-side."}}</p>
 <p class="ds-note">{{P "The framework's own vocabulary calls these partials: ui.Templates() returns partials, and docs/site/templates.md documents them under that name. The word on this page changed; the code's did not."}}</p>
 ` + deadLinkCallout + `
 <p class="ds-note">{{P "Each sample below in its own frame."}}</p>
 <p class="ds-note">{{P "Sample content in English. Sample shells translated."}}</p>
-{{range .Families}}
-<section class="ds-family" id="{{.ID}}" data-ds-anchor>
-<h3>{{.Title}}</h3>
-<p class="ds-lead">{{.Blurb}}</p>
-{{range .Partials}}
+{{range .Family.Partials}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
-<h4 class="rst-mono">{{.Name}}</h4>
+<h3 class="rst-mono">{{.Name}}</h3>
 <p class="ds-lead">{{.Blurb}}</p>
 {{range .States}}
 <div class="ds-sample">
@@ -2379,8 +2459,6 @@ const componentsBody = `{{define "ds-body-components"}}
 </div>
 {{end}}
 </article>
-{{end}}
-</section>
 {{end}}
 {{end}}`
 

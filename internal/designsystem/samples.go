@@ -73,9 +73,21 @@ type partialDoc struct {
 }
 
 // family groups partials the way ui's own doc comment does: the list
-// screen, the display vocabulary, the form controls, and the route-level
-// pages. A partial with no family lands in "Ungrouped" rather than
-// vanishing — see page.go's ungroupedPartials.
+// screen, the display vocabulary, the form controls, the date and time
+// fields, and the route-level pages.
+//
+// A family is a PAGE of the gallery now, not a section of one — see
+// pageKinds() in page.go, which reads its component rows straight off
+// this table. Two consequences worth knowing before editing here:
+//
+//   - Title and Blurb are the page's own name and the sentence the
+//     Overview routes readers to it with, so they are prose keys twice
+//     over and a new family needs its eleven translations before
+//     anything builds;
+//   - every partial ui.Templates() defines must appear in some family.
+//     A partial no family claims used to land in an "Ungrouped" section
+//     of the one components page; there is no such page to land on any
+//     more, so buildFamilies fails instead and names the partial.
 type family struct {
 	Key      string
 	Title    string
@@ -437,42 +449,6 @@ func families() []family {
 					},
 				},
 				{
-					Name:   "field-date",
-					Blurb:  "A native date input, plus the natural-language combobox datetime.js arms unless the caller passes Plain. Type \"tomorrow\" into it.",
-					Wrap:   wrapForm,
-					States: dateStates("field-date", "2026-09-04", "The day it goes live."),
-				},
-				{
-					Name:   "field-time",
-					Blurb:  "The same envelope around a native time input. The enhancement reads a clock rather than a calendar.",
-					Wrap:   wrapForm,
-					States: timeStates(),
-				},
-				{
-					Name:   "field-datetime",
-					Blurb:  "A date and a time in one input, one value.",
-					Wrap:   wrapForm,
-					States: dateStates("field-datetime", "2026-09-04T19:30", "When it goes live."),
-				},
-				{
-					Name:  "field-daterange",
-					Blurb: "A start and an end as one labelled. Names must be unique since IDs are derived.",
-					Wrap:  wrapForm,
-					States: []sample{
-						{State: "Date and time, seeded", Data: map[string]any{
-							"Legend": "When", "Seed": "session",
-							"Start": map[string]any{"Name": "dr_starts_at", "Label": "Starts", "Value": "2026-09-04T19:30"},
-							"End":   map[string]any{"Name": "dr_ends_at", "Label": "Ends"},
-						}, Note: "Commit the start with the end still empty and the browser fills the end in an hour later. Nothing is seeded server-side."},
-						{State: "Dates only, with an error on the end", Data: map[string]any{
-							"Legend": "Booking", "Kind": "date",
-							"Start": map[string]any{"Name": "dr_from", "Label": "From", "Value": "2026-09-04"},
-							"End": map[string]any{"Name": "dr_to", "Label": "To", "Value": "2026-09-01",
-								"Error": "The end comes before the start."},
-						}},
-					},
-				},
-				{
 					Name:  "form-foot",
 					Blurb: "A form's closing row: one primary submit and an optional cancel link. Cancel is an anchor, because leaving a form is navigation.",
 					Wrap:  wrapForm,
@@ -511,6 +487,49 @@ func families() []family {
 						{State: "Ordinary, default cancel wording", Data: map[string]any{
 							"Action": "/posts/1/publish", "Label": "Publish", "CancelHref": "/posts/1",
 						}, Note: "No CancelLabel, so the cancel link is worded from the catalog."},
+					},
+				},
+			},
+		},
+		{
+			Key:   "date-and-time",
+			Title: "Date and time",
+			Blurb: "The four fields datetime.js enhances, each keeping its native input underneath, so a reader with no script gets the plain control and not a broken one.",
+			Partials: []partialDoc{
+				{
+					Name:   "field-date",
+					Blurb:  "A native date input, plus the natural-language combobox datetime.js arms unless the caller passes Plain. Type \"tomorrow\" into it.",
+					Wrap:   wrapForm,
+					States: dateStates("field-date", "2026-09-04", "The day it goes live."),
+				},
+				{
+					Name:   "field-time",
+					Blurb:  "The same envelope around a native time input. The enhancement reads a clock rather than a calendar.",
+					Wrap:   wrapForm,
+					States: timeStates(),
+				},
+				{
+					Name:   "field-datetime",
+					Blurb:  "A date and a time in one input, one value.",
+					Wrap:   wrapForm,
+					States: dateStates("field-datetime", "2026-09-04T19:30", "When it goes live."),
+				},
+				{
+					Name:  "field-daterange",
+					Blurb: "A start and an end as one labelled. Names must be unique since IDs are derived.",
+					Wrap:  wrapForm,
+					States: []sample{
+						{State: "Date and time, seeded", Data: map[string]any{
+							"Legend": "When", "Seed": "session",
+							"Start": map[string]any{"Name": "dr_starts_at", "Label": "Starts", "Value": "2026-09-04T19:30"},
+							"End":   map[string]any{"Name": "dr_ends_at", "Label": "Ends"},
+						}, Note: "Commit the start with the end still empty and the browser fills the end in an hour later. Nothing is seeded server-side."},
+						{State: "Dates only, with an error on the end", Data: map[string]any{
+							"Legend": "Booking", "Kind": "date",
+							"Start": map[string]any{"Name": "dr_from", "Label": "From", "Value": "2026-09-04"},
+							"End": map[string]any{"Name": "dr_to", "Label": "To", "Value": "2026-09-01",
+								"Error": "The end comes before the start."},
+						}},
 					},
 				},
 			},
