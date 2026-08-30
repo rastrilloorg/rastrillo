@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/carlosframework/rastrillo/ui"
 )
@@ -425,18 +426,32 @@ func TestDoctorFindsARootStaticDirectory(t *testing.T) {
 	}
 }
 
-// TestDoctorRejectsSomethingThatIsNotAnApp: the failure has to name
-// what it looked for, because "no" without a reason sends someone
-// hunting through their own directory layout.
-func TestDoctorRejectsSomethingThatIsNotAnApp(t *testing.T) {
+// TestDoctorSaysWhatIsTrueOfAnAppWithNothingVendored: the failure has
+// to name what it looked for, because "no" without a reason sends
+// someone hunting through their own directory layout — and it must not
+// doubt the app. examples/notes is manifest-shaped, has no static/ at
+// all, and is a perfectly real rastrillo app; the honest answer there
+// is "nothing to compare", not "is this a rastrillo app?".
+func TestDoctorSaysWhatIsTrueOfAnAppWithNothingVendored(t *testing.T) {
 	dir := t.TempDir()
 	if _, err := diagnose(dir, ""); err == nil {
 		t.Fatal("diagnose accepted a directory with no go.mod")
 	}
 	mustWrite(t, filepath.Join(dir, "go.mod"), "module bare\n\ngo 1.24\n")
 	_, err := diagnose(dir, "")
-	if err == nil || !strings.Contains(err.Error(), "no vendored files") {
-		t.Fatalf("error %v, want one naming the missing vendored files", err)
+	if err == nil {
+		t.Fatal("diagnose accepted a module with nothing vendored in it")
+	}
+	if !strings.Contains(err.Error(), "nothing vendored to check") {
+		t.Errorf("error %v, want one saying there is nothing to compare", err)
+	}
+	for _, want := range []string{"tokens.css", "internal", "static"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %v does not name %q", err, want)
+		}
+	}
+	if strings.Contains(err.Error(), "a rastrillo app?") {
+		t.Errorf("the error doubts the app rather than reporting the state: %v", err)
 	}
 }
 
@@ -511,4 +526,171 @@ func printed(r *report, fixing bool) string {
 	var buf bytes.Buffer
 	r.print(&buf, fixing)
 	return buf.String()
+}
+
+// oldPinShape is the pin `rastrillo new` scaffolded at 36ee472 (#73),
+// verbatim: three files, no theme.css, no datetime.js, no
+// vendoredTheme. Both missing names joined the vendored set later
+// (#104, #106), which is the whole point of this fixture — an app
+// scaffolded in that window has a pin that never mentioned them, and
+// absence there means "predates", not "deleted on purpose".
+const oldPinShape = `package demoapptest
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/carlosframework/rastrillo/ui"
+)
+
+// The scaffold delivered these files once; they are app-owned from
+// then on. If you edit one DELIBERATELY, delete its line below — the
+// file is yours.
+func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
+	for name, lib := range map[string][]byte{
+		"tokens.css":   ui.TokensCSS(),
+		"rastrillo.js": ui.ShimJS(),
+		"select.js":    ui.SelectJS(),
+	} {
+		vendored, err := os.ReadFile(filepath.Join("..", "demoapp", "static", name))
+		if err != nil {
+			t.Errorf("read vendored %s: %v", name, err)
+			continue
+		}
+		if !bytes.Equal(vendored, lib) {
+			t.Errorf("static/%s differs from the library copy", name)
+		}
+	}
+}
+`
+
+// TestDoctorOldPinPredatingAFileIsNotAClaim is the 2025 population, and
+// the reason the old-shape fallback needs a second condition.
+//
+// The original pin listed three files. theme.css and datetime.js joined
+// the vendored set afterwards, so a pin from that window is silent
+// about both — and silence there cannot mean "the app deleted this
+// pin line on purpose", because there was never a line to delete.
+//
+// The fixture is the shape those apps actually reach doctor in: the
+// three pinned files clean, a theme.css the app really did hand-write
+// (present, unlisted — a genuine claim), and no datetime.js at all
+// (absent, unlisted — nothing was ever claimed). Calling the second one
+// a deliberate edit tells an app something false about its own history
+// AND makes --fix withhold a file it needs, with no override but
+// --force, which would also flatten the theme.
+func TestDoctorOldPinPredatingAFileIsNotAClaim(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	// The app hand-wrote its theme, and never had datetime.js.
+	mustWrite(t, filepath.Join(dir, "internal", "demoapp", "static", "theme.css"),
+		":root { --rst-bg: #fff8f0; }\n")
+	if err := os.Remove(filepath.Join(dir, "internal", "demoapp", "static", "datetime.js")); err != nil {
+		t.Fatal(err)
+	}
+
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	states := map[string]fileState{}
+	for _, f := range rep.files {
+		states[f.name] = f.state
+	}
+	if states["datetime.js"] != fileAbsent {
+		t.Errorf("datetime.js: state %v, want fileAbsent — the old pin never listed it, so its absence claims nothing",
+			states["datetime.js"])
+	}
+	if got := printed(rep, false); strings.Contains(got, "yours    datetime.js") {
+		t.Errorf("a file the pin never mentioned is reported as a deliberate edit:\n%s", got)
+	}
+	// The genuine claim still stands: theme.css exists and the pin
+	// stopped listing it, which is what deleting a pin line looks like.
+	if states["theme.css"] != fileMine {
+		t.Errorf("theme.css: state %v, want fileMine — a present, unlisted file is the old convention's claim",
+			states["theme.css"])
+	}
+
+	// And --fix must deliver the file without --force, without touching
+	// the theme.
+	var buf bytes.Buffer
+	if err := rep.applyFix(&buf, false); err != nil {
+		t.Fatalf("applyFix: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, "internal", "demoapp", "static", "datetime.js"))
+	if err != nil {
+		t.Fatalf("--fix did not deliver datetime.js: %v", err)
+	}
+	if !bytes.Equal(got, ui.DatetimeJS()) {
+		t.Error("datetime.js is not the library copy")
+	}
+	theme, _ := os.ReadFile(filepath.Join(dir, "internal", "demoapp", "static", "theme.css"))
+	if string(theme) != ":root { --rst-bg: #fff8f0; }\n" {
+		t.Error("--fix overwrote a theme the app hand-wrote")
+	}
+}
+
+// TestDoctorUsageErrorsExitTwo: cli.md tables 2 as usage, and a CI
+// branching on it has to be able to see it. Before this, an unknown
+// flag and an unknown theme both came out as 1, indistinguishable from
+// "your app is broken in a way I could not read".
+func TestDoctorUsageErrorsExitTwo(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	for _, tc := range []struct {
+		name string
+		args []string
+	}{
+		{"unknown flag", []string{"--badflag", dir}},
+		{"unknown theme", []string{"--theme", "nosuchtheme", dir}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := exitCode(t, runDoctor(tc.args)); got != 2 {
+				t.Errorf("exit %d, want 2", got)
+			}
+		})
+	}
+}
+
+// TestDoctorAdviceNamesSomethingTheAppHas: an app on the older pin has
+// no vendoredIsMine map, so telling it to add a name to one sends
+// someone looking for a thing that is not in their file.
+func TestDoctorAdviceNamesSomethingTheAppHas(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	mustWrite(t, filepath.Join(dir, "internal", "demoapp", "static", "select.js"), "// drifted\n")
+
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := printed(rep, false)
+	if !strings.Contains(out, "delete the file's line from the pin in internal/demoapptest/vendored_test.go") {
+		t.Errorf("an older app is not told how its own pin works:\n%s", out)
+	}
+	if strings.Contains(out, "vendoredIsMine") {
+		t.Errorf("an older app is told to edit a map its pin does not have:\n%s", out)
+	}
+}
+
+// TestClipDoesNotSplitARune: a drift sample is read by a person, and
+// half a rune is not readable in any locale.
+func TestClipDoesNotSplitARune(t *testing.T) {
+	// Hindi, Arabic and Japanese — three of the eleven the framework
+	// ships catalogs for, all multibyte.
+	for _, s := range []string{
+		strings.Repeat("क", 90), strings.Repeat("ب", 90), strings.Repeat("日", 90),
+	} {
+		got := clip(s, 68)
+		if !utf8.ValidString(got) {
+			t.Errorf("clip produced invalid UTF-8 from %.6s…", s)
+		}
+		if n := utf8.RuneCountInString(got); n != 69 { // 68 plus the ellipsis
+			t.Errorf("clip kept %d runes, want 68 and an ellipsis", n)
+		}
+	}
+	if got := clip("short", 68); got != "short" {
+		t.Errorf("clip(%q) = %q, want it untouched", "short", got)
+	}
 }

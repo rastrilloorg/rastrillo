@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/carlosframework/rastrillo/ui"
 )
@@ -58,8 +59,12 @@ func runDoctor(args []string) error {
 	fix := fset.Bool("fix", false, "re-copy each drifted file from this binary's library copy")
 	force := fset.Bool("force", false, "with --fix: re-copy across a version mismatch, and over files recorded as deliberate edits")
 	theme := fset.String("theme", "", "the theme static/theme.css should match (default: the app's own pin, else whichever shipped theme it matches)")
+	// A usage mistake exits 2, which is what this command's own
+	// exit-code table promises and what a CI branching on it will look
+	// for. flag.ContinueOnError has already printed the error and the
+	// usage, so the code travels out with no second message.
 	if err := fset.Parse(args); err != nil {
-		return err
+		return exitError{code: 2}
 	}
 	dir := "."
 	if rest := fset.Args(); len(rest) > 0 {
@@ -71,7 +76,8 @@ func runDoctor(args []string) error {
 	}
 	if *theme != "" {
 		if _, ok := ui.ThemeCSS(*theme); !ok {
-			return fmt.Errorf("unknown theme %q: known themes are %s", *theme, strings.Join(ui.ThemeNames(), ", "))
+			return exitError{code: 2, msg: fmt.Sprintf("unknown theme %q: known themes are %s",
+				*theme, strings.Join(ui.ThemeNames(), ", "))}
 		}
 	}
 
@@ -146,6 +152,7 @@ type report struct {
 	theme      string // the theme the comparison used; empty when unidentified
 	themeFrom  string // how the theme was decided, for the one-line explanation
 	pinFile    string // relative path of the app's vendored_test.go, if it has one
+	pinLegacy  bool   // that pin is the older map-literal shape, with no vendoredIsMine
 	files      []vendoredFile
 }
 
@@ -214,8 +221,8 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	}
 	r.staticDir = rel(dir, staticDir)
 
-	pinPath, pin := readPin(dir, pkg)
-	r.pinFile = rel(dir, pinPath)
+	pinPath, pin := readPin(dir, pkg, staticDir)
+	r.pinFile, r.pinLegacy = rel(dir, pinPath), pin.legacy
 
 	themeCSS, _ := os.ReadFile(filepath.Join(staticDir, "theme.css"))
 	r.theme, r.themeFrom = themeIdentity(themeFlag, pin.theme, themeCSS)
@@ -282,18 +289,26 @@ func findStaticDir(dir, pkg string) (string, error) {
 			}
 		}
 	}
-	// Nothing found. Naming the directory it looked in first is more
-	// use than listing every place it looked.
-	return "", fmt.Errorf("no vendored files under %s: is %s a rastrillo app?",
-		rel(dir, candidates[0]), dir)
+	// Nothing found — which is a real state a real rastrillo app can be
+	// in. examples/notes is manifest-shaped and has no static/ at all,
+	// and doubting whether it is a rastrillo app would be both rude and
+	// wrong. Say what is actually true: there is nothing here to
+	// compare, and name the places that were looked in so someone whose
+	// app keeps its assets elsewhere can point doctor at them.
+	return "", fmt.Errorf("nothing vendored to check in %s: no %s under %s, %s or %s",
+		dir, strings.Join(ui.VendoredNames(), ", "),
+		rel(dir, candidates[0]), filepath.Join("internal", "*", "static"), "static")
 }
 
 // pinInfo is what the app's own vendored_test.go says: the theme it was
-// scaffolded with, and which files it has stopped pinning because the
-// app edited them on purpose.
+// scaffolded with, which files it has stopped pinning because the app
+// edited them on purpose, and which of the two shapes said so — the
+// advice doctor prints has to name a thing the app's own file actually
+// has.
 type pinInfo struct {
-	theme string
-	mine  map[string]bool
+	theme  string
+	mine   map[string]bool
+	legacy bool // the pre-vendoredIsMine shape: a map literal you deleted a line from
 }
 
 var (
@@ -305,7 +320,10 @@ var (
 // readPin finds and reads the app's vendored_test.go. Everything it
 // returns is optional: an app that never had the test, or deleted it,
 // is one of the cases doctor exists for.
-func readPin(dir, pkg string) (string, pinInfo) {
+//
+// staticDir is needed for the older shape only — see the comment on
+// that branch. Nothing else here touches the app's files.
+func readPin(dir, pkg, staticDir string) (string, pinInfo) {
 	pin := pinInfo{mine: map[string]bool{}}
 	path := ""
 	candidates := []string{filepath.Join(dir, "internal", pkg+"test", "vendored_test.go")}
@@ -344,17 +362,38 @@ func readPin(dir, pkg string) (string, pinInfo) {
 	// way — an app that followed the instruction it was given must not
 	// have its deliberate edit reported as damage, and must not have it
 	// overwritten by --fix.
+	//
+	// With one condition, and it is the whole reason this branch is
+	// longer than it looks. The original pin (36ee472, #73) listed
+	// THREE files; theme.css and datetime.js joined the vendored set
+	// afterwards (#104, #106). So for an app scaffolded in that window,
+	// a name missing from its pin means "predates it", not "deleted on
+	// purpose" — there was never a line there to delete. Reading it as
+	// a claim tells that app something false about its own history, and
+	// makes --fix withhold a file it genuinely needs.
+	//
+	// Existence separates the two, and it is the only signal that can.
+	// Deleting a pin line is what you do to keep a file you edited, so
+	// the file is still there. A name the pin never had is a file the
+	// app never received, so it is not. Absent-and-unlisted therefore
+	// reports as `absent` — truthful under either reading, and the one
+	// state --fix can act on without --force.
 	listed := false
 	for _, name := range ui.VendoredNames() {
 		if strings.Contains(src, `"`+name+`"`) {
 			listed = true
 		}
 	}
-	if listed {
-		for _, name := range ui.VendoredNames() {
-			if !strings.Contains(src, `"`+name+`"`) {
-				pin.mine[name] = true
-			}
+	if !listed {
+		return path, pin
+	}
+	pin.legacy = true
+	for _, name := range ui.VendoredNames() {
+		if strings.Contains(src, `"`+name+`"`) {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(staticDir, name)); err == nil {
+			pin.mine[name] = true
 		}
 	}
 	return path, pin
@@ -489,7 +528,7 @@ func (r *report) print(w io.Writer, fixing bool) {
 	default:
 		fmt.Fprintf(w, "%d of %s differ from the library copy%s.\n", n, plural(compared, "file"), leftAlone(left))
 		fmt.Fprintln(w, "Run `rastrillo doctor --fix` to re-copy them, or record the edit as deliberate:")
-		fmt.Fprintf(w, "add the file's name to vendoredIsMine%s.\n", pinSuffix(r.pinFile))
+		fmt.Fprintln(w, r.recordAdvice())
 	}
 }
 
@@ -519,12 +558,20 @@ func leftAlone(n int) string {
 	return fmt.Sprintf(" (%s left alone, above)", plural(n, "file"))
 }
 
-// pinSuffix names the file to edit, when the app has one.
-func pinSuffix(pin string) string {
-	if pin == "" {
-		return " in the app's vendored_test.go"
+// recordAdvice says how to claim a file, in the words of the pin this
+// app actually has. Telling an older app to add a name to a
+// vendoredIsMine map its file does not contain sends someone looking
+// for a thing that is not there — and the older shape has its own way
+// of saying the same thing, which still works.
+func (r *report) recordAdvice() string {
+	where := "the app's vendored_test.go"
+	if r.pinFile != "" {
+		where = r.pinFile
 	}
-	return " in " + pin
+	if r.pinLegacy {
+		return "delete the file's line from the pin in " + where + "."
+	}
+	return "add the file's name to vendoredIsMine in " + where + "."
 }
 
 // applyFix re-copies the drifted files. It writes to files a person
@@ -653,11 +700,16 @@ func lines(b []byte) []string {
 	return strings.Split(s, "\n")
 }
 
+// clip truncates by RUNES, not bytes. A hand-edited file in any of the
+// eleven non-Latin locales the framework ships for can easily carry a
+// comment that a byte slice would cut mid-sequence, and a drift sample
+// that prints mojibake is a sample nobody can act on.
 func clip(s string, n int) string {
-	if len(s) <= n {
+	if utf8.RuneCountInString(s) <= n {
 		return s
 	}
-	return s[:n] + "…"
+	runes := []rune(s)
+	return string(runes[:n]) + "…"
 }
 
 // size prints a byte count with thousands separators: the numbers here
