@@ -3,6 +3,7 @@
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "Paginação"
 rastrillo.ui.search_submit = "Pesquisar"
+rastrillo.ui.search_clear = "Limpar a pesquisa"
 rastrillo.ui.cancel = "Cancelar"
 rastrillo.ui.done = "Seleção concluída"
 rastrillo.ui.select_filter = "Escreva para filtrar"

@@ -148,8 +148,14 @@ func families() []family {
 					States: []sample{
 						{State: "With a query", Data: map[string]any{
 							"Action": "/comments", "Query": "spam", "Placeholder": "Search comments",
-							"Hidden": [][2]string{{"page", "1"}},
-						}},
+							"Hidden": [][2]string{{"status", "held"}},
+						},
+							Note: "The ✕ is a link to the same screen with the query dropped. The status filter rides in Hidden and survives it."},
+						{State: "With a query on page 4", Data: map[string]any{
+							"Action": "/comments", "Query": "spam", "Placeholder": "Search comments",
+							"Hidden": [][2]string{{"page", "4"}}, "ClearHref": "/comments",
+						},
+							Note: "Nothing in Hidden says which pair is the page, so the default would carry page=4 into a result set that no longer has four pages. ClearHref is how an app resets it."},
 						{State: "Empty, accessible name from the catalog", Data: map[string]any{"Action": "/comments"},
 							Note: "No Placeholder. The input's accessible name comes from the framework catalog in the current language."},
 					},

@@ -35,6 +35,7 @@ import (
 
 	"github.com/chromedp/chromedp"
 
+	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/harness"
 )
 
@@ -945,6 +946,562 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 			if in.StartStart == "0px" {
 				t.Errorf("%s: it computes %s inside a card — the card's own corner rule is not reaching a full-bleed row", name, in)
 			}
+		}
+	}
+}
+
+// menuCorner is one corner of the window with a twelve-item menu in it —
+// the shape of the bug §6-v2.1b was written about, since the language
+// menu is exactly twelve entries and measures 388px.
+type menuCorner struct {
+	id      string
+	style   string
+	rowMenu bool
+}
+
+var menuCorners = []menuCorner{
+	{id: "tl", style: "inset-block-start:8px;inset-inline-start:8px"},
+	{id: "tr", style: "inset-block-start:8px;inset-inline-end:8px"},
+	{id: "bl", style: "inset-block-end:8px;inset-inline-start:8px", rowMenu: true},
+	{id: "br", style: "inset-block-end:8px;inset-inline-end:8px"},
+}
+
+// menuReading is one opened menu, measured against the window it opened
+// in. Every field is here because an assertion below needs it AND
+// because a failure is unreadable without it: "the menu did not flip"
+// says nothing without the two rectangles that prove it.
+type menuReading struct {
+	SummaryTop, SummaryBottom       int
+	SummaryLeft, SummaryRight       int
+	MenuTop, MenuBottom             int
+	MenuLeft, MenuRight             int
+	ScrollHeight, ClientHeight      int
+	MaxBlockSize, OverflowY         string
+	SupportsArea, SupportsTry       bool
+	SupportsScope, SupportsNonsense bool
+	SupportsControl                 bool
+	ViewportW, ViewportH            int
+}
+
+// menuMeasure opens every menu on the page and reads it back. The
+// capability probes ride along with the geometry deliberately: they are
+// read from the same engine in the same run, so a failure names both
+// halves at once.
+const menuMeasure = `(() => {
+  const out = {};
+  for (const box of document.querySelectorAll('[data-corner]')) {
+    const d = box.querySelector('details');
+    d.open = true;
+    const s = d.querySelector('summary').getBoundingClientRect();
+    const m = d.querySelector('.rst-dropdown__menu, .rst-row-menu__panel');
+    const r = m.getBoundingClientRect();
+    const cs = getComputedStyle(m);
+    out[box.dataset.corner] = {
+      SummaryTop: Math.round(s.top), SummaryBottom: Math.round(s.bottom),
+      SummaryLeft: Math.round(s.left), SummaryRight: Math.round(s.right),
+      MenuTop: Math.round(r.top), MenuBottom: Math.round(r.bottom),
+      MenuLeft: Math.round(r.left), MenuRight: Math.round(r.right),
+      ScrollHeight: m.scrollHeight, ClientHeight: m.clientHeight,
+      MaxBlockSize: cs.maxBlockSize, OverflowY: cs.overflowY,
+      SupportsArea: CSS.supports('position-area: block-end'),
+      SupportsTry: CSS.supports('position-try-fallbacks: flip-block'),
+      SupportsScope: CSS.supports('anchor-scope: --rst-menu'),
+      SupportsNonsense: CSS.supports('position-area: rastrillo-no-such-value'),
+      SupportsControl: CSS.supports('color: red'),
+      ViewportW: window.innerWidth, ViewportH: window.innerHeight,
+    };
+  }
+  return JSON.stringify(out);
+})()`
+
+// TestMenusCapTheirHeightScrollAndFlipToFitTheViewport is design spec
+// §6-v2.1b, sub-sections 1 and 2, in one drive because they are one
+// surface: .rst-dropdown__menu and .rst-row-menu__panel had no height
+// cap, no scroll, and no idea what was underneath them.
+//
+// THE CAP AND THE SCROLL are the everywhere half. A twelve-locale
+// language menu is 388px; on a short window its last entries were
+// simply unreachable, with nothing to drag. The drive requires the menu
+// to be really scrolling — scrollHeight above clientHeight — so a
+// future change that makes the fixture short enough to fit fails here
+// rather than quietly measuring nothing.
+//
+// THE FLIP is CSS anchor positioning, and it is Chromium-only today.
+// This drive runs Chromium, so it does not ask permission: the flip is
+// asserted flat, and the four capability probes are asserted alongside
+// it. That combination is the point, and it is what stops this being
+// the tenth gate on this branch that gated nothing:
+//
+//   - The geometry is asserted unconditionally. If the properties are
+//     renamed, dropped, or land behind a flag, the menu stops flipping
+//     and this goes red. There is no `if supported` for it to fall
+//     through.
+//   - The probes are asserted TRUE for the exact declarations
+//     tokens.css writes. A rename that CSS.supports starts answering
+//     false to fails here too, which is what tells the next reader
+//     WHY the geometry broke.
+//   - The probe is controlled in both directions: a nonsense
+//     position-area value must be answered FALSE and `color: red` must
+//     be answered TRUE. A CSS.supports that has started agreeing with
+//     everything, or refusing everything, cannot make this test green.
+//   - The fixture is proved to NEED the flip before the flip is
+//     asserted: the bottom corners are checked to have less room below
+//     the summary than the menu is tall. Without that a taller window
+//     would pass this test with no flip happening at all.
+//
+// RTL is a second pass over the same fixture, since every declaration
+// involved is a logical one and the inline flip is the half that would
+// give that away.
+func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+
+	// Twelve, because twelve locales is the menu that broke. The
+	// autonyms are transliterated here rather than in their own scripts:
+	// this drive measures boxes, and a font fallback that changed a
+	// glyph's width would move a number nobody meant to move.
+	var items []any
+	for _, name := range []string{
+		"English", "Espanol", "Portugues", "Gaeilge", "Arabiyya", "Hindi",
+		"Bangla", "Nihongo", "Russkiy", "Tieng Viet", "Jyutping", "Zhongwen",
+	} {
+		items = append(items, map[string]any{"Href": "#", "Label": name})
+	}
+
+	render := func(dir string) string {
+		var b strings.Builder
+		b.WriteString(`<!doctype html><html lang="en" dir="` + dir + `"><head><meta charset="utf-8">` +
+			`<title>menus</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css"></head><body>`)
+		for _, c := range menuCorners {
+			b.WriteString(`<div data-corner="` + c.id + `" style="position:fixed;` + c.style + `">`)
+			if c.rowMenu {
+				// Hand-written, the way tokens.css says the row-menu
+				// idiom is used, and here so the drive covers BOTH
+				// panels the new rule names rather than one of them.
+				b.WriteString(`<details class="rst-row-menu" name="rst-menu-` + c.id + `">` +
+					`<summary aria-label="Actions">` + string(rastrillo.Icon("kebab")) + `</summary>` +
+					`<div class="rst-row-menu__panel">`)
+				for _, it := range items {
+					b.WriteString(`<a href="#">` + it.(map[string]any)["Label"].(string) + `</a>`)
+				}
+				b.WriteString(`</div></details>`)
+			} else if err := tmpl.ExecuteTemplate(&b, "dropdown", map[string]any{
+				"Label": "Language", "Items": items, "MenuGroup": "rst-menu-" + c.id,
+			}); err != nil {
+				t.Fatalf("rendering the %s menu: %v", c.id, err)
+			}
+			b.WriteString(`</div>`)
+		}
+		b.WriteString(`</body></html>`)
+		return b.String()
+	}
+
+	ltr, rtl := render("ltr"), render("rtl")
+	mux := http.NewServeMux()
+	stylesheets(t, mux)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, ltr)
+	})
+	mux.HandleFunc("GET /rtl", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, rtl)
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	for _, leg := range []struct{ name, path string }{{"ltr", "/"}, {"rtl", "/rtl"}} {
+		var raw string
+		if err := chromedp.Run(ctx,
+			// 620px is short on purpose: it is the window in which a
+			// 388px menu opened from either bottom corner has nowhere
+			// to go, which is the whole subject.
+			chromedp.EmulateViewport(760, 620),
+			chromedp.Navigate(rig.Origin+leg.path),
+			chromedp.WaitVisible(`[data-corner="tl"] details`, chromedp.ByQuery),
+			chromedp.Evaluate(menuMeasure, &raw),
+		); err != nil {
+			t.Fatalf("%s: driving the menus: %v", leg.name, err)
+		}
+		var got map[string]menuReading
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("%s: reading the measurement (%q): %v", leg.name, raw, err)
+		}
+
+		for _, c := range menuCorners {
+			m, ok := got[c.id]
+			if !ok {
+				t.Fatalf("%s/%s: the menu was never measured", leg.name, c.id)
+			}
+			where := leg.name + "/" + c.id
+			t.Logf("%s: summary [%d,%d]-[%d,%d], menu [%d,%d]-[%d,%d] in %dx%d; %d of %dpx shown, max-block-size %s",
+				where, m.SummaryLeft, m.SummaryTop, m.SummaryRight, m.SummaryBottom,
+				m.MenuLeft, m.MenuTop, m.MenuRight, m.MenuBottom,
+				m.ViewportW, m.ViewportH, m.ClientHeight, m.ScrollHeight, m.MaxBlockSize)
+
+			// THE PROBE, AND THE PROBE'S OWN CONTROL. Read first,
+			// because everything below it is meaningless if CSS.supports
+			// has stopped discriminating.
+			if !m.SupportsControl {
+				t.Fatalf("%s: CSS.supports says this engine does not support `color: red`; the probe itself is broken, so nothing this drive reports about anchor positioning can be believed", where)
+			}
+			if m.SupportsNonsense {
+				t.Fatalf("%s: CSS.supports agreed to a position-area value that does not exist; it is answering true to everything, so a support check here would be worthless", where)
+			}
+			if !m.SupportsArea || !m.SupportsTry || !m.SupportsScope {
+				t.Fatalf("%s: this engine reports position-area %v, position-try-fallbacks %v, anchor-scope %v. tokens.css writes all three; if one has been renamed the menus below have silently stopped flipping", where, m.SupportsArea, m.SupportsTry, m.SupportsScope)
+			}
+
+			// THE CAP AND THE SCROLL.
+			if m.OverflowY != "auto" && m.OverflowY != "scroll" {
+				t.Errorf("%s: the menu computes overflow-y: %s, so a menu taller than the window still cannot be scrolled", where, m.OverflowY)
+			}
+			if m.ScrollHeight <= m.ClientHeight {
+				t.Errorf("%s: the menu shows all %dpx of its %dpx of entries, so this fixture is not tall enough to prove anything about the cap. Add entries or shorten the window.", where, m.ClientHeight, m.ScrollHeight)
+			}
+			if height := m.MenuBottom - m.MenuTop; height > m.ViewportH {
+				t.Errorf("%s: the menu is %dpx tall in a %dpx window — the cap is not holding", where, height, m.ViewportH)
+			}
+
+			// IN VIEW AT ALL. The plainest statement of what Paul
+			// asked for, and the one that fails whichever of the two
+			// flips has stopped working.
+			if m.MenuTop < -1 || m.MenuLeft < -1 || m.MenuBottom > m.ViewportH+1 || m.MenuRight > m.ViewportW+1 {
+				t.Errorf("%s: the menu sits at [%d,%d]-[%d,%d], outside the %dx%d window", where,
+					m.MenuLeft, m.MenuTop, m.MenuRight, m.MenuBottom, m.ViewportW, m.ViewportH)
+			}
+
+			// THE BLOCK FLIP, and first the proof that this corner
+			// needs one. Without this check a taller window would make
+			// the assertion below pass with nothing flipping.
+			menuHeight := m.MenuBottom - m.MenuTop
+			bottomCorner := strings.HasPrefix(c.id, "b")
+			if bottomCorner {
+				if room := m.ViewportH - m.SummaryBottom; room >= menuHeight {
+					t.Fatalf("%s: there is %dpx under the summary and the menu is %dpx tall, so it fits below and no flip is required. This fixture no longer tests the flip.", where, room, menuHeight)
+				}
+				if m.MenuBottom > m.SummaryTop+1 {
+					t.Errorf("%s: the menu's foot is at %d and the summary's head is at %d — it opened downward off the bottom of the window instead of flipping up", where, m.MenuBottom, m.SummaryTop)
+				}
+			} else if m.MenuTop < m.SummaryBottom-1 {
+				t.Errorf("%s: the menu's head is at %d, above the summary's foot at %d — it flipped upward where there was room below", where, m.MenuTop, m.SummaryBottom)
+			}
+		}
+	}
+}
+
+// TestTheScrollbarGutterHoldsTheLayoutStill is design spec §6-v2.1b.4:
+// clicking between a short screen and a long one moved the whole page
+// sideways by the scrollbar's width, and opening a modal did the same
+// thing in the other direction because its scroll lock takes the
+// scrollbar away.
+//
+// The control is the whole drive. --rst-scrollbar-gutter: auto is the
+// documented opt-out, so the same fixture with the token overridden is
+// the page as it was before the fix, and it MUST show the shift. If it
+// does not, this browser is drawing overlay scrollbars — the macOS
+// default, and chromedp's headless default until harness.WithScrollbars
+// turns it off — and the drive fails saying exactly that rather than
+// reporting a fix it never saw.
+func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
+	// A ruler and, for the tall pages, something to scroll. The ruler
+	// is a width: 100% block and body's own first child, so it reports
+	// the inline space the layout actually got and nothing in between
+	// can absorb a difference.
+	//
+	// document.documentElement.clientWidth is NOT that number, and was
+	// the first thing this drive tried: Chromium reports the full window
+	// width there whether or not a gutter is reserved, so every
+	// measurement agreed with every other one and the drive proved
+	// nothing at all.
+	const ruler = `<div id="ruler" style="width:100%;height:4px"></div>`
+	page := func(extra, body string) string {
+		return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>gutter</title>` +
+			`<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/theme.css">` + extra +
+			`</head><body>` + ruler + body + `</body></html>`
+	}
+	const optOut = `<style>:root{--rst-scrollbar-gutter:auto}</style>`
+	const tall = `<div style="height:3000px"></div>`
+
+	mux := http.NewServeMux()
+	stylesheets(t, mux)
+	for path, html := range map[string]string{
+		"/short":      page("", ""),
+		"/tall":       page("", tall),
+		"/short-auto": page(optOut, ""),
+		"/tall-auto":  page(optOut, tall),
+	} {
+		html := html
+		mux.HandleFunc("GET "+path, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprint(w, html)
+		})
+	}
+
+	rig := harness.New(t, func(string) http.Handler { return mux }, harness.WithScrollbars())
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	// The modal half is measured on one page rather than two, by adding
+	// the backdrop and reading the ruler again: nothing else about the
+	// document changes between the two numbers, which is the only way
+	// the difference can be attributed to the scroll lock.
+	const measure = `(() => {
+  const w = () => document.getElementById('ruler').getBoundingClientRect().width;
+  const before = w();
+  const b = document.createElement('div');
+  b.className = 'rst-backdrop';
+  document.body.appendChild(b);
+  const after = w();
+  b.remove();
+  return JSON.stringify({before, after});
+})()`
+
+	read := func(path string) (width int) {
+		t.Helper()
+		var raw string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(900, 600),
+			chromedp.Navigate(rig.Origin+path),
+			chromedp.WaitVisible(`#ruler`, chromedp.ByQuery),
+			chromedp.Evaluate(`JSON.stringify(Math.round(document.getElementById('ruler').getBoundingClientRect().width))`, &raw),
+		); err != nil {
+			t.Fatalf("measuring %s: %v", path, err)
+		}
+		if err := json.Unmarshal([]byte(raw), &width); err != nil {
+			t.Fatalf("reading %s (%q): %v", path, raw, err)
+		}
+		return width
+	}
+
+	short, tallW := read("/short"), read("/tall")
+	shortAuto, tallAuto := read("/short-auto"), read("/tall-auto")
+	t.Logf("stable: short %dpx, long %dpx — auto: short %dpx, long %dpx", short, tallW, shortAuto, tallAuto)
+
+	// THE CONTROL, first, because every assertion after it depends on
+	// this browser being able to show the bug at all.
+	if shortAuto == tallAuto {
+		t.Fatalf("with --rst-scrollbar-gutter: auto a short page and a long one both measure %dpx. This browser's scrollbars take no layout space, so nothing here can tell a working gutter from a missing one — check harness.WithScrollbars still reaches the browser.", shortAuto)
+	}
+
+	// THE FIX.
+	if short != tallW {
+		t.Errorf("a short page measures %dpx and a long one %dpx: the layout still slides by %dpx when the scrollbar comes and goes", short, tallW, short-tallW)
+	}
+
+	// THE SECOND BUG, which nobody had attributed to the scrollbar: the
+	// modal's scroll lock removes it, and the page jumps sideways while
+	// the reader is watching.
+	var raw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(900, 600),
+		chromedp.Navigate(rig.Origin+"/tall"),
+		chromedp.WaitVisible(`#ruler`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &raw),
+	); err != nil {
+		t.Fatalf("driving the modal scroll lock: %v", err)
+	}
+	var stable struct{ Before, After float64 }
+	if err := json.Unmarshal([]byte(raw), &stable); err != nil {
+		t.Fatalf("reading the modal measurement (%q): %v", raw, err)
+	}
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/tall-auto"),
+		chromedp.WaitVisible(`#ruler`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &raw),
+	); err != nil {
+		t.Fatalf("driving the modal scroll lock without the gutter: %v", err)
+	}
+	var auto struct{ Before, After float64 }
+	if err := json.Unmarshal([]byte(raw), &auto); err != nil {
+		t.Fatalf("reading the modal control (%q): %v", raw, err)
+	}
+	t.Logf("modal scroll lock: stable %.0f→%.0fpx, auto %.0f→%.0fpx", stable.Before, stable.After, auto.Before, auto.After)
+
+	if auto.Before == auto.After {
+		t.Fatalf("without the gutter, opening a modal left the page %vpx wide either way — the scroll lock is not removing a scrollbar here, so this leg is measuring nothing", auto.Before)
+	}
+	if stable.Before != stable.After {
+		t.Errorf("opening a modal took the page from %vpx to %vpx: body:has(.rst-backdrop) { overflow: hidden } is still yanking the scrollbar out from under the layout", stable.Before, stable.After)
+	}
+}
+
+// clearReading is the clear affordance measured where a finger lands:
+// its own box, and what is actually on top at the middle of it.
+type clearReading struct {
+	W, H          float64
+	Href          string
+	HitIsTheClear bool
+	Hit           string
+	InputRight    float64
+	InputTop      float64
+	InputBottom   float64
+	FormLeft      float64
+	FormRight     float64
+	ClearLeft     float64
+	ClearRight    float64
+}
+
+const clearMeasure = `(() => {
+  const form = document.querySelector('.rst-search');
+  const input = form.querySelector('input[type=search]');
+  const a = form.querySelector('.rst-search__clear');
+  const r = a.getBoundingClientRect(), ir = input.getBoundingClientRect(), fr = form.getBoundingClientRect();
+  const hit = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+  return JSON.stringify({
+    W: Math.round(r.width*100)/100, H: Math.round(r.height*100)/100,
+    Href: a.getAttribute('href'),
+    HitIsTheClear: !!(hit && hit.closest('.rst-search__clear')),
+    Hit: hit ? hit.tagName + '.' + (hit.getAttribute('class') || '') : 'nothing',
+    InputRight: ir.right, InputTop: ir.top, InputBottom: ir.bottom,
+    FormLeft: fr.left, FormRight: fr.right,
+    ClearLeft: r.left, ClearRight: r.right,
+  });
+})()`
+
+// TestClearingASearchIsALinkAndTheNativeCrossIsGone is design spec
+// §6-v2.1b.6, the bug Paul screenshotted: a search field holding "sere",
+// a ✕ beside it, and clicking the ✕ left the results and the ?q= exactly
+// where they were.
+//
+// That ✕ was ::-webkit-search-cancel-button doing precisely what it is
+// specified to do — clearing the input's VALUE — in a GET form that only
+// submits on submit. list-bar-search now renders a real link instead,
+// and tokens.css takes the native one away, because two affordances one
+// of which lies is worse than one that works.
+//
+// Three things are asserted, and the second is the one with teeth:
+//
+//  1. The link goes where clearing a search should go: the same screen
+//     with q dropped and the carried filter kept.
+//  2. The native ✕ is really gone. This is proved against a CONTROL
+//     page — a bare <input type="search"> with none of this library's
+//     CSS on it — which is clicked in the same place and MUST clear.
+//     If Chromium ever stops drawing that button, the control fails and
+//     says so, instead of the subject passing because there was never
+//     anything there to suppress.
+//  3. The target is at least 24×24 CSS px, WCAG 2.2 SC 2.5.8 (AA), and
+//     is really on top at its own centre — a 24px box under something
+//     else is not a 24px target.
+//
+// RTL is a second leg: the ✕ has to stay inside the field box when the
+// field mirrors, which is a claim about logical properties and nothing
+// else.
+func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+	var search strings.Builder
+	if err := tmpl.ExecuteTemplate(&search, "list-bar-search", map[string]any{
+		"Action": "/posts", "Query": "sere", "Placeholder": "Search posts",
+		"Hidden": [][2]string{{"status", "paid"}},
+	}); err != nil {
+		t.Fatalf("rendering the search form: %v", err)
+	}
+
+	mux := http.NewServeMux()
+	stylesheets(t, mux)
+	page := func(dir string) string {
+		return `<!doctype html><html lang="en" dir="` + dir + `"><head><meta charset="utf-8">` +
+			`<title>search</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css"></head><body>` +
+			`<div class="rst-page"><div class="rst-list">` + search.String() + `</div></div></body></html>`
+	}
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, page("ltr"))
+	})
+	mux.HandleFunc("GET /rtl", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, page("rtl"))
+	})
+	// The control: the same input with NONE of this library's CSS, so
+	// the browser draws its own ✕ exactly as it did before the fix.
+	mux.HandleFunc("GET /native", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>native</title>`+
+			`</head><body style="margin:0"><form><input id="q" type="search" name="q" value="sere" `+
+			`style="position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:300px;block-size:40px;font-size:20px">`+
+			`</form></body></html>`)
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	// clickTheNativeCross clicks where the browser draws its cancel
+	// button: just inside the input's trailing edge, on its centre line.
+	// The field is focused first because Chromium only makes the button
+	// live once the field has focus — found by driving it, and worth
+	// recording, since a drive that skips the focus measures a button
+	// that is there but inert and concludes it is absent.
+	clickTheNativeCross := func(sel string) chromedp.Action {
+		return chromedp.ActionFunc(func(ctx context.Context) error {
+			var at []float64
+			expr := fmt.Sprintf(`(() => { const r = document.querySelector(%q).getBoundingClientRect(); return [r.right - 8, r.top + r.height/2]; })()`, sel)
+			if err := chromedp.Evaluate(expr, &at).Do(ctx); err != nil {
+				return err
+			}
+			return chromedp.MouseClickXY(at[0], at[1]).Do(ctx)
+		})
+	}
+
+	var nativeValue string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(900, 600),
+		chromedp.Navigate(rig.Origin+"/native"),
+		chromedp.WaitVisible(`#q`, chromedp.ByQuery),
+		chromedp.Focus(`#q`, chromedp.ByQuery),
+		clickTheNativeCross(`#q`),
+		chromedp.Evaluate(`document.getElementById('q').value`, &nativeValue),
+	); err != nil {
+		t.Fatalf("driving the control input: %v", err)
+	}
+	if nativeValue != "" {
+		t.Fatalf("the control input still holds %q after a click on its trailing edge: this browser is not drawing ::-webkit-search-cancel-button there, so this drive cannot tell a suppressed one from an absent one", nativeValue)
+	}
+
+	for _, leg := range []struct{ name, path string }{{"ltr", "/"}, {"rtl", "/rtl"}} {
+		var raw, stillThere string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(900, 600),
+			chromedp.Navigate(rig.Origin+leg.path),
+			chromedp.WaitVisible(`.rst-search__clear`, chromedp.ByQuery),
+			chromedp.Evaluate(clearMeasure, &raw),
+			chromedp.Focus(`.rst-search input[type=search]`, chromedp.ByQuery),
+			clickTheNativeCross(`.rst-search input[type=search]`),
+			chromedp.Evaluate(`document.querySelector('.rst-search input[type=search]').value`, &stillThere),
+		); err != nil {
+			t.Fatalf("%s: driving the search form: %v", leg.name, err)
+		}
+		var got clearReading
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("%s: reading the measurement (%q): %v", leg.name, raw, err)
+		}
+		t.Logf("%s: clear target %.2f×%.2fpx to %s, hit %s; field [%.0f..%.0f], clear [%.0f..%.0f]",
+			leg.name, got.W, got.H, got.Href, got.Hit, got.FormLeft, got.FormRight, got.ClearLeft, got.ClearRight)
+
+		if want := "/posts?status=paid"; got.Href != want {
+			t.Errorf("%s: the clear link goes to %q, want %q — clearing a search must drop q and keep the filter", leg.name, got.Href, want)
+		}
+		// The native ✕ is gone: the same click that emptied the control
+		// input must leave this one alone.
+		if stillThere != "sere" {
+			t.Errorf("%s: clicking the field's trailing edge changed its value to %q — the native cancel button is still there beside the link, and it still lies", leg.name, stillThere)
+		}
+		// WCAG 2.2 SC 2.5.8, AA. A 17px chip on this branch already
+		// failed this once.
+		if got.W < 24 || got.H < 24 {
+			t.Errorf("%s: the clear target is %.2f×%.2fpx, under WCAG 2.2 SC 2.5.8's 24×24", leg.name, got.W, got.H)
+		}
+		if !got.HitIsTheClear {
+			t.Errorf("%s: the middle of the clear target hits %s, not the link — the box is the right size and something is over it", leg.name, got.Hit)
+		}
+		// It has to sit inside the field it belongs to, in both
+		// directions, or the mirrored layout has put it somewhere a
+		// reader will not look for it.
+		if got.ClearLeft < got.FormLeft || got.ClearRight > got.FormRight {
+			t.Errorf("%s: the clear target spans [%.0f..%.0f] and the field box is [%.0f..%.0f] — it has escaped the field", leg.name, got.ClearLeft, got.ClearRight, got.FormLeft, got.FormRight)
 		}
 	}
 }

@@ -11,6 +11,11 @@
        Hidden        [][2]string, optional — name/value pairs carried
                      across the search (a page size — or the current
                      filter, so searching keeps it applied)
+       ClearHref     string, optional — where the search's clear ✕ goes,
+                     passed straight through. Read the note on
+                     list-bar-search before you decide you do not need
+                     it: the computed default carries every Hidden pair,
+                     and a page number is the one it should not.
        Filter        dict, optional — passed whole to dropdown: Label,
                      Aria, Items (Href/Label/Current). See dropdown's
                      own contract.
@@ -18,7 +23,7 @@
      To override the submit button's screen-reader text, call
      list-bar-search directly inside your own <div class="rst-lbar">. */}}
 {{define "list-bar"}}<div class="rst-lbar">
-  {{template "list-bar-search" dict "Action" .SearchAction "Query" .Query "Placeholder" .Placeholder "Hidden" .Hidden}}
+  {{template "list-bar-search" dict "Action" .SearchAction "Query" .Query "Placeholder" .Placeholder "Hidden" .Hidden "ClearHref" (searchClear .)}}
   {{- if .Filter}}
   {{template "dropdown" .Filter}}
   {{- end}}

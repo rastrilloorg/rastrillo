@@ -53,10 +53,26 @@ type requestInfo struct{ method, url string }
 
 type config struct {
 	withoutPRFAtCreation bool
+	withScrollbars       bool
 }
 
 // Option adjusts what New builds.
 type Option func(*config)
+
+// WithScrollbars leaves the browser's scrollbars where the platform
+// draws them.
+//
+// chromedp's headless defaults hide them — --hide-scrollbars, copied
+// from Puppeteer — and that is invisible and harmless right up until a
+// drive's SUBJECT is the scrollbar. A browser that draws none takes no
+// width out of the layout, so a drive measuring whether a scrollbar
+// shifts the page would measure zero either way and agree with whatever
+// the stylesheet claimed. ui's scrollbar-gutter drive is exactly that
+// drive, and it fails rather than passes if this option stops working:
+// its control page asks for the shift and requires to see it.
+func WithScrollbars() Option {
+	return func(c *config) { c.withScrollbars = true }
+}
 
 // New boots the rig. Order is the point: a passkey app needs its
 // origin before building its handler (csrf, webauthn config), but the
@@ -92,6 +108,11 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 		chromedp.Flag("headless", true),
 		chromedp.NoSandbox,
 	)
+	if cfg.withScrollbars {
+		// After the defaults, so it wins: chromedp.Headless set this
+		// true and the flag map keeps the last value written.
+		allocOpts = append(allocOpts, chromedp.Flag("hide-scrollbars", false))
+	}
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), allocOpts...)
 	ctx, cancelCtx := chromedp.NewContext(allocCtx)
 	t.Cleanup(func() {

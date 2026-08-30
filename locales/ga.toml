@@ -3,6 +3,7 @@
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "Leathanaigh"
 rastrillo.ui.search_submit = "Cuardaigh"
+rastrillo.ui.search_clear = "Glan an cuardach"
 rastrillo.ui.cancel = "Cealaigh"
 rastrillo.ui.done = "Roghnú críochnaithe"
 rastrillo.ui.select_filter = "Clóscríobh chun scagadh"

@@ -3,6 +3,7 @@
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "ページ送り"
 rastrillo.ui.search_submit = "検索"
+rastrillo.ui.search_clear = "検索をクリア"
 rastrillo.ui.cancel = "キャンセル"
 rastrillo.ui.done = "選択完了"
 rastrillo.ui.select_filter = "入力して絞り込む"

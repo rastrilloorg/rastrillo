@@ -3,6 +3,7 @@
 # same key wins over this one.
 rastrillo.ui.pagination = "Pagination"
 rastrillo.ui.search_submit = "Search"
+rastrillo.ui.search_clear = "Clear search"
 rastrillo.ui.cancel = "Cancel"
 rastrillo.ui.done = "Done selecting"
 rastrillo.ui.select_filter = "Type to filter"

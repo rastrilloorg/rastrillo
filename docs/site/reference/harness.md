@@ -50,6 +50,7 @@ server it was talking to.
 type Option func(*config)
 
 func WithoutPRFAtCreation() Option
+func WithScrollbars() Option
 ```
 
 `New` takes a variadic list of `Option` values to adjust what it builds.
@@ -65,6 +66,17 @@ up: a script registered on new documents, in the main world, before
 an *own* property `getClientExtensionResults: () => ({})` on the
 credential it returns. `credentials.get` is left untouched, so the
 fallback assertion still gets real PRF from the authenticator.
+
+`WithScrollbars` leaves the browser's scrollbars where the platform
+draws them. chromedp's headless defaults hide them
+(`--hide-scrollbars`, copied from Puppeteer), which is invisible and
+harmless right up until a drive's subject *is* the scrollbar: a browser
+that draws none takes no width out of the layout, so a drive measuring
+whether a scrollbar shifts the page would measure zero either way and
+agree with whatever the stylesheet claimed. `ui`'s `scrollbar-gutter`
+drive is that drive, and it fails rather than passes if this option
+stops working — its control page asks for the shift and requires to see
+it.
 
 The own-property shape matters. Patching
 `PublicKeyCredential.prototype.getClientExtensionResults` would strip

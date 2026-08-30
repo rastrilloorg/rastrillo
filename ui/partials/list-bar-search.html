@@ -60,11 +60,41 @@
        Hidden       [][2]string, optional — extra name/value pairs to
                     carry across the search (an existing sort order, a
                     page size)
+       ClearHref    string, optional — where the clear ✕ goes. See below;
+                    the computed default is usually right, and page
+                    numbers are the case where it is not.
        Label        string, optional — passed through to
-                    list-search-submit as its screen-reader text */}}
+                    list-search-submit as its screen-reader text
+
+     CLEARING THE SEARCH. When Query is non-empty the form also renders
+     a ✕ beside the field, and it is a link, not script: the same
+     Action carrying every Hidden pair, with q dropped. A real
+     navigation, so it works with JavaScript off, it is bookmarkable,
+     and Back behaves.
+
+     The browser's own ✕ inside <input type="search"> is suppressed in
+     tokens.css, deliberately. It is ::-webkit-search-cancel-button and
+     it does exactly what it is specified to do — it clears the input's
+     VALUE. A GET form submits on submit, so nothing else happens: the
+     results stand and the address bar still says ?q=. Leaving it
+     beside a link that really does clear the search would be two
+     affordances, one of which lies.
+
+     Filters and sort survive a clear. They ride in Hidden, and
+     "clear the search" is not "reset the screen".
+
+     PAGINATION IS THE ONE THE FRAMEWORK CANNOT DECIDE, and every app
+     meets it eventually. Hidden is opaque name/value pairs — nothing in
+     it says which pair is the page — so the default carries all of
+     them, page number included, and a page number from a searched
+     result set is usually meaningless once the search is gone. Pass
+     ClearHref to say "and go back to page 1". */}}
 {{define "list-bar-search"}}<search><form class="rst-search" method="get"{{if .Action}} action="{{.Action}}"{{end}}>
   {{icon "search"}}
   <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}">
+  {{- if .Query}}
+  <a class="rst-search__clear" href="{{searchClear .}}" aria-label="{{T "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
+  {{- end}}
   {{- if .Hidden}}{{range .Hidden}}
   <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">
   {{- end}}{{end}}

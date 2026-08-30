@@ -141,17 +141,17 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 	}
 }
 
-func TestFuncsRegistersDictListMenuGroupIconIconAssetsTTfAndDateWords(t *testing.T) {
+func TestFuncsRegistersDictListMenuGroupSearchClearIconIconAssetsTTfAndDateWords(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "icon", "iconAssets", "T", "Tf", "dateWords"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 8 {
-		t.Errorf("Funcs() has %d entries, want exactly 8", len(f))
+	if len(f) != 9 {
+		t.Errorf("Funcs() has %d entries, want exactly 9", len(f))
 	}
 }
 
@@ -210,13 +210,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "icon", "iconAssets", "T", "Tf", "dateWords"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 8 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 8", len(f))
+	if len(f) != 9 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 9", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {
@@ -438,5 +438,165 @@ func TestDateWordsIsDeterministic(t *testing.T) {
 		if got := fn(); got != first {
 			t.Fatalf("dateWords() run %d differs:\n%s\n%s", i, first, got)
 		}
+	}
+}
+
+// searchClear is the whole of §6-v2.1b.6's default: the ✕ beside a
+// search field is a LINK to the same screen with q dropped, because the
+// browser's own ✕ only clears the input's value and leaves the results
+// and the ?q= exactly where they were.
+func TestSearchClearDropsOnlyTheQuery(t *testing.T) {
+	cases := []struct {
+		name string
+		data map[string]any
+		want string
+	}{
+		{
+			name: "filters and sort survive, only q goes",
+			data: map[string]any{"Action": "/posts", "Hidden": [][2]string{{"status", "paid"}, {"sort", "newest"}}},
+			want: "/posts?status=paid&sort=newest",
+		},
+		{
+			name: "nothing to carry is the bare action",
+			data: map[string]any{"Action": "/posts"},
+			want: "/posts",
+		},
+		{
+			// "" would resolve to the current URL, ?q= and all, so the
+			// link would look like an affordance and do nothing — which
+			// is the exact bug this whole feature exists to fix.
+			name: "no action at all still clears the query string",
+			data: map[string]any{},
+			want: "?",
+		},
+		{
+			name: "an action that already has a query gains an ampersand",
+			data: map[string]any{"Action": "/posts?view=grid", "Hidden": [][2]string{{"sort", "newest"}}},
+			want: "/posts?view=grid&sort=newest",
+		},
+		{
+			name: "an action ending in ? or & does not gain a second one",
+			data: map[string]any{"Action": "/posts?", "Hidden": [][2]string{{"sort", "newest"}}},
+			want: "/posts?sort=newest",
+		},
+		{
+			name: "names and values are escaped",
+			data: map[string]any{"Action": "/posts", "Hidden": [][2]string{{"tag name", "a&b=c d"}}},
+			want: "/posts?tag+name=a%26b%3Dc+d",
+		},
+		{
+			name: "ClearHref always wins — the hook an app resets its paging with",
+			data: map[string]any{"Action": "/posts", "Hidden": [][2]string{{"page", "7"}}, "ClearHref": "/posts"},
+			want: "/posts",
+		},
+		{
+			// The trap the partial's doc names: nothing in Hidden says
+			// which pair is the page, so the default carries it. This
+			// asserts the documented behaviour, not the desirable one.
+			name: "the default carries a page number, because it cannot know",
+			data: map[string]any{"Action": "/posts", "Hidden": [][2]string{{"page", "7"}}},
+			want: "/posts?page=7",
+		},
+		{
+			// list-bar names the same thing SearchAction, and hands the
+			// computed default down to list-bar-search as ClearHref, so
+			// searchClear runs twice over one search. It must be the
+			// same answer both times.
+			name: "SearchAction is read too, so list-bar can compute it once",
+			data: map[string]any{"SearchAction": "/posts", "Hidden": [][2]string{{"sort", "newest"}}},
+			want: "/posts?sort=newest",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := searchClear(c.data)
+			if got != c.want {
+				t.Errorf("searchClear = %q, want %q", got, c.want)
+			}
+			// Idempotence is load-bearing, not a nicety: list-bar
+			// computes the href and passes it on as ClearHref, and a
+			// second pass that changed the answer would silently give
+			// the two partials different links for one search.
+			if again := searchClear(map[string]any{"ClearHref": got}); again != c.want {
+				t.Errorf("searchClear of its own result = %q, want %q", again, c.want)
+			}
+		})
+	}
+}
+
+// The same trap menuGroup exists for: a struct caller that predates the
+// key must keep rendering. .ClearHref written inline in the template
+// would be an Execute error — a 500 on every list screen — so the key is
+// read reflectively, and a struct with the field set is honoured.
+func TestSearchClearReadsBothDataShapes(t *testing.T) {
+	type filter struct {
+		SearchAction string
+		Query        string
+		Placeholder  string
+		Hidden       [][2]string
+	}
+	got := searchClear(filter{SearchAction: "/posts", Hidden: [][2]string{{"sort", "newest"}}})
+	if want := "/posts?sort=newest"; got != want {
+		t.Errorf("struct without ClearHref: searchClear = %q, want %q", got, want)
+	}
+
+	type withHook struct {
+		Action    string
+		ClearHref string
+	}
+	if got := searchClear(withHook{Action: "/posts", ClearHref: "/posts?page=1"}); got != "/posts?page=1" {
+		t.Errorf("struct with ClearHref: searchClear = %q, want %q", got, "/posts?page=1")
+	}
+
+	// A caller passing a shape with none of the keys, and nil, are both
+	// "no search to clear", not a panic.
+	if got := searchClear(nil); got != "?" {
+		t.Errorf("searchClear(nil) = %q, want %q", got, "?")
+	}
+	if got := searchClear(42); got != "?" {
+		t.Errorf("searchClear(42) = %q, want %q", got, "?")
+	}
+}
+
+// The rendered markup, end to end: the link is there when there is a
+// query to clear and absent when there is not, and it carries an
+// accessible name from the catalog because an icon-only link has no
+// other one.
+func TestListBarSearchRendersTheClearLink(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+
+	var with strings.Builder
+	if err := tmpl.ExecuteTemplate(&with, "list-bar-search", map[string]any{
+		"Action": "/posts", "Query": "sere", "Hidden": [][2]string{{"sort", "newest"}},
+	}); err != nil {
+		t.Fatalf("rendering the search form: %v", err)
+	}
+	// &amp; because this is an attribute in HTML, which is correct and
+	// is what a browser reads back as a single &.
+	if want := `href="/posts?sort=newest"`; !strings.Contains(with.String(), want) {
+		t.Errorf("no clear link to %s in:\n%s", want, with.String())
+	}
+	if want := `aria-label="Clear search"`; !strings.Contains(with.String(), want) {
+		t.Errorf("the clear link has no accessible name:\n%s", with.String())
+	}
+
+	var without strings.Builder
+	if err := tmpl.ExecuteTemplate(&without, "list-bar-search", map[string]any{"Action": "/posts"}); err != nil {
+		t.Fatalf("rendering the empty search form: %v", err)
+	}
+	if strings.Contains(without.String(), "rst-search__clear") {
+		t.Errorf("an empty search offers a clear link:\n%s", without.String())
+	}
+
+	// list-bar renames Action to SearchAction and hands the whole search
+	// down; the clear link has to survive that hop.
+	var bar strings.Builder
+	if err := tmpl.ExecuteTemplate(&bar, "list-bar", map[string]any{
+		"SearchAction": "/posts", "Query": "sere", "Hidden": [][2]string{{"sort", "newest"}},
+	}); err != nil {
+		t.Fatalf("rendering the list bar: %v", err)
+	}
+	if want := `href="/posts?sort=newest"`; !strings.Contains(bar.String(), want) {
+		t.Errorf("list-bar lost the clear link to %s:\n%s", want, bar.String())
 	}
 }
