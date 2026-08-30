@@ -338,7 +338,7 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   menu is a `<details name="rst-menus">`, so opening one closes the rest
   and `rastrillo.js` closes any on an outside click or Escape; pass
   `MenuGroup` for another group, and a nested `rst-menu-group` MUST name
-  a different one or it closes its parent. The full vocabulary will be
+  a different one or it closes its parent. The full vocabulary is
   browsable at rastrillo.org/design-system; regenerate
   `docs/design-system` with `go generate ./...` after changing `ui`.
   docs/site/templates.md
