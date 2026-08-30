@@ -56,9 +56,14 @@ type partialView struct {
 	States []stateView
 }
 
+// familyView is one family of partials — and, since the split, one
+// PAGE of the gallery. Key is the family's row in samples.go, which is
+// what pageKinds() names the page after and what familyNav matches on;
+// Title and Blurb are the page's own heading and its opening sentence,
+// already localised.
 type familyView struct {
+	Key      string
 	Title    string
-	ID       string
 	Blurb    string
 	Partials []partialView
 }
@@ -143,6 +148,14 @@ type pageView struct {
 	Idioms    []idiomView
 	Shells    []shellView
 
+	// Family is the one family this page IS, where the page is a
+	// component family, and nil on every other page. Families beside
+	// it stays the whole list on every page, because the rail is the
+	// same on all of them and lists all of them; this is the narrowing
+	// the body renders. See renderGallery, which is the only thing that
+	// sets it.
+	Family *familyView
+
 	// Prev and Next are the pair of links at the foot of the page, in
 	// pageKinds() order. Either is nil at the ends of the sequence:
 	// the Overview has no previous and the last page has no next.
@@ -193,9 +206,6 @@ type pageView struct {
 // family, a shell's name — which the rail draws in the mono face for
 // the same reason the headings on the page do.
 //
-// Group marks a family heading inside the Partials section: a link like
-// any other, drawn as the rail's own group label, and hidden by the
-// filter when everything under it has gone.
 // Blank marks the entries that leave this document — the demo pages,
 // the only off-page links the rail has. They open in a new tab for the
 // reason every other demo link on this page does: a reader is in the
@@ -205,7 +215,6 @@ type navItem struct {
 	Label string
 	Href  string
 	Code  bool
-	Group bool
 	Blank bool
 
 	// Aria is the accessible name, where it has to differ from the
@@ -276,21 +285,54 @@ type pageKind struct {
 }
 
 func pageKinds() []pageKind {
-	return []pageKind{
+	kinds := []pageKind{
 		{Kind: "overview", File: "index.html", Title: "Overview"},
 		{Kind: "getting-started", File: "getting-started.html", Title: "Getting started", Nav: assetNav,
-			Blurb: "The two stylesheets and three scripts the framework ships, what each one is for, and what each one weighs."},
+			Blurb: "Details about the stylesheets and scripts that ship with the Rastrillo design system."},
 		{Kind: "tokens", File: "tokens.html", Title: "Tokens", Nav: tokenNav,
 			Blurb: "Every custom property the system is built out of: the theme's colour and type, and the scales for size, spacing and radius."},
 		{Kind: "icons", File: "icons.html", Title: "Icons", Nav: iconNav,
-			Blurb: "Every icon slug the framework answers, drawn at the size a component draws it, with the call to copy and the name lucide.dev publishes it under."},
-		{Kind: "components", File: "components.html", Title: "Components", Nav: componentNav,
-			Blurb: "The framework's template partials, each one rendered in every state it ships with, with the markup beside it."},
-		{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
-			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
-		{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
-			Blurb: "The three page frames rastrillo new can scaffold, each of them openable as a whole page at full width."},
+			Blurb: "Every icon slug, at the size components draw it, with the call to copy and its lucide.dev name."},
 	}
+	// The component families, where the one components page used to be.
+	kinds = append(kinds, componentPages()...)
+	return append(kinds,
+		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
+			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
+		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
+			Blurb: "The page frames rastrillo new can scaffold. Each opens full width."},
+	)
+}
+
+// componentPages is one page per family in samples.go: the split that
+// took components.html from 98 preview frames to five pages of roughly
+// twenty (16 + 30 + 30 + 14 + 8, counted off the render).
+//
+// Read off families() rather than written out here, which is what makes
+// a family a page and not a page a family. A row added to samples.go is
+// a page in the tree, an entry in the rail, a tab in the strip, a step
+// in the prev/next sequence and a route off the Overview, with nothing
+// to remember on this side — and its Title and Blurb, which samples.go
+// already writes as prose keys, are the page's name and the sentence
+// the Overview routes to it with. That is why the split cost no new
+// English beyond the one family it added.
+//
+// Kind is the family key, so the file is form.html and the rail entry
+// is Form. The keys are not the other kinds' names and cannot become
+// them by accident: TestNoTwoPageKindsShareAName holds that.
+func componentPages() []pageKind {
+	fams := families()
+	out := make([]pageKind, 0, len(fams))
+	for _, fam := range fams {
+		out = append(out, pageKind{
+			Kind:  fam.Key,
+			File:  fam.Key + ".html",
+			Title: fam.Title,
+			Blurb: fam.Blurb,
+			Nav:   familyNav(fam.Key),
+		})
+	}
+	return out
 }
 
 // fileOf is one page kind's filename. It panics on a kind that is not
@@ -326,16 +368,29 @@ func tokenNav(mount, theme, locale string, view pageView) []navItem {
 	return items
 }
 
-func componentNav(mount, theme, locale string, view pageView) []navItem {
-	file := fileOf("components")
-	var items []navItem
-	for _, fam := range view.Families {
-		items = append(items, navItem{Label: fam.Title, Href: anchorHrefIn(mount, theme, locale, file, fam.ID), Group: true})
-		for _, p := range fam.Partials {
-			items = append(items, navItem{Label: p.Name, Href: anchorHrefIn(mount, theme, locale, file, p.ID), Code: true})
+// familyNav is one family page's rail entries: its own partials, by
+// name, on its own page.
+//
+// It closes over the family key rather than reading the page being
+// rendered, because the rail is the same on every page — every family's
+// section lists that family's partials wherever the reader is standing.
+// A key with no family renders an empty section rather than panicking:
+// pageKinds() builds both sides off families(), so that cannot happen
+// without the table having changed underneath.
+func familyNav(key string) func(mount, theme, locale string, view pageView) []navItem {
+	return func(mount, theme, locale string, view pageView) []navItem {
+		file := fileOf(key)
+		var items []navItem
+		for _, fam := range view.Families {
+			if fam.Key != key {
+				continue
+			}
+			for _, p := range fam.Partials {
+				items = append(items, navItem{Label: p.Name, Href: anchorHrefIn(mount, theme, locale, file, p.ID), Code: true})
+			}
 		}
+		return items
 	}
-	return items
 }
 
 func primitiveNav(mount, theme, locale string, view pageView) []navItem {
@@ -636,6 +691,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		view := base
 		view.Kind = pk.Kind
 		view.Title = proseIn(locale, pk.Title)
+		view.Family = familyOf(families, pk.Kind)
 		view.Pages = pageTabs(mount, theme, locale, pk.Kind)
 		view.Themes = themeLinks(mount, theme, locale, pk.File)
 		view.Locales = localeLinks(mount, theme, locale, pk.File)
@@ -667,15 +723,29 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 // TestNoUnregisteredEnglishInThePageTemplates can sweep this list
 // rather than a second one written beside it.
 func bodyTemplates() []struct{ kind, src string } {
-	return []struct{ kind, src string }{
+	out := []struct{ kind, src string }{
 		{"overview", overviewBody},
 		{"getting-started", gettingStartedBody},
 		{"tokens", tokensBody},
 		{"icons", iconsBody},
-		{"components", componentsBody},
 		{"primitives", primitivesBody},
 		{"shells", shellsBody},
+		// The one family body, under a name no page kind has, so
+		// renderBody never reaches it directly.
+		{"family", familyBody},
 	}
+	// Every family page renders that same body against its own
+	// pageView.Family. renderBody looks a body up as "ds-body-"+kind,
+	// so each family needs a name of its own; the alternative — five
+	// copies of a 20-line template, or a {{if eq .Kind}} chain inside
+	// one — is five things to keep in step for the same output.
+	for _, pk := range componentPages() {
+		out = append(out, struct{ kind, src string }{
+			pk.Kind,
+			fmt.Sprintf(`{{define "ds-body-%s"}}{{template "ds-family" .}}{{end}}`, pk.Kind),
+		})
+	}
+	return out
 }
 
 // renderBody executes one page's section body against the finished
@@ -698,8 +768,8 @@ func renderBody(tmpl *template.Template, kind string, view pageView) (template.H
 }
 
 // themeLinks is the theme switcher. It keeps the reader on the page
-// they are reading: choosing another theme from components.html lands
-// on that theme's components.html, not back at the overview.
+// they are reading: choosing another theme from the form family's page
+// lands on that theme's form page, not back at the overview.
 func themeLinks(mount, theme, locale, file string) []navLink {
 	out := make([]navLink, 0, len(ui.ThemeNames()))
 	for _, name := range ui.ThemeNames() {
@@ -851,16 +921,26 @@ func modalHref(mount, theme, locale string) string {
 
 // ── Partial samples ──────────────────────────────────────────────────
 
-// buildFamilies renders every sample in samples.go, then sweeps up any
-// partial ui defines that no family claims. A partial with no sample is
-// a gap in the documentation, not a reason to drop it off the page: it
-// gets its own section, its marker comment (so the coverage gate still
-// sees it), and a visible note saying it has no sample data yet.
+// familyOf is the family a page kind is, or nil where the page is not a
+// family page. The kind IS the family key — see componentPages — so
+// this is a lookup and not a second table.
+func familyOf(fams []familyView, kind string) *familyView {
+	for i := range fams {
+		if fams[i].Key == kind {
+			return &fams[i]
+		}
+	}
+	return nil
+}
+
+// buildFamilies renders every sample in samples.go and holds the table
+// to ui: a partial samples.go documents that ui does not define, and a
+// partial ui defines that no family claims, are both errors here.
 func buildFamilies(mount string, tmpl *template.Template, theme, locale string) ([]familyView, error) {
 	claimed := map[string]bool{}
-	out := make([]familyView, 0, len(families())+1)
+	out := make([]familyView, 0, len(families()))
 	for _, fam := range families() {
-		view := familyView{Title: proseIn(locale, fam.Title), ID: anchorID("family", fam.Title), Blurb: proseIn(locale, fam.Blurb)}
+		view := familyView{Key: fam.Key, Title: proseIn(locale, fam.Title), Blurb: proseIn(locale, fam.Blurb)}
 		for _, doc := range fam.Partials {
 			if tmpl.Lookup(doc.Name) == nil {
 				return nil, fmt.Errorf("samples.go documents %q, which ui does not define", doc.Name)
@@ -897,28 +977,21 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 		}
 	}
 	sort.Strings(orphans)
+	// A partial no family claims used to get an "Ungrouped" section at
+	// the foot of the one components page: listed rather than dropped,
+	// because a component nobody documented is still a component apps
+	// can call.
+	//
+	// There is no such page any more. A family IS a page, so a partial
+	// with no family has nowhere to be, and the choices were a page
+	// that exists only on the days something is broken or a failure
+	// that says so. This is the failure. It is stricter than what it
+	// replaces — the old sweep let a partial reach the gallery with no
+	// sample and no thought — and it fails at build rather than in a
+	// coverage gate, so the message can name the file to edit.
 	if len(orphans) > 0 {
-		view := familyView{
-			Title: proseIn(locale, "Ungrouped"),
-			ID:    anchorID("family", "Ungrouped"),
-			Blurb: proseIn(locale, "Partials ui defines that samples.go has not been taught to render yet. They are listed rather than dropped, because a component nobody documented is still a component apps can call."),
-		}
-		for _, name := range orphans {
-			pv := partialView{Name: name, ID: anchorID("partial", name), Marker: marker("partial", name), Blurb: proseIn(locale, "No sample data yet — add one in internal/designsystem/samples.go.")}
-			// Many partials guard every optional field, so an empty
-			// dict renders something honest. One that does not simply
-			// shows its heading and the note above.
-			if html, err := renderSample(tmpl, name, 0, sample{Data: map[string]any{}}, locale); err == nil {
-				pv.States = append(pv.States, stateView{
-					State: proseIn(locale, "Rendered from an empty data value"),
-					Preview: newPreview(mount, theme, locale, pv.ID+"-0",
-						previewTitle(locale, name, "Rendered from an empty data value"),
-						string(html), heightOf(pv.ID)),
-				})
-			}
-			view.Partials = append(view.Partials, pv)
-		}
-		out = append(out, view)
+		return nil, fmt.Errorf("ui defines %d partial(s) no family in samples.go claims: %s — every partial belongs to a family, because a family is a page of this gallery; add them to families() in internal/designsystem/samples.go",
+			len(orphans), strings.Join(orphans, ", "))
 	}
 	return out, nil
 }
@@ -1768,7 +1841,7 @@ const demoTemplate = `
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
 {{template "form-foot" dict "Submit" (P "Send reply") "CancelHref" "#view-requests" "CancelLabel" (P "Cancel")}}
 </form></section>
-{{template "callout" dict "Tone" "info" "Title" (P "Three screens, three addresses") "Body" (P "Each view here has an address of its own, the way a rastrillo app gives every screen a URL. Turn JavaScript off and this page behaves exactly the same: the switching is CSS reading the address bar.")}}
+{{template "callout" dict "Tone" "info" "Title" (P "Three screens, three addresses") "Body" (P "Every view has its own address, like any rastrillo screen. Turn JavaScript off and it behaves the same. Switching uses CSS.")}}
 </section>
 {{end}}
 `
@@ -1878,7 +1951,15 @@ type assetView struct {
 // assetsView is the Getting started page's data. AppBytes is what a
 // scaffolded app is actually handed — tokens.css, ONE theme and the
 // three scripts — which is not the sum of the list, because the list
-// carries every theme and gallery.js, and an app receives neither.
+// carries every theme and an app receives one.
+//
+// What the list does NOT carry is this gallery's own furniture:
+// gallery.js and gallery.css are the page's plumbing, no scaffold
+// writes them, no app is ever handed them, and a reader of a page
+// about what an app ships has no use for either. They were on the list
+// once, each with a sentence saying it did not count — which is a row
+// whose whole content is that it should not be there.
+// TestTheGettingStartedPageWeighsTheRealAssets holds the absence.
 type assetsView struct {
 	List     []assetView
 	AppBytes int
@@ -1892,11 +1973,22 @@ type assetsView struct {
 // the same ones Render writes the tree's copies from — the file a
 // reader downloads and the number beside it cannot disagree.
 func buildAssets(mount, theme, locale string) assetsView {
-	themeCSS, ok := ui.ThemeCSS(theme)
+	// The vendored set, from the one place it is defined:
+	// ui.VendoredAssets, shared with rastrillo new's scaffold, the pin
+	// test it generates into every app, and rastrillo doctor. This page
+	// is the fourth reader of that list, and the only one whose numbers
+	// nobody would notice going stale — so it reads the list rather
+	// than repeating it, and a sixth vendored file lands in the total
+	// here on the same commit it reaches an app.
+	vendored, ok := ui.VendoredAssets(theme)
 	if !ok {
 		// Render has already failed on an unknown theme by the time
 		// anything calls this; an empty row would be a silent lie.
 		panic("designsystem: no theme " + theme)
+	}
+	appBytes := 0
+	for _, body := range vendored {
+		appBytes += len(body)
 	}
 	add := func(out *assetsView, name string, body []byte, blurb string, args ...any) {
 		out.List = append(out.List, assetView{
@@ -1908,7 +2000,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 		})
 	}
 	out := assetsView{
-		AppBytes: len(ui.TokensCSS()) + len(themeCSS) + len(ui.ShimJS()) + len(ui.SelectJS()) + len(ui.DatetimeJS()),
+		AppBytes: appBytes,
 		Scaffold: "rastrillo new --theme=" + theme + " myapp",
 		Pin:      `const vendoredTheme = "` + theme + `"`,
 	}
@@ -1928,187 +2020,10 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
 		"The date fields' natural-language input. Inert until a field opts in with data-rst-date or data-rst-time, and deletable on its own.")
-	add(&out, "gallery.js", GalleryJS(),
-		"This gallery's own filter and colour-scheme toggle. No scaffold writes it and no app receives it.")
 	return out
 }
 
 // ── The page itself ──────────────────────────────────────────────────
-
-// dsCSS is the page's own chrome: the swatch grid, the sample frames and
-// the section rhythm. It is deliberately small and deliberately not in
-// tokens.css — none of it is vocabulary an app should reach for, and
-// tokens.css shipping a class only one page uses is how a stylesheet
-// starts to rot. Every value here is a token, so the page's own
-// furniture changes theme with everything else.
-const dsCSS = `
-.ds-head { border-top: 1px solid var(--rst-line); margin: var(--rst-sp-6) 0 var(--rst-sp-3); padding-top: var(--rst-sp-5); }
-.ds-head h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 0; }
-.ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
-.ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
-.ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
-.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
-.ds-chrome .rst-dropdown { position: relative; }
-.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
-/* The toggle is hidden until gallery.js says it is there. With scripts
-   off it never appears, and the page stays on the theme's own
-   color-scheme: light dark — which is the System position anyway, so
-   nothing is lost but a control that could not have worked. The
-   attribute is set while the head is still parsing, so this is not a
-   reveal the reader sees happen. */
-.ds-scheme { display: none; }
-:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
-.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
-.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
-.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
-.ds-family { margin: var(--rst-sp-6) 0 0; }
-.ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
-.ds-partial { margin: var(--rst-sp-5) 0; }
-.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
-.ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
-.ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
-.ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
-.ds-toks { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
-.ds-tok { align-items: center; display: flex; gap: var(--rst-sp-3); min-inline-size: 0; }
-.ds-tok__text { min-inline-size: 0; }
-.ds-tok__name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ds-tok__value { color: var(--rst-text-muted); display: block; }
-.ds-chip { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); block-size: 2.25rem; flex: none; inline-size: 2.25rem; }
-.ds-chip--fill { background: var(--rst-accent); border-color: var(--rst-accent); }
-.ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
-.ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
-.ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
-/* The Icons page reuses the token grid: one chip per icon, and the icon
-   inside it at the 1em tokens.css gives it, which is the size a
-   component draws it at rather than a poster of it. The call under the
-   name is long enough to overrun a 13rem column on a 320px screen, so
-   this is the one place in the grid that breaks inside a word. */
-.ds-chip--icon { align-items: center; color: var(--rst-text); display: flex; justify-content: center; }
-.ds-icons .ds-tok__value { overflow-wrap: anywhere; }
-/* The Overview's opening paragraph and the routes under it. .ds-files is
-   the same row — a name, a sentence and a number — on the Getting
-   started page. It is a second class rather than a second use of
-   .ds-routes because TestTheOverviewRoutesIntoEveryOtherPage identifies
-   the Overview's route list BY that class and asserts no other page
-   carries one; sharing it would have made that gate stop meaning
-   anything. The
-   paragraph is the one piece of copy on this site somebody wrote by
-   hand rather than derived from the code, so it is set a step larger
-   than body text and given the same 62ch measure everything else here
-   reads at. */
-.ds-intro { font-size: 1.05rem; margin: 0 0 var(--rst-sp-5); max-width: 62ch; }
-.ds-routes, .ds-files { display: grid; gap: var(--rst-sp-4); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
-.ds-routes > li, .ds-files > li { border-inline-start: 2px solid var(--rst-line-strong); padding-inline-start: var(--rst-sp-3); }
-.ds-routes a, .ds-files a { font-weight: 600; }
-.ds-routes span, .ds-files span { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); max-width: 62ch; }
-/* Prev/next at the foot. Two grid columns rather than a flex row with
-   space-between, because the ends of the sequence are missing a link
-   and not missing a column: the Overview's Next has to stay on the
-   inline end rather than sliding across to where Previous would have
-   been. */
-.ds-updown { border-block-start: 1px solid var(--rst-line); display: grid; gap: var(--rst-sp-3); grid-template-columns: 1fr 1fr; margin-block-start: var(--rst-sp-6); padding-block-start: var(--rst-sp-4); }
-.ds-updown__prev { grid-column: 1; justify-self: start; }
-.ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
-.ds-shell { margin: var(--rst-sp-5) 0; }
-.ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
-.ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
-.ds-src code { white-space: pre; }
-
-/* The preview widget: [Desktop] [Mobile] [Code] over one frame.
-
-   No script anywhere in it. The tabs are three radio inputs sharing a
-   name, hidden but focusable inside their labels, and :has() reads
-   which one is checked from the wrapper — so the panels switch on the
-   browser's own form behaviour and a reader with JavaScript off has
-   the same three views as everyone else.
-
-   The scale is the other half. The frame is laid out at a virtual
-   1200px (or 390px, on Mobile) and scaled to fit whatever the reader's
-   column actually is, so the desktop rendering is the desktop
-   rendering on a phone too. CSS can divide two lengths into a plain
-   number exactly one way — tan(atan2(a, b)) — and 100cqw is the
-   container's own width, so --ds-k is that fraction and min() stops it
-   scaling anything UP. Where the trig functions are missing the
-   @supports block never applies, --ds-k stays 1, and the frame is a
-   1200px page clipped to the column: smaller, not broken.
-
-   --ds-h is the frame's virtual height, written per example by
-   previewStyle. It sizes the BOX; the frame takes its height back off
-   the box, 100% / --ds-k, which is the same number until a reader
-   drags the resize grip and then is whatever they dragged it to. Doing
-   it the other way round — a fixed height on the frame — gave the grip
-   nothing to move: the box grew and the document inside it stayed the
-   size it was, leaving 300px of empty box under a 255px rendering.
-
-   The box is a window on a document, not a fit to it: a taller sample
-   scrolls inside its frame, and the grip is there for the ones a
-   reader wants more of. */
-.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
-.ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
-.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
-.ds-view__tab + .ds-view__tab { border-inline-start: 0; }
-.ds-view__tab:first-of-type { border-end-start-radius: var(--rst-radius-sm); border-start-start-radius: var(--rst-radius-sm); }
-.ds-view__tab:last-of-type { border-end-end-radius: var(--rst-radius-sm); border-start-end-radius: var(--rst-radius-sm); }
-.ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
-.ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-.ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.ds-view__stage { container-type: inline-size; }
-.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
-.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
-@supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
-  .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
-}
-.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
-.ds-view__code { display: none; margin-block-start: 0; }
-.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
-.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
-
-/* The sidebar. The rail itself is the framework's own sidebar shell —
-   rst-shell-sidebar, rst-shell__rail, rst-shell__nav, and the details
-   chrome strip that collapses the rail below 800px — so the page that
-   documents the vocabulary is laid out in it. What is left here is the
-   two things a rail of links has no class for yet: a collapsible
-   section per group, and the filter over them. */
-.ds-rail { gap: var(--rst-sp-2); }
-.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
-.ds-nav > details > summary::-webkit-details-marker { display: none; }
-/* The disclosure glyph is the framework's own chevron: the vendored
-   Lucide chevron-down inside a .rst-caret, which tokens.css already
-   flips 180 degrees on [open] and already stills under
-   prefers-reduced-motion. It replaces content: "\25b8"/"\25be", two
-   geometric-shape characters that were the only arrow in the whole
-   vocabulary not drawn by the icon set — and that render as an emoji
-   triangle on some platforms and as nothing at all where the font has
-   no glyph for them. It is aria-hidden because it sits beside the
-   section's own name. */
-.ds-nav > details > summary > .rst-caret { flex: none; }
-.ds-nav > details[aria-current] > summary { color: var(--rst-accent); }
-/* A section with nothing to list yet is a link to its page rather than
-   a disclosure over an empty box. It wears the summary's typography so
-   the rail still reads as one list. */
-.ds-nav__page { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; padding-block: 0.35rem; text-transform: uppercase; }
-.ds-nav__page[aria-current] { color: var(--rst-accent); }
-.ds-nav__page:hover { color: var(--rst-text); }
-.ds-nav > details > summary:hover { color: var(--rst-text); }
-.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
-/* The filter hides a link by setting [hidden] on it, and the shell
-   paints every rail link display: block — which the browser's own
-   [hidden] rule loses to. This selector outranks it rather than
-   shouting !important at it. */
-.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
-/* The same scriptless story as the scheme toggle above: no script, no
-   filter, and no box sitting there looking like one. The nav under it
-   is a complete list of every anchor on the page either way. */
-.ds-search { display: none; }
-:root[data-rst-js] .ds-search { display: block; }
-.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
-.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
-.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
-`
 
 // pageTemplate is the frame every page of a <theme>/<locale> directory
 // is drawn in: the head, the chrome, the rail, the page header, the
@@ -2178,7 +2093,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <title>{{.Title}} — {{P "rastrillo design system"}} — {{.Theme}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
-<style>` + dsCSS + `</style>
+<link rel="stylesheet" href="{{.Mount}}/gallery.css">
 <script src="{{.Mount}}/gallery.js"></script>
 <script defer src="{{.Mount}}/rastrillo.js"></script>
 <script defer src="{{.Mount}}/select.js"></script>
@@ -2196,7 +2111,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
-{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
+{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
 {{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a>
 {{end}}{{end}}  </nav>
 </aside>
@@ -2263,7 +2178,7 @@ const overviewBody = `{{define "ds-body-overview"}}
 <p class="ds-intro">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
 <section class="ds-demo" id="demo-app">
 <h3 class="ds-sub">{{P "The demo application"}}</h3>
-<p class="ds-lead">{{P "A working application built out of nothing but this system: a dashboard, a list and one record open, each at an address of its own, and nothing on it that needs JavaScript to work."}}</p>
+<p class="ds-lead">{{P "A working app built only from this system: a dashboard, a list, one record open. Each has its own address. No JavaScript."}}</p>
 {{template "ds-view" .Demo}}
 <p class="ds-note"><a href="{{.DemoHref}}" target="_blank" rel="noopener">{{P "Open the demo application"}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>.</p>
 </section>
@@ -2283,33 +2198,33 @@ const overviewBody = `{{define "ds-body-overview"}}
 // after somebody edits one of the files.
 const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <div class="ds-head"><h2 id="getting-started">{{P "Getting started"}}</h2></div>
-<p class="ds-lead">{{P "Two stylesheets and three scripts. A new app is handed all of them at scaffold time and owns them from that moment; anything else can link them straight off this site. None of it is required for a page to work — turn JavaScript off and every component here still does what it says."}}</p>
+<p class="ds-lead">{{P "Rastrillo apps get all of this day one, but anyone can use the design system. Progressively enhanced with JS, but no JS required."}}</p>
 
 <h3 class="ds-sub">{{P "The stylesheets"}}</h3>
-<p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. It carries no colour literal and is the same file under every theme. themes/<name>.css is the other half — colour, type family and shape — as one :root block where every colour is declared once as a light-dark() pair, so a theme changes how an app feels and not only what colour it is."}}</p>
+<p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h3 class="ds-sub">{{P "The scripts"}}</h3>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are the two enhancements, each one inert until a control opts into it and each one deletable on its own. gallery.js is this gallery's own script and is not part of what an app receives."}}</p>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
 
 <h3 class="ds-sub">{{P "What each file weighs"}}</h3>
-<p class="ds-note">{{P "Every number below is the length of the bytes this page was rendered from, measured as it rendered. None of them is written down anywhere, so none of them can go stale."}}</p>
+<p class="ds-note">{{P "Filesizes for the various components."}}</p>
 <ul class="ds-files">{{range .Assets.List}}
 <li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{P "{bytes} bytes" "bytes" .Bytes}}</span></li>{{end}}
 </ul>
-<p class="ds-lead">{{P "A scaffolded app is handed {bytes} bytes of that: tokens.css, one theme and the three scripts. gallery.js is not in the total, and neither are the themes an app did not choose." "bytes" .Assets.AppBytes}}</p>
+<p class="ds-lead">{{P "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts." "bytes" .Assets.AppBytes}}</p>
 
 <h3 class="ds-sub">{{P "In a new rastrillo app"}}</h3>
-<p class="ds-lead">{{P "rastrillo new writes these files into the app's own static directory and links them from the layout, tokens.css first and the theme after it. They are app-owned from that moment: edit them, or delete a script the app has no use for."}}</p>
+<p class="ds-lead">{{P "rastrillo new writes these into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
 <pre class="ds-src rst-mono"><code>{{.Assets.Scaffold}}</code></pre>
-<p class="ds-lead">{{P "The theme is pinned twice, deliberately. --theme decides which of the shipped themes is copied to static/theme.css, and the generated suite records that choice, so a framework upgrade that changes the theme's bytes is a test failure rather than a surprise on a Friday."}}</p>
+<p class="ds-lead">{{P "The theme is pinned twice. --theme decides which shipped theme is copied to static/theme.css, and logged at app generation time."}}</p>
 <pre class="ds-src rst-mono"><code>{{.Assets.Pin}}</code></pre>
 
 <h3 class="ds-sub">{{P "Using it without the framework"}}</h3>
-<p class="ds-lead">{{P "Every file above is served from this site at its own address, and the names above are the links. Take tokens.css and one theme and you have the whole visual system: the classes are plain, the markup is ordinary HTML, and none of it needs a build step, a bundler or a Go program."}}</p>
+<p class="ds-lead">{{P "The names above are links. Take tokens.css and one theme and you have the whole visual system: plain classes, ordinary HTML, no build step."}}</p>
 
 <h3 class="ds-sub">{{P "Upgrading"}}</h3>
 <p class="ds-lead">{{P "The trap worth knowing before it costs you an afternoon: tokens.css is copied into the app's static directory at scaffold time and frozen there, while the partials it styles keep upgrading with the module. An app can quietly run new markup against old CSS. Re-copy tokens.css when you upgrade, and the theme and the scripts with it."}}</p>
-<p class="ds-note">{{P "rastrillo doctor will compare an app's frozen files against the module's and offer to re-copy them. It is approved and it does not exist yet. Until it does, the suite rastrillo new writes is what notices: it holds every vendored file byte-identical to the library copy it came from, and fails when one drifts."}}</p>
+<p class="ds-note">{{P "rastrillo doctor will compare an app's frozen files against the module's and offer to re-copy."}}</p>
 {{end}}`
 
 // iconsBody is every slug rastrillo.IconSlugs() answers, drawn at 1em —
@@ -2355,21 +2270,31 @@ const tokensBody = `{{define "ds-body-tokens"}}
 {{end}}
 {{end}}`
 
-const componentsBody = `{{define "ds-body-components"}}
-<div class="ds-head"><h2 id="components">{{P "Components"}}</h2></div>
-<p class="ds-lead">{{P "Components give you pre-built, consistent UI elements, rendered server-side."}}</p>
+// familyBody is every component page: the family whose page this is,
+// its partials, and the four sentences that are true of all of them.
+//
+// One template for five pages rather than five: the pages differ in
+// which family they are and in nothing else, and the four notes below
+// belong on each of them — a reader who lands on Form from a search has
+// not read the Display page's preamble.
+//
+// The shape is the primitives page's shape, one heading level shallower
+// than the old components page: the family is the h2 now that it is the
+// page, and a partial is an h3 rather than an h4 under a family h3 that
+// repeated the page's own title.
+const familyBody = `{{define "ds-family"}}{{with .Family}}
+<div class="ds-head"><h2>{{.Title}}</h2></div>
+<p class="ds-lead">{{.Blurb}}</p>
+{{end}}
+<p class="ds-lead">{{P "Pre-built, consistent UI elements, rendered server-side."}}</p>
 <p class="ds-note">{{P "The framework's own vocabulary calls these partials: ui.Templates() returns partials, and docs/site/templates.md documents them under that name. The word on this page changed; the code's did not."}}</p>
 ` + deadLinkCallout + `
 <p class="ds-note">{{P "Each sample below in its own frame."}}</p>
 <p class="ds-note">{{P "Sample content in English. Sample shells translated."}}</p>
-{{range .Families}}
-<section class="ds-family" id="{{.ID}}" data-ds-anchor>
-<h3>{{.Title}}</h3>
-<p class="ds-lead">{{.Blurb}}</p>
-{{range .Partials}}
+{{range .Family.Partials}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
-<h4 class="rst-mono">{{.Name}}</h4>
+<h3 class="rst-mono">{{.Name}}</h3>
 <p class="ds-lead">{{.Blurb}}</p>
 {{range .States}}
 <div class="ds-sample">
@@ -2379,8 +2304,6 @@ const componentsBody = `{{define "ds-body-components"}}
 </div>
 {{end}}
 </article>
-{{end}}
-</section>
 {{end}}
 {{end}}`
 

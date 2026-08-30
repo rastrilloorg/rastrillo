@@ -26,6 +26,15 @@ db.Open -> App -> Serve).
 lands as `static/theme.css`, the shell as `templates/layout.html`, both
 app-owned from then on. docs/site/templates.md
 
+`rastrillo doctor [--fix] [dir]` compares `static/`'s vendored files
+(`tokens.css`, `theme.css`, the three scripts) with the CLI's own
+copies. Exit 3 = drift, 4 = the app requires a different rastrillo
+version, which is NOT drift — `--fix` refuses across it without
+`--force`. A theme matching none of the shipped three is "custom or
+drifted" and is never diffed against a guess; a file named in the
+scaffolded `vendoredIsMine` is left alone by both doctor and the pin
+test. The pin test, not doctor, is the standing gate. docs/site/cli.md
+
 Imports: `github.com/carlosframework/rastrillo` and subpackages `db`,
 `migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
 `jobs`; `github.com/go-chi/chi/v5`; `gorm.io/gorm`.

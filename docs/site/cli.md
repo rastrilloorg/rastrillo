@@ -1,6 +1,6 @@
 # 🤖 The CLI
 
-One binary, five commands. Install it with:
+One binary, six commands. Install it with:
 
 ```sh
 go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
@@ -169,6 +169,98 @@ what it is for, and it is why it is manual.
 
 [Migrations](/docs/migrations#recovering-an-old-database) walks the
 whole recovery.
+
+## rastrillo doctor
+
+```sh
+rastrillo doctor [--fix] [--force] [--theme <name>] [dir]
+```
+
+Compares the files `rastrillo new` copied into the app's `static/`
+directory — `tokens.css`, `theme.css`, `rastrillo.js`, `select.js` and
+`datetime.js` — against the copies this binary carries, and says which
+ones differ and how.
+
+It is a convenience and an upgrade tool, not the thing standing between
+your app and silent drift. That is the `vendored_test.go` the scaffold
+writes, which runs in CI on every commit without anyone remembering to.
+What `doctor` adds is re-copying rather than telling you to, working on
+an app that never had that test, saying *how* a file differs rather than
+that it does, and running from outside the app — which is what asking
+"is this one safe to upgrade?" about somebody else's repository needs.
+
+| Flag | Purpose |
+|---|---|
+| `--fix` | Re-copy each drifted file from this binary's library copy |
+| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits |
+| `--theme` | Which theme `static/theme.css` should be, for an app with no pin to read it from |
+
+### The version it compares against
+
+The CLI carries its own compiled-in copy of the library; your app has
+its own required version in `go.mod`. These are frequently different,
+**and that difference is not drift** — an app deliberately on `v0.19.0`
+checked by a `v0.20.0` binary has files that correctly match `v0.19.0`.
+
+So `doctor` reads both, says which one it compared against, and makes a
+mismatch the first line of the report rather than a footnote:
+
+```
+rastrillo doctor is v0.20.0; this app requires v0.19.0.
+Comparing against v0.20.0 — upgrade the module first, or these differences are expected.
+```
+
+`--fix` refuses in that state. Copying `v0.20.0` assets into an app that
+compiles against `v0.19.0` produces exactly the fault this checks for —
+new CSS against old markup — with the difference that `doctor` would
+then call it clean. Upgrade the module first, or pass `--force`.
+
+An app with a `replace` directive is not a mismatch: it builds against a
+checkout, so there is no second version to disagree with. `doctor` says
+which checkout and compares against its own copy, which is right only if
+this binary was built from that tree.
+
+### What it will not call drift
+
+A hand-edited theme is a supported thing, not damage. If
+`static/theme.css` matches no shipped theme, `doctor` says **custom or
+drifted** and compares nothing — it will not pick the closest theme and
+report a diff against a guess. Pass `--theme <name>` when you do want it
+compared against a shipped one.
+
+A file you edited on purpose is the same: name it in `vendoredIsMine` in
+the scaffold's `vendored_test.go` and both that test and `doctor` leave
+it alone. Apps scaffolded before that map existed recorded the same
+thing by deleting the file's line from the pin, and `doctor` reads that
+too — but it reads such a file rather than assuming. The first version
+of that pin listed three files, and `theme.css` and `datetime.js` joined
+the vendored set afterwards, so a name an old pin never mentions may
+simply mean "this app predates it". You delete a pin line to protect an
+edit, so the edit is the evidence: a file that is missing is **absent**
+and `--fix` delivers it, a file identical to the library is checked
+normally, and only a file that is there *and* differs is left alone as
+yours. That last rule is also what stops `--fix` from installing a file
+and thereby exempting it from every check afterwards.
+
+A file you deleted is the same again. Dropping `select.js` from an app
+with no big selects is a supported choice, so an absent file is reported
+as **absent**, not as drift, and does not fail the exit code — you get a
+line saying what the library ships and how big it is. `--fix` will still
+add it, because asking for `--fix` is asking.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every compared file matches |
+| `1` | An error — not an app, unreadable files |
+| `2` | Usage |
+| `3` | Drift: files differ from the library copy |
+| `4` | The app and the CLI are on different rastrillo versions, so the comparison is not authoritative |
+
+Drift and version mismatch are separate codes because they call for
+opposite actions: one means "re-copy these", the other means "do not
+re-copy anything yet".
 
 ## rastrillo vectors
 

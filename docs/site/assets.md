@@ -39,6 +39,10 @@ have drifted, so drift is something you chose rather than something you
 discover much later while debugging a component that no longer matches
 its stylesheet.
 
-When you do mean to diverge, update or delete that test in the same
-commit as the edit. A pin test everybody knows is failing protects
-nothing.
+When you do mean to diverge, say so in the same commit as the edit: add
+the file's name to `vendoredIsMine` at the top of that test. A pin test
+everybody knows is failing protects nothing.
+
+`rastrillo doctor` reads the same list, so a file you have recorded as
+yours is one it leaves alone too — and it will re-copy the ones you have
+not. See [The CLI](/docs/cli).

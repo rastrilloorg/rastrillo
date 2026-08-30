@@ -228,6 +228,23 @@ does, for a field that reaches it without the attributes.
 All four are delivered once and yours from then on. Edit them freely;
 nothing in the framework overwrites them. The scaffold's
 `vendored_test.go` pins the delivered copies byte-identical to these, so
-drift is something you choose rather than discover — update or delete
-that test in the same commit as a deliberate edit. See
-[Assets](/docs/assets).
+drift is something you choose rather than discover — name the file in
+that test's `vendoredIsMine` in the same commit as a deliberate edit.
+See [Assets](/docs/assets).
+
+```go
+func VendoredNames() []string
+func VendoredAssets(theme string) (map[string][]byte, bool)
+```
+
+`VendoredAssets` is the whole vendored set for one theme, keyed by the
+name each file takes in an app's `static/` directory: the four above
+plus `theme.css`, which is `ThemeCSS(theme)`. It reports `false` for a
+theme that is not shipped. `VendoredNames` is the same set as an ordered
+list of names, for reporting on the files one at a time.
+
+It exists so the list is written down once. `rastrillo new` writes these
+bytes, the `vendored_test.go` it generates compares the app's copies
+against them, and [`rastrillo doctor`](/docs/cli) reports the
+difference — three readers of one function rather than three lists that
+eventually disagree.

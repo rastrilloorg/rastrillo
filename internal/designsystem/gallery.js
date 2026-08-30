@@ -189,33 +189,18 @@
       for (var s = 0; s < sections.length; s++) {
         var section = sections[s];
         var kids = section.children;
-        var shown = 0, group = null, inGroup = 0;
+        var shown = 0;
         // The section's own name matching stands for everything under
-        // it, the same way a family heading's does for its run.
+        // it: a reader who types "form" means the Form page, not the
+        // one entry in it whose name happens to contain the word.
         var whole = !q || section.dsText.indexOf(q) >= 0;
         for (var k = 0; k < kids.length; k++) {
           var el = kids[k];
           if (el.tagName !== "A") continue;
-          // A family heading is a link like any other, but it stands
-          // for the run under it: matching the family shows the whole
-          // family, and matching nothing in it takes the heading with
-          // it rather than leaving a label over a gap.
-          if (el.classList.contains("ds-nav__group")) {
-            if (group) group.hidden = inGroup === 0;
-            group = el;
-            group.dsWhole = whole || el.dsText.indexOf(q) >= 0;
-            inGroup = group.dsWhole ? 1 : 0;
-            shown += inGroup;
-            continue;
-          }
-          var hit = whole || (group && group.dsWhole) || el.dsText.indexOf(q) >= 0;
+          var hit = whole || el.dsText.indexOf(q) >= 0;
           el.hidden = !hit;
-          if (hit) {
-            shown++;
-            inGroup++;
-          }
+          if (hit) shown++;
         }
-        if (group) group.hidden = inGroup === 0;
         section.hidden = shown === 0;
         if (shown) found = true;
         section.open = q ? shown > 0 : chosen ? chosen[s] : section.open;

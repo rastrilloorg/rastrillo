@@ -23,11 +23,26 @@ const rastrilloFallbackVersion = "v0.20.0"
 // scaffolds (github.com/carlosframework/rastrillo), that tag *is* the
 // module's own version — the exact one to require.
 func rastrilloVersion() string {
+	v, _ := rastrilloVersionTagged()
+	return v
+}
+
+// rastrilloVersionTagged reports the same version and whether it came
+// from a real install tag rather than the fallback constant.
+//
+// `rastrillo doctor` needs the second half. It compares its own version
+// against the app's, and a binary someone built from a checkout reports
+// the fallback — a version it has no evidence for. Saying so is the
+// difference between "you are on different versions" and "I am guessing
+// at mine": the first is a finding, the second is a caveat, and a tool
+// that reports drift must not confuse them.
+func rastrilloVersionTagged() (string, bool) {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return rastrilloFallbackVersion
+		return rastrilloFallbackVersion, false
 	}
-	return versionFromBuildInfo(info.Main.Version)
+	v := versionFromBuildInfo(info.Main.Version)
+	return v, v == info.Main.Version
 }
 
 // versionFromBuildInfo isolates the fallback decision from

@@ -803,13 +803,17 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 	}
 	src := readScaffold(t, "blogapp", "internal", "blogapptest", "vendored_test.go")
 	for _, want := range []string{
-		"ui.TokensCSS()",
-		"ui.ShimJS()",
-		"ui.SelectJS()",
+		// The pin reads the library's own list rather than repeating
+		// it: one definition of the vendored set, shared with the
+		// scaffold above and with rastrillo doctor.
+		"ui.VendoredAssets(vendoredTheme)",
 		// The theme is vendored too, and the pin has to remember which
 		// one this app was scaffolded with.
 		`vendoredTheme = "day"`,
-		"ui.ThemeCSS(vendoredTheme)",
+		// The recorded-deliberate-edit escape hatch, which doctor reads
+		// too — without it, an app that meant to diverge has no way to
+		// say so except deleting the whole test.
+		"vendoredIsMine",
 		`filepath.Join("..", "blogapp", "static", name)`,
 	} {
 		if !strings.Contains(src, want) {

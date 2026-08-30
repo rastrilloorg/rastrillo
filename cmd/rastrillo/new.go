@@ -67,7 +67,13 @@ func runNew(args []string) error {
 	if err != nil {
 		return err
 	}
-	themeCSS, ok := ui.ThemeCSS(*theme)
+	// The vendored set — tokens.css, the chosen theme, and the three
+	// scripts — comes from ui.VendoredAssets, which is the one place
+	// that list is written down (ui/vendored.go). The generated
+	// vendored_test.go below and `rastrillo doctor` read the same
+	// function, so a file added to the set reaches the scaffold, the
+	// pin and the doctor together rather than one at a time.
+	vendored, ok := ui.VendoredAssets(*theme)
 	if !ok {
 		return fmt.Errorf("unknown theme %q: known themes are %s", *theme, strings.Join(ui.ThemeNames(), ", "))
 	}
@@ -124,29 +130,6 @@ func runNew(args []string) error {
 		// is what keeps it from drifting off of modelsTemplate's Note.
 		filepath.Join(appDir, "migrations", "0001_init.sql"): initMigrationTemplate,
 		filepath.Join(appDir, "migrations", "schema.sql"):    schemaSQLTemplate,
-		// The design-token stylesheet, delivered once. rastrillo.Serve
-		// never serves CSS at runtime; from here on this is an ordinary
-		// app-owned file that new/generate never touch again.
-		filepath.Join(appDir, "static", "tokens.css"): string(ui.TokensCSS()),
-		// The colours. tokens.css is structural only — every colour
-		// token gets its value here — so an app without a theme renders
-		// colourless. Delivered on the same terms: app-owned from here,
-		// swap it for another of ui.ThemeNames() or edit it freely.
-		filepath.Join(appDir, "static", "theme.css"): string(themeCSS),
-		// The fragment shim, delivered once like tokens.css: app-owned
-		// from here on, loaded by the layout via the same fingerprinting
-		// {{asset ...}} helper.
-		filepath.Join(appDir, "static", "rastrillo.js"): string(ui.ShimJS()),
-		// field-select's searchable enhancement, on the same terms.
-		// Inert until a select opts in with data-rst-select, which
-		// field-select emits past ten options — so an app that never has
-		// a select that big can delete this and its script tag.
-		filepath.Join(appDir, "static", "select.js"): string(ui.SelectJS()),
-		// The date fields' natural-language combobox, on the same
-		// terms again. Inert until an input opts in with data-rst-date
-		// or data-rst-time, which the date field partials emit — so an
-		// app with no date field can delete this and its script tag.
-		filepath.Join(appDir, "static", "datetime.js"): string(ui.DatetimeJS()),
 		// The test harness, delivered once like tokens.css: app-owned
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
@@ -174,6 +157,26 @@ func runNew(args []string) error {
 		filepath.Join(name, "AGENTS.md"): fmt.Sprintf(agentsMDTemplate, name) + string(conventions),
 		filepath.Join(name, "CLAUDE.md"): claudeMDPointer,
 	}
+	// The vendored static files, written from the one list. Each is
+	// delivered once and app-owned from here on: rastrillo.Serve never
+	// serves CSS at runtime, and new/generate never touch these again.
+	//
+	//	tokens.css     the design-token stylesheet — structure only
+	//	theme.css      the colour, type family and shape tokens
+	//	               tokens.css paints its classes with; swap it for
+	//	               another of ui.ThemeNames() or edit it freely
+	//	rastrillo.js   the fragment shim behind data-poll and data-busy
+	//	select.js      field-select's searchable enhancement, inert
+	//	               until a <select> opts in with data-rst-select
+	//	datetime.js    the date fields' natural-language combobox,
+	//	               inert until an input opts in with data-rst-date
+	//
+	// An app that never renders a big select or a date field can delete
+	// that script and its tag; nothing else changes.
+	for name, content := range vendored {
+		files[filepath.Join(appDir, "static", name)] = string(content)
+	}
+
 	for path, content := range files {
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			return err
@@ -715,34 +718,46 @@ import (
 	"github.com/carlosframework/rastrillo/ui"
 )
 
+// vendoredTheme is the theme this app was scaffolded with. Change it
+// here when you swap static/theme.css for another of ui.ThemeNames().
+const vendoredTheme = "%[2]s"
+
+// vendoredIsMine names the vendored files this app has edited
+// DELIBERATELY. Add one here when you mean to diverge: this test stops
+// pinning it, and rastrillo doctor leaves it alone too. The file was
+// yours from the moment the scaffold wrote it — this is only where you
+// record that the edit was on purpose, so the next reader (and the next
+// upgrade) can tell it from drift.
+var vendoredIsMine = map[string]bool{
+	// "tokens.css": true,
+}
+
 // The scaffold delivered these files once; they are app-owned from
 // then on. This test pins each vendored copy byte-identical to the
 // library it came from: a reviewer runs the suite instead of reading
 // ~56KB of assets as app diff, and a framework upgrade that forgets
-// to re-copy is caught instead of drifting silently. If you edit one
-// DELIBERATELY, delete its line below — the file is yours.
+// to re-copy is caught instead of drifting silently.
+//
+// The list is ui.VendoredAssets — the same function rastrillo new
+// wrote these files from and rastrillo doctor compares them against —
+// so a file added to the library's vendored set is pinned here without
+// this file changing.
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
-	// The theme this app was scaffolded with. Change it here when you
-	// swap static/theme.css for another of ui.ThemeNames().
-	const vendoredTheme = "%[2]s"
-	themeCSS, ok := ui.ThemeCSS(vendoredTheme)
+	assets, ok := ui.VendoredAssets(vendoredTheme)
 	if !ok {
 		t.Fatalf("unknown theme %%q", vendoredTheme)
 	}
-	for name, lib := range map[string][]byte{
-		"tokens.css":   ui.TokensCSS(),
-		"theme.css":    themeCSS,
-		"rastrillo.js": ui.ShimJS(),
-		"select.js":    ui.SelectJS(),
-		"datetime.js":  ui.DatetimeJS(),
-	} {
+	for name, lib := range assets {
+		if vendoredIsMine[name] {
+			continue
+		}
 		vendored, err := os.ReadFile(filepath.Join("..", "%[1]s", "static", name))
 		if err != nil {
 			t.Errorf("read vendored %%s: %%v", name, err)
 			continue
 		}
 		if !bytes.Equal(vendored, lib) {
-			t.Errorf("static/%%s differs from the library copy; re-copy it (or delete its pin if the edit was deliberate)", name)
+			t.Errorf("static/%%s differs from the library copy; re-copy it with rastrillo doctor --fix (or add it to vendoredIsMine if the edit was deliberate)", name)
 		}
 	}
 }
