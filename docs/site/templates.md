@@ -396,6 +396,18 @@ serves `/design-system` and `/design-system/` as the same page without
 redirecting between them, and a relative href resolves differently on
 each.
 
+The gallery is scanned to WCAG 2.2 AA on every CI run. `go test -tags
+browser ./internal/designsystem/` injects a pinned copy of axe-core into
+a real browser and fails the build on any violation, across three
+themes, both colour schemes, an RTL page, the modal and shell demos, and
+the preview documents the components actually live in — plus two checks
+axe cannot make: that nothing scrolls sideways in a 320px viewport, and
+that a Tab through the page shows a focus ring at every stop and never
+gets stuck. That is a floor, not a certificate: automated scanning
+reaches roughly half of the WCAG success criteria, and the other half —
+whether alt text says something true, whether the reading order makes
+sense, whether a label means what it says — is read by a person.
+
 ## Styling
 
 `ui.TokensCSS()` is the design-token stylesheet, and `rastrillo new`

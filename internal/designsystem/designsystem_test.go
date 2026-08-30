@@ -1755,3 +1755,56 @@ func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
 		}
 	}
 }
+
+// TestVendoredAxeStaysOutOfTheTree is the other half of the containment
+// gate in ui/axe_test.go. That one holds the library's shipped assets;
+// this one holds the 189 files the gallery publishes. The scanner is
+// read off disk by the browser-tagged accessibility drive and injected
+// at run time, and that is the only place it is allowed to exist.
+func TestVendoredAxeStaysOutOfTheTree(t *testing.T) {
+	const marker = "Deque Systems"
+	for name, body := range render(t) {
+		if strings.Contains(string(body), marker) {
+			t.Errorf("%s carries the vendored axe-core: the scanner must not ship with the thing it scans", name)
+		}
+	}
+	if !treeCommitted {
+		return
+	}
+	err := fs.WalkDir(os.DirFS(treeDir), ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		if strings.Contains(p, "axe") {
+			t.Errorf("%s is committed under %s and looks like the vendored scanner", p, treeDir)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking %s: %v", treeDir, err)
+	}
+}
+
+// TestEveryFrameTitleIsUniqueOnThePage is WCAG 2.0 A 4.1.2 for the one
+// element this page has a hundred and ten of. A frame's title is what a
+// screen reader announces on entering it and what a frame list shows;
+// eleven frames called "the field sample" is a list that cannot be used
+// to get anywhere. The accessibility gate found it (as an incomplete —
+// see previewTitle); this holds it without needing a browser.
+func TestEveryFrameTitleIsUniqueOnThePage(t *testing.T) {
+	titleAttr := regexp.MustCompile(`<iframe[^>]*\stitle="([^"]*)"`)
+	for name, body := range render(t) {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		seen := map[string]int{}
+		for _, m := range titleAttr.FindAllStringSubmatch(string(body), -1) {
+			seen[m[1]]++
+		}
+		for title, n := range seen {
+			if n > 1 {
+				t.Errorf("%s has %d frames titled %q — a frame title is an accessible name and has to be unique on the page", name, n, html.UnescapeString(title))
+			}
+		}
+	}
+}

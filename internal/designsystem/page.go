@@ -481,7 +481,7 @@ func buildFamilies(tmpl *template.Template, theme, locale string) ([]familyView,
 					Note:  proseIn(locale, s.Note),
 					Preview: newPreview(theme, locale,
 						fmt.Sprintf("%s-%d", pv.ID, i),
-						proseIn(locale, "The {name} sample, in a page of its own", "name", doc.Name),
+						previewTitle(locale, doc.Name, s.State),
 						wrap(doc.Wrap, string(html)), heightOf(pv.ID)),
 				})
 			}
@@ -516,7 +516,7 @@ func buildFamilies(tmpl *template.Template, theme, locale string) ([]familyView,
 				pv.States = append(pv.States, stateView{
 					State: proseIn(locale, "Rendered from an empty data value"),
 					Preview: newPreview(theme, locale, pv.ID+"-0",
-						proseIn(locale, "The {name} sample, in a page of its own", "name", name),
+						previewTitle(locale, name, "Rendered from an empty data value"),
 						string(html), heightOf(pv.ID)),
 				})
 			}
@@ -763,12 +763,19 @@ var srcdocScripts = []struct {
 // it: gallery.js writes data-theme on each frame's own <html>, on load
 // and on every toggle. See its "the previews" section, and the drive
 // leg that measured the two apart.
-func srcdoc(theme, locale, body string) string {
+func srcdoc(theme, locale, title, body string) string {
 	var b strings.Builder
 	b.WriteString("<!doctype html>\n")
 	b.WriteString(`<html lang="` + locale + `" dir="` + rastrillo.Dir(locale) + `">` + "\n")
 	b.WriteString("<head>\n<meta charset=\"utf-8\">\n")
 	b.WriteString(`<meta name="viewport" content="width=device-width, initial-scale=1">` + "\n")
+	// The same words the frame's title attribute carries. A frame is a
+	// document, and a document with no title fails WCAG 2.4.2 — which
+	// the a11y gate says out loud, because it scans these documents in
+	// the frame rather than only the page around them. It is also what
+	// a screen reader announces on entering the frame, so the two names
+	// agreeing is the point rather than a coincidence.
+	b.WriteString("<title>" + template.HTMLEscapeString(title) + "</title>\n")
 	b.WriteString(`<link rel="stylesheet" href="` + mountPath + `/tokens.css">` + "\n")
 	b.WriteString(`<link rel="stylesheet" href="` + mountPath + `/theme-` + theme + `.css">` + "\n")
 	// A component sample gets breathing room; a whole-page sample —
@@ -837,13 +844,39 @@ func deaden(html string) string {
 	return sampleForm.ReplaceAllString(out, `<form target="ds-void"`)
 }
 
+// previewTitle names one preview frame, and the name has to be unique
+// on the page. A frame is a document, and a screen reader announces its
+// title on the way in; a page of a hundred and ten frames with
+// forty-six names between them is a page whose frame list is useless.
+// That is WCAG 2.0 A 4.1.2, and axe says so — as an "incomplete" rather
+// than a violation only because the gallery is scanned with the frames
+// left to their own pass, so the engine can see the duplicates but not
+// prove it.
+//
+// Uniqueness comes from what already distinguishes one preview from
+// another: which state of the partial this is, and — for the one name
+// that is both a partial and an idiom, dropdown — which section it is
+// in. Both halves are existing prose keys, translated in all twelve
+// locales like everything else the page says. No new key was invented
+// for this, deliberately: a frame title is not the place to spend
+// eleven translations.
+//
+// TestEveryFrameTitleIsUniqueOnThePage holds the result.
+func previewTitle(locale, name, qualifier string) string {
+	t := proseIn(locale, "The {name} sample, in a page of its own", "name", name)
+	if qualifier == "" {
+		return t
+	}
+	return t + " — " + proseIn(locale, qualifier)
+}
+
 // newPreview is one example's widget: the source as written, and a
 // document holding the same markup with its links deadened.
 func newPreview(theme, locale, group, title, source string, height int) previewView {
 	return previewView{
 		Group:  group,
 		Style:  previewStyle(height),
-		Doc:    srcdoc(theme, locale, deaden(source)),
+		Doc:    srcdoc(theme, locale, title, deaden(source)),
 		Source: source,
 		Title:  title,
 	}
@@ -940,6 +973,14 @@ var demoIdioms = map[string]demoIdiom{
 // complete HTML with no template actions, so they go onto the page as
 // they are — the point is that the page shows the same bytes the ui
 // tests hold against tokens.css.
+//
+// An idiom's own heading is an h3, not the h4 a partial gets, and the
+// difference is the outline rather than the size. A partial sits inside
+// a family, so its heading is one level under the family's h3; an idiom
+// sits directly under the "Class idioms" h2 with nothing between, and
+// an h4 there skipped a level. It read the same and described a
+// structure that was not there — which is the whole of WCAG 1.3.1, and
+// what the accessibility gate found the first time it ran.
 func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, error) {
 	samples := ui.Styleguide()
 	names := make([]string, 0, len(samples))
@@ -956,7 +997,7 @@ func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, er
 			Blurb:  proseIn(locale, idiomBlurbs[name]),
 		}
 		view.Preview = newPreview(theme, locale, view.ID+"-0",
-			proseIn(locale, "The {name} sample, in a page of its own", "name", name),
+			previewTitle(locale, name, "Class idioms"),
 			samples[name], heightOf(view.ID))
 		if demo, ok := demoIdioms[name]; ok {
 			view.DemoLabel = proseIn(locale, demo.Label)
@@ -1134,7 +1175,7 @@ const dsCSS = `
 .ds-family { margin: var(--rst-sp-6) 0 0; }
 .ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
 .ds-partial { margin: var(--rst-sp-5) 0; }
-.ds-partial > h4 { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
 .ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
 .ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
 .ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
@@ -1375,7 +1416,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 {{range .Idioms}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
-<h4 class="rst-mono">{{.Name}}</h4>
+<h3 class="rst-mono">{{.Name}}</h3>
 {{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
 {{.Rule}}
 <div class="ds-sample">{{template "ds-view" .Preview}}

@@ -26,7 +26,7 @@
 .ds-family { margin: var(--rst-sp-6) 0 0; }
 .ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
 .ds-partial { margin: var(--rst-sp-5) 0; }
-.ds-partial > h4 { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
 .ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
 .ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
 .ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
@@ -191,11 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header の見本、それ自身のページの中で — 見出し、サブ見出し、そして主要な操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;page-header の見本、それ自身のページの中で — 見出し、サブ見出し、そして主要な操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -231,11 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header の見本、それ自身のページの中で — 見出しだけ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;page-header の見本、それ自身のページの中で — 見出しだけ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -274,11 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar の見本、それ自身のページの中で — 検索と絞り込みのドロップダウン" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-bar の見本、それ自身のページの中で — 検索と絞り込みのドロップダウン&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -340,11 +343,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search の見本、それ自身のページの中で — 検索語がすでに入っている状態" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-bar-search の見本、それ自身のページの中で — 検索語がすでに入っている状態&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -379,11 +383,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search の見本、それ自身のページの中で — 空、アクセシブルな名前はカタログから" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-bar-search の見本、それ自身のページの中で — 空、アクセシブルな名前はカタログから&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -423,11 +428,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit の見本、それ自身のページの中で — 既定のラベル" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-search-submit の見本、それ自身のページの中で — 既定のラベル&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -458,11 +464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action の見本、それ自身のページの中で — 先頭の目印、状態、そしてひとつの操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-row-action の見本、それ自身のページの中で — 先頭の目印、状態、そしてひとつの操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -496,11 +503,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action の見本、それ自身のページの中で — 名前と補足行だけ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-row-action の見本、それ自身のページの中で — 名前と補足行だけ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -535,11 +543,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs の見本、それ自身のページの中で — セクションが二つ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;seg-tabs の見本、それ自身のページの中で — セクションが二つ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -570,11 +579,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown の見本、それ自身のページの中で — 絞り込みをひとつ適用したフィルターメニュー" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;dropdown の見本、それ自身のページの中で — 絞り込みをひとつ適用したフィルターメニュー&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -619,11 +629,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar の見本、それ自身のページの中で — 3 行を選択中" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;bulk-bar の見本、それ自身のページの中で — 3 行を選択中&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -654,11 +665,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination の見本、それ自身のページの中で — 長い一覧の途中" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;pagination の見本、それ自身のページの中で — 長い一覧の途中&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -684,11 +696,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination の見本、それ自身のページの中で — 最初のページ、アクセシブルな名前は既定" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;pagination の見本、それ自身のページの中で — 最初のページ、アクセシブルな名前は既定&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -721,11 +734,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state の見本、それ自身のページの中で — POST の行動喚起つき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;empty-state の見本、それ自身のページの中で — POST の行動喚起つき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -764,11 +778,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state の見本、それ自身のページの中で — 文だけ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;empty-state の見本、それ自身のページの中で — 文だけ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -809,11 +824,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で — 既定のトーン（neutral）" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;status-pill の見本、それ自身のページの中で — 既定のトーン（neutral）&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -837,11 +853,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;status-pill の見本、それ自身のページの中で — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -865,11 +882,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;status-pill の見本、それ自身のページの中で — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -893,11 +911,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;status-pill の見本、それ自身のページの中で — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -921,11 +940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill の見本、それ自身のページの中で — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;status-pill の見本、それ自身のページの中で — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -956,11 +976,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で — トーンなし（控えめな既定）" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;badge の見本、それ自身のページの中で — トーンなし（控えめな既定）&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -984,11 +1005,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;badge の見本、それ自身のページの中で — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1012,11 +1034,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;badge の見本、それ自身のページの中で — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1040,11 +1063,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;badge の見本、それ自身のページの中で — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1068,11 +1092,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge の見本、それ自身のページの中で — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;badge の見本、それ自身のページの中で — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1103,11 +1128,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で — 空" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;meter の見本、それ自身のページの中で — 空&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1131,11 +1157,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で — 途中まで" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;meter の見本、それ自身のページの中で — 途中まで&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1159,11 +1186,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で — ほぼ満杯" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;meter の見本、それ自身のページの中で — ほぼ満杯&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1187,11 +1215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で — 満杯" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;meter の見本、それ自身のページの中で — 満杯&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1215,11 +1244,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter の見本、それ自身のページの中で — 上限超過" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;meter の見本、それ自身のページの中で — 上限超過&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1250,11 +1280,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person の見本、それ自身のページの中で — 名前とメールアドレス" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;person の見本、それ自身のページの中で — 名前とメールアドレス&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1278,11 +1309,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person の見本、それ自身のページの中で — 大サイズ、詳細画面の見出しに使う大きさ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;person の見本、それ自身のページの中で — 大サイズ、詳細画面の見出しに使う大きさ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1306,11 +1338,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person の見本、それ自身のページの中で — イニシャルなし" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;person の見本、それ自身のページの中で — イニシャルなし&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,11 +1374,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で — 既定のトーン（info）、見出しなし" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;callout の見本、それ自身のページの中で — 既定のトーン（info）、見出しなし&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1369,11 +1403,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;callout の見本、それ自身のページの中で — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1397,11 +1432,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;callout の見本、それ自身のページの中で — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1425,11 +1461,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;callout の見本、それ自身のページの中で — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1453,11 +1490,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;callout の見本、それ自身のページの中で — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1481,11 +1519,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout の見本、それ自身のページの中で — negative、アラートとして読み上げ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;callout の見本、それ自身のページの中で — negative、アラートとして読み上げ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1516,11 +1555,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list の見本、それ自身のページの中で — 四つの事実、うち一つは機械寄り" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;detail-list の見本、それ自身のページの中で — 四つの事実、うち一つは機械寄り&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1569,11 +1609,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice の見本、それ自身のページの中で — 保存を知らせるメッセージ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;notice の見本、それ自身のページの中で — 保存を知らせるメッセージ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1604,11 +1645,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error の見本、それ自身のページの中で — 拒否された送信" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-error の見本、それ自身のページの中で — 拒否された送信&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1639,11 +1681,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status の見本、それ自身のページの中で — 実行中" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;job-status の見本、それ自身のページの中で — 実行中&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1676,11 +1719,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status の見本、それ自身のページの中で — 完了" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;job-status の見本、それ自身のページの中で — 完了&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1712,11 +1756,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status の見本、それ自身のページの中で — 失敗" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;job-status の見本、それ自身のページの中で — 失敗&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1761,11 +1806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で — 素のまま" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field の見本、それ自身のページの中で — 素のまま&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1794,11 +1840,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で — ヒントつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field の見本、それ自身のページの中で — ヒントつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1827,11 +1874,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で — コントロールの下にヘルプつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field の見本、それ自身のページの中で — コントロールの下にヘルプつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1862,11 +1910,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で — 必須" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field の見本、それ自身のページの中で — 必須&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1895,11 +1944,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で — エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field の見本、それ自身のページの中で — エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1930,11 +1980,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field の見本、それ自身のページの中で — 短い" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field の見本、それ自身のページの中で — 短い&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1970,11 +2021,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で — 素のまま" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-text の見本、それ自身のページの中で — 素のまま&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2005,11 +2057,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で — ヒントつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-text の見本、それ自身のページの中で — ヒントつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2042,11 +2095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で — 必須" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-text の見本、それ自身のページの中で — 必須&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2077,11 +2131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text の見本、それ自身のページの中で — エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-text の見本、それ自身のページの中で — エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2121,11 +2176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で — 素のまま" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-textarea の見本、それ自身のページの中で — 素のまま&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2156,11 +2212,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で — ヒントつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-textarea の見本、それ自身のページの中で — ヒントつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2193,11 +2250,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で — エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-textarea の見本、それ自身のページの中で — エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2230,11 +2288,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea の見本、それ自身のページの中で — 必須" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-textarea の見本、それ自身のページの中で — 必須&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2272,11 +2331,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で — 選択肢が三つ — ネイティブの select" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-select の見本、それ自身のページの中で — 選択肢が三つ — ネイティブの select&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2305,11 +2365,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で — 選択肢が 12 — 絞り込みできるコンボボックス" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-select の見本、それ自身のページの中で — 選択肢が 12 — 絞り込みできるコンボボックス&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2341,11 +2402,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で — 選択肢が 12、Plain — 拡張を断った場合" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-select の見本、それ自身のページの中で — 選択肢が 12、Plain — 拡張を断った場合&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2374,11 +2436,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で — 必須、エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-select の見本、それ自身のページの中で — 必須、エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2409,11 +2472,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select の見本、それ自身のページの中で — 手書き、optgroup つき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-select の見本、それ自身のページの中で — 手書き、optgroup つき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2460,11 +2524,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check の見本、それ自身のページの中で — オン" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-check の見本、それ自身のページの中で — オン&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2489,11 +2554,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check の見本、それ自身のページの中で — オフ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-check の見本、それ自身のページの中で — オフ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2518,11 +2584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check の見本、それ自身のページの中で — 無効" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-check の見本、それ自身のページの中で — 無効&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2554,11 +2621,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field の見本、それ自身のページの中で — ひとつだけ選ぶ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;choice-field の見本、それ自身のページの中で — ひとつだけ選ぶ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2583,11 +2651,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field の見本、それ自身のページの中で — いくつでも選べる" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;choice-field の見本、それ自身のページの中で — いくつでも選べる&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2619,11 +2688,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で — 拡張あり — 「明日」か「3週間後」と入力" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-date の見本、それ自身のページの中で — 拡張あり — 「明日」か「3週間後」と入力&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2657,11 +2727,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で — 必須、エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-date の見本、それ自身のページの中で — 必須、エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2695,11 +2766,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で — 範囲つき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-date の見本、それ自身のページの中で — 範囲つき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2731,11 +2803,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date の見本、それ自身のページの中で — Plain — 素のネイティブ入力" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-date の見本、それ自身のページの中で — Plain — 素のネイティブ入力&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2773,11 +2846,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で — 拡張あり — 「19:30」か「正午」と入力" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-time の見本、それ自身のページの中で — 拡張あり — 「19:30」か「正午」と入力&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2811,11 +2885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で — 必須、エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-time の見本、それ自身のページの中で — 必須、エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2849,11 +2924,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で — 範囲つき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-time の見本、それ自身のページの中で — 範囲つき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2885,11 +2961,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time の見本、それ自身のページの中で — Plain — 素のネイティブ入力" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-time の見本、それ自身のページの中で — Plain — 素のネイティブ入力&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,11 +3004,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で — 拡張あり — 「明日」か「3週間後」と入力" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-datetime の見本、それ自身のページの中で — 拡張あり — 「明日」か「3週間後」と入力&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2965,11 +3043,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で — 必須、エラーつき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-datetime の見本、それ自身のページの中で — 必須、エラーつき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3003,11 +3082,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で — 範囲つき" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-datetime の見本、それ自身のページの中で — 範囲つき&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3039,11 +3119,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime の見本、それ自身のページの中で — Plain — 素のネイティブ入力" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-datetime の見本、それ自身のページの中で — Plain — 素のネイティブ入力&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3081,11 +3162,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange の見本、それ自身のページの中で — 日付と時刻、初期値あり" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-daterange の見本、それ自身のページの中で — 日付と時刻、初期値あり&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3135,11 +3217,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange の見本、それ自身のページの中で — 日付のみ、終了側にエラー" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;field-daterange の見本、それ自身のページの中で — 日付のみ、終了側にエラー&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3198,11 +3281,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で — 保存とキャンセル" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-foot の見本、それ自身のページの中で — 保存とキャンセル&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3233,11 +3317,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で — 送信のみ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-foot の見本、それ自身のページの中で — 送信のみ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3266,11 +3351,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で — 待機中 — 何も起きていないときのボタン" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-foot の見本、それ自身のページの中で — 待機中 — 何も起きていないときのボタン&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3301,11 +3387,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot の見本、それ自身のページの中で — 処理中 — フォームが出ていくときに rastrillo.js が書くもの" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-foot の見本、それ自身のページの中で — 処理中 — フォームが出ていくときに rastrillo.js が書くもの&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3343,11 +3430,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form の見本、それ自身のページの中で — 取り消せない操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;confirm-form の見本、それ自身のページの中で — 取り消せない操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3372,11 +3460,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form の見本、それ自身のページの中で — 通常の場合、キャンセルの文言は既定" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;confirm-form の見本、それ自身のページの中で — 通常の場合、キャンセルの文言は既定&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3414,11 +3503,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で — 404 — 見つかりません" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;error-page の見本、それ自身のページの中で — 404 — 見つかりません&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3452,11 +3542,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で — 403 — アクセス権なし" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;error-page の見本、それ自身のページの中で — 403 — アクセス権なし&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3490,11 +3581,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で — 422 — 処理できません" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;error-page の見本、それ自身のページの中で — 422 — 処理できません&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3528,11 +3620,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で — 500 — サーバーエラー" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;error-page の見本、それ自身のページの中で — 500 — サーバーエラー&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3568,11 +3661,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で — 503 — 利用できません" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;error-page の見本、それ自身のページの中で — 503 — 利用できません&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3606,11 +3700,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page の見本、それ自身のページの中で — それ以外すべて — 汎用の組" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;error-page の見本、それ自身のページの中で — それ以外すべて — 汎用の組&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3651,11 +3746,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav の見本、それ自身のページの中で — レコードに戻る" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;back-nav の見本、それ自身のページの中で — レコードに戻る&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3686,11 +3782,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu の見本、それ自身のページの中で — 12 の言語、いま選ばれているものに印" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;locale-menu の見本、それ自身のページの中で — 12 の言語、いま選ばれているものに印&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
-<h4 class="rst-mono">box</h4>
+<h3 class="rst-mono">box</h3>
 <p class="ds-lead">余白のあるセクションカードと、その外側に置く見出しです。</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>どのカードがどれか</strong><p>rst-list と rst-card に余白がないのは意図です。これらは行の連なりを収めるもので、余白は各行が自分で持ちます。フォームや段落、リンクの帯など、行でないものを直に入れると枠線にぴったり付いて描かれます。文字が縁に触れているのがその印です。任意の内容を入れる余白付きのカードは rst-box で、その見出しは直前に置く兄弟の rst-box-head です。</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 220px; --ds-hm: 275px">
@@ -3758,11 +3855,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;box の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3782,7 +3880,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: dropdown -->
 <article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
-<h4 class="rst-mono">dropdown</h4>
+<h3 class="rst-mono">dropdown</h3>
 <p class="ds-lead">ヘッダーのはみ出しメニューや一覧バーの絞り込みの正体である details/summary のメニューと、適用中の絞り込みを表す取り外せるチップです。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 220px; --ds-hm: 275px">
@@ -3791,11 +3889,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;dropdown の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3827,7 +3926,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: form-layout -->
 <article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
-<h4 class="rst-mono">form-layout</h4>
+<h3 class="rst-mono">form-layout</h3>
 <p class="ds-lead">フォームにリズムと保存バーを与えるクラスです。これらを出力する部品はありません。呼び出し側が組み立てたフィールドの連なりを包むものです。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 390px; --ds-hm: 487px">
@@ -3836,11 +3935,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-layout の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3911,7 +4011,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: help -->
 <article class="ds-partial" id="idiom-help" data-ds-anchor>
-<h4 class="rst-mono">help</h4>
+<h3 class="rst-mono">help</h3>
 <p class="ds-lead">ヘルプ記事にリンクする、枠付きの疑問符です。CSS のツールチップは飾りで、リンク自身が文としてのラベルを持っています。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 100px; --ds-hm: 125px">
@@ -3920,11 +4020,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;help の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3942,7 +4043,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: list-grid -->
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
-<h4 class="rst-mono">list-grid</h4>
+<h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">データテーブルの本当の語彙です。列を決めるのはカードで一度きり、行はセルを選ぶだけです。</p>
 <div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>画面は縦に積む</strong><p>画面はひとつの列です。page-header、次に section-header とカード、次の section-header とカード、と読む順に並びます。見出しと段落とボタンを flex の行に横並びで組まないでください。横並びは、それを備えた語彙 — rst-box-head、rst-field-row、rst-lbar、rst-lrow のセル、rst-seg-tabs — のためのものです。</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
@@ -3951,11 +4052,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-grid の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3995,7 +4097,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: modal -->
 <article class="ds-partial" id="idiom-modal" data-ds-anchor>
-<h4 class="rst-mono">modal</h4>
+<h3 class="rst-mono">modal</h3>
 <p class="ds-lead">モーダルはクライアント側の状態ではなく、それ自体がひとつの URL です。下の画面を inert にし、その上にパネルを置き、閉じるのはただのリンクです。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 620px; --ds-hm: 775px">
@@ -4004,11 +4106,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;modal の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4058,7 +4161,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: selbox -->
 <article class="ds-partial" id="idiom-selbox" data-ds-anchor>
-<h4 class="rst-mono">selbox</h4>
+<h3 class="rst-mono">selbox</h3>
 <p class="ds-lead">選択モードで一覧の行が身につけるチェックボックスです。そのラベルは、その行が何であるかを言い直します。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
@@ -4067,11 +4170,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;selbox の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4089,7 +4193,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: shell-sidebar -->
 <article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
-<h4 class="rst-mono">shell-sidebar</h4>
+<h3 class="rst-mono">shell-sidebar</h3>
 <p class="ds-lead">sidebar シェル自身の枠で、800px を下回ると details の開閉に畳まれます。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 400px; --ds-hm: 500px">
@@ -4098,11 +4202,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;shell-sidebar の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4134,7 +4239,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
-<h4 class="rst-mono">shell-topbar</h4>
+<h3 class="rst-mono">shell-topbar</h3>
 <p class="ds-lead">topbar シェル自身の枠を、マークアップとして示したものです。Layout はこれをテンプレート一式として提供します。これはその中身です。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
@@ -4143,11 +4248,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;shell-topbar の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4183,7 +4289,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <!-- idiom: tblock -->
 <article class="ds-partial" id="idiom-tblock" data-ds-anchor>
-<h4 class="rst-mono">tblock</h4>
+<h3 class="rst-mono">tblock</h3>
 <p class="ds-lead">枠付きのカードで、中身はスイッチが入っている間だけ :has() で表示されます。本当の状態はスイッチであり、表示は見せ方の都合にすぎません。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 270px; --ds-hm: 337px">
@@ -4192,11 +4298,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">モバイル</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">コード</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock の見本、それ自身のページの中で" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock の見本、それ自身のページの中で — クラスの語彙" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;tblock の見本、それ自身のページの中で — クラスの語彙&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
