@@ -2547,37 +2547,47 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 // any more is a canary that can only mislead, so it went with it.
 func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 	files := render(t)
-	scripts := map[string][]byte{
-		"rastrillo.js": ui.ShimJS(),
-		"select.js":    ui.SelectJS(),
-		"datetime.js":  ui.DatetimeJS(),
-	}
 	row := regexp.MustCompile(`<li id="asset-`)
 	for _, theme := range ui.ThemeNames() {
-		themeCSS, ok := ui.ThemeCSS(theme)
+		vendored, ok := ui.VendoredAssets(theme)
 		if !ok {
 			t.Fatalf("no theme %q", theme)
 		}
 		// The files the page lists, in the order it lists them, built
-		// the way the page builds them: off ui, not off a list here.
-		want := []struct {
+		// from ui.VendoredAssets — the one definition of the vendored
+		// set, shared with the scaffold, the generated pin and
+		// rastrillo doctor. Written out here instead, this test would
+		// be a second copy of the page's own list agreeing with itself,
+		// and a sixth vendored file would reach every app while this
+		// page and this gate stayed quiet.
+		//
+		// One expansion: theme.css is ONE file in an app and one row
+		// PER shipped theme here, because a reader choosing a theme to
+		// download needs to see all of them.
+		var want []struct {
 			file string
 			body []byte
-		}{{"tokens.css", ui.TokensCSS()}}
-		for _, n := range ui.ThemeNames() {
-			css, _ := ui.ThemeCSS(n)
+		}
+		for _, n := range ui.VendoredNames() {
+			if n == "theme.css" {
+				for _, tn := range ui.ThemeNames() {
+					css, _ := ui.ThemeCSS(tn)
+					want = append(want, struct {
+						file string
+						body []byte
+					}{"theme-" + tn + ".css", css})
+				}
+				continue
+			}
 			want = append(want, struct {
 				file string
 				body []byte
-			}{"theme-" + n + ".css", css})
+			}{n, vendored[n]})
 		}
-		for _, n := range []string{"rastrillo.js", "select.js", "datetime.js"} {
-			want = append(want, struct {
-				file string
-				body []byte
-			}{n, scripts[n]})
+		app := 0
+		for _, body := range vendored {
+			app += len(body)
 		}
-		app := len(ui.TokensCSS()) + len(themeCSS) + len(ui.ShimJS()) + len(ui.SelectJS()) + len(ui.DatetimeJS())
 		for _, locale := range rastrillo.BaseLocales() {
 			name := theme + "/" + locale + "/" + fileOf("getting-started")
 			page := string(files[name])

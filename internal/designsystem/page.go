@@ -305,8 +305,8 @@ func pageKinds() []pageKind {
 }
 
 // componentPages is one page per family in samples.go: the split that
-// took components.html from 97 preview frames to five pages of roughly
-// twenty.
+// took components.html from 98 preview frames to five pages of roughly
+// twenty (16 + 30 + 30 + 14 + 8, counted off the render).
 //
 // Read off families() rather than written out here, which is what makes
 // a family a page and not a page a family. A row added to samples.go is
@@ -768,8 +768,8 @@ func renderBody(tmpl *template.Template, kind string, view pageView) (template.H
 }
 
 // themeLinks is the theme switcher. It keeps the reader on the page
-// they are reading: choosing another theme from components.html lands
-// on that theme's components.html, not back at the overview.
+// they are reading: choosing another theme from the form family's page
+// lands on that theme's form page, not back at the overview.
 func themeLinks(mount, theme, locale, file string) []navLink {
 	out := make([]navLink, 0, len(ui.ThemeNames()))
 	for _, name := range ui.ThemeNames() {
@@ -1973,11 +1973,22 @@ type assetsView struct {
 // the same ones Render writes the tree's copies from — the file a
 // reader downloads and the number beside it cannot disagree.
 func buildAssets(mount, theme, locale string) assetsView {
-	themeCSS, ok := ui.ThemeCSS(theme)
+	// The vendored set, from the one place it is defined:
+	// ui.VendoredAssets, shared with rastrillo new's scaffold, the pin
+	// test it generates into every app, and rastrillo doctor. This page
+	// is the fourth reader of that list, and the only one whose numbers
+	// nobody would notice going stale — so it reads the list rather
+	// than repeating it, and a sixth vendored file lands in the total
+	// here on the same commit it reaches an app.
+	vendored, ok := ui.VendoredAssets(theme)
 	if !ok {
 		// Render has already failed on an unknown theme by the time
 		// anything calls this; an empty row would be a silent lie.
 		panic("designsystem: no theme " + theme)
+	}
+	appBytes := 0
+	for _, body := range vendored {
+		appBytes += len(body)
 	}
 	add := func(out *assetsView, name string, body []byte, blurb string, args ...any) {
 		out.List = append(out.List, assetView{
@@ -1989,7 +2000,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 		})
 	}
 	out := assetsView{
-		AppBytes: len(ui.TokensCSS()) + len(themeCSS) + len(ui.ShimJS()) + len(ui.SelectJS()) + len(ui.DatetimeJS()),
+		AppBytes: appBytes,
 		Scaffold: "rastrillo new --theme=" + theme + " myapp",
 		Pin:      `const vendoredTheme = "` + theme + `"`,
 	}
