@@ -2768,3 +2768,77 @@ embeds its CSS from the module rather than being scaffold-copied — one
 pin, no frozen file — and declares its tested `ui` range for
 `rastrillo doctor` (§6-v2.3) to check, which is an extension of a
 mechanism already approved rather than a new one.
+
+---
+
+## 6-v2.7. Dashboards and a fourth shell (2026-08-30) — RULED by Paul
+
+Two additions, with Stripe's dashboard as the reference Paul supplied.
+
+### A shell that is topbar AND sidebar
+
+`ui.Layout` ships `column`, `topbar` and `sidebar`. It cannot do the
+commonest admin shape of all: a brand-and-account bar across the top
+with a navigation rail beneath it down the side. Stripe, GitHub and most
+consoles are this, and an app that wants it today has to hand-write a
+layout the framework nearly provides.
+
+Proposed name: **`console`**. Same `nav`, `account`, `locale`, `brand`
+and `content` blocks as the other three, so a screen moves between
+shells without an edit. It collapses like the others below 800px — and
+it has two things to fold rather than one, which is the design work.
+
+### Dashboard components
+
+The vocabulary from the reference, named for what each one is:
+
+- **stat** — a figure with an optional **delta** (`+1,900%`) and a
+  comparison label (`1 previous period`). §6-v2.4 already ruled `<data>`
+  for the figure and titogo's `stat-band` as the lead/companion shape.
+- **card footer** — `Updated 22 seconds ago` on one side, `More details`
+  on the other. It recurs on every card in the reference and is a
+  component, not a one-off.
+- **leader list** — name and meta on the left, a right-aligned figure on
+  the right, ranked. Distinct from `list-row`, which is a record you
+  navigate to; this is a reading of a top-N.
+- **series** — the chart itself.
+- and the combinations: stat over series in one card, stat beside stat,
+  series spanning a full-width block.
+
+### The chart problem, and the answer
+
+A chart cannot be a charting library here — the doctrine is that the
+scriptless path is the real one, and a dashboard that renders nothing
+without JavaScript fails it at the first screen.
+
+**Server-rendered SVG.** A Go helper takes the points and emits a
+`<polyline>` or `<path>`. Zero JavaScript, prints, works in email, and
+degrades to nothing worse than itself.
+
+Three rules the reference already follows, and which this system holds
+anyway:
+
+1. **Geometry in SVG, labels in HTML.** Axis values, the title and the
+   footer are HTML around the SVG, not `<text>` inside it. They then
+   translate through the twelve catalogs, scale with the type tokens,
+   stay selectable, and reflow. Text baked into SVG does none of that
+   and would quietly break every non-English rendering.
+2. **A series is distinguished by line style, not only colour.** The
+   reference draws this period solid and the previous dotted. That is
+   the framework's existing rule — colour never carries meaning alone —
+   arriving at the same answer, and it must be the default rather than
+   an option.
+3. **The chart is a picture of data, so the data must be reachable.** A
+   `role="img"` with an accessible name summarising the trend, and the
+   series available as a real table — visually hidden, or in a
+   `<details>`. That satisfies the text-alternative requirement *and*
+   gives a keyboard or screen-reader user the actual numbers, which a
+   summary sentence cannot.
+
+Do not accept a chart that is only an image with a label. The numbers
+are the content.
+
+### Sequencing
+
+After §6-v3 stage 2. These are new components in the class spelling
+today and would otherwise be written twice.
