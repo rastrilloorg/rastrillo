@@ -182,14 +182,33 @@ jobs:
       # of what makes that sentence true, so removing it means editing
       # that paragraph in the same commit.
       #
-      # ./ui/ is still deliberately absent, for the reason it always
-      # was: the select drive is deterministic-green locally but
+      # ./ui/ is not here as a package, and that is still deliberate:
+      # its script-driven drives are deterministic-green locally but
       # 0-for-5 on this runner, where the Enter that commits the
-      # selection reaches the form instead and submits the page out
-      # from under the drive (issue #86 has the captured widget-state
-      # evidence). It stays a deliberate local run. Nothing in the
-      # accessibility gate lives there — the vendored engine does, and
-      # the untagged tests that keep it out of the shipped tree run in
-      # the plain suite.
+      # enhanced select's choice reaches the form instead and submits
+      # the page out from under the drive (issue #86 has the captured
+      # widget-state evidence). Those stay a deliberate local run.
+      # Nothing in the accessibility gate lives there — the vendored
+      # engine does, and the untagged tests that keep it out of the
+      # shipped tree run in the plain suite.
       - name: browser-tagged tests
         run: go test -tags browser -p 1 ./harness/ ./webauthn/ ./internal/designsystem/ -count=1
+
+      # But the package-level exclusion above was swallowing drives it
+      # was never about. ui/shell_browser_test.go runs no script at all
+      # — static markup, tokens.css, a theme, and one click on a
+      # <details> summary the browser handles synchronously — so issue
+      # #86's failure mode cannot reach it, and without this step the
+      # only automated proof that a menu escapes its card, that a
+      # self-shaped child keeps its corners, and that the sidebar
+      # dropup opens upward would live in no CI job at all. Someone
+      # would restore `overflow: hidden` and every job here would stay
+      # green.
+      #
+      # Anchored so the filter cannot quietly widen to a script-driven
+      # drive by matching a substring of its name. The list is names,
+      # so it can go stale: TestTheScriptlessDrivesAreInTheBrowserJob
+      # (plain suite, ./ui/) reads this file and fails if a test is
+      # added to that file and not added here.
+      - name: browser-tagged tests (ui, the scriptless drives only)
+        run: go test -tags browser ./ui/ -run '^(TestAMenuOpenedInsideAListCardEscapesTheCard|TestSelfShapedChildrenKeepTheirCornersInsideACard|TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward)$' -count=1

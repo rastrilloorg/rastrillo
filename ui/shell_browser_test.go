@@ -1,18 +1,27 @@
 //go:build browser
 
-// Browser drives for the two bugs a Go test cannot see, because both
-// are about geometry a real engine computes: whether a menu opened
-// inside a card is actually painted outside it, and where the sidebar
-// rail puts the person and which way its language menu opens.
+// Browser drives for the things a Go test cannot see, because they are
+// geometry a real engine computes: whether a menu opened inside a card
+// is actually painted outside it, whether a child that owns its own
+// corners keeps them inside one, and where the sidebar rail puts the
+// person and which way its language menu opens.
 //
 // Run with the rest of the family:
 //
 //	go test -tags browser -p 1 ./harness/ ./ui/ ./internal/designsystem/
 //
-// Neither of these is timing-sensitive the way the enhanced-select
-// drive above is: there is no script under test at all. Both pages are
-// static markup plus tokens.css, and the only interaction is one click
-// on a <details> summary, which the browser handles synchronously.
+// None of these is timing-sensitive the way the enhanced-select drive
+// in browser_test.go is: there is no script under test at all. Every
+// page here is static markup plus tokens.css and a theme, and the only
+// interaction is a click on a <details> summary, which the browser
+// handles synchronously.
+//
+// That is why THESE drives run in CI and that one does not. The browser
+// job's ./ui/ step is -run-filtered to the tests in this file (issue #86
+// is about the script-driven drives on GitHub's runner, and is not about
+// these). The filter is a list of names, so it can go stale —
+// TestTheScriptlessDrivesAreInTheBrowserJob, in the plain suite, fails
+// if a test is added here and not added to it.
 package ui
 
 import (
@@ -279,11 +288,16 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	}
 
 	// And the collapse. Below 800px the rail is not a full-height
-	// column at all — it is an ordinary block the chrome strip
-	// discloses, with the whole page under it. The auto margin has no
-	// space to eat, so the foot simply follows the nav; and the
-	// language menu goes back to opening DOWNWARD, because up there is
-	// where the nav is and down there is the rest of the page.
+	// column at all. It is still a flex column — the media query adds
+	// block-size: 100dvh and nothing else — but a content-height one
+	// the chrome strip discloses, with the whole page under it, so the
+	// auto margin has no free space to distribute and the foot simply
+	// follows the nav. RailHeight is asserted below for that reason
+	// rather than as a sanity check: it is what would catch a later
+	// min-block-size on the disclosed rail, which would put the gap
+	// back while FootGap stayed small. And the language menu goes back
+	// to opening DOWNWARD, because up there is the nav and down there
+	// is the rest of the page.
 	var narrow string
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(390, 780),
@@ -328,5 +342,189 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	}
 	if small.MenuLift >= 0 {
 		t.Errorf("the language menu still opens upward in the collapsed rail (%dpx above its summary); below 800px there is nothing above it but the nav", small.MenuLift)
+	}
+}
+
+// cornerReading is one element's four logical corner radii, as strings
+// straight off getComputedStyle so a comparison is exact rather than
+// parsed-and-rounded.
+type cornerReading struct {
+	StartStart string
+	StartEnd   string
+	EndStart   string
+	EndEnd     string
+}
+
+func (c cornerReading) String() string {
+	return c.StartStart + "/" + c.StartEnd + " " + c.EndStart + "/" + c.EndEnd
+}
+
+func (c cornerReading) uniform() bool {
+	return c.StartStart == c.StartEnd && c.StartStart == c.EndStart && c.StartStart == c.EndEnd
+}
+
+// TestSelfShapedChildrenKeepTheirCornersInsideACard gates the cascade
+// relationship the corner-rounding rules depend on, which a comment
+// cannot: the rules are wrapped in :where() so they weigh (0,0,0), and
+// therefore lose to ANY child that declares a radius of its own.
+//
+// Written before it was true. A bare `.rst-list > :first-child` weighs
+// (0,2,0) and beats .rst-search's and .rst-empty's (0,1,0) in every
+// source order, so a hand-written <form class="rst-search"> as the
+// direct first child of a list card painted 7px on its top corners and
+// 6px on its bottom ones in day — lopsided, and the exact arrangement
+// ui/partials/list-bar-search.html exists to support. The gallery does
+// not show it, because list-bar-search renders inside a <search>
+// landmark and the direct child is that unpainted element, so this gate
+// is built on bare markup rather than on a rendered page.
+//
+// The assertion is deliberately theme-independent and token-independent:
+// the SAME element is rendered inside a card and outside one, and the
+// two readings must agree. No pixel value appears in this test, so a
+// theme that changes its radii cannot make it stale. Every theme is
+// measured, because --rst-radius and --rst-radius-sm differ between them
+// and a rule that ties in one could win in another.
+func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+	var searchForm strings.Builder
+	if err := tmpl.ExecuteTemplate(&searchForm, "list-bar-search", map[string]any{"Action": "/posts"}); err != nil {
+		t.Fatalf("rendering list-bar-search: %v", err)
+	}
+	// The partial wraps its form in the <search> landmark. Strip that
+	// wrapper: the bare form as a card's direct child is the case under
+	// test, and it is the case an app hand-writes.
+	bare := searchForm.String()
+	if i, j := strings.Index(bare, "<form"), strings.LastIndex(bare, "</form>"); i >= 0 && j > i {
+		bare = bare[i : j+len("</form>")]
+	} else {
+		t.Fatalf("list-bar-search no longer renders a <form>: %q", searchForm.String())
+	}
+	empty := `<div class="rst-empty"><p>Nothing here yet.</p></div>`
+	row := `<div class="rst-row"><span>A row</span></div>`
+
+	// Each case: a self-shaped element in the position under test
+	// inside a card, and the same element loose on the page. Plus the
+	// negative control — a plain row, which declares no radius and so
+	// MUST take the card's corners, or the rule has stopped working
+	// altogether and the rest of this test would pass vacuously.
+	cases := []struct {
+		name, inCard, loose string
+		wantOwn             bool
+	}{
+		{"a bare search form as the first child", `<div class="rst-list">` + bare + row + `</div>`, bare, true},
+		{"an empty state as the last child", `<div class="rst-list">` + row + empty + `</div>`, empty, true},
+		{"a plain row as the first child", `<div class="rst-list">` + row + row + `</div>`, row, false},
+	}
+
+	var body strings.Builder
+	for i, c := range cases {
+		fmt.Fprintf(&body, `<div id="in-%d" class="rst-page">%s</div><div id="out-%d" class="rst-page">%s</div>`, i, c.inCard, i, c.loose)
+	}
+	pageHTML := body.String()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	// One route per theme, named by ThemeNames() rather than hardcoded:
+	// a fourth theme has to appear here without an edit.
+	for _, name := range ThemeNames() {
+		css, ok := ThemeCSS(name)
+		if !ok {
+			t.Fatalf("ThemeCSS(%q) reports no such theme", name)
+		}
+		mux.HandleFunc("GET /theme-"+name+".css", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/css")
+			w.Write(css)
+		})
+	}
+	mux.HandleFunc("GET /{theme}/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>corners</title>`+
+			`<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/theme-%s.css">`+
+			`</head><body>%s</body></html>`, r.PathValue("theme"), pageHTML)
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancel()
+
+	const measure = `(() => {
+	  const read = el => {
+	    const s = getComputedStyle(el);
+	    return {
+	      StartStart: s.borderStartStartRadius, StartEnd: s.borderStartEndRadius,
+	      EndStart: s.borderEndStartRadius, EndEnd: s.borderEndEndRadius
+	    };
+	  };
+	  const out = [];
+	  let i = 0;
+	  for (;;) {
+	    const inCard = document.querySelector("#in-" + i);
+	    const loose = document.querySelector("#out-" + i);
+	    if (!inCard || !loose) break;
+	    // The element under test is the first child of the card for the
+	    // first-child cases and the last for the last-child ones; the
+	    // loose copy is the page div's only child either way.
+	    const probe = loose.firstElementChild;
+	    const tag = probe.tagName + "." + probe.className;
+	    const card = inCard.firstElementChild;
+	    let mine = null;
+	    for (const kid of card.children) {
+	      if (mine === null && kid.tagName + "." + kid.className === tag) { mine = kid; }
+	    }
+	    out.push({ In: mine ? read(mine) : null, Out: read(probe) });
+	    i++;
+	  }
+	  return JSON.stringify(out);
+	})()`
+
+	for _, theme := range ThemeNames() {
+		var raw string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(1280, 900),
+			chromedp.Navigate(rig.Origin+"/"+theme+"/"),
+			chromedp.WaitVisible(`#in-0`, chromedp.ByQuery),
+			chromedp.Evaluate(measure, &raw),
+		); err != nil {
+			t.Fatalf("%s: driving the corner probe: %v", theme, err)
+		}
+		var got []struct{ In, Out *cornerReading }
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("%s: reading the measurement (%q): %v", theme, raw, err)
+		}
+		if len(got) != len(cases) {
+			t.Fatalf("%s: measured %d cases, want %d", theme, len(got), len(cases))
+		}
+		for i, c := range cases {
+			name := theme + ": " + c.name
+			if got[i].In == nil {
+				t.Errorf("%s: the element was not found inside the card", name)
+				continue
+			}
+			in, out := *got[i].In, *got[i].Out
+			if c.wantOwn {
+				if in != out {
+					t.Errorf("%s: it computes %s inside a card and %s outside one — the card's corner rule is out-weighing the child's own radius", name, in, out)
+				}
+				// The symptom a reader sees is lopsidedness, so name it
+				// as well as the mismatch: a self-shaped child that
+				// keeps one pair of corners and loses the other reads
+				// as a rendering bug, not as a cascade one.
+				if !in.uniform() {
+					t.Errorf("%s: its corners are %s inside a card — lopsided, so only some of them lost the cascade", name, in)
+				}
+				continue
+			}
+			// The negative control. Without it every assertion above
+			// would also pass if the corner rules were simply deleted.
+			if in == out {
+				t.Errorf("%s: it computes the same %s inside a card as outside one; the card is no longer rounding the rows that have no radius of their own", name, in)
+			}
+			if in.StartStart == "0px" {
+				t.Errorf("%s: it computes %s inside a card — the card's own corner rule is not reaching a full-bleed row", name, in)
+			}
+		}
 	}
 }

@@ -6,9 +6,11 @@ import (
 	"html"
 	"html/template"
 	"io/fs"
+	"os"
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -2167,10 +2169,18 @@ func TestSrOnlyUtilityComesAfterTheRulesItMustBeat(t *testing.T) {
 // Selectors, not substrings: ".rst-dropdown__menu hr" is not satisfied
 // by ".rst-dropdown__menu hr" appearing inside some longer selector that
 // does not actually match a menu separator.
+//
+// Values, not substrings either. An earlier version of this gate asked
+// only whether the rule body contained "border-top", which
+// `border-top: 0` satisfies while the UA's groove comes straight back.
+// It takes BOTH halves to neutralise it — `border: 0` to drop the
+// inset 3D box, then a real `border-top` to draw the hairline — so both
+// are checked, and the width is checked for being non-zero.
 func TestEveryMenuSurfaceStylesItsSeparator(t *testing.T) {
 	styled := map[string]bool{}
 	for _, rule := range leafRules(string(TokensCSS())) {
-		if !strings.Contains(rule.body, "border-top") {
+		decls := declarations(rule.body)
+		if !resetsBorder(decls["border"]) || !drawsARule(decls["border-top"]) {
 			continue
 		}
 		for _, sel := range selectorList(rule.selector) {
@@ -2183,9 +2193,60 @@ func TestEveryMenuSurfaceStylesItsSeparator(t *testing.T) {
 		".rst-locale hr",
 	} {
 		if !styled[want] {
-			t.Errorf("no rule draws the separator for %q; that menu renders the UA's thick inset <hr>", want)
+			t.Errorf("no rule both resets the UA border and draws a hairline for %q; that menu renders the browser's own thick inset <hr>", want)
 		}
 	}
+}
+
+// declarations splits a rule body into property → value. Last wins,
+// as the cascade does within one block.
+func declarations(body string) map[string]string {
+	out := map[string]string{}
+	for _, d := range strings.Split(body, ";") {
+		prop, val, ok := strings.Cut(d, ":")
+		if !ok {
+			continue
+		}
+		out[strings.ToLower(strings.TrimSpace(prop))] = strings.TrimSpace(val)
+	}
+	return out
+}
+
+// resetsBorder reports whether a value drops the UA's inset 3D border
+// altogether. Only the shorthand does that; a longhand leaves three
+// sides of groove behind.
+func resetsBorder(val string) bool {
+	switch strings.ToLower(val) {
+	case "0", "0px", "none":
+		return true
+	}
+	return false
+}
+
+// drawsARule reports whether a border-top value paints a visible line:
+// a width that is not zero, and a style that is not none. "0",
+// "0 solid …" and "1px none …" all fail it.
+func drawsARule(val string) bool {
+	fields := strings.Fields(strings.ToLower(val))
+	if len(fields) == 0 {
+		return false
+	}
+	for _, f := range fields {
+		if f == "none" || f == "hidden" {
+			return false
+		}
+	}
+	width := fields[0]
+	if width == "0" {
+		return false
+	}
+	// A bare unit-ful zero — 0px, 0rem, 0em — is still zero.
+	if num := strings.TrimRight(width, "abcdefghijklmnopqrstuvwxyz%"); num != "" {
+		if f, err := strconv.ParseFloat(num, 64); err == nil && f == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // The sidebar rail's foot: the person block last, the language switcher
@@ -2776,5 +2837,66 @@ func TestFieldDaterangeLegendCanBeHidden(t *testing.T) {
 	})
 	if !strings.Contains(got, `<legend class="rst-sr-only">When</legend>`) {
 		t.Errorf("LegendHidden did not hide the legend:\n%s", got)
+	}
+}
+
+// browserJobFilterPattern pulls the -run filter out of the CI browser
+// job's ./ui/ step. Anchored on the flag and the package so it cannot
+// match some other step's -run.
+var browserJobFilterPattern = regexp.MustCompile(`go test -tags browser \./ui/ -run '\^\(([^)]*)\)\$'`)
+
+// testFuncPattern finds every top-level Go test function in a file.
+var testFuncPattern = regexp.MustCompile(`(?m)^func (Test\w+)\(t \*testing\.T\) \{`)
+
+// The CI browser job runs ./harness/, ./webauthn/ and
+// ./internal/designsystem/ as whole packages, and ./ui/ only through a
+// -run filter naming the drives in ui/shell_browser_test.go — the ones
+// that run no script and so cannot hit issue #86, which is why ./ui/ is
+// otherwise excluded.
+//
+// A filter written as a list of names goes stale the first time someone
+// adds a drive next to the others: the new test would run locally, pass
+// review, and then run in no CI job — which is the exact failure this
+// branch has already shipped once. So the list is gated rather than
+// trusted. This test is deliberately NOT build-tagged: it must run in
+// the plain suite, where everyone sees it, even though the file it
+// reads only compiles under -tags browser.
+func TestTheScriptlessDrivesAreInTheBrowserJob(t *testing.T) {
+	const drives = "shell_browser_test.go"
+	src, err := os.ReadFile(drives)
+	if err != nil {
+		t.Fatalf("reading %s: %v", drives, err)
+	}
+	inFile := map[string]bool{}
+	for _, m := range testFuncPattern.FindAllStringSubmatch(string(src), -1) {
+		inFile[m[1]] = true
+	}
+	if len(inFile) == 0 {
+		t.Fatalf("%s declares no tests; this gate is measuring nothing", drives)
+	}
+
+	const workflow = "../.github/workflows/ci.yml"
+	yml, err := os.ReadFile(workflow)
+	if err != nil {
+		t.Fatalf("reading %s: %v — the browser job is where these drives run", workflow, err)
+	}
+	m := browserJobFilterPattern.FindSubmatch(yml)
+	if m == nil {
+		t.Fatalf("%s has no anchored `go test -tags browser ./ui/ -run '^(…)$'` step; every drive in %s now runs in no CI job", workflow, drives)
+	}
+	inCI := map[string]bool{}
+	for _, name := range strings.Split(string(m[1]), "|") {
+		inCI[strings.TrimSpace(name)] = true
+	}
+
+	for name := range inFile {
+		if !inCI[name] {
+			t.Errorf("%s is in %s but not in the browser job's -run filter, so it runs in no CI job; add it to %s", name, drives, workflow)
+		}
+	}
+	for name := range inCI {
+		if !inFile[name] {
+			t.Errorf("the browser job's -run filter names %q, which is not in %s; -run matching nothing exits 0, so that step would pass while testing less than it claims", name, drives)
+		}
 	}
 }
