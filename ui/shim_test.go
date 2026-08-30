@@ -299,7 +299,7 @@ func TestSelectContract(t *testing.T) {
 	if !strings.Contains(js, `!== "false"`) {
 		t.Error(`select.js does not honour data-rst-select="false"; a hand-written select cannot opt out`)
 	}
-	for _, want := range []string{"OPTGROUP", `"group"`, "rst-select__group"} {
+	for _, want := range []string{"OPTGROUP", `"group"`, "rst-select-group"} {
 		if !strings.Contains(js, want) {
 			t.Errorf("select.js does not mention %q; a grouped select would be flattened", want)
 		}

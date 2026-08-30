@@ -1011,11 +1011,12 @@
       };
 
       var wrap = document.createElement("div");
-      wrap.className = "rst-dtp";
+      wrap.setAttribute("rst-dtp", "");
 
       var input = document.createElement("input");
       input.type = "text";
-      input.className = "rst-input rst-dtp__input";
+      input.setAttribute("rst-input", "");
+      input.setAttribute("rst-dtp-input", "");
       input.id = id + "-combo";
       input.autocomplete = "off";
       input.spellcheck = false;
@@ -1025,7 +1026,7 @@
       input.setAttribute("aria-autocomplete", "list");
 
       var list = document.createElement("ul");
-      list.className = "rst-dtp__list";
+      list.setAttribute("rst-dtp-list", "");
       list.id = listId;
       list.hidden = true;
       list.setAttribute("role", "listbox");
@@ -1051,7 +1052,7 @@
         input.setAttribute("aria-describedby", native.getAttribute("aria-describedby"));
 
       // Hidden, never removed: it is what the form submits.
-      native.classList.remove("rst-input");
+      native.removeAttribute("rst-input");
       native.classList.add("rst-sr-only");
       native.setAttribute("tabindex", "-1");
       native.setAttribute("aria-hidden", "true");
@@ -1060,7 +1061,7 @@
       if (canPick(native)) {
         pick = document.createElement("button");
         pick.type = "button";
-        pick.className = "rst-dtp__pick";
+        pick.setAttribute("rst-dtp-pick", "");
         pick.setAttribute("aria-label", pickLabel);
         pick.innerHTML = CAL_SVG;
         wrap.insertBefore(pick, list);
@@ -1086,9 +1087,14 @@
         else input.removeAttribute("aria-activedescendant");
       }
 
-      function addRow(label, meta, date, hasTime, extra) {
+      // extra is the row's variant ("set") or a second attribute
+      // ("rst-dtp-quick"): the vocabulary spells a variant in the
+      // value slot and a kind as an attribute of its own, so one
+      // parameter cannot be both, and the caller says which.
+      function addRow(label, meta, date, hasTime, variant, extra) {
         var li = document.createElement("li");
-        li.className = "rst-dtp__row" + (extra ? " " + extra : "");
+        li.setAttribute("rst-dtp-row", variant || "");
+        if (extra) li.setAttribute(extra, "");
         li.id = listId + "-" + rows.length;
         li.setAttribute("role", "option");
         // The row that IS the committed value says so in the
@@ -1097,12 +1103,12 @@
         // moved by the arrow keys.
         li.setAttribute("aria-selected", toWire(kind, date) === native.value ? "true" : "false");
         var main = document.createElement("span");
-        main.className = "rst-dtp__label";
+        main.setAttribute("rst-dtp-label", "");
         main.textContent = label;
         li.appendChild(main);
         if (meta) {
           var m = document.createElement("span");
-          m.className = "rst-dtp__set";
+          m.setAttribute("rst-dtp-set", "");
           m.textContent = meta;
           li.appendChild(m);
         }
@@ -1150,15 +1156,15 @@
         rows = [];
         var text = String(query || "").trim();
         var read = text ? parse(text, vocab, tbl, now, ctx()) : null;
-        if (read) addRow(show(read.date), setLabel, read.date, read.hasTime, "rst-dtp__row--set");
+        if (read) addRow(show(read.date), setLabel, read.date, read.hasTime, "set");
         var quickPicks = picks(now), i, skip = read ? toWire(kind, read.date) : "";
         for (i = 0; i < quickPicks.length; i++) {
           if (toWire(kind, quickPicks[i].date) === skip) continue;
-          addRow(quickPicks[i].label, show(quickPicks[i].date), quickPicks[i].date, kind !== "date", "rst-dtp__quick");
+          addRow(quickPicks[i].label, show(quickPicks[i].date), quickPicks[i].date, kind !== "date", "", "rst-dtp-quick");
         }
         if (hintText) {
           var hint = document.createElement("li");
-          hint.className = "rst-dtp__hint";
+          hint.setAttribute("rst-dtp-hint", "");
           hint.setAttribute("aria-hidden", "true");
           hint.textContent = hintText.replace("{example}", show(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0)));
           list.appendChild(hint);

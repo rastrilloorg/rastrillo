@@ -65,7 +65,7 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 		"--rst-sp-4", "--rst-fs-base",
 		"var(--rst-bg)", "var(--rst-text)", "var(--rst-accent)", "var(--rst-font)",
 		"var(--rst-radius)", "var(--rst-shadow-pop)",
-		".rst-status", ".rst-sr-only",
+		"[rst-status]", ".rst-sr-only",
 	} {
 		if !strings.Contains(string(css), want) {
 			t.Errorf("tokens.css is missing %q", want)
@@ -286,7 +286,7 @@ func leafRules(css string) []leafRule {
 // individual, trimmed selectors — ".a, .a::after" becomes [".a",
 // ".a::after"], each compared for exact equality elsewhere in this file,
 // never by substring: a substring check would let a new, unguarded
-// ".rst-tip" rule pass by riding on ".rst-tip::after" already being
+// "[rst-tip]" rule pass by riding on "[rst-tip]::after" already being
 // listed in a reduce block, which is exactly the false negative this
 // gate exists to catch.
 func selectorList(sel string) []string {
@@ -354,7 +354,7 @@ func buildReduceIndex(blocks []string) reduceIndex {
 // declaring a *different* motion property on an already-listed selector
 // (selector reappearing is not enough — the property must actually be
 // neutralized), and a new selector merely overlapping textually with one
-// already covered (".rst-tip" vs ".rst-tip::after") — hence the exact,
+// already covered ("[rst-tip]" vs "[rst-tip]::after") — hence the exact,
 // comma-split selector match in selectorList/buildReduceIndex rather than
 // a substring check.
 func TestReducedMotionDisablesEveryTransition(t *testing.T) {
@@ -1293,10 +1293,10 @@ func TestDisabledPaginationChipIsStyled(t *testing.T) {
 		t.Errorf("disabled item lost its class: %s", got)
 	}
 	css := string(TokensCSS())
-	if !strings.Contains(css, ".rst-pagination__disabled") {
-		t.Errorf("tokens.css no longer styles .rst-pagination__disabled")
+	if !strings.Contains(css, "[rst-pagination-disabled]") {
+		t.Errorf("tokens.css no longer styles [rst-pagination-disabled]")
 	}
-	if strings.Contains(css, `.rst-pagination [aria-disabled=`) {
+	if strings.Contains(css, `[rst-pagination] [aria-disabled=`) {
 		t.Errorf("tokens.css still carries the dead aria-disabled pagination rule no partial emits")
 	}
 }
@@ -1380,7 +1380,7 @@ func TestSegTabsMarksCurrent(t *testing.T) {
 }
 
 // confirm-form's Cancel is the group's first element in the DOM — no CSS
-// reorders it. DOM order, visual order (.rst-form-actions is a plain
+// reorders it. DOM order, visual order ([rst-form-actions] is a plain
 // flex row, no order property), and tab order therefore all agree:
 // Cancel, then the submit. The destructive control is never the first
 // focusable element in the group, so a keyboard user tabbing forward
@@ -2024,7 +2024,7 @@ func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
 	// the reset rule in prose, and a check that cannot tell a selector
 	// from a sentence about one is not a check.
 	css := cssComment.ReplaceAllString(string(TokensCSS()), "")
-	i := strings.Index(css, "dialog.rst-modal-panel")
+	i := strings.Index(css, "dialog[rst-modal-panel]")
 	if i < 0 {
 		t.Fatal("tokens.css has no scoped dialog reset; the UA dialog block would position the panel absolutely")
 	}
@@ -2053,7 +2053,7 @@ func TestSearchFormSitsInASearchLandmark(t *testing.T) {
 		t.Errorf("the search form is not wrapped in a <search> landmark: %s", got)
 	}
 	css := string(TokensCSS())
-	for _, want := range []string{".rst-lbar > search", ".rst-list > search"} {
+	for _, want := range []string{"[rst-lbar] > search", "[rst-list] > search"} {
 		if !strings.Contains(css, want) {
 			t.Errorf("tokens.css has no %q rule; wrapping the form broke the layout it used to size", want)
 		}
@@ -2196,11 +2196,11 @@ func TestFormFootMinimalFixture(t *testing.T) {
 }
 
 // F2's second half: the focus ring covers the whole app column, so a
-// hand-rolled control inside .rst-page no longer restates the outline.
+// hand-rolled control inside [rst-page] no longer restates the outline.
 func TestFocusRingScopeIncludesThePageColumn(t *testing.T) {
 	css := string(TokensCSS())
-	if !strings.Contains(css, ":where(.rst-page,") {
-		t.Error("tokens.css :focus-visible scope does not start with .rst-page")
+	if !strings.Contains(css, ":where([rst-page],") {
+		t.Error("tokens.css :focus-visible scope does not start with [rst-page]")
 	}
 }
 
@@ -2300,7 +2300,7 @@ func TestSrOnlyUtilityComesAfterTheRulesItMustBeat(t *testing.T) {
 	if srOnly < 0 {
 		t.Fatal("tokens.css no longer defines .rst-sr-only")
 	}
-	for _, competitor := range []string{".rst-input {", ".rst-btn {"} {
+	for _, competitor := range []string{"[rst-input] {", "[rst-btn] {"} {
 		at := strings.Index(css, competitor)
 		if at < 0 {
 			continue // that component may have been renamed; not this test's business
@@ -2314,12 +2314,12 @@ func TestSrOnlyUtilityComesAfterTheRulesItMustBeat(t *testing.T) {
 // A separator inside a menu panel is an <hr>, and a UA <hr> is a thick
 // inset 3D rule that looks nothing like the hairline the menus draw. The
 // rule that neutralises it existed but was scoped to one panel —
-// .rst-row-menu__panel — so the topbar account menu, which is a
-// .rst-dropdown__menu, rendered the browser's own. The panels are one
+// [rst-row-menu-panel] — so the topbar account menu, which is a
+// [rst-dropdown-menu], rendered the browser's own. The panels are one
 // surface with three entry points, so the rule has to name all three.
 //
-// Selectors, not substrings: ".rst-dropdown__menu hr" is not satisfied
-// by ".rst-dropdown__menu hr" appearing inside some longer selector that
+// Selectors, not substrings: "[rst-dropdown-menu] hr" is not satisfied
+// by "[rst-dropdown-menu] hr" appearing inside some longer selector that
 // does not actually match a menu separator.
 //
 // Values, not substrings either. An earlier version of this gate asked
@@ -2340,9 +2340,9 @@ func TestEveryMenuSurfaceStylesItsSeparator(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		".rst-row-menu__panel hr",
-		".rst-dropdown__menu hr",
-		".rst-locale hr",
+		"[rst-row-menu-panel] hr",
+		"[rst-dropdown-menu] hr",
+		"[rst-locale] hr",
 	} {
 		if !styled[want] {
 			t.Errorf("no rule both resets the UA border and draws a hairline for %q; that menu renders the browser's own thick inset <hr>", want)
@@ -2431,11 +2431,11 @@ func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
 	}
 	// An un-overridden shell renders an empty wrapper, so the foot has
 	// to be genuinely empty for :empty to hide it — no whitespace text
-	// node between the two blocks. Same discipline as .rst-shell__foot.
+	// node between the two blocks. Same discipline as [rst-shell-foot].
 	if !strings.Contains(s, `<div rst-shell-rail-foot>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>`) {
 		t.Error("the rail foot carries whitespace between its blocks; :empty will never match it and an un-overridden rail grows a stray gap")
 	}
-	if !strings.Contains(string(TokensCSS()), ".rst-shell__rail-foot:empty") {
+	if !strings.Contains(string(TokensCSS()), "[rst-shell-rail-foot]:empty") {
 		t.Error("tokens.css does not hide an empty rail foot")
 	}
 }
@@ -2974,12 +2974,12 @@ func TestDaterangeFieldsetIsStyled(t *testing.T) {
 	if !strings.Contains(got, `<fieldset rst-field-range>`) {
 		t.Errorf("daterange fieldset lost its class:\n%s", got)
 	}
-	// Read as a selector rather than as the literal ".rst-field-range {":
+	// Read as a selector rather than as the literal "[rst-field-range] {":
 	// since stage 1 of the markup migration every rule carries its
 	// attribute twin too, so the class is no longer the last thing before
 	// the brace.
-	if !tokensStyleSelector(".rst-field-range") {
-		t.Error("tokens.css does not style .rst-field-range")
+	if !tokensStyleSelector("[rst-field-range]") {
+		t.Error("tokens.css does not style [rst-field-range]")
 	}
 }
 

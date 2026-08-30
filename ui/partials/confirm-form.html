@@ -43,7 +43,7 @@
      jumping by landmark should find the way back out of a confirm page
      without reading it. No aria-label — the one link inside already
      names the destination, and a label would only repeat it (the shells'
-     own rst-shell__nav is unnamed for the same reason; pagination and
+     own rst-shell-nav is unnamed for the same reason; pagination and
      seg-tabs are labelled because their link text is "1", "Next",
      "Basics", which names nothing on its own). */}}
 {{define "back-nav"}}<nav rst-back-nav><a href="{{.Href}}">← {{.Label}}</a></nav>{{end}}

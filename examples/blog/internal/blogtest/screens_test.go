@@ -189,7 +189,7 @@ func TestBlogCSSIsSelfContained(t *testing.T) {
 }
 
 // blog.css never styles a library class: an example that shipped
-// .rst-row { padding: … } would be teaching every reader to fork the
+// [rst-row] { padding: … } would be teaching every reader to fork the
 // design system on day one. Comments are stripped first, because the
 // file's own header explains the rule by naming the prefix.
 func TestBlogCSSStylesNoLibraryClass(t *testing.T) {

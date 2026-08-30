@@ -28,14 +28,14 @@
 
      On an engine too old to know the element the cost is real but small,
      and worth stating exactly. An unknown element is display: inline, so
-     `.rst-list > search`'s margin has nothing to apply to and the search
-     box sits flush in a list card; the flex rule in `.rst-lbar` no-ops
+     `[rst-list] > search`'s margin has nothing to apply to and the search
+     box sits flush in a list card; the flex rule in `[rst-lbar]` no-ops
      the same way. And the landmark is simply absent — not moved, not
      wrong — so the search box is still a labelled input in a working
      form. Both engines that old are below the floors this library
      already documents for light-dark() and :has(), so nothing here is
      the first thing to break on one. tokens.css keeps the
-     `.rst-lbar > .rst-search` and `.rst-list > .rst-search` selectors
+     `[rst-lbar] > [rst-search]` and `[rst-list] > [rst-search]` selectors
      beside the new ones, so a hand-written bare form in your own
      toolbar strip lays out exactly as it did.
 

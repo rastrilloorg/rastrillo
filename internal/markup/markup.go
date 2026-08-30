@@ -83,6 +83,7 @@ var Renamed = map[string]string{
 var Dropped = map[string]string{
 	"rst-dropdown__summary": "no rule: the summary is styled structurally, by [rst-dropdown] > summary",
 	"rst-btn__spin":         "no rule: the busy spinner is styled structurally, by [rst-btn] > [rst-spin]",
+	"rst-combo__input":      "no rule: select.js wrote it beside rst-input and nothing ever styled it",
 }
 
 // Attribute translates one rst- class name into the attribute that

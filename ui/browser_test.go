@@ -731,7 +731,7 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 					_ = chromedp.Evaluate(`JSON.stringify({
 						options: document.querySelectorAll('[role="option"]').length,
 						groups: document.querySelectorAll('[role="group"]').length,
-						headings: Array.from(document.querySelectorAll('.rst-select__group')).map(function (h) { return h.textContent }),
+						headings: Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }),
 						inputValue: (function (i) { return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
 					})`, &snap).Do(ctx)
 					return fmt.Errorf("%s never became true within 10s; widget state: %s", name, snap)
@@ -769,9 +769,9 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &openGroups),
 		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &openOptions),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`, &groupLabels),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('.rst-select__group')).map(function (h) { return h.textContent }).join(',')`, &headings),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
 		// A heading is furniture, never a pick.
-		chromedp.Evaluate(`document.querySelectorAll('.rst-select__group[role="option"]').length`, &headingsAreOptions),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-select-group][role="option"]').length`, &headingsAreOptions),
 
 		// Filter to "a": Galway in one group, Madrid and Barcelona in the
 		// other. Both groups survive, so the keyboard has a boundary to
@@ -795,7 +795,7 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		at("narrowed-to-one"),
 		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &narrowedGroups),
 		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &narrowedOptions),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('.rst-select__group')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
 
 		// The sole match commits on Enter, and mirrors onto the carrier.
 		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
@@ -1171,31 +1171,31 @@ func TestModalDialogPanelDrive(t *testing.T) {
 	)
 	if err := chromedp.Run(ctx,
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-modal-panel`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").tagName`, &tag),
-		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").open === true`, &isOpen),
+		chromedp.WaitVisible(`[rst-modal-panel]`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").tagName`, &tag),
+		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").open === true`, &isOpen),
 		// matches(":modal") is true only for a dialog in the top layer,
 		// which is what showModal() does and a rendered-open one never
 		// does. This is the assertion that the zero-JS promise holds.
-		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").matches(":modal")`, &inTopLayer),
-		chromedp.Evaluate(`getComputedStyle(document.querySelector(".rst-modal-panel")).position`, &position),
-		chromedp.Evaluate(`getComputedStyle(document.querySelector(".rst-modal-panel")).paddingTop`, &padding),
-		chromedp.Evaluate(`document.querySelector(".rst-modal-overlay").contains(document.querySelector(".rst-modal-panel"))`, &insideOverlay),
+		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").matches(":modal")`, &inTopLayer),
+		chromedp.Evaluate(`getComputedStyle(document.querySelector("[rst-modal-panel]")).position`, &position),
+		chromedp.Evaluate(`getComputedStyle(document.querySelector("[rst-modal-panel]")).paddingTop`, &padding),
+		chromedp.Evaluate(`document.querySelector("[rst-modal-overlay]").contains(document.querySelector("[rst-modal-panel]"))`, &insideOverlay),
 		// Centred inside the overlay's flex box, within a pixel: the UA
 		// block's absolute positioning and auto margins would put it
 		// somewhere else entirely.
 		chromedp.Evaluate(`(function () {
-			var o = document.querySelector(".rst-modal-overlay").getBoundingClientRect();
-			var p = document.querySelector(".rst-modal-panel").getBoundingClientRect();
+			var o = document.querySelector("[rst-modal-overlay]").getBoundingClientRect();
+			var p = document.querySelector("[rst-modal-panel]").getBoundingClientRect();
 			return Math.abs((o.left + o.right) / 2 - (p.left + p.right) / 2) < 2;
 		})()`, &centred),
-		chromedp.Evaluate(`document.querySelector(".rst-backdrop").hasAttribute("inert")`, &backdropInert),
+		chromedp.Evaluate(`document.querySelector("[rst-backdrop]").hasAttribute("inert")`, &backdropInert),
 		// The dialog role has to be named. Resolve aria-labelledby the way
 		// an AT would — follow the id to the element and read its text —
 		// rather than trusting the attribute is pointing at anything.
-		chromedp.Evaluate(`document.querySelector(".rst-modal-panel").getAttribute("aria-labelledby") ?? ""`, &labelledBy),
+		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").getAttribute("aria-labelledby") ?? ""`, &labelledBy),
 		chromedp.Evaluate(`(function () {
-			var id = document.querySelector(".rst-modal-panel").getAttribute("aria-labelledby");
+			var id = document.querySelector("[rst-modal-panel]").getAttribute("aria-labelledby");
 			var el = id ? document.getElementById(id) : null;
 			return el ? el.textContent.trim() : "";
 		})()`, &labelText),
@@ -1237,7 +1237,7 @@ func TestModalDialogPanelDrive(t *testing.T) {
 		t.Errorf("aria-labelledby=%q resolves to no text; the dialog's accessible name is empty", labelledBy)
 	}
 
-	rig.Screen(".rst-modal-panel", "the open modal")
+	rig.Screen("[rst-modal-panel]", "the open modal")
 }
 
 // fieldRowPage serves one page holding every layout this batch's
@@ -1372,16 +1372,16 @@ const rowGeometryJS = `(function () {
   // the native input where it did not.
   function control(name) {
     var native = document.getElementsByName(name)[0];
-    var wrap = native.closest(".rst-dtp");
-    return wrap ? wrap.querySelector(".rst-dtp__input") : native;
+    var wrap = native.closest("[rst-dtp]");
+    return wrap ? wrap.querySelector("[rst-dtp-input]") : native;
   }
-  function field(name) { return document.getElementsByName(name)[0].closest(".rst-field"); }
+  function field(name) { return document.getElementsByName(name)[0].closest("[rst-field]"); }
   var from = control("dr_from"), to = control("dr_to");
   return {
     fromControl: box(from), toControl: box(to),
     fromField: box(field("dr_from")), toField: box(field("dr_to")),
     error: byId("dr_to-error"),
-    fromPick: box(from.closest(".rst-dtp").querySelector(".rst-dtp__pick")),
+    fromPick: box(from.closest("[rst-dtp]").querySelector("[rst-dtp-pick]")),
     city: byId("city"), cityField: box(field("city")),
     zip: byId("zip"), zipField: box(field("zip")),
     bothOne: byId("b_one"), bothTwo: byId("b_two"),
@@ -1418,7 +1418,7 @@ func within(inner, outer geometry) bool {
 	return inner.Left >= outer.Left-geometrySlack && inner.Right <= outer.Right+geometrySlack
 }
 
-// assertRowGeometry is every invariant .rst-field-row now owes, checked
+// assertRowGeometry is every invariant [rst-field-row] now owes, checked
 // against one layout. It is called once per writing mode, because the
 // picker button's placement and the row's own inline axis are the two
 // things a logical-property mistake gets wrong in exactly one of them.
@@ -1516,7 +1516,7 @@ func assertRowGeometry(t *testing.T, g rowGeometry) {
 }
 
 // TestFieldRowGeometryHoldsUnderAnError pins the layout contract of
-// .rst-field-row with a real engine doing the layout, because none of
+// [rst-field-row] with a real engine doing the layout, because none of
 // these bugs is visible in the markup — every one of them is a used
 // value the browser computed.
 //
@@ -1526,7 +1526,7 @@ func assertRowGeometry(t *testing.T, g rowGeometry) {
 //   - the row bottom-aligned its fields, so a field carrying an error
 //     lifted its control clear of its neighbour's and dropped the error
 //     line across the field beside it;
-//   - .rst-input sized width:100% as a content box, so every input
+//   - [rst-input] sized width:100% as a content box, so every input
 //     overflowed its own column by its padding and borders and ran
 //     under the field next to it;
 //   - the picker button, anchored to a wrapper the input had outgrown,
@@ -1555,7 +1555,7 @@ func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
 			var g rowGeometry
 			if err := chromedp.Run(ctx,
 				chromedp.Navigate(rig.Origin+"/?dir="+dir),
-				chromedp.WaitVisible(".rst-dtp__pick", chromedp.ByQuery),
+				chromedp.WaitVisible("[rst-dtp-pick]", chromedp.ByQuery),
 				chromedp.Evaluate(rowGeometryJS, &g),
 			); err != nil {
 				t.Fatalf("dir=%s: reading the row's geometry: %v", dir, err)

@@ -218,7 +218,7 @@ label's line anyway, so an unlabelled control still lines up with a
 labelled sibling's; a field whose label is long enough to wrap is a
 field that wants its own row.
 
-**Every field in a row has an 8rem floor**, and `rst-input--short` is
+**Every field in a row has an 8rem floor**, and `rst-input="short"` is
 8rem wide. A row that runs out of width wraps rather than squeezing its
 fields into slivers.
 
@@ -243,17 +243,18 @@ the form gained 16px of dead air at each end where nothing was being
 separated from anything.
 
 It is stated as a rule over every child rather than a list of the
-classes the library happens to ship, because a list cannot name your own
+kinds the library happens to ship, because a list cannot name your own
 `<div>` and a child the list forgets lands at exactly the spacing the
 rule exists to prevent. The two exceptions are written into the
-selector: `rst-form__foot` and `rst-form-foot` keep their block-start
-margin, which is not rhythm but the extra air separating a closing
-action row from the last question above it.
+selector: `rst-form-foot`, the action row `form-foot` emits, and
+`rst-form-bar`, the sticky save bar you write by hand, keep their
+block-start margin — which is not rhythm but the extra air separating a
+closing action row from the last question above it.
 
 If you mean to override it, the shipped selector is
-`.rst-form > *:not(.rst-form__foot, .rst-form-foot)`, and a `:not()`
+`[rst-form] > *:not([rst-form-foot], [rst-form-bar])`, and a `:not()`
 takes the specificity of its most specific argument — so that is
-(0,2,0), exactly the weight of `.rst-form > .whatever`. You win the tie
+(0,2,0), exactly the weight of `[rst-form] > .whatever`. You win the tie
 on source order, and you have it: the shell's `head` block puts your
 stylesheet after `tokens.css`.
 

@@ -105,7 +105,7 @@
 // content is a data table you want announced as one; this is for list
 // screens whose rows are links. The card sets its columns
 // once with the --rst-cols custom property (trailing 32px reserved for a
-// kebab); rows only choose cells. A head row carries rst-lrow--head; a
+// kebab); rows only choose cells. A head row carries rst-lrow="head"; a
 // data row's identity cell is rst-nm, a column hidden below 800px is
 // rst-m-hide, and the per-row overflow menu is a native
 // <details rst-row-menu> — no JavaScript:
@@ -216,10 +216,10 @@
 //	<label rst-selbox><input type="checkbox" aria-label="Select order AB3PX"></label>
 //
 // shell — the page frame's own chrome. rst-shell-topbar wraps a
-// rst-shell__bar holding rst-shell__brand, rst-shell__nav,
-// rst-shell__account and, below the page, rst-shell__foot;
-// rst-shell-sidebar wraps a rst-shell__rail of rst-shell__group-labelled
-// nav beside rst-shell__main, collapsing below 800px into a
+// rst-shell-bar holding rst-shell-brand, rst-shell-nav,
+// rst-shell-account and, below the page, rst-shell-foot;
+// rst-shell-sidebar wraps a rst-shell-rail of rst-shell-group-labelled
+// nav beside rst-shell-main, collapsing below 800px into a
 // <details rst-shell-chrome> — no JavaScript. Both carry
 // rst-skip, the skip link. The canonical markup is Styleguide's
 // "shell-topbar" and "shell-sidebar", and an app does not usually write

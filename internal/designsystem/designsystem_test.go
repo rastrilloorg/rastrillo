@@ -687,9 +687,9 @@ func localeOfPath(p string) string {
 	return parts[1]
 }
 
-// No gallery page may render a live modal. `.rst-modal-overlay` is
+// No gallery page may render a live modal. `[rst-modal-overlay]` is
 // `position: fixed; inset: 0; z-index: 10` and
-// `body:has(.rst-backdrop) { overflow: hidden }`, so the modal sample
+// `body:has([rst-backdrop]) { overflow: hidden }`, so the modal sample
 // rendered inline did not sit in the gallery's flow at all: every index
 // page loaded with a full-viewport modal over it, the content behind it
 // unscrollable, and its Close link — the sample's own `/settings` —

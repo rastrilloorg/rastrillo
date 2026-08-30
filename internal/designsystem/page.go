@@ -1065,7 +1065,7 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 //     to its own viewport, which is where the idiom is honest.
 //   - the two shell samples are whole page frames with their own <main>
 //     landmark, and this page has one. Two documents, two mains.
-//   - .rst-form-foot is position: sticky; bottom: 0, so the form save
+//   - [rst-form-bar] is position: sticky; bottom: 0, so the form save
 //     bar stuck to the bottom of the GALLERY and floated over the
 //     sample below it. It now sticks to the bottom of its own frame,
 //     which is what it does in an app.
@@ -2391,7 +2391,7 @@ const shellTemplate = `
 //
 // The panel is <dialog open>, exactly as the sample is: rendered open,
 // never showModal()'d, so it never enters the top layer, ::backdrop
-// never paints, and .rst-modal-overlay stays the scrim. Its
+// never paints, and [rst-modal-overlay] stays the scrim. Its
 // aria-labelledby points at the panel's own <h2>, the same way the
 // sample's does — a dialog role with no name is an axe failure, and the
 // heading is already the text that names this panel.

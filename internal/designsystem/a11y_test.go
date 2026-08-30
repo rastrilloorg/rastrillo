@@ -457,8 +457,8 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	axeJS := axeSource(t)
 	total := 0
 	for _, sh := range []struct{ shell, open string }{
-		{"topbar", ".rst-shell__menu > summary"},
-		{"sidebar", ".rst-shell__chrome > summary"},
+		{"topbar", "[rst-shell-menu] > summary"},
+		{"sidebar", "[rst-shell-chrome] > summary"},
 	} {
 		for _, scheme := range a11ySchemes {
 			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"

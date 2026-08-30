@@ -36,7 +36,7 @@ var styleguideSamples = map[string]string{
 	// exclusivity is document-wide, not sibling-scoped, so a submenu
 	// sharing its parent's group would close the parent the instant it
 	// opened — the submenu would flash and vanish. Shell chrome (the
-	// sidebar's rst-shell__chrome strip) and the toggle-block stay out of
+	// sidebar's rst-shell-chrome strip) and the toggle-block stay out of
 	// the group entirely: neither is a menu, and closing the sidebar
 	// because someone opened a filter would be absurd.
 	"dropdown": `<details rst-dropdown name="rst-menus">
@@ -51,7 +51,7 @@ var styleguideSamples = map[string]string{
 	// rhythm and the save bar (rst-form-flow, rst-field-row, rst-grow,
 	// rst-form-foot, rst-form-actions) — no partial emits these, since
 	// they wrap a caller-composed run of "field" partials rather than a
-	// single data shape. Two adjacent .rst-field divs exercise the
+	// single data shape. Two adjacent [rst-field] divs exercise the
 	// rst-form-flow spacing rule; the row's grown field exercises
 	// rst-grow. The cancel/save pair reuses the existing button classes
 	// (Task 3's ambiguity resolution: no new rst-btn variant needed).
@@ -83,7 +83,7 @@ var styleguideSamples = map[string]string{
   </div>
 </form>`,
 	// tblock reuses field-check's exact switch markup (input + a sibling
-	// rst-switch__track) inside its own head, so :has() can key off the
+	// rst-switch-track) inside its own head, so :has() can key off the
 	// same input:checked selector tokens.css already ships for the
 	// switch. The body is hand-written static HTML — a caller's real
 	// body would be a "field" partial render, but this sample has no
@@ -126,7 +126,7 @@ var styleguideSamples = map[string]string{
 	// each panel its own.
 	//
 	// Nothing moves to the top layer, so ::backdrop never paints and the
-	// .rst-modal-overlay div remains the scrim. tokens.css's dialog.rst-modal-panel rule undoes the UA
+	// [rst-modal-overlay] div remains the scrim. tokens.css's dialog[rst-modal-panel] rule undoes the UA
 	// dialog block (absolute positioning, auto margins, 1em padding,
 	// Canvas colours) so the panel lays out exactly as it did as a div.
 	"modal": `<div rst-backdrop inert>
@@ -158,10 +158,10 @@ var styleguideSamples = map[string]string{
 	// "checkbox 3 of 12".
 	"selbox": `<label rst-selbox><input type="checkbox" aria-label="Select order AB3PX"></label>`,
 	// shell-topbar — one of the two page frames a shell puts around
-	// .rst-page: a skip link first in the DOM, a bar carrying brand, nav
+	// [rst-page]: a skip link first in the DOM, a bar carrying brand, nav
 	// and an account dropdown pushed to the inline end, then the page
 	// column and a footer. Below 800px the tail (nav, account, locale)
-	// goes behind the .rst-shell__menu disclosure, which is a SIBLING of
+	// goes behind the [rst-shell-menu] disclosure, which is a SIBLING of
 	// the tail rather than its parent — a closed <details> hides its own
 	// content, and the account menu must not sit inside a disclosure it
 	// would close by opening. Its name is rst-shell-menu for exactly
@@ -188,7 +188,7 @@ var styleguideSamples = map[string]string{
 	// state reveals the rail (the adjacent-sibling selector in
 	// tokens.css), so the shell stays zero-JS like every other idiom
 	// here. Its summary carries the same `menu` icon the topbar's does,
-	// aria-hidden beside its own visible label. The rail's own .rst-page still wraps the content, so a
+	// aria-hidden beside its own visible label. The rail's own [rst-page] still wraps the content, so a
 	// screen's markup is identical in either shell.
 	"shell-sidebar": `<div rst-shell-sidebar>
   <a rst-skip href="#main">Skip to content</a>

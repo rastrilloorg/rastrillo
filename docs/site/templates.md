@@ -85,7 +85,7 @@ element rather than a div wearing a role:
 
 `<search>` carries the search role itself, so the form inside it no
 longer sets `role="search"` — two nested search landmarks for one search
-box helps nobody. The strip sizes the landmark (`.rst-lbar > search`) as
+box helps nobody. The strip sizes the landmark (`[rst-lbar] > search`) as
 well as a bare form, so hand-written markup keeps the layout it had.
 
 ### Clearing a search
@@ -162,7 +162,7 @@ around it. `<details name>` exclusivity is document-wide, not
 sibling-scoped, so a submenu sharing its parent's group closes that
 parent the moment it opens.
 
-The sidebar shell's `rst-shell__chrome` strip and the toggle-block are
+The sidebar shell's `rst-shell-chrome` strip and the toggle-block are
 deliberately outside the group: neither is a menu, and closing the
 narrow-screen nav rail because someone opened a filter would take the
 navigation away.
@@ -229,7 +229,7 @@ released. That includes a submit button that belongs to the form through
 a sticky header's Save takes. A form you came back to is a form you can
 submit again.
 
-The spinner is `.rst-spin`, the same ring `job-status` wears, and it
+The spinner is `[rst-spin]`, the same ring `job-status` wears, and it
 stops turning under `prefers-reduced-motion` — the ring stays, dimmed,
 because the message is "working", not "look at this". An
 `<input type="submit">` gets the attributes and the label swap but no
@@ -570,7 +570,7 @@ nothing about how anything is laid out.
 
 ### Menus that fit the window
 
-Every menu surface — `.rst-dropdown__menu` and `.rst-row-menu__panel` —
+Every menu surface — `[rst-dropdown-menu]` and `[rst-row-menu-panel]` —
 is capped at `min(20rem, 100dvh - 6rem)` and scrolls past that, so a
 long menu on a short window can still be reached. A twelve-locale
 language menu is 388px, which is where this came from.
@@ -597,7 +597,7 @@ html  { scrollbar-gutter: var(--rst-scrollbar-gutter); }
 The width a scrollbar takes is reserved whether or not a scrollbar is in
 it, so moving between a short screen and a long one no longer slides the
 whole page sideways — and neither does opening a modal, whose scroll
-lock (`body:has(.rst-backdrop) { overflow: hidden }`) takes the
+lock (`body:has([rst-backdrop]) { overflow: hidden }`) takes the
 scrollbar away the instant it lands.
 
 The opt-out is one line in your own stylesheet:
@@ -739,15 +739,15 @@ the head, so your own CSS wins the ties it should win against
 shell you are in. In `topbar` the layout owns the `<details
 rst-dropdown rst-shell-account>` and its summary, so your
 `account` block is the **menu body only** — the links that go inside
-`.rst-dropdown__menu`. In `sidebar` there is no dropdown: `account` is a
+`[rst-dropdown-menu]`. In `sidebar` there is no dropdown: `account` is a
 bare slot in the rail, and you supply the whole thing. Move a block
 between shells and this is the edit you will need.
 
 The chrome classes live in `tokens.css` like every other idiom:
-`rst-shell-topbar`, `rst-shell__bar`, `rst-shell__brand`,
-`rst-shell__nav`, `rst-shell__account` and `rst-shell__foot` for the
-topbar; `rst-shell-sidebar`, `rst-shell__rail`, `rst-shell__chrome`,
-`rst-shell__group` and `rst-shell__main` for the sidebar; and
+`rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`,
+`rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the
+topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
+`rst-shell-group` and `rst-shell-main` for the sidebar; and
 `rst-skip`, the skip link, which all three shells carry — `column`
 included. The sidebar's mobile collapse is that
 `<details rst-shell-chrome>` and nothing else — no JavaScript,
@@ -757,25 +757,25 @@ like every other idiom here.
 
 The topbar grew a narrow layout, and with it a wrapper. Below 800px its
 `nav`, `account` and `locale` hide behind a `<details>`; above it,
-`.rst-shell__tail` is `display: contents`, so those three generate no
-box of their own and lay out as flex items of `.rst-shell__bar` exactly
+`[rst-shell-tail]` is `display: contents`, so those three generate no
+box of their own and lay out as flex items of `[rst-shell-bar]` exactly
 as they did before — the rendering is unchanged at every width.
 
-The DOM is not. They are now grandchildren of `.rst-shell__bar` through
-`.rst-shell__tail`, and `display: contents` changes box generation, not
+The DOM is not. They are now grandchildren of `[rst-shell-bar]` through
+`[rst-shell-tail]`, and `display: contents` changes box generation, not
 selector matching. If your own CSS or JavaScript reaches into the bar
 with a child combinator:
 
 ```css
 /* stops matching, at every width */
-.rst-shell__bar > .rst-shell__nav { … }
+[rst-shell-bar] > [rst-shell-nav] { … }
 ```
 
 use a descendant selector, or just target the class:
 
 ```css
-.rst-shell__bar .rst-shell__nav { … }
-.rst-shell__nav { … }
+[rst-shell-bar] [rst-shell-nav] { … }
+[rst-shell-nav] { … }
 ```
 
 The block names — `brand`, `nav`, `account`, `locale`, `foot` — did not

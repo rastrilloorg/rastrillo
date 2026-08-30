@@ -171,7 +171,7 @@ func fieldMono(k rastrillo.Kind) bool {
 //     with a "Filter" dict. Both are direct children of one
 //     <div rst-lbar>, which tokens.css requires for the flex
 //     layout that puts the search box and the dropdown side by side
-//     (.rst-lbar > .rst-search's 20rem cap reserves exactly this room).
+//     ([rst-lbar] > [rst-search]'s 20rem cap reserves exactly this room).
 //     The dropdown's own MARKUP is inlined rather than reached through
 //     ui/partials/dropdown.html because that partial's contract takes
 //     ONE dict already holding a fully-built Items list of RESOLVED
