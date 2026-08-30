@@ -19,7 +19,13 @@
 <body>
 <div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-<details class="rst-shell__chrome"><summary>{{T "rastrillo.ui.shell_menu"}}</summary></details>
+{{/* The narrow-screen nav strip. The icon is aria-hidden because the
+     visible label beside it is already the accessible name, and it is
+     Lucide `menu` rather than `kebab` — kebab means "more actions on
+     this row" everywhere else in this vocabulary. No name attribute:
+     joining the rst-menus exclusivity group would let any menu a
+     reader opens take the whole navigation away. */}}
+<details class="rst-shell__chrome"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
 <aside class="rst-shell__rail">
 {{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>

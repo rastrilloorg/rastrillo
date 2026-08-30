@@ -1681,7 +1681,7 @@ bug rather than a redundancy: two affordances, one of which lies.
 - It needs a new catalog key for its accessible name — twelve locales,
   and a trip through the copy gate with the rest of the new prose.
 
-### 7. The rail overflows the viewport by its own padding — REGRESSION, 2026-08-30
+### 7. The rail overflows the viewport by its own padding — REGRESSION, 2026-08-30 — AS BUILT (2026-08-30)
 
 Paul, with the live sidebar shell: *"Sidebar shell left nav is going off
 the edge of the viewport"* — the person at the rail's foot is clipped.
@@ -1706,7 +1706,7 @@ exceed it — and the same drive would have failed on the day it landed.
 Fix per this file's convention: `box-sizing: border-box` on the rail
 itself, beside the components that already declare it, not a `*` reset.
 
-### 8. The collapsed rail needs a menu icon — RULED 2026-08-30 by Paul
+### 8. The collapsed rail needs a menu icon — RULED 2026-08-30 by Paul — AS BUILT (2026-08-30)
 
 *"The sidebar shell should also provide a kebab / hamburger icon beside
 'Menu'."* — the `<summary>` of the disclosed rail below 800px, which is
@@ -1721,7 +1721,7 @@ rather than a literal list, so it picks the new icon up with no edit.
 
 `aria-hidden`, since it sits beside a visible text label.
 
-### 9. The topbar has no narrow layout — RULED 2026-08-30 by Paul
+### 9. The topbar has no narrow layout — RULED 2026-08-30 by Paul — AS BUILT (2026-08-30)
 
 *"The topbar shell should compact the menu and the dropdowns into a
 single dropdown, or some kind of overlay."*
@@ -1759,3 +1759,264 @@ of display rules.
 `locale`. Wrapping them in a disclosure is a layout change, not a
 contract change — the block names stay exactly as they are, or every
 app that overrides one breaks silently on upgrade.
+
+### 10. Prev/next at the foot of every page — RULED 2026-08-30 by Paul
+
+*"since we're splitting across pages now, we need a 'Prev' and 'Next'
+navigation at the bottom of each page."*
+
+The split gave the gallery five pages and three ways between them: the
+rail, the tab strip, and nothing at the bottom. A reader who has just
+finished a page has to go back up to leave it, and below 800px the rail
+folds, so the tab strip is carrying navigation alone.
+
+A pair of links at the foot of every page, in `pageKinds()` order:
+previous on the inline start, next on the inline end, each naming the
+page it goes to rather than saying "Prev" and "Next" alone — the name is
+what tells a reader whether they want it. Overview has no previous and
+Shells has no next; the missing side leaves its space rather than
+shifting the other one across.
+
+Derived from `pageKinds()`, never a literal list, so a sixth page kind
+joins the sequence with no edit — and **gate that**, the way the tab
+strip and the chrome gates now do, because this is the third navigation
+surface in the same file and the first two both shipped ungated.
+
+Both link labels are prose keys: two new English strings, eleven
+translations each.
+
+### 11. Overview shipped blank — process note, 2026-08-30
+
+Task 3 built Overview as a deliberate stub: the page exists and is
+reachable, its content belongs to Task 4. That was a reasonable way to
+split the work and an unreasonable thing to deploy. It was written in
+the pull request and shipped anyway, and Paul found a blank page at the
+address every visitor lands on first.
+
+The rule this earns: **a stub may be merged, but the deploy that carries
+it needs either its content or a placeholder that reads as deliberate.**
+An empty `<h1>Overview</h1>` reads as a broken build, not as work in
+progress. Nothing about the gates would have caught it — every gate
+passed, because a page that renders its own heading and nothing else is
+structurally perfect and substantively empty.
+
+### 12. Every nav section needs its own overview link — RULED 2026-08-30 by Paul
+
+*"each major section now needs an overview too as the first clickable
+item in each nav section."*
+
+The split left a gap in the rail: expanding TOKENS shows nine anchors
+and **no route to `tokens.html` itself**. The section title is a
+`<summary>`, so it discloses rather than navigates, and the only ways to
+a section's top are the tab strip and the prev/next links of §10, which
+do not exist yet.
+
+First item under every section, before its anchors: a link to that
+page's top, labelled **Overview** — Paul's word, kept.
+
+**The name collides on purpose, so disambiguate it in the accessible
+name.** The top-level page is also Overview, so the rail reads Overview,
+then TOKENS → Overview, then COMPONENTS → Overview. Nesting makes that
+unambiguous to the eye and ambiguous to a screen reader, which hears
+"Overview" five times in one navigation landmark.
+
+Give each link an accessible name carrying its section — "Tokens
+overview" — via a `{section} overview` prose key. That satisfies WCAG
+2.5.3 Label in Name, which requires the accessible name to *contain* the
+visible label, and it does. Do not change the visible word to
+disambiguate: the visible label is the one Paul asked for and the one
+the filter matches on.
+
+Derived from `pageKinds()` like §10's prev/next, and gated the same way:
+first item in its section, exactly one per section, present for a sixth
+page kind with no edit.
+
+Two prose keys — the visible label and the accessible-name pattern —
+eleven translations each.
+
+### §7–§9 as built (2026-08-30)
+
+Built as ruled, with one deviation in §9 and one addition to all three.
+
+**§7.** `box-sizing: border-box` on `.rst-shell-sidebar >
+.rst-shell__rail`, beside the components that already declare it. The
+gate is re-framed: `railReading` now carries `Viewport`, `RailOverhang`
+and `PersonOverhang`, and the drive asserts the rail's border box does
+not exceed the window, that the sticky rail's bottom edge is not below
+it, and that the person at its foot is not off-screen. Mutation-verified
+— restored to `content-box`, the old frame passes reporting "rail 932px
+in a 900px viewport" and the new frame fails on all three assertions
+with the same numbers. A third leg drives 1280×420, where the honest
+claim is weaker and is stated as such: the rail must fit the window, and
+anything that does not fit inside the rail must be reachable by
+scrolling it.
+
+That third leg was reviewed and found vacuous, and is fixed (see the fix
+round below). It ran on a two-link fixture that fits 420px, so the
+overflow case never arose; and it read `scrollHeight - clientHeight`,
+which is overflow and not scrollability — `overflow: visible` reports it
+too. Removing `overflow-y: auto` from the rail passed all three legs
+green. It now runs on a twenty-link page of its own, treats the overflow
+reading as the PREMISE and fails if the fixture stops overflowing, and
+proves the claim by round trip: what the engine computed for
+`overflow-y`, where `scrollTop` actually landed when the box was asked
+to go to its own bottom, and whether the person came into view when it
+did.
+
+**§8.** Lucide `menu` as a twelfth slug in `icons.go`, `IconSlugs()` and
+both scaffoldable sets (`internal/iconsets`; Font Awesome's is `bars`).
+`kebab` untouched, and `TestMenuAndKebabAreDifferentGlyphs` fails if a
+later edit points one at the other. Both shells' collapse summaries
+carry it, aria-hidden beside their own visible label; so does the
+gallery's own chrome strip.
+
+**§9, and the deviation.** The tail is an adjacent SIBLING of the
+disclosure — `.rst-shell__menu[open] + .rst-shell__tail` — rather than
+its content. The ruling described the tail as the disclosure's content;
+that shape cannot produce the wide layout, because a closed `<details>`
+hides its own content and no rule reliably un-hides it across engines
+(`::details-content` is too new to be the floor a shell stands on). The
+sibling shape is the one `.rst-shell__chrome` already uses, which is
+what the ruling pointed at, and above 800px `display: contents` on the
+tail promotes nav, account and locale back to direct flex items of the
+bar, so the wide layout is unchanged down to the auto margin.
+
+The trap survives the deviation and is worth restating for that reason:
+`<details name>` exclusivity is **document-wide, not sibling-scoped**,
+so keeping the account menu out of the disclosure's subtree buys nothing
+on its own. The disclosure takes `name="rst-shell-menu"`. Two gates:
+`TestEveryMenuDefaultsToTheSharedExclusivityGroup` reads the name off
+the layout, and the browser drive opens the account menu inside the
+collapsed tail and asserts the disclosure is still open. Both were
+mutation-verified against `name="rst-menus"`.
+
+**Common to all three: the shells are now driven against viewports.**
+`TestTheTopbarCollapsesItsTailBehindOneDisclosure` drives 1280, 800
+(the breakpoint matches at its own width), 390 and 320 with no script on
+the page, and `TestA11yScansTheShellsCollapsed` scans both shells at
+390px with the disclosure open, in light and dark, and measures the
+summary against WCAG 2.2 SC 2.5.8's 24×24 — a target size axe's default
+tag set does not check. That gap, not the three bugs, was the finding:
+every scan in the tree ran at a width where neither collapse control
+exists.
+
+### §10–§12 as built (2026-08-30)
+
+Built as ruled. Overview opens with Paul's paragraph, word for word,
+translated into the other eleven; under it, a route into each of the
+other pages read off `pageKinds()`, each row carrying its own one-line
+`Blurb`. Adding a page kind is still one row — the row is one field
+longer.
+
+The prev/next pair is a two-column grid rather than a flex row with
+`space-between`, because the ends of the sequence are missing a link
+and not missing a column: Overview's Next has to stay on the inline end
+rather than sliding across to where Previous would have been.
+
+The section overview link is the first item of every rail section that
+*discloses*. A section with nothing anchored on it yet already renders
+as a plain link to its own page — the Overview is the only one — so it
+does not get a second route under itself, and Demos, which is not a
+page of this gallery, does not get one at all. The visible label is
+Paul's word on every section and the accessible name carries the
+section (`aria-label="Tokens overview"`); the gate asserts the
+containment SC 2.5.3 asks for rather than trusting the prose table to
+keep the shape.
+
+All three surfaces are gated, and all three gates were mutation-verified
+in both directions — the link pinned to a fixed page, and the surface
+removed outright — which is what §10 asked for after the first two
+navigation surfaces in the same file shipped ungated. The gates walk
+`pageKinds()`, so a sixth page kind is expected on all three the day its
+row lands.
+
+### The demo application as built (2026-08-30)
+
+`<theme>/<locale>/demo.html`, 36 copies, built in the sidebar shell —
+named rather than derived, because a demo has to pick one and the
+sidebar is the richest of the three. It is framed at the top of the
+Overview under Paul's paragraph, linked full-page from there and from
+the rail's Demos section on every page.
+
+Three views in one document, as Paul chose: a dashboard, the request
+list, and one request open. The switching is `:target` — each view has
+an address of its own, so the back button walks them and a reader can
+copy a link to the detail view out of the frame. That is the
+URL-per-view idiom in the only currency a static file has, and the
+demo's own callout says so rather than implying a route it does not
+have.
+
+The rules are written so the DASHBOARD is what hides, not what shows:
+`#view-requests` and `#view-request` are hidden until targeted, and the
+dashboard is hidden only when one of them is. Where `:has()` is missing
+the last rule drops and the page degrades to every view stacked and
+readable, rather than to a blank screen. The rail's current item is the
+same trick, and it is honest about being visual only: a real app renders
+each view at its own route and puts `aria-current` on the link
+server-side.
+
+The framework's three scripts load, because a real app gets them, and
+none of them does any of the switching.
+`TestTheDemoApplicationSwitchesViewsWithNoScript` drives the whole
+journey — land, follow the rail to the list, follow a row into the
+record, follow the back link out — with script execution disabled in the
+engine, and asserts exactly one view is painted at every stop.
+Mutation-verified by deleting the rule that hides the dashboard: the
+drive then reports two views painted at three of the four stops.
+
+The app's own words are prose keys and translated; its records — the
+names, the subjects, the dates, the queue, the brand — stay English on
+every copy, which is the boundary `templateFixtures` and
+`proseFixtureCollisions` already draw for the shell and modal demos.
+
+### Fix round 1 (2026-08-30)
+
+Six findings from the review of both batches on this branch.
+
+**The topbar comment argued for the bug it exists to prevent.** It
+opened `name="rst-menus", and the rst-menus group is exactly what it
+must not be`, three lines above an element carrying
+`name="rst-shell-menu"`. The first four words asserted the value the
+rest of the paragraph forbids, in the one comment a maintainer editing
+that layout is standing in. Rewritten to state the attribute the element
+carries, why it is not `rst-menus`, and that the paragraph is the reason
+for the two gates rather than advice to change the element.
+
+**§10's placement clause was ungated.** Two `grid-column` declarations
+are the whole of "previous at the inline start, next at the inline end"
+and of "the missing side leaves its space", and nothing read geometry —
+deleting them and swapping them both passed the entire suite,
+`-tags browser` included, because the only gate that noticed was the
+tree's freshness check and the answer to that is `go generate`.
+`TestThePrevNextPairSitsAtTheEndsOfItsRow` now measures: the two ends of
+the sequence and a middle page, in both writing directions, against the
+strip's own box. Deletion is the shape worth having it for — with both
+links present, auto-placement puts them in columns 1 and 2 anyway, so
+the bug is invisible until the Overview's lone Next auto-places into the
+first column and lands exactly where Previous would have been.
+
+**The demo application's grid headers were untranslated.** `Subject`,
+`Status` and `Updated` were allowlisted as fixtures under a comment
+whose own rule — everything the application says is a prose key — put
+them on the other side of the line, so a Japanese or Arabic reader met
+an English table header inside the fully localised frame that is their
+first sight of the system. Three prose keys, eleven translations each.
+The line is now stated where it actually runs: a ROW is data and stays
+English, the HEADER over it is the application naming its own columns.
+`Status` remains a fixture as well, for the shell demos' sample screen,
+which writes its column headers literally.
+
+**Two sentences made true.** `demoCSS` claimed `:has()`-less
+degradation stacks "every view"; it is at most two, and with no fragment
+exactly one. `internal/iconsets` listed `menu` as Font Awesome's `bars`
+inside a run of Lucide divergences; `menu` is Lucide's own slug, and the
+five that differ are the five `docs/site/icons.md` names.
+
+**And one thing that was not a finding.** The topbar's `nav`, `account`
+and `locale` are a level deeper than they were: `display: contents`
+gives their boxes back above 800px but not their selectors, so an app
+whose CSS says `.rst-shell__bar > .rst-shell__nav` stops matching at
+every width. Nothing in this repo does, but apps upgrade — so it is
+written down in `docs/site/templates.md` under Shells, where an upgrader
+will meet it, and the layout's own comment no longer says the three
+blocks "are direct children of the bar again".

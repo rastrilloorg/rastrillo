@@ -336,6 +336,8 @@ func a11yTargets() []a11yTarget {
 		{"day/ar components", page("day", "ar", "components"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref("day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref("day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
+		{"day/en demo app", demoHref("day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
+		{"day/ar demo app", demoHref("day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
 	}
 }
 
@@ -387,6 +389,78 @@ func TestA11yScansTheGallery(t *testing.T) {
 	}
 	if total == 0 {
 		t.Logf("clean: %d pages × %d schemes, %v", len(a11yTargets()), len(a11ySchemes), axeTags)
+	}
+}
+
+// TestA11yScansTheShellsCollapsed is the scan the other three did not
+// cover: both chrome shells below their 800px breakpoint, with the
+// disclosure open.
+//
+// Every scan above runs at the browser's default width, where the
+// sidebar's chrome strip is display: none and the topbar's collapse
+// control does not exist at all. So the two controls a reader on a
+// phone meets FIRST were the two controls axe had never seen — which is
+// the same gap, in a different shape, as a rail whose height was only
+// ever compared to itself: the shells are demonstrated as chrome, and
+// nobody drove them narrow.
+//
+// It also measures the one thing axe will not: WCAG 2.2 target size.
+// 2.5.8 asks for 24×24 CSS px, axe's target-size rule is not in the
+// tag set this gate runs, and both summaries are new or newly
+// icon-bearing, so measure them here rather than assume.
+func TestA11yScansTheShellsCollapsed(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 600*time.Second)
+	defer cancel()
+
+	axeJS := axeSource(t)
+	total := 0
+	for _, sh := range []struct{ shell, open string }{
+		{"topbar", ".rst-shell__menu > summary"},
+		{"sidebar", ".rst-shell__chrome > summary"},
+	} {
+		for _, scheme := range a11ySchemes {
+			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"
+			if err := chromedp.Run(ctx,
+				chromedp.EmulateViewport(390, 780),
+				chromedp.Navigate(rig.Origin+shellHref("day", "en", sh.shell)),
+				chromedp.WaitVisible(sh.open, chromedp.ByQuery),
+				chromedp.Click(sh.open, chromedp.ByQuery),
+				chromedp.Evaluate(axeJS, nil),
+			); err != nil {
+				t.Fatalf("%s: opening: %v", where, err)
+			}
+			paint(t, ctx, scheme)
+			total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
+
+			// The target the reader taps. Measured on the summary
+			// itself, which is the control: a 24px floor on both axes,
+			// and the accessible name the icon must not have replaced.
+			var raw string
+			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+			  const s = document.querySelector(`+"`"+sh.open+"`"+`);
+			  const r = s.getBoundingClientRect();
+			  return JSON.stringify({W: Math.round(r.width), H: Math.round(r.height), Text: s.innerText.trim()});
+			})()`, &raw)); err != nil {
+				t.Fatalf("%s: measuring the summary: %v", where, err)
+			}
+			var got struct {
+				W, H int
+				Text string
+			}
+			if err := json.Unmarshal([]byte(raw), &got); err != nil {
+				t.Fatalf("%s: reading the measurement (%q): %v", where, raw, err)
+			}
+			if got.W < 24 || got.H < 24 {
+				t.Errorf("%s: the disclosure's target is %d×%dpx, under WCAG 2.2 SC 2.5.8's 24×24", where, got.W, got.H)
+			}
+			if got.Text == "" {
+				t.Errorf("%s: the disclosure has no visible label; the icon beside it is aria-hidden, so the control would have no accessible name at all", where)
+			}
+		}
+	}
+	if total == 0 {
+		t.Logf("clean: 2 shells × %d schemes at 390px, disclosed, %v", len(a11ySchemes), axeTags)
 	}
 }
 

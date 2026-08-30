@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="yue" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>示範應用程式 — rastrillo 設計系統</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-signal.css">
+<script defer src="/design-system/rastrillo.js"></script>
+
+<script defer src="/design-system/select.js"></script>
+<script defer src="/design-system/datetime.js"></script>
+
+<script src="/design-system/gallery.js"></script>
+<style>
+#view-requests, #view-request { display: none; }
+#view-requests:target, #view-request:target { display: block; }
+body:has(#view-requests:target) #view-dashboard,
+body:has(#view-request:target) #view-dashboard { display: none; }
+body:not(:has(#view-requests:target, #view-request:target)) .rst-shell__nav a[href="#view-dashboard"],
+body:has(#view-requests:target) .rst-shell__nav a[href="#view-requests"],
+body:has(#view-request:target) .rst-shell__nav a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.app-stats { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-block-end: var(--rst-sp-5); }
+.app-stats > .rst-box { margin: 0; }
+.app-stat__n { font-size: 1.9rem; font-weight: 650; line-height: 1.1; margin: 0; }
+.app-stat__l { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0.2rem 0 0; }
+</style>
+</head>
+<body>
+<div class="rst-shell-sidebar">
+<a class="rst-skip" href="#main">跳到內容</a>
+
+<details class="rst-shell__chrome"><summary><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>選單</summary></details>
+<aside class="rst-shell__rail">
+<a class="rst-shell__brand" href="#view-dashboard">Harbour</a>
+<nav class="rst-shell__nav"><a href="#view-dashboard">儀表板</a><a href="#view-requests">請求</a></nav>
+
+<div class="rst-shell__rail-foot"><details class="rst-dropdown rst-locale" name="rst-menus"><summary>語言<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="rst-dropdown__menu"><a href="/design-system/signal/en/demo.html" lang="en" dir="ltr">English</a><a href="/design-system/signal/ga/demo.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/signal/zh-Hans/demo.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/signal/es/demo.html" lang="es" dir="ltr">Español</a><a href="/design-system/signal/hi/demo.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/signal/pt/demo.html" lang="pt" dir="ltr">Português</a><a href="/design-system/signal/bn/demo.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/signal/ru/demo.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/signal/ja/demo.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/signal/yue/demo.html" lang="yue" dir="ltr" aria-current="true">廣東話</a><a href="/design-system/signal/vi/demo.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/signal/ar/demo.html" lang="ar" dir="rtl">العربية</a></div></details><div class="rst-shell__account"><a class="rst-person" href="#view-dashboard"><span class="rst-person__av" aria-hidden="true">A</span><span class="rst-person__meta"><span class="rst-person__name">Ada Lovelace</span><span class="rst-person__email">ada@example.com</span></span></a></div></div>
+</aside>
+<main class="rst-shell__main" id="main">
+<div class="rst-page">
+
+<section class="app-view" id="view-dashboard">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>儀表板</h1>
+    <p class="rst-page-header__sub">今朝等緊團隊處理嘅所有嘢。</p>
+  </div>
+</header>
+<div class="app-stats">
+<section class="rst-box"><p class="app-stat__n">24</p><p class="app-stat__l">未處理嘅請求</p></section>
+<section class="rst-box"><p class="app-stat__n">6</p><p class="app-stat__l">等緊我哋</p></section>
+<section class="rst-box"><p class="app-stat__n">41</p><p class="app-stat__l">今個星期已解決</p></section>
+</div>
+<div class="rst-box-head"><h2>郵箱容量</h2></div>
+<section class="rst-box"><span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: 82%"></i></span><span class="rst-meter__num">412 / 500</span></span></section>
+<div class="rst-box-head"><h2>最近動態</h2><a class="rst-btn" href="#view-requests">請求</a></div>
+<div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px">
+<div class="rst-lrow rst-lrow--head"><span>主題</span><span class="rst-m-hide">狀態</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="warning">等緊</span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="neutral">未處理</span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="positive">已解決</span></span></div>
+</div>
+</section>
+
+<section class="app-view" id="view-requests">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>請求</h1>
+    <p class="rst-page-header__sub">排隊入面所有請求，最新嘅排喺前面。</p>
+  </div>
+  <a class="rst-btn rst-btn--primary" href="#view-requests"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>新請求</a>
+</header>
+<nav class="rst-seg-tabs" aria-label="請求"><a href="#view-requests" aria-current="page">全部</a><a href="#view-requests">未處理</a><a href="#view-requests">已解決</a></nav>
+<div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px 120px">
+<div class="rst-lbar">
+  <search><form class="rst-search" method="get" action="#view-requests">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  <input type="search" name="q" placeholder="搜尋請求" aria-label="搜尋請求">
+  <button class="rst-sr-only" type="submit">搜尋</button>
+</form></search>
+</div>
+<div class="rst-lrow rst-lrow--head"><span>主題</span><span class="rst-m-hide">狀態</span><span class="rst-m-hide">更新時間</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="warning">等緊</span></span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="neutral">未處理</span></span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="neutral">未處理</span></span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · Billing</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="positive">已解決</span></span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
+</div>
+<p class="rst-count-line">24 個請求之中嘅 1–4</p>
+<nav class="rst-pagination" aria-label="分頁"><span aria-current="page">1</span><a href="#view-requests">2</a><a href="#view-requests">3</a>
+</nav>
+</section>
+
+<section class="app-view" id="view-request">
+<nav class="rst-back-nav"><a href="#view-requests">← 請求</a></nav>
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Invoice #4471 never arrived</h1>
+    <p class="rst-page-header__sub">由 Fiona Reid 報告，而家仲等緊我哋回覆。</p>
+  </div>
+</header>
+<p><span class="rst-status" data-tone="warning">等緊</span> <span class="rst-badge">Billing</span></p>
+<div class="rst-box-head"><h2>詳情</h2></div>
+<section class="rst-box"><dl class="rst-detail">
+  <dt>編號</dt>
+  <dd class="rst-mono">REQ-4471</dd>
+  <dt>報告人</dt>
+  <dd>fiona@example.com</dd>
+  <dt>隊列</dt>
+  <dd>Billing</dd>
+  <dt>開單時間</dt>
+  <dd>14 August, 09:12</dd>
+</dl></section>
+<div class="rst-box-head"><h2>回覆</h2></div>
+<section class="rst-box"><form class="rst-form" method="post" action="#view-request">
+<div class="rst-field">
+  <label class="rst-field__label" for="reply">你嘅回覆</label>
+  <textarea class="rst-textarea" id="reply" name="reply" rows="4" aria-describedby="reply-hint"></textarea>
+  <small class="rst-field__hint" id="reply-hint">報告呢件事嘅人會收到電郵。</small>
+</div>
+<div class="rst-form__foot">
+  <button class="rst-btn rst-btn--primary" type="submit">寄出回覆</button>
+  <a class="rst-btn" href="#view-requests">取消</a>
+</div>
+</form></section>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>三個畫面，三個地址</strong><p>呢度每個畫面都有自己嘅地址，就好似 rastrillo 應用程式畀每個畫面一個 URL 咁。閂咗 JavaScript，呢版一樣咁行：轉畫面係 CSS 讀緊地址列。</p></div></div>
+</section>
+
+</div>
+</main>
+</div>
+</body>
+</html>

@@ -647,6 +647,34 @@ included. The sidebar's mobile collapse is that
 `<details class="rst-shell__chrome">` and nothing else — no JavaScript,
 like every other idiom here.
 
+### Upgrading: the topbar's tail is a level deeper
+
+The topbar grew a narrow layout, and with it a wrapper. Below 800px its
+`nav`, `account` and `locale` hide behind a `<details>`; above it,
+`.rst-shell__tail` is `display: contents`, so those three generate no
+box of their own and lay out as flex items of `.rst-shell__bar` exactly
+as they did before — the rendering is unchanged at every width.
+
+The DOM is not. They are now grandchildren of `.rst-shell__bar` through
+`.rst-shell__tail`, and `display: contents` changes box generation, not
+selector matching. If your own CSS or JavaScript reaches into the bar
+with a child combinator:
+
+```css
+/* stops matching, at every width */
+.rst-shell__bar > .rst-shell__nav { … }
+```
+
+use a descendant selector, or just target the class:
+
+```css
+.rst-shell__bar .rst-shell__nav { … }
+.rst-shell__nav { … }
+```
+
+The block names — `brand`, `nav`, `account`, `locale`, `foot` — did not
+change, and a test holds them. Only the depth did.
+
 The `locale` block is where the language switcher goes, and
 `locale-menu` is the partial that fills it:
 

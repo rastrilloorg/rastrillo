@@ -1122,6 +1122,66 @@ dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 
 /* the topbar shell emits a foot even when the block is un-overridden; an empty one is a stray rule and padding, so draw nothing. */
 .rst-shell__foot:empty { display: none; }
 
+/* The topbar's narrow layout. Below 800px — the same breakpoint the
+   sidebar collapses at, deliberately, because two shells with two
+   breakpoints is two systems — the bar's tail (nav, account, locale)
+   goes behind one disclosure carrying the `menu` icon. Above it the
+   summary is display: none and the tail is display: contents, so nav,
+   account and locale are direct flex items of the bar again and the
+   inline-end layout is byte-for-byte the one that shipped before this
+   existed. No script: a <details>, a media query and a pair of display
+   rules.
+
+   Why the tail is a SIBLING of the disclosure rather than its content,
+   which is the shape .rst-shell__chrome already uses: a closed
+   <details> hides its own content, and no CSS reliably un-hides it
+   across engines, so the wide layout could not be recovered from
+   inside one. It also keeps the account menu out of the disclosure
+   entirely, which matters — see the name below.
+
+   The name is rst-shell-menu and NOT rst-menus. <details name>
+   exclusivity is document-wide, not sibling-scoped, so a disclosure
+   sharing the menus' group would be closed by the very account menu it
+   reveals: the user clicks Account and the navigation they opened it
+   from disappears. Same rule this file's rst-menu-group already
+   documents ("a nested group MUST name a different one"), met here for
+   the first time in the framework's own shells. */
+.rst-shell-topbar .rst-shell__menu { margin-inline-start: auto; }
+.rst-shell-topbar .rst-shell__menu > summary { align-items: center; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.35rem; list-style: none; min-block-size: 24px; padding-block: 0.3rem; padding-inline: 0.55rem; }
+.rst-shell-topbar .rst-shell__menu > summary::-webkit-details-marker { display: none; }
+.rst-shell-topbar .rst-shell__tail { display: none; }
+/* The account's auto margin has to be undone here, and stretch does not
+   do it: in a column flex box the inline axis is the CROSS axis, and an
+   item with an auto cross-axis margin is exempt from stretching, so
+   margin-inline-start: auto survived and shoved Account to the trailing
+   edge of the collapsed stack — the same trailing-edge shove that made
+   the wrapped bar look wrong in the first place. The wide query below
+   puts it back. */
+.rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail { display: flex; flex-basis: 100%; flex-direction: column; gap: var(--rst-sp-3); }
+.rst-shell-topbar .rst-shell__tail > .rst-shell__account { margin-inline-start: 0; }
+/* flex-start so a nav link's aria-current underline is as wide as its
+   own label rather than as wide as the bar, where it reads as a rule
+   across the menu instead of as a marker on one item. */
+.rst-shell-topbar .rst-shell__tail > .rst-shell__nav { align-items: flex-start; flex-direction: column; gap: var(--rst-sp-2); }
+/* The nav links pick up the inline padding the two menu summaries below
+   them already carry, so the collapsed stack reads as one column of
+   labels rather than three components that happen to be above each
+   other. Same reason the rail's links carry 0.55rem. */
+.rst-shell-topbar .rst-shell__tail > .rst-shell__nav a { padding-inline: 0.6rem; }
+@media (min-width: 800px) {
+  .rst-shell-topbar .rst-shell__menu { display: none; }
+  /* Both selectors, and both at least as specific as the narrow rules
+     they undo: a media query adds no specificity, so the open
+     disclosure's 0-4-0 rule above would otherwise keep the tail a
+     column for anyone who opened the menu and then widened the
+     window. */
+  .rst-shell-topbar .rst-shell__tail,
+  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail { display: contents; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__account { margin-inline-start: auto; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav { align-items: normal; flex-direction: row; gap: var(--rst-sp-4); }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a { padding-inline: 0; }
+}
+
 /* sidebar shell — a rail beside the page. Below 800px the rail is
    hidden behind a <details> chrome strip and, opened, becomes an
    full-width column above the content: the open state is the
@@ -1130,7 +1190,17 @@ dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 
    (a list grid, a <pre>) scrolls itself instead of stretching the grid
    track. */
 .rst-shell__main { min-inline-size: 0; }
-.rst-shell-sidebar > .rst-shell__rail { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+/* box-sizing on the rail, per this file's convention (see .rst-input
+   above): set on the component that needs it, never in a `*` reset.
+   The rail is the one box in the stylesheet whose height is the
+   VIEWPORT'S — block-size: 100dvh in the query below — and it also
+   carries padding, so as a content box its border box was 100dvh + 32px.
+   Sticky at inset-block-start: 0, the last 32px of it hung under the
+   window and clipped whatever sat at its foot; overflow-y: auto could
+   not help, because the content fitted the content box and no scrollbar
+   was ever owed. Anything sized against the viewport has to be measured
+   the way the viewport measures it. */
+.rst-shell-sidebar > .rst-shell__rail { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
 .rst-shell-sidebar > .rst-shell__chrome > summary { align-items: center; border-block-end: 1px solid var(--rst-line); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.3rem; list-style: none; padding-block: 0.55rem; padding-inline: var(--rst-sp-4); }
 .rst-shell-sidebar > .rst-shell__chrome > summary::-webkit-details-marker { display: none; }
 .rst-shell-sidebar > .rst-shell__chrome[open] + .rst-shell__rail { display: flex; }

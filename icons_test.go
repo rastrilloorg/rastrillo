@@ -49,11 +49,12 @@ func TestIconUnknownSlugRendersNothing(t *testing.T) {
 	}
 }
 
-// All eleven expected icon slugs are registered and non-empty.
+// All twelve expected icon slugs are registered and non-empty.
 func TestExpectedIconSlugsRegistered(t *testing.T) {
 	expected := []string{
 		"chevron-down", "check", "plus", "search",
 		"kebab", "x", "info", "check-circle", "alert-triangle", "x-circle", "help-circle",
+		"menu",
 	}
 	for _, slug := range expected {
 		if got := Icon(slug); got == "" {
@@ -83,6 +84,27 @@ func TestNewIconsResolveWithAriaHidden(t *testing.T) {
 	// An unknown slug still behaves as before: empty, no panic.
 	if got := Icon("not-a-real-icon"); got != "" {
 		t.Errorf("Icon(%q) = %q, want empty string", "not-a-real-icon", got)
+	}
+}
+
+// menu is navigation and kebab is "more actions on this row". They are
+// two different words in this vocabulary, so they have to be two
+// different glyphs: reusing kebab for the shells' collapsed navigation
+// was the cheap option and was ruled out precisely because it would
+// have made the distinction unreadable at the only place a reader meets
+// both. A future edit that points one at the other fails here.
+func TestMenuAndKebabAreDifferentGlyphs(t *testing.T) {
+	menu, kebab := string(Icon("menu")), string(Icon("kebab"))
+	if menu == "" {
+		t.Fatal(`Icon("menu") is empty: the shells' collapsed navigation has no icon`)
+	}
+	if menu == kebab {
+		t.Error(`Icon("menu") and Icon("kebab") render the same glyph; navigation and "more actions" must stay distinguishable`)
+	}
+	// Three full-width horizontal strokes, which is what a hamburger is
+	// and what neither kebab (three dots) nor any other slug draws.
+	if n := strings.Count(menu, `<path d="M4 `); n != 3 {
+		t.Errorf(`Icon("menu") draws %d horizontal strokes, want the three of a hamburger: %s`, n, menu)
 	}
 }
 

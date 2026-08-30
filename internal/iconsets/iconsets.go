@@ -73,9 +73,13 @@ type set struct {
 // call, matching the framework's own set in icons.go. Every set answers
 // all of them.
 //
-// These are rastrillo's names, not any vendor's. Most match Lucide, but
-// not all — "kebab" is Lucide's ellipsis-vertical, and Lucide v1 renamed
-// four others (check-circle, alert-triangle, x-circle, help-circle). Each
+// These are rastrillo's names, not any vendor's. Five of the twelve
+// differ from Lucide's canonical names — "kebab" is Lucide's
+// ellipsis-vertical, and v1 renamed four others (check-circle,
+// alert-triangle, x-circle, help-circle). "menu" is NOT one of them:
+// it is Lucide's own slug, and it is Font Awesome that calls that glyph
+// "bars", which is a fact about the Font Awesome set below rather than
+// a divergence from Lucide. docs/site/icons.md says the same five. Each
 // set therefore carries its own translation in its glyph data, Lucide
 // included, which is exactly why the shipped partials never change when
 // the set does.
@@ -86,7 +90,8 @@ type set struct {
 func Slugs() []string {
 	return []string{
 		"alert-triangle", "check", "check-circle", "chevron-down",
-		"help-circle", "info", "kebab", "plus", "search", "x", "x-circle",
+		"help-circle", "info", "kebab", "menu", "plus", "search", "x",
+		"x-circle",
 	}
 }
 
@@ -136,6 +141,7 @@ var sets = map[string]set{
 			"help-circle":    {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>`, Element: `<i class="icon icon-circle-help" aria-hidden="true"></i>`},
 			"info":           {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>`, Element: `<i class="icon icon-info" aria-hidden="true"></i>`},
 			"kebab":          {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>`, Element: `<i class="icon icon-ellipsis-vertical" aria-hidden="true"></i>`},
+			"menu":           {ViewBox: "0 0 24 24", Body: `<path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/>`, Element: `<i class="icon icon-menu" aria-hidden="true"></i>`},
 			"plus":           {ViewBox: "0 0 24 24", Body: `<path d="M5 12h14"/><path d="M12 5v14"/>`, Element: `<i class="icon icon-plus" aria-hidden="true"></i>`},
 			"search":         {ViewBox: "0 0 24 24", Body: `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>`, Element: `<i class="icon icon-search" aria-hidden="true"></i>`},
 			"x":              {ViewBox: "0 0 24 24", Body: `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`, Element: `<i class="icon icon-x" aria-hidden="true"></i>`},
@@ -166,6 +172,7 @@ var sets = map[string]set{
 			"help-circle":    {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zm0-336c-17.7 0-32 14.3-32 32 0 13.3-10.7 24-24 24s-24-10.7-24-24c0-44.2 35.8-80 80-80s80 35.8 80 80c0 47.2-36 67.2-56 74.5l0 3.8c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-8.1c0-20.5 14.8-35.2 30.1-40.2 6.4-2.1 13.2-5.5 18.2-10.3 4.3-4.2 7.7-10 7.7-19.6 0-17.7-14.3-32-32-32zM224 368a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/>`, Element: `<i class="icon fa-solid fa-circle-question" aria-hidden="true"></i>`},
 			"info":           {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM224 160a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm-8 64l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z"/>`, Element: `<i class="icon fa-solid fa-circle-info" aria-hidden="true"></i>`},
 			"kebab":          {ViewBox: "0 0 128 512", Body: `<path fill="currentColor" d="M64 144a56 56 0 1 1 0-112 56 56 0 1 1 0 112zm0 224c30.9 0 56 25.1 56 56s-25.1 56-56 56-56-25.1-56-56 25.1-56 56-56zm56-112c0 30.9-25.1 56-56 56s-56-25.1-56-56 25.1-56 56-56 56 25.1 56 56z"/>`, Element: `<i class="icon fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>`},
+			"menu":           {ViewBox: "0 0 448 512", Body: `<path fill="currentColor" d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z"/>`, Element: `<i class="icon fa-solid fa-bars" aria-hidden="true"></i>`},
 			"plus":           {ViewBox: "0 0 448 512", Body: `<path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>`, Element: `<i class="icon fa-solid fa-plus" aria-hidden="true"></i>`},
 			"search":         {ViewBox: "0 0 512 512", Body: `<path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>`, Element: `<i class="icon fa-solid fa-magnifying-glass" aria-hidden="true"></i>`},
 			"x":              {ViewBox: "0 0 384 512", Body: `<path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/>`, Element: `<i class="icon fa-solid fa-xmark" aria-hidden="true"></i>`},

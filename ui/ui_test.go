@@ -1598,6 +1598,7 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 		"rst-skip",
 		"rst-shell-topbar", "rst-shell__bar", "rst-shell__brand", "rst-shell__nav",
 		"rst-shell__account", "rst-shell__foot",
+		"rst-shell__menu", "rst-shell__tail",
 		"rst-shell-sidebar", "rst-shell__chrome", "rst-shell__rail", "rst-shell__group", "rst-shell__main",
 	} {
 		if !seen[class] {
@@ -1788,6 +1789,125 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	if strings.Contains(Styleguide()["shell-sidebar"], group) ||
 		strings.Contains(Styleguide()["tblock"], group) {
 		t.Error("shell chrome or the toggle-block joined the menu exclusivity group")
+	}
+
+	// The topbar's narrow-screen disclosure is the same kind of
+	// <details> as the sidebar's chrome strip — navigation, not a menu —
+	// but it cannot be checked the same way, because the layout it lives
+	// in legitimately carries rst-menus on the account dropdown a few
+	// lines below it. So read its own name attribute.
+	//
+	// This is the trap the rst-menu-group rule already names, met for
+	// the first time in the framework's own shells: <details name>
+	// exclusivity is document-wide rather than sibling-scoped, so a
+	// disclosure sharing the menus' group is closed by the very account
+	// menu it reveals. The tail is a sibling rather than the
+	// disclosure's content, which keeps the account menu out of it
+	// altogether — but a name in the shared group would break it even
+	// so, because the exclusivity does not care about nesting.
+	for _, tag := range detailsOpenTags(string(layout)) {
+		if !strings.Contains(tag, `class="rst-shell__menu"`) {
+			continue
+		}
+		m := detailsNamePattern.FindStringSubmatch(tag)
+		if m == nil {
+			t.Errorf("the topbar's narrow-screen disclosure carries no name at all: %s", tag)
+			continue
+		}
+		if m[1] == MenuGroupDefault {
+			t.Errorf("the topbar's narrow-screen disclosure joined %q; opening the account menu would close the navigation it was opened from: %s", MenuGroupDefault, tag)
+		}
+	}
+	if !strings.Contains(string(layout), `class="rst-shell__menu"`) {
+		t.Error("the topbar shell has no narrow-screen disclosure; below 800px its nav, account and locale have nowhere to go")
+	}
+}
+
+// Both shells collapse behind the same disclosure and the same icon.
+// A text-only summary was the state §8 was filed against — "Menu" as a
+// bare word, with nothing to find it by at a glance — and `kebab` was
+// the cheap way to fix it, ruled out because kebab already means "more
+// actions on this row". aria-hidden throughout: the visible label
+// beside the glyph is the accessible name, and a second one would be
+// read out twice.
+func TestBothShellsCollapseBehindTheMenuIcon(t *testing.T) {
+	if rastrillo.Icon("menu") == "" {
+		t.Fatal(`rastrillo.Icon("menu") is empty: the shells' collapse has no icon to draw`)
+	}
+	for _, c := range []struct{ layout, class string }{
+		{"topbar", "rst-shell__menu"},
+		{"sidebar", "rst-shell__chrome"},
+	} {
+		src, ok := Layout(c.layout)
+		if !ok {
+			t.Fatalf("Layout(%q) missing", c.layout)
+		}
+		want := `<details class="` + c.class + `"`
+		i := strings.Index(string(src), want)
+		if i < 0 {
+			// The topbar's disclosure carries a name attribute, so match
+			// the class wherever it sits in the tag.
+			i = strings.Index(string(src), `class="`+c.class+`"`)
+		}
+		if i < 0 {
+			t.Errorf("layouts/%s.html has no .%s disclosure", c.layout, c.class)
+			continue
+		}
+		rest := string(src)[i:]
+		end := strings.Index(rest, "</summary>")
+		if end < 0 {
+			t.Errorf("layouts/%s.html's .%s disclosure has no summary", c.layout, c.class)
+			continue
+		}
+		summary := rest[:end]
+		if !strings.Contains(summary, `{{icon "menu"}}`) {
+			t.Errorf("layouts/%s.html's collapse summary is text-only; it needs the menu icon: %s", c.layout, summary)
+		}
+		if strings.Contains(summary, `{{icon "kebab"}}`) {
+			t.Errorf(`layouts/%s.html spends "kebab" on navigation; kebab means "more actions on this row"`, c.layout)
+		}
+	}
+	// And the styleguide samples, which are the markup an app copying by
+	// hand reads — they inline the SVG rather than calling {{icon}}.
+	for _, name := range []string{"shell-topbar", "shell-sidebar"} {
+		if !strings.Contains(Styleguide()[name], `<path d="M4 12h16"/>`) {
+			t.Errorf("styleguide sample %q shows a collapse summary with no menu icon in it", name)
+		}
+	}
+}
+
+// detailsOpenTags returns every <details …> open tag in a template, so
+// a check can read one element's attributes without a parser.
+func detailsOpenTags(src string) []string {
+	return regexp.MustCompile(`<details [^>]*>`).FindAllString(src, -1)
+}
+
+// The blocks a shell leaves open ARE its public contract: an app
+// overrides "nav", "account" or "locale" and upgrades the framework
+// under it. §9's collapse wraps three of them in a disclosure, which is
+// a layout change and must not be a contract change — so pin the set,
+// per shell, literally. A rename here is silent at the seam: the app's
+// {{define "nav"}} simply stops being called, and the page renders with
+// an empty bar rather than an error.
+func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
+	want := map[string][]string{
+		"column":  {"lang", "dir", "title", "head", "content"},
+		"topbar":  {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
+		"sidebar": {"lang", "dir", "title", "head", "brand", "nav", "locale", "account", "content"},
+	}
+	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
+	for _, name := range LayoutNames() {
+		src, ok := Layout(name)
+		if !ok {
+			t.Fatalf("Layout(%q) missing", name)
+		}
+		var got []string
+		for _, m := range blockName.FindAllStringSubmatch(string(src), -1) {
+			got = append(got, m[1]+m[2])
+		}
+		if !reflect.DeepEqual(got, want[name]) {
+			t.Errorf("layouts/%s.html offers the blocks %v, want %v — every app overriding a renamed or dropped block breaks silently on upgrade", name, got, want[name])
+		}
 	}
 }
 

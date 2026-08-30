@@ -160,7 +160,12 @@ var styleguideSamples = map[string]string{
 	// shell-topbar — one of the two page frames a shell puts around
 	// .rst-page: a skip link first in the DOM, a bar carrying brand, nav
 	// and an account dropdown pushed to the inline end, then the page
-	// column and a footer. No partial emits
+	// column and a footer. Below 800px the tail (nav, account, locale)
+	// goes behind the .rst-shell__menu disclosure, which is a SIBLING of
+	// the tail rather than its parent — a closed <details> hides its own
+	// content, and the account menu must not sit inside a disclosure it
+	// would close by opening. Its name is rst-shell-menu for exactly
+	// that reason: <details name> exclusivity is document-wide. No partial emits
 	// any of this — an app's layout template owns its own shell — so
 	// this sample is the only exercise these classes get. The nav's
 	// current item is aria-current, the same signal the dropdown and
@@ -168,9 +173,12 @@ var styleguideSamples = map[string]string{
 	"shell-topbar": `<div class="rst-shell-topbar">
   <a class="rst-skip" href="#main">Skip to content</a>
   <header class="rst-shell__bar"><a class="rst-shell__brand" href="/">Notes</a>
+    <details class="rst-shell__menu" name="rst-shell-menu"><summary><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>Menu</summary></details>
+    <div class="rst-shell__tail">
     <nav class="rst-shell__nav"><a href="/" aria-current="page">Home</a><a href="/archive">Archive</a></nav>
     <details class="rst-dropdown rst-shell__account" name="rst-menus"><summary>Account<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
       <div class="rst-dropdown__menu"><a href="/settings">Settings</a></div></details>
+    </div>
   </header>
   <main class="rst-page" id="main">Content.</main>
   <footer class="rst-shell__foot">Made with rastrillo</footer>
@@ -179,11 +187,12 @@ var styleguideSamples = map[string]string{
 	// narrow-screen disclosure is a native <details> strip whose open
 	// state reveals the rail (the adjacent-sibling selector in
 	// tokens.css), so the shell stays zero-JS like every other idiom
-	// here. The rail's own .rst-page still wraps the content, so a
+	// here. Its summary carries the same `menu` icon the topbar's does,
+	// aria-hidden beside its own visible label. The rail's own .rst-page still wraps the content, so a
 	// screen's markup is identical in either shell.
 	"shell-sidebar": `<div class="rst-shell-sidebar">
   <a class="rst-skip" href="#main">Skip to content</a>
-  <details class="rst-shell__chrome"><summary>Menu</summary></details>
+  <details class="rst-shell__chrome"><summary><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>Menu</summary></details>
   <aside class="rst-shell__rail"><a class="rst-shell__brand" href="/">Notes</a>
     <nav class="rst-shell__nav"><span class="rst-shell__group">Work</span><a href="/" aria-current="page">Dashboard</a><a href="/reports">Reports</a></nav>
   </aside>
