@@ -1638,3 +1638,45 @@ from `rastrillo.js` (16,378 of 16,384).
 The doctrine holds throughout: with no JavaScript at all, menus keep
 today's fixed position, which is what every browser does today. This
 file only ever moves an engine closer to the CSS we already wrote.
+
+### 6. Clearing a search must clear the search — RULED 2026-08-30 by Paul
+
+Paul, with a screenshot of a search field holding "sere" and a native ✕:
+*"clearing search doesn't actually clear the search ... can we provide a
+sensible default for what happens when the search is cleared ...
+presumably returning to a URL where there's no search? Some kind of hook
+anyway."*
+
+The ✕ in that screenshot is `::-webkit-search-cancel-button`, which does
+exactly what it is specified to do: it clears the input's VALUE. A form
+submits on submit, so nothing else happens — the results stand and the
+URL still carries `?q=sere`. The affordance looks like it worked.
+
+**The default is a link, not script.** When `Query` is non-empty,
+`list-bar-search` renders an `<a>` to the same `Action` carrying the
+`Hidden` pairs with `q` omitted. A real navigation: it works with
+JavaScript off, it is bookmarkable, and Back behaves. `ClearHref` is the
+hook — an app passing it wins over the computed default.
+
+**Suppress the native cancel button.** Leaving it beside the link is the
+bug rather than a redundancy: two affordances, one of which lies.
+
+**What clearing means, decided rather than left to fall out:**
+
+- Filters and sort survive. They ride in `Hidden`; the default carries
+  them and omits only `q`. "Clear the search" is not "reset the screen".
+- **Pagination is the case the framework cannot decide.** `Hidden` is
+  opaque name/value pairs — nothing tells the partial which one is the
+  page. A page number from a filtered result set is meaningless once the
+  filter is gone, but the partial cannot know to drop it, so the default
+  carries everything and `ClearHref` is how an app says "and reset to
+  page 1". Document that on the key, because otherwise every app meets
+  it once, in production.
+
+**Two constraints on the implementation:**
+
+- The clear target must be **at least 24×24 CSS px**. WCAG 2.2 AA target
+  size is gated in CI and already caught a 17px close chip on this
+  branch; an ✕ tucked inside a field is exactly that shape.
+- It needs a new catalog key for its accessible name — twelve locales,
+  and a trip through the copy gate with the rest of the new prose.
