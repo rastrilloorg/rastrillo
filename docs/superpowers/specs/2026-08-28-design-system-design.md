@@ -2329,6 +2329,26 @@ older scaffold's test had deleted — which meant the same thing before
 the map existed, and whose apps are exactly the population doctor is
 for.
 
+The third of those carries a condition the first implementation missed
+(found in review, fixed before merge): **the file must still exist**.
+The original pin (`36ee472`, #73) listed three files; `theme.css` and
+`datetime.js` joined the vendored set later (#104, #106), so for an app
+scaffolded in that window a name its pin never mentioned means
+"predates", not "deleted on purpose". Reading it as a claim told the
+oldest apps — the ones most likely to be drifting — something false
+about their own history, and made `--fix` withhold a file they needed.
+Existence separates the two readings and is the only signal that can:
+you delete a pin line to *keep* a file you edited, so it is still there.
+Absent-and-unlisted reports as `absent`, which is true either way and is
+the one state `--fix` acts on without `--force`.
+
+**A fourth reader of the one list**, added in the same round: the
+gallery's Getting started page. Its `AppBytes` total and its file rows
+were enumerated by hand, bound to the library only by the
+`len(scripts) == 3` canary that §6-v2.1's cleanup retired. Both now come
+off `ui.VendoredAssets`, so a sixth vendored file cannot reach an app
+while the page that weighs the set stays quiet.
+
 Exit codes 0 clean, 1 error, 2 usage, 3 drift, 4 version mismatch. Drift
 and mismatch are separate because they call for opposite actions: one
 means "re-copy these", the other means "re-copy nothing yet".

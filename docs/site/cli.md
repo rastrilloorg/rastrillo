@@ -232,7 +232,12 @@ A file you edited on purpose is the same: name it in `vendoredIsMine` in
 the scaffold's `vendored_test.go` and both that test and `doctor` leave
 it alone. Apps scaffolded before that map existed recorded the same
 thing by deleting the file's line from the pin, and `doctor` reads that
-too.
+too — but only for a file that is still in `static/`. The first version
+of that pin listed three files, and `theme.css` and `datetime.js` joined
+the vendored set afterwards, so a name an old pin never mentioned means
+"this app predates it", not "I deleted that line". You delete a pin line
+to keep a file you edited; a file that is not there was never claimed,
+so it is reported as **absent** and `--fix` will deliver it.
 
 A file you deleted is the same again. Dropping `select.js` from an app
 with no big selects is a supported choice, so an absent file is reported
