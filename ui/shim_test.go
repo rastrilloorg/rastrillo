@@ -127,7 +127,7 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 		b.WriteByte('\n')
 	}
 	code = b.String()
-	for _, bad := range []string{"form.target", "form.rstBusy", ".rstBusy ="} {
+	for _, bad := range []string{"form.target", "form.method", ".formMethod", "form.rstBusy", ".rstBusy ="} {
 		if strings.Contains(code, bad) {
 			t.Errorf("the shim reads %s as a property; a control of that name shadows it — switching the rule off, or, for an assignment under strict mode, throwing", bad)
 		}
@@ -138,17 +138,35 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	if !strings.Contains(js, `if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }`) {
 		t.Error("the double-submit guard is not the form's own aria-busy attribute")
 	}
-	// A form that submits NOWHERE must not be guarded, and there are two
-	// of them. target="_blank" leaves this page where it is; so does
-	// <form method="dialog">, the standard close button inside a
-	// <dialog>. The dialog is the worse of the two: nothing ever
-	// navigates or reloads afterwards, so a guard armed there is never
-	// cleared — the close button ends up disabled and the dialog cannot
-	// be closed through its form again, ever. The attribute, not
-	// form.method, for the [LegacyOverrideBuiltIns] reason above, and
-	// case-insensitively because method is an enumerated attribute.
-	if !strings.Contains(js, `if (/^dialog$/i.test(form.getAttribute("method"))) return;`) {
-		t.Error(`the busy rule does not bail out of <form method="dialog">; a dialog's own close form arms a guard nothing will ever clear`)
+	// A submit that goes NOWHERE must not be guarded, and there are
+	// three shapes of it. target="_blank" leaves this page where it is;
+	// so does <form method="dialog">, the standard close button inside a
+	// <dialog>; and so does <button formmethod="dialog"> in an ordinary
+	// form, the same close reached through the submitter's own
+	// attribute. The dialog shapes are the worse: nothing ever navigates
+	// or reloads afterwards, so a guard armed there is never cleared —
+	// the close button ends up disabled and the dialog cannot be closed
+	// through that form again, ever.
+	//
+	// One effective method, computed once, with the submitter's
+	// formmethod beating the form's method the way HTML says it does.
+	// Both read through getAttribute — never form.method or
+	// btn.formMethod — for the [LegacyOverrideBuiltIns] reason above,
+	// and matched case-insensitively because method is an enumerated
+	// attribute.
+	for _, want := range []string{
+		`if (/^dialog$/i.test(btn && btn.getAttribute("formmethod") ||`,
+		`      form.getAttribute("method"))) return;`,
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf(`the busy rule does not bail out of an effective method of "dialog" (%s missing); a dialog's close form — or a button's formmethod="dialog" — arms a guard nothing will ever clear`, want)
+		}
+	}
+	// The submitter has to be in hand BEFORE the guard runs, or the
+	// effective method cannot see it and the bail reads the form's
+	// method alone.
+	if strings.Index(js, "    var btn = e.submitter;") > strings.Index(js, `    if (/^dialog$/i.test(`) {
+		t.Error("the submitter is read after the dialog bail; the bail cannot see formmethod")
 	}
 	// The reset has to reach a submit button that belongs to the form
 	// through form="id" while living somewhere else in the document — a
@@ -213,6 +231,16 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // arithmetic: the next behaviour this file gains does not fit, and the
 // reasoning for these two lives in TestBusyRuleIsTheDefault above and
 // in browser_test.go's legs 2d and 4c because it did not fit here.
+//
+// The round after that closed the third shape of the same defect —
+// <button formmethod="dialog"> in an ordinary form — for +29 bytes, by
+// MERGING rather than adding: one effective method (the submitter's
+// formmethod, else the form's) replaces the bail that read the form's
+// method alone. 16,349 → 16,378: 47 bytes of code, and 18 GIVEN BACK by
+// the comment, because two checks explained separately are now one
+// explanation, and the submitter paragraph moved up to sit beside the
+// var it describes. 6 bytes are left under the cap, and leg 2e in
+// browser_test.go drives the shape.
 //
 // Splitting was the alternative and was rejected on the arithmetic:
 // 618 bytes of behaviour does not earn a third scaffolded file, a third

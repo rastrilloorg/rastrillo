@@ -163,14 +163,15 @@ at the same place and are all refused while the first submission is out.
 
 Three things the rule deliberately does not do. It does not touch a form
 whose `target` sends the result somewhere else — that page is not going
-anywhere, so it has nothing to be busy about. It does not touch
-`<form method="dialog">`, the standard close button inside a `<dialog>`,
-for the same reason and a sharper one: that submit closes the dialog and
-leaves the page exactly where it stood, so a guard armed there would
-never be cleared and the dialog could never be closed through its form
-again. And it hands the form back if something downstream cancels the
-submit: an app handler that calls `preventDefault()` to do the work
-itself owns the feedback too.
+anywhere, so it has nothing to be busy about. It does not touch the
+standard close button inside a `<dialog>` — `<form method="dialog">`, or
+a `<button formmethod="dialog">` inside an ordinary form, since the
+button's attribute beats the form's — for the same reason and a sharper
+one: that submit closes the dialog and leaves the page exactly where it
+stood, so a guard armed there would never be cleared and the dialog
+could never be closed through its form again. And it hands the form back
+if something downstream cancels the submit: an app handler that calls
+`preventDefault()` to do the work itself owns the feedback too.
 
 One state it cannot get itself out of. A submission that never navigates
 — a `204` or `205`, or a response the browser hands straight to the

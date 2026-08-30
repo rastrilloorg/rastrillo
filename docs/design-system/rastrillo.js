@@ -187,23 +187,6 @@
     var form = e.target;
     if (!form || form.tagName !== "FORM") return;
     if (form.getAttribute("data-busy") === "false") return;
-    // A form that opens its result elsewhere, or that closes a dialog
-    // and stays put, has nothing to be busy about and nothing to clear.
-    //
-    // getAttribute, NOT form.target — and this is not style. A form is
-    // [LegacyOverrideBuiltIns]: a control named "target" (a target
-    // amount, a target date — an ordinary field name) shadows the IDL
-    // attribute with the input itself, which is truthy and is not
-    // "_self", so the property form silently switches the rule off and
-    // hands back the double submit it exists to prevent. The busy flag
-    // below is the form's own aria-busy for the same reason: an expando
-    // is shadowable, and under strict mode assigning to a shadowed one
-    // throws.
-    var to = form.getAttribute("target");
-    if (to && to !== "_self") return;
-    if (/^dialog$/i.test(form.getAttribute("method"))) return;
-    if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }
-    form.setAttribute("aria-busy", "true");
     // The button the browser submitted with: the one clicked, or — for
     // Enter in a field — the default one it implicitly clicked. Only
     // that one goes busy; every other submit button in the form keeps
@@ -211,6 +194,23 @@
     // leaves the buttons alone and keeps the guard, which is the half
     // that matters.
     var btn = e.submitter;
+    // A form that opens its result elsewhere, or a submit that closes a
+    // dialog and stays put, has nothing to be busy about and nothing to
+    // clear. The submitter's formmethod beats the form's.
+    //
+    // getAttribute, never the IDL properties. A form is
+    // [LegacyOverrideBuiltIns]: a control named "target" or "method" (a
+    // target date, a method column — ordinary field names) shadows the IDL
+    // attribute with the input itself, so the property form quietly
+    // switches the rule off and hands back the double submit. The busy flag
+    // below is the form's own aria-busy for the same reason: an expando is
+    // shadowable, and under strict mode assigning to a shadowed one throws.
+    var to = form.getAttribute("target");
+    if (to && to !== "_self") return;
+    if (/^dialog$/i.test(btn && btn.getAttribute("formmethod") ||
+      form.getAttribute("method"))) return;
+    if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }
+    form.setAttribute("aria-busy", "true");
     if (!btn || btn.getAttribute("data-busy") === "false") btn = null;
     var label = btn && (btn.getAttribute("data-busy-label") ||
       form.getAttribute("data-busy-label"));

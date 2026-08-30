@@ -1570,15 +1570,17 @@ const backStateJS = `(function () {
   ].join(" ");
 })()`
 
-// dialogStateJS reads the standard dialog close pattern: a <dialog>
-// holding <form method="dialog"><button>Close</button></form>. Nothing
-// about it may end up busy, because nothing about it is on its way
-// anywhere — and the dialog's open state is the assertion that says so
-// in behaviour rather than in flags.
-const dialogStateJS = `(function () {
-  var d = document.getElementById("dlg");
-  var f = document.getElementById("dlgform");
-  var b = document.getElementById("dlgclose");
+// dialogState reads a dialog close pattern, by ids: the <dialog>, the
+// form inside it, and the button that closes it. Two shapes wear this
+// pattern — <form method="dialog">, and an ordinary form whose button
+// carries formmethod="dialog" — and neither may end up busy, because
+// neither is on its way anywhere. The dialog's open state is the
+// assertion that says so in behaviour rather than in flags.
+func dialogState(dlg, form, btn string) string {
+	return `(function () {
+  var d = document.getElementById("` + dlg + `");
+  var f = document.getElementById("` + form + `");
+  var b = document.getElementById("` + btn + `");
   return [
     "open:" + d.open,
     "form:" + (f.getAttribute("aria-busy") || "-"),
@@ -1587,6 +1589,7 @@ const dialogStateJS = `(function () {
     "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
   ].join(" ");
 })()`
+}
 
 // extBackStateJS is backStateJS for the form whose submit button lives
 // OUTSIDE it and belongs to it through form="ext" — the toolbar Save
@@ -1717,6 +1720,16 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`<dialog id="dlg"><p>A dialog.</p>`+
 			`<form id="dlgform" method="dialog">`+
 			`<button id="dlgclose" class="rst-btn" type="submit">Close</button>`+
+			`</form></dialog>`+
+			// The same close reached through the SUBMITTER instead of
+			// the form: an ordinary POST form whose button carries
+			// formmethod="dialog". HTML says the button's attribute
+			// beats the form's, so this submit goes nowhere either —
+			// and a rule that reads only the form's method arms a
+			// guard here that nothing will ever clear.
+			`<dialog id="fmdlg"><p>Another dialog.</p>`+
+			`<form id="fmform" class="rst-form" method="post" action="/submit">`+
+			`<button id="fmclose" class="rst-btn" type="submit" formmethod="dialog">Close</button>`+
 			`</form></dialog>`+
 			// A submit button that belongs to a form it does not live
 			// in — the toolbar/sticky-header Save the form attribute
@@ -1900,24 +1913,56 @@ func TestBusyButtonDrive(t *testing.T) {
 	//
 	// The second close is the assertion. A wedged dialog closes once,
 	// looks fine, and never closes again.
+	const wantDialog = "open:false form:- btn:- btn-off:false spin:no"
 	var dialogFirst, dialogSecond string
 	fail(chromedp.Run(ctx,
 		chromedp.Evaluate(`document.getElementById("dlg").showModal()`, nil), at("opened-dialog"),
 		chromedp.Evaluate(`document.getElementById("dlgclose").click()`, nil), at("clicked-dialog-close"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(dialogStateJS, &dialogFirst),
+		chromedp.Evaluate(dialogState("dlg", "dlgform", "dlgclose"), &dialogFirst),
 		chromedp.Evaluate(`document.getElementById("dlg").showModal()`, nil), at("reopened-dialog"),
 		chromedp.Evaluate(`document.getElementById("dlgclose").click()`, nil), at("clicked-dialog-close-again"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(dialogStateJS, &dialogSecond),
+		chromedp.Evaluate(dialogState("dlg", "dlgform", "dlgclose"), &dialogSecond),
 	))
-	const wantDialog = "open:false form:- btn:- btn-off:false spin:no"
 	if dialogFirst != wantDialog {
 		t.Errorf("after closing the dialog once the state is\n  %q\nwant\n  %q\n— method=\"dialog\" submits nowhere, so nothing may be left looking busy", dialogFirst, wantDialog)
 	}
 	if dialogSecond != wantDialog {
 		t.Errorf("after reopening and closing the dialog again the state is\n  %q\nwant\n  %q\n— the close button is dead and the dialog is wedged open", dialogSecond, wantDialog)
 	}
+
+	// ── 2e. The same close, through the submitter ─────────────────────
+	//
+	// <form method="post"><button formmethod="dialog"> is 2d reached
+	// through the button's own attribute, which HTML says beats the
+	// form's method. The form looks like an ordinary POST — a rule that
+	// reads only form.method sees "post", arms the guard, and wedges the
+	// dialog exactly as 2d does, in the shape a real app is likelier to
+	// write: one form that both saves and closes.
+	//
+	// Same assertion, and for the same reason: the second close is the
+	// one that catches it.
+	var fmFirst, fmSecond string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("fmdlg").showModal()`, nil), at("opened-formmethod-dialog"),
+		chromedp.Evaluate(`document.getElementById("fmclose").click()`, nil), at("clicked-formmethod-close"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(dialogState("fmdlg", "fmform", "fmclose"), &fmFirst),
+		chromedp.Evaluate(`document.getElementById("fmdlg").showModal()`, nil), at("reopened-formmethod-dialog"),
+		chromedp.Evaluate(`document.getElementById("fmclose").click()`, nil), at("clicked-formmethod-close-again"),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(dialogState("fmdlg", "fmform", "fmclose"), &fmSecond),
+	))
+	if fmFirst != wantDialog {
+		t.Errorf("after closing the dialog once through formmethod=\"dialog\" the state is\n  %q\nwant\n  %q\n— the submitter's formmethod beats the form's method, so this submits nowhere either", fmFirst, wantDialog)
+	}
+	if fmSecond != wantDialog {
+		t.Errorf("after reopening and closing it again through formmethod=\"dialog\" the state is\n  %q\nwant\n  %q\n— the close button is dead and the dialog is wedged open", fmSecond, wantDialog)
+	}
+	// The form's action is real: if the effective method were ever read
+	// as the form's "post", this leg would also have posted to it.
+	tookNothing(t, payloads, "formmethod=\"dialog\" close")
 
 	// ── 3. The rule itself, and the payload ───────────────────────────
 	var busy, afterSecond string
