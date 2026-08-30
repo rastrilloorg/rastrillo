@@ -1799,3 +1799,37 @@ An empty `<h1>Overview</h1>` reads as a broken build, not as work in
 progress. Nothing about the gates would have caught it — every gate
 passed, because a page that renders its own heading and nothing else is
 structurally perfect and substantively empty.
+
+### 12. Every nav section needs its own overview link — RULED 2026-08-30 by Paul
+
+*"each major section now needs an overview too as the first clickable
+item in each nav section."*
+
+The split left a gap in the rail: expanding TOKENS shows nine anchors
+and **no route to `tokens.html` itself**. The section title is a
+`<summary>`, so it discloses rather than navigates, and the only ways to
+a section's top are the tab strip and the prev/next links of §10, which
+do not exist yet.
+
+First item under every section, before its anchors: a link to that
+page's top, labelled **Overview** — Paul's word, kept.
+
+**The name collides on purpose, so disambiguate it in the accessible
+name.** The top-level page is also Overview, so the rail reads Overview,
+then TOKENS → Overview, then COMPONENTS → Overview. Nesting makes that
+unambiguous to the eye and ambiguous to a screen reader, which hears
+"Overview" five times in one navigation landmark.
+
+Give each link an accessible name carrying its section — "Tokens
+overview" — via a `{section} overview` prose key. That satisfies WCAG
+2.5.3 Label in Name, which requires the accessible name to *contain* the
+visible label, and it does. Do not change the visible word to
+disambiguate: the visible label is the one Paul asked for and the one
+the filter matches on.
+
+Derived from `pageKinds()` like §10's prev/next, and gated the same way:
+first item in its section, exactly one per section, present for a sixth
+page kind with no edit.
+
+Two prose keys — the visible label and the accessible-name pattern —
+eleven translations each.
