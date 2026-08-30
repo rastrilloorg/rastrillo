@@ -331,6 +331,11 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   wires `gormlite` over modernc.
 - **Never bind a form onto a model, query an owned model unscoped, or
   answer 403 where 404 is honest.** §3, §4.
+- **Your app's components stay in your app.** `ui` is rastrillo's
+  vocabulary, not yours. Keep a component app-local until a second app
+  reaches for it; the day one app copies another's, extract it to a
+  shared module that week and delete the copy. A copy is the trigger —
+  "a second consumer appears" never fires.
 - **UI: `rst-list`/`rst-card` hold rows only (unpadded by design).** A
   form, prose or links go in `rst-box` with a sibling `rst-box-head`.
   Screens stack vertically — never heading, paragraph and button in one
