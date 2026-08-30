@@ -12,19 +12,28 @@ form helpers. Module `github.com/carlosframework/rastrillo`; worked
 reference `examples/notes`. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
-## 1. App shape
+## 0. Start here
 
-Five files plus `migrations.go` beside `models.go` (§2):
-`internal/<app>/models.go` (plain GORM structs), `app.go` (wiring:
-migrate.Apply, sessions, identity plugin, router), `handlers.go`
-(owner-scoped CRUD), `render.go` (embedded templates,
-flash/session-aware page data), `cmd/<app>/main.go` (Resolve ->
-db.Open -> App -> Serve).
+```sh
+go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
+rastrillo new notes && cd notes && go mod tidy && go test ./...
+```
 
 `rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar <name>`
-(also `--icons`, `--icon-delivery`, `--ux`) scaffolds it all: the theme
-lands as `static/theme.css`, the shell as `templates/layout.html`, both
-app-owned from then on. docs/site/templates.md
+(also `--icons`, `--icon-delivery`, `--ux`) writes the whole §1 shape plus
+`go.mod`, migrations, templates, static assets, app-owned icons, a test
+harness including the browser drive, a `Makefile` whose `ci` target is the
+gate, and `.amadan/ci.d/` steps. It compiles, its tests pass and it
+serves before you write a line — hand-writing any of it redoes the
+scaffold's work. The theme lands as `static/theme.css`, the shell as
+`templates/layout.html`, both app-owned from then on.
+docs/site/templates.md
+
+The scaffolded `AGENTS.md` is the source of truth for that app's code;
+this file stays the framework's. `rastrillo generate` writes `gen/`
+from `manifest/` — commit it, never hand-edit; add `generate --check`
+to `make ci`. `rastrillo dev` watches, regenerates, rebuilds and
+restarts. docs/site/getting-started.md
 
 `rastrillo doctor [--fix] [dir]` compares `static/`'s vendored files
 (`tokens.css`, `theme.css`, the three scripts) with the CLI's own
@@ -34,6 +43,21 @@ version, which is NOT drift — `--fix` refuses across it without
 drifted" and is never diffed against a guess; a file named in the
 scaffolded `vendoredIsMine` is left alone by both doctor and the pin
 test. The pin test, not doctor, is the standing gate. docs/site/cli.md
+
+**Reach for a manifest before hand-writing.** A `manifest/*.toml`
+resource generates CRUD screens — field kinds text, textarea, money; no
+relations; `scope = "user"` owner-filters by session subject. Inside
+that vocabulary the closing checklist is correct by construction.
+docs/site/manifests.md
+
+## 1. App shape
+
+Five files plus `migrations.go` beside `models.go` (§2):
+`internal/<app>/models.go` (plain GORM structs), `app.go` (wiring:
+migrate.Apply, sessions, identity plugin, router), `handlers.go`
+(owner-scoped CRUD), `render.go` (embedded templates,
+flash/session-aware page data), `cmd/<app>/main.go` (Resolve ->
+db.Open -> App -> Serve).
 
 Imports: `github.com/carlosframework/rastrillo` and subpackages `db`,
 `migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
@@ -85,7 +109,7 @@ filters on.
 `db.Open(path, logger)` returns `*db.DB`: `.G` is the `*gorm.DB`,
 SQLite-wired (one file, WAL, one writer connection, several readers,
 routed per statement). `d.Close()` closes both pools; `d.G.DB()` returns
-the writer `*sql.DB` for database/sql packages like sessions.
+the writer `*sql.DB` for database/sql packages.
 
 Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
@@ -149,14 +173,14 @@ field names, the allowlist keeping unexpected fields out of columns.
 Validate with `form.Parse(r, form.Field{Name: "title", Required: true},
 form.Field{Name: "body", Kind: form.Textarea})` — one declaration per
 field. On `!p.OK()`: `w.WriteHeader(422)`, re-render seeding values
-back (`p.String("title")`; `p.Echo()` is the seed-back map for
+(`p.String("title")`; `p.Echo()` is the seed-back map for
 map-shaped views). Write the status before rendering; the render helper
 writes none. Money is `int64` cents: `form.Money`, read `p.Cents`,
 parse `form.ParseCents` (no `$`, two decimals max, `""` = zero), seed
 `form.FormatCentsPlain`, display `form.FormatCents`.
 
 `form.Date`/`Time`/`DateTime` parse `2006-01-02`, `15:04` and
-`2006-01-02T15:04` exactly — nothing looser — in `Field.Location` (nil
+`2006-01-02T15:04` — nothing looser — in `Field.Location` (nil
 = UTC; `Time` ignores it); read `p.Date`/`p.Time`/`p.DateTime`;
 `form.Range(p, "starts", "ends")` checks end-before-start. Empty
 optional dates, unparseable ones and undeclared names all read back as
@@ -168,8 +192,7 @@ English passes through. Partials: `field-date`, `field-time`,
 `field-datetime`, `field-daterange` (its two halves need distinct
 `Name`s); `datetime.js` enhances them into a combobox reading
 "next fri 9am" in the page's own language — vocabulary from the catalog
-on one JSON attribute, month names from `Intl`, no English vocabulary
-in the file.
+on one JSON attribute, month names from `Intl`, no English in the file.
 
 After a mutation: `flash.Set(w, "notice", "...")`, then 303; the render
 helper calls `flash.Take(w, r)` once per page and the layout renders it.
@@ -267,17 +290,13 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 
 ## 7. What NOT to do
 
-- **Manifests: declare what fits the vocabulary, hand-write the rest.**
-  A `manifest/*.toml` resource generates CRUD screens — field kinds
-  text, textarea, money; no relations; `scope = "user"` owner-filters by
-  session subject. docs/site/manifests.md
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`:**
   glebarez re-registers modernc's `sqlite` driver name, so the binary
   panics at init; the gorm.io one is cgo. `db.Open` already wires
   `gormlite` over modernc.
 - **Your app's components stay in your app.** `ui` is rastrillo's
-  vocabulary, not yours. Keep a component app-local; the day one app
-  copies another's, extract it to a shared module that week and delete
+  vocabulary, not yours. The day one app copies
+  another's, extract it to a shared module that week and delete
   the copy. A copy is the trigger — "a second consumer appears" never
   fires.
 - **UI: `rst-list`/`rst-card` hold rows only (unpadded by design).**
@@ -299,7 +318,7 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   log line's `ref`. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a
   `rastrillo.ErrorPageFunc` — `rastrillo new` scaffolds it as
   `render.go`'s `ErrorPage` over `templates/errors.html`; panics recover
-  to that same page. Unwired, errors are bare text.
+  there. Unwired, errors are bare text.
   docs/site/templates.md
 - **Never `git merge` to main**, even locally: every change is a PR,
   squash-merged.
