@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/internal/iconsets"
 	"github.com/carlosframework/rastrillo/ui"
 )
 
@@ -158,6 +159,14 @@ type pageView struct {
 	Demo     previewView
 	DemoHref string
 
+	// Icons is the Icons page's whole content and Assets is the Getting
+	// started page's. Both are read off the framework rather than
+	// written out — IconSlugs() and the embedded asset bytes — so
+	// neither page has a list in it to go stale. See iconsView and
+	// assetsView.
+	Icons  iconsView
+	Assets assetsView
+
 	// Nav is the sidebar: derived from the five fields above it, once
 	// they are built, so it cannot list anything the page does not
 	// render and cannot miss anything it does. See galleryNav.
@@ -269,8 +278,12 @@ type pageKind struct {
 func pageKinds() []pageKind {
 	return []pageKind{
 		{Kind: "overview", File: "index.html", Title: "Overview"},
+		{Kind: "getting-started", File: "getting-started.html", Title: "Getting started", Nav: assetNav,
+			Blurb: "The two stylesheets and three scripts the framework ships, what each one is for, and what each one weighs."},
 		{Kind: "tokens", File: "tokens.html", Title: "Tokens", Nav: tokenNav,
 			Blurb: "Every custom property the system is built out of: the theme's colour and type, and the scales for size, spacing and radius."},
+		{Kind: "icons", File: "icons.html", Title: "Icons", Nav: iconNav,
+			Blurb: "Every icon slug the framework answers, drawn at the size a component draws it, with the call to copy and the name lucide.dev publishes it under."},
 		{Kind: "components", File: "components.html", Title: "Components", Nav: componentNav,
 			Blurb: "The framework's template partials, each one rendered in every state it ships with, with the markup beside it."},
 		{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
@@ -330,6 +343,31 @@ func primitiveNav(mount, theme, locale string, view pageView) []navItem {
 	var items []navItem
 	for _, idiom := range view.Idioms {
 		items = append(items, navItem{Label: idiom.Name, Href: anchorHrefIn(mount, theme, locale, file, idiom.ID), Code: true})
+	}
+	return items
+}
+
+// iconNav is one rail entry per slug, in IconSlugs() order — which is
+// the order the page draws them in, because both read the same call.
+// Code because a slug is an identifier, the same as a partial's name.
+func iconNav(mount, theme, locale string, view pageView) []navItem {
+	file := fileOf("icons")
+	var items []navItem
+	for _, ic := range view.Icons.List {
+		items = append(items, navItem{Label: ic.Slug, Href: anchorHrefIn(mount, theme, locale, file, ic.ID), Code: true})
+	}
+	return items
+}
+
+// assetNav is one rail entry per shipped file, in the order the page
+// lists them. Derived from assetViews for the same reason iconNav is
+// derived from IconSlugs(): a fourth script joins both lists on the day
+// it ships, or neither.
+func assetNav(mount, theme, locale string, view pageView) []navItem {
+	file := fileOf("getting-started")
+	var items []navItem
+	for _, a := range view.Assets.List {
+		items = append(items, navItem{Label: a.Name, Href: anchorHrefIn(mount, theme, locale, file, a.ID), Code: true})
 	}
 	return items
 }
@@ -589,6 +627,8 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		Families:   families,
 		Idioms:     idioms,
 		Shells:     shellViews(mount, theme, locale),
+		Icons:      buildIcons(locale),
+		Assets:     buildAssets(mount, theme, locale),
 	}
 
 	out := make(map[string][]byte, len(pageKinds()))
@@ -629,7 +669,9 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 func bodyTemplates() []struct{ kind, src string } {
 	return []struct{ kind, src string }{
 		{"overview", overviewBody},
+		{"getting-started", gettingStartedBody},
 		{"tokens", tokensBody},
+		{"icons", iconsBody},
 		{"components", componentsBody},
 		{"primitives", primitivesBody},
 		{"shells", shellsBody},
@@ -1731,6 +1773,166 @@ const demoTemplate = `
 {{end}}
 `
 
+// ── Icons ────────────────────────────────────────────────────────────
+//
+// The whole page is a reading of rastrillo.IconSlugs(). Nothing here
+// names an icon and nothing counts them: the twelfth slug (menu) landed
+// while this page was being written and cost no edit, and the
+// thirteenth will cost none either. TestTheIconsPageIsAReadingOfIconSlugs
+// is what holds that — it fails on a slug the page does not draw and on
+// a drawing the slug set does not have.
+
+// lucideHome is the one address in this tree that is not in this tree.
+// It is where the glyphs come from and where a reader goes to see the
+// rest of the set; see outboundLinks in designsystem_test.go, which is
+// the gate's side of the same decision.
+const lucideHome = "https://lucide.dev"
+
+// iconWiring is how an app puts its own icon set in front of the
+// framework's. Held here as source rather than written into the
+// template because it is code a reader copies, not prose the page says
+// — the same footing ui.Styleguide's samples are on.
+const iconWiring = `tmpl := template.Must(template.New("").
+	Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
+	ParseFS(ui.Templates(), "*.html"))`
+
+// iconRebind is the call the trap is about: BOTH seams, every time.
+// ui.FuncsWith(t) alone is the shape that silently reverts.
+const iconRebind = `ui.Funcs(ui.WithT(t), ui.WithIcons(icons.Icon, icons.Assets))`
+
+// iconView is one slug: the markup Icon answers, the call that renders
+// it, and where the glyph came from.
+//
+// Provenance is an address rather than a sentence — lucide.dev/icons/…
+// — so it needs no translation and a reader can type it. Renamed is
+// set where rastrillo's name for the glyph is not Lucide's, which is
+// the difference a reader can see between the two lines.
+type iconView struct {
+	ID         string
+	Slug       string
+	Call       string
+	Provenance string
+	Renamed    bool
+	Markup     template.HTML
+}
+
+// iconsView is the Icons page's data. Total and Renamed are counted
+// here rather than written into a sentence, so the sentence cannot be
+// wrong about the set it is describing.
+type iconsView struct {
+	List       []iconView
+	Total      int
+	Renamed    int
+	Wiring     string
+	Rebind     string
+	LucideLine template.HTML
+}
+
+func buildIcons(locale string) iconsView {
+	slugs := rastrillo.IconSlugs()
+	out := iconsView{
+		List:   make([]iconView, 0, len(slugs)),
+		Total:  len(slugs),
+		Wiring: iconWiring,
+		Rebind: iconRebind,
+	}
+	for _, slug := range slugs {
+		name := iconsets.LucideName(slug)
+		renamed := name != "" && name != slug
+		if renamed {
+			out.Renamed++
+		}
+		out.List = append(out.List, iconView{
+			ID:         anchorID("icon", slug),
+			Slug:       slug,
+			Call:       `{{icon "` + slug + `"}}`,
+			Provenance: "lucide.dev/icons/" + name,
+			Renamed:    renamed,
+			Markup:     rastrillo.Icon(slug),
+		})
+	}
+	out.LucideLine = proseMarkup(locale, "The whole set is at {link}.", "link", template.HTML(
+		`<a href="`+lucideHome+`" target="_blank" rel="noopener">lucide.dev<span class="rst-sr-only"> (`+
+			template.HTMLEscapeString(proseIn(locale, "opens in a new tab"))+`)</span></a>`))
+	return out
+}
+
+// ── Getting started ──────────────────────────────────────────────────
+//
+// Every weight on that page is len() of the bytes the page was rendered
+// from. Not one of them is written down, here or in prose.go, which is
+// the whole point: a number in a sentence is wrong the first time
+// somebody edits the file it describes, and this project has corrected
+// five of those in three days.
+
+// assetView is one shipped file: what it is called, where this tree
+// serves it, what it weighs and what it is for.
+type assetView struct {
+	ID    string
+	Name  string
+	Href  string
+	Bytes int
+	Blurb string
+}
+
+// assetsView is the Getting started page's data. AppBytes is what a
+// scaffolded app is actually handed — tokens.css, ONE theme and the
+// three scripts — which is not the sum of the list, because the list
+// carries every theme and gallery.js, and an app receives neither.
+type assetsView struct {
+	List     []assetView
+	AppBytes int
+	Scaffold string
+	Pin      string
+}
+
+// buildAssets reads the shipped assets out of ui, in the order the page
+// lists them. The theme rows come off ui.ThemeNames(), so a fourth
+// theme appears here and in the rail with no edit, and the getters are
+// the same ones Render writes the tree's copies from — the file a
+// reader downloads and the number beside it cannot disagree.
+func buildAssets(mount, theme, locale string) assetsView {
+	themeCSS, ok := ui.ThemeCSS(theme)
+	if !ok {
+		// Render has already failed on an unknown theme by the time
+		// anything calls this; an empty row would be a silent lie.
+		panic("designsystem: no theme " + theme)
+	}
+	add := func(out *assetsView, name string, body []byte, blurb string, args ...any) {
+		out.List = append(out.List, assetView{
+			ID:    anchorID("asset", name),
+			Name:  name,
+			Href:  mount + "/" + name,
+			Bytes: len(body),
+			Blurb: proseIn(locale, blurb, args...),
+		})
+	}
+	out := assetsView{
+		AppBytes: len(ui.TokensCSS()) + len(themeCSS) + len(ui.ShimJS()) + len(ui.SelectJS()) + len(ui.DatetimeJS()),
+		Scaffold: "rastrillo new --theme=" + theme + " myapp",
+		Pin:      `const vendoredTheme = "` + theme + `"`,
+	}
+	add(&out, "tokens.css", ui.TokensCSS(),
+		"Structure: every component class, every scale, and no colour literal anywhere. The same file under every theme.")
+	for _, name := range ui.ThemeNames() {
+		css, ok := ui.ThemeCSS(name)
+		if !ok {
+			continue
+		}
+		add(&out, "theme-"+name+".css", css,
+			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
+	}
+	add(&out, "rastrillo.js", ui.ShimJS(),
+		"The progressive-enhancement shim: polling fragments, busy states and light dismiss. Every scaffolded app gets it.")
+	add(&out, "select.js", ui.SelectJS(),
+		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
+	add(&out, "datetime.js", ui.DatetimeJS(),
+		"The date fields' natural-language input. Inert until a field opts in with data-rst-date or data-rst-time, and deletable on its own.")
+	add(&out, "gallery.js", GalleryJS(),
+		"This gallery's own filter and colour-scheme toggle. No scaffold writes it and no app receives it.")
+	return out
+}
+
 // ── The page itself ──────────────────────────────────────────────────
 
 // dsCSS is the page's own chrome: the swatch grid, the sample frames and
@@ -1778,16 +1980,29 @@ const dsCSS = `
 .ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
 .ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
 .ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
-/* The Overview's opening paragraph and the routes under it. The
+/* The Icons page reuses the token grid: one chip per icon, and the icon
+   inside it at the 1em tokens.css gives it, which is the size a
+   component draws it at rather than a poster of it. The call under the
+   name is long enough to overrun a 13rem column on a 320px screen, so
+   this is the one place in the grid that breaks inside a word. */
+.ds-chip--icon { align-items: center; color: var(--rst-text); display: flex; justify-content: center; }
+.ds-icons .ds-tok__value { overflow-wrap: anywhere; }
+/* The Overview's opening paragraph and the routes under it. .ds-files is
+   the same row — a name, a sentence and a number — on the Getting
+   started page. It is a second class rather than a second use of
+   .ds-routes because TestTheOverviewRoutesIntoEveryOtherPage identifies
+   the Overview's route list BY that class and asserts no other page
+   carries one; sharing it would have made that gate stop meaning
+   anything. The
    paragraph is the one piece of copy on this site somebody wrote by
    hand rather than derived from the code, so it is set a step larger
    than body text and given the same 62ch measure everything else here
    reads at. */
 .ds-intro { font-size: 1.05rem; margin: 0 0 var(--rst-sp-5); max-width: 62ch; }
-.ds-routes { display: grid; gap: var(--rst-sp-4); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
-.ds-routes > li { border-inline-start: 2px solid var(--rst-line-strong); padding-inline-start: var(--rst-sp-3); }
-.ds-routes a { font-weight: 600; }
-.ds-routes span { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); max-width: 62ch; }
+.ds-routes, .ds-files { display: grid; gap: var(--rst-sp-4); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
+.ds-routes > li, .ds-files > li { border-inline-start: 2px solid var(--rst-line-strong); padding-inline-start: var(--rst-sp-3); }
+.ds-routes a, .ds-files a { font-weight: 600; }
+.ds-routes span, .ds-files span { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); max-width: 62ch; }
 /* Prev/next at the foot. Two grid columns rather than a flex row with
    space-between, because the ends of the sequence are missing a link
    and not missing a column: the Overview's Next has to stay on the
@@ -2056,6 +2271,74 @@ const overviewBody = `{{define "ds-body-overview"}}
 <ul class="ds-routes">{{range .Routes}}
 <li><a href="{{.Href}}">{{.Label}}</a><span>{{.Blurb}}</span></li>{{end}}
 </ul>
+{{end}}`
+
+// gettingStartedBody is the page a reader meets before any of the
+// vocabulary: what the framework actually ships as CSS and JavaScript,
+// and what it costs.
+//
+// Every weight on it is len() of the embedded bytes, taken while the
+// page renders. There is no number in prose.go and none in this
+// constant, which is the only way a page about file sizes stays true
+// after somebody edits one of the files.
+const gettingStartedBody = `{{define "ds-body-getting-started"}}
+<div class="ds-head"><h2 id="getting-started">{{P "Getting started"}}</h2></div>
+<p class="ds-lead">{{P "Two stylesheets and three scripts. A new app is handed all of them at scaffold time and owns them from that moment; anything else can link them straight off this site. None of it is required for a page to work — turn JavaScript off and every component here still does what it says."}}</p>
+
+<h3 class="ds-sub">{{P "The stylesheets"}}</h3>
+<p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. It carries no colour literal and is the same file under every theme. themes/<name>.css is the other half — colour, type family and shape — as one :root block where every colour is declared once as a light-dark() pair, so a theme changes how an app feels and not only what colour it is."}}</p>
+
+<h3 class="ds-sub">{{P "The scripts"}}</h3>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are the two enhancements, each one inert until a control opts into it and each one deletable on its own. gallery.js is this gallery's own script and is not part of what an app receives."}}</p>
+
+<h3 class="ds-sub">{{P "What each file weighs"}}</h3>
+<p class="ds-note">{{P "Every number below is the length of the bytes this page was rendered from, measured as it rendered. None of them is written down anywhere, so none of them can go stale."}}</p>
+<ul class="ds-files">{{range .Assets.List}}
+<li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{P "{bytes} bytes" "bytes" .Bytes}}</span></li>{{end}}
+</ul>
+<p class="ds-lead">{{P "A scaffolded app is handed {bytes} bytes of that: tokens.css, one theme and the three scripts. gallery.js is not in the total, and neither are the themes an app did not choose." "bytes" .Assets.AppBytes}}</p>
+
+<h3 class="ds-sub">{{P "In a new rastrillo app"}}</h3>
+<p class="ds-lead">{{P "rastrillo new writes these files into the app's own static directory and links them from the layout, tokens.css first and the theme after it. They are app-owned from that moment: edit them, or delete a script the app has no use for."}}</p>
+<pre class="ds-src rst-mono"><code>{{.Assets.Scaffold}}</code></pre>
+<p class="ds-lead">{{P "The theme is pinned twice, deliberately. --theme decides which of the shipped themes is copied to static/theme.css, and the generated suite records that choice, so a framework upgrade that changes the theme's bytes is a test failure rather than a surprise on a Friday."}}</p>
+<pre class="ds-src rst-mono"><code>{{.Assets.Pin}}</code></pre>
+
+<h3 class="ds-sub">{{P "Using it without the framework"}}</h3>
+<p class="ds-lead">{{P "Every file above is served from this site at its own address, and the names above are the links. Take tokens.css and one theme and you have the whole visual system: the classes are plain, the markup is ordinary HTML, and none of it needs a build step, a bundler or a Go program."}}</p>
+
+<h3 class="ds-sub">{{P "Upgrading"}}</h3>
+<p class="ds-lead">{{P "The trap worth knowing before it costs you an afternoon: tokens.css is copied into the app's static directory at scaffold time and frozen there, while the partials it styles keep upgrading with the module. An app can quietly run new markup against old CSS. Re-copy tokens.css when you upgrade, and the theme and the scripts with it."}}</p>
+<p class="ds-note">{{P "rastrillo doctor will compare an app's frozen files against the module's and offer to re-copy them. It is approved and it does not exist yet. Until it does, the suite rastrillo new writes is what notices: it holds every vendored file byte-identical to the library copy it came from, and fails when one drifts."}}</p>
+{{end}}`
+
+// iconsBody is every slug rastrillo.IconSlugs() answers, drawn at 1em —
+// the size tokens.css gives .icon, which is the size a component draws
+// it at. The grid is the token page's own, because an icon in this
+// system is a token-shaped thing: a name, a value and a call.
+//
+// Nothing in this constant names an icon or counts them. Both numbers
+// in the sentence under the grid are interpolated from the set.
+const iconsBody = `{{define "ds-body-icons"}}
+<div class="ds-head"><h2 id="icons">{{P "Icons"}}</h2></div>
+<p class="ds-lead">{{P "{total} slugs, vendored as inline SVG and compiled into the binary: no build step, no second origin, and they work with no network at all. Each one is sized from the text beside it by tokens.css's own .icon rule, which is the size you are looking at here. A slug nothing answers renders nothing, so a typo costs a missing icon rather than a page that died mid-response." "total" .Icons.Total}}</p>
+<ul class="ds-toks ds-icons">{{range .Icons.List}}
+<li class="ds-tok" id="{{.ID}}" data-ds-anchor><span class="ds-chip ds-chip--icon">{{.Markup}}</span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Slug}}</span><span class="ds-tok__value">{{.Call}}</span><span class="ds-tok__value">{{.Provenance}}</span></span></li>{{end}}
+</ul>
+
+<h3 class="ds-sub">{{P "The names are rastrillo's own"}}</h3>
+<p class="ds-lead">{{P "{renamed} of the {total} differ from the name lucide.dev publishes, so even the Lucide set carries a translation of its own. Where the last line under an icon does not repeat its name, that is one of them. The payoff is that one call means the same glyph whichever set an app scaffolds, and the shipped partials never change when the set does." "renamed" .Icons.Renamed "total" .Icons.Total}}</p>
+<p class="ds-note">{{P "kebab and menu are the pair worth keeping straight: kebab is the three dots that mean more actions on this row, menu the three lines that mean navigation. The shells use menu when they collapse."}}</p>
+
+<h3 class="ds-sub">{{P "Where the glyphs come from"}}</h3>
+<p class="ds-lead">{{P "Lucide, vendored under the ISC licence and pinned in the source rather than fetched at run time. rastrillo new --icons=font-awesome scaffolds Font Awesome Free instead: a source an app can draw from, not a dependency this framework has. Nothing here fetches it, and Pro is a paid product rastrillo cannot vendor on your behalf."}}</p>
+<p class="ds-note">{{.Icons.LucideLine}}</p>
+
+<h3 class="ds-sub">{{P "An icon the framework does not ship"}}</h3>
+<p class="ds-lead">{{P "The icons package rastrillo new writes is app-owned source: add the glyph there and call it like any other. ui.WithIcons is the seam that puts your set in front of the framework's own."}}</p>
+<pre class="ds-src rst-mono"><code>{{.Icons.Wiring}}</code></pre>
+<p class="ds-lead">{{P "The trap, and it is a silent one: ui.FuncsWith rebinds icon and iconAssets back to the built-in set. An app that scaffolded its own icons has to pass both seams on every call, or its icons revert to Lucide on every request while still rendering something perfectly plausible."}}</p>
+<pre class="ds-src rst-mono"><code>{{.Icons.Rebind}}</code></pre>
 {{end}}`
 
 const tokensBody = `{{define "ds-body-tokens"}}

@@ -311,7 +311,9 @@ func a11yTargets() []a11yTarget {
 		// heading level or a landmark can only be wrong on the page it
 		// is on.
 		{"day/en overview", page("day", "en", "overview"), "the root page: the chrome, the rail and the page header with nothing else in the way"},
+		{"day/en getting started", page("day", "en", "getting-started"), "a page of prose, a list of links out to the assets and two source blocks: the plainest document in the tree, and the one where a heading level or a list semantic has nothing else to hide behind"},
 		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
+		{"day/en icons", page("day", "en", "icons"), "twelve inline SVGs, each aria-hidden beside its own name: the one page in the tree where an icon is the content rather than furniture, and where an accessible name accidentally coming off a decorative glyph would show"},
 		{"day/en components", page("day", "en", "components"), "the page with every component on it"},
 		{"day/en primitives", page("day", "en", "primitives"), "the class idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
