@@ -556,8 +556,10 @@ yours: edit it freely, and nothing in the framework will overwrite it.
 
 The scaffold ships a `vendored_test.go` pinning the delivered copy
 byte-identical to the library's, so you find out you have drifted when
-you meant to, rather than at an upgrade. Delete or update that test when
-you intend to diverge. See [Assets](/docs/assets).
+you meant to, rather than at an upgrade. Name the file in that test's
+`vendoredIsMine` when you intend to diverge, and `rastrillo doctor
+--fix` will re-copy the ones you have not. See [Assets](/docs/assets)
+and [The CLI](/docs/cli).
 
 Two stylesheets, not one. `tokens.css` is structure — layout, spacing,
 the type scale, and every `rst-` component class. A theme, written
@@ -687,8 +689,9 @@ Swapping in a theme of your own is replacing `static/theme.css`. The
 only contract is the token set: declare every name `day` declares, and
 every component class already knows what to do with it. The scaffold's
 `vendored_test.go` pins `theme.css` to the library copy exactly as it
-pins `tokens.css`, so delete its line there when the edit is
-deliberate.
+pins `tokens.css`, so name it in `vendoredIsMine` when the edit is
+deliberate. `rastrillo doctor` never diffs a theme it cannot identify —
+a theme of your own reads as "custom or drifted", not as damage.
 
 ## Shells
 

@@ -2281,7 +2281,7 @@ generator's offered set.
 
 ---
 
-## 6-v2.3. `rastrillo doctor` (2026-08-30) — APPROVED by Paul
+## 6-v2.3. `rastrillo doctor` (2026-08-30) — AS BUILT (2026-08-30)
 
 Compares an app's frozen `static/*` — `tokens.css` above all — against
 the module's embedded copies, reports drift, and offers to re-copy.
@@ -2298,6 +2298,40 @@ spellings.
 Named downstream consumer: the Sheets app, which asked for it and said
 it would adopt it the day it ships. That is what moved it from an idea
 to work.
+
+### As built
+
+`cmd/rastrillo/doctor.go`, `rastrillo doctor [--fix] [--force] [--theme
+<name>] [dir]`, documented at docs/site/cli.md.
+
+**The version question was the design.** The CLI carries its own
+compiled-in `ui`; the app has its own required version in `go.mod`; the
+difference is not drift. Doctor reads both, names the one it compared
+against on the first line, and **refuses `--fix` across a mismatch**
+without `--force` — copying this binary's assets into an app that
+compiles against an older module manufactures the exact fault the tool
+detects and then reports it clean. A `replace` directive is not a
+mismatch: there is no second version to disagree with, only the question
+of whether this binary was built from that checkout, which doctor says
+out loud rather than guessing.
+
+**One list, three readers.** `ui.VendoredAssets(theme)` is now the
+single definition of the vendored set. The scaffold writes those bytes,
+the `vendored_test.go` it generates compares against them, and doctor
+reports the difference — replacing the list that had been written twice,
+once in `new.go`'s file map and once inside its generated-test template.
+
+**Three things it will not call drift**, because one false positive
+costs the tool everything: a `theme.css` matching no shipped theme
+("custom or drifted", never diffed against a guess), a file named in the
+generated test's new `vendoredIsMine` map, and a file whose pin line an
+older scaffold's test had deleted — which meant the same thing before
+the map existed, and whose apps are exactly the population doctor is
+for.
+
+Exit codes 0 clean, 1 error, 2 usage, 3 drift, 4 version mismatch. Drift
+and mismatch are separate because they call for opposite actions: one
+means "re-copy these", the other means "re-copy nothing yet".
 
 ---
 
