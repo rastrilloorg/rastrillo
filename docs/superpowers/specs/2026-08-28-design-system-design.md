@@ -1249,3 +1249,248 @@ its regression — stated rather than quietly ignored. `color-contrast`
 comes back INCOMPLETE on the modal's translucent overlay in both
 schemes; `ui/contrast_test.go` holds every documented token pair, so the
 gap is one composited overlay nobody has measured by hand.
+
+---
+
+## 6-v2.1. Third iteration (2026-08-30, Paul's review of the v2 page)
+
+v2 shipped and Paul reviewed it live. This section records what he asked
+for, and the three slices it was split into. **v2.1 is this section.**
+The markup migration (§6-v3) and the palette generator (§6-v2.2) are
+sequenced after it, deliberately: the repo-wide markup change should not
+ride along with visible bug fixes.
+
+### The bugs, with the causes found before planning
+
+1. **A dropdown is clipped by the card it opens inside.** `.rst-list`
+   sets `overflow: hidden` (tokens.css:255) to clip its rows' corners,
+   which makes it a clipping context for the bulk bar's absolutely
+   positioned Actions menu. Fix by rounding the first and last rows
+   instead and dropping the `overflow`. Any card that holds a menu has
+   this shape, so the fix is the rule, not the one instance.
+2. **`<hr>` renders as a thick UA inset rule in the topbar account
+   menu.** The style exists but is scoped to `.rst-row-menu__panel hr`
+   (tokens.css:651); the account menu is `.rst-dropdown__menu`. Widen
+   the selector to every menu surface.
+3. **The sidebar nav discloses with text glyphs** (▸ ▾) where the rest
+   of the system uses Lucide. `chevron-down` is already vendored — the
+   set is eleven icons with `IconSlugs()` — so this is a swap.
+4. **The sidebar shell puts the person mid-rail.** The profile belongs
+   bottom-left, with the language switcher as a **dropup** above it.
+   Zero JavaScript: a `<details>` menu positioned `bottom: 100%`.
+
+### The page split
+
+One 371 KB document carrying 110 iframes is the reason the page feels
+slow; it is not the Eleventy build, which only passthrough-copies the
+Go-generated tree. Split the gallery into pages, each with its own URL
+and its own place in the nav:
+
+**Overview** (the new landing page) · **Tokens** · **Components**
+(renamed from Partials) · **UI primitives** (renamed from Class idioms)
+· **Shells** · **Icons** (new) · **Getting started** (new, under
+Overview).
+
+The rename is to the READER-FACING label only. `ui.Templates()` keeps
+returning partials and `docs/site/templates.md` keeps calling them
+partials, because that is what they are in Go and what an app author
+types. A page that calls them Components while the code calls them
+partials would be a worse lie than the one it fixes — so the Components
+page says, once, that these are the framework's template partials.
+
+### Overview's content
+
+Paul's paragraph, verbatim, is the page's opening:
+
+> The Rastrillo design system aims to be a starter framework for any app
+> to get a consistent, polished, accessible UI with no or minimal
+> JavaScript dependence, available in multiple languages, and using
+> clean, modern HTML and CSS. It's designed to be delightful to use with
+> or without LLM assistance, and easily remixable.
+
+Above or beside it, an **"everything" demo** in an iframe: one
+self-contained page with dashboard, list and detail as clickable
+sections, so a first-time reader sees what an app looks like before they
+see a single token. One page with internal sections rather than a
+multi-page app (Paul's choice), zero JavaScript, openable full-page.
+
+### Getting started
+
+A page showing how the CSS and JS are structured, what each file is for,
+and **what it weighs** — measured at render, never typed:
+
+| file | bytes today |
+|---|---|
+| `tokens.css` | 64,838 |
+| `themes/<theme>.css` | ~10,000 |
+| `rastrillo.js` | 16,378 |
+| `select.js` | 10,799 |
+| `datetime.js` | 59,077 |
+
+It offers an independent download for someone not using the framework,
+and says plainly that new rastrillo apps get all of this by default.
+
+### The column
+
+`.rst-page` was capped at 52rem, not the 800px Paul estimated — a
+reading measure on a column that holds list grids and side-by-side
+fields. Widened to 64rem.
+
+The desktop preview's scale factor moves with it, and is measured
+rather than written down: it is `min(1, 100cqw / 1200px)`, so nothing
+in the CSS needed editing, and `TestPreviewWidgetDrivesTheWholeJourney`
+now logs what the engine computed. Read on a 1280px window, the
+1200px virtual page went from painted 768px wide (scale 0.640) to
+960px (scale 0.800). `previewHeights` did NOT move, and was
+re-measured to confirm it: every frame lays out at the virtual 1200px
+whatever the column is, so the table is independent of this change.
+
+### Sequenced after this section
+
+- **§6-v2.2 — the palette generator.** Not a shuffle: a mood
+  (calm/warm/technical/editorial) produces a palette BY CONSTRUCTION
+  inside the AA contrast constraints, in OKLCH, rejecting what fails.
+  Every generated palette must pass the same 26-pair × 2-scheme gate the
+  three shipped themes pass, or the system's accessibility claim becomes
+  a claim about three files rather than about the system.
+- **§6-v3 — the markup migration.** Attributes for kind, classes for
+  modifiers (`<div rst-list>`, `<button rst-btn="primary">`). Fable was
+  asked for the design; its recommendation lands in
+  `.superpowers/sdd/2026-08-29-design-system-v2/fable-markup-recommendation.md`.
+  Not started until Paul has read it.
+
+---
+
+## 6-v3. The markup migration (2026-08-30) — RULED, not yet started
+
+Fable's design recommendation, with the migration counts and a worked
+side-by-side, is at
+`.superpowers/sdd/2026-08-29-design-system-v2/fable-markup-recommendation.md`.
+Read it before planning this. The grammar it recommends, and which is
+hereby ratified:
+
+- **Kind is an attribute.** `<div rst-list>`, `<details rst-dropdown>`.
+- **Variant is the attribute's value, matched with `~=`.** `<button
+  rst-btn="primary">`, and `~=` gives class-like space-separated tokens,
+  so `rst-btn="primary compact"` composes with no new mechanism.
+- **The value slot NEVER names a part.** `rst-dropdown="summary"` would
+  make identical syntax mean "variant" on one attribute and "part-of" on
+  another in the same tag. Parts are styled structurally
+  (`[rst-dropdown] > summary`) or get a flat attribute
+  (`rst-dropdown-menu`). Note that `rst-dropdown__summary` has no rule
+  at all today, so it is deleted rather than renamed.
+- **`class` is for utilities and the app's own CSS** — `rst-sr-only`,
+  `rst-mono`, `rst-grow`.
+- **`data-tone` becomes `rst-tone`**, which also unifies it with the
+  four `rst-badge--*` classes that spell the same four tones a second
+  way today. `data-*` stays for runtime state (`data-busy`,
+  `data-theme`).
+- **One spelling, not two.** No permanent class fallback. This
+  vocabulary is taught to LLMs through `SKILL.md`; two spellings means
+  every example picks one anyway, and what comes back is a mix.
+- **No `<rst-list>` custom elements.** §7's deferral stands, and Fable
+  independently agrees: the library's best pieces are native `details`,
+  `summary` and `search` elements, which attributes annotate and custom
+  elements would have to wrap or replace.
+
+### RULED 2026-08-30 by Paul: bare attributes, not `data-rst-*`
+
+> I think bare `rst-list` is fine. Later we could add tooling to prefix
+> with `data-` if we wanted to.
+
+Fable named this the one unrevisitable decision, on the grounds that
+generated apps carry the attribute forever. Paul's answer holds, and the
+reasoning is recorded here so nobody relitigates it: the escape hatch is
+the same staged mechanism Fable already proposed for the class→attribute
+flip — ship a `tokens.css` matching both spellings, run a codemod, drop
+the old selectors. A mechanism that works once works twice. The decision
+costs one extra staged release to reverse, not permanence.
+
+### The risk that is real
+
+`tokens.css` is written into each app's `static/` at scaffold time and
+frozen there, while partials upgrade with the module. A straight flip
+breaks apps mid-upgrade. The staged path is therefore mandatory, not
+optional: ratify the grammar → ship a release whose `tokens.css` pairs
+both selectors (non-breaking) → flip the partials atomically and
+regenerate the gallery (the breaking release, whose notes mandate a
+`tokens.css` refresh) → drop the class selectors before 1.0.
+
+### Measured migration surface
+
+~585 live `class="rst-` instances: partials 127, layouts 20,
+`styleguide.go` 76, scaffold 17, `internal/designsystem` 82, examples
+74, `docs/site` 16, `ui` test literals ~170. Plus 451 selector
+occurrences of 145 distinct classes in `tokens.css`, 83 `rst-`
+references across the three JS files, and 12,444 instances in the
+189-file gallery, which regenerate for free. Every `--rst-*` custom
+property is untouched.
+
+The teaching surface — `SKILL.md` (17,602/18,000), `docs/site`, the
+styleguide, the scaffold and the gates — must flip in the same commit as
+the partials, or an LLM reading a half-migrated corpus emits a mix.
+
+---
+
+## 6-v2.2. Remixability (2026-08-30) — RULED, not yet started
+
+Two changes with one motive: the system currently prescribes where it
+should offer. Paul's observation is the frame for both — *"Every
+Rastrillo app so far built has had it"* — and neither change is worth
+making if the result is a different single answer imposed just as hard.
+
+### The rake line is retired
+
+`.rst-page-header::after` draws a 2.5rem accent stroke over the header's
+1px rule, flush to the inline start. It is the library's one flourish
+and the reason every app looks like a rastrillo app. It also reads as a
+determinate progress bar at 12%, and not by resemblance: it is built
+from the same parts in the same order — a thin full-width track in the
+line colour with a shorter saturated segment filling it from the leading
+edge. The same markup would serve both.
+
+**RULED 2026-08-30 by Paul: the tinted hairline.** The header rule moves
+onto the theme axis as one derived token, and the `::after` goes away:
+
+```css
+/* tokens.css — structure, identical on every theme */
+.rst-page-header { border-bottom: 1px solid var(--rst-header-rule); }
+.rst-page-header::after { content: none; }
+
+/* themes/day.css */
+--rst-header-rule: color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line));
+/* themes/plain.css */
+--rst-header-rule: var(--rst-line);
+/* themes/signal.css */
+--rst-header-rule: color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line));
+```
+
+Derived rather than authored, so a theme that changes its accent gets a
+matching rule with no second value to keep in step — that drift is
+exactly what a fourth hand-authored colour per theme per scheme would
+produce.
+
+**The rule is decorative and carries no contrast floor.** The heading's
+size, weight and spacing carry the structure; the rule does not. Do not
+add it to the 26-pair contrast gate, and do not let a later pass argue
+it back up to meet a 3:1 floor it was never subject to. This sentence
+exists so that argument has already been answered.
+
+An app that wants its own sets one custom property, instead of fighting
+an `::after` it cannot remove. That is the whole point of the change.
+
+### The palette generator
+
+**RULED 2026-08-30 by Paul: a mood-driven generator constrained BY the
+contrast gate, not a shuffle.** A mood (calm, warm, technical,
+editorial) produces a palette *by construction* in OKLCH — lightness
+ladders derived so the documented pairs clear their floors — and
+anything that fails is rejected rather than shipped with a warning.
+
+The floor to hold is the one the three shipped themes hold: 26 pairs ×
+2 schemes, 4.5:1 for text and 3:1 for control borders. A generator whose
+output is not held to it turns the system's accessibility claim into a
+claim about three files rather than about the system, which is worse
+than not generating at all.
+
+Both changes ship after v2.1.

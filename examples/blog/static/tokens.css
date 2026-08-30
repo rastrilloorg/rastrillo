@@ -69,11 +69,13 @@ body {
 }
 
 /* The content column every screen sits in. Your page markup emits this;
-   no partial does. */
+   no partial does. 64rem, widened from 52rem after the v2 page went
+   live: 52rem is a reading measure, and this column holds list grids
+   and side-by-side form fields, which a reading measure squeezes. */
 .rst-page {
   box-sizing: border-box;
   margin: 0 auto;
-  max-width: 52rem;
+  max-width: 64rem;
   padding: var(--rst-sp-5) var(--rst-sp-4) var(--rst-sp-6);
 }
 
@@ -257,7 +259,63 @@ body {
   background: var(--rst-surface);
   border: 1px solid var(--rst-line);
   border-radius: var(--rst-radius);
-  overflow: hidden;
+}
+
+/* Why there is no `overflow: hidden` here, since the obvious way to
+   clip rows to a rounded card is exactly that, and it IS what this rule
+   used to be.
+   A card that clips is a clipping context for everything absolutely
+   positioned inside it — so a bulk bar's Actions menu, or a row kebab's
+   panel, was sliced off at the card's edge the moment it opened. That
+   is any card holding a menu, not one instance of it, so the fix is
+   here rather than at the bulk bar.
+   `overflow: clip` is the same trap: it clips too. `overflow-clip-margin`
+   would push the clip box outward, but it pushes it outward on every
+   side and past the border radius — which is the corner clipping this
+   whole rule exists to do. So the card stops clipping and the rows round
+   THEMSELVES: the first full-bleed child takes the card's start corners,
+   the last takes its end corners, one step in for the 1px border. A
+   card's own rows (.rst-row, .rst-lrow, .rst-lbar, .rst-bulkbar) declare
+   no radius, which is what makes them full-bleed in the first place.
+
+   Both selectors are wrapped in :where() to weigh NOTHING — (0,0,0),
+   not the (0,2,0) a bare `.rst-list > :first-child` would carry. That is
+   the whole mechanism by which a child that owns its own shape keeps it:
+   a bare <form class="rst-search"> or a .rst-empty as the direct first
+   or last child of a card declares its radius at (0,1,0) and therefore
+   wins, and so does any app class doing the same. Source order does NOT
+   decide this and cannot be relied on to — an earlier draft of this
+   comment said it did, and both those children painted lopsided corners
+   (7px over 6px in day) because (0,2,0) beat (0,1,0) whatever the order.
+   :where() rather than a :not(.rst-search, .rst-empty) exception list
+   because the list would need extending for every self-shaped child an
+   app or a later partial invents, and the thing being expressed is not
+   "except these two" but "unless the child says otherwise".
+   TestSelfShapedChildrenKeepTheirCornersInsideACard gates the
+   relationship, by measuring the same child inside a card and outside
+   one and requiring the two to agree.
+
+   KNOWN EDGE, not handled: :last-child is a DOM position, and the old
+   `overflow: hidden` clipped whatever was PAINTED last. So a trailing
+   <input type="hidden"> — which apps write constantly, and which has
+   display: none from the UA — takes the rounding and leaves the real
+   last row square. No template in the framework does this, so nothing
+   regressed; it is unhandled rather than overlooked because the CSS that
+   would handle it has to enumerate what "invisible" means in a selector
+   (:nth-last-child(1 of :not([type=hidden]):not([hidden]))), and the
+   commonest case of all — display: none from the app's own stylesheet —
+   is not expressible in a selector at all. A rule that covered two of
+   the three would read as covering all three. If you are looking at a
+   square corner on a rounded card, look for a hidden last child. */
+:where(.rst-list) > :where(:first-child),
+:where(.rst-card) > :where(:first-child) {
+  border-start-end-radius: calc(var(--rst-radius) - 1px);
+  border-start-start-radius: calc(var(--rst-radius) - 1px);
+}
+:where(.rst-list) > :where(:last-child),
+:where(.rst-card) > :where(:last-child) {
+  border-end-end-radius: calc(var(--rst-radius) - 1px);
+  border-end-start-radius: calc(var(--rst-radius) - 1px);
 }
 
 /* list-bar: the toolbar strip. The search field is capped at 20rem so
@@ -648,7 +706,16 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-row-menu__panel { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; min-width: 176px; padding: 0.25rem; position: absolute; top: calc(100% + 4px); z-index: 40; }
 .rst-row-menu__panel a, .rst-row-menu__panel button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); font-weight: 450; margin: 0; padding: 0.4rem 0.65rem; text-align: start; text-decoration: none; width: 100%; }
 .rst-row-menu__panel a:hover, .rst-row-menu__panel button:hover { background: var(--rst-accent-soft); }
-.rst-row-menu__panel hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
+/* The separator every menu surface draws. Scoped to the row menu alone
+   until the live page showed the topbar account menu wearing the UA's
+   thick inset 3D <hr> instead: that panel is a .rst-dropdown__menu, and
+   nothing named it. The three panels are one surface with three entry
+   points, so one rule names all three — .rst-locale redundantly, since
+   its panel carries .rst-dropdown__menu too, but a locale menu built
+   without that class is still a menu and still needs the hairline. */
+.rst-row-menu__panel hr,
+.rst-dropdown__menu hr,
+.rst-locale hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
 .rst-danger { color: var(--rst-tone-negative-fg); }
 .rst-row-menu__panel .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 
@@ -1057,7 +1124,7 @@ dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 
 
 /* sidebar shell — a rail beside the page. Below 800px the rail is
    hidden behind a <details> chrome strip and, opened, becomes an
-   ordinary full-width block above the content: the open state is the
+   full-width column above the content: the open state is the
    native element's own, so the shell stays zero-JS like every idiom
    above it. The main column carries min-inline-size: 0 so a wide child
    (a list grid, a <pre>) scrolls itself instead of stretching the grid
@@ -1072,10 +1139,36 @@ dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 
 .rst-shell-sidebar .rst-shell__nav a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
 .rst-shell-sidebar .rst-shell__nav a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .rst-shell-sidebar .rst-shell__nav a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+/* The rail's foot — the language switcher and the person, in the corner
+   an app puts them in everywhere else. margin-block-start: auto is the
+   whole mechanism: the rail is a column flex box, so the auto margin
+   eats whatever height is left between the nav and the bottom.
+
+   Below 800px the disclosed rail is STILL a flex column — the media
+   query below only adds block-size: 100dvh, it does not change the
+   display — so the reason the foot stays put down there is not that the
+   layout changed but that the column is content-height and the auto
+   margin has no free space to distribute. That is a dependency, so name
+   it: give the disclosed rail a min-block-size or a height and the foot
+   floats back down to the bottom of it, silently. The 390px leg of
+   TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward
+   asserts the rail's own height for exactly that reason. */
+.rst-shell__rail-foot { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin-block-start: auto; }
+/* An un-overridden shell renders the wrapper with nothing in it; draw
+   no gap for it, the same way .rst-shell__foot handles its own. */
+.rst-shell__rail-foot:empty { display: none; }
 @media (min-width: 800px) {
   .rst-shell-sidebar { display: grid; grid-template-columns: 15rem 1fr; }
   .rst-shell-sidebar > .rst-shell__chrome { display: none; }
   .rst-shell-sidebar > .rst-shell__rail { block-size: 100dvh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
+  /* A menu at the foot of a full-height rail is a DROPUP: the same
+     <details> panel, opened block-start-ward instead of block-end-ward,
+     because below it there is only the window's edge. No script — this
+     is one pair of inset values. Only inside this query: below 800px
+     the rail is a content-height column with the whole page under it,
+     so the same menu opens downward there like every other menu in the
+     system. */
+  .rst-shell__rail-foot .rst-dropdown__menu { inset-block-end: calc(100% + 4px); inset-block-start: auto; margin-block-start: 0; }
 }
 
 /* error page — one centred column, whatever shell it lands in: the

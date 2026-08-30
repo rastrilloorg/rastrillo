@@ -6,9 +6,11 @@ import (
 	"html"
 	"html/template"
 	"io/fs"
+	"os"
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -2157,6 +2159,135 @@ func TestSrOnlyUtilityComesAfterTheRulesItMustBeat(t *testing.T) {
 	}
 }
 
+// A separator inside a menu panel is an <hr>, and a UA <hr> is a thick
+// inset 3D rule that looks nothing like the hairline the menus draw. The
+// rule that neutralises it existed but was scoped to one panel —
+// .rst-row-menu__panel — so the topbar account menu, which is a
+// .rst-dropdown__menu, rendered the browser's own. The panels are one
+// surface with three entry points, so the rule has to name all three.
+//
+// Selectors, not substrings: ".rst-dropdown__menu hr" is not satisfied
+// by ".rst-dropdown__menu hr" appearing inside some longer selector that
+// does not actually match a menu separator.
+//
+// Values, not substrings either. An earlier version of this gate asked
+// only whether the rule body contained "border-top", which
+// `border-top: 0` satisfies while the UA's groove comes straight back.
+// It takes BOTH halves to neutralise it — `border: 0` to drop the
+// inset 3D box, then a real `border-top` to draw the hairline — so both
+// are checked, and the width is checked for being non-zero.
+func TestEveryMenuSurfaceStylesItsSeparator(t *testing.T) {
+	styled := map[string]bool{}
+	for _, rule := range leafRules(string(TokensCSS())) {
+		decls := declarations(rule.body)
+		if !resetsBorder(decls["border"]) || !drawsARule(decls["border-top"]) {
+			continue
+		}
+		for _, sel := range selectorList(rule.selector) {
+			styled[sel] = true
+		}
+	}
+	for _, want := range []string{
+		".rst-row-menu__panel hr",
+		".rst-dropdown__menu hr",
+		".rst-locale hr",
+	} {
+		if !styled[want] {
+			t.Errorf("no rule both resets the UA border and draws a hairline for %q; that menu renders the browser's own thick inset <hr>", want)
+		}
+	}
+}
+
+// declarations splits a rule body into property → value. Last wins,
+// as the cascade does within one block.
+func declarations(body string) map[string]string {
+	out := map[string]string{}
+	for _, d := range strings.Split(body, ";") {
+		prop, val, ok := strings.Cut(d, ":")
+		if !ok {
+			continue
+		}
+		out[strings.ToLower(strings.TrimSpace(prop))] = strings.TrimSpace(val)
+	}
+	return out
+}
+
+// resetsBorder reports whether a value drops the UA's inset 3D border
+// altogether. Only the shorthand does that; a longhand leaves three
+// sides of groove behind.
+func resetsBorder(val string) bool {
+	switch strings.ToLower(val) {
+	case "0", "0px", "none":
+		return true
+	}
+	return false
+}
+
+// drawsARule reports whether a border-top value paints a visible line:
+// a width that is not zero, and a style that is not none. "0",
+// "0 solid …" and "1px none …" all fail it.
+func drawsARule(val string) bool {
+	fields := strings.Fields(strings.ToLower(val))
+	if len(fields) == 0 {
+		return false
+	}
+	for _, f := range fields {
+		if f == "none" || f == "hidden" {
+			return false
+		}
+	}
+	width := fields[0]
+	if width == "0" {
+		return false
+	}
+	// A bare unit-ful zero — 0px, 0rem, 0em — is still zero.
+	if num := strings.TrimRight(width, "abcdefghijklmnopqrstuvwxyz%"); num != "" {
+		if f, err := strconv.ParseFloat(num, 64); err == nil && f == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// The sidebar rail's foot: the person block last, the language switcher
+// directly above it, and both in a wrapper the LAYOUT owns — the account
+// and locale blocks are app-supplied markup, so the shell cannot style
+// them by class, only by the box it puts them in. The geometry (pinned
+// to the foot, the menu opening upward) is measured on a real engine in
+// shell_browser_test.go; this pins the markup the geometry needs.
+func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
+	src, ok := Layout("sidebar")
+	if !ok {
+		t.Fatal("no sidebar layout")
+	}
+	s := string(src)
+	foot := strings.Index(s, `<div class="rst-shell__rail-foot">`)
+	if foot < 0 {
+		t.Fatal("layouts/sidebar.html has no rail foot; the profile has nothing to sit at the bottom of")
+	}
+	nav := strings.Index(s, `<nav class="rst-shell__nav">`)
+	if nav < 0 || nav > foot {
+		t.Error("the rail's nav does not come before its foot")
+	}
+	locale := strings.Index(s, `{{block "locale" .}}`)
+	account := strings.Index(s, `{{block "account" .}}`)
+	if locale < foot || account < foot {
+		t.Error("the locale and account blocks are not inside the rail's foot")
+	}
+	if locale > account {
+		t.Error("the account block comes before the locale block; the language switcher belongs directly above the profile")
+	}
+	// An un-overridden shell renders an empty wrapper, so the foot has
+	// to be genuinely empty for :empty to hide it — no whitespace text
+	// node between the two blocks. Same discipline as .rst-shell__foot.
+	if !strings.Contains(s, `<div class="rst-shell__rail-foot">{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>`) {
+		t.Error("the rail foot carries whitespace between its blocks; :empty will never match it and an un-overridden rail grows a stray gap")
+	}
+	if !strings.Contains(string(TokensCSS()), ".rst-shell__rail-foot:empty") {
+		t.Error("tokens.css does not hide an empty rail foot")
+	}
+}
+
 func TestLocaleMenuRenders(t *testing.T) {
 	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
 	items := []rastrillo.LocaleItem{
@@ -2706,5 +2837,60 @@ func TestFieldDaterangeLegendCanBeHidden(t *testing.T) {
 	})
 	if !strings.Contains(got, `<legend class="rst-sr-only">When</legend>`) {
 		t.Errorf("LegendHidden did not hide the legend:\n%s", got)
+	}
+}
+
+// browserJobPattern pulls the package list out of the CI browser
+// job's browser-tagged step. Anchored on the flags so it cannot match
+// some other step.
+var browserJobPattern = regexp.MustCompile(`go test -tags browser -p 1 ([^\n]*?) -count=1`)
+
+// uiFilterPattern matches any attempt to run ./ui/ under a -run
+// filter, which is how this package was narrowed before issue #86 was
+// fixed and how it would quietly be narrowed again.
+var uiFilterPattern = regexp.MustCompile(`go test -tags browser [^\n]*\./ui/[^\n]*-run`)
+
+// The CI browser job runs ./harness/, ./webauthn/, ./ui/ and
+// ./internal/designsystem/ as whole packages.
+//
+// ./ui/ was excluded for a while, then run through a -run filter
+// naming three scriptless drives, because the script-driven ones were
+// 0-for-5 on GitHub's runner (issue #86). That turned out to be a real
+// gap in select.js rather than a runner fault, and it is fixed; the
+// filter is gone and the package runs whole.
+//
+// This gate is what keeps it that way. A -run filter is the cheapest
+// possible response to a red drive and it is silent: -run matching
+// nothing exits 0, so a narrowed step passes while testing less than
+// it claims, and a drive added next to the others would run in no CI
+// job at all — the exact failure this branch has already shipped once.
+// So the package list is gated rather than trusted.
+//
+// Deliberately NOT build-tagged: it must run in the plain suite, where
+// everyone sees it, even though the drives it protects only compile
+// under -tags browser.
+func TestTheUIDrivesRunWholeInTheBrowserJob(t *testing.T) {
+	const workflow = "../.github/workflows/ci.yml"
+	yml, err := os.ReadFile(workflow)
+	if err != nil {
+		t.Fatalf("reading %s: %v — the browser job is where these drives run", workflow, err)
+	}
+
+	m := browserJobPattern.FindSubmatch(yml)
+	if m == nil {
+		t.Fatalf("%s has no anchored `go test -tags browser -p 1 … -count=1` step; every browser drive in this repo now runs in no CI job", workflow)
+	}
+	var found bool
+	for _, pkg := range strings.Fields(string(m[1])) {
+		if pkg == "./ui/" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("the browser job's package list is %q, which does not include ./ui/; every drive in ui/browser_test.go and ui/shell_browser_test.go would run in no CI job", string(m[1]))
+	}
+
+	if loc := uiFilterPattern.FindIndex(yml); loc != nil {
+		t.Errorf("%s runs ./ui/ under a -run filter (%q): a filter matching nothing exits 0, so that step passes while testing less than it claims. Fix the drive instead", workflow, yml[loc[0]:loc[1]])
 	}
 }

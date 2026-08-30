@@ -182,14 +182,21 @@ jobs:
       # of what makes that sentence true, so removing it means editing
       # that paragraph in the same commit.
       #
-      # ./ui/ is still deliberately absent, for the reason it always
-      # was: the select drive is deterministic-green locally but
-      # 0-for-5 on this runner, where the Enter that commits the
-      # selection reaches the form instead and submits the page out
-      # from under the drive (issue #86 has the captured widget-state
-      # evidence). It stays a deliberate local run. Nothing in the
-      # accessibility gate lives there — the vendored engine does, and
-      # the untagged tests that keep it out of the shipped tree run in
-      # the plain suite.
+      # ./ui/ runs whole. It used to be excluded, and the exclusion
+      # used to be right: the script-driven drives were 0-for-5 here
+      # while deterministic-green locally, because the Enter that
+      # commits the enhanced select's choice was also submitting the
+      # form and taking the page out from under the drive. That was
+      # never a runner fault and never a flake — issue #86 traced it to
+      # a real gap in select.js. A synthesised key press arrives as two
+      # independent events, and the second one carried the \r of
+      # implicit form submission with the first one's preventDefault
+      # already forgotten, so the drive fired a submit on EVERY run
+      # everywhere and passed only where reading the mirror outran the
+      # navigation. select.js now refuses the keypress as well as the
+      # keydown, the way datetime.js always did, and
+      # TestEnterCommitsWithoutSubmittingTheForm holds both widgets to
+      # it. Nothing is filtered out of ./ui/ any more; if a drive here
+      # goes red, read it as a regression.
       - name: browser-tagged tests
-        run: go test -tags browser -p 1 ./harness/ ./webauthn/ ./internal/designsystem/ -count=1
+        run: go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./internal/designsystem/ -count=1

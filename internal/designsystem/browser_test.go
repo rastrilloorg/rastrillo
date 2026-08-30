@@ -744,6 +744,11 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	if d.Painted >= 1200 || d.Painted < 200 {
 		t.Errorf("the desktop frame is painted %gpx wide in a 1280px window; it is not being scaled into its column", d.Painted)
 	}
+	// The scale factor, logged rather than written down anywhere: it is
+	// 100cqw / --ds-w, so it moves whenever .rst-page's cap moves, and
+	// a number in a comment would be a number nobody re-measures. This
+	// is where to read it after changing the column.
+	t.Logf("desktop preview: a %gpx virtual page painted %gpx wide in a 1280px window — scale %.3f", d.Virtual, d.Painted, d.Painted/d.Virtual)
 	if !d.FrameShown || d.CodeShown {
 		t.Error("the page does not open on the framed rendering")
 	}

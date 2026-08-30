@@ -17,25 +17,28 @@
 // loud-failure watchers, and the screen gate's junk scan all live
 // there now, shared with every browser drive in the family.
 //
-// KNOWN LIMITATION, stated rather than discovered: this test is
-// timing-sensitive under machine load. On an idle box it passes in
-// ~0.4s and 20 consecutive runs are green. On a box at load ~9-14 it
-// fails roughly 1 run in 4, always the same way — a keystroke arrives
-// while focus has drifted, Enter reaches the document instead of the
-// combobox, the form submits, the execution context dies, and the next
-// step hangs until the deadline. The failure names the step it got to,
-// so it is legible rather than mysterious.
+// These drives used to carry a KNOWN LIMITATION saying they were
+// timing-sensitive under machine load — 1 failure in 4 on a busy box,
+// 0-for-5 on GitHub's runner, and so excluded from CI (issue #86). It
+// was not a limitation and it was not timing. It was a bug, and load
+// only decided who noticed.
 //
-// CI does NOT run this: ./ui/ is absent from the browser job on
-// purpose, because the same drive is 0-for-5 on GitHub's runner for a
-// second and unrelated reason (issue #86). So the whole cost of this
-// flake falls on whoever runs the drive deliberately, on a machine
-// that may be busy. Rerun before believing a failure, and read the reported
-// step: a real regression fails at a specific assertion, load flake
-// fails at a deadline after "read-mirrored-value" or later. Fixing it
-// properly likely means driving the widget through synthesised events
-// inside one page evaluation, which trades away the fidelity of real
-// CDP input — not obviously the right trade, so it has not been made.
+// The Enter that commits the select's choice was ALSO submitting the
+// form, on every run, on every machine. select.js refused the keydown
+// and that is enough for a key a person presses, but a key CDP
+// synthesises arrives as two independent events and the second one
+// carried the \r of implicit form submission with the refusal already
+// forgotten. So every run raced: the mirror poll below against a
+// navigation that had already started. An idle laptop won that race
+// and called it green; a loaded runner lost it and called it a flake.
+// select.js now refuses the keypress too, the way datetime.js always
+// did, which is why ./ui/ is back in the browser job whole.
+//
+// The drives still deliver keys through chromedp's three-event
+// encoding rather than a friendlier one, on purpose: that shape is
+// what broke, so it is the shape worth driving.
+// TestEnterCommitsWithoutSubmittingTheForm asserts the invariant
+// directly; a failure at a deadline here now means something else.
 //
 // One test per enhancement, deliberately: a browser drive is
 // expensive, so each drives a whole journey — render, enhance, type,
@@ -134,11 +137,10 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 	// this is wall-clock against a real browser: on a loaded box it is
 	// slower by orders of magnitude, and a budget tuned to the idle case
 	// fails for no reason. 60s was that mistake, tuned on a quiet dev
-	// machine: the browser CI job's first-ever run hit the documented
-	// load flake at exactly the deadline. The budget exists so a hang
-	// fails as itself, not to race a busy runner's clock — 180s still
-	// fails far faster than Go's default test timeout, so a genuine
-	// regression surfaces as a deadline rather than a hung suite.
+	// machine. The budget exists so a hang fails as itself, not to race
+	// a busy runner's clock — 180s still fails far faster than Go's
+	// default test timeout, so a genuine regression surfaces as a
+	// deadline rather than a hung suite.
 	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancelTimeout()
 
@@ -180,29 +182,29 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &optionsShown),
 		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &filterText),
 		// Synchronise on observable state rather than assuming a keystroke
-		// landed. Under load the arrow key can arrive before the filtered
-		// list is drawn, or while focus has drifted; then Enter reaches
-		// the document instead of the combobox, the form submits, the
-		// execution context dies and the next step hangs on a page that
-		// no longer exists. Waiting for the highlight turns that into a
-		// fast, legible failure at the exact step that did not happen.
+		// landed: under load the arrow key can arrive before the filtered
+		// list is drawn, and an ArrowDown with nothing to highlight is a
+		// silent no-op the next step would inherit. Waiting for the
+		// highlight turns that into a fast, legible failure at the exact
+		// step that did not happen.
 		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("list-drawn"),
-		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, and on
-		// a CI runner focus drifted between the highlight and Enter —
-		// Enter reached the form, the form submitted an empty value,
-		// and the drive died on a page with no widget left to poll.
-		// SendKeys focuses its target before delivering the same real
-		// CDP key events, so the key lands where the user's would.
+		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, while
+		// SendKeys focuses its target first and then delivers the same
+		// CDP key events, so the key lands where the user's would. It
+		// was reached for while chasing issue #86 and kept afterwards —
+		// aiming a keystroke is right whether or not it was ever the
+		// problem, and it was not.
 		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down"),
 		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("option-highlighted"),
 		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
 
-		// The mirror: what the form will actually submit. Polled, not
-		// sampled: three CI runs in a row read "" here and then burned
-		// the whole drive budget waiting for a #done the empty submit
-		// could never produce. Bounded at 10s so a commit that truly
-		// never happens fails fast, at this step, with the widget's
-		// state in the error instead of a bare deadline.
+		// The mirror: what the form will actually submit. Polled rather
+		// than sampled, and bounded at 10s, so a commit that never
+		// happens fails fast at this step with the widget's state in the
+		// error instead of burning the whole budget on a bare deadline.
+		// This poll is also what used to hide issue #86: it was racing a
+		// navigation the Enter had already started, and winning often
+		// enough to look green.
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for {
@@ -362,9 +364,10 @@ func datePage(t *testing.T) (http.Handler, chan string) {
 //   - a JS error takes the enhancement down and the page still looks
 //     fine (the rig's screen gate catches this one).
 //
-// It shares the select drive's KNOWN LIMITATION: real CDP input under
-// machine load can deliver a keystroke while focus has drifted. Read
-// the reported step before believing a failure.
+// It is the drive that was already right about Enter: datetime.js has
+// refused the synthesised keypress from the start, which is why this
+// one never submitted the page out from under itself the way the
+// select drive did. See the file header, and issue #86.
 func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 	mux, submitted := datePage(t)
 	rig := harness.New(t, func(string) http.Handler { return mux })
@@ -492,6 +495,106 @@ func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 	rig.Screen("body", "after the date journey")
 }
 
+// TestEnterCommitsWithoutSubmittingTheForm is the regression test for
+// issue #86, and it is the only test in this file that asserts what
+// must NOT happen.
+//
+// Both comboboxes make the same promise: Enter picks the highlighted
+// row and stops there. It must never also submit the form, because a
+// submit racing a commit posts whatever the control held BEFORE the
+// user chose — the choice is thrown away and the page moves on as if
+// it had been made.
+//
+// Keeping that promise takes two refusals, not one. The keydown
+// handler's preventDefault is enough for a key a person presses: the
+// engine derives the keypress from the keydown it just cancelled, so
+// there is no keypress left to submit anything. It is NOT enough for a
+// synthesised key. CDP — and so chromedp, playwright's raw protocol,
+// and every browser drive built on either — can deliver the keydown
+// and the character as two independent events, and the second arrives
+// with no memory of the first one's refusal: an uncancelled keypress
+// carrying \r, which is exactly what implicit form submission listens
+// for. Both widgets therefore refuse the keypress as well.
+//
+// This test drives Enter through chromedp's three-event encoding on
+// purpose, because that is the shape that breaks. It is a real
+// assertion and not a test-harness quirk: before the guard went into
+// select.js the drive above fired a submit on EVERY run, on every
+// machine, and passed only because reading the mirror usually beat the
+// navigation — a race it lost five times out of five on GitHub's
+// runner and about one run in seven on a box under load.
+//
+// The submit spy cancels what it counts, so a regression fails here
+// with a count instead of taking the page out from under the next
+// step.
+func TestEnterCommitsWithoutSubmittingTheForm(t *testing.T) {
+	const spy = `window.__submits = 0;
+		document.addEventListener('submit', function (e) { e.preventDefault(); window.__submits++; }, true);
+		true`
+
+	for _, tc := range []struct {
+		name    string
+		page    func(*testing.T) (http.Handler, chan string)
+		typed   string
+		mirror  string
+		wantVal func(string) bool
+	}{
+		{
+			name:   "select",
+			page:   func(t *testing.T) (http.Handler, chan string) { return page(t, 40) },
+			typed:  "Option 12",
+			mirror: `document.querySelector('select[name="author"]')?.value ?? ''`,
+			// "Option 12" is the 12th option, so value "12" — not "1",
+			// which is what the select holds by default.
+			wantVal: func(v string) bool { return v == "12" },
+		},
+		{
+			name:    "date",
+			page:    datePage,
+			typed:   "tomorrow",
+			mirror:  `document.querySelector('input[name="due"]')?.value ?? ''`,
+			wantVal: func(v string) bool { return v != "" },
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mux, _ := tc.page(t)
+			rig := harness.New(t, func(string) http.Handler { return mux })
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+
+			var (
+				submits int
+				value   string
+			)
+			if err := chromedp.Run(ctx,
+				chromedp.Navigate(rig.Origin+"/"),
+				chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
+				chromedp.Evaluate(spy, nil),
+				chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
+				chromedp.SendKeys(`input[role="combobox"]`, tc.typed, chromedp.ByQuery),
+				chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery),
+				chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery),
+				chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery),
+				chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery),
+				chromedp.Evaluate(`window.__submits`, &submits),
+				chromedp.Evaluate(tc.mirror, &value),
+			); err != nil {
+				t.Fatalf("drive failed: %v", err)
+			}
+
+			if submits != 0 {
+				t.Errorf("Enter submitted the form %d time(s); it must commit the highlighted row and stop", submits)
+			}
+			// Without this the test would pass on a widget that ignores
+			// Enter entirely, which keeps the letter of the promise and
+			// breaks the point of it.
+			if !tc.wantVal(value) {
+				t.Errorf("Enter did not commit: the native control holds %q", value)
+			}
+		})
+	}
+}
+
 // groupPage serves one form carrying two hand-written selects: a
 // grouped one that should enhance, and a large one that says no.
 //
@@ -584,9 +687,8 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 //   - the opt-out is read as a truthy attribute (it is present, after
 //     all) and the select enhances anyway.
 //
-// It shares the select drive's KNOWN LIMITATION above: real CDP input
-// under machine load can deliver a keystroke while focus has drifted.
-// Read the reported step before believing a failure.
+// It runs on the same terms as the drives above; see the file header
+// for what issue #86 turned out to be.
 func TestGroupedSelectRendersItsGroups(t *testing.T) {
 	mux, submitted := groupPage(t)
 	rig := harness.New(t, func(string) http.Handler { return mux })
