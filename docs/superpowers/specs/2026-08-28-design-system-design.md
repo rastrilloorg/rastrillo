@@ -1720,3 +1720,42 @@ distinction the vocabulary currently keeps. Add `menu` to `icons.go` and
 rather than a literal list, so it picks the new icon up with no edit.
 
 `aria-hidden`, since it sits beside a visible text label.
+
+### 9. The topbar has no narrow layout — RULED 2026-08-30 by Paul
+
+*"The topbar shell should compact the menu and the dropdowns into a
+single dropdown, or some kind of overlay."*
+
+`.rst-shell__bar` (tokens.css:1112) is `display: flex; flex-wrap: wrap`
+and `.rst-shell__account` (:1118) carries `margin-inline-start: auto`.
+There is **no collapse breakpoint for the topbar at all** — so as the
+window narrows, the account and locale menus wrap onto a second row and
+the auto margin shoves them to the trailing edge, which is the state in
+Paul's screenshot. Nothing is broken; nothing was ever written.
+
+**Use the sidebar's mechanism, not a second one.** Below the same
+breakpoint the sidebar already uses (800px), the topbar's tail — nav,
+account, locale — collapses into ONE `<details>` disclosure behind the
+Lucide `menu` icon added in §8. Above it, CSS hides the `<summary>` and
+the tail lays out inline exactly as today, which is the same shape
+`.rst-shell__chrome` already uses in reverse. Two shells, one collapse
+idiom, one icon: that is the thing a design system is supposed to
+demonstrate.
+
+**The trap, named before anyone meets it.** The account menu is
+`<details class="rst-dropdown" name="rst-menus">`. Nesting it inside an
+outer `<details name="rst-menus">` means opening the account **closes
+its own parent** — the exclusivity that makes sibling menus behave is
+the thing that breaks nested ones. This system already documents that
+rule for `rst-menu-group` ("a nested group MUST name a different one or
+it closes its parent"); this is the first place in the framework's own
+shells where it applies. The outer disclosure takes a different group
+name, and the inner menus become nested groups.
+
+Zero JavaScript throughout: it is `<details>`, a media query and a pair
+of display rules.
+
+**Block names must survive.** Apps override `nav`, `account` and
+`locale`. Wrapping them in a disclosure is a layout change, not a
+contract change — the block names stay exactly as they are, or every
+app that overrides one breaks silently on upgrade.
