@@ -1015,6 +1015,16 @@ func previewStyle(h int) template.CSS {
 // modal. What a reader does with those examples is open them, and a
 // box that fits the closed state is a box they cannot use.
 //
+// A menu's box has a second job, and it is easy to get wrong: dvh
+// inside a frame is THE FRAME, so tokens.css's menu cap
+// (min(20rem, max(100dvh - 6rem, 8rem))) is computed against these
+// numbers and not against the reader's window. The 8rem floor means no
+// frame here can collapse a menu to nothing any more — ui's
+// TestAMenuOpenedInsideAShortFrameIsStillUsable holds the framework to
+// that — but a frame under about 140px still clips an open three-item
+// menu, and no frame can show more than 20rem of one. Size a menu's box
+// for the state a reader opens, not for the closed one.
+//
 // The key is the anchor id, not the name, because "dropdown" is both a
 // partial and a class idiom and they are not the same height. Being
 // wrong here costs a scrollbar or some white space, never a broken
@@ -1028,7 +1038,7 @@ var previewHeights = map[string]int{
 	"partial-list-row-action":    120,
 	"partial-seg-tabs":           80,
 	"partial-dropdown":           200, // room for the open menu
-	"partial-bulk-bar":           100,
+	"partial-bulk-bar":           190, // room for the actions menu it opens
 	"partial-pagination":         110,
 	"partial-empty-state":        240,
 	// Display.
@@ -1058,7 +1068,7 @@ var previewHeights = map[string]int{
 	// Route.
 	"partial-error-page":  390,
 	"partial-back-nav":    80,
-	"partial-locale-menu": 260, // twelve languages, once it is open
+	"partial-locale-menu": 420, // the open menu at its full 20rem cap; twelve languages scroll inside it
 	// The class idioms.
 	"idiom-box":           220,
 	"idiom-list-grid":     280,

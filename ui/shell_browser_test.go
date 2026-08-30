@@ -33,6 +33,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"github.com/carlosframework/rastrillo"
@@ -957,6 +958,17 @@ type menuCorner struct {
 	id      string
 	style   string
 	rowMenu bool
+	// short cuts the menu to three items and mid says it sits in open
+	// window with room on every side. They go together, and they exist
+	// for one reason: a corner fixture cannot tell a right default from
+	// a wrong one. flip-block is symmetric, so a stylesheet that opened
+	// every menu UPWARD by default would be flipped back to correct in
+	// all four corners and the drive would stay green while every
+	// ordinary page in every app dropped its menus the wrong way. That
+	// mutation was run against the first version of this drive and it
+	// passed. The mid fixture is what fails it.
+	short bool
+	mid   bool
 }
 
 var menuCorners = []menuCorner{
@@ -964,6 +976,7 @@ var menuCorners = []menuCorner{
 	{id: "tr", style: "inset-block-start:8px;inset-inline-end:8px"},
 	{id: "bl", style: "inset-block-end:8px;inset-inline-start:8px", rowMenu: true},
 	{id: "br", style: "inset-block-end:8px;inset-inline-end:8px"},
+	{id: "mid", style: "inset-block-start:50%;inset-inline-start:40%", short: true, mid: true},
 }
 
 // menuReading is one opened menu, measured against the window it opened
@@ -981,6 +994,7 @@ type menuReading struct {
 	SupportsScope, SupportsNonsense bool
 	SupportsControl                 bool
 	ViewportW, ViewportH            int
+	Direction                       string
 }
 
 // menuMeasure opens every menu on the page and reads it back. The
@@ -1009,6 +1023,7 @@ const menuMeasure = `(() => {
       SupportsNonsense: CSS.supports('position-area: rastrillo-no-such-value'),
       SupportsControl: CSS.supports('color: red'),
       ViewportW: window.innerWidth, ViewportH: window.innerHeight,
+      Direction: getComputedStyle(document.documentElement).direction,
     };
   }
   return JSON.stringify(out);
@@ -1073,6 +1088,14 @@ func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
 			`<title>menus</title><link rel="stylesheet" href="/tokens.css">` +
 			`<link rel="stylesheet" href="/theme.css"></head><body>`)
 		for _, c := range menuCorners {
+			items := items
+			if c.short {
+				// Three entries, so this fixture has room on every side
+				// and the default drop direction is what shows. Twelve
+				// would not fit above AND below a 620px window, and a
+				// fixture that only fits one way is a corner again.
+				items = items[:3]
+			}
 			b.WriteString(`<div data-corner="` + c.id + `" style="position:fixed;` + c.style + `">`)
 			if c.rowMenu {
 				// Hand-written, the way tokens.css says the row-menu
@@ -1158,7 +1181,13 @@ func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
 			if m.OverflowY != "auto" && m.OverflowY != "scroll" {
 				t.Errorf("%s: the menu computes overflow-y: %s, so a menu taller than the window still cannot be scrolled", where, m.OverflowY)
 			}
-			if m.ScrollHeight <= m.ClientHeight {
+			switch {
+			case c.short && m.ScrollHeight > m.ClientHeight:
+				// The mid fixture's three entries have to FIT, or it is
+				// not the "room on every side" fixture the default
+				// direction is read off below.
+				t.Errorf("%s: the three-item menu is scrolling — %d of %dpx shown — so it no longer has room on every side and cannot pin the default direction", where, m.ClientHeight, m.ScrollHeight)
+			case !c.short && m.ScrollHeight <= m.ClientHeight:
 				t.Errorf("%s: the menu shows all %dpx of its %dpx of entries, so this fixture is not tall enough to prove anything about the cap. Add entries or shorten the window.", where, m.ClientHeight, m.ScrollHeight)
 			}
 			if height := m.MenuBottom - m.MenuTop; height > m.ViewportH {
@@ -1173,20 +1202,51 @@ func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
 					m.MenuLeft, m.MenuTop, m.MenuRight, m.MenuBottom, m.ViewportW, m.ViewportH)
 			}
 
-			// THE BLOCK FLIP, and first the proof that this corner
-			// needs one. Without this check a taller window would make
-			// the assertion below pass with nothing flipping.
+			// THE BLOCK AXIS, and first the proof that this fixture is
+			// the one it claims to be. Without those checks a taller
+			// window would make the corner assertions pass with nothing
+			// flipping, and a mid fixture that had drifted into a
+			// corner would stop pinning anything.
 			menuHeight := m.MenuBottom - m.MenuTop
-			bottomCorner := strings.HasPrefix(c.id, "b")
-			if bottomCorner {
-				if room := m.ViewportH - m.SummaryBottom; room >= menuHeight {
-					t.Fatalf("%s: there is %dpx under the summary and the menu is %dpx tall, so it fits below and no flip is required. This fixture no longer tests the flip.", where, room, menuHeight)
+			above, below := m.SummaryTop, m.ViewportH-m.SummaryBottom
+			switch {
+			case c.mid:
+				// THE DEFAULT DIRECTION. A corner fixture cannot assert
+				// this: flip-block is symmetric, so a stylesheet that
+				// preferred block-start would be flipped back to
+				// correct in every corner and this drive would stay
+				// green while every ordinary page opened its menus
+				// upward. Here there is room both ways, so what shows
+				// IS the default.
+				if above < menuHeight+4 || below < menuHeight+4 {
+					t.Fatalf("%s: the menu is %dpx tall with %dpx above the summary and %dpx below. This fixture is supposed to have room on BOTH sides — with room on only one, flip-block rescues a wrong default and the assertion below stops meaning anything.", where, menuHeight, above, below)
+				}
+				if m.MenuTop < m.SummaryBottom-1 {
+					t.Errorf("%s: the menu's head is at %d, above the summary's foot at %d — with room on both sides a menu must drop DOWNWARD; the default direction has been inverted", where, m.MenuTop, m.SummaryBottom)
+				}
+				// The same hole on the inline axis: with room both ways
+				// the default alignment is what shows, and it is
+				// span-inline-start — the panel's inline-END edge on
+				// the summary's inline-end edge, which is what
+				// inset-inline-end: 0 always did.
+				gotEdge, wantEdge := m.MenuRight, m.SummaryRight
+				if m.Direction == "rtl" {
+					gotEdge, wantEdge = m.MenuLeft, m.SummaryLeft
+				}
+				if gotEdge < wantEdge-1 || gotEdge > wantEdge+1 {
+					t.Errorf("%s: the menu's inline-end edge is at %d and the summary's is at %d (dir=%s) — with room on both sides the default alignment has changed", where, gotEdge, wantEdge, m.Direction)
+				}
+			case strings.HasPrefix(c.id, "b"):
+				if below >= menuHeight {
+					t.Fatalf("%s: there is %dpx under the summary and the menu is %dpx tall, so it fits below and no flip is required. This fixture no longer tests the flip.", where, below, menuHeight)
 				}
 				if m.MenuBottom > m.SummaryTop+1 {
 					t.Errorf("%s: the menu's foot is at %d and the summary's head is at %d — it opened downward off the bottom of the window instead of flipping up", where, m.MenuBottom, m.SummaryTop)
 				}
-			} else if m.MenuTop < m.SummaryBottom-1 {
-				t.Errorf("%s: the menu's head is at %d, above the summary's foot at %d — it flipped upward where there was room below", where, m.MenuTop, m.SummaryBottom)
+			default:
+				if m.MenuTop < m.SummaryBottom-1 {
+					t.Errorf("%s: the menu's head is at %d, above the summary's foot at %d — it flipped upward where there was room below", where, m.MenuTop, m.SummaryBottom)
+				}
 			}
 		}
 	}
@@ -1417,28 +1477,47 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 	})
 	// The control: the same input with NONE of this library's CSS, so
 	// the browser draws its own ✕ exactly as it did before the fix.
-	mux.HandleFunc("GET /native", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>native</title>`+
-			`</head><body style="margin:0"><form><input id="q" type="search" name="q" value="sere" `+
-			`style="position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:300px;block-size:40px;font-size:20px">`+
-			`</form></body></html>`)
-	})
+	// One per direction, because the button is not in the same place in
+	// both and a control in the wrong direction proves nothing about
+	// the leg it is controlling.
+	native := func(dir string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprint(w, `<!doctype html><html lang="en" dir="`+dir+`"><head><meta charset="utf-8">`+
+				`<title>native</title></head><body style="margin:0"><form>`+
+				`<input id="q" type="search" name="q" value="sere" `+
+				`style="position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:300px;block-size:40px;font-size:20px">`+
+				`</form></body></html>`)
+		}
+	}
+	mux.HandleFunc("GET /native", native("ltr"))
+	mux.HandleFunc("GET /native-rtl", native("rtl"))
 
 	rig := harness.New(t, func(string) http.Handler { return mux })
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 
 	// clickTheNativeCross clicks where the browser draws its cancel
-	// button: just inside the input's trailing edge, on its centre line.
+	// button: just inside the field's INLINE-END edge, on its centre
+	// line. Inline-end, not right: Chromium mirrors the button with the
+	// direction, so in an RTL document it sits at the left. The first
+	// version of this drive clicked r.right - 8 in both legs, which in
+	// RTL is the edge the button is never at — an assertion that could
+	// not fail, on a branch that has shipped several.
+	//
 	// The field is focused first because Chromium only makes the button
-	// live once the field has focus — found by driving it, and worth
-	// recording, since a drive that skips the focus measures a button
-	// that is there but inert and concludes it is absent.
+	// live once the field has focus. Worth recording: a drive that
+	// skips the focus measures a button that is there but inert, and
+	// concludes it is absent.
 	clickTheNativeCross := func(sel string) chromedp.Action {
 		return chromedp.ActionFunc(func(ctx context.Context) error {
 			var at []float64
-			expr := fmt.Sprintf(`(() => { const r = document.querySelector(%q).getBoundingClientRect(); return [r.right - 8, r.top + r.height/2]; })()`, sel)
+			expr := fmt.Sprintf(`(() => {
+			  const el = document.querySelector(%q);
+			  const r = el.getBoundingClientRect();
+			  const rtl = getComputedStyle(el).direction === "rtl";
+			  return [rtl ? r.left + 8 : r.right - 8, r.top + r.height / 2];
+			})()`, sel)
 			if err := chromedp.Evaluate(expr, &at).Do(ctx); err != nil {
 				return err
 			}
@@ -1446,22 +1525,29 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		})
 	}
 
-	var nativeValue string
-	if err := chromedp.Run(ctx,
-		chromedp.EmulateViewport(900, 600),
-		chromedp.Navigate(rig.Origin+"/native"),
-		chromedp.WaitVisible(`#q`, chromedp.ByQuery),
-		chromedp.Focus(`#q`, chromedp.ByQuery),
-		clickTheNativeCross(`#q`),
-		chromedp.Evaluate(`document.getElementById('q').value`, &nativeValue),
-	); err != nil {
-		t.Fatalf("driving the control input: %v", err)
-	}
-	if nativeValue != "" {
-		t.Fatalf("the control input still holds %q after a click on its trailing edge: this browser is not drawing ::-webkit-search-cancel-button there, so this drive cannot tell a suppressed one from an absent one", nativeValue)
-	}
+	for _, leg := range []struct{ name, path, control string }{
+		{"ltr", "/", "/native"},
+		{"rtl", "/rtl", "/native-rtl"},
+	} {
+		// THE CONTROL, per leg and per direction: the browser's own ✕,
+		// clicked in the same place, must empty a bare input. If it
+		// does not, Chromium is not drawing the button where this leg
+		// clicks and the leg's own assertion could not have failed.
+		var nativeValue string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(900, 600),
+			chromedp.Navigate(rig.Origin+leg.control),
+			chromedp.WaitVisible(`#q`, chromedp.ByQuery),
+			chromedp.Focus(`#q`, chromedp.ByQuery),
+			clickTheNativeCross(`#q`),
+			chromedp.Evaluate(`document.getElementById('q').value`, &nativeValue),
+		); err != nil {
+			t.Fatalf("%s: driving the control input: %v", leg.name, err)
+		}
+		if nativeValue != "" {
+			t.Fatalf("%s: the control input still holds %q after a click on its inline-end edge: this browser is not drawing ::-webkit-search-cancel-button there, so this leg cannot tell a suppressed one from an absent one", leg.name, nativeValue)
+		}
 
-	for _, leg := range []struct{ name, path string }{{"ltr", "/"}, {"rtl", "/rtl"}} {
 		var raw, stillThere string
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(900, 600),
@@ -1503,5 +1589,350 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		if got.ClearLeft < got.FormLeft || got.ClearRight > got.FormRight {
 			t.Errorf("%s: the clear target spans [%.0f..%.0f] and the field box is [%.0f..%.0f] — it has escaped the field", leg.name, got.ClearLeft, got.ClearRight, got.FormLeft, got.FormRight)
 		}
+	}
+}
+
+// frameReading is one preview-sized iframe with a menu open inside it.
+type frameReading struct {
+	FrameHeight  int
+	DVH          int
+	MaxBlockSize string
+	ShortClient  int
+	ShortScroll  int
+	LongClient   int
+	LongScroll   int
+}
+
+// TestAMenuOpenedInsideAShortFrameIsStillUsable is the bug the first
+// version of the cap shipped, and it is worth stating plainly because
+// it was the fix causing it: `max-block-size: 100dvh - 6rem` has no
+// floor, and inside an iframe `dvh` is THE FRAME.
+//
+// In the design gallery's own 100px preview frames the cap therefore
+// computed to 4px, and the bulk-bar sample's Actions menu rendered as a
+// 12px sliver of its 103px of entries. Below a 96px frame the cap
+// computed to zero and the menu was invisible. A fix aimed at menu
+// entries nobody could reach had shipped a menu with no entries at all,
+// and nothing caught it because no gate anywhere opened a menu inside a
+// frame. This one does.
+//
+// It is not a gallery test. Any app embedding a rastrillo screen in a
+// short iframe had the same bug, which is why the floor is in
+// tokens.css and the drive is here.
+//
+// The dvh control is the load-bearing part. Every assertion below is
+// about what happens when the viewport is the frame, so the drive first
+// reads a 100dvh box inside the frame and requires it to measure the
+// frame's own height. If a future engine changed that, this drive would
+// otherwise keep passing while testing nothing.
+func TestAMenuOpenedInsideAShortFrameIsStillUsable(t *testing.T) {
+	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
+
+	var long []any
+	for _, name := range []string{
+		"English", "Espanol", "Portugues", "Gaeilge", "Arabiyya", "Hindi",
+		"Bangla", "Nihongo", "Russkiy", "Tieng Viet", "Jyutping", "Zhongwen",
+	} {
+		long = append(long, map[string]any{"Href": "#", "Label": name})
+	}
+	short := long[:3]
+
+	mux := http.NewServeMux()
+	stylesheets(t, mux)
+	// The framed document: the same shape the gallery frames, a sample
+	// with its menu already open, plus a 100dvh ruler for the control.
+	mux.HandleFunc("GET /frame", func(w http.ResponseWriter, r *http.Request) {
+		var b strings.Builder
+		b.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+			`<title>frame</title><link rel="stylesheet" href="/tokens.css">` +
+			`<link rel="stylesheet" href="/theme.css"></head><body style="margin:0">` +
+			`<div id="dvh" style="block-size:100dvh;inline-size:1px"></div>`)
+		for _, m := range []struct {
+			id    string
+			items []any
+		}{{"short", short}, {"long", long}} {
+			b.WriteString(`<div id="` + m.id + `" style="position:absolute;inset-block-start:0;inset-inline-start:8px">`)
+			if err := tmpl.ExecuteTemplate(&b, "dropdown", map[string]any{
+				"Label": "Menu", "Items": m.items, "MenuGroup": "rst-menu-" + m.id,
+			}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			b.WriteString(`</div>`)
+		}
+		b.WriteString(`</body></html>`)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, b.String())
+	})
+	// 100px and 190px are two of the gallery's own previewHeights; 80px
+	// is under the 96px at which the unfloored cap reached zero, which
+	// is the case that has to be covered rather than avoided.
+	heights := []int{80, 100, 190, 260}
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		var b strings.Builder
+		b.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+			`<title>frames</title></head><body style="margin:0">`)
+		for _, h := range heights {
+			b.WriteString(fmt.Sprintf(
+				`<iframe data-h="%d" src="/frame" style="display:block;width:420px;height:%dpx;border:0"></iframe>`, h, h))
+		}
+		b.WriteString(`</body></html>`)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, b.String())
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	const measure = `(() => {
+  const out = [];
+  for (const f of document.querySelectorAll("iframe[data-h]")) {
+    const d = f.contentDocument;
+    const open = id => {
+      const details = d.querySelector("#" + id + " details");
+      details.open = true;
+      return details.querySelector(".rst-dropdown__menu");
+    };
+    const s = open("short"), l = open("long");
+    out.push({
+      FrameHeight: parseInt(f.dataset.h, 10),
+      DVH: Math.round(d.getElementById("dvh").getBoundingClientRect().height),
+      MaxBlockSize: getComputedStyle(l).maxBlockSize,
+      ShortClient: s.clientHeight, ShortScroll: s.scrollHeight,
+      LongClient: l.clientHeight, LongScroll: l.scrollHeight,
+    });
+  }
+  return JSON.stringify(out);
+})()`
+
+	var raw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(900, 1200),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`iframe[data-h]`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &raw),
+	); err != nil {
+		t.Fatalf("driving the framed menus: %v", err)
+	}
+	var got []frameReading
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatalf("reading the measurement (%q): %v", raw, err)
+	}
+	if len(got) != len(heights) {
+		t.Fatalf("measured %d frames, want %d", len(got), len(heights))
+	}
+
+	for _, f := range got {
+		t.Logf("a %dpx frame: 100dvh is %dpx, max-block-size %s; three items show %d of %dpx, twelve show %d of %dpx",
+			f.FrameHeight, f.DVH, f.MaxBlockSize, f.ShortClient, f.ShortScroll, f.LongClient, f.LongScroll)
+
+		// THE CONTROL. Everything below is a claim about dvh inside a
+		// frame, so prove dvh is the frame first.
+		if f.DVH != f.FrameHeight {
+			t.Fatalf("a %dpx frame reports 100dvh as %dpx. dvh is no longer the frame's own height, so this drive is not exercising the bug it was written for.", f.FrameHeight, f.DVH)
+		}
+
+		// A three-item menu is 103px and the floor is 8rem, so it must
+		// fit whole — in an 80px frame as much as a 260px one. This is
+		// the assertion that was 12-of-103 before the floor.
+		if f.ShortClient < f.ShortScroll {
+			t.Errorf("in a %dpx frame a three-item menu shows %d of its %dpx: the cap has collapsed it, and a reader opening this menu sees a sliver", f.FrameHeight, f.ShortClient, f.ShortScroll)
+		}
+		// A twelve-item menu cannot fit a short frame and is not meant
+		// to — it scrolls. What it must not do is disappear.
+		if f.LongClient < 96 {
+			t.Errorf("in a %dpx frame a twelve-item menu shows %dpx of its %dpx. An overflowing menu can be scrolled to; a 4px one cannot be used and a 0px one cannot be seen.", f.FrameHeight, f.LongClient, f.LongScroll)
+		}
+	}
+}
+
+// orphanReading is one menu in one scroller, read before and after the
+// scroll that takes its button away.
+type orphanReading struct {
+	SummaryTop     float64
+	SummaryBottom  float64
+	ScrollerTop    float64
+	ScrollerBottom float64
+	MenuTop        float64
+	MenuBottom     float64
+	Painted        bool
+	Hit            string
+	Visibility     string
+	Supports       bool
+	SupportsBogus  bool
+}
+
+// TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt is the price
+// of the fixed positioning the flip needs, paid.
+//
+// A fixed panel is deliberately outside every scrolling ancestor's clip
+// — that is how a menu opened inside a list card escapes the card — and
+// Chromium keeps it tracking its anchor through both window and
+// inner-scroller scrolls. But the ANCHOR is still inside the clip, so
+// scrolling a rail's nav until the menu's own button had gone left the
+// menu painted, over unrelated content, with nothing under it. The
+// sidebar rail with its thirty-odd links is the live case.
+//
+// position-visibility: anchors-visible ties the two together: when the
+// button goes, the menu goes.
+//
+// The always-visible control beside it is what stops this drive being
+// able to pass by mistake. The second scroller's panel overrides the
+// declaration back to `always`, so it MUST still be painted after the
+// same scroll. If the drive's way of asking "is this visible?" ever
+// starts answering no to everything — a changed API, a mis-selected
+// element, a scroll that moved the wrong box — the control fails and
+// says so, instead of the subject passing for the wrong reason.
+func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
+	// Hand-written markup, the way tokens.css says these idioms are
+	// used, because the second scroller needs an override the partial
+	// has no key for.
+	scroller := func(id, panelStyle string) string {
+		return `<div id="` + id + `" style="block-size:220px;inline-size:320px;overflow-y:auto;` +
+			`border:1px solid #888;margin:24px">` +
+			`<details class="rst-dropdown" id="` + id + `-menu" name="rst-menu-` + id + `">` +
+			`<summary>Menu</summary>` +
+			`<div class="rst-dropdown__menu" style="` + panelStyle + `">` +
+			`<a href="#">One</a><a href="#">Two</a><a href="#">Three</a>` +
+			`</div></details>` +
+			`<div style="block-size:1200px">tall</div></div>`
+	}
+
+	mux := http.NewServeMux()
+	stylesheets(t, mux)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
+			`<title>orphan</title><link rel="stylesheet" href="/tokens.css">`+
+			// The 200px of head room is the whole fixture. The scrollers
+			// have to sit far enough down the page that an anchor
+			// scrolled ABOVE its scroller's top edge is still at a
+			// coordinate inside the window — that is the orphan case. A
+			// scroller at the top of the page takes its anchor off the
+			// window as well, which hides the bug rather than showing
+			// it, and was this drive's first draft.
+			`<link rel="stylesheet" href="/theme.css"></head>`+
+			`<body style="margin:0;padding-block-start:200px">`+
+			scroller("subject", "")+
+			scroller("control", "position-visibility: always")+
+			`</body></html>`)
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	// elementFromPoint is the measurement, and that is not a style
+	// choice. position-visibility hides the box at USED-value time: the
+	// element keeps its computed `visibility: visible`, keeps its
+	// layout rectangle, and answers true to
+	// checkVisibility({visibilityProperty: true}) — all three were
+	// tried, and all three said "visible" of a menu Chromium was no
+	// longer painting. What actually changes is paint and hit testing,
+	// so the question has to be asked of the compositor: is the menu
+	// the thing at the middle of the menu?
+	//
+	// This is the same technique, and the same reason, as
+	// TestAMenuOpenedInsideAListCardEscapesTheCard above.
+	read := func(id string) string {
+		return `(() => {
+  const box = document.getElementById(` + "`" + id + "`" + `);
+  const d = document.getElementById(` + "`" + id + `-menu` + "`" + `);
+  const s = d.querySelector("summary").getBoundingClientRect();
+  const m = d.querySelector(".rst-dropdown__menu");
+  const r = m.getBoundingClientRect();
+  const b = box.getBoundingClientRect();
+  const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  return JSON.stringify({
+    SummaryTop: s.top, SummaryBottom: s.bottom,
+    ScrollerTop: b.top, ScrollerBottom: b.bottom,
+    MenuTop: r.top, MenuBottom: r.bottom,
+    Painted: !!(hit && (hit === m || m.contains(hit))),
+    Hit: hit ? hit.tagName + "." + (hit.getAttribute("class") || "") : "nothing",
+    Visibility: getComputedStyle(m).positionVisibility,
+    Supports: CSS.supports("position-visibility: anchors-visible"),
+    SupportsBogus: CSS.supports("position-visibility: rastrillo-no-such-value"),
+  });
+})()`
+	}
+	get := func(id string) orphanReading {
+		t.Helper()
+		var raw string
+		if err := chromedp.Run(ctx, chromedp.Evaluate(read(id), &raw)); err != nil {
+			t.Fatalf("reading %s: %v", id, err)
+		}
+		var out orphanReading
+		if err := json.Unmarshal([]byte(raw), &out); err != nil {
+			t.Fatalf("reading %s (%q): %v", id, raw, err)
+		}
+		return out
+	}
+
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(900, 700),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`#subject-menu`, chromedp.ByQuery),
+		chromedp.Click(`#subject-menu > summary`, chromedp.ByQuery),
+		chromedp.Click(`#control-menu > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#subject-menu .rst-dropdown__menu`, chromedp.ByQuery),
+	); err != nil {
+		t.Fatalf("opening the menus: %v", err)
+	}
+
+	before := get("subject")
+	t.Logf("before the scroll: summary %.0f..%.0f in a scroller %.0f..%.0f; menu %.0f..%.0f, painted=%v (hit %s, position-visibility %s)",
+		before.SummaryTop, before.SummaryBottom, before.ScrollerTop, before.ScrollerBottom,
+		before.MenuTop, before.MenuBottom, before.Painted, before.Hit, before.Visibility)
+
+	if !before.Supports {
+		t.Fatalf("this engine does not support position-visibility: anchors-visible. tokens.css writes it; if it has been renamed, every menu below is orphaned again and nothing else would say so.")
+	}
+	if before.SupportsBogus {
+		t.Fatal("CSS.supports agreed to a position-visibility value that does not exist; the support check above is worthless")
+	}
+	if !before.Painted {
+		t.Fatalf("the menu is not painted before anything has scrolled — the middle of it hits %s. This drive is measuring the wrong element.", before.Hit)
+	}
+
+	// Take the anchor away.
+	if err := chromedp.Run(ctx, chromedp.Evaluate(
+		`(() => { for (const id of ["subject", "control"]) document.getElementById(id).scrollTop = 150; return "ok"; })()`,
+		new(string))); err != nil {
+		t.Fatalf("scrolling the anchors away: %v", err)
+	}
+	// Anchor positioning — placement and position-visibility both —
+	// settles during paint, not during the scroll, so the reading waits
+	// for two frames rather than racing the compositor.
+	if err := chromedp.Run(ctx, chromedp.Evaluate(
+		`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r("ok"))))`,
+		new(string), func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		t.Fatalf("waiting for the anchored positions to settle: %v", err)
+	}
+
+	after, control := get("subject"), get("control")
+	t.Logf("after the scroll: subject summary %.0f..%.0f, scroller %.0f..%.0f, menu %.0f..%.0f painted=%v (hit %s); control menu %.0f..%.0f painted=%v (hit %s)",
+		after.SummaryTop, after.SummaryBottom, after.ScrollerTop, after.ScrollerBottom,
+		after.MenuTop, after.MenuBottom, after.Painted, after.Hit,
+		control.MenuTop, control.MenuBottom, control.Painted, control.Hit)
+
+	// THE FIXTURE'S OWN PROOF, in two halves. The anchor really did
+	// leave the scroller that clips it — and it is still at a
+	// coordinate inside the window, which is what makes this the
+	// orphan case rather than a menu that simply scrolled off the top
+	// of the page with everything else.
+	if after.SummaryBottom > after.ScrollerTop {
+		t.Fatalf("the summary's foot is at %.0f and the scroller's head is at %.0f — the anchor has not been scrolled out of the box that clips it, so nothing below is being tested", after.SummaryBottom, after.ScrollerTop)
+	}
+	if after.SummaryTop < 0 {
+		t.Fatalf("the summary is at %.0f, off the top of the WINDOW rather than merely out of its scroller. A menu that follows its anchor off the page is not orphaned, so this fixture would pass with the declaration deleted.", after.SummaryTop)
+	}
+	// THE CONTROL: the same scroll, the declaration overridden back.
+	if !control.Painted {
+		t.Fatalf("the control menu — position-visibility: always — is also gone after the same scroll; the middle of it hits %s. Whatever this drive is measuring, it is not the declaration under test.", control.Hit)
+	}
+	// THE SUBJECT.
+	if after.Painted {
+		t.Errorf("the menu is still painted at %.0f..%.0f with its button scrolled out of the box that clips it — it is floating over unrelated content with nothing under it", after.MenuTop, after.MenuBottom)
 	}
 }

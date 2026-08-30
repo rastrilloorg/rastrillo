@@ -105,6 +105,11 @@ clear the search would be two affordances, one of which lies.
 Filters and sort survive a clear. They ride in `Hidden`, and clearing
 the search is not resetting the screen.
 
+One pair it *can* decide about is `q` itself. An app that carries its
+whole query string across the GET hands `q` back in `Hidden`, and
+carrying that into the clear link would hand the reader a ✕ that puts
+the search back — the exact lie this replaced. It is dropped.
+
 **Pagination is the one the framework cannot decide.** `Hidden` is
 opaque name/value pairs — nothing in it says which pair is the page — so
 the default carries all of them, page number included, and a page number

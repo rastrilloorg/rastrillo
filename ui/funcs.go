@@ -370,6 +370,13 @@ func optPairs(data any, key string) [][2]string {
 	return pairs
 }
 
+// searchQueryName is the name list-bar-search gives its input, and
+// therefore the one parameter "clear the search" is defined to drop.
+// It is a constant rather than a literal because searchClear and the
+// partial have to agree about it, and nothing else would notice if they
+// stopped.
+const searchQueryName = "q"
+
 // searchClear is where list-bar-search's clear link goes.
 //
 // The ✕ a browser draws inside <input type="search"> is
@@ -407,6 +414,15 @@ func searchClear(data any) string {
 	}
 	var query []string
 	for _, pair := range optPairs(data, "Hidden") {
+		// A Hidden pair named q is the search itself, and an app that
+		// carries its whole query string across the GET wholesale will
+		// have one. Carrying it here would reinstate the exact bug this
+		// link exists to fix: a ✕ that puts the query back.
+		// list-bar-search's input is name="q", so that is the one name
+		// this can be sure about.
+		if pair[0] == searchQueryName {
+			continue
+		}
 		query = append(query, url.QueryEscape(pair[0])+"="+url.QueryEscape(pair[1]))
 	}
 	if len(query) == 0 {

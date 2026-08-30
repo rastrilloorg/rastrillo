@@ -81,7 +81,10 @@
      affordances, one of which lies.
 
      Filters and sort survive a clear. They ride in Hidden, and
-     "clear the search" is not "reset the screen".
+     "clear the search" is not "reset the screen". A Hidden pair named
+     q does NOT survive: an app that carries its whole query string
+     across the GET hands q back that way, and carrying it would give
+     the reader a ✕ that puts the search back.
 
      PAGINATION IS THE ONE THE FRAMEWORK CANNOT DECIDE, and every app
      meets it eventually. Hidden is opaque name/value pairs — nothing in

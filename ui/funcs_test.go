@@ -498,6 +498,20 @@ func TestSearchClearDropsOnlyTheQuery(t *testing.T) {
 			want: "/posts?page=7",
 		},
 		{
+			// The one pair it CAN know about. An app that carries its
+			// whole query string across the GET wholesale hands q back in
+			// Hidden, and carrying it would give the reader a ✕ that puts
+			// the search back — the exact lie this link replaced.
+			name: "a q in Hidden is dropped too, whatever else it carries",
+			data: map[string]any{"Action": "/posts", "Hidden": [][2]string{{"status", "paid"}, {"q", "sere"}, {"sort", "newest"}}},
+			want: "/posts?status=paid&sort=newest",
+		},
+		{
+			name: "a Hidden that is nothing but q leaves a bare action",
+			data: map[string]any{"Action": "/posts", "Hidden": [][2]string{{"q", "sere"}}},
+			want: "/posts",
+		},
+		{
 			// list-bar names the same thing SearchAction, and hands the
 			// computed default down to list-bar-search as ClearHref, so
 			// searchClear runs twice over one search. It must be the
@@ -586,6 +600,18 @@ func TestListBarSearchRendersTheClearLink(t *testing.T) {
 	}
 	if strings.Contains(without.String(), "rst-search__clear") {
 		t.Errorf("an empty search offers a clear link:\n%s", without.String())
+	}
+
+	// A q carried in Hidden must not come back through the markup
+	// either: the whole point of the link is that the search is gone.
+	var carryingQ strings.Builder
+	if err := tmpl.ExecuteTemplate(&carryingQ, "list-bar-search", map[string]any{
+		"Action": "/posts", "Query": "sere", "Hidden": [][2]string{{"q", "sere"}, {"sort", "newest"}},
+	}); err != nil {
+		t.Fatalf("rendering a search that carries its own q: %v", err)
+	}
+	if want := `class="rst-search__clear" href="/posts?sort=newest"`; !strings.Contains(carryingQ.String(), want) {
+		t.Errorf("the clear link is not %s — it is handing the query back:\n%s", want, carryingQ.String())
 	}
 
 	// list-bar renames Action to SearchAction and hands the whole search

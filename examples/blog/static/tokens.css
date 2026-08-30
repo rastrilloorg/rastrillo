@@ -830,11 +830,23 @@ a.rst-nm:hover { color: var(--rst-accent); }
    THE CAP AND THE SCROLL come first because they work in every engine.
    The twelve-locale language menu measures 388px; on a short viewport
    its last entries were simply unreachable — no cap, no scroll, nothing
-   to drag. min(20rem, 100dvh - 6rem) is the space a menu may take:
-   20rem where the window is tall, and the window itself less the room
-   the anchor and the page's own chrome need where it is not.
-   overscroll-behavior keeps a flick that bottoms the menu out from
-   carrying on into the page behind it.
+   to drag. The cap is the space a menu may take: 20rem where the window
+   is tall, and the window itself less the room the anchor and the
+   page's own chrome need where it is not. overscroll-behavior keeps a
+   flick that bottoms the menu out from carrying on into the page behind
+   it.
+
+   THE 8rem FLOOR IS NOT DECORATION, and it went in after the first
+   version of this rule shipped without one. dvh is the viewport, and
+   inside an iframe the viewport is THE FRAME — so in the design
+   gallery's own 100px preview frames `100dvh - 6rem` computed to 4px
+   and a three-item menu rendered as a 12px sliver; below a 96px frame
+   it computed to zero and the menu was invisible. A fix aimed at menu
+   entries nobody could reach had shipped a menu with no entries at all.
+   The floor is the honest trade: in a frame too short for the menu it
+   overflows, and an overflowing menu can be scrolled to, where an
+   invisible one cannot be anything. Any app embedding a screen in a
+   short iframe had the same bug, so this is not a gallery fix.
 
    THE FLIP is CSS anchor positioning. A menu with no room below opens
    upward; one against the trailing edge opens the other way inline.
@@ -867,10 +879,18 @@ a.rst-nm:hover { color: var(--rst-accent); }
    and is worse: an element clamped to fit never overflows, and overflow
    is precisely what triggers position-try-fallbacks, so the menu would
    scroll in place at the foot of the window instead of flipping up into
-   the room above it. */
+   the room above it.
+
+   position-visibility pays for the fixed positioning above. A fixed
+   panel is deliberately outside every scrolling ancestor's clip — that
+   is how a menu opened inside a card escapes it — but the anchor is
+   NOT, so scrolling a rail's nav until the menu's own button was gone
+   left the menu painted over unrelated content with nothing under it.
+   anchors-visible ties the panel's visibility to its anchor's: when the
+   button goes, the menu goes. */
 .rst-dropdown__menu,
 .rst-row-menu__panel {
-  max-block-size: min(20rem, calc(100dvh - 6rem));
+  max-block-size: min(20rem, max(calc(100dvh - 6rem), 8rem));
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -888,6 +908,7 @@ a.rst-nm:hover { color: var(--rst-accent); }
     position-anchor: --rst-menu;
     position-area: block-end span-inline-start;
     position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+    position-visibility: anchors-visible;
   }
 }
 
