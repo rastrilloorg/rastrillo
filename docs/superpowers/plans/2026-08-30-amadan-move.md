@@ -306,8 +306,15 @@ Every target is one current CI step, verbatim in behaviour. `ci` is the
 whole gate.
 
 ```makefile
+# example-helloworld/blog/tickets/notes are deliberately NOT listed here.
+# GNU Make treats a name in .PHONY as an explicit empty rule, which
+# pre-empts the example-% pattern rule below: those targets then print
+# "Nothing to be done", exit 0, and the sweep never runs. A gate that
+# reports green while running nothing is the exact failure this plan
+# exists to prevent. None of the four names a real file, so the pattern
+# rule already reruns unconditionally without .PHONY.
 .PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser \
-        example-helloworld example-blog example-tickets example-notes $(BIN)/rastrillo
+        $(BIN)/rastrillo
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -520,13 +527,16 @@ A green suite cannot tell a working gate from one that reports
 `skipped`. Break something on purpose:
 
 ```bash
-printf '\n\n\nvar unusedDeliberateBreak int\n' >> run.go
+printf '\n\nfunc init() { rastrilloDeliberateBreakUndefinedSymbol() }\n' >> run.go
 sh .amadan/ci.d/20-root; echo "exit=$?"
 git checkout run.go
+git diff --stat    # must be empty before you commit
 ```
 
 Expected: a non-zero `exit=`. If it exits 0, the step is not running
-what you think it is.
+what you think it is. Use an undefined symbol, not an unused variable:
+an unused **package-level** var is legal Go, so `var x int` compiles
+clean and would prove a false pass.
 
 - [ ] **Step 8: Commit**
 
@@ -1127,11 +1137,18 @@ catch:
 
 ```bash
 git checkout -b gate-agreement-probe
-printf '\n\n\nvar unusedDeliberateBreak int\n' >> run.go
+printf '\n\nfunc init() { rastrilloDeliberateBreakUndefinedSymbol() }\n' >> run.go
+CGO_ENABLED=0 go build ./... ; echo "must be non-zero: $?"
 git commit -am "Deliberately broken: probing that both gates refuse it"
 git push origin gate-agreement-probe
 git push github gate-agreement-probe
 ```
+
+The call to an undefined symbol is deliberate, and the local `go build`
+before committing is not ceremony. An unused **package-level** variable
+is legal Go — `var unusedDeliberateBreak int` compiles clean — so a
+probe built on one would prove both gates green and teach you nothing.
+Confirm the break is real before you push it.
 
 Expected: **both** gates fail, and both fail at the equivalent step
 (`20-root` on amadan; *root module* on GitHub). Then delete the branch
