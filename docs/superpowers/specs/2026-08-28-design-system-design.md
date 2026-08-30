@@ -1759,3 +1759,43 @@ of display rules.
 `locale`. Wrapping them in a disclosure is a layout change, not a
 contract change — the block names stay exactly as they are, or every
 app that overrides one breaks silently on upgrade.
+
+### 10. Prev/next at the foot of every page — RULED 2026-08-30 by Paul
+
+*"since we're splitting across pages now, we need a 'Prev' and 'Next'
+navigation at the bottom of each page."*
+
+The split gave the gallery five pages and three ways between them: the
+rail, the tab strip, and nothing at the bottom. A reader who has just
+finished a page has to go back up to leave it, and below 800px the rail
+folds, so the tab strip is carrying navigation alone.
+
+A pair of links at the foot of every page, in `pageKinds()` order:
+previous on the inline start, next on the inline end, each naming the
+page it goes to rather than saying "Prev" and "Next" alone — the name is
+what tells a reader whether they want it. Overview has no previous and
+Shells has no next; the missing side leaves its space rather than
+shifting the other one across.
+
+Derived from `pageKinds()`, never a literal list, so a sixth page kind
+joins the sequence with no edit — and **gate that**, the way the tab
+strip and the chrome gates now do, because this is the third navigation
+surface in the same file and the first two both shipped ungated.
+
+Both link labels are prose keys: two new English strings, eleven
+translations each.
+
+### 11. Overview shipped blank — process note, 2026-08-30
+
+Task 3 built Overview as a deliberate stub: the page exists and is
+reachable, its content belongs to Task 4. That was a reasonable way to
+split the work and an unreasonable thing to deploy. It was written in
+the pull request and shipped anyway, and Paul found a blank page at the
+address every visitor lands on first.
+
+The rule this earns: **a stub may be merged, but the deploy that carries
+it needs either its content or a placeholder that reads as deliberate.**
+An empty `<h1>Overview</h1>` reads as a broken build, not as work in
+progress. Nothing about the gates would have caught it — every gate
+passed, because a page that renders its own heading and nothing else is
+structurally perfect and substantively empty.
