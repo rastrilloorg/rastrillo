@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La ruta del modal — sistema de diseño de rastrillo</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-day.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">La página sobre la que se abrió el modal. Está marcada como inert, así que mientras el panel esté arriba nada de aquí recibe el foco ni llega a un lector de pantalla.</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>Los modales tienen su propia URL.</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/day/es/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/day/es/modal.html">Billing</a>
+      <a href="/design-system/day/es/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/day/es/index.html" aria-label="Cerrar los ajustes">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>Actualiza el nombre y la foto que se muestran en toda la cuenta.</p>
+      <p>El enlace de cierre está pensado para funcionar sin JS.</p>
+      <p>En una aplicación, la ✕ te devolvería a la pantalla del fondo.</p>
+      <p><a class="rst-btn" href="/design-system/day/es/index.html">Volver al sistema de diseño</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>

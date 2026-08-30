@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The modal route — rastrillo design system</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-day.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up.</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>Modals get their own URL.</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/day/en/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/day/en/modal.html">Billing</a>
+      <a href="/design-system/day/en/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/day/en/index.html" aria-label="Close settings">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>Update the name and photo shown across the account.</p>
+      <p>Close link designed to work without JS.</p>
+      <p>In an application the ✕ would return you to the screen in the backdrop.</p>
+      <p><a class="rst-btn" href="/design-system/day/en/index.html">Back to the design system</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>

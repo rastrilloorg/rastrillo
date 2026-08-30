@@ -27,7 +27,7 @@ internal/<app>/render.go     embedded templates, flash/session-aware page data
 cmd/<app>/main.go            Resolve -> db.Open -> App -> Serve
 ```
 
-`rastrillo new --theme=ink|teal|warm --shell=column|topbar|sidebar <name>`
+`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar <name>`
 scaffolds all of it (also `--icons`, `--icon-delivery`, `--ux`): the theme
 lands as `static/theme.css`, the shell as `templates/layout.html`, both
 app-owned from that moment. docs/site/templates.md
@@ -303,8 +303,10 @@ markup opts in. `data-poll="URL"` + `data-poll-every="2"` swap the
 element for the fetched fragment and repeat while the fragment still
 carries `data-poll` (ui's `job-status` partial drops it once done); the
 partial's `PushURL` (= `EventsPath`) emits `data-poll-push` and the shim
-rides SSE, falling back to polling. `data-busy`/`data-busy-label`
-disable and retitle a submit button.
+rides SSE, falling back to polling. Every submit button gets a spinner,
+`aria-busy` and a double-submit guard by DEFAULT; `data-busy="false"`
+(form or button) opts out, `data-busy-label` retitles. It is manners,
+not idempotency — the server still has to refuse the second write.
 
 Hibernation means a `time.Ticker` is not a scheduler. Declare recurring
 work outside the app (`carlos schedule set -name sync -every 6h -path
@@ -332,10 +334,17 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 - **UI: `rst-list`/`rst-card` hold rows only (unpadded by design).** A
   form, prose or links go in `rst-box` with a sibling `rst-box-head`.
   Screens stack vertically — never heading, paragraph and button in one
-  flex row; a notice with a CTA is a `callout` ending in a link. The
-  full vocabulary will be browsable at rastrillo.org/design-system
-  (PR 5); regenerate `docs/design-system` with `go generate ./...` after
-  changing `ui`. docs/site/templates.md
+  flex row; a notice with a CTA is a `callout` ending in a link. State
+  is never colour alone — a `status-pill`'s label and a `meter`'s
+  fraction are always visible text — and `Alert` (`role="alert"`) is for
+  live problems, not ambient notes. Every
+  menu is a `<details name="rst-menus">`, so opening one closes the rest
+  and `rastrillo.js` closes any on an outside click or Escape; pass
+  `MenuGroup` for another group, and a nested `rst-menu-group` MUST name
+  a different one or it closes its parent. The full vocabulary is
+  browsable at rastrillo.org/design-system; regenerate
+  `docs/design-system` with `go generate ./...` after changing `ui`.
+  docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the
   `ref` on the log line. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a

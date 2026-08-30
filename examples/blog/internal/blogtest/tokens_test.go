@@ -30,10 +30,10 @@ func TestVendoredTokensCSSMatchesTheLibrary(t *testing.T) {
 
 // tokens.css declares the colour tokens; a theme fills them in, so a
 // vendored theme can fall behind exactly the way the tokens once did.
-// The blog is scaffolded with ink — swap static/theme.css and this
+// The blog is scaffolded with day — swap static/theme.css and this
 // constant together.
 func TestVendoredThemeCSSMatchesTheLibrary(t *testing.T) {
-	const vendoredTheme = "ink"
+	const vendoredTheme = "day"
 	lib, ok := ui.ThemeCSS(vendoredTheme)
 	if !ok {
 		t.Fatalf("ui.ThemeCSS(%q) reports no such theme", vendoredTheme)

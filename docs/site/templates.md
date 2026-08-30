@@ -71,6 +71,139 @@ Each partial's file carries its data contract in a comment above the
 `{{define}}`, and `ui_test.go`'s `TestAllPartialsAreDefined` is the
 authoritative list.
 
+### The elements they use
+
+Where HTML has an element for what a component is, the component is that
+element rather than a div wearing a role:
+
+| Idiom | Element |
+|---|---|
+| `list-bar-search` | `<search>` around the `method="get"` form |
+| `pagination`, `seg-tabs`, `back-nav` | `<nav>` |
+| the modal panel | `<dialog open>` |
+| every menu | `<details>` / `<summary>` |
+
+`<search>` carries the search role itself, so the form inside it no
+longer sets `role="search"` — two nested search landmarks for one search
+box helps nobody. The strip sizes the landmark (`.rst-lbar > search`) as
+well as a bare form, so hand-written markup keeps the layout it had.
+
+The modal panel is a `<dialog open>`, which is not a change of idiom: a
+rendered-open, non-modal dialog is exactly what a modal-as-a-URL already
+was. Nothing calls `showModal()`, so nothing enters the top layer,
+`::backdrop` never paints, and the `rst-modal-overlay` div stays the
+scrim. `tokens.css` undoes the browser's own dialog block — absolute
+positioning, auto margins, `1em` of padding — so the panel lays out as
+before.
+
+Three things stay divs on purpose. The `rst-lrow` grid is a **layout
+grid**, not a table: its columns come from one `--rst-cols` custom
+property on the card, and CSS grid on real `<table>` markup means
+`display: grid` on the table and its rows, which throws away the table
+semantics you converted for. Use a `<table>` when the content is a data
+table you want announced as one; `rst-lrow` is for list screens whose
+rows are links. A list row (`list-row-action`'s `rst-row`) is a div for
+the same reason — it lives in a `rst-list` card your own page markup
+writes, and a `<li>` needs a list around it that the partial does not
+own.
+
+`job-status`'s `rst-job` is the third, and the reason is behaviour
+rather than structure: the shim replaces that element **wholesale** on
+every poll, and whether a live region whose host node keeps being
+swapped out still announces is a question for a browser, not a
+judgement call. It stays a plain div until someone drives it.
+
+### Menus close each other
+
+Every `dropdown`, row menu and `locale-menu` the library emits carries
+`name="rst-menus"`, so opening one closes whichever was open. That is
+the native `<details name>` group and costs no JavaScript. Pass
+`MenuGroup` to `dropdown`, `locale-menu` or `bulk-bar` to put a menu in
+a group of its own.
+
+A nested `rst-menu-group` **must** use a different name from the menu
+around it. `<details name>` exclusivity is document-wide, not
+sibling-scoped, so a submenu sharing its parent's group closes that
+parent the moment it opens.
+
+The sidebar shell's `rst-shell__chrome` strip and the toggle-block are
+deliberately outside the group: neither is a menu, and closing the
+narrow-screen nav rail because someone opened a filter would take the
+navigation away.
+
+Closing an open menu on a click elsewhere, or on Escape, is the one part
+native `<details>` cannot express, so `rastrillo.js` does it — two
+delegated listeners on the document, no per-element wiring, menus that
+arrive in a polled fragment covered for free. Delete that section of the
+file to opt out; with no script at all the menus still open, still close
+on a second click of their own summary, and still keep one open at a
+time.
+
+### A button that changes something says so
+
+Every submit button in every form gets a loading state on its way out:
+`aria-busy="true"`, a spinner before the label, and — a tick later, once
+the submission is under way — `disabled`. `rastrillo.js` does it by
+default, with no attribute to remember. A button that only *reveals*
+something gets nothing: a disclosure, a dropdown, a tab is not doing
+work, and dressing it as though it were is a lie the reader has to learn
+to ignore.
+
+Only the button that was clicked. The others in the same form keep their
+`name` and their `value`, so a Save / Save-draft pair still tells your
+handler which one it was. The form is what carries the guard: a second
+click, Enter in a field and a programmatic `requestSubmit()` all arrive
+at the same place and are all refused while the first submission is out.
+
+| Attribute | On | Effect |
+|---|---|---|
+| `data-busy="false"` | the `<form>` | the whole form opts out |
+| `data-busy="false"` | one submit button | that button opts out; the form is still guarded |
+| `data-busy-label="Saving…"` | either | replaces the button's text while it works |
+
+Three things the rule deliberately does not do. It does not touch a form
+whose `target` sends the result somewhere else — that page is not going
+anywhere, so it has nothing to be busy about. It does not touch the
+standard close button inside a `<dialog>` — `<form method="dialog">`, or
+a `<button formmethod="dialog">` inside an ordinary form, since the
+button's attribute beats the form's — for the same reason and a sharper
+one: that submit closes the dialog and leaves the page exactly where it
+stood, so a guard armed there would never be cleared and the dialog
+could never be closed through its form again. And it hands the form back
+if something downstream cancels the submit: an app handler that calls
+`preventDefault()` to do the work itself owns the feedback too.
+
+One state it cannot get itself out of. A submission that never navigates
+— a `204` or `205`, or a response the browser hands straight to the
+downloads shelf via `Content-Disposition` — leaves the page exactly as
+the submit left it, so the button stays disabled with no timeout behind
+it to rescue it. There is no honest general fix: a timer would either
+fire while a slow save was still running or be so long it never helped.
+`data-busy="false"` on that form is the escape hatch, and the same goes
+for anything that posts and stays put. Worth knowing while you are
+there: `disabled` on the focused button moves focus to `<body>`, so a
+keyboard user tabs from the top of the document, which is another reason
+a form that stays put should opt out.
+
+Going back is handled. The back/forward cache restores a page exactly as
+it was left, spinner and all, so the shim clears every busy form on
+`pageshow` — button re-enabled, label restored, spinner removed, guard
+released. That includes a submit button that belongs to the form through
+`form="id"` while living somewhere else on the page, which is the shape
+a sticky header's Save takes. A form you came back to is a form you can
+submit again.
+
+The spinner is `.rst-spin`, the same ring `job-status` wears, and it
+stops turning under `prefers-reduced-motion` — the ring stays, dimmed,
+because the message is "working", not "look at this". An
+`<input type="submit">` gets the attributes and the label swap but no
+spinner: it is a void element with nowhere to put one. Prefer
+`<button type="submit">`, which is what `form-foot` emits.
+
+This is an enhancement and nothing more. See
+[Forms](/docs/forms/#the-busy-button-is-not-a-guarantee) for what it
+does not promise you.
+
 ### Three containers the partials assume
 
 They belong to your page markup, so the library does not emit them:
@@ -120,6 +253,17 @@ call to action is either a `callout` whose body ends in a link, or a
 holding the explanation. Horizontal arrangement is reserved for the
 idioms that ship it: `rst-box-head`, `rst-field-row`, `rst-lbar`,
 `rst-lrow` cells, `rst-seg-tabs`.
+
+### State is never colour alone
+
+A tone tells you how to feel about a value; it never carries the value.
+`status-pill` always renders its label, `meter` always prints its
+fraction as text beside the bar, and `badge` is a word before it is a
+colour — so a reader who cannot separate your positive green from your
+negative red still reads the same screen you do. `callout` with `Alert`
+adds `role="alert"`, which interrupts a screen reader mid-sentence:
+reserve it for a problem happening now, and leave ambient notes as the
+ordinary tones.
 
 ## Date and time fields
 
@@ -235,17 +379,85 @@ for the modal route. It lives in-repo at `docs/design-system/`,
 generated by `internal/designsystem` and committed like the rest of the
 docs; run `go generate ./...` after any change to `ui` or its
 templates, and `TestDesignSystemIsCurrent` fails the build if the tree
-drifts from what's committed. It will be published at
-rastrillo.org/design-system once the website vendors it.
+drifts from what's committed. It is live at
+rastrillo.org/design-system, which vendors the committed tree: it
+changes when you regenerate here and the site ships again.
 
-Three samples are shown as escaped source instead of rendered inline,
-each beside a link to the page where the same markup is real. The two
-shell frames carry their own `<main>`, and the gallery page already has
-one. The modal is the sharper case: its overlay is `position: fixed`,
-so rendering it in the gallery opened a modal over the whole page the
-moment it loaded — which is the idiom saying what it needs. Its demo is
-the doctrine working: `<theme>/<locale>/modal.html`, a real URL, with
-Close a plain link back to the gallery.
+The page is laid out in the `sidebar` shell, because that shell is one
+of the things it exists to show. The rail carries a search box over a
+nav that links every section, every partial and every class idiom on the
+page — `TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives that
+list from the same markers the coverage gates read, so a new partial
+shows up there without anyone touching it. Typing in the box hides the
+entries that do not match, and any section that empties out. Below 800px
+the rail folds into the shell's own `<details>` chrome strip, with no
+script involved.
+
+**Every word on the page is translated**, not only the components. The
+gallery's headings, leads and notes come from a catalog of its own, in
+the same twelve locales the framework ships, so the language switcher
+changes the prose as well as the samples.
+`TestEveryProseKeyIsTranslated` fails on a missing entry, and
+`TestNoEnglishProseReachesATranslatedPage` fails on an English string
+that reached a page in another language.
+
+Sample content is the deliberate exception. The names, routes and labels
+inside a component sample are stand-ins, and translating them would
+suggest the framework ships those words, so they stay English on every
+page. The shell and modal demos go the other way — they impersonate a
+real application, so their chrome speaks the language you picked. The
+page says so itself, under Partials, in all twelve languages.
+
+Every example on the page is shown three ways behind one control:
+**Desktop**, **Mobile** and **Code**. The two previews are one
+`<iframe>` holding a document of its own — the sample, the stylesheets,
+and nothing else — laid out at a virtual 1200px or 390px and scaled
+into whatever width you are reading at, so the desktop rendering is the
+desktop rendering on a phone. The tabs are radio inputs and `:has()`;
+no JavaScript is involved in switching them. Each preview is a window on
+its document rather than a fit to it, so a tall sample scrolls inside
+the box — and the box has a resize grip on its bottom edge. Drag it and
+the frame takes its new height, which means you see more of the
+document rather than more of the box.
+
+Giving each sample a document of its own is what makes the awkward ones
+work. The two shell frames carry their own `<main>` and the gallery
+page already has one; the modal's overlay is `position: fixed`, so
+rendered in the gallery it covered the gallery; a form's save bar is
+`position: sticky`, so it stuck to the bottom of the gallery rather
+than to its own form. Each of those is correct inside its own frame.
+The shells and the modal keep their full-page demos as well — a shell
+wants a window, and a modal's whole claim is that it is a URL — and
+those links, like every "open the demo" link on the page, open in a new
+tab.
+
+The links inside a sample go nowhere on purpose. Sample markup is
+written to read like a real application (`/posts/1/edit`), and this
+site serves none of those routes, so every link is rewritten to `#`
+before it is framed and every form is aimed at a hidden sink. The Code
+tab beside the preview keeps the routes the sample was written with,
+which are the ones worth copying.
+
+Three switchers sit in the header, top right. **Theme** is three links,
+one per theme, landing on the same page in that theme's palette.
+**Colour scheme** is System / Light / Dark, and it is the only one of
+the three that needs JavaScript: it writes `data-theme` on `<html>`,
+remembers the choice in `localStorage`, and puts the same attribute on
+every preview frame, because a colour scheme does not reach into an
+embedded document that declares one of its own. **Language** is the
+`locale-menu` dropdown, twelve entries, each keeping you on the page you
+were reading.
+
+The script behind that toggle is `gallery.js`, the only JavaScript in
+the tree that is not part of the framework — furniture for the page
+rather than something an app is ever given, which is why it lives beside
+the renderer instead of in `ui`. It follows the same rules as its three
+neighbours anyway:
+first-party, no dependencies, no network. The scheme toggle and the
+filter box are both `display: none` until the file sets
+`data-rst-js`, so with scripts off you get the nav and the theme's own
+`color-scheme: light dark` rather than two controls that cannot do
+anything.
 
 Every link in that tree — stylesheets, scripts, the theme and language
 switchers, the shell and modal demos — is an absolute path under
@@ -254,6 +466,26 @@ Relative links looked more portable and were wrong: the static edge
 serves `/design-system` and `/design-system/` as the same page without
 redirecting between them, and a relative href resolves differently on
 each.
+
+The gallery is scanned to WCAG 2.2 AA on every CI run — the
+`browser-tagged tests` job runs `./internal/designsystem/`, and a
+violation fails the build. Locally it is `go test -tags browser -p 1
+./internal/designsystem/` (the `-p 1` matters: two Chromium-heavy
+packages starting together contend badly enough to blow a drive's
+deadline). It injects a pinned copy of axe-core into a real browser and
+runs it over the committed tree: the index in each of the three themes
+in both colour schemes, an RTL page, the modal and a shell demo, and the
+preview documents the components actually live in — those in every theme
+and scheme too. Plus two checks axe cannot make: that nothing scrolls
+sideways in a 320px viewport, and that a Tab through the page shows a
+focus ring at every stop and never gets stuck.
+
+That is a floor, not a certificate. Automated scanning reaches roughly
+half of the WCAG success criteria, and the other half — whether alt text
+says something true, whether the reading order makes sense, whether a
+label means what it says — is read by a person. And it is a sample: six
+pages of a hundred and eighty, eight previews of a hundred and ten,
+chosen for what they would catch rather than for coverage.
 
 ## Styling
 
@@ -267,9 +499,9 @@ you meant to, rather than at an upgrade. Delete or update that test when
 you intend to diverge. See [Assets](/docs/assets).
 
 Two stylesheets, not one. `tokens.css` is structure — layout, spacing,
-radius, the type scale, and every `rst-` component class. A theme,
-written beside it as `static/theme.css`, is the colour and the type
-family those classes paint themselves with. The split is what makes a
+the type scale, and every `rst-` component class. A theme, written
+beside it as `static/theme.css`, is the colour, the type family and the
+shape those classes paint themselves with. The split is what makes a
 restyle cheap: swapping one file changes how everything looks, and
 nothing about how anything is laid out.
 
@@ -277,34 +509,75 @@ nothing about how anything is laid out.
 
 Three ship, and `rastrillo new --theme=<name>` writes the one you pick:
 
-| Theme  | The look                                                            |
-|--------|---------------------------------------------------------------------|
-| `ink`  | iron-gall violet on cool-violet neutrals (default)                  |
-| `teal` | workbench teal on green-grey neutrals, monospace-leaning type       |
-| `warm` | rust on cream paper neutrals — closer to letters than to a dashboard |
+| Theme    | The look                                                           |
+|----------|--------------------------------------------------------------------|
+| `day`    | an everyday blue on white and grey; soft corners (default)         |
+| `plain`  | the skeleton: greyscale, system type, almost no shape              |
+| `signal` | graphite and one live cobalt; milled corners, short dense shadows  |
 
-A theme file holds custom properties and a `color-scheme`, declared
-three times: once for light, once under `prefers-color-scheme: dark`,
-and once more under `[data-theme]` so an explicit toggle beats the OS in
-both directions. Both modes are authored — the dark set is not the light
-set inverted.
+A theme file is one `:root` block. It sets `color-scheme: light dark`,
+then declares every colour once as `light-dark(<light>, <dark>)`;
+single-valued tokens — the font stack, the radii — are written plain.
+Two rules at the foot of the file are the whole explicit toggle:
+
+```css
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+```
+
+Setting `color-scheme` re-resolves every `light-dark()` in the file at
+once, in both directions, so a toggle beats the OS without restating a
+single colour. Both schemes are authored — the dark set is not the light
+set inverted — and there is no second copy of the palette to keep in
+sync.
+
+`light-dark()` needs a recent engine: Chrome and Edge 123, Safari 17.5,
+Firefox 120, all of them 2024. Older ones do not fall back to the light
+half — they cannot parse the function at all, so every declaration using
+it is dropped and the app renders with no palette rather than a
+monochrome one. If you have to support an engine below that floor, write
+a theme with a plain `:root` palette and a `prefers-color-scheme` block
+instead; the token names are the only contract, so nothing else changes.
+
+`tokens.css` has a floor of its own, lower and far less brittle. It uses
+`:has()` — Chrome 105, Safari 15.4, Firefox 121 — and the `lh` unit,
+Chrome 109, Safari 16.4, Firefox 120. On Chrome and Safari `lh` is the
+newer of the two, which is why the phantom label that reserves a line in
+a field row writes a `calc()` fallback ahead of its `1lh`; on Firefox
+`:has()` arrived last, so no engine there ever sees that fallback.
+Neither degrades badly — a `:has()` selector an engine cannot parse
+simply does not apply — so take the highest of all three and the floor
+for `tokens.css` plus a shipped theme is Chrome 123, Safari 17.5,
+Firefox 121: `light-dark()` sets it everywhere except Firefox, where
+`:has()` does.
+
+One caveat worth knowing: `light-dark()` is a colour function, so it may
+only stand where a colour is expected. A shadow token wraps its colour
+and writes the geometry outside the call —
+`0 8px 24px light-dark(a, b)`, never `light-dark(0 8px 24px a, …)`.
+
+Shape is part of the theme, not the structure. `--rst-radius`,
+`--rst-radius-sm`, `--rst-radius-pill` and the four depth tokens
+(`--rst-shadow-pop`, `--rst-shadow-knob`, `--rst-shadow-lift`,
+`--rst-overlay`) live in the theme file, which is why `plain` can be
+nearly square and `signal` can be milled while `tokens.css` stays the
+same bytes.
 
 Each file carries its own contrast table in the header comment: every
-text-on-background and border-on-background pair with the measured
-ratio beside the WCAG 2.2 AA requirement it has to clear. `ui`'s
-contrast gate recomputes every pair from the hex values in the file and
-fails if one has dropped under its AA floor — 4.5:1 for text, 3:1 for a
-control border. What it does not check is the printed number. A row can
-go stale and the build stays green, so if you edit a colour, edit the
-row: nothing else will.
+text-on-background and border-on-background pair, in both schemes, with
+the measured ratio beside the WCAG 2.2 AA requirement it has to clear.
+`ui`'s contrast gate splits every `light-dark()` back into two tables and
+recomputes every pair, failing if one has dropped under its AA floor —
+4.5:1 for text, 3:1 for a control border. What it does not check is the
+printed number. A row can go stale and the build stays green, so if you
+edit a colour, edit the row: nothing else will.
 
 Swapping in a theme of your own is replacing `static/theme.css`. The
-only contract is the token set: declare every colour name `ink` declares
-in each of the three blocks — `--rst-font` is declared once, in its own
-`:root` — and every component class already knows what to do with it.
-The scaffold's `vendored_test.go` pins `theme.css` to the library copy
-exactly as it pins `tokens.css`, so delete its line there when the edit
-is deliberate.
+only contract is the token set: declare every name `day` declares, and
+every component class already knows what to do with it. The scaffold's
+`vendored_test.go` pins `theme.css` to the library copy exactly as it
+pins `tokens.css`, so delete its line there when the edit is
+deliberate.
 
 ## Shells
 
@@ -335,12 +608,18 @@ block:
 {{define "content"}}<h1>Your notes</h1>{{end}}
 ```
 
-The blocks are `title`, `lang` and `dir` in all three shells, plus
-`brand`, `nav`, `account` and `locale` in `topbar` and `sidebar`, and
-`foot` in `topbar` only. None of them reads a field off the data, so a
-shell renders whether your handler passes a struct, a `dict`-built map
+The blocks are `title`, `lang`, `dir` and `head` in all three shells,
+plus `brand`, `nav`, `account` and `locale` in `topbar` and `sidebar`,
+and `foot` in `topbar` only. None of them reads a field off the data, so
+a shell renders whether your handler passes a struct, a `dict`-built map
 or nil — a shell can never break because a page's view model changed
 shape.
+
+`head` is the odd one out: it is not chrome, it is your slot in
+`<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
+that has to run before the body — override it and they go in, last in
+the head, so your own CSS wins the ties it should win against
+`tokens.css` and the theme.
 
 `account` is the one asymmetric block, and it is worth knowing which
 shell you are in. In `topbar` the layout owns the `<details

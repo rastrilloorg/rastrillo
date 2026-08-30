@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hans" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模态框那条路由 — rastrillo 设计系统</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-signal.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">模态框覆盖住的那一页。它被标记为 inert，所以面板打开期间，这里的东西既不接受焦点也到不了读屏器。</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>模态框有自己的网址。</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/signal/zh-Hans/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/signal/zh-Hans/modal.html">Billing</a>
+      <a href="/design-system/signal/zh-Hans/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/signal/zh-Hans/index.html" aria-label="关闭设置">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>更新整个账户里显示的名字和照片。</p>
+      <p>关闭链接的设计，不用 JS 也能用。</p>
+      <p>在真实应用里，✕ 会把你带回背后的那个页面。</p>
+      <p><a class="rst-btn" href="/design-system/signal/zh-Hans/index.html">返回设计系统</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>

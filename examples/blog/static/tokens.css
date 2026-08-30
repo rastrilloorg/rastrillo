@@ -16,11 +16,20 @@
    not a wish (ui_test.go, TestTokensCSSIsSelfContained) — which is also
    why this comment cannot spell those constructs out literally.
 
-   Colour and the type family are not here: they live in themes/ink.css,
-   which rastrillo new writes beside this file as static/theme.css. This
-   file is structure — layout, spacing, radius, the type scale, and the
-   component classes, every one of them painted with var(--rst-*). Swap
-   the theme file and the app changes palette; nothing here is touched.
+   Colour, the type family and shape are not here: they live in
+   themes/day.css (or whichever theme was scaffolded), which rastrillo new
+   writes beside this file as static/theme.css. This file is structure —
+   layout, spacing, the type scale, and the component classes, every one
+   of them painted with var(--rst-*). Swap the theme file and the app
+   changes palette, corner and depth; nothing here is touched.
+
+   Radius and shadow used to live in the scale block below. They moved to
+   the themes in v2, because a theme that can only change colour cannot
+   change how an app feels: day is soft (8px/6px, wide low-alpha
+   shadows), plain is nearly square (4px/3px, one hairline layer) and
+   signal is milled (4px/2px, short dense shadows). tokens.css still
+   paints with var(--rst-radius*) and var(--rst-shadow-*) everywhere; it
+   just no longer decides what they are.
 
    Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
    WCAG 2.2): pagination chips measure about 30px, row action pills
@@ -32,7 +41,8 @@
    reason. Anything you add here should follow suit.
    ──────────────────────────────────────────────────────────────────── */
 
-/* ── Scale: type, spacing, radius. Theme-independent. ─────────────── */
+/* ── Scale: type and spacing. Theme-independent. Radius is not here —
+      it is part of the theme's shape axis; see themes/. ────────────── */
 :root {
   --rst-fs-base: 0.875rem;   /* 14px at the browser default */
   --rst-fs-sm: 0.78125rem;   /* 12.5px */
@@ -44,10 +54,6 @@
   --rst-sp-4: 1rem;
   --rst-sp-5: 1.5rem;
   --rst-sp-6: 2.5rem;
-
-  --rst-radius: 10px;
-  --rst-radius-sm: 7px;
-  --rst-radius-pill: 999px;
 }
 
 /* ── Base. Three rules, so a freshly scaffolded app looks finished
@@ -138,19 +144,19 @@ body {
    4.5:1 as a filled background against --rst-on-accent's label colour
    in both themes, so no new custom properties are needed — computed
    with the same WCAG relative-luminance formula as each theme file's
-   own contrast table (ink's values, shown; every theme's own pair is
-   gated the same way):
-     light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#93262f)   8.21:1
-     dark   --rst-on-accent (#1a1030) on --rst-tone-negative-fg (#f58c95)   7.81:1
+   own contrast table (day's values, shown; every theme's own pair is
+   gated the same way, in both schemes):
+     light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#b91c1c)   6.47:1
+     dark   --rst-on-accent (#0b1220) on --rst-tone-negative-fg (#f79aa0)   8.99:1
    Hover darkens via filter rather than a themed "negative-strong"
    token: brightness() scales every channel of the already-themed fill
    (and, being a post-paint filter, the label too), so one rule works
    in both themes without a new pair of colours to maintain. Re-checked
    with the label included in the scaled result, both still clear
-   4.5:1 by a wide margin (ink's values again; a post-paint filter
+   4.5:1 by a wide margin (day's values again; a post-paint filter
    result, so these two rows are illustrative rather than gated):
-     light  0.9× fill (#84222a) vs 0.9× label (#e6e6e6)   7.50:1
-     dark   0.9× fill (#dc7e86) vs 0.9× label (#170e2b)   6.50:1
+     light  0.9× fill (#a61919) vs 0.9× label (#e6e6e6)   6.06:1
+     dark   0.9× fill (#de8a90) vs 0.9× label (#0a101c)   7.38:1
    background/border-color/color are restated on :hover, matching
    .rst-btn--primary:hover's pattern exactly — .rst-btn:hover (same
    0,2,0 specificity, an earlier rule) sets border-color/color to the
@@ -168,6 +174,34 @@ body {
   border-color: var(--rst-tone-negative-fg);
   color: var(--rst-on-accent);
   filter: brightness(0.9);
+}
+
+/* busy — the loading state rastrillo.js gives every submit button on
+   its way out, and the one state of a button that is not a variant:
+   any .rst-btn can wear it. The spinner is a real child element
+   (.rst-spin, further down) rather than a pseudo-element, because the
+   shim adds and removes it; .rst-btn's own `gap` spaces it from the
+   label, so there is no margin here to keep in step with the padding.
+   :disabled arrives a tick later, once the submission is under way —
+   the two are styled together so the button does not change twice.
+   Nothing here animates, so prefers-reduced-motion has nothing to say
+   to it: .rst-spin already stops rotating under that query. */
+.rst-btn[aria-busy="true"], .rst-btn:disabled {
+  cursor: default;
+}
+/* Dimmed, but not much. A disabled control is "incidental" under WCAG
+   1.4.3 and exempt from the contrast minimum, and this one is disabled
+   for a second — so the dimming is a hint that the button is not
+   listening, not a licence to make the label hard to read while
+   someone is waiting on it. */
+.rst-btn:disabled {
+  opacity: 0.8;
+}
+/* The ring must not be squeezed by a long label, and must not stretch
+   with the button's align-items: center default. */
+.rst-btn__spin {
+  align-self: center;
+  flex: none;
 }
 
 /* ── page-header ──────────────────────────────────────────────────── */
@@ -238,13 +272,19 @@ body {
   gap: var(--rst-sp-3);
   padding: var(--rst-sp-2) var(--rst-sp-3);
 }
+/* list-bar-search wraps its form in <search>, the landmark element, so
+   the strip's flex child is the <search>, not the form. Both are sized
+   here: an app that hand-writes a bare <form class="rst-search"> into
+   its own .rst-lbar keeps the layout it had before the element landed. */
+.rst-lbar > search,
 .rst-lbar > .rst-search {
   flex: 0 1 20rem;
 }
 
 /* list-bar-search renders this form, which is the field box itself. Used
    on its own inside a .rst-list card it just needs margin; inside a
-   .rst-lbar the strip supplies the padding. */
+   .rst-lbar the strip supplies the padding. The <search> around it is a
+   plain block box — it draws nothing, so the form remains the field. */
 .rst-search {
   align-items: center;
   background: var(--rst-surface);
@@ -255,6 +295,7 @@ body {
   margin: 0;
   padding: 0.3rem 0.55rem;
 }
+.rst-list > search,
 .rst-list > .rst-search {
   margin: var(--rst-sp-3);
 }
@@ -546,6 +587,7 @@ body {
 
 /* ── Narrow screens ───────────────────────────────────────────────── */
 @media (max-width: 34rem) {
+  .rst-lbar > search,
   .rst-lbar > .rst-search {
     flex: 1 1 100%;
   }
@@ -634,6 +676,12 @@ a.rst-nm:hover { color: var(--rst-accent); }
    a/button rule above. */
 .rst-dropdown__menu button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); margin: 0; padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
 .rst-dropdown__menu button:hover { background: var(--rst-accent-soft); }
+/* The same content-box bug the inputs had, in the three menu panels:
+   a full-width button inside a 0.25rem-padded panel measured 100% of
+   the content box and then added its own 0.65rem of side padding, so
+   every hover highlight bled ~20.8px past the panel's rounded edge.
+   One rule for all three panels, because it is one cause. */
+.rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-dropdown__menu button { box-sizing: border-box; }
 .rst-dropdown__menu .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 .rst-dropdown__menu .rst-menu-group > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
 .rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker { display: none; }
@@ -643,10 +691,15 @@ a.rst-nm:hover { color: var(--rst-accent); }
 details[open] > summary > .rst-caret { transform: rotate(180deg); }
 
 /* ftok — an applied filter as a removable chip; the × is a plain link
-   to the unfiltered URL, so removing a filter is just navigation. */
-.rst-ftok { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0.1rem; padding-inline: 0.6rem 0.3rem; }
+   to the unfiltered URL, so removing a filter is just navigation.
+   The × is 24px square because WCAG 2.2 AA 2.5.8 says a target is, and
+   it was 17px until the accessibility gate measured it. The chip lost
+   its block padding in the same breath to pay for most of that: the
+   chip measures 26.0px tall now against 22.4px before, and would have
+   been 29.2px if the padding had stayed. */
+.rst-ftok { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0; padding-inline: 0.6rem 0.2rem; }
 .rst-ftok .rst-ftok__k { color: var(--rst-text-muted); }
-.rst-ftok a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 17px; justify-content: center; text-decoration: none; width: 17px; }
+.rst-ftok a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 24px; justify-content: center; text-decoration: none; width: 24px; }
 .rst-ftok a:hover { background: var(--rst-tone-negative-bg); color: var(--rst-tone-negative-fg); }
 
 /* Reduced motion: the caret's rotate transition is the only new
@@ -664,18 +717,39 @@ details[open] > summary > .rst-caret { transform: rotate(180deg); }
 .rst-field { margin: var(--rst-sp-4) 0; }
 .rst-field__label { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); margin: 0 0 0.2rem; }
 .rst-field__hint { color: var(--rst-text-faint); font-weight: 400; }
-.rst-input { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
+/* box-sizing is set here rather than in a `*` reset, because this file
+   promises exactly one collision surface with an app's own CSS: the
+   rst- prefix. Without it width:100% is the CONTENT box, so an input
+   overflowed its own wrapper by its padding and borders — 21px for a
+   plain field, 47px once .rst-dtp__input reserves room for the picker
+   button. That overflow was three of this batch's visible bugs at once:
+   an input running under the field beside it in a row, an input running
+   out of its card, and a picker button anchored to the wrapper landing
+   47px short of the input's visible end. */
+.rst-input { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
 .rst-input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.rst-input--short { width: 6.5rem; }
+/* short is compact, not tiny: 8rem is a border-box width, so it renders
+   within a pixel or two of the old 6.5rem content box plus its padding,
+   and it is wide enough for the postcodes and codes it is for. The
+   max keeps it from overflowing a column narrower than itself. */
+.rst-input--short { inline-size: 8rem; max-inline-size: 100%; }
 textarea.rst-input { min-height: 5rem; resize: vertical; }
 /* field-text/field-textarea (the interim pair the manifest generator
    emits) mark a required label with * and put the textarea on its own
    class; styled here so both field families render finished. */
 .rst-field__required { color: var(--rst-tone-negative-fg); }
-.rst-textarea { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
+.rst-textarea { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
 .rst-textarea:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.rst-field__help { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
-.rst-field__error { color: var(--rst-tone-negative-fg); font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+/* The three message lines under a control. display:block is load-bearing
+   rather than cosmetic: the field partial emits them as <p>, and the
+   field-text/date/time/select family as <small>, and an inline <small>
+   silently drops the top margin — so the same message sat at two
+   different distances from its control depending on which partial drew
+   it. The hint's class is shared with the inline parenthetical inside a
+   label in the field partial, so only the <small> form is blocked out. */
+.rst-field__help { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+.rst-field__error { color: var(--rst-tone-negative-fg); display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
+small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
 
 /* switch — the one toggle mechanism: real checkbox, visible track. The
    knob's left: 2px is deliberately physical, not inset-inline-start: it
@@ -704,17 +778,64 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-choice__cards label:has(input:checked) { background: var(--rst-accent-soft); border-color: var(--rst-accent); }
 .rst-choice__cards label:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 
-/* seg-tabs — filled pill inside a soft track; current is aria-current. */
-.rst-seg-tabs { background: var(--rst-accent-soft); border-radius: 8px; display: flex; gap: 2px; padding: 2px; width: max-content; }
+/* seg-tabs — filled pill inside a soft track; current is aria-current.
+   It wraps: width: max-content is what a segmented control wants and
+   max-inline-size: 100% is what WCAG 2.2 AA 1.4.10 requires, because
+   four tabs are 345px wide and a reflow viewport is 320. Two rows beats
+   a sideways scrollbar on the whole page. */
+.rst-seg-tabs { background: var(--rst-accent-soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; max-inline-size: 100%; padding: 2px; width: max-content; }
 .rst-seg-tabs a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
 .rst-seg-tabs a:hover { color: var(--rst-text); }
 .rst-seg-tabs a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field { margin-top: var(--rst-sp-5); }
-.rst-field-row { align-items: end; display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
+/* field-row aligns by the CONTROL row, not by the bottom of the box.
+   align-items:end was the bug: a field carrying an error is taller than
+   its sibling, so bottom-aligning it lifted its input clear of the row
+   and dropped its error line across the field beside it.
+
+   Judged against grid-with-subgrid, which does align label/control/
+   message tracks across siblings exactly: subgrid needs the row to be a
+   grid, and a grid cannot express what this row is for. grid-auto-flow:
+   column never wraps, so a narrow screen overflows instead of stacking;
+   and grid-auto-columns is one value for every column, so rst-grow — a
+   wide field beside a short one — cannot be said at all. Flex keeps
+   both. What align-items:start gives up is a row whose fields have
+   label boxes of different heights; the ::before below buys back the
+   common case of that (a field with no label at all), and a label long
+   enough to wrap is a field that wants its own row.
+
+   The message then flows under its own column and shifts no sibling,
+   which is the second half of the fix — it needs the border-box on
+   .rst-input above to hold, or the control overflows the column the
+   message is measured against. */
+.rst-field-row { align-items: start; display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.75rem 0; }
 .rst-field-row .rst-field { margin: 0; }
-.rst-field-row > .rst-grow { flex: 1; min-width: 0; }
+.rst-field-row > .rst-field { flex: 0 1 auto; min-inline-size: 8rem; }
+.rst-field-row > .rst-grow { flex: 1 1 12rem; }
+/* A field in a row with no label reserves the label's line anyway, so
+   its control still lines up with a labelled sibling's. It measures
+   that line rather than restating it: the same font-size .rst-field__label
+   declares, one lh of the line-height both of them inherit, and the
+   label's own bottom margin.
+
+   The two block-size declarations are one value with a fallback, not a
+   duplicate: an engine that has :has() but not the lh unit drops the
+   second line and keeps the calc. That window is real — :has() shipped
+   in Chrome 105 and Safari 15.4, lh in Chrome 109 and Safari 16.4 — so
+   Chrome 105-108 and Safari 15.4-16.3 render this rule and would
+   otherwise reserve a zero-height line. They get the body's 1.5
+   line-height as a number; everything newer measures the line itself
+   and the copy stops mattering. Firefox never sees the calc: lh landed
+   there in 120 and :has() in 121, so any Firefox that matches this
+   selector already has the unit. */
+.rst-field-row > .rst-field:not(:has(> .rst-field__label))::before { block-size: calc(var(--rst-fs-sm) * 1.5); block-size: 1lh; content: ""; display: block; font-size: var(--rst-fs-sm); margin-block-end: 0.2rem; }
+/* A row is sized by its controls, never by its messages: contain keeps a
+   long error out of the field's max-content width, so the sentence wraps
+   under its own control instead of stretching the column it belongs to
+   and squeezing the field beside it. */
+.rst-field-row > .rst-field > :is(.rst-field__help, .rst-field__error, .rst-field__hint) { contain: inline-size; }
 /* field-daterange — the fieldset reset the grouped start/end pair needs,
    with the legend sized like a field label. Its own selector rather than
    a share of .rst-choice: the two groups look alike today, and a card
@@ -727,7 +848,28 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 .rst-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 /* form/form-foot — the container the form-foot partial's callers wrap
    fields in, and the closing action row form-foot itself emits. */
-.rst-form { display: flex; flex-direction: column; gap: var(--rst-sp-2); max-inline-size: 44rem; }
+/* One spacing mechanism, not two. The form is a flex column, so its
+   children's own stacking margins never collapse — they were added to
+   the gap, and they were also added at the two ends, where nothing is
+   being separated from anything. Inside a card holding a single field
+   that was the whole of the dead space under the control: 16px of
+   field margin on top of the card's own padding, at both ends. The gap
+   is now the rhythm (the same var(--rst-sp-5) .rst-form-flow uses
+   between its fields) and the blocks contribute no margin of their
+   own.
+
+   Stated as a rule over every child rather than as a list of the
+   classes we happen to ship: a list is a promise this file cannot keep,
+   because it cannot name .rst-callout's successor, and it cannot name
+   an app's own div at all — and a child the list forgot lands at gap
+   plus its own two margins, which is the bug this rule exists to
+   prevent. So: the form owns the block rhythm, full stop, and the two
+   deliberate exceptions are exempted here where they can be read.
+   .rst-form__foot and .rst-form-foot both set a block-start margin that
+   is not rhythm — it is the extra air that separates a closing action
+   row from the last question above it. */
+.rst-form { display: flex; flex-direction: column; gap: var(--rst-sp-5); max-inline-size: 44rem; }
+.rst-form > *:not(.rst-form__foot, .rst-form-foot) { margin-block: 0; }
 .rst-form__foot { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -759,6 +901,15 @@ textarea.rst-input { min-height: 5rem; resize: vertical; }
 body:has(.rst-backdrop) { overflow: hidden; }
 .rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
 .rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
+/* The panel is a <dialog open>: the rendered-open, NON-modal dialog is
+   exactly what a modal-as-a-URL is — the server sends the page with the
+   dialog already open, and nothing calls showModal(). So ::backdrop is
+   never painted (it only exists for the top layer) and .rst-modal-overlay
+   stays the scrim, as it was. What the element does bring is a UA block
+   this idiom has to undo: absolute positioning with auto inline insets,
+   auto margins, 1em of padding and the Canvas colour pair. Reset them
+   and the panel lays out as the ordinary flex item it already was. */
+dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 0; padding: 0; position: static; }
 .rst-modal-panel > nav { border-inline-end: 1px solid var(--rst-line); display: flex; flex: none; flex-direction: column; gap: 0.15rem; padding: 1.1rem 0.8rem; width: 180px; }
 .rst-modal-panel > nav a { border-radius: 8px; color: inherit; padding: 0.4rem 0.65rem; text-decoration: none; }
 .rst-modal-panel > nav a:hover { background: var(--rst-accent-soft); }
@@ -853,7 +1004,16 @@ body:has(.rst-backdrop) { overflow: hidden; }
    .rst-sr-only, because it is what the form submits. */
 .rst-dtp { position: relative; }
 .rst-dtp__input { padding-inline-end: 2.25rem; }
-.rst-dtp__pick { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block-start: 0.3rem; inset-inline-end: 0.35rem; justify-content: center; padding: 0; position: absolute; }
+/* The button is anchored to .rst-dtp, which is exactly as wide and as
+   tall as the input it wraps once the input is a border box — so
+   inset-inline-end puts it at the control's inline end in either
+   writing mode, and inset-block:0 with auto block margins centres it on
+   the control at whatever height the type scale gives it. The old
+   inset-block-start:0.3rem was that centring measured once by hand
+   against one font size. .rst-dtp__input's padding-inline-end is the
+   room this reserves inside the control, so text never runs under it,
+   with a value or without one. */
+.rst-dtp__pick { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block: 0; inset-inline-end: 0.35rem; justify-content: center; margin-block: auto; padding: 0; position: absolute; }
 .rst-dtp__pick:hover { color: var(--rst-text); }
 .rst-dtp__pick svg { block-size: 1rem; inline-size: 1rem; }
 .rst-dtp__list { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-block-start: 4px; max-block-size: 17rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 40; }

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuyến của hộp thoại — hệ thống thiết kế rastrillo</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-plain.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">Trang mà hộp thoại đã mở đè lên. Nó được đánh dấu inert, nên khi tấm panel còn mở, không thứ gì ở đây nhận tiêu điểm hay đến được trình đọc màn hình.</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>Hộp thoại có URL riêng của nó.</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/plain/vi/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/plain/vi/modal.html">Billing</a>
+      <a href="/design-system/plain/vi/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/plain/vi/index.html" aria-label="Đóng phần cài đặt">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>Cập nhật tên và ảnh hiển thị trên toàn bộ tài khoản.</p>
+      <p>Liên kết đóng được làm để chạy được khi không có JS.</p>
+      <p>Trong một ứng dụng thật, dấu ✕ sẽ đưa bạn về màn hình phía sau.</p>
+      <p><a class="rst-btn" href="/design-system/plain/vi/index.html">Quay lại hệ thống thiết kế</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>

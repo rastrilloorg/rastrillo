@@ -301,17 +301,18 @@ the meantime. This list is their union. **Built:**
   an owner holds at most four running jobs (`Start` answers
   `ErrOwnerBusy` past that), and a job still running after fifteen
   minutes is marked failed, its context expired. The only JavaScript
-  in the framework is `static/rastrillo.js`, a ~130-line app-owned shim
+  in the framework is `static/rastrillo.js`, an app-owned shim
   `rastrillo new` writes beside `tokens.css`: it replaces an element
   carrying `data-poll` with the HTML fragment it fetches and stops when
-  the new fragment stops asking, and marks a submitting `data-busy` form
-  busy. Status pages poll, or ride Server-Sent Events where the browser
-  supports them: `Events` streams at `/jobs/{id}/events` (heartbeats,
-  per-write deadlines, a bounded stream lifetime — the serve.go
-  streaming recipe), and the shim's `data-poll-push` upgrades to an
-  EventSource that falls back to plain polling on its own. htmx remains
-  a choice, not a dependency — `examples/notes`
-  demonstrates the whole loop with an Export flow.
+  the new fragment stops asking, and gives every submit button a
+  spinner and a double-submit guard while its form is out
+  (`data-busy="false"` opts out). Status pages poll, or ride
+  Server-Sent Events where the browser supports them: `Events` streams
+  at `/jobs/{id}/events` (heartbeats, per-write deadlines, a bounded
+  stream lifetime — the serve.go streaming recipe), and the shim's
+  `data-poll-push` upgrades to an EventSource that falls back to plain
+  polling on its own. htmx remains a choice, not a dependency —
+  `examples/notes` demonstrates the whole loop with an Export flow.
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail
   flow honors, leaving storage, rendering, and CSRF to the app.

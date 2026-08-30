@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="yue" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模態框嗰條路由 — rastrillo 設計系統</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-signal.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">模態框蓋住嗰一版。佢標咗做 inert，所以面板開住嗰陣，呢度啲嘢唔會攞到焦點，亦到唔到螢幕閱讀器。</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>模態視窗有自己嘅網址。</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/signal/yue/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/signal/yue/modal.html">Billing</a>
+      <a href="/design-system/signal/yue/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/signal/yue/index.html" aria-label="關閉設定">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>更新成個帳戶入面顯示嘅名同相。</p>
+      <p>關閉連結設計成冇 JS 都用得。</p>
+      <p>喺真嘅應用程式度，✕ 會帶你返去背後嗰個畫面。</p>
+      <p><a class="rst-btn" href="/design-system/signal/yue/index.html">返去設計系統</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>

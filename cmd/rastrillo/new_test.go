@@ -30,9 +30,10 @@ func TestNewScaffoldsTokensCSS(t *testing.T) {
 	}
 }
 
-// tokens.css is structural only: colour arrives in a theme, and the
-// default is ink. Without static/theme.css a scaffolded app renders
-// colourless, so the theme ships beside the tokens.
+// tokens.css is structural only: colour, type family and shape arrive in
+// a theme, and the default is day. Without static/theme.css a scaffolded
+// app renders colourless and square, so the theme ships beside the
+// tokens.
 func TestNewScaffoldsThemeCSS(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"blogapp"}); err != nil {
@@ -42,12 +43,12 @@ func TestNewScaffoldsThemeCSS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected a scaffolded theme: %v", err)
 	}
-	want, ok := ui.ThemeCSS("ink")
+	want, ok := ui.ThemeCSS("day")
 	if !ok {
-		t.Fatal(`ui.ThemeCSS("ink") reports no such theme`)
+		t.Fatal(`ui.ThemeCSS("day") reports no such theme`)
 	}
 	if !bytes.Equal(got, want) {
-		t.Errorf("scaffolded theme.css is not the ink theme verbatim (%d bytes vs %d)", len(got), len(want))
+		t.Errorf("scaffolded theme.css is not the day theme verbatim (%d bytes vs %d)", len(got), len(want))
 	}
 }
 
@@ -56,16 +57,16 @@ func TestNewScaffoldsThemeCSS(t *testing.T) {
 // icon flags follow.
 func TestNewThemeFlag(t *testing.T) {
 	t.Chdir(t.TempDir())
-	if err := runNew([]string{"--theme=teal", "app"}); err != nil {
+	if err := runNew([]string{"--theme=signal", "app"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
 	got, err := os.ReadFile(filepath.Join("app", "internal", "app", "static", "theme.css"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, _ := ui.ThemeCSS("teal")
+	want, _ := ui.ThemeCSS("signal")
 	if !bytes.Equal(got, want) {
-		t.Error("static/theme.css is not the teal theme")
+		t.Error("static/theme.css is not the signal theme")
 	}
 	if err := runNew([]string{"--theme=nope", "app2"}); err == nil {
 		t.Fatal("unknown theme must fail")
@@ -807,7 +808,7 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 		"ui.SelectJS()",
 		// The theme is vendored too, and the pin has to remember which
 		// one this app was scaffolded with.
-		`vendoredTheme = "ink"`,
+		`vendoredTheme = "day"`,
 		"ui.ThemeCSS(vendoredTheme)",
 		`filepath.Join("..", "blogapp", "static", name)`,
 	} {

@@ -10,6 +10,11 @@
 {{iconAssets}}
 <script defer src="{{asset "static/select.js"}}"></script>
 <script defer src="{{asset "static/datetime.js"}}"></script>
+{{/* head is the app's own slot in <head>: a favicon, a meta tag, one
+     more stylesheet. Empty by default, last in the head so an app's
+     own CSS wins over the framework's, and the only block in the
+     three shells that is not chrome. */}}
+{{block "head" .}}{{end}}
 </head>
 <body>
 <div class="rst-shell-sidebar">

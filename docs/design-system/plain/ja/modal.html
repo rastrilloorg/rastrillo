@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モーダルのルート — rastrillo デザインシステム</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-plain.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">モーダルが上に開いた画面です。inert が付いているので、パネルが開いているあいだ、ここのものはフォーカスを受け取らず、スクリーンリーダーにも届きません。</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>モーダルには自分の URL があります。</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/plain/ja/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/plain/ja/modal.html">Billing</a>
+      <a href="/design-system/plain/ja/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/plain/ja/index.html" aria-label="設定を閉じる">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>アカウント全体で表示される名前と写真を変更します。</p>
+      <p>閉じるリンクは、JS なしでも動くように作ってあります。</p>
+      <p>実際のアプリケーションなら、✕ は背後の画面に戻します。</p>
+      <p><a class="rst-btn" href="/design-system/plain/ja/index.html">デザインシステムに戻る</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>

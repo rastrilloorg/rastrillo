@@ -42,13 +42,30 @@ belong to your page markup: `<div class="rst-page">`,
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-Registers `dict`, `list`, `icon` and `T`.
+Registers `dict`, `list`, `menuGroup`, `icon`, `iconAssets`, `T`, `Tf`
+and `dateWords`.
 
 `dict` builds a partial's single data value at the call site:
 
 ```html
 {{template "badge" dict "Label" "Draft" "Tone" "muted"}}
 ```
+
+## MenuGroupDefault
+
+```go
+const MenuGroupDefault = "rst-menus"
+```
+
+The `<details name>` exclusivity group every menu the library emits
+joins unless its caller names another, so opening one menu closes
+whichever was open — native, no script. `dropdown`, `locale-menu` and
+`bulk-bar` take a `MenuGroup` key to override it; the `menuGroup`
+template func resolves that key and falls back here.
+
+A nested `rst-menu-group` must **not** use this value. `<details name>`
+exclusivity is document-wide rather than sibling-scoped, so a submenu
+sharing its parent's group closes that parent the moment it opens.
 
 ## Option, WithIcons, WithT
 
@@ -100,23 +117,26 @@ func ThemeNames() []string
 func ThemeCSS(name string) ([]byte, bool)
 ```
 
-The three shipped themes, `ink` first: `ink`, `teal`, `warm`.
+The three shipped themes, `day` first: `day`, `plain`, `signal`.
 `ThemeCSS` returns one theme's bytes and reports `false` for a name that
 is not shipped — `rastrillo new --theme` calls it before it writes
 anything.
 
-A theme is colour and type family only; the structure is `tokens.css`.
-It declares its tokens three times — light, dark under
-`prefers-color-scheme`, and again under `[data-theme]` so an explicit
-toggle wins in both directions — and carries its own measured WCAG 2.2
-AA contrast table in its header comment. `ui`'s `contrast_test.go`
-recomputes every pair, so a theme that drifts fails the build rather
-than shipping.
+A theme is colour, type family and shape; the structure is `tokens.css`.
+It is one `:root` block under `color-scheme: light dark`, with every
+colour declared once as `light-dark(<light>, <dark>)` and two toggle
+rules at the foot setting nothing but `color-scheme`, so an explicit
+`[data-theme]` choice wins in both directions without restating a
+colour. Each file carries its own measured WCAG 2.2 AA contrast table in
+its header comment, for both schemes; `ui`'s `contrast_test.go` splits
+the `light-dark()` calls back apart and recomputes every pair, so a
+theme that drifts fails the build rather than shipping.
 
 The chosen theme lands as `static/theme.css` and is app-owned from that
 moment. Swapping in a hand-written one means replacing that file; the
-whole surface a theme has to satisfy is the token set `ink` declares,
-which `TestThemesDeclareIdenticalTokenSets` holds every theme to.
+whole surface a theme has to satisfy is the token set `day` declares —
+which now includes the radii and the four depth tokens — and
+`TestThemesDeclareIdenticalTokenSets` holds every theme to it.
 
 ## Shells
 
@@ -132,11 +152,16 @@ centred page, `topbar` adds a header bar with nav and an account menu,
 reports `false` for a name that is not shipped.
 
 A shell executes `{{template "content" .}}` for the page body and wraps
-it in chrome made of blocks with working defaults: `title`, `lang` and
-`dir` in all three, plus `brand`, `nav`, `account` and `locale` in the
-two chrome shells, and `foot` in `topbar`. No block reads a field off
-the data, so a shell renders the same whether a handler passes a struct,
-a `dict`-built map, or nil.
+it in chrome made of blocks with working defaults: `title`, `lang`,
+`dir` and `head` in all three, plus `brand`, `nav`, `account` and
+`locale` in the two chrome shells, and `foot` in `topbar`. No block
+reads a field off the data, so a shell renders the same whether a
+handler passes a struct, a `dict`-built map, or nil.
+
+`head` is the one that is not chrome: it is an empty slot at the foot of
+`<head>`, for a favicon, a meta tag, an extra stylesheet or a script
+that must run before the body. Being last means an app's own CSS wins
+the ties it should against `tokens.css` and the theme.
 
 `rastrillo new --shell` writes the chosen one as
 `templates/layout.html`. It is an ordinary template from then on — no
@@ -174,9 +199,14 @@ func DatetimeJS() []byte
 
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
 into the app's `static/`. `ShimJS` is `rastrillo.js` — the
-progressive-enhancement shim that drives `data-poll`, `data-poll-push`
-and `data-busy` ([Background jobs](/docs/jobs)). `SelectJS` backs the
-enhanced select: it mirrors a `<select>` carrying `data-rst-select` as a
+progressive-enhancement shim. It drives `data-poll` and
+`data-poll-push` ([Background jobs](/docs/jobs)); it gives every submit
+button a busy state and every form a double-submit guard by default,
+with `data-busy="false"` as the opt-out and `data-busy-label` as the
+label swap; and it closes an open `<details>` menu on an outside click
+or Escape, which is the one part of the menu idiom the native element
+cannot express. `SelectJS` backs the enhanced select: it mirrors a
+`<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one
 marked `data-rst-select="false"`. `DatetimeJS` backs the date fields: it

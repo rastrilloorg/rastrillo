@@ -60,8 +60,9 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 		t.Fatal("TokensCSS() is empty")
 	}
 	for _, want := range []string{
-		"--rst-sp-4", "--rst-fs-base", "--rst-radius",
+		"--rst-sp-4", "--rst-fs-base",
 		"var(--rst-bg)", "var(--rst-text)", "var(--rst-accent)", "var(--rst-font)",
+		"var(--rst-radius)", "var(--rst-shadow-pop)",
 		".rst-status", ".rst-sr-only",
 	} {
 		if !strings.Contains(string(css), want) {
@@ -70,18 +71,23 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 	}
 	// The colour blocks are the theme's now. tokens.css naming one again
 	// means a palette leaked back into the structural file, where a
-	// theme swap could no longer reach it.
+	// theme swap could no longer reach it. The shape tokens joined them
+	// in v2: a "--rst-radius:" or "--rst-shadow-pop:" *declaration* here
+	// would silently outrank nothing and confuse everything, since every
+	// theme declares its own.
 	for _, gone := range []string{
 		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+		"--rst-radius:", "--rst-radius-sm:", "--rst-radius-pill:",
+		"--rst-shadow-pop:", "--rst-shadow-knob:", "--rst-shadow-lift:", "--rst-overlay:",
 	} {
 		if strings.Contains(string(css), gone) {
-			t.Errorf("tokens.css declares theme block %q; colour belongs in themes/", gone)
+			t.Errorf("tokens.css declares %q; colour and shape belong in themes/", gone)
 		}
 	}
 }
 
-// Every shipped theme is a whole theme: the colour blocks, the type
-// family, and the three-block structure the contrast gate parses.
+// Every shipped theme is a whole theme: the palette, the type family,
+// the shape tokens, and the one-block structure the contrast gate parses.
 func TestThemeCSSIsEmbedded(t *testing.T) {
 	for _, name := range ThemeNames() {
 		css, ok := ThemeCSS(name)
@@ -90,28 +96,54 @@ func TestThemeCSSIsEmbedded(t *testing.T) {
 		}
 		for _, want := range []string{
 			"--rst-bg", "--rst-surface", "--rst-text", "--rst-accent",
-			"--rst-tone-positive-fg", "--rst-font",
-			"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
+			"--rst-tone-positive-fg", "--rst-font", "--rst-radius", "--rst-shadow-pop",
+			"color-scheme: light dark", "light-dark(",
+			`:root[data-theme="dark"] { color-scheme: dark; }`,
+			`:root[data-theme="light"] { color-scheme: light; }`,
 		} {
 			if !strings.Contains(string(css), want) {
 				t.Errorf("themes/%s.css is missing %q", name, want)
 			}
 		}
+		// The v2 format is one :root block plus exactly two toggle rules,
+		// and the toggle rules carry nothing but color-scheme. A theme
+		// that grew a second palette block (a prefers-color-scheme media
+		// query, say, or colours restated under [data-theme]) has a copy
+		// of itself to keep in sync again, which is the failure
+		// light-dark() was adopted to make impossible.
+		if strings.Contains(string(css), "prefers-color-scheme") {
+			t.Errorf("themes/%s.css declares a prefers-color-scheme block; the scheme split is light-dark()'s job now", name)
+		}
+		if got := strings.Count(string(css), ":root {"); got != 1 {
+			t.Errorf("themes/%s.css opens %d bare :root blocks, want exactly 1", name, got)
+		}
+		for _, prop := range []string{"--rst-bg:", "--rst-text:", "--rst-accent:", "--rst-radius:"} {
+			if got := strings.Count(string(css), prop); got != 1 {
+				t.Errorf("themes/%s.css declares %s %d times, want exactly 1 (one block, both schemes)", name, prop, got)
+			}
+		}
 	}
-	for _, bad := range []string{"nope", "", "ink.css", "../tokens"} {
+	for _, bad := range []string{"nope", "", "day.css", "../tokens"} {
 		if _, ok := ThemeCSS(bad); ok {
 			t.Errorf("ThemeCSS(%q) reports a theme that is not shipped", bad)
 		}
 	}
 }
 
-// Both themes are authored, never inverted: every themed token is
-// declared three times — light, dark-by-OS, and dark-by-toggle. A
-// half-authored dark theme is the classic way a token file rots, and
-// after the split it is the classic way a *new* theme ships half-done,
-// so this runs over every theme rather than over tokens.css.
-func TestBothThemesDeclareEveryColourToken(t *testing.T) {
-	themed := []string{
+// Both schemes are authored, never inverted. Before v2 that meant
+// counting three copies of every colour block; now it means every themed
+// colour is declared exactly once, as a light-dark() call with two
+// distinct-or-deliberate halves. A theme that wrote a bare hex where a
+// light-dark() belongs has a dark scheme that is just the light one
+// showing through, which is the modern shape of the same rot.
+//
+// The shadows and the overlay are exempt from the light-dark()
+// requirement but not from being declared: a shadow whose two schemes
+// are genuinely identical (day's knob and lift) is allowed to say so
+// once, and light-dark() may only wrap the colour inside a shadow value
+// anyway, never the whole thing.
+func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
+	needsLightDark := []string{
 		"--rst-bg", "--rst-surface", "--rst-surface-2", "--rst-line", "--rst-line-strong",
 		"--rst-text", "--rst-text-muted", "--rst-text-faint",
 		"--rst-accent", "--rst-accent-strong", "--rst-accent-soft", "--rst-on-accent",
@@ -119,19 +151,39 @@ func TestBothThemesDeclareEveryColourToken(t *testing.T) {
 		"--rst-tone-positive-fg", "--rst-tone-positive-bg",
 		"--rst-tone-warning-fg", "--rst-tone-warning-bg",
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
-		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
+		"--rst-overlay",
 	}
+	declaredOnce := append([]string{
+		"--rst-font", "--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift",
+	}, needsLightDark...)
+
 	for _, name := range ThemeNames() {
 		raw, ok := ThemeCSS(name)
 		if !ok {
 			t.Fatalf("ThemeCSS(%q) missing", name)
 		}
 		css := string(raw)
-		for _, prop := range themed {
+		decl := regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
+		values := map[string]string{}
+		for _, m := range decl.FindAllStringSubmatch(css, -1) {
+			values[m[1]] = strings.TrimSpace(m[2])
+		}
+		for _, prop := range declaredOnce {
 			// Declarations are "<prop>: value"; uses are "var(<prop>)", so the
 			// trailing colon counts declarations only.
-			if got := strings.Count(css, prop+":"); got != 3 {
-				t.Errorf("themes/%s.css declares %s %d times, want 3 (light, prefers-color-scheme dark, [data-theme=dark])", name, prop, got)
+			if got := strings.Count(css, prop+":"); got != 1 {
+				t.Errorf("themes/%s.css declares %s %d times, want exactly 1", name, prop, got)
+			}
+		}
+		for _, prop := range needsLightDark {
+			light, dark, ok := splitLightDark(values[prop])
+			if !ok {
+				t.Errorf("themes/%s.css: %s is %q, want a whole-value light-dark(<light>, <dark>)", name, prop, values[prop])
+				continue
+			}
+			if light == dark {
+				t.Errorf("themes/%s.css: %s declares %s for both schemes; that is an inverted dark theme wearing light-dark()'s clothes", name, prop, light)
 			}
 		}
 	}
@@ -495,12 +547,19 @@ func TestEmptyStatePostCTAWithoutHidden(t *testing.T) {
 func TestListBarSearchMinimalFixture(t *testing.T) {
 	got := render(t, "list-bar-search", map[string]any{"Action": "/posts"})
 	for _, want := range []string{
-		`<form class="rst-search"`, `role="search"`, `method="get"`, `action="/posts"`,
-		`type="search"`, `name="q"`, `<svg`, `type="submit"`,
+		`<search><form class="rst-search"`, `method="get"`, `action="/posts"`,
+		`type="search"`, `name="q"`, `<svg`, `type="submit"`, `</form></search>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
 		}
+	}
+	// <search> already carries the search role. Keeping role="search" on
+	// the form as well would announce two nested search landmarks for one
+	// search box, so exactly one of them may be present — and it is the
+	// element, not the attribute.
+	if strings.Contains(got, `role="search"`) {
+		t.Errorf("<search> and role=\"search\" both present: that is two nested search landmarks: %s", got)
 	}
 	// No Query, no Placeholder: neither attribute should appear empty.
 	if strings.Contains(got, `value=""`) || strings.Contains(got, `placeholder=""`) {
@@ -572,7 +631,7 @@ func TestListBarWrapsTheSearchFormInAToolbarStrip(t *testing.T) {
 		"Hidden":       [][2]string{{"sort", "newest"}},
 	})
 	for _, want := range []string{
-		`<div class="rst-lbar">`, `<form class="rst-search"`,
+		`<div class="rst-lbar">`, `<search><form class="rst-search"`,
 		`action="/posts"`, `value="notes"`, `placeholder="Search posts"`,
 		`<input type="hidden" name="sort" value="newest">`,
 	} {
@@ -600,7 +659,7 @@ func TestListBarRendersAFilterDropdownWhenGivenOne(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<details class="rst-dropdown">`,
+		`<details class="rst-dropdown" name="rst-menus">`,
 		`aria-label="Filter by status: All"`,
 		`<a href="/admin/posts?status=draft">Drafts</a>`,
 	} {
@@ -1354,7 +1413,7 @@ func TestConfirmFormShape(t *testing.T) {
 
 func TestBackNavRendersArrowLink(t *testing.T) {
 	got := render(t, "back-nav", fixtureFor(t, "back-nav"))
-	if !strings.Contains(got, `<p class="rst-back-nav">`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
+	if !strings.Contains(got, `<nav class="rst-back-nav">`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
 		t.Errorf("missing back-nav shape: %s", got)
 	}
 }
@@ -1441,7 +1500,11 @@ func TestStyleguideSamplesRender(t *testing.T) {
 		if strings.Contains(out, "<script") {
 			t.Errorf("%s: reaches for <script>; this vocabulary is zero-JS: %s", name, out)
 		}
-		for _, tag := range []string{"div", "details", "section", "a", "span"} {
+		// dialog, nav and search joined the list when the interactive
+		// idioms stopped being divs playing those roles: an unbalanced
+		// <dialog> is the one that would silently swallow the rest of a
+		// page rather than merely look wrong.
+		for _, tag := range []string{"div", "details", "section", "a", "span", "dialog", "nav", "search"} {
 			open, closed := countOpenTags(out, tag), strings.Count(out, "</"+tag+">")
 			if open != closed {
 				t.Errorf("%s: <%s> is unbalanced: %d opened, %d closed", name, tag, open, closed)
@@ -1644,9 +1707,9 @@ func TestJobStatusPartialClassesAreStyled(t *testing.T) {
 	}
 }
 
-// The dropdown's exclusivity between siblings (only one open at a time)
-// is the native <details name> attribute, not JavaScript — this pins
-// both halves of that promise.
+// The dropdown's exclusivity (only one open at a time) is the native
+// <details name> attribute, not JavaScript — this pins both halves of
+// that promise.
 func TestDropdownExclusivityIsNative(t *testing.T) {
 	sample := Styleguide()["dropdown"]
 	if !strings.Contains(sample, `<details class="rst-dropdown" name=`) {
@@ -1654,6 +1717,192 @@ func TestDropdownExclusivityIsNative(t *testing.T) {
 	}
 	if strings.Contains(sample, "<script") {
 		t.Errorf("dropdown sample reaches for <script>; exclusivity must stay native: %s", sample)
+	}
+}
+
+// cssComment matches a whole /* … */ block, so a check can read
+// tokens.css's selectors without its prose about them.
+var cssComment = regexp.MustCompile(`(?s)/\*.*?\*/`)
+
+// detailsNamePattern reads the name attribute off a <details> open tag,
+// whichever order the attributes are written in.
+var detailsNamePattern = regexp.MustCompile(`<details [^>]*name="([^"]*)"`)
+
+// Every menu the library emits joins one shared exclusivity group by
+// default, so opening a row menu closes an open header dropdown without
+// a line of script. The default is a value, not an absence: a <details>
+// with no name is in no group at all and would stay open beside the one
+// the user just opened, which is the bug this defends.
+func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
+	const group = `name="rst-menus"`
+
+	for _, c := range []struct {
+		partial string
+		data    map[string]any
+	}{
+		{"dropdown", map[string]any{"Label": "Sort", "Items": []any{
+			map[string]any{"Href": "/x", "Label": "Newest"}}}},
+		{"locale-menu", map[string]any{"Items": []rastrillo.LocaleItem{{Code: "ga", Name: "Gaeilge", Href: "/ga"}}}},
+		{"bulk-bar", map[string]any{
+			"DoneHref": "/x", "Count": "3 selected", "MenuLabel": "Actions",
+			"Actions": []any{map[string]any{"Value": "archive", "Label": "Archive"}}}},
+	} {
+		got := render(t, c.partial, c.data)
+		if !strings.Contains(got, group) {
+			t.Errorf("%s renders no %s, so it is in no exclusivity group: %s", c.partial, group, got)
+		}
+	}
+
+	// The topbar shell's account menu is a dropdown the layout owns
+	// rather than a partial, so it needs the same default written into
+	// the layout — otherwise the one menu a user meets on every screen is
+	// the one that never closes.
+	layout, ok := Layout("topbar")
+	if !ok {
+		t.Fatal(`Layout("topbar") reports no such layout`)
+	}
+	if !strings.Contains(string(layout), `rst-shell__account" `+group) {
+		t.Errorf("the topbar shell's account dropdown is outside the exclusivity group:\n%s", layout)
+	}
+
+	// The class idioms carry it in their canonical samples, which is the
+	// only place an app copying markup by hand will read it from.
+	for _, name := range []string{"dropdown", "list-grid", "shell-topbar"} {
+		if !strings.Contains(Styleguide()[name], group) {
+			t.Errorf("styleguide sample %q shows a menu outside the exclusivity group", name)
+		}
+	}
+
+	// And the two <details> that are NOT menus stay out of it. The
+	// sidebar's chrome strip is the narrow-screen nav rail: closing it
+	// because a filter opened would take the whole navigation away.
+	sidebar, ok := Layout("sidebar")
+	if !ok {
+		t.Fatal(`Layout("sidebar") reports no such layout`)
+	}
+	if strings.Contains(string(sidebar), group) {
+		t.Errorf("the sidebar shell's chrome strip joined the menu exclusivity group:\n%s", sidebar)
+	}
+	if strings.Contains(Styleguide()["shell-sidebar"], group) ||
+		strings.Contains(Styleguide()["tblock"], group) {
+		t.Error("shell chrome or the toggle-block joined the menu exclusivity group")
+	}
+}
+
+// A caller who wants a menu in a group of its own says so, and their
+// name wins over the default everywhere the default is offered.
+func TestMenuGroupOverrideWins(t *testing.T) {
+	for _, c := range []struct {
+		partial string
+		data    map[string]any
+	}{
+		{"dropdown", map[string]any{"MenuGroup": "list-controls", "Label": "Sort",
+			"Items": []any{map[string]any{"Href": "/x", "Label": "Newest"}}}},
+		{"locale-menu", map[string]any{"MenuGroup": "list-controls",
+			"Items": []rastrillo.LocaleItem{{Code: "ga", Name: "Gaeilge", Href: "/ga"}}}},
+		{"bulk-bar", map[string]any{"MenuGroup": "list-controls",
+			"DoneHref": "/x", "Count": "3 selected", "MenuLabel": "Actions",
+			"Actions": []any{map[string]any{"Value": "archive", "Label": "Archive"}}}},
+	} {
+		got := render(t, c.partial, c.data)
+		if !strings.Contains(got, `name="list-controls"`) {
+			t.Errorf("%s ignored MenuGroup: %s", c.partial, got)
+		}
+		if strings.Contains(got, `name="rst-menus"`) {
+			t.Errorf("%s emitted both the override and the default: %s", c.partial, got)
+		}
+	}
+}
+
+// The submenu trap, pinned. <details name> exclusivity is DOCUMENT-wide,
+// not sibling-scoped: two elements sharing a name close each other even
+// when one is inside the other. A nested rst-menu-group that inherited
+// its parent's group would therefore close the parent the instant it
+// opened — the submenu flashes and the whole menu vanishes under the
+// pointer. The nested sample must carry a name of its own, and it must
+// not be the parent's.
+func TestNestedMenuGroupNeverSharesItsParentsName(t *testing.T) {
+	sample := Styleguide()["dropdown"]
+	names := detailsNamePattern.FindAllStringSubmatch(sample, -1)
+	if len(names) != 2 {
+		t.Fatalf("expected two named <details> in the dropdown sample, found %d: %s", len(names), sample)
+	}
+	if !strings.Contains(sample, "rst-menu-group") {
+		t.Fatalf("the dropdown sample no longer nests an rst-menu-group: %s", sample)
+	}
+	if names[0][1] == names[1][1] {
+		t.Errorf("the nested rst-menu-group shares its parent's group %q; opening it would close the parent", names[0][1])
+	}
+}
+
+// The modal panel is <dialog open>: the rendered-open, non-modal dialog,
+// which is exactly what a modal-as-a-URL already was. Nothing calls
+// showModal(), so nothing enters the top layer, ::backdrop never paints,
+// and the overlay div stays the scrim. The UA's own dialog block has to
+// be undone or the panel lays out absolutely positioned with 1em of
+// padding.
+func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
+	sample := Styleguide()["modal"]
+	for _, want := range []string{
+		`<dialog class="rst-modal-panel" open `, `</dialog>`,
+		`<div class="rst-modal-overlay">`, `<div class="rst-backdrop" inert>`,
+	} {
+		if !strings.Contains(sample, want) {
+			t.Errorf("modal sample missing %q: %s", want, sample)
+		}
+	}
+	if strings.Contains(sample, `<div class="rst-modal-panel">`) {
+		t.Errorf("the modal panel is still a div: %s", sample)
+	}
+	// A dialog role with no accessible name is announced as "dialog" and
+	// nothing else, and fails axe's aria-dialog-name — a failure this
+	// vocabulary created for itself the moment the panel stopped being a
+	// div. The name comes from the panel's own heading rather than a
+	// string in this library, so it is already in the page's language.
+	id := regexp.MustCompile(`aria-labelledby="([^"]+)"`).FindStringSubmatch(sample)
+	if id == nil {
+		t.Fatalf("the dialog has no accessible name: %s", sample)
+	}
+	if !strings.Contains(sample, `<h2 id="`+id[1]+`">`) {
+		t.Errorf("aria-labelledby=%q points at no heading in the panel: %s", id[1], sample)
+	}
+	// Comments stripped first: this file explains ::backdrop and names
+	// the reset rule in prose, and a check that cannot tell a selector
+	// from a sentence about one is not a check.
+	css := cssComment.ReplaceAllString(string(TokensCSS()), "")
+	i := strings.Index(css, "dialog.rst-modal-panel")
+	if i < 0 {
+		t.Fatal("tokens.css has no scoped dialog reset; the UA dialog block would position the panel absolutely")
+	}
+	rule := css[i:]
+	rule = rule[:strings.Index(rule, "}")]
+	for _, want := range []string{"position: static", "padding: 0", "margin: 0", "color: inherit"} {
+		if !strings.Contains(rule, want) {
+			t.Errorf("the dialog reset does not undo the UA block's %q: %s", want, rule)
+		}
+	}
+	// ::backdrop belongs to the top layer, which a rendered-open dialog
+	// never reaches. Styling it would be dead CSS that reads as if the
+	// scrim came from the element.
+	if strings.Contains(css, "::backdrop") {
+		t.Error("tokens.css styles ::backdrop; a rendered-open dialog never paints one — the overlay div is the scrim")
+	}
+}
+
+// The search form is inside a <search> landmark, the element HTML added
+// for exactly this, and the toolbar strip sizes the landmark rather than
+// the form it now wraps — the direct-child selector that used to reach
+// the form no longer does.
+func TestSearchFormSitsInASearchLandmark(t *testing.T) {
+	got := render(t, "list-bar", map[string]any{"SearchAction": "/posts"})
+	if !strings.Contains(got, "<search><form") || !strings.Contains(got, "</form></search>") {
+		t.Errorf("the search form is not wrapped in a <search> landmark: %s", got)
+	}
+	css := string(TokensCSS())
+	for _, want := range []string{".rst-lbar > search", ".rst-list > search"} {
+		if !strings.Contains(css, want) {
+			t.Errorf("tokens.css has no %q rule; wrapping the form broke the layout it used to size", want)
+		}
 	}
 }
 
@@ -1667,7 +1916,7 @@ func TestDropdownRendersADetailsMenuOfLinks(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<details class="rst-dropdown">`,
+		`<details class="rst-dropdown" name="rst-menus">`,
 		`<summary class="rst-btn rst-dropdown__summary" aria-label="Filter by status: All">All`,
 		`<a href="/admin/posts" aria-current="true">All`,
 		`<a href="/admin/posts?status=draft">Drafts</a>`,
@@ -1943,20 +2192,30 @@ func TestLocaleMenuRenders(t *testing.T) {
 }
 
 // Every theme file must declare exactly the same set of --rst-*
-// properties as ink, the reference theme. A theme that forgets a token
+// properties as day, the reference theme. A theme that forgets a token
 // does not fail loudly at render time — it silently falls back to
 // whatever the cascade already had, which in a scaffolded app is
 // nothing at all, so the affected element renders unstyled rather than
-// wrong. Names only: values are the theme's whole point, and their
-// contrast is contrast_test.go's job.
+// wrong. Since v2 that set includes the shape tokens (the radii and the
+// four depth values), which used to be tokens.css's and are now part of
+// what a theme has to answer for. Names only: values are the theme's
+// whole point, and their contrast is contrast_test.go's job.
 func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 	names := ThemeNames()
-	if len(names) == 0 || names[0] != "ink" {
-		t.Fatalf("ThemeNames = %v; ink must exist and come first", names)
+	if len(names) == 0 || names[0] != "day" {
+		t.Fatalf("ThemeNames = %v; day must exist and come first", names)
 	}
-	want := themePropSet(t, "ink")
+	want := themePropSet(t, "day")
 	if len(want) == 0 {
-		t.Fatal("ink declares no --rst- properties")
+		t.Fatal("day declares no --rst- properties")
+	}
+	for _, shape := range []string{
+		"--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
+	} {
+		if !want[shape] {
+			t.Errorf("day does not declare %s; the shape axis is the theme's since v2", shape)
+		}
 	}
 	for _, n := range names[1:] {
 		got := themePropSet(t, n)
@@ -1967,7 +2226,7 @@ func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 		}
 		for p := range got {
 			if !want[p] {
-				t.Errorf("theme %s declares %s, which ink does not", n, p)
+				t.Errorf("theme %s declares %s, which day does not", n, p)
 			}
 		}
 	}
@@ -2037,6 +2296,38 @@ func TestLayoutsParseAndRender(t *testing.T) {
 				t.Errorf("%s: an unresolved catalog key leaked into the page", name)
 			}
 		})
+	}
+}
+
+// Every shell leaves the app a slot in <head>. It is the one extension
+// point a page frame cannot do without and the three shells did not
+// have: a favicon, an Open Graph tag, one more stylesheet, an inline
+// script that has to run before the body. Without it the only way to
+// add any of those was to stop using ui.Layout at all.
+//
+// Last in the head on purpose, and asserted so: an app's own
+// stylesheet has to come after tokens.css and the theme, or it loses
+// every tie it should win.
+func TestEveryShellLeavesTheAppASlotInTheHead(t *testing.T) {
+	for _, name := range LayoutNames() {
+		src, ok := Layout(name)
+		if !ok {
+			t.Fatalf("Layout(%q) missing", name)
+		}
+		s := string(src)
+		i := strings.Index(s, `{{block "head" .}}{{end}}`)
+		if i < 0 {
+			t.Errorf("layouts/%s.html declares no head block — an app has nowhere to put a favicon", name)
+			continue
+		}
+		head := strings.Index(s, "</head>")
+		if head < 0 || i > head {
+			t.Errorf("layouts/%s.html's head block is not inside <head>", name)
+			continue
+		}
+		if last := strings.LastIndex(s[:head], "<link"); last > i {
+			t.Errorf("layouts/%s.html loads a stylesheet after the head block; an app's own CSS would lose the tie", name)
+		}
 	}
 }
 

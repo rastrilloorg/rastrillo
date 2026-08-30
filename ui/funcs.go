@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"reflect"
 	"strings"
 
 	"github.com/carlosframework/rastrillo"
@@ -85,10 +86,13 @@ func WithT(t func(key string, args ...any) string) Option {
 // unit in a way string concatenation never is.
 //
 // dateWords is the date fields' vocabulary, JSON in one attribute — see
-// its own doc comment below.
+// its own doc comment below. menuGroup resolves the optional MenuGroup
+// key every menu partial takes, defaulting to MenuGroupDefault; it reads
+// the key reflectively so it stays optional whether the caller passed a
+// dict or a Go struct.
 //
 // An app is free to add its own entries on top; it must not drop these
-// seven, or the shipped partials stop parsing.
+// eight, or the shipped partials stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -100,7 +104,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		opt(&c)
 	}
 	return template.FuncMap{
-		"dict": dict, "list": list,
+		"dict": dict, "list": list, "menuGroup": menuGroup,
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 		"dateWords": dateWords(c.t),
 	}
@@ -241,6 +245,66 @@ func dict(pairs ...any) (map[string]any, error) {
 		m[key] = pairs[i+1]
 	}
 	return m, nil
+}
+
+// MenuGroupDefault is the <details name> exclusivity group every menu
+// the library emits joins unless its caller names another: the dropdown,
+// locale-menu and bulk-bar partials, the row menus in the list grid, and
+// the topbar shell's account menu. Sharing one group is what makes
+// opening a row's kebab close the header menu — native, no script.
+//
+// A nested rst-menu-group must NOT use this value. <details name>
+// exclusivity is document-wide rather than sibling-scoped, so a submenu
+// sharing its parent's group closes that parent the instant it opens.
+const MenuGroupDefault = "rst-menus"
+
+// menuGroup resolves a partial's optional MenuGroup key to the group
+// name its <details> should carry, defaulting to MenuGroupDefault.
+//
+// It exists rather than a plain {{if .MenuGroup}} in the template
+// because ui's partials accept two data shapes — a dict-built
+// map[string]any, and a Go struct, which the package doc offers exactly
+// so a caller gets missing-field detection. A template action reading
+// .MenuGroup off a struct that has no such field is an Execute error, so
+// adding the key inline would have turned every existing struct caller's
+// list screen into a 500 (examples/blog's blog.Filter is precisely such
+// a caller, and did). Reading it reflectively keeps an optional key
+// optional for both shapes, which is what "optional" has always meant
+// for every other key in this library.
+//
+// Anything that is not a non-empty string — key absent, field absent,
+// nil, empty, a number — is the default. A menu in no group at all is
+// not a state worth being able to reach by accident: it would sit open
+// beside the one the user just opened, which is the bug the group exists
+// to prevent. A caller who genuinely wants that writes the <details>
+// themselves; the class idioms are hand-written markup anyway.
+func menuGroup(data any) string {
+	v := reflect.ValueOf(data)
+	for v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface {
+		if v.IsNil() {
+			return MenuGroupDefault
+		}
+		v = v.Elem()
+	}
+	var got reflect.Value
+	switch v.Kind() {
+	case reflect.Map:
+		if v.Type().Key().Kind() == reflect.String {
+			got = v.MapIndex(reflect.ValueOf("MenuGroup").Convert(v.Type().Key()))
+		}
+	case reflect.Struct:
+		got = v.FieldByName("MenuGroup")
+	}
+	for got.IsValid() && (got.Kind() == reflect.Interface || got.Kind() == reflect.Pointer) {
+		if got.IsNil() {
+			return MenuGroupDefault
+		}
+		got = got.Elem()
+	}
+	if !got.IsValid() || got.Kind() != reflect.String || got.String() == "" {
+		return MenuGroupDefault
+	}
+	return got.String()
 }
 
 // list builds a slice from its arguments — pagination's Items, mostly:

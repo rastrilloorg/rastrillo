@@ -23,5 +23,7 @@
                  surrounding form's implicit-Enter default (pressing
                  Enter in any text field on the form submits it,
                  whether or not the menu is even open), so a Danger
-                 entry must never be first. */}}
-{{define "bulk-bar"}}<div class="rst-bulkbar"><a class="rst-bulkbar__close" href="{{.DoneHref}}" aria-label="{{if .DoneLabel}}{{.DoneLabel}}{{else}}{{T "rastrillo.ui.done"}}{{end}}">{{icon "x"}}</a><span class="rst-bulkbar__count">{{.Count}}</span>{{if .EscalateHref}}<a class="rst-bulkbar__escalate" href="{{.EscalateHref}}">{{.EscalateLabel}}</a>{{end}}<details class="rst-dropdown"><summary>{{.MenuLabel}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Actions}}<button type="submit" name="action" value="{{.Value}}"{{if .Danger}} class="rst-danger"{{end}}>{{.Label}}</button>{{end}}</div></details></div>{{end}}
+                 entry must never be first.
+       MenuGroup string, optional — the <details name> exclusivity
+                 group, default "rst-menus" (see dropdown) */}}
+{{define "bulk-bar"}}<div class="rst-bulkbar"><a class="rst-bulkbar__close" href="{{.DoneHref}}" aria-label="{{if .DoneLabel}}{{.DoneLabel}}{{else}}{{T "rastrillo.ui.done"}}{{end}}">{{icon "x"}}</a><span class="rst-bulkbar__count">{{.Count}}</span>{{if .EscalateHref}}<a class="rst-bulkbar__escalate" href="{{.EscalateHref}}">{{.EscalateLabel}}</a>{{end}}<details class="rst-dropdown" name="{{menuGroup .}}"><summary>{{.MenuLabel}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Actions}}<button type="submit" name="action" value="{{.Value}}"{{if .Danger}} class="rst-danger"{{end}}>{{.Label}}</button>{{end}}</div></details></div>{{end}}

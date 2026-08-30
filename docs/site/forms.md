@@ -197,6 +197,94 @@ Both handle negatives correctly, writing the sign once against the
 absolute value. Formatting a negative directly produces `"$-1.-50"`,
 since Go's `/` and `%` both truncate toward zero.
 
+## Two fields on one row
+
+`rst-field-row` is the wrapper for fields that belong side by side — a
+city and a postcode, a start and an end. `field-daterange` emits one;
+everywhere else you write it yourself around a run of `field` partials:
+
+```html
+<div class="rst-field-row">
+  <div class="rst-field rst-grow">…City…</div>
+  <div class="rst-field">…<input class="rst-input rst-input--short">…</div>
+</div>
+```
+
+**The row aligns by the control line, not the bottom.** A field carrying
+an error is taller than the one beside it, so aligning at the top is
+what keeps every control on one line; each message then flows under its
+own column and shifts nothing. A field with no label reserves the
+label's line anyway, so an unlabelled control still lines up with a
+labelled sibling's; a field whose label is long enough to wrap is a
+field that wants its own row.
+
+**Every field in a row has an 8rem floor**, and `rst-input--short` is
+8rem wide. A row that runs out of width wraps rather than squeezing its
+fields into slivers.
+
+**`rst-grow` is `flex: 1 1 12rem`, not `flex: 1`.** `flex: 1` is
+`flex: 1 1 0%` — a grown field with no basis, which collapses on a
+narrow screen instead of taking the next line. 12rem is the width it
+wraps at.
+
+A long error message never buys its column extra width — the messages
+are `contain: inline-size`, so the sentence wraps under its own control
+rather than stretching the column and squeezing the field beside it.
+
+### The form owns the block rhythm
+
+`rst-form` is a flex column with a `var(--rst-sp-5)` gap — 24px, the
+same rhythm `rst-form-flow` uses — and it zeroes the block margins of
+every child it holds. That is one spacing mechanism rather than two:
+fields carry margins of their own for use outside a form, and inside one
+those margins used to add to the gap. The gap was 8px then, so two
+fields sat 40px apart — 8 between them plus 16 above and 16 below — and
+the form gained 16px of dead air at each end where nothing was being
+separated from anything.
+
+It is stated as a rule over every child rather than a list of the
+classes the library happens to ship, because a list cannot name your own
+`<div>` and a child the list forgets lands at exactly the spacing the
+rule exists to prevent. The two exceptions are written into the
+selector: `rst-form__foot` and `rst-form-foot` keep their block-start
+margin, which is not rhythm but the extra air separating a closing
+action row from the last question above it.
+
+If you mean to override it, the shipped selector is
+`.rst-form > *:not(.rst-form__foot, .rst-form-foot)`, and a `:not()`
+takes the specificity of its most specific argument — so that is
+(0,2,0), exactly the weight of `.rst-form > .whatever`. You win the tie
+on source order, and you have it: the shell's `head` block puts your
+stylesheet after `tokens.css`.
+
+## The busy button is not a guarantee
+
+`rastrillo.js` gives every submit button a loading state while its form
+is out — spinner, `aria-busy`, then `disabled` — and refuses a second
+submit from the same form while the first is in flight. It is on by
+default; `data-busy="false"` on the form or on one button opts out, and
+`data-busy-label` replaces the text. The whole rule, including what it
+looks like, is in
+[Templates](/docs/templates/#a-button-that-changes-something-says-so).
+
+What it buys you is that the ordinary double click stops posting twice.
+What it does not buy you is idempotency, and it is worth being blunt
+about the difference: the guard lives in the browser, and the browser is
+not where your data is. With JavaScript off there is no guard at all and
+the form submits exactly as it always did — twice, if someone clicks
+twice. A refresh, a back button, a retried request, two tabs, someone
+with a script: none of them go through it.
+
+There is one shape to watch for on the other side of it: a submission
+that never navigates — a `204`, or a file handed to the downloads shelf
+— leaves the button disabled for good, because nothing arrives to clear
+it. Put `data-busy="false"` on those forms. `Templates` has the detail.
+
+So the server still has to be able to see the same write twice and only
+do it once. A unique index, an idempotency key on the form, a token you
+consume — whichever fits the write. The busy button is manners. The
+constraint is the correctness.
+
 ## After a successful write
 
 ```go

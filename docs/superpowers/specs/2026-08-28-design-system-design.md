@@ -51,41 +51,54 @@ declare. Concretely:
 
 ### 1.1 What a theme is
 
-A theme is colour and type: the light `:root` block, the
-`@media (prefers-color-scheme: dark)` block, the two `[data-theme]`
-override blocks, and `--rst-font`. Nothing structural. Today those
-blocks live inside `ui/tokens.css`; they move out.
+AS BUILT (v2, 2026-08-29). A theme is colour, type family and shape:
+one `:root` block setting `color-scheme: light dark`, every colour
+declared once as `light-dark(<light>, <dark>)`, single-valued tokens
+(`--rst-font`, the radii) written plain, and exactly two toggle rules —
+`:root[data-theme="light"] { color-scheme: light; }` and
+`:root[data-theme="dark"] { color-scheme: dark; }` — which re-resolve
+every `light-dark()` in the file at once, in both directions.
+`light-dark()` is a colour function, so a shadow token wraps only its
+colour and writes the geometry outside the call. Nothing structural.
+Those blocks used to live inside `ui/tokens.css`; they moved out in v1,
+and the shape tokens (`--rst-radius`, `--rst-radius-sm`,
+`--rst-radius-pill`, `--rst-shadow-pop`, `--rst-shadow-knob`,
+`--rst-shadow-lift`, `--rst-overlay`) followed them in v2.
 
 ```
-ui/tokens.css           structure only: spacing, radii, every component class
-ui/themes/ink.css       the current palette, unchanged — iron-gall violet on cool-violet neutrals
-ui/themes/teal.css      amadan's teal (#0b6e63) on green-grey neutrals, monospace-first --rst-font
-ui/themes/warm.css      messenger's paper (#efe3d6 / #fbf6ee) neutrals, rust accent (~#a3452a), warm charcoal dark
+ui/tokens.css           structure only: spacing, the type scale, every component class
+ui/themes/day.css       the default — an everyday blue (#2464e0) on white and grey, 8/6px radii
+ui/themes/plain.css     the skeleton — greyscale, accent = text colour, 4/3px radii, hairline shadows
+ui/themes/signal.css    graphite neutrals, one electric cobalt (#1a56ff), 4/2px radii, short dense shadows
 ```
+
+(v1 shipped `ink`, `teal` and `warm`; §6-v2 replaced all three.)
 
 Each theme file carries the same custom-property set — a gate asserts
 the three declare identical property names — and its own WCAG 2.2 AA
-table in the header, computed from its hex values.
-`ui/contrast_test.go` parameterises over `ThemeNames()` and asserts
-every documented pair; a new theme that fails a pair does not ship.
+table in the header, in BOTH schemes, computed from its hex values.
+`ui/contrast_test.go` parameterises over `ThemeNames()` × {light, dark},
+splitting each `light-dark()` back into two per-scheme tables, and
+asserts every documented pair; a new theme that fails a pair does not
+ship.
 
 ### 1.2 API
 
 ```go
-func ThemeNames() []string            // "ink", "teal", "warm" — ink first, the default
+func ThemeNames() []string            // "day", "plain", "signal" — day first, the default
 func ThemeCSS(name string) ([]byte, bool)
 ```
 
 ### 1.3 Delivery
 
-`rastrillo new --theme=ink` (default `ink`) writes `static/tokens.css`
+`rastrillo new --theme=day` (default `day`) writes `static/tokens.css`
 and `static/theme.css`. The file is always named `theme.css`, whatever
 theme it holds: the layout links one fixed name, and switching theme
 later is replacing one small file. The scaffold's vendored-pin test
 gains a line for `theme.css`, keyed to the chosen theme name recorded
 in the test's map.
 
-The examples keep `ink` and their pins.
+The examples keep the default theme and their pins (`day` since v2).
 
 ## 2. Shells
 
@@ -124,6 +137,14 @@ defaults:
 as a single line above `<main>` when there is more than one locale.
 As built, `column` defines `title`, `lang` and `dir` and no `locale`
 block at all (as built, 2026-08-28).
+
+All three shells also carry `{{block "head" .}}{{end}}` as the last
+thing in `<head>` — an empty slot for a favicon, a meta tag, an extra
+stylesheet or a script that must run before the body. It was added for
+the gallery's shell demos, which need `gallery.js` inside an iframe that
+inherits nothing from the page around it, and kept because an app wants
+the same hole; being last is what lets an app's own CSS win the ties it
+should against `tokens.css` and the theme (as built, 2026-08-29).
 
 The shell classes — `rst-shell-topbar`, `rst-shell-sidebar`,
 `rst-shell__rail`, `rst-shell__chrome`, ~~`rst-shell__menu`~~ (never
@@ -491,7 +512,8 @@ statuses above, `error_generic_title`/`_body` for any other, `error_back`,
 
 ### 5.1 What is on it
 
-One page per theme × locale, `index.html` for `ink`/`en`, showing:
+One page per theme × locale, `index.html` for ~~`ink`~~ `day`/`en`
+(v2 renamed the themes; §6-v2.2), showing:
 
 - **Tokens** — every custom property as a swatch, with the contrast
   table rendered from the theme's header, and the type scale. As built,
@@ -546,10 +568,15 @@ One page per theme × locale, `index.html` for `ink`/`en`, showing:
   markup is rendered on the page (as built, 2026-08-29).
 - A **theme** switcher (three links) and the **language** switcher
   (§2.4's markup, links only — no cookie route on a static site), so
-  the page is itself the RTL and CJK proof.
+  the page is itself the RTL and CJK proof. As built there are three
+  switchers, clustered top-right in the header, and a searchable sidebar
+  besides — §6-v2.3 (as built, 2026-08-29).
 
-Page prose is English; the components on it render in the selected
-locale from the framework catalogs.
+~~Page prose is English; the components on it render in the selected
+locale from the framework catalogs.~~ Amended by §6-v2 requirement (1):
+every word on the page is translated into all twelve base locales, page
+prose included, with the deliberate exception of the sample fixtures.
+§6-v2.3 has the boundary (as built, 2026-08-29).
 
 ### 5.2 How it is built
 
@@ -575,26 +602,34 @@ href resolved against a different base on each, and the slash-less
 visit, which is the one a person types, loaded no stylesheet and
 carried a navigation pointing one directory too high. The tree is now
 bound to the path the site serves it from, which is the trade. With no
-depth prefixes left, the root `index.html` and `ink/en/index.html` are
-the same bytes; `TestRootIndexIsInkEnglishAtTheTreeRoot` asserts that
+depth prefixes left, the root `index.html` and `day/en/index.html` (was
+`ink/en`) are the same bytes;
+`TestRootIndexIsTheDefaultThemeInEnglishAtTheTreeRoot` — renamed in v2
+so it names the default theme rather than one theme's name — asserts that
 byte-identity outright rather than blanking hrefs to compare the rest
 (as built, 2026-08-29).
 
 ```
 docs/design-system/
-  index.html                 ink, en
+  index.html                 day, en
   <theme>/<locale>/index.html
   <theme>/<locale>/modal.html
   <theme>/<locale>/shells/{column,topbar,sidebar}.html
-  tokens.css  theme-{ink,teal,warm}.css  select.js  datetime.js  rastrillo.js
+  tokens.css  theme-{day,plain,signal}.css
+  select.js  datetime.js  rastrillo.js  gallery.js
 ```
 
 ~~36 pages plus 108 shell pages; each is ~100 KB; the tree is ~15 MB and
-committed.~~ As built: 188 files (36 index pages + 36 modal demos + 108
-shell pages + the root index + 7 shared assets), 4,427,216 bytes —
-4.22 MiB, well under the ~15 MB estimate. `TestTreeStaysUnderTheSizeGate` holds the whole
-rendered tree to a 20 MB ceiling, logging the exact byte count each run
-(as built, 2026-08-29). Committed regardless of size; that is the price
+committed.~~ ~~As built: 188 files … 4,427,216 bytes — 4.22 MiB, well
+under the ~15 MB estimate.~~ As built after v2: **189 files** (36 index
+pages + 36 modal demos + 108 shell pages + the root index + 8 shared
+assets — `gallery.js` is the eighth), **15,356,180 bytes / 14.64 MiB**
+(15,335,806 before the menu previews gained the shim).
+The estimate was right after all; the previews are what closed the gap,
+since every example on an index page carries two `srcdoc` documents of
+its own. `TestTreeStaysUnderTheSizeGate` holds the whole rendered tree
+to a 20 MB ceiling, logging the exact byte count each run (as built,
+2026-08-30). Committed regardless of size; that is the price
 of no-Go-on-the-website, and it is reviewable: a partial change shows as
 a diff in every page that renders it, which is the point.
 
@@ -665,7 +700,11 @@ Five PRs, in this order, each green and reviewable alone:
 
 SKILL.md gets one line for `--theme`/`--shell`, one for the date kinds
 and `form.Range`, one for the twelve base locales. Budget 18,000;
-17,836 today, so §7's bullets are trimmed to pay.
+17,836 today, so §7's bullets are trimmed to pay. As built through v2,
+SKILL.md is **17,422 bytes** and also carries the busy-button default,
+the `<details name>` menu group with its nested-group trap, and the
+design-system URL in the future tense until the site vendors the tree
+(as built, 2026-08-30).
 
 ## 7. Out of scope
 
@@ -673,7 +712,540 @@ and `form.Range`, one for the twelve base locales. Budget 18,000;
   which does it better than a first-party grid would, in every locale.
 - Themes beyond three, or a theme editor. A theme is a 90-line file;
   the page shows what one looks like.
-- Translating the docs prose or the design-system page copy.
+- Translating the docs prose ~~or the design-system page copy~~. The
+  design-system page copy came back in scope as §6-v2 requirement (1)
+  and is translated into all twelve base locales; `docs/site/*.md` is
+  still English only (as built, 2026-08-29).
 - Persisting locale without JavaScript on the *static* site (there is
   no server there; links suffice).
 - Writing the cookie for apps that route their own locale prefix.
+
+## 6-v2. Second iteration (2026-08-29, Paul's review of the live page)
+
+Requirements, verbatim in intent: (1) the language switcher moves top-right
+and changes ALL text on the page, page prose included; (2) a searchable
+sidebar nav with collapsible sections linking to every item; (3) the
+default theme becomes generic-personable — white background, greys, an
+everyday palette — renamed **day**; (4) the second theme is **plain**, a
+minimal skeleton to build on; (5) the third is personality-led,
+impeccable-style, modern/slick/assertive (**signal**), and every theme is
+authored light+dark with a scheme switcher in the gallery; (6) semantic
+elements for the main interactive idioms (`<nav>`, `<dialog>`, `<search>`);
+(7) the visual bugs Paul screenshotted (field-row alignment with errors,
+grow/short proportions, date-button placement, dead space); (8) every
+example gets Desktop/Mobile/Code previews — desktop always renders the
+desktop layout via a scaled iframe, the technique also covering modals;
+full examples stay linked, in new tabs; (9) tito CSS.md principles adopted
+where they fit: `light-dark()` single-declaration theming, descriptive
+variable layering, semantic-first markup, alphabetised rules — custom
+elements replacing the `rst-*` vocabulary are explicitly DEFERRED, a
+doctrine question for another day; (10) sample links go nowhere (`#`)
+instead of 404ing; (11) opening a dropdown closes other open dropdowns by
+default (native `<details name>`, nested groups excepted). Theme axis
+grows to colour + type + shape (radius/shadow tokens move into themes).
+Plan: docs/superpowers/plans/2026-08-29-design-system-v2.md.
+
+As built, by requirement: (6) and (11) in §6-v2.1; (3)(4)(5) in
+§6-v2.2; (1) and (2) in §6-v2.3; (7) in §6-v2.4; (8) and (10) in
+§6-v2.5; (9) in §6-v2.6. Two requirements arrived after this list and
+have addenda of their own below: (12) the busy-button rule, and (13) the
+accessibility gate.
+
+### 6-v2.1 Semantic elements and menu exclusivity — AS BUILT (2026-08-29)
+
+Requirements (6) and (11), as they landed.
+
+**Elements.** `list-bar-search` renders `<search>` around its
+`method="get"` form, and the form's `role="search"` is gone with it —
+`<search>` carries that role, and both would announce two nested search
+landmarks for one box. `tokens.css` sizes `.rst-lbar > search` and
+`.rst-list > search` alongside the `.rst-search` selectors they replace,
+so hand-written bare forms keep their layout. `back-nav` became a
+`<nav>`; `pagination` and `seg-tabs` already were, and the shells' link
+clusters already used `<nav class="rst-shell__nav">`. The modal panel
+became `<dialog class="rst-modal-panel" open>`: a rendered-open,
+non-modal dialog is exactly what a modal-as-a-URL already was, nothing
+calls `showModal()`, nothing reaches the top layer, `::backdrop` never
+paints, and the `rst-modal-overlay` div stays the scrim. `tokens.css`
+gains one scoped reset (`dialog.rst-modal-panel`) undoing the UA dialog
+block — absolute positioning, auto margins, `1em` padding, the Canvas
+colour pair.
+
+**Deliberate non-changes.** The `rst-lrow` grid stays divs: its columns
+come from one `--rst-cols` custom property on the card, and CSS grid over
+real `<table>` markup means `display: grid` on the table and its rows,
+which discards the table semantics the conversion was for. A list row
+(`rst-row`) stays a div for a related reason — it lives inside a
+`rst-list` card the app's own page markup writes, so a `<li>` would need
+a list the partial does not own. `job-status`'s `rst-job` div is not
+given a live-region role here: the shim replaces that element wholesale
+on every poll, and whether a replaced host announces reliably is a
+behaviour question, not an element one.
+
+**Exclusivity.** Every menu the library emits defaults to the
+`<details name>` group `rst-menus` — `dropdown`, `locale-menu`,
+`bulk-bar`, the row menus in the list grid, the generated filter
+dropdown, and the topbar shell's account menu. The `dropdown`,
+`locale-menu` and `bulk-bar` partials take a `MenuGroup` key to override
+it, resolved through a new `menuGroup` template func rather than
+`{{if .MenuGroup}}`: the partials accept a Go struct as well as a dict,
+and a template action reading a field a struct does not have is an
+Execute error, so the inline form would have 500'd every existing struct
+caller (`examples/blog`'s `blog.Filter`, which it did, loudly, in that
+example's own suite). A nested `rst-menu-group` MUST carry a different
+name: `<details name>` exclusivity is document-wide, not sibling-scoped.
+The sidebar's `rst-shell__chrome` strip and the toggle-block stay out of
+the group.
+
+**Light dismiss.** Closing an open menu on an outside click or on Escape
+is beyond the native disclosure, so `rastrillo.js` does it: two
+delegated capture-phase listeners on the document, no per-element
+binding, so menus arriving in a polled fragment are covered. Escape
+returns focus to the summary that opened the menu. Scriptless behaviour
+is unchanged — toggling and the name group still work with the file
+removed. The shim's size cap rose from 8KB to 12KB, matching select.js;
+the arithmetic is in `TestShimIsSmall`'s comment.
+
+**Gates.** `TestMenuExclusivityAndDropdownDismissDrive` and
+`TestModalDialogPanelDrive` (`-tags browser`) drive a real engine: the
+shared group closing a header dropdown when a row menu opens, a submenu
+NOT closing its parent, outside-click and Escape dismissal, chrome and
+tblock untouched, and `:modal` false on the panel — the assertion that
+the zero-JS promise holds.
+
+### 6-v2.2 The three themes — AS BUILT (2026-08-29)
+
+Requirements (3), (4), (5), and the theme-axis ruling. The format and
+the palettes are recorded in §1.1 and §1.3, which were rewritten rather
+than annotated because v1's `ink`/`teal`/`warm` had no surviving reader.
+What belongs here is what the rewrite cost.
+
+**Shape joined the theme axis** — `--rst-radius`, `--rst-radius-sm`,
+`--rst-radius-pill` and the four depth tokens moved out of `tokens.css`
+into the theme files. Ruled up front, and it is what lets `plain` be
+nearly square and `signal` be milled while the structure stylesheet
+stays the same bytes. `TestThemesDeclareIdenticalTokenSets` is what
+keeps the wider axis honest.
+
+**`light-dark()` is a colour function.** A shadow token wraps only its
+colour and writes the geometry outside the call. The first draft wrapped
+the whole shadow, which parses as a custom property and is invalid the
+moment it substitutes into `box-shadow` — every shadow in every theme
+would have vanished in a real browser with the Go gate still green.
+
+**The browser floor moved, and the file says so.** `light-dark()` is
+Chrome 123, Safari 17.5, Firefox 120, and its failure is ungraceful: an
+older engine cannot parse the function, so every declaration using it is
+dropped and the app renders with no palette at all rather than a
+monochrome one. `tokens.css` has a lower floor of its own — `:has()`
+(Chrome 105, Safari 15.4, Firefox 121) and the `lh` unit (Chrome 109,
+Safari 16.4, Firefox 120), which is why the field row's phantom label
+writes a `calc()` fallback ahead of its `1lh` for the Chrome 105–108 and
+Safari 15.4–16.3 window. Note that `lh` is NEWER than `:has()` on Chrome
+and Safari and older only on Firefox; an early note in `tokens.css`
+calling `lh` "below the floor we already set" was true of Firefox alone
+and has been corrected. The combined floor is Chrome 123, Safari 17.5,
+Firefox 121, and `docs/site/templates.md` prints all three numbers with
+the escape hatch (a plain `:root` palette plus a `prefers-color-scheme`
+block; the token names are the only contract).
+
+**`plain`'s shadows are real, not absent.** Ruled during the pre-flight
+scan: "no shadow" would have made the contrast parser non-uniform across
+themes, so `plain` uses 1px hairline-style shadows and its header states
+the skeleton intent. `signal`'s direction was controller-pinned rather
+than rolled from a `PRODUCT.md` that does not exist; its header reads as
+an expansion of the pin.
+
+### 6-v2.3 The gallery: localised prose, three switchers, a searchable rail — AS BUILT (2026-08-29)
+
+Requirements (1) and (2).
+
+**Every word on the page is translated**, not only the components on it.
+The renderer's own headings, leads, notes and control labels — 207 prose
+keys — go through a `P` helper against a catalog of the gallery's own,
+in the same twelve base locales the framework ships.
+`TestEveryProseKeyIsTranslated` fails on a missing entry;
+`TestNoEnglishProseReachesATranslatedPage` sweeps all 165 non-`en` pages
+for English that slipped through, and it earned its keep twice: the
+first version could not see strings passed as `dict` arguments, so
+"Write a post", "Published" and "Draft" shipped untranslated on 99 shell
+pages until `dictArguments` was added.
+
+**Keys are the English sentence itself**, not a slug. Ruled after a
+challenge: a copy-edit to the sentence fires BOTH arms of the gate — no
+catalog entry for the new text, and an orphaned row for the old — which
+is strictly stronger than a slug. The residual (renaming a key silently
+keeps eleven stale translations) is not fixable by any scheme available
+here, and is named rather than chased.
+
+**The sample-data boundary (RULED, escalated).** Demo screens localise;
+component-sample fixtures stay English. The names, routes and labels in
+a component sample are stand-ins, and translating them would imply the
+framework ships those words — the same class of thing as "Grace
+Hopper". The shell and modal demos are the other way round: they
+impersonate a real application, so their chrome speaks the reader's
+language. Where one string is both — "Write a post" is the page's own
+chrome on a shell demo and a fixture on an index — `proseFixtureCollisions`
+exempts the key on that page kind ONLY and keeps checking it everywhere
+else. Rejected alternative: widening `proseLeakFloor`, which would
+exempt every short key at once. The boundary is written in three places
+on purpose — the gallery's own prose under Partials in all twelve
+languages, the comment above `proseFixtureCollisions` where a maintainer
+meets it, and `docs/site/templates.md` for a reader who never opens
+either.
+
+**Three switchers, clustered top-right** in the page header: theme
+(three links), colour scheme (System / Light / Dark), language (the
+`locale-menu` dropdown, twelve entries). Theme and language keep you in
+the tab you are reading; the scheme toggle is the only one that needs
+JavaScript. `TestTheChromeCarriesTheThreeSwitchers` holds the cluster.
+
+**The rail is the `sidebar` shell**, deliberately — a gallery that
+documented `rst-shell-sidebar` while being built out of something else
+would be advertising rather than documentation, and the mobile collapse
+comes free with it. Above the nav sits a search box; typing hides the
+entries that do not match and any section left empty.
+`TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives the nav from
+the same `<!-- partial: -->` / `<!-- idiom: -->` markers the coverage
+gates read, in page order, so a new partial appears in the rail with no
+nav code edited — verified by a reviewer adding a probe partial. Section
+titles join the filter as well, because a reader searching "shells"
+means the heading.
+
+**Gallery-only JavaScript is permitted (RULED).** The framework's
+zero-JS doctrine binds the partials, not the gallery's own chrome, so
+`gallery.js` exists: the scheme toggle, the nav filter, and re-writing
+`data-theme` onto each preview frame. It lives beside the renderer, not
+in `ui`, and no scaffold ever writes it. Same rules as its three
+neighbours otherwise — first-party, dependency-free, no network, and
+inert-safe: both controls are `display: none` until the file sets
+`data-rst-js`, so scripts-off gets the nav and the theme's own
+`color-scheme: light dark` rather than two dead controls. It is a
+blocking `<script>` in `<head>` rather than a deferred one, because
+applying a remembered Dark after the body has parsed is a visible flash
+and revealing the toggle after the body has parsed is a control popping
+into a bar the reader is already looking at.
+`TestGalleryScriptLoadsBeforeTheBody` and
+`TestGalleryScriptStaysInertAndFirstParty` hold both halves. Budget
+10 KiB; 10,208 bytes as shipped, and the ceiling's comment says the next
+feature here is a conversation rather than a bump.
+
+### 6-v2.4 The four visual bugs — AS BUILT (2026-08-29)
+
+Requirement (7). Three of the four had one cause: `.rst-input` and
+`.rst-textarea` set `width: 100%` with padding and a border and no
+`box-sizing: border-box`, so `100%` was the CONTENT box — a plain input
+rendered 21px wider than its own `.rst-field`, and an enhanced date
+input 47px wider than its `.rst-dtp` wrapper. `box-sizing` is declared
+on the two control classes rather than globally, because `tokens.css`
+ships no `*` reset on purpose: the `rst-` prefix is its whole collision
+surface with an app's own CSS.
+
+- **Row misalignment.** `.rst-field-row` bottom-aligned its fields, so
+  the one carrying an error had its control lifted clear of its
+  sibling's and its message dropped across the field beside it.
+  `align-items: start` aligns by the label row and therefore by the
+  control row. A field with no label reserves the label's line with a
+  `::before` that MEASURES it (`font-size: var(--rst-fs-sm)`,
+  `block-size: 1lh`) rather than restating the 1.5. Messages carry
+  `contain: inline-size` so a long error cannot buy its column extra
+  width at its neighbour's expense. Judged against grid-with-subgrid,
+  which aligns the tracks exactly but cannot express what this row is
+  for: `grid-auto-flow: column` never wraps, and `grid-auto-columns` is
+  one value for every column, so `rst-grow` cannot be said at all.
+- **Grow/short proportions.** `.rst-grow` was `flex: 1` — that is
+  `flex: 1 1 0%`, a grown field with no basis to wrap at — and
+  `.rst-input--short` was a 6.5rem content box with no floor. Now
+  `flex: 1 1 12rem`, `inline-size: 8rem; max-inline-size: 100%`, and
+  every field in a row gets `min-inline-size: 8rem`.
+- **Date picker button.** Absolutely positioned against a wrapper that
+  was 47px narrower than the control inside it. The border-box fix makes
+  the two the same box; `inset-block: 0` with `margin-block: auto`
+  centres the button at any control height, in either writing mode.
+- **Dead space.** `.rst-form` is a flex column, where child margins
+  never collapse, and its children carried `margin: var(--rst-sp-4) 0`
+  — so the form spaced its children twice and added 16px at each end
+  where nothing was being separated from anything. Now one mechanism:
+  `gap: var(--rst-sp-5)` and `.rst-form > *:not(.rst-form__foot,
+  .rst-form-foot) { margin-block: 0 }`. **Stated as a rule, not a
+  list**, after a review round proved a list cannot name `.rst-callout`'s
+  successor and cannot name an app's own div at all — a child the list
+  forgets lands at exactly the spacing the rule exists to prevent.
+  Side effect worth knowing: two fields in a `.rst-form` now sit 24px
+  apart rather than 40px, which is the rhythm `.rst-form-flow` already
+  documented, so the two containers finally agree.
+  `docs/site/forms.md` carries all of this for readers.
+
+`TestFieldRowGeometryHoldsUnderAnError` (`-tags browser`) is the gate:
+one fixture whose direction rides the query string, run as `ltr` and
+`rtl` subtests, asserting shared control tops, messages that stay off
+their neighbour, equal columns under unequal errors, no control
+overflowing its field, and the picker button 0.35rem inside the
+control's inline end. It fires 20 assertions against the pre-task
+stylesheet.
+
+### 6-v2.5 Desktop / Mobile / Code, dead links, new tabs — AS BUILT (2026-08-29)
+
+Requirements (8) and (10).
+
+**Nothing renders inline on the gallery any more.** All 110 examples per
+index page are a `ds-view` widget: three radios sharing a name, a
+`:has()` rule swapping the panels, and one `<iframe srcdoc>` holding a
+whole document — the sample, the stylesheets, and nothing else. Radios
+over id/`for` to avoid 330 extra ids per page. The frame lays out at a
+virtual `--ds-w` (1200px Desktop, 390px Mobile) and is scaled by
+`min(1, tan(atan2(100cqw, var(--ds-w))))` inside an `@supports` guard —
+`tan(atan2(a, b))` being the one way CSS divides two lengths into a
+number; without the trig functions the scale stays 1 and the frame is a
+1200px page clipped to the column, smaller rather than broken.
+
+Giving each sample its own document is what settles the awkward ones:
+the modal renders LIVE, overlay and all, because the overlay is fixed to
+its own viewport; the two shell chrome idioms render live because a
+`<main>` inside its own document is not a nested landmark; and
+`.rst-form-foot`'s `position: sticky` sticks to its own form's window,
+which is what it does in an app. Frame heights are measured off the
+engine, not guessed, and `TestPreviewFrameHeightsFitTheirContent` is
+that measuring drive, committed, so the numbers cannot rot.
+
+**The grip.** A preview is a window on its document rather than a fit to
+it — a taller sample scrolls inside its box — so `.ds-view__box` carries
+`resize: vertical` and the frame takes its height back off the box
+(`block-size: calc(100% / var(--ds-k))`). The first version had it the
+other way round, a fixed height on the frame, which gave the grip
+nothing to move: the box grew and the rendering inside it stayed the
+size it was, leaving ~300px of empty box under a 255px sample. Caught in
+review as a control that did nothing, and now measured — box 251 → 561,
+rendering 249 → 559, the framed document's own viewport 390 → 876 — with
+a drive leg that fails if the CSS is reverted.
+
+**Dead links (10).** `deaden()` runs over the live rendering only: every
+`href` that is not already a fragment or a page of this tree becomes
+`#`, and every `<form>` gains `target="ds-void"` with a hidden sink
+iframe appended to the `srcdoc`. The submission a real app would make is
+really made, into the sink, and the preview is still on screen
+afterwards — and the busy rule's existing "skip a form whose target is
+not `_self`" clause means nothing spins on its way nowhere. A form's
+`action` is deliberately untouched, and the **Code tab is not deadened
+at all**: it keeps `/posts/1/edit` and friends, which are the hrefs
+somebody copying the markup wants. `samples.go` was left alone against
+the brief's letter, because rewriting the data would have deadened the
+source a reader copies.
+
+**New tabs.** `target="_blank" rel="noopener"` plus an `rst-sr-only`
+"(opens in a new tab)" on every renderer-owned link that leaves the
+page — the rail's four demo entries, the modal and shell idiom links,
+and the button under each shell demo. The theme and language switchers
+deliberately stay in the tab you are reading, and
+`TestEveryDemoLinkOpensInANewTab` says which is which and why.
+
+**Cost.** 4.95 MiB → 14.64 MiB (5,185,476 bytes at `4eaeb39`), index
+page 110,703 → 374,833 bytes, under
+the unchanged 20 MiB ceiling, with the arithmetic in the gate's comment:
+each sample is written twice (escaped `srcdoc` plus escaped source) and
+attribute escaping costs ~40% because every quote becomes six
+characters. A third copy would need the ceiling to move. Measured load
+is ~1.0s for 362KB, and `loading="lazy"` does almost nothing here —
+107 of 110 frames are constructed at first paint, since only the three
+`src=` shell frames can defer.
+
+**One assumption that was wrong, and the drive caught it.**
+`color-scheme` does propagate into an iframe — but only into a document
+that has not declared one, and every preview links a theme, and every
+theme declares `color-scheme: light dark`. So `gallery.js` writes
+`data-theme` onto each frame's own `<html>` instead, on load and on
+every toggle.
+
+### 6-v2.6 The CSS.md adoption boundary — AS BUILT (2026-08-29)
+
+Requirement (9), ruled at planning and unchanged by delivery.
+
+**Adopted:** `light-dark()` single-declaration theming (§6-v2.2);
+descriptive two-layer variables inside the theme files; semantic-first
+markup (§6-v2.1); alphabetised declarations within a rule, which
+`tokens.css` and the themes both follow.
+
+**Deferred, explicitly:** custom elements replacing the `rst-*` class
+vocabulary. That is a doctrine question — it would change what an app
+writes in every template, what `Styleguide()` returns, and what the
+scaffold's vendored pins mean — and it is not smuggled in under a
+styling pass. `rst-` prefixed classes remain the whole collision surface
+`tokens.css` claims with an app's own CSS, and the absence of any `*`
+reset in the file is part of that claim.
+
+### §6-v2 addendum (2026-08-29): the busy-button rule
+
+(12) A button that changes something gets a loading state — disabled-in-effect
+plus a spinner — by default; a button that only reveals something (disclosure,
+dropdown, tab) does not. The framework's `data-busy` form opt-in becomes the
+default for submit buttons, with `data-busy="false"` as the opt-out and
+`data-busy-label` unchanged. The guard against double submission is the
+substance of the rule; the spinner is how it tells the truth to the person
+waiting. Zero-JS: unchanged submit, no busy state — idempotency stays the
+app's job. Plan: Task 5c.
+
+#### AS BUILT (2026-08-29)
+
+**Shape.** One delegated capture-phase `submit` listener on the document,
+replacing the `form[data-busy]` scan — so a form arriving inside a polled
+fragment is covered the moment it lands, and the attribute survives only as
+an opt-out. The form gets `aria-busy="true"` and a `rstBusy` flag; the button
+the browser submitted with (`SubmitEvent.submitter` — the one clicked, or the
+default one implicit submission clicked) gets `aria-busy="true"`, a
+`<span class="rst-spin rst-btn__spin" aria-hidden="true">` before its label,
+the optional `data-busy-label` swap, and `disabled` one tick later.
+`data-busy="false"` is read on the form (skip everything) and on the button
+(skip the loading state, keep the form's guard). The bfcache restore now
+walks `form[aria-busy]` rather than `form[data-busy]`.
+
+**Ordering is the whole design.** Chrome really does drop a submit button's
+name/value if `disabled` is set inside the submit handler — mutation-verified,
+not assumed: the drive's payload assertion goes from `action=save&note=hello`
+to `note=hello` the moment the hardening is hoisted out of the deferred
+callback. So the synchronous half is only what cannot reach the payload
+(`aria-busy`, the spinner, a `<button>`'s text, which is never submitted), and
+the deferred half is `disabled` plus an `<input type="submit">`'s value, which
+IS what it submits.
+
+**Divergences from the sketch above, and why.** Only the CLICKED button goes
+busy, not every submit button in the form — the others must keep their name
+and value for a Save / Save-draft pair to still be distinguishable server-side.
+A form with a `target` other than `_self` is skipped: the page it is on is not
+going anywhere. A submit that something downstream cancels
+(`e.defaultPrevented` at the tick) is handed back, guard included — a form the
+browser never sent must not sit there looking busy, and an app handler that
+took the job owns the feedback. An `<input type="submit">` gets the attributes
+and the label but no spinner: it is void, with nowhere to put one. An engine
+without `SubmitEvent.submitter` keeps the guard and skips the loading state.
+
+**Trap 3 is structural, not defended.** Constraint validation fails BEFORE the
+submit event fires, so an invalid form never reaches this code and cannot be
+left stuck busy. `formnovalidate` skips validation and really does submit,
+which should look like a submission. Both are driven.
+
+**CSS.** `.rst-spin` already carried its `prefers-reduced-motion` branch
+(`animation: none; opacity: 0.5`), so nothing was added for it. New in
+`tokens.css`: `.rst-btn[aria-busy="true"], .rst-btn:disabled { cursor: default }`,
+`.rst-btn:disabled { opacity: 0.8 }`, and `.rst-btn__spin { align-self: center;
+flex: none }`. `.rst-btn`'s own `gap` spaces the ring from the label. 0.8 rather
+than a heavier dim: a disabled control is incidental under WCAG 1.4.3 and exempt
+from the contrast minimum, but this one is disabled while someone is waiting on
+it, so the label stays comfortably readable.
+
+**Shadowing.** `HTMLFormElement` is `[LegacyOverrideBuiltIns]`, so a control
+named `target` — a target amount, a target date; an ordinary field name —
+replaces `form.target` with the input element, which is truthy and is not
+`"_self"`. Reading the property rather than the attribute makes the handler bail
+out BEFORE it arms the guard, so that one form silently loses the whole rule and
+double-submits. Every attribute the handler reads therefore goes through
+`getAttribute`, and the guard is the form's own `aria-busy` rather than an
+expando a control could shadow — and, under strict mode, throw on assigning to.
+Driven with `<input name="target">`, premise asserted first.
+
+**Budget.** The shim's cap rose 12KB → 16KB, once, with the arithmetic in
+`TestShimIsSmall`: 11,689 → 16,177 bytes, of which 620 are code and 3,868 are
+comment. Splitting was rejected on those numbers — 620 bytes of behaviour does
+not earn a third scaffolded file and a third `<script>` tag on every page.
+select.js keeps its own 12KB; the shared number was a coincidence of history.
+
+**Gates.** `TestBusyRuleIsTheDefault` (Go) pins the delegated listener, the
+absence of the opt-in scan, both readings of `data-busy="false"`, and the
+sync/deferred split of the payload-affecting mutations.
+`TestBusyButtonDrive` (`-tags browser`) drives a real engine through nine legs:
+the refused form, the form-level opt-out, the button-level opt-out (form still
+guarded, proven by behaviour rather than a flag), the form with a control named
+`target`, the busy state with the payload the server actually received,
+re-entrancy from three directions, the back/forward-cache restore,
+`prefers-reduced-motion` (computed `animation-name: none`, ring still shown),
+and scripts disabled. Most of it hangs on the endpoint answering **204 No
+Content**, which is defined not to navigate — that is what keeps the busy state
+on the page long enough to assert against instead of racing a response. The
+back leg is the exception and needs a response that really does navigate, so it
+posts to a second endpoint; it asserts `pageshow`'s `persisted` flag first and
+fails fatally if the browser re-fetched the page, since a leg that reads a fresh
+document proves nothing about the restore. Coming back has to leave the form not
+merely clean but usable, so the leg submits it again and checks the server heard
+it.
+
+**Gallery.** `form-foot` gains an idle/working pair, the second a `Raw` sample
+because it is not a state the partial can be asked for, with the rule and its
+limits as the two notes — four new prose keys in twelve locales.
+
+### §6-v2 addendum (2026-08-29): the accessibility gate
+
+(13) From the user's question on the v2 page — "and everything is WCAG
+2.2 AA, right?". The honest answer needed a gate rather than an
+assertion, so v2 grew one: an axe-core scan in a real browser over the
+committed gallery tree, plus the two criteria axe cannot see. Landed as
+Task 6b, after the previews, so it scans the final markup.
+
+#### AS BUILT (2026-08-29)
+
+**Engine.** axe-core 4.10.3, vendored as `ui/testdata/axe/axe.min.js`
+with its sha256, provenance and MPL-2.0 note in a README beside it —
+self-contained, because a test that fetches from a CDN is a test that
+fails on a train. Two untagged containment tests keep it honest:
+`TestVendoredAxeIsThePinnedVersion` hashes the file against the pin, and
+`TestVendoredAxeIsNotAShippedAsset` plus
+`TestVendoredAxeStaysOutOfTheTree` prove it reaches neither `ui`'s
+exported assets nor `docs/design-system/`.
+
+**Ruleset.** `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa` — all five,
+since 2.2 AA is cumulative. `best-practice`, `experimental` and ACT tags
+are excluded: useful advice, not the standard the question asked about.
+`axeExempt` is EMPTY; no rule was weakened to make anything pass.
+
+**Four browser-tagged tests** in `internal/designsystem/a11y_test.go`:
+the gallery (6 pages × 2 schemes), the preview documents (8 srcdocs × 3
+themes × 2 schemes plus an RTL page — 64 scans, axe injected into each
+frame's own document), reflow at 320×640, and a 30-stop keyboard walk.
+The tree served is the COMMITTED one, not a fresh `Render()`, since
+`TestDesignSystemIsCurrent` already proves them equal — so what CI
+publishes is what CI scanned.
+
+**Findings: 9 violations → 0**, plus 2 reflow failures and 3 unringed
+keyboard stops. `document-title` on all 8 preview documents (every
+`srcdoc` now carries a `<title>`, the words its frame's `title` already
+had); `target-size` on the filter chip's ✕ at 17×17px (now 24×24, the
+chip measuring 26.0px against 22.4 before); `.rst-seg-tabs` overflowing
+a 320px viewport (now wraps); `frame-title-unique`, reported as
+incomplete only because the index is scanned with `iframes:false` but
+real — 110 frames, 46 distinct titles — fixed by constructing titles
+from existing prose keys, so no new string needed eleven translations.
+Two of the three missing focus rings were a measurement bug in the
+walk; the third is the browser's own scrollable-region stop on an
+iframe, which no author CSS can paint (probed and proven), and is the
+single entry in `focusRingExempt`.
+
+**Two things about driving axe, both written into the test's comments.**
+A clean first run is a lie until you prove the engine ran: axe's
+cross-frame `postMessage` path went quiet on a page holding 110 frames
+and returned an EMPTY result, which reads exactly like a pass, so
+`scan()` returns the count of rules that completed and the floor is
+`axeFloor = 5` (measured minima: 30 on an index, 15 on the modal, 13 on
+a shell, 6 on the smallest preview). And an engine injected with
+`AddScriptToEvaluateOnNewDocument` binds to the document that existed
+then, so a lazy frame that reloaded produced phantom violations; axe is
+now injected into each frame after its document has settled.
+
+**A review round found the gate gating nothing.** The tests were in no
+CI job while `docs/site/templates.md` claimed "every CI run".
+`./internal/designsystem/` is now in the `browser-tagged tests` job with
+`-p 1`, and that step's comment says removing it means editing the
+templates.md paragraph in the same commit. The same round found the
+focus-ring detector green-lighting an invisible ring (`outline-offset`
+counted alone, and `outline-color: transparent` counted as a ring) — it
+scored 29/30 on a page with every indicator removed. Every property is
+now normalised to present-and-visible before comparison, and both
+mutation shapes fail.
+
+**Honest scope, and it is in the docs.** Automated scanning reaches
+roughly half the WCAG success criteria; the other half is read by a
+person. It is a sample: 6 pages of 180 and 8 previews of 110, chosen for
+what they would catch rather than for coverage, each choice argued in
+`a11yTargets()`. `heading-order` was found and fixed with the ruleset
+temporarily widened, but it is tagged `best-practice`, so nothing gates
+its regression — stated rather than quietly ignored. `color-contrast`
+comes back INCOMPLETE on the modal's translucent overlay in both
+schemes; `ui/contrast_test.go` holds every documented token pair, so the
+gap is one composited overlay nobody has measured by hand.

@@ -22,18 +22,28 @@ var styleguideSamples = map[string]string{
   <div class="rst-lrow">
     <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
     <span class="rst-m-hide rst-cell-mut">Paid</span>
-    <details class="rst-row-menu"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
+    <details class="rst-row-menu" name="rst-menus"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
       <div class="rst-row-menu__panel"><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
     </details>
   </div>
   <p class="rst-no-match">No orders match. <a href="/orders">Clear filters</a></p>
 </div>
 <p class="rst-count-line">Displaying <strong>1–20</strong> of <strong>412</strong></p>`,
-	"dropdown": `<details class="rst-dropdown" name="list-controls">
+	// dropdown — "rst-menus" is the shared exclusivity group every
+	// dropdown, row-menu and locale menu in the library defaults to, so
+	// opening any one of them closes whichever was open. The nested
+	// rst-menu-group carries a DIFFERENT name on purpose: <details name>
+	// exclusivity is document-wide, not sibling-scoped, so a submenu
+	// sharing its parent's group would close the parent the instant it
+	// opened — the submenu would flash and vanish. Shell chrome (the
+	// sidebar's rst-shell__chrome strip) and the toggle-block stay out of
+	// the group entirely: neither is a menu, and closing the sidebar
+	// because someone opened a filter would be absurd.
+	"dropdown": `<details class="rst-dropdown" name="rst-menus">
   <summary>Filter<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">Filter orders: Paid</span></summary>
   <div class="rst-dropdown__menu">
     <a aria-current="true" href="/orders?status=paid">Paid</a>
-    <details class="rst-menu-group" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
+    <details class="rst-menu-group" name="rst-menus-price" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
   </div>
 </details>
 <span class="rst-ftok"><span class="rst-ftok__k">Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span>`,
@@ -97,11 +107,33 @@ var styleguideSamples = map[string]string{
 	// is open. The nav rail's current item is aria-current, matching the
 	// dropdown and seg-tabs idioms. Closing is the plain rst-modal-close
 	// link back to the page the backdrop already shows.
+	//
+	// The panel is <dialog open> — the rendered-open, non-modal dialog,
+	// which is precisely what a modal-as-a-URL is: the server sends the
+	// page with the dialog already open and no script ever calls
+	// showModal(), so the idiom stays zero-JS while the panel gets the
+	// element's dialog role for free — a role that, like every other one,
+	// needs a name. aria-labelledby points at the panel's own <h2>, which
+	// is already the thing on screen saying what the modal is, so the
+	// name is real text in the page's own language rather than a string
+	// this library would have to translate. A dialog with no accessible
+	// name fails axe's aria-dialog-name and, more to the point, is
+	// announced as "dialog" and nothing else.
+	//
+	// id="modal-title" assumes the one-dialog-per-response pattern this
+	// idiom IS — a modal is its own URL, so a response carries one panel.
+	// Paste this sample twice on one page and the two ids collide: give
+	// each panel its own.
+	//
+	// Nothing moves to the top layer, so ::backdrop never paints and the
+	// .rst-modal-overlay div remains the scrim. tokens.css's dialog.rst-modal-panel rule undoes the UA
+	// dialog block (absolute positioning, auto margins, 1em padding,
+	// Canvas colours) so the panel lays out exactly as it did as a div.
 	"modal": `<div class="rst-backdrop" inert>
   <div class="rst-page"><h1>Settings</h1></div>
 </div>
 <div class="rst-modal-overlay">
-  <div class="rst-modal-panel">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
     <nav>
       <a href="/settings/profile" aria-current="page">Profile</a>
       <a href="/settings/billing">Billing</a>
@@ -109,10 +141,10 @@ var styleguideSamples = map[string]string{
     </nav>
     <section>
       <a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>
-      <h2>Profile</h2>
+      <h2 id="modal-title">Profile</h2>
       <p>Update the name and photo shown across the account.</p>
     </section>
-  </div>
+  </dialog>
 </div>`,
 	// help — the CSS tooltip (data-tip, shown via rst-tip::after on
 	// hover/focus) is decoration only; aria-label carries the real
@@ -137,7 +169,7 @@ var styleguideSamples = map[string]string{
   <a class="rst-skip" href="#main">Skip to content</a>
   <header class="rst-shell__bar"><a class="rst-shell__brand" href="/">Notes</a>
     <nav class="rst-shell__nav"><a href="/" aria-current="page">Home</a><a href="/archive">Archive</a></nav>
-    <details class="rst-dropdown rst-shell__account"><summary>Account<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
+    <details class="rst-dropdown rst-shell__account" name="rst-menus"><summary>Account<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
       <div class="rst-dropdown__menu"><a href="/settings">Settings</a></div></details>
   </header>
   <main class="rst-page" id="main">Content.</main>

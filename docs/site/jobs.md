@@ -111,17 +111,25 @@ page refreshes forever.
 
 ## The JavaScript
 
-The only JavaScript in the framework is `static/rastrillo.js`, a
-~130-line app-owned shim that `rastrillo new` writes beside
-`tokens.css`. It does nothing until your markup opts in:
+The only JavaScript in the framework is `static/rastrillo.js`, an
+app-owned shim that `rastrillo new` writes beside `tokens.css`. The
+polling below does nothing until your markup opts in:
 
 | Attribute | Effect |
 |---|---|
 | `data-poll="URL"` | replace this element with the fetched fragment |
 | `data-poll-every="2"` | seconds between polls |
 | `data-poll-push="URL"` | upgrade to Server-Sent Events, falling back to polling |
-| `data-busy` | disable a submitting button |
-| `data-busy-label` | retitle it while busy |
+| `data-busy="false"` | **opt out** of the busy-button rule, on a form or one submit button |
+| `data-busy-label` | retitle the button while it works |
+
+`data-busy` changed direction. Every submit button now gets its loading
+state by default and the attribute is only ever an opt-out — see
+[Templates](/docs/templates/#a-button-that-changes-something-says-so)
+for the rule and [Forms](/docs/forms/#the-busy-button-is-not-a-guarantee)
+for what it does not promise. The shim has three sections: polling, which
+you opt into with the attributes above, and two that are simply on —
+light dismiss for menus, and the busy rule.
 
 Polling repeats while the new fragment still carries `data-poll`. The
 `ui` package's `job-status` partial drops the attribute once the job is

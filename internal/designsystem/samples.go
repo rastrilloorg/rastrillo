@@ -20,6 +20,18 @@ import "github.com/carlosframework/rastrillo"
 // The partial strings a sample does NOT set are the point of several of
 // them: the framework's own defaults resolve through T, so an unset
 // Label renders in the page's language rather than in English.
+//
+// Every English string in this file — a family's Title and Blurb, a
+// partial's Blurb, a state's State and Note — is the page speaking in
+// its own voice, and the page speaks twelve languages. The renderer
+// passes each of them through proseIn, so the string you write here is
+// BOTH the English and the lookup key: add a state with a note and
+// TestEveryProseKeyIsTranslated fails until prose.go carries the eleven
+// translations. That is why the English stays here, in among the data
+// it labels, rather than moving out to a table of slugs — see prose.go
+// for the whole of that argument. Sample DATA is exempt and stays
+// English on every page: a person is called Grace Hopper in Japanese
+// too, and a route is /posts/new in Arabic.
 
 // wrapper is the container a sample needs around it, per the rules in
 // docs/site/templates.md: rst-list and rst-card hold rows only, and a
@@ -97,11 +109,11 @@ func families() []family {
 		{
 			Key:   "list-screen",
 			Title: "List screen",
-			Blurb: "The screen most apps spend most of their time on: a title bar, a toolbar, a run of rows, and a way through the rest of them.",
+			Blurb: "Generic list screen with title, toolbar, rows that work desktop and mobile.",
 			Partials: []partialDoc{
 				{
 					Name:  "page-header",
-					Blurb: "The screen's title bar: an h1, an optional subhead, and at most one primary action.",
+					Blurb: "The screen's title bar: an h1, an optional subhead, and a primary action.",
 					States: []sample{
 						{State: "Title, subhead and a primary action", Data: map[string]any{
 							"Title": "Posts", "Sub": "Everything you have written, newest first.",
@@ -112,7 +124,7 @@ func families() []family {
 				},
 				{
 					Name:  "list-bar",
-					Blurb: "The toolbar at the top of a list card: the search form, and room to its right for a filter.",
+					Blurb: "The toolbar at the top of a list card with search and filter.",
 					Wrap:  wrapList,
 					States: []sample{
 						{State: "Search with a filter dropdown", Data: map[string]any{
@@ -131,15 +143,15 @@ func families() []family {
 				},
 				{
 					Name:  "list-bar-search",
-					Blurb: "The search form on its own, for a list that only searches. An ordinary method=\"get\" form.",
+					Blurb: "Solo search form for search-only lists. An ordinary method=\"get\" form.",
 					Wrap:  wrapList,
 					States: []sample{
-						{State: "With a query already applied", Data: map[string]any{
+						{State: "With a query", Data: map[string]any{
 							"Action": "/comments", "Query": "spam", "Placeholder": "Search comments",
 							"Hidden": [][2]string{{"page", "1"}},
 						}},
 						{State: "Empty, accessible name from the catalog", Data: map[string]any{"Action": "/comments"},
-							Note: "No Placeholder, so the input's accessible name comes from the framework catalog in this page's language."},
+							Note: "No Placeholder. The input's accessible name comes from the framework catalog in the current language."},
 					},
 				},
 				{
@@ -148,12 +160,12 @@ func families() []family {
 					Wrap:  wrapBox,
 					States: []sample{
 						{State: "Default label", Data: map[string]any{},
-							Note: "Nothing is visible here until you tab into it — that is the whole component."},
+							Note: "Nothing is visible here until you tab into it."},
 					},
 				},
 				{
 					Name:  "list-row-action",
-					Blurb: "One list row: the record's name as the primary link, a meta line, and at most one secondary action.",
+					Blurb: "One list row: the record's name as the primary link, a meta line, and a secondary action.",
 					Wrap:  wrapList,
 					States: []sample{
 						{State: "Lead marker, status and an action", Data: map[string]any{
@@ -172,7 +184,7 @@ func families() []family {
 				},
 				{
 					Name:  "seg-tabs",
-					Blurb: "A segmented control of server-rendered links. The current tab is aria-current on a link, nothing more.",
+					Blurb: "A segmented control of server-rendered links. The current tab is aria-current on a link.",
 					States: []sample{
 						{State: "Two sections", Data: map[string]any{
 							"Label": "Post sections",
@@ -244,7 +256,7 @@ func families() []family {
 				},
 				{
 					Name:  "empty-state",
-					Blurb: "The blank-state card. An empty state teaches: it says what would be here and how to make one.",
+					Blurb: "The blank-state card. Empty state with affordances for starting steps.",
 					States: []sample{
 						{State: "With a POST call to action", Data: map[string]any{
 							"Title":      "Nothing here yet",
@@ -266,7 +278,7 @@ func families() []family {
 			Partials: []partialDoc{
 				{
 					Name:   "status-pill",
-					Blurb:  "A record's status as a tinted pill. State is never colour alone — the label is always visible text.",
+					Blurb:  "A record's status as a tinted pill, colour and label.",
 					States: statusPillStates(),
 				},
 				{
@@ -276,12 +288,12 @@ func families() []family {
 				},
 				{
 					Name:   "meter",
-					Blurb:  "A capacity bar with its number. The fraction is always text — a bar never carries the number alone.",
+					Blurb:  "A capacity bar with its number.",
 					States: meterStates(),
 				},
 				{
 					Name:  "person",
-					Blurb: "Initials avatar, name and email: the identity cell for record types that are people.",
+					Blurb: "Initials avatar, name and email. Quickly identifies people records.",
 					States: []sample{
 						{State: "Name and email", Data: map[string]any{
 							"Href": "/people/1", "Name": "Grace Hopper", "Email": "grace@example.com", "Initial": "G",
@@ -301,10 +313,10 @@ func families() []family {
 				},
 				{
 					Name:  "detail-list",
-					Blurb: "A record's labelled facts as a definition list — the show screen's body. Mono marks machine-ish values.",
+					Blurb: "Definition list about a record on a detail screen. Mono marks for machine-ish values.",
 					Wrap:  wrapBox,
 					States: []sample{
-						{State: "Four facts, one of them machine-ish", Data: map[string]any{
+						{State: "Four facts, one machine-ish", Data: map[string]any{
 							"Items": []any{
 								map[string]any{"Label": "Audience", "Value": "Members"},
 								map[string]any{"Label": "Main page", "Value": "No"},
@@ -351,13 +363,13 @@ func families() []family {
 			Partials: []partialDoc{
 				{
 					Name:   "field",
-					Blurb:  "Label, input, optional hint, help and error — the general text-like control, with an explicit ID.",
+					Blurb:  "Label, input, optional hint, help and error. The general text-like control, with an explicit ID.",
 					Wrap:   wrapForm,
 					States: fieldStates(),
 				},
 				{
 					Name:   "field-text",
-					Blurb:  "One labelled text input, ids derived from Name. The required marker's star is aria-hidden — the input's required attribute is the programmatic signal.",
+					Blurb:  "One labelled text input, ids derived from Name. The required marker's star is aria-hidden. The input's required attribute is the programmatic signal.",
 					Wrap:   wrapForm,
 					States: fieldTextStates(),
 				},
@@ -438,7 +450,7 @@ func families() []family {
 				},
 				{
 					Name:  "field-daterange",
-					Blurb: "A start and an end as one labelled group. The two halves must carry different Names — each derives its ids from its own.",
+					Blurb: "A start and an end as one labelled. Names must be unique since IDs are derived.",
 					Wrap:  wrapForm,
 					States: []sample{
 						{State: "Date and time, seeded", Data: map[string]any{
@@ -463,6 +475,21 @@ func families() []family {
 							"Submit": "Save post", "CancelHref": "/posts", "CancelLabel": "Back to posts",
 						}},
 						{State: "Submit only", Data: map[string]any{"Submit": "Send invitation"}},
+						// The busy rule, shown as the pair it is. The
+						// second state is Raw rather than data, because
+						// it is not a state the partial can be asked
+						// for: it is what rastrillo.js writes over the
+						// first one the moment the form goes out.
+						{State: "Idle — the button before anything happens", Data: map[string]any{
+							"Submit": "Publish", "CancelHref": "/posts", "CancelLabel": "Back to posts",
+						}, Note: "A button that CHANGES something gets a loading state; a button that only reveals something, e.g. a disclosure, a dropdown, a tab, does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into."},
+						{State: "Working — what rastrillo.js writes on the way out",
+							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
+							Raw: `<div class="rst-form__foot">
+<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
+<a class="rst-btn" href="/posts">Back to posts</a>
+</div>`,
+						},
 					},
 				},
 				{
@@ -489,7 +516,7 @@ func families() []family {
 			Partials: []partialDoc{
 				{
 					Name:   "error-page",
-					Blurb:  "The whole body of an error response: the status, one honest sentence, a way back, and — for a 500 — the reference an operator can grep for.",
+					Blurb:  "The whole body of an error response: the status, one honest sentence, a way back, and 500 references an admin can use.",
 					States: errorPageStates(),
 				},
 				{
@@ -503,8 +530,8 @@ func families() []family {
 					Name:  "locale-menu",
 					Blurb: "The language switcher: a details menu of one-field POST forms to /_locale, so the choice lands in the locale cookie and the reader stays on the same path.",
 					States: []sample{
-						{State: "Twelve languages, the current one marked", Build: localeMenuData,
-							Note: "This one posts to /_locale, which a static page has no server for — the switcher in this page's own header is the links-only version."},
+						{State: "Twelve languages, current highlighted.", Build: localeMenuData,
+							Note: "This one posts to /_locale, which would require a server. The switcher in this page's own header is the links-only version."},
 					},
 				},
 			},
@@ -527,7 +554,7 @@ func badgeStates() []sample {
 	labels := map[string]string{
 		"neutral": "Internal", "positive": "Live", "warning": "Beta", "negative": "Sold out",
 	}
-	out := []sample{{State: "No tone (the quiet default)", Data: map[string]any{"Label": "Draft"}}}
+	out := []sample{{State: "No tone (quiet default)", Data: map[string]any{"Label": "Draft"}}}
 	for _, tone := range tones {
 		out = append(out, sample{State: tone, Data: map[string]any{"Tone": tone, "Label": labels[tone]}})
 	}
@@ -541,7 +568,7 @@ func meterStates() []sample {
 		{State: "Nearly full", Data: map[string]any{"Percent": 82, "Text": "412/500"}},
 		{State: "Full", Data: map[string]any{"Percent": 100, "Text": "500/500"}},
 		{State: "Over budget", Data: map[string]any{"Percent": 140, "Text": "700/500"},
-			Note: "The fill is clamped to 100% in the partial; the number tells the truth."},
+			Note: "The fill is clamped to 100% in the partial."},
 	}
 }
 
@@ -565,7 +592,7 @@ func calloutStates() []sample {
 	out = append(out, sample{State: "negative, announced as an alert", Data: map[string]any{
 		"Tone": "negative", "Alert": true,
 		"Title": "The import stopped", "Body": "Nothing was changed. Fix row 91 and try again.",
-	}, Note: "Alert adds role=\"alert\". Reserve it for live problems, not ambient notes."})
+	}, Note: "Alert adds role=\"alert\" to display important messages."})
 	return out
 }
 
@@ -615,10 +642,10 @@ func fieldSelectStates() []sample {
 		"Helsinki", "Reykjavík", "Warsaw", "Zagreb", "Tallinn", "Valletta",
 	)
 	return []sample{
-		{State: "Three options — a native select", Data: map[string]any{
+		{State: "Three options: a native select", Data: map[string]any{
 			"ID": "sel_few", "Name": "sel_few", "Label": "Role", "Options": few,
 		}},
-		{State: "Twelve options — the filterable combobox", Data: map[string]any{
+		{State: "Twelve options: the filterable combobox", Data: map[string]any{
 			"ID": "sel_many", "Name": "sel_many", "Label": "City", "Options": many,
 			"Help": "Start typing to filter.",
 		}, Note: "Past ten options the partial arms select.js. Below ten it does not: search over a handful of items is furniture, not help."},
@@ -648,7 +675,7 @@ func fieldSelectStates() []sample {
 // keys and differ only in the value format.
 func dateStates(name, value, hint string) []sample {
 	return []sample{
-		{State: "Enhanced — type \"tomorrow\", or \"in 3 weeks\"", Data: map[string]any{
+		{State: "Enhanced input: type \"tomorrow\", or \"in 3 weeks\"", Data: map[string]any{
 			"Name": name + "_live", "Label": "Publish on", "Value": value, "Hint": hint,
 		}, Note: "The words it parses ride out on data-rst-date-words, resolved through this page's catalog: the field parses the language the page is in."},
 		{State: "Required, with an error", Data: map[string]any{
@@ -681,7 +708,7 @@ func maxFor(name string) string {
 
 func timeStates() []sample {
 	return []sample{
-		{State: "Enhanced — type \"half seven\", or \"noon\"", Data: map[string]any{
+		{State: "Enhanced input: type \"half seven\", or \"noon\"", Data: map[string]any{
 			"Name": "time_live", "Label": "Doors open", "Value": "19:30", "Hint": "Local time.",
 		}},
 		{State: "Required, with an error", Data: map[string]any{

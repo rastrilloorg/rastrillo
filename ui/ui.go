@@ -51,22 +51,34 @@
 //
 // Styling comes from two stylesheets rastrillo new writes once into a
 // new app's static/ directory: tokens.css, which is structure — layout,
-// spacing, radius, the type scale and the component classes — and a
-// theme (see ThemeCSS), which is the colour and the type family those
-// classes paint themselves with. rastrillo.Serve never serves either:
+// spacing, the type scale and the component classes — and a theme (see
+// ThemeCSS), which is the colour, the type family and the shape (radii,
+// shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
 // static files the app is free to edit in place. rastrillo.js, the fragment shim behind
 // data-poll and data-busy, ships the same way, landing beside it. It
 // never replaces a native idiom — every "no JavaScript" idiom above
-// still works with scripts disabled; the shim exists only for the one
-// kind of work a native idiom cannot do, work that finishes after the
-// response has already been sent, such as a background job's progress.
+// still works with scripts disabled; the shim exists only for the kinds
+// of work a native idiom cannot do. Two of them: work that finishes
+// after the response has already been sent, such as a background job's
+// progress, and light dismiss for the menus — closing an open dropdown
+// on an outside click or on Escape, which native <details> has no way to
+// express. Without the shim the menus still open, still close on a
+// second click of their own summary, and still keep one open at a time
+// through the <details name> group.
 //
 // Errors follow ordinary html/template semantics (nothing is
 // special-cased). With dict-built map data a key the caller forgot to set
 // does not fail at Execute; the partials guard every optional field, so a
-// missing key renders nothing. A caller who wants missing-field detection
-// gets it by passing a Go struct instead of a dict-built map.
+// missing key renders nothing. That guarding is what makes a key optional
+// for a MAP: a struct caller must carry every field the partial names,
+// optional ones included, because html/template treats a field a struct
+// does not have as an Execute error rather than an empty value. MenuGroup
+// is the one exception, read through the menuGroup func precisely so
+// adding it did not break existing struct callers. A caller who wants
+// missing-field detection gets it by passing a Go struct instead of a
+// dict-built map — and takes on keeping that struct in step with the
+// partial.
 //
 // # Class idioms
 //
@@ -85,7 +97,13 @@
 //	<div class="rst-box-head"><h2>Payout</h2><a class="rst-btn" href="/payout/edit">Edit</a></div>
 //	<section class="rst-box"><p>…</p><div class="rst-box-foot">Last updated 2 hours ago</div></section>
 //
-// list grid — the real data-table vocabulary. The card sets its columns
+// list grid — the real data-table vocabulary. It is a layout grid of
+// divs on purpose, not a <table>: the columns come from one --rst-cols
+// custom property on the card, and CSS grid over real table markup means
+// display: grid on the table and its rows, which throws away the table
+// semantics the conversion would be for. Reach for a <table> when the
+// content is a data table you want announced as one; this is for list
+// screens whose rows are links. The card sets its columns
 // once with the --rst-cols custom property (trailing 32px reserved for a
 // kebab); rows only choose cells. A head row carries rst-lrow--head; a
 // data row's identity cell is rst-nm, a column hidden below 800px is
@@ -97,23 +115,37 @@
 //	  <div class="rst-lrow">
 //	    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
 //	    <span class="rst-m-hide rst-cell-mut">Paid</span>
-//	    <details class="rst-row-menu"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
+//	    <details class="rst-row-menu" name="rst-menus"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
 //	      <div class="rst-row-menu__panel"><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
 //	    </details>
 //	  </div>
 //	</div>
 //
 // dropdown — the details/summary menu vocabulary behind header overflow
-// menus and a list-bar's Filter/Sort controls. A dropdown's exclusivity
-// with its siblings (only one open at a time) is the native <details
-// name> attribute, never JavaScript; rst-menu-group nests a submenu the
-// same way. rst-caret is the disclosure arrow that flips on [open]:
+// menus and a list-bar's Filter/Sort controls. Only one menu is open at
+// a time, and that is the native <details name> attribute rather than
+// JavaScript: every dropdown, row-menu and locale menu the library emits
+// defaults to the group "rst-menus", so opening a row's kebab closes the
+// account menu in the header without a line of script. The dropdown,
+// locale-menu and bulk-bar partials all take a MenuGroup key to carve a
+// menu into a group of its own.
 //
-//	<details class="rst-dropdown" name="list-controls">
+// A nested rst-menu-group MUST use a different name from the menu around
+// it. <details name> exclusivity is document-wide, not sibling-scoped,
+// so a submenu sharing its parent's group closes that parent the instant
+// it opens — the submenu flashes and the whole menu vanishes.
+//
+// Shell chrome and the toggle-block stay out of the group on purpose:
+// neither is a menu, and closing the narrow-screen nav rail because
+// someone opened a filter would take the navigation away.
+//
+// rst-caret is the disclosure arrow that flips on [open]:
+//
+//	<details class="rst-dropdown" name="rst-menus">
 //	  <summary>Filter<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">Filter orders: Paid</span></summary>
 //	  <div class="rst-dropdown__menu">
 //	    <a aria-current="true" href="/orders?status=paid">Paid</a>
-//	    <details class="rst-menu-group" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
+//	    <details class="rst-menu-group" name="rst-menus-price" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
 //	  </div>
 //	</details>
 //
@@ -144,14 +176,28 @@
 // user cannot reach it while the panel is open), then the overlay and
 // panel on top. Closing is a plain link back to that same URL — never
 // JavaScript, so there is nothing to wire up and nothing that can get
-// out of sync with the page underneath:
+// out of sync with the page underneath.
+//
+// The panel is a <dialog open>. A rendered-open, non-modal dialog is
+// exactly what a modal-as-a-URL already was: the server sends the page
+// with the dialog open and nothing ever calls showModal(), so the idiom
+// keeps its zero-JS promise while the panel gains the element's dialog
+// role. Because nothing enters the top layer, ::backdrop never paints —
+// the rst-modal-overlay div is still the scrim, as it always was.
+//
+// The dialog role needs a name like any other: aria-labelledby points at
+// the panel's own heading, which is already the text saying what the
+// modal is — so the name comes from the page's own language rather than
+// a string this library would have to translate. A dialog with no
+// accessible name fails axe's aria-dialog-name and is announced as
+// "dialog" and nothing else:
 //
 //	<div class="rst-backdrop" inert>…the page a Close click returns to…</div>
 //	<div class="rst-modal-overlay">
-//	  <div class="rst-modal-panel">
+//	  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
 //	    <nav><a href="/settings/profile" aria-current="page">Profile</a><a href="/settings/billing">Billing</a></nav>
-//	    <section><a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a>…</section>
-//	  </div>
+//	    <section><a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a><h2 id="modal-title">Profile</h2>…</section>
+//	  </dialog>
 //	</div>
 //
 // help — a bordered "?" icon-link to a help article, opening in a new
@@ -229,23 +275,37 @@ func Templates() fs.FS {
 // beside it — see ThemeCSS.
 func TokensCSS() []byte { return tokensCSS }
 
-// themeNames lists the shipped themes, ink first: it is the reference
-// theme, the one every other theme's token set is checked against
-// (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice matches
-// the files in themes/ exactly — adding a theme means adding both.
-var themeNames = []string{"ink", "teal", "warm"}
+// themeNames lists the shipped themes, day first: it is the default and
+// the reference theme, the one every other theme's token set is checked
+// against (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice
+// matches the files in themes/ exactly — adding a theme means adding
+// both.
+//
+//	day     the everyday default: an ordinary blue on white and grey
+//	plain   the skeleton: greyscale, system type, almost no shape
+//	signal  graphite and one live cobalt; milled corners, dense shadows
+var themeNames = []string{"day", "plain", "signal"}
 
-// ThemeNames returns the shipped theme names, ink first. The returned
+// ThemeNames returns the shipped theme names, day first. The returned
 // slice is a copy, so a caller sorting or truncating it cannot reorder
 // the library's own list.
 func ThemeNames() []string { return append([]string(nil), themeNames...) }
 
-// ThemeCSS returns one theme's raw bytes — the colour tokens and the
-// type family tokens.css paints its component classes with — reporting
+// ThemeCSS returns one theme's raw bytes — the colour, type-family and
+// shape tokens tokens.css paints its component classes with — reporting
 // false for a name that is not shipped. rastrillo new writes the chosen
 // theme once as static/theme.css, beside tokens.css and on exactly the
 // same terms: app-owned from then on, and swappable for a hand-written
 // one without touching the structural stylesheet.
+//
+// A theme file is one :root block. Every colour is declared once as
+// light-dark(<light>, <dark>) under color-scheme: light dark, and the two
+// rules at the bottom — :root[data-theme="light"] and
+// :root[data-theme="dark"], each setting nothing but color-scheme — are
+// the whole explicit toggle: changing color-scheme re-resolves every
+// light-dark() in the file at once, in both directions. Radii and shadows
+// live here too, so a theme can change how an app feels and not only what
+// colour it is.
 func ThemeCSS(name string) ([]byte, bool) {
 	b, err := fs.ReadFile(themesFS, "themes/"+name+".css")
 	return b, err == nil

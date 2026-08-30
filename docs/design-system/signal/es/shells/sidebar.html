@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El armazón sidebar — sistema de diseño de rastrillo</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-signal.css">
+<script defer src="/design-system/rastrillo.js"></script>
+
+<script defer src="/design-system/select.js"></script>
+<script defer src="/design-system/datetime.js"></script>
+
+<script src="/design-system/gallery.js"></script>
+</head>
+<body>
+<div class="rst-shell-sidebar">
+<a class="rst-skip" href="#main">Ir al contenido</a>
+<details class="rst-shell__chrome"><summary>Menú</summary></details>
+<aside class="rst-shell__rail">
+<a class="rst-shell__brand" href="/design-system/signal/es/index.html">rastrillo</a>
+<nav class="rst-shell__nav"><a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a></nav>
+
+<div class="rst-shell__account"><a class="rst-person" href="#"><span class="rst-person__av" aria-hidden="true">G</span><span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span><span class="rst-person__email">grace@example.com</span></span></a></div>
+<details class="rst-dropdown rst-locale" name="rst-menus"><summary>Idioma<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="rst-dropdown__menu"><a href="/design-system/signal/en/index.html" lang="en" dir="ltr">English</a><a href="/design-system/signal/ga/index.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/signal/zh-Hans/index.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/signal/es/index.html" lang="es" dir="ltr" aria-current="true">Español</a><a href="/design-system/signal/hi/index.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/signal/pt/index.html" lang="pt" dir="ltr">Português</a><a href="/design-system/signal/bn/index.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/signal/ru/index.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/signal/ja/index.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/signal/yue/index.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/signal/vi/index.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/signal/ar/index.html" lang="ar" dir="rtl">العربية</a></div></details>
+</aside>
+<main class="rst-shell__main" id="main">
+<div class="rst-page">
+
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Posts</h1>
+    <p class="rst-page-header__sub">Una pantalla representativa, para que el armazón que la rodea tenga algo que enmarcar.</p>
+  </div>
+  <a class="rst-btn rst-btn--primary" href="#"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Escribir una entrada</a>
+</header>
+<div class="rst-box-head"><h2>Esta página</h2><a class="rst-btn" href="/design-system/signal/es/index.html">Volver al sistema de diseño</a></div>
+<section class="rst-box"><p>Este es el armazón sidebar, uno de los tres que trae ui.Layout. Una pantalla es una columna: una cabecera de página, luego un título de sección con su tarjeta, luego el siguiente. Todo lo que ves aquí es el armazón, tokens.css y dos parciales.</p></section>
+<div class="rst-box-head"><h2>Recent</h2></div>
+<div class="rst-card" style="--rst-cols: 2fr 110px 32px">
+<div class="rst-lrow rst-lrow--head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="positive">Publicado</span></span><span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#">Why we moved off the old runner<small>Borrador</small></a><span class="rst-m-hide"><span class="rst-status" data-tone="neutral">Borrador</span></span><span></span></div>
+</div>
+<p class="rst-count-line">Displaying <strong>1–2</strong> of <strong>412</strong></p>
+
+</div>
+</main>
+</div>
+</body>
+</html>

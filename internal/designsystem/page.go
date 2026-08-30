@@ -3,6 +3,7 @@ package designsystem
 import (
 	"fmt"
 	"html/template"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -14,7 +15,7 @@ import (
 //
 // Every URL on a page is an absolute path under mountPath: an asset is
 // /design-system/tokens.css, a shell demo is
-// /design-system/ink/en/shells/topbar.html, wherever the page holding
+// /design-system/day/en/shells/topbar.html, wherever the page holding
 // the link sits in the tree. There used to be a pair of "../../" depth
 // prefixes here instead; designsystem.go's mountPath comment has the
 // edge behaviour that made them wrong.
@@ -22,7 +23,7 @@ import (
 // The one thing absolute paths cost: a page can no longer link to
 // "itself" as a bare filename, so the theme and locale switchers point
 // their current entry at that page's canonical address. From
-// index.html that address is ink/en/index.html — a different file
+// index.html that address is day/en/index.html — a different file
 // holding the same bytes, which is what the tree root is.
 
 type navLink struct {
@@ -40,59 +41,61 @@ type localeLink struct {
 }
 
 type stateView struct {
-	State string
-	Note  string
-	HTML  template.HTML
+	State   string
+	Note    string
+	Preview previewView
 }
 
 type partialView struct {
 	Name   string
+	ID     string
 	Marker template.HTML
 	Blurb  string
 	Wrap   wrapper
 	States []stateView
 }
 
-// IsList, IsForm and IsBox keep the wrapper decision out of the
-// template, which cannot compare an unexported constant.
-func (p partialView) IsList() bool { return p.Wrap == wrapList }
-func (p partialView) IsForm() bool { return p.Wrap == wrapForm }
-func (p partialView) IsBox() bool  { return p.Wrap == wrapBox }
-
 type familyView struct {
 	Title    string
+	ID       string
 	Blurb    string
 	Partials []partialView
 }
 
 type idiomView struct {
-	Name   string
-	Marker template.HTML
-	Rule   template.HTML // the #98 callout this idiom carries, if any
-	HTML   template.HTML
-	Blurb  string
+	Name    string
+	ID      string
+	Marker  template.HTML
+	Rule    template.HTML // the #98 callout this idiom carries, if any
+	Blurb   string
+	Preview previewView
 
-	// Source, Why, DemoLabel and DemoHref are the escape route for the
-	// samples that cannot be rendered inline on a gallery page. A shell
-	// sample is a whole page frame, <main id="main"> and all, and this
-	// page already has one: rendering it inline nests a main inside a
-	// main (invalid HTML) and puts three main landmarks on the page.
-	// The modal sample is worse — its overlay is position: fixed, so it
-	// rendered as an open modal covering the whole gallery the moment
-	// the page loaded. Those samples are shown as escaped source —
-	// which is what a reader wants from them anyway, since they are
-	// markup to copy rather than a component to look at — beside a link
-	// to the demo page where the same markup is real. See sourceIdioms.
-	Source    string
-	Why       string // why it is source here and not markup
+	// DemoLabel and DemoHref are the three idioms that also exist as a
+	// page of this tree: the modal route and the two shells. Their
+	// preview frames the sample like every other one does, and the link
+	// goes to the same idiom at a URL of its own, in a new tab — which
+	// is the whole demonstration in the modal's case. See demoIdioms.
 	DemoLabel string // the link's own words
 	DemoHref  string
 }
 
 type shellView struct {
-	Name  string
-	Href  string
-	Blurb string
+	Name    string
+	ID      string
+	Href    string
+	Blurb   string
+	Preview previewView
+}
+
+// schemeButton is one position of the colour-scheme toggle. Pressed is
+// the server-rendered aria-pressed: System is the state a page with no
+// JavaScript is actually in, so it is the one that starts pressed, and
+// gallery.js repaints all three from localStorage before the reader
+// sees them.
+type schemeButton struct {
+	Value   string
+	Label   string
+	Pressed string
 }
 
 type pageView struct {
@@ -105,14 +108,144 @@ type pageView struct {
 	// href="{{.Mount}}/tokens.css" without knowing it.
 	Mount string
 
+	// Sub is the page's opening sentence, built in Go rather than in
+	// the template because it interleaves prose with two names that
+	// have to carry markup of their own: the theme in <strong>, and the
+	// language in a <strong lang=…> so a screen reader says the autonym
+	// in its own voice. See proseMarkup.
+	Sub template.HTML
+
 	Themes    []navLink
+	Schemes   []schemeButton
 	Locales   []localeLink
-	Font      tokenRow
 	Colours   []tokenGroup
 	Structure []tokenGroup
 	Families  []familyView
 	Idioms    []idiomView
 	Shells    []shellView
+
+	// Nav is the sidebar: derived from the five fields above it, once
+	// they are built, so it cannot list anything the page does not
+	// render and cannot miss anything it does. See galleryNav.
+	Nav []navSection
+}
+
+// ── The sidebar ──────────────────────────────────────────────────────
+//
+// The rail is a second view of the page, not a second copy of it. Every
+// entry in it is read off the same slices the body renders — the token
+// groups, the families and their partials, the idioms, the shells — so
+// a partial added to ui, a family added to samples.go or a token added
+// to a theme appears in the sidebar the same day it appears in the
+// page, with no list to remember to update.
+//
+// That is a gate as much as a design. TestTheSidebarLinksEverythingOnThePageExactlyOnce
+// holds the two sides to one sequence — the fragments the rail links,
+// in rail order, are the anchored elements on the page, in page order —
+// so an entry here pointing at nothing, and a section rendered with no
+// way to reach it, are both build failures.
+
+// navItem is one line in the rail. Code is set for the entries whose
+// label is an identifier — a partial's template name, an idiom's class
+// family, a shell's name — which the rail draws in the mono face for
+// the same reason the headings on the page do.
+//
+// Group marks a family heading inside the Partials section: a link like
+// any other, drawn as the rail's own group label, and hidden by the
+// filter when everything under it has gone.
+// Blank marks the entries that leave this document — the demo pages,
+// the only off-page links the rail has. They open in a new tab for the
+// reason every other demo link on this page does: a reader is in the
+// middle of a long page and a filter they typed, and a demo is a
+// detour, not a destination.
+type navItem struct {
+	Label string
+	Href  string
+	Code  bool
+	Group bool
+	Blank bool
+}
+
+type navSection struct {
+	Title string
+	Items []navItem
+}
+
+// galleryNav builds the rail from a finished view. Five sections, in
+// the order the page itself is in: the tokens, the partials by family,
+// the class idioms, the shells, and last the demo pages — which are the
+// only entries in the rail that leave this document, and are here
+// because the modal demo is otherwise reachable only from a sentence
+// halfway down the idioms.
+func galleryNav(theme, locale string, view pageView) []navSection {
+	tokens := navSection{Title: proseIn(locale, "Tokens")}
+	for _, g := range view.Colours {
+		tokens.Items = append(tokens.Items, navItem{Label: g.Title, Href: "#" + g.ID})
+	}
+	for _, g := range view.Structure {
+		tokens.Items = append(tokens.Items, navItem{Label: g.Title, Href: "#" + g.ID})
+	}
+
+	partials := navSection{Title: proseIn(locale, "Partials")}
+	for _, fam := range view.Families {
+		partials.Items = append(partials.Items, navItem{Label: fam.Title, Href: "#" + fam.ID, Group: true})
+		for _, p := range fam.Partials {
+			partials.Items = append(partials.Items, navItem{Label: p.Name, Href: "#" + p.ID, Code: true})
+		}
+	}
+
+	idioms := navSection{Title: proseIn(locale, "Class idioms")}
+	for _, idiom := range view.Idioms {
+		idioms.Items = append(idioms.Items, navItem{Label: idiom.Name, Href: "#" + idiom.ID, Code: true})
+	}
+
+	shells := navSection{Title: proseIn(locale, "Shells")}
+	demos := navSection{Title: proseIn(locale, "Demos")}
+	for _, sh := range view.Shells {
+		shells.Items = append(shells.Items, navItem{Label: sh.Name, Href: "#" + sh.ID, Code: true})
+		demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The {shell} shell", "shell", sh.Name), Href: sh.Href, Blank: true})
+	}
+	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The modal route"), Href: modalHref(theme, locale), Blank: true})
+
+	return []navSection{tokens, partials, idioms, shells, demos}
+}
+
+// ── Anchors ──────────────────────────────────────────────────────────
+
+// anchorID is the id one anchorable thing on the page wears, and the
+// fragment the rail links it by. Two rules make it worth having its own
+// function rather than being spelled out at four call sites:
+//
+//   - it is built from the ENGLISH name, so the twelve translations of
+//     a page carry the same sixty fragments and a link into the
+//     gallery survives a change of language;
+//   - it is prefixed by kind, so a partial called "badge" and an idiom
+//     called "badge" are two ids and not one. A duplicate id is the
+//     failure a rail full of fragments would hide — both entries scroll
+//     to the first element — and the same gate counts them.
+func anchorID(kind, name string) string { return kind + "-" + slug(name) }
+
+// slug lowercases and hyphenates. ASCII letters and digits survive;
+// everything else becomes a single hyphen, and leading and trailing
+// hyphens go. The inputs are English headings and identifiers already
+// written in this alphabet — "Surfaces and lines", "field-select" — so
+// there is no transliteration question to answer here.
+func slug(s string) string {
+	var b strings.Builder
+	dash := false
+	for _, r := range strings.ToLower(s) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+			dash = false
+		default:
+			if b.Len() > 0 && !dash {
+				b.WriteByte('-')
+				dash = true
+			}
+		}
+	}
+	return strings.TrimSuffix(b.String(), "-")
 }
 
 // ── Building one page ────────────────────────────────────────────────
@@ -128,6 +261,9 @@ func renderIndex(theme, locale string) ([]byte, error) {
 	if _, err := tmpl.Parse(indexTemplate); err != nil {
 		return nil, fmt.Errorf("parsing the page: %w", err)
 	}
+	if _, err := tmpl.Parse(viewTemplate); err != nil {
+		return nil, fmt.Errorf("parsing the preview widget: %w", err)
+	}
 	// Every hand-written sample is parsed into the tree before anything
 	// executes: html/template refuses to Clone or Parse into a tree that
 	// has already run, so there is no lazily-add-one-later option here.
@@ -135,7 +271,7 @@ func renderIndex(theme, locale string) ([]byte, error) {
 		return nil, err
 	}
 
-	colours, font, err := themePalette(theme)
+	colours, err := themePalette(theme)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +279,7 @@ func renderIndex(theme, locale string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	families, err := buildFamilies(tmpl, locale)
+	families, err := buildFamilies(tmpl, theme, locale)
 	if err != nil {
 		return nil, err
 	}
@@ -152,19 +288,25 @@ func renderIndex(theme, locale string) ([]byte, error) {
 		return nil, err
 	}
 
+	localeName := rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"]
 	view := pageView{
 		Theme: theme, Locale: locale, Dir: rastrillo.Dir(locale),
-		LocaleName: rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"],
+		LocaleName: localeName,
 		Mount:      mountPath,
+		Sub:        subhead(locale, theme, localeName),
 		Themes:     themeLinks(theme, locale),
+		Schemes:    schemeButtons(locale),
 		Locales:    localeLinks(theme, locale),
-		Font:       font,
-		Colours:    colours,
-		Structure:  structure,
+		Colours:    localiseGroups(locale, colours),
+		Structure:  localiseGroups(locale, structure),
 		Families:   families,
 		Idioms:     idioms,
 		Shells:     shellViews(theme, locale),
 	}
+	// Last, and off the finished view: the rail is a reading of the
+	// page, so it is built once everything it reads exists.
+	view.Nav = galleryNav(theme, locale, view)
+
 	var buf strings.Builder
 	if err := tmpl.ExecuteTemplate(&buf, "ds-index", view); err != nil {
 		return nil, err
@@ -184,9 +326,54 @@ func themeLinks(theme, locale string) []navLink {
 	return out
 }
 
+// schemeButtons is the colour-scheme toggle: three positions, System
+// first, because System is where every reader starts and is the only
+// state the page can be in with scripts off.
+//
+// The values are the ones the themes already understand — data-theme
+// "light" and "dark" on <html>, and no attribute at all for System,
+// which is color-scheme: light dark doing the deciding. gallery.js
+// writes the attribute; nothing here does.
+func schemeButtons(locale string) []schemeButton {
+	labels := map[string]string{"system": "System", "light": "Light", "dark": "Dark"}
+	out := make([]schemeButton, 0, 3)
+	for _, value := range []string{"system", "light", "dark"} {
+		pressed := "false"
+		if value == "system" {
+			pressed = "true"
+		}
+		out = append(out, schemeButton{Value: value, Label: proseIn(locale, labels[value]), Pressed: pressed})
+	}
+	return out
+}
+
+// localiseGroups translates the token headings. The groups are built by
+// designsystem.go, which reads a stylesheet and knows nothing about
+// what language anybody is reading in; translating the titles on the
+// way into the view keeps the parser and the page's words apart.
+func localiseGroups(locale string, groups []tokenGroup) []tokenGroup {
+	out := make([]tokenGroup, len(groups))
+	for i, g := range groups {
+		g.Title = proseIn(locale, g.Title)
+		out[i] = g
+	}
+	return out
+}
+
+// subhead is the page's opening sentence: one prose string with two
+// placeholders, and two names substituted into it as markup rather than
+// as text. See proseMarkup for why the escaping runs in that order.
+func subhead(locale, theme, localeName string) template.HTML {
+	return proseMarkup(locale,
+		"An overview of everything the design system provides. Theme: {theme}. Language: {language}.",
+		"theme", template.HTML("<strong>"+template.HTMLEscapeString(theme)+"</strong>"),
+		"language", template.HTML(`<strong lang="`+template.HTMLEscapeString(locale)+`">`+template.HTMLEscapeString(localeName)+"</strong>"),
+	)
+}
+
 // indexHref is one theme × locale page's canonical address. Every
 // switcher entry uses it, the current one included: the tree root is a
-// copy of ink/en, so "the page you are on" and "this page's address"
+// copy of day/en, so "the page you are on" and "this page's address"
 // are the same document even when they are two files.
 func indexHref(theme, locale string) string {
 	return mountPath + "/" + theme + "/" + locale + "/index.html"
@@ -229,10 +416,26 @@ func shellViews(theme, locale string) []shellView {
 	}
 	out := make([]shellView, 0, len(ui.LayoutNames()))
 	for _, name := range ui.LayoutNames() {
+		id := anchorID("shell", name)
+		href := shellHref(theme, locale, name)
 		out = append(out, shellView{
 			Name:  name,
-			Href:  shellHref(theme, locale, name),
-			Blurb: blurbs[name],
+			ID:    id,
+			Href:  href,
+			Blurb: proseIn(locale, blurbs[name]),
+			// The one preview that frames a page of this tree rather
+			// than a document written for it: the shell demos already
+			// exist, at their own URLs, and framing the real file is
+			// both smaller and more honest than copying it. No Code
+			// tab either — a shell's source is a Go template with
+			// {{block}} in it, not markup to copy, and the two shell
+			// chrome idioms above show the markup it produces.
+			Preview: previewView{
+				Group: id + "-0",
+				Style: previewStyle(heightOf(id)),
+				Src:   href,
+				Title: proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
+			},
 		})
 	}
 	return out
@@ -257,23 +460,30 @@ func modalHref(theme, locale string) string {
 // a gap in the documentation, not a reason to drop it off the page: it
 // gets its own section, its marker comment (so the coverage gate still
 // sees it), and a visible note saying it has no sample data yet.
-func buildFamilies(tmpl *template.Template, locale string) ([]familyView, error) {
+func buildFamilies(tmpl *template.Template, theme, locale string) ([]familyView, error) {
 	claimed := map[string]bool{}
 	out := make([]familyView, 0, len(families())+1)
 	for _, fam := range families() {
-		view := familyView{Title: fam.Title, Blurb: fam.Blurb}
+		view := familyView{Title: proseIn(locale, fam.Title), ID: anchorID("family", fam.Title), Blurb: proseIn(locale, fam.Blurb)}
 		for _, doc := range fam.Partials {
 			if tmpl.Lookup(doc.Name) == nil {
 				return nil, fmt.Errorf("samples.go documents %q, which ui does not define", doc.Name)
 			}
 			claimed[doc.Name] = true
-			pv := partialView{Name: doc.Name, Marker: marker("partial", doc.Name), Blurb: doc.Blurb, Wrap: doc.Wrap}
+			pv := partialView{Name: doc.Name, ID: anchorID("partial", doc.Name), Marker: marker("partial", doc.Name), Blurb: proseIn(locale, doc.Blurb), Wrap: doc.Wrap}
 			for i, s := range doc.States {
 				html, err := renderSample(tmpl, doc.Name, i, s, locale)
 				if err != nil {
 					return nil, fmt.Errorf("%s (%s): %w", doc.Name, s.State, err)
 				}
-				pv.States = append(pv.States, stateView{State: s.State, Note: s.Note, HTML: html})
+				pv.States = append(pv.States, stateView{
+					State: proseIn(locale, s.State),
+					Note:  proseIn(locale, s.Note),
+					Preview: newPreview(theme, locale,
+						fmt.Sprintf("%s-%d", pv.ID, i),
+						previewTitle(locale, doc.Name, s.State),
+						wrap(doc.Wrap, string(html)), heightOf(pv.ID)),
+				})
 			}
 			view.Partials = append(view.Partials, pv)
 		}
@@ -293,16 +503,22 @@ func buildFamilies(tmpl *template.Template, locale string) ([]familyView, error)
 	sort.Strings(orphans)
 	if len(orphans) > 0 {
 		view := familyView{
-			Title: "Ungrouped",
-			Blurb: "Partials ui defines that samples.go has not been taught to render yet. They are listed rather than dropped, because a component nobody documented is still a component apps can call.",
+			Title: proseIn(locale, "Ungrouped"),
+			ID:    anchorID("family", "Ungrouped"),
+			Blurb: proseIn(locale, "Partials ui defines that samples.go has not been taught to render yet. They are listed rather than dropped, because a component nobody documented is still a component apps can call."),
 		}
 		for _, name := range orphans {
-			pv := partialView{Name: name, Marker: marker("partial", name), Blurb: "No sample data yet — add one in internal/designsystem/samples.go."}
+			pv := partialView{Name: name, ID: anchorID("partial", name), Marker: marker("partial", name), Blurb: proseIn(locale, "No sample data yet — add one in internal/designsystem/samples.go.")}
 			// Many partials guard every optional field, so an empty
 			// dict renders something honest. One that does not simply
 			// shows its heading and the note above.
 			if html, err := renderSample(tmpl, name, 0, sample{Data: map[string]any{}}, locale); err == nil {
-				pv.States = append(pv.States, stateView{State: "Rendered from an empty data value", HTML: html})
+				pv.States = append(pv.States, stateView{
+					State: proseIn(locale, "Rendered from an empty data value"),
+					Preview: newPreview(theme, locale, pv.ID+"-0",
+						previewTitle(locale, name, "Rendered from an empty data value"),
+						string(html), heightOf(pv.ID)),
+				})
 			}
 			view.Partials = append(view.Partials, pv)
 		}
@@ -366,10 +582,341 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 	return template.HTML(buf.String()), nil
 }
 
+// ── Preview widgets ──────────────────────────────────────────────────
+//
+// Every example on this page is shown three ways behind one control:
+// framed at a desktop width, framed at a phone's, and as source. The
+// frame is the whole of it — the sample is not on this page at all, it
+// is a document of its own inside an <iframe>, which is what a
+// component gallery has always wanted and what several of this page's
+// scars were about:
+//
+//   - the modal sample's overlay is position: fixed, so rendered in the
+//     gallery it covered the gallery. In its own document it is fixed
+//     to its own viewport, which is where the idiom is honest.
+//   - the two shell samples are whole page frames with their own <main>
+//     landmark, and this page has one. Two documents, two mains.
+//   - .rst-form-foot is position: sticky; bottom: 0, so the form save
+//     bar stuck to the bottom of the GALLERY and floated over the
+//     sample below it. It now sticks to the bottom of its own frame,
+//     which is what it does in an app.
+//   - every id a sample carries is scoped to its own document, so a
+//     field id repeated across two states is no longer a duplicate id
+//     on this page. (The outer page stays clean either way; html/template
+//     writes a srcdoc's quotes as &#34;, so nothing inside one is markup
+//     here.)
+//
+// The three tabs are radio inputs and their labels, and the panels
+// follow from :checked through :has(). No script: the page picks
+// Desktop with the checked attribute, and a reader with JavaScript off
+// switches tabs exactly like one who has it.
+
+// previewView is one example's widget. Doc and Src are alternatives:
+// Doc is a whole document written here and handed to the frame as
+// srcdoc, Src is a page of this tree the frame loads instead (the shell
+// demos, which are already documents). Source empty means no Code tab —
+// only the shell demos, whose source is a Go template and not markup to
+// copy.
+type previewView struct {
+	Group  string       // the radio group's name, unique on the page
+	Style  template.CSS // --ds-h and --ds-hm: the frame's virtual height
+	Doc    string
+	Src    string
+	Source string
+	Title  string
+}
+
+// previewStyle writes one example's two virtual heights. The frame is a
+// window, not a fit: a sample taller than its box scrolls inside it,
+// and the box carries resize: vertical so a reader can drag it open —
+// the frame reads its height back off the box, so dragging really does
+// show more of the document rather than more of the box.
+//
+// Mobile is a quarter taller than desktop, one factor for every
+// example rather than a second table of numbers. The same measuring
+// drive that fixed the numbers below fixed this: at 390px the tallest
+// any sample grows is 1.17× its desktop height — a page header, whose
+// title and action stack — and most grow not at all, because a
+// component this small has one column either way.
+func previewStyle(h int) template.CSS {
+	return template.CSS(fmt.Sprintf("--ds-h: %dpx; --ds-hm: %dpx", h, h*5/4))
+}
+
+// previewHeights is how tall each example's own document is, in CSS
+// pixels at the 1200px desktop width. Measured, not guessed:
+// TestPreviewFrameHeightsFitTheirContent (a browser drive) reads every
+// frame's content height off a real engine and fails on any box its
+// content does not fit in, so these numbers cannot rot quietly. They
+// were taken on the English page in the default theme and rounded up
+// with a little slack, because twelve languages and three type
+// families do not lay out to the same pixel.
+//
+// A partial with several states takes the tallest of them: one number
+// per section keeps the boxes the same size down a column, which reads
+// better than each one being exactly its own content and none of them
+// lining up.
+//
+// Some entries are deliberately taller than anything that is on screen
+// at rest — the fields whose script opens a panel, the menus, the
+// modal. What a reader does with those examples is open them, and a
+// box that fits the closed state is a box they cannot use.
+//
+// The key is the anchor id, not the name, because "dropdown" is both a
+// partial and a class idiom and they are not the same height. Being
+// wrong here costs a scrollbar or some white space, never a broken
+// page.
+var previewHeights = map[string]int{
+	// The list screen.
+	"partial-page-header":        140,
+	"partial-list-bar":           190, // room for the filter menu it opens
+	"partial-list-bar-search":    110,
+	"partial-list-search-submit": 120,
+	"partial-list-row-action":    120,
+	"partial-seg-tabs":           80,
+	"partial-dropdown":           200, // room for the open menu
+	"partial-bulk-bar":           100,
+	"partial-pagination":         110,
+	"partial-empty-state":        240,
+	// Display.
+	"partial-status-pill": 70,
+	"partial-badge":       70,
+	"partial-meter":       70,
+	"partial-person":      95,
+	"partial-callout":     160,
+	"partial-detail-list": 230,
+	"partial-notice":      110,
+	"partial-form-error":  90,
+	"partial-job-status":  70,
+	// Form. The three enhanced fields carry the panel their script
+	// opens under them, which is the whole reason to look at them.
+	"partial-field":           210,
+	"partial-field-text":      210,
+	"partial-field-textarea":  260,
+	"partial-field-select":    300,
+	"partial-field-check":     140,
+	"partial-choice-field":    280,
+	"partial-field-date":      330,
+	"partial-field-time":      330,
+	"partial-field-datetime":  330,
+	"partial-field-daterange": 360,
+	"partial-form-foot":       170,
+	"partial-confirm-form":    160,
+	// Route.
+	"partial-error-page":  390,
+	"partial-back-nav":    80,
+	"partial-locale-menu": 260, // twelve languages, once it is open
+	// The class idioms.
+	"idiom-box":           220,
+	"idiom-list-grid":     280,
+	"idiom-dropdown":      220,
+	"idiom-form-layout":   390,
+	"idiom-tblock":        270,
+	"idiom-modal":         620, // a modal wants a window to be modal over
+	"idiom-help":          100,
+	"idiom-selbox":        70,
+	"idiom-shell-topbar":  250,
+	"idiom-shell-sidebar": 400,
+	// The three shell demos, which are whole pages.
+	// One height for the three, because they sit under one another and
+	// the sidebar's rail is the tallest of them.
+	"shell-column":  780,
+	"shell-topbar":  780,
+	"shell-sidebar": 780,
+}
+
+// previewHeight is what an example gets when the table has nothing to
+// say about it.
+const previewHeight = 220
+
+func heightOf(id string) int {
+	if h, ok := previewHeights[id]; ok {
+		return h
+	}
+	return previewHeight
+}
+
+// srcdocScripts names the framework scripts one sample needs, by the
+// attribute — or, for the menus, the class — each of them boots on. A
+// sample that needs none — most of them — gets a document with no
+// script in it at all, which is both smaller and the truth about that
+// component.
+//
+// The menu classes are here because light dismiss is the one thing a
+// <details> menu cannot do by itself, and a preview that cannot do it
+// teaches the opposite of what the shim exists for: a reader who clicks
+// away from an open menu in the frame and watches it stay open has been
+// told, by the page, that menus do not close. It costs one script tag
+// in each frame that holds a menu: 20,202 bytes across the whole tree
+// when it was added, 0.13% of it, against a ceiling still 5.3 MiB away.
+var srcdocScripts = []struct {
+	asset string
+	hooks []string
+}{
+	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
+	{"select.js", []string{"data-rst-select"}},
+	{"datetime.js", []string{"data-rst-date", "data-rst-time", "data-rst-range"}},
+}
+
+// srcdoc builds the document one example is previewed in: the tree's own
+// stylesheets by absolute path (so the browser has them cached from the
+// gallery), the example, and nothing else. No script unless the example
+// needs one.
+//
+// Nothing in here follows the reader's colour scheme, and it cannot.
+// color-scheme is an inherited property and a browser does propagate
+// the embedder's through an <iframe> — but only into a document that
+// has not declared one of its own, and this one links a theme, and
+// every theme declares color-scheme: light dark. The declaration wins,
+// the propagated value is ignored, and the frame resolves against the
+// reader's OS instead of against the gallery. So the gallery paints
+// it: gallery.js writes data-theme on each frame's own <html>, on load
+// and on every toggle. See its "the previews" section, and the drive
+// leg that measured the two apart.
+func srcdoc(theme, locale, title, body string) string {
+	var b strings.Builder
+	b.WriteString("<!doctype html>\n")
+	b.WriteString(`<html lang="` + locale + `" dir="` + rastrillo.Dir(locale) + `">` + "\n")
+	b.WriteString("<head>\n<meta charset=\"utf-8\">\n")
+	b.WriteString(`<meta name="viewport" content="width=device-width, initial-scale=1">` + "\n")
+	// The same words the frame's title attribute carries. A frame is a
+	// document, and a document with no title fails WCAG 2.4.2 — which
+	// the a11y gate says out loud, because it scans these documents in
+	// the frame rather than only the page around them. It is also what
+	// a screen reader announces on entering the frame, so the two names
+	// agreeing is the point rather than a coincidence.
+	b.WriteString("<title>" + template.HTMLEscapeString(title) + "</title>\n")
+	b.WriteString(`<link rel="stylesheet" href="` + mountPath + `/tokens.css">` + "\n")
+	b.WriteString(`<link rel="stylesheet" href="` + mountPath + `/theme-` + theme + `.css">` + "\n")
+	// A component sample gets breathing room; a whole-page sample —
+	// a shell frame, the modal's backdrop — fills the frame, because
+	// insetting a page inside a page is not what any of them look
+	// like. The shells' rail is block-size: 100dvh, so padding under
+	// one is also a scrollbar that can never be got rid of.
+	b.WriteString("<style>body { padding: 1rem; }\n")
+	b.WriteString("body:has(> .rst-shell-topbar, > .rst-shell-sidebar, > .rst-backdrop) { padding: 0; }</style>\n")
+	for _, s := range srcdocScripts {
+		for _, hook := range s.hooks {
+			if strings.Contains(body, hook) {
+				b.WriteString(`<script defer src="` + mountPath + "/" + s.asset + `"></script>` + "\n")
+				break
+			}
+		}
+	}
+	b.WriteString("</head>\n<body>\n")
+	b.WriteString(body)
+	// The sink. Every form in a preview is aimed at it (see deaden), so
+	// a reader who clicks Save gets the submission a real app would make
+	// and a preview that is still on the screen afterwards — instead of
+	// a frame navigated to a route this static site does not serve.
+	// rastrillo.js's busy rule skips a form whose target is not _self
+	// for the same reason, so nothing spins pointlessly either.
+	if strings.Contains(body, "<form") {
+		b.WriteString("\n<iframe name=\"ds-void\" hidden></iframe>")
+	}
+	b.WriteString("\n</body>\n</html>\n")
+	return b.String()
+}
+
+var (
+	sampleHref = regexp.MustCompile(`href="([^"]*)"`)
+	sampleForm = regexp.MustCompile(`<form\b`)
+)
+
+// deaden makes one sample's markup safe to click. The samples are
+// written to read like a real application — /posts/1/edit, and a form
+// that posts to /posts/1/delete — and this site serves none of those,
+// so following one landed on a missing page. Every link that is not
+// already a fragment or a page of this tree becomes href="#", which
+// goes nowhere and looks like the link it is; every form is aimed at
+// the sink iframe srcdoc appends.
+//
+// A form's ACTION is deliberately left alone — nineteen of them still
+// name a real route — because the target is what decides where the
+// answer goes, and the target is the sink. The request is made and
+// lands nowhere the reader can see, which is closer to what the sample
+// says it does than a form posting to "#" would be. It also keeps the
+// action a reader reads in the preview the same as the one in the Code
+// tab beside it.
+//
+// Only the LIVE rendering is treated. The Code tab beside it shows the
+// sample as it was written, routes and all, because those are the
+// hrefs somebody copying this markup wants — a gallery that had quietly
+// replaced them with # would be teaching the wrong thing.
+func deaden(html string) string {
+	out := sampleHref.ReplaceAllStringFunc(html, func(m string) string {
+		v := m[len(`href="`) : len(m)-1]
+		if v == "" || strings.HasPrefix(v, "#") || strings.HasPrefix(v, mountPath+"/") {
+			return m
+		}
+		return `href="#"`
+	})
+	return sampleForm.ReplaceAllString(out, `<form target="ds-void"`)
+}
+
+// previewTitle names one preview frame, and the name has to be unique
+// on the page. A frame is a document, and a screen reader announces its
+// title on the way in; a page of a hundred and ten frames with
+// forty-six names between them is a page whose frame list is useless.
+// That is WCAG 2.0 A 4.1.2, and axe says so — as an "incomplete" rather
+// than a violation only because the gallery is scanned with the frames
+// left to their own pass, so the engine can see the duplicates but not
+// prove it.
+//
+// Uniqueness comes from what already distinguishes one preview from
+// another: which state of the partial this is, and — for the one name
+// that is both a partial and an idiom, dropdown — which section it is
+// in. Both halves are existing prose keys, translated in all twelve
+// locales like everything else the page says. No new key was invented
+// for this, deliberately: a frame title is not the place to spend
+// eleven translations.
+//
+// TestEveryFrameTitleIsUniqueOnThePage holds the result.
+func previewTitle(locale, name, qualifier string) string {
+	t := proseIn(locale, "{name} sample standalone preview", "name", name)
+	if qualifier == "" {
+		return t
+	}
+	return t + " — " + proseIn(locale, qualifier)
+}
+
+// newPreview is one example's widget: the source as written, and a
+// document holding the same markup with its links deadened.
+func newPreview(theme, locale, group, title, source string, height int) previewView {
+	return previewView{
+		Group:  group,
+		Style:  previewStyle(height),
+		Doc:    srcdoc(theme, locale, title, deaden(source)),
+		Source: source,
+		Title:  title,
+	}
+}
+
+// wrap puts a sample in the container its partial assumes, per the two
+// rules under Class idioms: rows go in a list, a form's fields go in a
+// form inside a padded box. It runs in Go rather than in the template
+// because the wrapper is part of the sample now — it is inside the
+// frame, and it is in the source the Code tab shows, which is where a
+// reader learns that a field partial does not bring its own <form>.
+func wrap(w wrapper, html string) string {
+	switch w {
+	case wrapList:
+		return `<div class="rst-list">` + html + `</div>`
+	case wrapForm:
+		return `<section class="rst-box"><form class="rst-form" method="post" action="#">` + html + `</form></section>`
+	case wrapBox:
+		return `<section class="rst-box">` + html + `</section>`
+	}
+	return html
+}
+
 // ── Class idioms ─────────────────────────────────────────────────────
 
 // idiomBlurbs is one English sentence per class idiom, in the page's own
 // voice. A missing entry renders no blurb rather than an empty one.
+//
+// English here is the source AND the prose.go key, exactly as in
+// samples.go: adding an idiom means adding its eleven translations, and
+// the parity gate says so.
 var idiomBlurbs = map[string]string{
 	"box":           "The padded section card, and the heading that sits outside it.",
 	"list-grid":     "The real data-table vocabulary: the card sets its columns once, rows only choose cells.",
@@ -379,7 +926,7 @@ var idiomBlurbs = map[string]string{
 	"modal":         "A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.",
 	"help":          "A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.",
 	"selbox":        "The selection checkbox a list row wears in select mode. Its label restates the row's identity.",
-	"shell-topbar":  "The topbar shell's own chrome, as markup. Layout ships it as a whole template — this is what is inside.",
+	"shell-topbar":  "The topbar shell's own chrome, as markup. Layout ships it as a whole template.",
 	"shell-sidebar": "The sidebar shell's chrome, collapsing below 800px into a details disclosure.",
 }
 
@@ -397,37 +944,34 @@ var idiomRules = map[string]struct{ Title, Body string }{
 	"list-grid": {
 		"Screens stack vertically",
 		"A screen is a column: page-header, then section-header + card, then the next section-header + card, in reading order. " +
-			"Do not compose a heading, a paragraph and a button side by side in a flex row. " +
 			"Horizontal arrangement is reserved for the idioms that ship it: rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.",
 	},
 }
 
-// sourceIdiom is one sample the gallery shows as escaped source: why it
-// is not rendered inline, the words its link wears, and the page where
-// the same markup is real.
-type sourceIdiom struct {
-	Why   string
+// demoIdiom is one idiom that is also a page of this tree: the words
+// its link wears, and the address it goes to.
+type demoIdiom struct {
 	Label string
 	Href  func(theme, locale string) string
 }
 
-// sourceIdioms are the three samples that cannot be rendered inline on
-// a gallery page. See idiomView.Source for the shape of the problem;
-// each Why below is the particular one.
-var sourceIdioms = map[string]sourceIdiom{
+// demoIdioms are the three idioms whose preview is not the last word on
+// them. The two shells are whole page frames, and a frame is better
+// seen at the size of a window than at the size of a paragraph; the
+// modal's whole claim is that it is a URL, so the demonstration is not
+// complete until you have been to it. Each link opens in a new tab —
+// the reader is in the middle of a page, and losing their place in it
+// is a poor trade for a look at a demo.
+var demoIdioms = map[string]demoIdiom{
 	"shell-topbar": {
-		Why:   "Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one.",
-		Label: "Open the topbar shell demo, where the same markup is a real page",
+		Label: "Open the topbar shell demo, a dedicated preview.",
 		Href:  func(theme, locale string) string { return shellHref(theme, locale, "topbar") },
 	},
 	"shell-sidebar": {
-		Why:   "Shown as source, not rendered: this sample is a whole page frame with its own main landmark, and it is sitting inside one.",
-		Label: "Open the sidebar shell demo, where the same markup is a real page",
+		Label: "Open the sidebar shell demo, a standalone preview.",
 		Href:  func(theme, locale string) string { return shellHref(theme, locale, "sidebar") },
 	},
 	"modal": {
-		Why: "Shown as source, not rendered: the overlay is fixed to the viewport, so rendering it here opened a modal over the whole gallery the moment this page loaded. " +
-			"That is the idiom telling you what it wants — a modal is its own URL, and this is not it.",
 		Label: "See it live at the URL it belongs to",
 		Href:  modalHref,
 	},
@@ -437,6 +981,14 @@ var sourceIdioms = map[string]sourceIdiom{
 // complete HTML with no template actions, so they go onto the page as
 // they are — the point is that the page shows the same bytes the ui
 // tests hold against tokens.css.
+//
+// An idiom's own heading is an h3, not the h4 a partial gets, and the
+// difference is the outline rather than the size. A partial sits inside
+// a family, so its heading is one level under the family's h3; an idiom
+// sits directly under the "Class idioms" h2 with nothing between, and
+// an h4 there skipped a level. It read the same and described a
+// structure that was not there — which is the whole of WCAG 1.3.1, and
+// what the accessibility gate found the first time it ran.
 func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, error) {
 	samples := ui.Styleguide()
 	names := make([]string, 0, len(samples))
@@ -448,21 +1000,21 @@ func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, er
 	for _, name := range names {
 		view := idiomView{
 			Name:   name,
+			ID:     anchorID("idiom", name),
 			Marker: marker("idiom", name),
-			Blurb:  idiomBlurbs[name],
+			Blurb:  proseIn(locale, idiomBlurbs[name]),
 		}
-		if src, ok := sourceIdioms[name]; ok {
-			view.Source = samples[name]
-			view.Why = src.Why
-			view.DemoLabel = src.Label
-			view.DemoHref = src.Href(theme, locale)
-		} else {
-			view.HTML = template.HTML(samples[name])
+		view.Preview = newPreview(theme, locale, view.ID+"-0",
+			previewTitle(locale, name, "Class idioms"),
+			samples[name], heightOf(view.ID))
+		if demo, ok := demoIdioms[name]; ok {
+			view.DemoLabel = proseIn(locale, demo.Label)
+			view.DemoHref = demo.Href(theme, locale)
 		}
 		if rule, ok := idiomRules[name]; ok {
 			var buf strings.Builder
 			err := tmpl.ExecuteTemplate(&buf, "callout", map[string]any{
-				"Tone": "info", "Title": rule.Title, "Body": rule.Body,
+				"Tone": "info", "Title": proseIn(locale, rule.Title), "Body": proseIn(locale, rule.Body),
 			})
 			if err != nil {
 				return nil, fmt.Errorf("idiom %s rule: %w", name, err)
@@ -485,6 +1037,7 @@ type shellData struct {
 	Dir     string
 	Name    string
 	Title   string
+	Mount   string
 	Index   string
 	Locales []localeLink
 	Account template.HTML
@@ -511,7 +1064,7 @@ func renderShell(theme, locale, shell string) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("no shell %q", shell)
 	}
-	funcs := ui.Funcs(ui.WithT(translator(locale)))
+	funcs := galleryFuncs(locale)
 	funcs["asset"] = func(p string) string {
 		name := strings.TrimPrefix(p, "static/")
 		if name == "theme.css" {
@@ -534,7 +1087,8 @@ func renderShell(theme, locale, shell string) ([]byte, error) {
 		Locale:  locale,
 		Dir:     rastrillo.Dir(locale),
 		Name:    shell,
-		Title:   "The " + shell + " shell — rastrillo design system",
+		Title:   proseIn(locale, "The {shell} shell", "shell", shell) + " — " + proseIn(locale, "rastrillo design system"),
+		Mount:   mountPath,
 		Index:   indexHref(theme, locale),
 		Locales: localeLinks(theme, locale),
 		Account: accountMarkup[shell],
@@ -566,7 +1120,13 @@ type modalData struct {
 // actually serves, so every link on it resolves.
 //
 // No scripts: closing is a link, the backdrop is an HTML attribute, and
-// there is nothing here to enhance. That is the demonstration.
+// there is nothing here to enhance. That is the demonstration — and it
+// is why this is the one page in the tree that does not load
+// gallery.js. The cost is real and small: a reader who chose Dark in
+// the gallery gets the system scheme for as long as this demo is open,
+// because the page that would restore it is the page whose whole claim
+// is that it runs nothing. The claim is worth more than the
+// consistency.
 func renderModal(theme, locale string) ([]byte, error) {
 	tmpl, err := partialTree(locale)
 	if err != nil {
@@ -604,11 +1164,26 @@ const dsCSS = `
 .ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
 .ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
 .ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
-.ds-switch .rst-dropdown { position: relative; }
+.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-chrome .rst-dropdown { position: relative; }
+.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+/* The toggle is hidden until gallery.js says it is there. With scripts
+   off it never appears, and the page stays on the theme's own
+   color-scheme: light dark — which is the System position anyway, so
+   nothing is lost but a control that could not have worked. The
+   attribute is set while the head is still parsing, so this is not a
+   reveal the reader sees happen. */
+.ds-scheme { display: none; }
+:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 .ds-family { margin: var(--rst-sp-6) 0 0; }
 .ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
 .ds-partial { margin: var(--rst-sp-5) 0; }
-.ds-partial > h4 { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
 .ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
 .ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
 .ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
@@ -622,11 +1197,88 @@ const dsCSS = `
 .ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
 .ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
 .ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
-.ds-frame { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); block-size: 26rem; display: block; inline-size: 100%; margin: var(--rst-sp-3) 0; }
 .ds-shell { margin: var(--rst-sp-5) 0; }
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
+
+/* The preview widget: [Desktop] [Mobile] [Code] over one frame.
+
+   No script anywhere in it. The tabs are three radio inputs sharing a
+   name, hidden but focusable inside their labels, and :has() reads
+   which one is checked from the wrapper — so the panels switch on the
+   browser's own form behaviour and a reader with JavaScript off has
+   the same three views as everyone else.
+
+   The scale is the other half. The frame is laid out at a virtual
+   1200px (or 390px, on Mobile) and scaled to fit whatever the reader's
+   column actually is, so the desktop rendering is the desktop
+   rendering on a phone too. CSS can divide two lengths into a plain
+   number exactly one way — tan(atan2(a, b)) — and 100cqw is the
+   container's own width, so --ds-k is that fraction and min() stops it
+   scaling anything UP. Where the trig functions are missing the
+   @supports block never applies, --ds-k stays 1, and the frame is a
+   1200px page clipped to the column: smaller, not broken.
+
+   --ds-h is the frame's virtual height, written per example by
+   previewStyle. It sizes the BOX; the frame takes its height back off
+   the box, 100% / --ds-k, which is the same number until a reader
+   drags the resize grip and then is whatever they dragged it to. Doing
+   it the other way round — a fixed height on the frame — gave the grip
+   nothing to move: the box grew and the document inside it stayed the
+   size it was, leaving 300px of empty box under a 255px rendering.
+
+   The box is a window on a document, not a fit to it: a taller sample
+   scrolls inside its frame, and the grip is there for the ones a
+   reader wants more of. */
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
+.ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
+.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
+.ds-view__tab + .ds-view__tab { border-inline-start: 0; }
+.ds-view__tab:first-of-type { border-end-start-radius: var(--rst-radius-sm); border-start-start-radius: var(--rst-radius-sm); }
+.ds-view__tab:last-of-type { border-end-end-radius: var(--rst-radius-sm); border-start-end-radius: var(--rst-radius-sm); }
+.ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
+.ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-view__stage { container-type: inline-size; }
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+@supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
+  .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
+}
+.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+.ds-view__code { display: none; margin-block-start: 0; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
+
+/* The sidebar. The rail itself is the framework's own sidebar shell —
+   rst-shell-sidebar, rst-shell__rail, rst-shell__nav, and the details
+   chrome strip that collapses the rail below 800px — so the page that
+   documents the vocabulary is laid out in it. What is left here is the
+   two things a rail of links has no class for yet: a collapsible
+   section per group, and the filter over them. */
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+.ds-nav > details > summary::before { content: "\25b8"; font-size: 0.8em; }
+.ds-nav > details[open] > summary::before { content: "\25be"; }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+/* The filter hides a link by setting [hidden] on it, and the shell
+   paints every rail link display: block — which the browser's own
+   [hidden] rule loses to. This selector outranks it rather than
+   shouting !important at it. */
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+/* The same scriptless story as the scheme toggle above: no script, no
+   filter, and no box sitting there looking like one. The nav under it
+   is a complete list of every anchor on the page either way. */
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 `
 
 // indexTemplate is the whole design-system page. Two things in it are
@@ -646,71 +1298,119 @@ const dsCSS = `
 //     The hrefs inside the samples are the exception: they are content,
 //     sample data written to read like a real app, and they point at
 //     routes no static site has.
+//   - id="…" data-ds-anchor. Every element the sidebar can link wears
+//     the pair, and nothing else does. The attribute is the marker —
+//     the same trick as the comments above, for the same reason — so
+//     an element that grew an id for its own purposes is not a nav
+//     target and a section that lost one is not either. The ids
+//     themselves come out of anchorID and are built from English, so
+//     the twelve translations of this page carry the same sixty.
+//
+// The frame is the sidebar shell, class for class: rst-shell-sidebar
+// holding the details chrome strip, the rail and the main column. That
+// is dogfooding with a point to it — the shell is one of the three
+// things this page documents, and a gallery built out of something else
+// while recommending this would be advertising.
+// viewTemplate is the preview widget, once, used by every example on
+// the page. Desktop is the checked radio, so a page with no JavaScript
+// and no interaction at all still opens on the rendering a reader most
+// wants — and the Code tab only exists where there is source worth
+// copying, which is everywhere but the shell demos.
+const viewTemplate = `{{define "ds-view"}}<div class="ds-view" style="{{.Style}}">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">{{P "Preview"}}</legend>
+<label class="ds-view__tab"><input type="radio" name="{{.Group}}" checked>{{P "Desktop"}}</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label>
+{{if .Source}}<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="{{.Group}}">{{P "Code"}}</label>{{end}}
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="{{.Title}}" loading="lazy"{{if .Src}} src="{{.Src}}"{{else}} srcdoc="{{.Doc}}"{{end}}></iframe></div></div>
+{{if .Source}}<pre class="ds-src ds-view__code rst-mono"><code>{{.Source}}</code></pre>{{end}}
+</div>{{end}}`
+
 const indexTemplate = `{{define "ds-index"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rastrillo design system — {{.Theme}}</title>
+<title>{{P "rastrillo design system"}} — {{.Theme}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
 <style>` + dsCSS + `</style>
+<script src="{{.Mount}}/gallery.js"></script>
 <script defer src="{{.Mount}}/rastrillo.js"></script>
 <script defer src="{{.Mount}}/select.js"></script>
 <script defer src="{{.Mount}}/datetime.js"></script>
 </head>
 <body>
-<a class="rst-skip" href="#main">Skip to content</a>
-<main class="rst-page" id="main">
+<div class="rst-shell-sidebar">
+<a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<details class="rst-shell__chrome"><summary>{{T "rastrillo.ui.shell_menu"}}</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
+    <input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
+{{range .Nav}}    <details open><summary>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
+{{end}}  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
+
+<header class="ds-chrome">
+  <nav class="rst-seg-tabs" aria-label="{{P "Theme"}}">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
+  <div class="ds-scheme" role="group" aria-label="{{P "Colour scheme"}}">{{range .Schemes}}<button type="button" data-ds-scheme="{{.Value}}" aria-pressed="{{.Pressed}}">{{.Label}}</button>{{end}}</div>
+  <details class="rst-dropdown rst-locale" name="rst-menus">
+    <summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">{{P ", currently {language}" "language" .LocaleName}}</span></summary>
+    <div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
+  </details>
+</header>
+
+<div class="rst-page">
 
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
-    <h1>rastrillo design system</h1>
-    <p class="rst-page-header__sub">Every partial, class idiom and design token the framework ships, on one page. The theme is <strong>{{.Theme}}</strong> and the components speak <strong lang="{{.Locale}}">{{.LocaleName}}</strong>; the prose around them stays in English.</p>
+    <h1>{{P "rastrillo design system"}}</h1>
+    <p class="rst-page-header__sub">{{.Sub}}</p>
   </div>
 </header>
 
 <div class="ds-switch">
-  <nav class="rst-seg-tabs" aria-label="Theme">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
-  <details class="rst-dropdown rst-locale">
-    <summary>Language<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">, currently {{.LocaleName}}</span></summary>
-    <div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
-  </details>
-  <nav class="rst-seg-tabs" aria-label="Sections"><a href="#tokens">Tokens</a><a href="#partials">Partials</a><a href="#idioms">Class idioms</a><a href="#shells">Shells</a></nav>
+  <nav class="rst-seg-tabs" aria-label="{{P "Sections"}}"><a href="#tokens">{{P "Tokens"}}</a><a href="#partials">{{P "Partials"}}</a><a href="#idioms">{{P "Class idioms"}}</a><a href="#shells">{{P "Shells"}}</a></nav>
 </div>
 
-{{template "callout" dict "Tone" "info" "Title" "The links in these samples go nowhere" "Body" "This is a static page. Every href below is sample data chosen to read like a real application, so the markup is the markup an app would ship — but nothing here is served by anything, and following one lands on a missing page."}}
+{{template "callout" dict "Tone" "info" "Title" (P "Links here are inactive") "Body" (P "Links inactive, sample source provided.")}}
 
-<div class="ds-head"><h2 id="tokens">Tokens</h2></div>
-<p class="ds-lead">The custom properties every component paints itself with. Colour and the type family come from the theme (themes/{{.Theme}}.css); the type scale, the spacing steps and the radii are structure and come from tokens.css, the same on every theme.</p>
-<p class="ds-swatch-note">The values printed here are the light ones. The dark set is authored by hand in the same file — never inverted — and ui/contrast_test.go holds every documented pair in both sets to the WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. The chips themselves are painted with var(), so they follow whichever scheme you are reading in, and they will not match the printed values in dark mode.</p>
+<div class="ds-head"><h2 id="tokens">{{P "Tokens"}}</h2></div>
+<p class="ds-lead">{{P "Shared custom properties for all components. Colour and the type are part of the theme (themes/{theme}.css). Type scale and the spacing steps are structure and come from tokens.css." "theme" .Theme}}</p>
+<p class="ds-swatch-note">{{P "Light mode shown here, light-dark for all values. WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. All colours in chips etc pull from the variables."}}</p>
 {{range .Colours}}
-<h3 class="ds-sub">{{.Title}}</h3>
+<h3 class="ds-sub" id="{{.ID}}" data-ds-anchor>{{.Title}}</h3>
 <ul class="ds-toks">{{range .Rows}}<li class="ds-tok">{{if .Preview}}<span class="ds-chip" style="{{.Preview}}"></span>{{end}}<span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
 {{end}}
-<h3 class="ds-sub">Type family</h3>
-<ul class="ds-toks"><li class="ds-tok"><span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Font.Name}}</span><span class="ds-tok__value">{{.Font.Value}}</span></span></li></ul>
 {{range .Structure}}
-<h3 class="ds-sub">{{.Title}}</h3>
+<h3 class="ds-sub" id="{{.ID}}" data-ds-anchor>{{.Title}}</h3>
 <ul class="ds-toks">{{$kind := .Kind}}{{range .Rows}}<li class="ds-tok">{{if eq $kind "type"}}<span class="ds-type" style="{{.Preview}}">Ag</span>{{else if eq $kind "space"}}<span class="ds-bar" style="{{.Preview}}"></span>{{else}}<span class="ds-chip ds-chip--fill" style="{{.Preview}}"></span>{{end}}<span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
 {{end}}
 
-<div class="ds-head"><h2 id="partials">Partials</h2></div>
-<p class="ds-lead">Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below. One thing a gallery cannot help: page-header and error-page each own an h1, so this page carries several, where a real screen has exactly one.</p>
+<div class="ds-head"><h2 id="partials">{{P "Partials"}}</h2></div>
+<p class="ds-lead">{{P "Partials give you pre-built, consistent UI elements, rendered server-side."}}</p>
+<p class="ds-note">{{P "Each sample below in its own frame."}}</p>
+<p class="ds-note">{{P "Sample content in English. Sample shells translated."}}</p>
 {{range .Families}}
-<section class="ds-family">
+<section class="ds-family" id="{{.ID}}" data-ds-anchor>
 <h3>{{.Title}}</h3>
 <p class="ds-lead">{{.Blurb}}</p>
 {{range .Partials}}
 {{.Marker}}
-<article class="ds-partial">
+<article class="ds-partial" id="{{.ID}}" data-ds-anchor>
 <h4 class="rst-mono">{{.Name}}</h4>
 <p class="ds-lead">{{.Blurb}}</p>
-{{$wrapList := .IsList}}{{$wrapForm := .IsForm}}{{$wrapBox := .IsBox}}
 {{range .States}}
 <div class="ds-sample">
 {{if .State}}<p class="ds-state">{{.State}}</p>{{end}}
-{{if $wrapList}}<div class="rst-list">{{.HTML}}</div>{{else if $wrapForm}}<section class="rst-box"><form class="rst-form" method="post" action="#">{{.HTML}}</form></section>{{else if $wrapBox}}<section class="rst-box">{{.HTML}}</section>{{else}}{{.HTML}}{{end}}
+{{template "ds-view" .Preview}}
 {{if .Note}}<p class="ds-note">{{.Note}}</p>{{end}}
 </div>
 {{end}}
@@ -719,32 +1419,33 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 </section>
 {{end}}
 
-<div class="ds-head"><h2 id="idioms">Class idioms</h2></div>
-<p class="ds-lead">The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css — copy from here.</p>
+<div class="ds-head"><h2 id="idioms">{{P "Class idioms"}}</h2></div>
+<p class="ds-lead">{{P "The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css."}}</p>
 {{range .Idioms}}
 {{.Marker}}
-<article class="ds-partial">
-<h4 class="rst-mono">{{.Name}}</h4>
+<article class="ds-partial" id="{{.ID}}" data-ds-anchor>
+<h3 class="rst-mono">{{.Name}}</h3>
 {{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
 {{.Rule}}
-{{if .Source}}<pre class="ds-src rst-mono"><code>{{.Source}}</code></pre>
-<p class="ds-note">{{.Why}} <a href="{{.DemoHref}}">{{.DemoLabel}}</a>.</p>
-{{else}}<div class="ds-sample">{{.HTML}}</div>{{end}}
+<div class="ds-sample">{{template "ds-view" .Preview}}
+{{if .DemoHref}}<p class="ds-note"><a href="{{.DemoHref}}" target="_blank" rel="noopener">{{.DemoLabel}}</a><span class="rst-sr-only"> ({{P "opens in a new tab"}})</span>.</p>{{end}}</div>
 </article>
 {{end}}
 
-<div class="ds-head"><h2 id="shells">Shells</h2></div>
-<p class="ds-lead">The page frame itself. rastrillo new writes one of these as templates/layout.html; a page fills its content hole and overrides whichever chrome blocks it needs. Each demo below is a whole page at its own URL — open one to see it at full width, where the sidebar's rail and the topbar's footer actually have room.</p>
+<div class="ds-head"><h2 id="shells">{{P "Shells"}}</h2></div>
+<p class="ds-lead">{{P "The page frame itself. rastrillo new writes one of these as templates/layout.html; a page fills its content hole and overrides whichever chrome blocks it needs. Each demo below is a whole page at its own URL — open one to see it at full width, where the sidebar's rail and the topbar's footer actually have room."}}</p>
 {{range .Shells}}
-<section class="ds-shell">
+<section class="ds-shell" id="{{.ID}}" data-ds-anchor>
 <h3>{{.Name}}</h3>
 <p class="ds-lead">{{.Blurb}}</p>
-<iframe class="ds-frame" src="{{.Href}}" title="The {{.Name}} shell, rendered at full page" loading="lazy"></iframe>
-<p><a class="rst-btn" href="{{.Href}}">Open the {{.Name}} shell</a></p>
+{{template "ds-view" .Preview}}
+<p><a class="rst-btn" href="{{.Href}}" target="_blank" rel="noopener">{{P "Open the {shell} shell" "shell" .Name}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a></p>
 </section>
 {{end}}
 
+</div>
 </main>
+</div>
 </body>
 </html>
 {{end}}`
@@ -752,24 +1453,34 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 // shellTemplate fills every block the three shells leave open. The
 // blocks a given shell does not declare are simply never executed, so
 // one override set covers all three.
+//
+// head is the newest of them and the reason it exists: this demo is a
+// real page a reader can open in a tab of its own, and a reader who
+// chose Dark in the gallery should still be in Dark when they get
+// here. gallery.js reads that choice out of localStorage and applies
+// it before the first paint — the same script, on the same origin,
+// doing the same job it does on the gallery. It is also the honest
+// answer to "what is the head block FOR": an app's favicon, an app's
+// stylesheet, an app's one script that has to run early.
 const shellTemplate = `
+{{define "head"}}<script src="{{.Mount}}/gallery.js"></script>{{end}}
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
 {{define "brand"}}<a class="rst-shell__brand" href="{{.Index}}">rastrillo</a>{{end}}
 {{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
-{{define "locale"}}<details class="rst-dropdown rst-locale"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{define "foot"}}<a href="{{.Index}}">Back to the design system</a>{{end}}
+{{define "locale"}}<details class="rst-dropdown rst-locale" name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{define "foot"}}<a href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
-{{template "page-header" dict "Title" "Posts" "Sub" "A representative screen, so the chrome around it has something to frame." "ActionHref" "#" "ActionLabel" "Write a post" "ActionIcon" "plus"}}
-<div class="rst-box-head"><h2>This page</h2><a class="rst-btn" href="{{.Index}}">Back to the design system</a></div>
-<section class="rst-box"><p>This is the <strong>{{.Name}}</strong> shell, one of the three ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials.</p></section>
+{{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
+<div class="rst-box-head"><h2>{{P "This page"}}</h2><a class="rst-btn" href="{{.Index}}">{{P "Back to the design system"}}</a></div>
+<section class="rst-box"><p>{{P "This is the {shell} shell, one of the three ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
 <div class="rst-box-head"><h2>Recent</h2></div>
 <div class="rst-card" style="--rst-cols: 2fr 110px 32px">
 <div class="rst-lrow rst-lrow--head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" "Published"}}</span><span></span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#">Why we moved off the old runner<small>Draft</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" "Draft"}}</span><span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Published")}}</span><span></span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#">Why we moved off the old runner<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
 </div>
 <p class="rst-count-line">Displaying <strong>1–2</strong> of <strong>412</strong></p>
 {{end}}
@@ -790,39 +1501,46 @@ const shellTemplate = `
 //   - Close returns to the gallery rather than to the backdrop's own
 //     screen, which does not have a URL of its own here. The panel says
 //     so, rather than leaving a reader to wonder.
+//
+// The panel is <dialog open>, exactly as the sample is: rendered open,
+// never showModal()'d, so it never enters the top layer, ::backdrop
+// never paints, and .rst-modal-overlay stays the scrim. Its
+// aria-labelledby points at the panel's own <h2>, the same way the
+// sample's does — a dialog role with no name is an axe failure, and the
+// heading is already the text that names this panel.
 const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The modal route — rastrillo design system</title>
+<title>{{P "The modal route"}} — {{P "rastrillo design system"}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
 </head>
 <body>
 <div class="rst-backdrop" inert>
 <main class="rst-page" id="main">
-{{template "page-header" dict "Title" "Settings" "Sub" "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up."}}
+{{template "page-header" dict "Title" "Settings" "Sub" (P "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up.")}}
 <div class="rst-box-head"><h2>Account</h2></div>
-<section class="rst-box"><p>One response rendered this screen and the panel over it. That is the whole idiom: the modal is a URL, the page underneath is what a Close click returns to, and neither of them is client state.</p></section>
+<section class="rst-box"><p>{{P "Modals get their own URL."}}</p></section>
 </main>
 </div>
 <div class="rst-modal-overlay">
-  <div class="rst-modal-panel">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
     <nav>
       <a href="{{.Self}}" aria-current="page">Profile</a>
       <a href="{{.Self}}">Billing</a>
       <a href="{{.Self}}">Notifications</a>
     </nav>
     <section>
-      <a class="rst-modal-close" href="{{.Index}}" aria-label="Close settings">✕</a>
-      <h2>Profile</h2>
-      <p>Update the name and photo shown across the account.</p>
-      <p>There is no JavaScript on this page. Closing is the ✕ above, a plain link; the tabs on the left are plain links too, which is why they stay on this URL instead of pretending to load a section.</p>
-      <p>In an application the ✕ would return you to the screen in the backdrop. Here it returns you to the gallery you opened this demo from, because that is the page that exists.</p>
-      <p><a class="rst-btn" href="{{.Index}}">Back to the design system</a></p>
+      <a class="rst-modal-close" href="{{.Index}}" aria-label="{{P "Close settings"}}">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>{{P "Update the name and photo shown across the account."}}</p>
+      <p>{{P "Close link designed to work without JS."}}</p>
+      <p>{{P "In an application the ✕ would return you to the screen in the backdrop."}}</p>
+      <p><a class="rst-btn" href="{{.Index}}">{{P "Back to the design system"}}</a></p>
     </section>
-  </div>
+  </dialog>
 </div>
 </body>
 </html>

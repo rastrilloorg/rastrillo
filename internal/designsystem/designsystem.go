@@ -25,6 +25,7 @@
 package designsystem
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"regexp"
@@ -34,6 +35,24 @@ import (
 	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/ui"
 )
+
+// galleryJS is the gallery's own script, embedded from the file beside
+// this one so it is edited as JavaScript — with a syntax highlighter
+// and a linter — rather than as a Go string constant.
+//
+// It lives here and not in ui/ because it is not part of the framework:
+// no scaffold writes it, no app receives it, and the only page that
+// loads it is the one this package renders. Its header comment is its
+// contract; TestGalleryScriptStaysInertAndFirstParty holds the two
+// honest.
+//
+//go:embed gallery.js
+var galleryJS []byte
+
+// GalleryJS returns gallery.js's raw bytes. Exported for the same
+// reason ui.ShimJS is: the gates read it, and a caller embedding this
+// tree somewhere else needs the asset as well as the pages.
+func GalleryJS() []byte { return append([]byte(nil), galleryJS...) }
 
 // mountPath is where this tree is served: rastrillo.org/design-system.
 // Every URL the renderer emits — stylesheet, script, iframe, switcher,
@@ -52,12 +71,13 @@ const mountPath = "/design-system"
 // Render builds the whole design-system tree in memory: path relative to
 // docs/design-system → file content.
 //
-//	index.html                            ink, en, assets at the tree root
+//	index.html                            day, en, assets at the tree root
 //	<theme>/<locale>/index.html           the same page, 36 times
 //	<theme>/<locale>/modal.html           36 modal demos, one per index
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
-//	rastrillo.js select.js datetime.js    the three scripts, once each
+//	rastrillo.js select.js datetime.js    the framework's three scripts
+//	gallery.js                            the gallery's own script, once
 //
 // The assets are shared by every page rather than copied per theme, so
 // the tree's size is 180 documents plus one copy of the library.
@@ -67,6 +87,7 @@ func Render() (map[string][]byte, error) {
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
+		"gallery.js":   GalleryJS(),
 	}
 	for _, theme := range ui.ThemeNames() {
 		css, ok := ui.ThemeCSS(theme)
@@ -99,19 +120,28 @@ func Render() (map[string][]byte, error) {
 		}
 	}
 
-	// The tree root is ink/en again. It used to be a second render at a
-	// different depth, because every path on it needed rewriting for
-	// the shallower directory; with absolute paths there is nothing
-	// left to rewrite, so the two files are the same bytes and saying
-	// so is more honest than a second call that could only ever return
-	// them. Copied, not aliased: callers get one slice per path.
-	nested, ok := out["ink/en/index.html"]
+	// The tree root is the default theme in English again — day/en since
+	// v2, and named through ui.ThemeNames() rather than spelled out, so
+	// renaming the default theme moves the root with it. It used to be a
+	// second render at a different depth, because every path on it needed
+	// rewriting for the shallower directory; with absolute paths there is
+	// nothing left to rewrite, so the two files are the same bytes and
+	// saying so is more honest than a second call that could only ever
+	// return them. Copied, not aliased: callers get one slice per path.
+	rootPage := RootTheme() + "/en/index.html"
+	nested, ok := out[rootPage]
 	if !ok {
-		return nil, fmt.Errorf("designsystem: index.html: no ink/en page to serve as the tree root")
+		return nil, fmt.Errorf("designsystem: index.html: no %s page to serve as the tree root", rootPage)
 	}
 	out["index.html"] = append([]byte(nil), nested...)
 	return out, nil
 }
+
+// RootTheme is the theme the tree root serves: the first name
+// ui.ThemeNames() reports, which is the same theme rastrillo new
+// scaffolds by default. Exported so the gates can say "the root index is
+// this theme's English page" without repeating the name.
+func RootTheme() string { return ui.ThemeNames()[0] }
 
 // translator binds T (and Tf, which ui.WithT sets to the same function)
 // to one locale's framework catalog: the locale's own value, English if
@@ -179,8 +209,20 @@ func interpolate(s string, args []any) string {
 // — so the Clone discipline ui.FuncsWith documents buys nothing here.
 func partialTree(locale string) (*template.Template, error) {
 	return template.New("designsystem").
-		Funcs(ui.Funcs(ui.WithT(translator(locale)))).
+		Funcs(galleryFuncs(locale)).
 		ParseFS(ui.Templates(), "*.html")
+}
+
+// galleryFuncs is ui's own func map plus P, the gallery's own
+// translator. T resolves the framework's catalog — the strings a
+// component emits — and P resolves prose.go, the strings this page says
+// in its own voice. Two functions rather than one table because the two
+// sets have different owners: an app can override a rastrillo.ui.* key,
+// and nothing outside this package has any business in prose.go.
+func galleryFuncs(locale string) template.FuncMap {
+	funcs := ui.Funcs(ui.WithT(translator(locale)))
+	funcs["P"] = func(key string, args ...any) string { return proseIn(locale, key, args...) }
+	return funcs
 }
 
 // partialNames lists the partials ui defines, sorted: the templates that
@@ -312,11 +354,26 @@ func preview(property, token string) template.CSS {
 
 // tokenGroup is a run of related custom properties under one heading.
 // Kind picks the shape of the preview the page draws beside each row:
-// "colour" (the default), "type", "space" or "radius".
+// "colour" (the default), "type", "space", "radius" or "font".
+//
+// ID is the group's anchor on the page, and the reason newGroup exists:
+// it is derived from the ENGLISH title, before localiseGroups touches
+// it, so /ja/index.html and /en/index.html carry the same sixty
+// fragments and a link to one is a link to the same thing on all of
+// them.
 type tokenGroup struct {
 	Title string
 	Kind  string
+	ID    string
 	Rows  []tokenRow
+}
+
+// newGroup starts a group with its anchor already on it. Every
+// tokenGroup on the page comes through here; a literal built anywhere
+// else would render a heading the sidebar cannot link to, and
+// TestTheSidebarLinksEverythingOnThePageExactlyOnce says so.
+func newGroup(title, kind string) tokenGroup {
+	return tokenGroup{Title: title, Kind: kind, ID: anchorID("tokens", title)}
 }
 
 // colourGroups splits a theme's light-block tokens into the five groups
@@ -337,7 +394,7 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 	out := make([]tokenGroup, 0, len(groups)+1)
 	claimed := map[string]bool{}
 	for _, g := range groups {
-		group := tokenGroup{Title: g.Title, Kind: "colour"}
+		group := newGroup(g.Title, "colour")
 		for _, row := range rows {
 			for _, prefix := range g.Prefixes {
 				if strings.HasPrefix(row.Name, prefix) && !claimed[row.Name] {
@@ -351,7 +408,7 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 			out = append(out, group)
 		}
 	}
-	other := tokenGroup{Title: "Other", Kind: "colour"}
+	other := newGroup("Other", "colour")
 	for _, row := range rows {
 		if !claimed[row.Name] {
 			other.Rows = append(other.Rows, row)
@@ -384,35 +441,115 @@ func structuralGroups() ([]tokenGroup, error) {
 		}
 		return out
 	}
-	return []tokenGroup{
-		{Title: "Type scale", Kind: "type", Rows: pick("--rst-fs-", "font-size")},
-		{Title: "Spacing", Kind: "space", Rows: pick("--rst-sp-", "inline-size")},
-		{Title: "Radius", Kind: "radius", Rows: pick("--rst-radius", "border-radius")},
-	}, nil
+	// No Radius group: the radii moved into the themes in v2, so they are
+	// part of the palette below, not of the structure every page shares.
+	scale := newGroup("Type scale", "type")
+	scale.Rows = pick("--rst-fs-", "font-size")
+	space := newGroup("Spacing", "space")
+	space.Rows = pick("--rst-sp-", "inline-size")
+	return []tokenGroup{scale, space}, nil
 }
 
-// themePalette reads one theme's light block plus the type family it
-// declares above it. Dark values are not on the page: they live in the
-// same file, and the page says so rather than showing a second set of
-// chips nobody can compare side by side anyway.
-func themePalette(theme string) (colours []tokenGroup, font tokenRow, err error) {
-	raw, ok := ui.ThemeCSS(theme)
-	if !ok {
-		return nil, tokenRow{}, fmt.Errorf("no theme %q", theme)
+// lightHalf resolves a v2 theme value for the light scheme: the first
+// argument of a whole-value light-dark(<light>, <dark>) call, or the
+// value unchanged when it is not one. The split is paren-aware, because
+// both halves are usually rgba() calls carrying commas of their own.
+//
+// A value that merely contains a light-dark() somewhere inside it — a
+// shadow, "0 8px 24px light-dark(a, b)" — is left whole on purpose: the
+// page shows shadows as a shadow worn by a card, not as a colour chip,
+// so the whole declaration is what a reader needs to see.
+func lightHalf(v string) string {
+	const prefix = "light-dark("
+	if !strings.HasPrefix(v, prefix) || !strings.HasSuffix(v, ")") {
+		return v
 	}
-	css := string(raw)
-	light, err := blockBody(css, `:root[data-theme="light"] {`)
-	if err != nil {
-		return nil, tokenRow{}, fmt.Errorf("themes/%s.css: %w", theme, err)
-	}
-	family, err := blockBody(css, ":root {")
-	if err != nil {
-		return nil, tokenRow{}, fmt.Errorf("themes/%s.css: %w", theme, err)
-	}
-	for _, row := range parseTokens(family) {
-		if row.Name == "--rst-font" {
-			font = row
+	inner := v[len(prefix) : len(v)-1]
+	depth := 0
+	for i := 0; i < len(inner); i++ {
+		switch inner[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth < 0 {
+				return v
+			}
+		case ',':
+			if depth == 0 {
+				return strings.TrimSpace(inner[:i])
+			}
 		}
 	}
-	return colourGroups(parseTokens(light)), font, nil
+	return v
+}
+
+// themePalette reads one theme's single :root block: the colours
+// resolved to their light halves, the shape tokens as their own group,
+// and the type family. Dark values are not on the page: they live in the
+// same declaration, and the page says so rather than showing a second
+// set of chips nobody can compare side by side anyway.
+//
+// The type family comes back as a one-row group rather than as a
+// tokenRow of its own. It used to be the latter, and the page had a
+// hand-written heading and list for it — which meant the sidebar had a
+// heading to link and no group to derive it from. A group with one row
+// renders the same bytes (a font stack has no preview to draw) and is
+// one fewer special case in two files.
+func themePalette(theme string) ([]tokenGroup, error) {
+	raw, ok := ui.ThemeCSS(theme)
+	if !ok {
+		return nil, fmt.Errorf("no theme %q", theme)
+	}
+	css := string(raw)
+	// ":root {" cannot match the two toggle rules at the foot of the
+	// file, whose selectors are ":root[data-theme=…] {".
+	body, err := blockBody(css, ":root {")
+	if err != nil {
+		return nil, fmt.Errorf("themes/%s.css: %w", theme, err)
+	}
+
+	var palette []tokenRow
+	var radii []tokenRow
+	var font tokenRow
+	for _, row := range parseTokens(body) {
+		switch {
+		case row.Name == "--rst-font":
+			font = row
+		case strings.HasPrefix(row.Name, "--rst-radius"):
+			row.Preview = preview("border-radius", row.Name)
+			radii = append(radii, row)
+		default:
+			palette = append(palette, resolveLight(row))
+		}
+	}
+	groups := colourGroups(palette)
+	if len(radii) > 0 {
+		radius := newGroup("Radius", "radius")
+		radius.Rows = radii
+		groups = append(groups, radius)
+	}
+	if font.Name != "" {
+		family := newGroup("Type family", "font")
+		family.Rows = []tokenRow{font}
+		groups = append(groups, family)
+	}
+	return groups, nil
+}
+
+// resolveLight rewrites one row to the light scheme: the displayed value
+// loses its light-dark() wrapper, and a value that only became a colour
+// once resolved (every palette token, since v2) gets its chip back.
+func resolveLight(row tokenRow) tokenRow {
+	row.Value = lightHalf(row.Value)
+	row.Colour = colourValue.MatchString(row.Value)
+	switch {
+	case row.Shadow:
+		row.Preview = preview("box-shadow", row.Name)
+	case row.Colour:
+		row.Preview = preview("background", row.Name)
+	default:
+		row.Preview = ""
+	}
+	return row
 }

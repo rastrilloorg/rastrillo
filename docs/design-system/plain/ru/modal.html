@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Маршрут модального окна — дизайн-система rastrillo</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-plain.css">
+</head>
+<body>
+<div class="rst-backdrop" inert>
+<main class="rst-page" id="main">
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>Settings</h1>
+    <p class="rst-page-header__sub">Страница, над которой открылось модальное окно. Она помечена inert, поэтому, пока панель наверху, ничто здесь не получает фокус и не доходит до экранного диктора.</p>
+  </div>
+</header>
+<div class="rst-box-head"><h2>Account</h2></div>
+<section class="rst-box"><p>У модальных окон есть собственный URL.</p></section>
+</main>
+</div>
+<div class="rst-modal-overlay">
+  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+    <nav>
+      <a href="/design-system/plain/ru/modal.html" aria-current="page">Profile</a>
+      <a href="/design-system/plain/ru/modal.html">Billing</a>
+      <a href="/design-system/plain/ru/modal.html">Notifications</a>
+    </nav>
+    <section>
+      <a class="rst-modal-close" href="/design-system/plain/ru/index.html" aria-label="Закрыть настройки">✕</a>
+      <h2 id="modal-title">Profile</h2>
+      <p>Измените имя и фото, которые показываются по всему аккаунту.</p>
+      <p>Ссылка закрытия сделана так, чтобы работать без JS.</p>
+      <p>В настоящем приложении ✕ вернул бы вас на экран, который виден позади.</p>
+      <p><a class="rst-btn" href="/design-system/plain/ru/index.html">Назад к дизайн-системе</a></p>
+    </section>
+  </dialog>
+</div>
+</body>
+</html>
