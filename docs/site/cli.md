@@ -234,6 +234,12 @@ it alone. Apps scaffolded before that map existed recorded the same
 thing by deleting the file's line from the pin, and `doctor` reads that
 too.
 
+A file you deleted is the same again. Dropping `select.js` from an app
+with no big selects is a supported choice, so an absent file is reported
+as **absent**, not as drift, and does not fail the exit code — you get a
+line saying what the library ships and how big it is. `--fix` will still
+add it, because asking for `--fix` is asking.
+
 ### Exit codes
 
 | Code | Meaning |

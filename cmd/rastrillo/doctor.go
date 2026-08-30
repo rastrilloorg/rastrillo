@@ -117,7 +117,7 @@ type fileState int
 const (
 	fileOK      fileState = iota // byte-identical to the library copy
 	fileDiffers                  // present, and different
-	fileMissing                  // not in the app's static directory
+	fileAbsent                   // the library ships it; this app has no copy
 	fileMine                     // the app recorded this edit as deliberate
 	fileUnknownTheme
 	fileUnreadable
@@ -164,9 +164,17 @@ func (r *report) skewed() bool {
 
 // drifted reports whether any file the app has not claimed differs from
 // the library copy.
+//
+// An ABSENT file is not drift. The framework documents deleting
+// select.js or datetime.js as a supported choice for an app with no big
+// select and no date field, so an app that took that choice must not be
+// told it is broken — and an app that predates a file the library has
+// since added has not damaged anything either. Both get a line in the
+// report saying the library ships it; neither gets a failing exit code
+// for it. --fix still adds them, because --fix is an explicit request.
 func (r *report) drifted() bool {
 	for _, f := range r.files {
-		if f.state == fileDiffers || f.state == fileMissing {
+		if f.state == fileDiffers {
 			return true
 		}
 	}
@@ -236,7 +244,7 @@ func diagnose(dir, themeFlag string) (*report, error) {
 			f.app, f.err = os.ReadFile(f.path)
 			switch {
 			case f.err != nil && os.IsNotExist(f.err):
-				f.state = fileMissing
+				f.state = fileAbsent
 			case f.err != nil:
 				f.state = fileUnreadable
 			case bytes.Equal(f.app, f.lib):
@@ -433,8 +441,9 @@ func (r *report) print(w io.Writer, fixing bool) {
 			fmt.Fprintf(w, "  yours    %s (recorded as a deliberate edit in %s)\n", f.name, r.pinFile)
 		case fileUnknownTheme:
 			fmt.Fprintf(w, "  yours    %s (%s — a theme of your own is supported, so nothing is compared)\n", f.name, r.themeFrom)
-		case fileMissing:
-			fmt.Fprintf(w, "  missing  %s (the library ships %s)\n", f.name, size(len(f.lib)))
+		case fileAbsent:
+			fmt.Fprintf(w, "  absent   %s (the library ships %s; deleting one you do not use is supported)\n",
+				f.name, size(len(f.lib)))
 		case fileUnreadable:
 			fmt.Fprintf(w, "  error    %s: %v\n", f.name, f.err)
 		case fileDiffers:
@@ -450,17 +459,23 @@ func (r *report) print(w io.Writer, fixing bool) {
 	// app has claimed was never a candidate for drift, and saying "5
 	// files, all matching" when one of them was skipped is the kind of
 	// small lie that costs a tool its credibility.
-	n, compared := 0, 0
+	n, compared, absent := 0, 0, 0
 	for _, f := range r.files {
 		switch f.state {
-		case fileDiffers, fileMissing:
+		case fileDiffers:
 			n++
 			compared++
 		case fileOK:
 			compared++
+		case fileAbsent:
+			absent++
 		}
 	}
-	left := len(r.files) - compared
+	left := len(r.files) - compared - absent
+	if absent > 0 {
+		fmt.Fprintf(w, "%s the library ships %s absent here — not drift. `--fix` would add %s.\n",
+			plural(absent, "file"), isAre(absent), them(absent))
+	}
 	switch {
 	case n == 0 && r.skewed():
 		fmt.Fprintf(w, "Nothing differs, but this app is on %s and this binary is on %s — upgrade the module and run again.\n", r.appVersion, r.cliVersion)
@@ -476,6 +491,23 @@ func (r *report) print(w io.Writer, fixing bool) {
 		fmt.Fprintln(w, "Run `rastrillo doctor --fix` to re-copy them, or record the edit as deliberate:")
 		fmt.Fprintf(w, "add the file's name to vendoredIsMine%s.\n", pinSuffix(r.pinFile))
 	}
+}
+
+// isAre and them keep the absent-files line grammatical for one file
+// and for several, which is the difference between a sentence and a
+// template someone forgot to finish.
+func isAre(n int) string {
+	if n == 1 {
+		return "is"
+	}
+	return "are"
+}
+
+func them(n int) string {
+	if n == 1 {
+		return "it"
+	}
+	return "them"
 }
 
 // leftAlone reports the files doctor did not compare, so the count
@@ -546,7 +578,7 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 			return fmt.Errorf("write %s: %w", f.name, err)
 		}
 		switch {
-		case f.state == fileMissing:
+		case f.state == fileAbsent:
 			fmt.Fprintf(w, "  wrote       %s (%s, was missing)\n", rel(r.dir, f.path), size(len(f.lib)))
 		default:
 			fmt.Fprintf(w, "  re-copied   %s (%s -> %s)\n", rel(r.dir, f.path), size(len(f.app)), size(len(f.lib)))

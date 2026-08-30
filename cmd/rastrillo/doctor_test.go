@@ -164,11 +164,12 @@ func TestDoctorFixReCopies(t *testing.T) {
 	}
 }
 
-// TestDoctorWritesAMissingFile: an app that deleted select.js because
-// it has no big selects is a supported thing, but --fix asked for is
-// --fix given. The report must say the file was missing rather than
-// pretending it drifted.
-func TestDoctorWritesAMissingFile(t *testing.T) {
+// TestDoctorDoesNotCallAnAbsentFileDrift: the framework documents
+// deleting datetime.js as a supported choice for an app with no date
+// field, and examples/blog has never had the three scripts at all. An
+// absent file gets a line saying the library ships it — not a failing
+// exit code. --fix still adds it, because --fix is an explicit request.
+func TestDoctorDoesNotCallAnAbsentFileDrift(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
 	path := filepath.Join(dir, "internal", "demoapp", "static", "datetime.js")
 	if err := os.Remove(path); err != nil {
@@ -178,8 +179,17 @@ func TestDoctorWritesAMissingFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(printed(rep, false), "missing  datetime.js") {
-		t.Errorf("a deleted file is not reported as missing:\n%s", printed(rep, false))
+	if rep.drifted() {
+		t.Fatalf("a deliberately deleted file was reported as drift:\n%s", printed(rep, false))
+	}
+	if got := exitCode(t, rep.exit()); got != 0 {
+		t.Errorf("exit %d for an absent file, want 0", got)
+	}
+	out := printed(rep, false)
+	for _, want := range []string{"absent   datetime.js", "not drift"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report does not contain %q:\n%s", want, out)
+		}
 	}
 	var buf bytes.Buffer
 	if err := rep.applyFix(&buf, false); err != nil {
@@ -406,8 +416,8 @@ func TestDoctorFindsARootStaticDirectory(t *testing.T) {
 	if rep.staticDir != "static" {
 		t.Fatalf("static dir %q, want static", rep.staticDir)
 	}
-	// The files it does not have are missing, which is a finding, not
-	// an error — but tokens.css, the one that matters, is clean.
+	// The files it does not have are absences, not findings — but
+	// tokens.css, the one that matters, is clean.
 	for _, f := range rep.files {
 		if f.name == "tokens.css" && f.state != fileOK {
 			t.Errorf("tokens.css: state %v, want ok", f.state)
