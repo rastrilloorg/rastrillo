@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI primitives — rastrillo design system — day</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-day.css">
+<style>
+.ds-head { border-top: 1px solid var(--rst-line); margin: var(--rst-sp-6) 0 var(--rst-sp-3); padding-top: var(--rst-sp-5); }
+.ds-head h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 0; }
+.ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+.ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
+.ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
+.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-chrome .rst-dropdown { position: relative; }
+.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+ 
+.ds-scheme { display: none; }
+:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+.ds-family { margin: var(--rst-sp-6) 0 0; }
+.ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
+.ds-partial { margin: var(--rst-sp-5) 0; }
+.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+.ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
+.ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
+.ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
+.ds-toks { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
+.ds-tok { align-items: center; display: flex; gap: var(--rst-sp-3); min-inline-size: 0; }
+.ds-tok__text { min-inline-size: 0; }
+.ds-tok__name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-tok__value { color: var(--rst-text-muted); display: block; }
+.ds-chip { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); block-size: 2.25rem; flex: none; inline-size: 2.25rem; }
+.ds-chip--fill { background: var(--rst-accent); border-color: var(--rst-accent); }
+.ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
+.ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
+.ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+.ds-shell { margin: var(--rst-sp-5) 0; }
+.ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
+.ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
+.ds-src code { white-space: pre; }
+
+ 
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
+.ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
+.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
+.ds-view__tab + .ds-view__tab { border-inline-start: 0; }
+.ds-view__tab:first-of-type { border-end-start-radius: var(--rst-radius-sm); border-start-start-radius: var(--rst-radius-sm); }
+.ds-view__tab:last-of-type { border-end-end-radius: var(--rst-radius-sm); border-start-end-radius: var(--rst-radius-sm); }
+.ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
+.ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-view__stage { container-type: inline-size; }
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+@supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
+  .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
+}
+.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+.ds-view__code { display: none; margin-block-start: 0; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+ 
+.ds-nav > details > summary > .rst-caret { flex: none; }
+.ds-nav > details[aria-current] > summary { color: var(--rst-accent); }
+ 
+.ds-nav__page { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav__page[aria-current] { color: var(--rst-accent); }
+.ds-nav__page:hover { color: var(--rst-text); }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
+</style>
+<script src="/design-system/gallery.js"></script>
+<script defer src="/design-system/rastrillo.js"></script>
+<script defer src="/design-system/select.js"></script>
+<script defer src="/design-system/datetime.js"></script>
+</head>
+<body>
+<div class="rst-shell-sidebar">
+<a class="rst-skip" href="#main">Skip to content</a>
+<details class="rst-shell__chrome"><summary>Menu</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">Filter</label>
+    <input id="ds-filter" type="search" placeholder="Filter" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>No matches</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="Sections and demos">
+    <a class="ds-nav__page" href="/design-system/day/en/index.html">Overview</a>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>Tokens</summary><a href="/design-system/day/en/tokens.html#tokens-surfaces-and-lines">Surfaces and lines</a><a href="/design-system/day/en/tokens.html#tokens-text">Text</a><a href="/design-system/day/en/tokens.html#tokens-accent">Accent</a><a href="/design-system/day/en/tokens.html#tokens-status-tones">Status tones</a><a href="/design-system/day/en/tokens.html#tokens-depth">Depth</a><a href="/design-system/day/en/tokens.html#tokens-radius">Radius</a><a href="/design-system/day/en/tokens.html#tokens-type-family">Type family</a><a href="/design-system/day/en/tokens.html#tokens-type-scale">Type scale</a><a href="/design-system/day/en/tokens.html#tokens-spacing">Spacing</a></details>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>Components</summary><a href="/design-system/day/en/components.html#family-list-screen" class="ds-nav__group">List screen</a><a href="/design-system/day/en/components.html#partial-page-header" class="rst-mono">page-header</a><a href="/design-system/day/en/components.html#partial-list-bar" class="rst-mono">list-bar</a><a href="/design-system/day/en/components.html#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="/design-system/day/en/components.html#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="/design-system/day/en/components.html#partial-list-row-action" class="rst-mono">list-row-action</a><a href="/design-system/day/en/components.html#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="/design-system/day/en/components.html#partial-dropdown" class="rst-mono">dropdown</a><a href="/design-system/day/en/components.html#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="/design-system/day/en/components.html#partial-pagination" class="rst-mono">pagination</a><a href="/design-system/day/en/components.html#partial-empty-state" class="rst-mono">empty-state</a><a href="/design-system/day/en/components.html#family-display" class="ds-nav__group">Display</a><a href="/design-system/day/en/components.html#partial-status-pill" class="rst-mono">status-pill</a><a href="/design-system/day/en/components.html#partial-badge" class="rst-mono">badge</a><a href="/design-system/day/en/components.html#partial-meter" class="rst-mono">meter</a><a href="/design-system/day/en/components.html#partial-person" class="rst-mono">person</a><a href="/design-system/day/en/components.html#partial-callout" class="rst-mono">callout</a><a href="/design-system/day/en/components.html#partial-detail-list" class="rst-mono">detail-list</a><a href="/design-system/day/en/components.html#partial-notice" class="rst-mono">notice</a><a href="/design-system/day/en/components.html#partial-form-error" class="rst-mono">form-error</a><a href="/design-system/day/en/components.html#partial-job-status" class="rst-mono">job-status</a><a href="/design-system/day/en/components.html#family-form" class="ds-nav__group">Form</a><a href="/design-system/day/en/components.html#partial-field" class="rst-mono">field</a><a href="/design-system/day/en/components.html#partial-field-text" class="rst-mono">field-text</a><a href="/design-system/day/en/components.html#partial-field-textarea" class="rst-mono">field-textarea</a><a href="/design-system/day/en/components.html#partial-field-select" class="rst-mono">field-select</a><a href="/design-system/day/en/components.html#partial-field-check" class="rst-mono">field-check</a><a href="/design-system/day/en/components.html#partial-choice-field" class="rst-mono">choice-field</a><a href="/design-system/day/en/components.html#partial-field-date" class="rst-mono">field-date</a><a href="/design-system/day/en/components.html#partial-field-time" class="rst-mono">field-time</a><a href="/design-system/day/en/components.html#partial-field-datetime" class="rst-mono">field-datetime</a><a href="/design-system/day/en/components.html#partial-field-daterange" class="rst-mono">field-daterange</a><a href="/design-system/day/en/components.html#partial-form-foot" class="rst-mono">form-foot</a><a href="/design-system/day/en/components.html#partial-confirm-form" class="rst-mono">confirm-form</a><a href="/design-system/day/en/components.html#family-route" class="ds-nav__group">Route</a><a href="/design-system/day/en/components.html#partial-error-page" class="rst-mono">error-page</a><a href="/design-system/day/en/components.html#partial-back-nav" class="rst-mono">back-nav</a><a href="/design-system/day/en/components.html#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details open aria-current="page"><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>UI primitives</summary><a href="/design-system/day/en/primitives.html#idiom-box" class="rst-mono">box</a><a href="/design-system/day/en/primitives.html#idiom-dropdown" class="rst-mono">dropdown</a><a href="/design-system/day/en/primitives.html#idiom-form-layout" class="rst-mono">form-layout</a><a href="/design-system/day/en/primitives.html#idiom-help" class="rst-mono">help</a><a href="/design-system/day/en/primitives.html#idiom-list-grid" class="rst-mono">list-grid</a><a href="/design-system/day/en/primitives.html#idiom-modal" class="rst-mono">modal</a><a href="/design-system/day/en/primitives.html#idiom-selbox" class="rst-mono">selbox</a><a href="/design-system/day/en/primitives.html#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="/design-system/day/en/primitives.html#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="/design-system/day/en/primitives.html#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>Shells</summary><a href="/design-system/day/en/shells.html#shell-column" class="rst-mono">column</a><a href="/design-system/day/en/shells.html#shell-topbar" class="rst-mono">topbar</a><a href="/design-system/day/en/shells.html#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>Demos</summary><a href="/design-system/day/en/shells/column.html" target="_blank" rel="noopener">The column shell</a><a href="/design-system/day/en/shells/topbar.html" target="_blank" rel="noopener">The topbar shell</a><a href="/design-system/day/en/shells/sidebar.html" target="_blank" rel="noopener">The sidebar shell</a><a href="/design-system/day/en/modal.html" target="_blank" rel="noopener">The modal route</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
+
+<header class="ds-chrome">
+  <nav class="rst-seg-tabs" aria-label="Theme"><a href="/design-system/day/en/primitives.html" aria-current="page">day</a><a href="/design-system/plain/en/primitives.html">plain</a><a href="/design-system/signal/en/primitives.html">signal</a></nav>
+  <div class="ds-scheme" role="group" aria-label="Colour scheme"><button type="button" data-ds-scheme="system" aria-pressed="true">System</button><button type="button" data-ds-scheme="light" aria-pressed="false">Light</button><button type="button" data-ds-scheme="dark" aria-pressed="false">Dark</button></div>
+  <details class="rst-dropdown rst-locale" name="rst-menus">
+    <summary>Language<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">, currently English</span></summary>
+    <div class="rst-dropdown__menu"><a href="/design-system/day/en/primitives.html" lang="en" dir="ltr" aria-current="true">English</a><a href="/design-system/day/ga/primitives.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/day/zh-Hans/primitives.html" lang="zh-Hans" dir="ltr">简体中文</a><a href="/design-system/day/es/primitives.html" lang="es" dir="ltr">Español</a><a href="/design-system/day/hi/primitives.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/day/pt/primitives.html" lang="pt" dir="ltr">Português</a><a href="/design-system/day/bn/primitives.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/day/ru/primitives.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/day/ja/primitives.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/day/yue/primitives.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/day/vi/primitives.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/day/ar/primitives.html" lang="ar" dir="rtl">العربية</a></div>
+  </details>
+</header>
+
+<div class="rst-page">
+
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>rastrillo design system</h1>
+    <p class="rst-page-header__sub">An overview of everything the design system provides. Theme: <strong>day</strong>. Language: <strong lang="en">English</strong>.</p>
+  </div>
+</header>
+
+<div class="ds-switch">
+  <nav class="rst-seg-tabs" aria-label="Sections"><a href="/design-system/day/en/index.html">Overview</a><a href="/design-system/day/en/tokens.html">Tokens</a><a href="/design-system/day/en/components.html">Components</a><a href="/design-system/day/en/primitives.html" aria-current="page">UI primitives</a><a href="/design-system/day/en/shells.html">Shells</a></nav>
+</div>
+
+
+<div class="ds-head"><h2 id="primitives">UI primitives</h2></div>
+<p class="ds-lead">The shapes a component cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells&#39; own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css.</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Links here are inactive</strong><p>Links inactive, sample source provided.</p></div></div>
+
+<!-- idiom: box -->
+<article class="ds-partial" id="idiom-box" data-ds-anchor>
+<h3 class="rst-mono">box</h3>
+<p class="ds-lead">The padded section card, and the heading that sits outside it.</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Which card is which</strong><p>rst-list and rst-card have no padding by design: they hold a run of rows, and each row pads itself. Put a form, a paragraph, a strip of links or anything else that is not a row straight into one and it renders flush against the border — the text touching the edge is the tell. The padded card for arbitrary content is rst-box, with its heading as a sibling rst-box-head before it.</p></div></div>
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 220px; --ds-hm: 275px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-box-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;box sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-box-head&#34;&gt;&lt;h2&gt;Payout&lt;/h2&gt;&lt;a class=&#34;rst-btn&#34; href=&#34;#&#34;&gt;Edit&lt;/a&gt;&lt;/div&gt;
+&lt;section class=&#34;rst-box&#34;&gt;&lt;p&gt;Everything on a screen sits inside boxes.&lt;/p&gt;&lt;div class=&#34;rst-box-foot&#34;&gt;Last updated 2 hours ago&lt;/div&gt;&lt;/section&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-box-head&#34;&gt;&lt;h2&gt;Payout&lt;/h2&gt;&lt;a class=&#34;rst-btn&#34; href=&#34;/payout/edit&#34;&gt;Edit&lt;/a&gt;&lt;/div&gt;
+&lt;section class=&#34;rst-box&#34;&gt;&lt;p&gt;Everything on a screen sits inside boxes.&lt;/p&gt;&lt;div class=&#34;rst-box-foot&#34;&gt;Last updated 2 hours ago&lt;/div&gt;&lt;/section&gt;</code></pre>
+</div>
+</div>
+</article>
+
+<!-- idiom: dropdown -->
+<article class="ds-partial" id="idiom-dropdown" data-ds-anchor>
+<h3 class="rst-mono">dropdown</h3>
+<p class="ds-lead">The details/summary menu behind header overflow menus and a list bar&#39;s filter, plus an applied filter as a removable chip.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 220px; --ds-hm: 275px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-dropdown-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;dropdown sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;script defer src=&#34;/design-system/rastrillo.js&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;details class=&#34;rst-dropdown&#34; name=&#34;rst-menus&#34;&gt;
+  &lt;summary&gt;Filter&lt;span class=&#34;rst-caret&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;m6 9 6 6 6-6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span class=&#34;rst-sr-only&#34;&gt;Filter orders: Paid&lt;/span&gt;&lt;/summary&gt;
+  &lt;div class=&#34;rst-dropdown__menu&#34;&gt;
+    &lt;a aria-current=&#34;true&#34; href=&#34;#&#34;&gt;Paid&lt;/a&gt;
+    &lt;details class=&#34;rst-menu-group&#34; name=&#34;rst-menus-price&#34; open&gt;&lt;summary&gt;Price&lt;/summary&gt;&lt;div&gt;&lt;a href=&#34;#&#34;&gt;Free&lt;/a&gt;&lt;/div&gt;&lt;/details&gt;
+  &lt;/div&gt;
+&lt;/details&gt;
+&lt;span class=&#34;rst-ftok&#34;&gt;&lt;span class=&#34;rst-ftok__k&#34;&gt;Paid&lt;/span&gt;&lt;a href=&#34;#&#34; aria-label=&#34;Remove filter Paid&#34;&gt;✕&lt;/a&gt;&lt;/span&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;details class=&#34;rst-dropdown&#34; name=&#34;rst-menus&#34;&gt;
+  &lt;summary&gt;Filter&lt;span class=&#34;rst-caret&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;m6 9 6 6 6-6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span class=&#34;rst-sr-only&#34;&gt;Filter orders: Paid&lt;/span&gt;&lt;/summary&gt;
+  &lt;div class=&#34;rst-dropdown__menu&#34;&gt;
+    &lt;a aria-current=&#34;true&#34; href=&#34;/orders?status=paid&#34;&gt;Paid&lt;/a&gt;
+    &lt;details class=&#34;rst-menu-group&#34; name=&#34;rst-menus-price&#34; open&gt;&lt;summary&gt;Price&lt;/summary&gt;&lt;div&gt;&lt;a href=&#34;/orders?price=free&#34;&gt;Free&lt;/a&gt;&lt;/div&gt;&lt;/details&gt;
+  &lt;/div&gt;
+&lt;/details&gt;
+&lt;span class=&#34;rst-ftok&#34;&gt;&lt;span class=&#34;rst-ftok__k&#34;&gt;Paid&lt;/span&gt;&lt;a href=&#34;/orders&#34; aria-label=&#34;Remove filter Paid&#34;&gt;✕&lt;/a&gt;&lt;/span&gt;</code></pre>
+</div>
+</div>
+</article>
+
+<!-- idiom: form-layout -->
+<article class="ds-partial" id="idiom-form-layout" data-ds-anchor>
+<h3 class="rst-mono">form-layout</h3>
+<p class="ds-lead">The classes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 390px; --ds-hm: 487px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-form-layout-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;form-layout sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;form target=&#34;ds-void&#34; class=&#34;rst-form-flow&#34; method=&#34;post&#34; action=&#34;/settings&#34;&gt;
+  &lt;div class=&#34;rst-field&#34;&gt;
+    &lt;label class=&#34;rst-field__label&#34; for=&#34;name&#34;&gt;Name&lt;/label&gt;
+    &lt;input class=&#34;rst-input&#34; type=&#34;text&#34; id=&#34;name&#34; name=&#34;name&#34;&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;rst-field&#34;&gt;
+    &lt;label class=&#34;rst-field__label&#34; for=&#34;email&#34;&gt;Email&lt;/label&gt;
+    &lt;input class=&#34;rst-input&#34; type=&#34;email&#34; id=&#34;email&#34; name=&#34;email&#34;&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;rst-field-row&#34;&gt;
+    &lt;div class=&#34;rst-field rst-grow&#34;&gt;
+      &lt;label class=&#34;rst-field__label&#34; for=&#34;city&#34;&gt;City&lt;/label&gt;
+      &lt;input class=&#34;rst-input&#34; type=&#34;text&#34; id=&#34;city&#34; name=&#34;city&#34;&gt;
+    &lt;/div&gt;
+    &lt;div class=&#34;rst-field&#34;&gt;
+      &lt;label class=&#34;rst-field__label&#34; for=&#34;zip&#34;&gt;ZIP&lt;/label&gt;
+      &lt;input class=&#34;rst-input rst-input--short&#34; type=&#34;text&#34; id=&#34;zip&#34; name=&#34;zip&#34;&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;rst-form-foot&#34;&gt;
+    &lt;span class=&#34;rst-form-foot__note&#34;&gt;Changes save immediately.&lt;/span&gt;
+    &lt;div class=&#34;rst-form-actions&#34;&gt;
+      &lt;a class=&#34;rst-btn&#34; href=&#34;#&#34;&gt;Cancel&lt;/a&gt;
+      &lt;button class=&#34;rst-btn rst-btn--primary&#34; type=&#34;submit&#34;&gt;Save&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/form&gt;
+&lt;iframe name=&#34;ds-void&#34; hidden&gt;&lt;/iframe&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;form class=&#34;rst-form-flow&#34; method=&#34;post&#34; action=&#34;/settings&#34;&gt;
+  &lt;div class=&#34;rst-field&#34;&gt;
+    &lt;label class=&#34;rst-field__label&#34; for=&#34;name&#34;&gt;Name&lt;/label&gt;
+    &lt;input class=&#34;rst-input&#34; type=&#34;text&#34; id=&#34;name&#34; name=&#34;name&#34;&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;rst-field&#34;&gt;
+    &lt;label class=&#34;rst-field__label&#34; for=&#34;email&#34;&gt;Email&lt;/label&gt;
+    &lt;input class=&#34;rst-input&#34; type=&#34;email&#34; id=&#34;email&#34; name=&#34;email&#34;&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;rst-field-row&#34;&gt;
+    &lt;div class=&#34;rst-field rst-grow&#34;&gt;
+      &lt;label class=&#34;rst-field__label&#34; for=&#34;city&#34;&gt;City&lt;/label&gt;
+      &lt;input class=&#34;rst-input&#34; type=&#34;text&#34; id=&#34;city&#34; name=&#34;city&#34;&gt;
+    &lt;/div&gt;
+    &lt;div class=&#34;rst-field&#34;&gt;
+      &lt;label class=&#34;rst-field__label&#34; for=&#34;zip&#34;&gt;ZIP&lt;/label&gt;
+      &lt;input class=&#34;rst-input rst-input--short&#34; type=&#34;text&#34; id=&#34;zip&#34; name=&#34;zip&#34;&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;rst-form-foot&#34;&gt;
+    &lt;span class=&#34;rst-form-foot__note&#34;&gt;Changes save immediately.&lt;/span&gt;
+    &lt;div class=&#34;rst-form-actions&#34;&gt;
+      &lt;a class=&#34;rst-btn&#34; href=&#34;/settings&#34;&gt;Cancel&lt;/a&gt;
+      &lt;button class=&#34;rst-btn rst-btn--primary&#34; type=&#34;submit&#34;&gt;Save&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/form&gt;</code></pre>
+</div>
+</div>
+</article>
+
+<!-- idiom: help -->
+<article class="ds-partial" id="idiom-help" data-ds-anchor>
+<h3 class="rst-mono">help</h3>
+<p class="ds-lead">A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 100px; --ds-hm: 125px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-help-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;help sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;a class=&#34;rst-help rst-tip&#34; href=&#34;#&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34; aria-label=&#34;Help: orders&#34; data-tip=&#34;About orders&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3&#34;/&gt;&lt;path d=&#34;M12 17h.01&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;a class=&#34;rst-help rst-tip&#34; href=&#34;/help/orders&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34; aria-label=&#34;Help: orders&#34; data-tip=&#34;About orders&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3&#34;/&gt;&lt;path d=&#34;M12 17h.01&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;</code></pre>
+</div>
+</div>
+</article>
+
+<!-- idiom: list-grid -->
+<article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
+<h3 class="rst-mono">list-grid</h3>
+<p class="ds-lead">The real data-table vocabulary: the card sets its columns once, rows only choose cells.</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Screens stack vertically</strong><p>A screen is a column: page-header, then section-header &#43; card, then the next section-header &#43; card, in reading order. Horizontal arrangement is reserved for the idioms that ship it: rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.</p></div></div>
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-grid sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;script defer src=&#34;/design-system/rastrillo.js&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-card&#34; style=&#34;--rst-cols: 2fr 110px 32px&#34;&gt;
+  &lt;div class=&#34;rst-lrow rst-lrow--head&#34;&gt;&lt;span&gt;Order&lt;/span&gt;&lt;span class=&#34;rst-m-hide&#34;&gt;Status&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&#34;rst-lrow&#34;&gt;
+    &lt;a class=&#34;rst-nm&#34; href=&#34;#&#34;&gt;Grace Hopper&lt;small&gt;AB3PX · grace@example.com&lt;/small&gt;&lt;/a&gt;
+    &lt;span class=&#34;rst-m-hide rst-cell-mut&#34;&gt;Paid&lt;/span&gt;
+    &lt;details class=&#34;rst-row-menu&#34; name=&#34;rst-menus&#34;&gt;&lt;summary aria-label=&#34;Actions for order AB3PX&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;1&#34;/&gt;&lt;circle cx=&#34;12&#34; cy=&#34;5&#34; r=&#34;1&#34;/&gt;&lt;circle cx=&#34;12&#34; cy=&#34;19&#34; r=&#34;1&#34;/&gt;&lt;/svg&gt;&lt;/summary&gt;
+      &lt;div class=&#34;rst-row-menu__panel&#34;&gt;&lt;a href=&#34;#&#34;&gt;View&lt;/a&gt;&lt;hr&gt;&lt;button type=&#34;submit&#34; class=&#34;rst-danger&#34;&gt;Refund order…&lt;/button&gt;&lt;/div&gt;
+    &lt;/details&gt;
+  &lt;/div&gt;
+  &lt;p class=&#34;rst-no-match&#34;&gt;No orders match. &lt;a href=&#34;#&#34;&gt;Clear filters&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;p class=&#34;rst-count-line&#34;&gt;Displaying &lt;strong&gt;1–20&lt;/strong&gt; of &lt;strong&gt;412&lt;/strong&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-card&#34; style=&#34;--rst-cols: 2fr 110px 32px&#34;&gt;
+  &lt;div class=&#34;rst-lrow rst-lrow--head&#34;&gt;&lt;span&gt;Order&lt;/span&gt;&lt;span class=&#34;rst-m-hide&#34;&gt;Status&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&#34;rst-lrow&#34;&gt;
+    &lt;a class=&#34;rst-nm&#34; href=&#34;/orders/AB3PX&#34;&gt;Grace Hopper&lt;small&gt;AB3PX · grace@example.com&lt;/small&gt;&lt;/a&gt;
+    &lt;span class=&#34;rst-m-hide rst-cell-mut&#34;&gt;Paid&lt;/span&gt;
+    &lt;details class=&#34;rst-row-menu&#34; name=&#34;rst-menus&#34;&gt;&lt;summary aria-label=&#34;Actions for order AB3PX&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;1&#34;/&gt;&lt;circle cx=&#34;12&#34; cy=&#34;5&#34; r=&#34;1&#34;/&gt;&lt;circle cx=&#34;12&#34; cy=&#34;19&#34; r=&#34;1&#34;/&gt;&lt;/svg&gt;&lt;/summary&gt;
+      &lt;div class=&#34;rst-row-menu__panel&#34;&gt;&lt;a href=&#34;/orders/AB3PX&#34;&gt;View&lt;/a&gt;&lt;hr&gt;&lt;button type=&#34;submit&#34; class=&#34;rst-danger&#34;&gt;Refund order…&lt;/button&gt;&lt;/div&gt;
+    &lt;/details&gt;
+  &lt;/div&gt;
+  &lt;p class=&#34;rst-no-match&#34;&gt;No orders match. &lt;a href=&#34;/orders&#34;&gt;Clear filters&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;p class=&#34;rst-count-line&#34;&gt;Displaying &lt;strong&gt;1–20&lt;/strong&gt; of &lt;strong&gt;412&lt;/strong&gt;&lt;/p&gt;</code></pre>
+</div>
+</div>
+</article>
+
+<!-- idiom: modal -->
+<article class="ds-partial" id="idiom-modal" data-ds-anchor>
+<h3 class="rst-mono">modal</h3>
+<p class="ds-lead">A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 620px; --ds-hm: 775px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-modal-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;modal sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-backdrop&#34; inert&gt;
+  &lt;div class=&#34;rst-page&#34;&gt;&lt;h1&gt;Settings&lt;/h1&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;rst-modal-overlay&#34;&gt;
+  &lt;dialog class=&#34;rst-modal-panel&#34; open aria-labelledby=&#34;modal-title&#34;&gt;
+    &lt;nav&gt;
+      &lt;a href=&#34;#&#34; aria-current=&#34;page&#34;&gt;Profile&lt;/a&gt;
+      &lt;a href=&#34;#&#34;&gt;Billing&lt;/a&gt;
+      &lt;a href=&#34;#&#34;&gt;Notifications&lt;/a&gt;
+    &lt;/nav&gt;
+    &lt;section&gt;
+      &lt;a class=&#34;rst-modal-close&#34; href=&#34;#&#34; aria-label=&#34;Close settings&#34;&gt;✕&lt;/a&gt;
+      &lt;h2 id=&#34;modal-title&#34;&gt;Profile&lt;/h2&gt;
+      &lt;p&gt;Update the name and photo shown across the account.&lt;/p&gt;
+    &lt;/section&gt;
+  &lt;/dialog&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-backdrop&#34; inert&gt;
+  &lt;div class=&#34;rst-page&#34;&gt;&lt;h1&gt;Settings&lt;/h1&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;rst-modal-overlay&#34;&gt;
+  &lt;dialog class=&#34;rst-modal-panel&#34; open aria-labelledby=&#34;modal-title&#34;&gt;
+    &lt;nav&gt;
+      &lt;a href=&#34;/settings/profile&#34; aria-current=&#34;page&#34;&gt;Profile&lt;/a&gt;
+      &lt;a href=&#34;/settings/billing&#34;&gt;Billing&lt;/a&gt;
+      &lt;a href=&#34;/settings/notifications&#34;&gt;Notifications&lt;/a&gt;
+    &lt;/nav&gt;
+    &lt;section&gt;
+      &lt;a class=&#34;rst-modal-close&#34; href=&#34;/settings&#34; aria-label=&#34;Close settings&#34;&gt;✕&lt;/a&gt;
+      &lt;h2 id=&#34;modal-title&#34;&gt;Profile&lt;/h2&gt;
+      &lt;p&gt;Update the name and photo shown across the account.&lt;/p&gt;
+    &lt;/section&gt;
+  &lt;/dialog&gt;
+&lt;/div&gt;</code></pre>
+</div>
+<p class="ds-note"><a href="/design-system/day/en/modal.html" target="_blank" rel="noopener">See it live at the URL it belongs to</a><span class="rst-sr-only"> (opens in a new tab)</span>.</p></div>
+</article>
+
+<!-- idiom: selbox -->
+<article class="ds-partial" id="idiom-selbox" data-ds-anchor>
+<h3 class="rst-mono">selbox</h3>
+<p class="ds-lead">The selection checkbox a list row wears in select mode. Its label restates the row&#39;s identity.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-selbox-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;selbox sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;label class=&#34;rst-selbox&#34;&gt;&lt;input type=&#34;checkbox&#34; aria-label=&#34;Select order AB3PX&#34;&gt;&lt;/label&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;label class=&#34;rst-selbox&#34;&gt;&lt;input type=&#34;checkbox&#34; aria-label=&#34;Select order AB3PX&#34;&gt;&lt;/label&gt;</code></pre>
+</div>
+</div>
+</article>
+
+<!-- idiom: shell-sidebar -->
+<article class="ds-partial" id="idiom-shell-sidebar" data-ds-anchor>
+<h3 class="rst-mono">shell-sidebar</h3>
+<p class="ds-lead">The sidebar shell&#39;s chrome, collapsing below 800px into a details disclosure.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 400px; --ds-hm: 500px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-shell-sidebar-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;shell-sidebar sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-shell-sidebar&#34;&gt;
+  &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
+  &lt;details class=&#34;rst-shell__chrome&#34;&gt;&lt;summary&gt;Menu&lt;/summary&gt;&lt;/details&gt;
+  &lt;aside class=&#34;rst-shell__rail&#34;&gt;&lt;a class=&#34;rst-shell__brand&#34; href=&#34;#&#34;&gt;Notes&lt;/a&gt;
+    &lt;nav class=&#34;rst-shell__nav&#34;&gt;&lt;span class=&#34;rst-shell__group&#34;&gt;Work&lt;/span&gt;&lt;a href=&#34;#&#34; aria-current=&#34;page&#34;&gt;Dashboard&lt;/a&gt;&lt;a href=&#34;#&#34;&gt;Reports&lt;/a&gt;&lt;/nav&gt;
+  &lt;/aside&gt;
+  &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-shell-sidebar&#34;&gt;
+  &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
+  &lt;details class=&#34;rst-shell__chrome&#34;&gt;&lt;summary&gt;Menu&lt;/summary&gt;&lt;/details&gt;
+  &lt;aside class=&#34;rst-shell__rail&#34;&gt;&lt;a class=&#34;rst-shell__brand&#34; href=&#34;/&#34;&gt;Notes&lt;/a&gt;
+    &lt;nav class=&#34;rst-shell__nav&#34;&gt;&lt;span class=&#34;rst-shell__group&#34;&gt;Work&lt;/span&gt;&lt;a href=&#34;/&#34; aria-current=&#34;page&#34;&gt;Dashboard&lt;/a&gt;&lt;a href=&#34;/reports&#34;&gt;Reports&lt;/a&gt;&lt;/nav&gt;
+  &lt;/aside&gt;
+  &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
+&lt;/div&gt;</code></pre>
+</div>
+<p class="ds-note"><a href="/design-system/day/en/shells/sidebar.html" target="_blank" rel="noopener">Open the sidebar shell demo, a standalone preview.</a><span class="rst-sr-only"> (opens in a new tab)</span>.</p></div>
+</article>
+
+<!-- idiom: shell-topbar -->
+<article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
+<h3 class="rst-mono">shell-topbar</h3>
+<p class="ds-lead">The topbar shell&#39;s own chrome, as markup. Layout ships it as a whole template.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-shell-topbar-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;shell-topbar sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;script defer src=&#34;/design-system/rastrillo.js&#34;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-shell-topbar&#34;&gt;
+  &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
+  &lt;header class=&#34;rst-shell__bar&#34;&gt;&lt;a class=&#34;rst-shell__brand&#34; href=&#34;#&#34;&gt;Notes&lt;/a&gt;
+    &lt;nav class=&#34;rst-shell__nav&#34;&gt;&lt;a href=&#34;#&#34; aria-current=&#34;page&#34;&gt;Home&lt;/a&gt;&lt;a href=&#34;#&#34;&gt;Archive&lt;/a&gt;&lt;/nav&gt;
+    &lt;details class=&#34;rst-dropdown rst-shell__account&#34; name=&#34;rst-menus&#34;&gt;&lt;summary&gt;Account&lt;span class=&#34;rst-caret&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;m6 9 6 6 6-6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/summary&gt;
+      &lt;div class=&#34;rst-dropdown__menu&#34;&gt;&lt;a href=&#34;#&#34;&gt;Settings&lt;/a&gt;&lt;/div&gt;&lt;/details&gt;
+  &lt;/header&gt;
+  &lt;main class=&#34;rst-page&#34; id=&#34;main&#34;&gt;Content.&lt;/main&gt;
+  &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-shell-topbar&#34;&gt;
+  &lt;a class=&#34;rst-skip&#34; href=&#34;#main&#34;&gt;Skip to content&lt;/a&gt;
+  &lt;header class=&#34;rst-shell__bar&#34;&gt;&lt;a class=&#34;rst-shell__brand&#34; href=&#34;/&#34;&gt;Notes&lt;/a&gt;
+    &lt;nav class=&#34;rst-shell__nav&#34;&gt;&lt;a href=&#34;/&#34; aria-current=&#34;page&#34;&gt;Home&lt;/a&gt;&lt;a href=&#34;/archive&#34;&gt;Archive&lt;/a&gt;&lt;/nav&gt;
+    &lt;details class=&#34;rst-dropdown rst-shell__account&#34; name=&#34;rst-menus&#34;&gt;&lt;summary&gt;Account&lt;span class=&#34;rst-caret&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;m6 9 6 6 6-6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/summary&gt;
+      &lt;div class=&#34;rst-dropdown__menu&#34;&gt;&lt;a href=&#34;/settings&#34;&gt;Settings&lt;/a&gt;&lt;/div&gt;&lt;/details&gt;
+  &lt;/header&gt;
+  &lt;main class=&#34;rst-page&#34; id=&#34;main&#34;&gt;Content.&lt;/main&gt;
+  &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
+&lt;/div&gt;</code></pre>
+</div>
+<p class="ds-note"><a href="/design-system/day/en/shells/topbar.html" target="_blank" rel="noopener">Open the topbar shell demo, a dedicated preview.</a><span class="rst-sr-only"> (opens in a new tab)</span>.</p></div>
+</article>
+
+<!-- idiom: tblock -->
+<article class="ds-partial" id="idiom-tblock" data-ds-anchor>
+<h3 class="rst-mono">tblock</h3>
+<p class="ds-lead">A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.</p>
+
+<div class="ds-sample"><div class="ds-view" style="--ds-h: 270px; --ds-hm: 337px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">Preview</legend>
+<label class="ds-view__tab"><input type="radio" name="idiom-tblock-0" checked>Desktop</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">Mobile</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">Code</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock sample standalone preview — UI primitives" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;tblock sample standalone preview — UI primitives&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-tblock&#34;&gt;
+  &lt;label class=&#34;rst-tblock__head&#34;&gt;&lt;input type=&#34;checkbox&#34; name=&#34;notify&#34; checked&gt;
+    &lt;span class=&#34;rst-switch__track&#34; aria-hidden=&#34;true&#34;&gt;&lt;/span&gt;
+    &lt;span&gt;&lt;span class=&#34;rst-tblock__title&#34;&gt;Email notifications&lt;/span&gt;&lt;span class=&#34;rst-tblock__desc&#34;&gt;Sent for every reply to a thread you&#39;re in.&lt;/span&gt;&lt;/span&gt;
+  &lt;/label&gt;
+  &lt;div class=&#34;rst-tblock__body&#34;&gt;
+    &lt;div class=&#34;rst-field&#34;&gt;
+      &lt;label class=&#34;rst-field__label&#34; for=&#34;notify-freq&#34;&gt;Frequency&lt;/label&gt;
+      &lt;input class=&#34;rst-input&#34; type=&#34;text&#34; id=&#34;notify-freq&#34; name=&#34;notify_freq&#34; value=&#34;Daily digest&#34;&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-tblock&#34;&gt;
+  &lt;label class=&#34;rst-tblock__head&#34;&gt;&lt;input type=&#34;checkbox&#34; name=&#34;notify&#34; checked&gt;
+    &lt;span class=&#34;rst-switch__track&#34; aria-hidden=&#34;true&#34;&gt;&lt;/span&gt;
+    &lt;span&gt;&lt;span class=&#34;rst-tblock__title&#34;&gt;Email notifications&lt;/span&gt;&lt;span class=&#34;rst-tblock__desc&#34;&gt;Sent for every reply to a thread you&#39;re in.&lt;/span&gt;&lt;/span&gt;
+  &lt;/label&gt;
+  &lt;div class=&#34;rst-tblock__body&#34;&gt;
+    &lt;div class=&#34;rst-field&#34;&gt;
+      &lt;label class=&#34;rst-field__label&#34; for=&#34;notify-freq&#34;&gt;Frequency&lt;/label&gt;
+      &lt;input class=&#34;rst-input&#34; type=&#34;text&#34; id=&#34;notify-freq&#34; name=&#34;notify_freq&#34; value=&#34;Daily digest&#34;&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+</div>
+</div>
+</article>
+
+
+
+</div>
+</main>
+</div>
+</body>
+</html>

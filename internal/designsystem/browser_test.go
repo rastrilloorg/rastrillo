@@ -35,6 +35,7 @@ import (
 	"github.com/chromedp/chromedp/kb"
 
 	"github.com/carlosframework/rastrillo/harness"
+	"github.com/carlosframework/rastrillo/ui"
 )
 
 // treeHandler serves the rendered tree at the mount path the pages
@@ -211,8 +212,14 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 // made against one of these rather than against a handful of separate
 // evaluations, so a step's whole picture is caught at one instant.
 type railState struct {
-	Links   int      `json:"links"`
-	Shown   []string `json:"shown"`
+	Links int      `json:"links"`
+	Shown []string `json:"shown"`
+	// Pages is the rail's page links — the sections that have nothing
+	// anchored under them yet and are drawn as a plain link rather than
+	// a disclosure. They are how a reader reaches that page, not
+	// entries in a list of anchors, so the filter leaves them alone and
+	// this is where that is asserted rather than assumed.
+	Pages   []string `json:"pages"`
 	Folded  int      `json:"folded"`
 	Open    []bool   `json:"open"`
 	Empty   bool     `json:"empty"`
@@ -232,13 +239,15 @@ type railState struct {
 // painted down the page. It did.
 const railProbe = `(() => {
   const seen = el => getComputedStyle(el).display !== "none";
-  const links = Array.from(document.querySelectorAll("#ds-nav a"));
+  const links = Array.from(document.querySelectorAll("#ds-nav details a"));
+  const pages = Array.from(document.querySelectorAll("#ds-nav > a"));
   const secs = Array.from(document.querySelectorAll("#ds-nav details"));
   const box = document.querySelector("[data-ds-filter]");
   const empty = document.querySelector("[data-ds-filter-empty]");
   return {
     links: links.length,
     shown: links.filter(seen).map(a => a.getAttribute("href")),
+    pages: pages.filter(seen).map(a => a.getAttribute("href")),
     folded: secs.filter(d => !seen(d)).length,
     open: secs.map(d => d.open),
     empty: seen(empty),
@@ -283,7 +292,16 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
 
-	url := rig.Origin + indexHref(RootTheme(), "en")
+	// The components page: the rail is the same on all five, and this
+	// is the one whose own section is the long one, so a filter that
+	// folded the current section away would show up here first.
+	url := rig.Origin + pageHref(RootTheme(), "en", fileOf("components"))
+	// The rail's entries are absolute page addresses with a fragment on
+	// the end, the current page's included, so every expectation below
+	// names the page it links as well as the fragment.
+	on := func(locale, kind, id string) string {
+		return anchorHrefIn(RootTheme(), locale, fileOf(kind), id)
+	}
 
 	var (
 		fresh, scriptless, badge, family, titled railState
@@ -330,17 +348,19 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		chromedp.Evaluate(`(() => {
 		  document.documentElement.removeAttribute("data-rst-js");
 		  const seen = el => getComputedStyle(el).display !== "none";
-		  const links = Array.from(document.querySelectorAll("#ds-nav a"));
+		  const links = Array.from(document.querySelectorAll("#ds-nav details a"));
+		  const pages = Array.from(document.querySelectorAll("#ds-nav > a"));
 		  const state = {
 		    links: links.length,
 		    shown: links.filter(seen).map(a => a.getAttribute("href")),
+		    pages: pages.filter(seen).map(a => a.getAttribute("href")),
 		    folded: 0, open: [], empty: false, focused: "", value: "",
 		    boxSeen: seen(document.querySelector(".ds-search")),
 		  };
 		  document.documentElement.setAttribute("data-rst-js", "on");
 		  return state;
 		})()`, &scriptless),
-		chromedp.Evaluate(`document.querySelectorAll("#ds-nav a").length`, &navWithNoJS),
+		chromedp.Evaluate(`document.querySelectorAll("#ds-nav details a").length`, &navWithNoJS),
 		at("scriptless-read"),
 
 		// A partial's own name: one entry left in Partials, every other
@@ -395,7 +415,7 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// typing them off an English keyboard types neither accent, and
 		// with the fold replaced by a plain toLowerCase both queries
 		// find nothing at all.
-		chromedp.Navigate(rig.Origin+indexHref(RootTheme(), "es")), at("navigated-es"),
+		chromedp.Navigate(rig.Origin+pageHref(RootTheme(), "es", fileOf("components"))), at("navigated-es"),
 		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("es-filter-visible"),
 		typing("presentacion"), at("typed-unaccented-family"),
 		chromedp.Evaluate(railProbe, &accented),
@@ -418,10 +438,22 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if fresh.Empty {
 		t.Error("the no-matches line is on screen before anything is typed")
 	}
-	for i, open := range fresh.Open {
-		if !open {
-			t.Errorf("sidebar section %d arrives collapsed; the rail is a table of contents first", i)
+	// One section arrives open: the page you are on. The rail carries
+	// the whole vocabulary on every page since the split, so opening
+	// all of it would be six hundred lines of links over the reader's
+	// content — the folded sections are what makes a shared rail
+	// usable, and the filter is what reaches into them.
+	var open int
+	for _, o := range fresh.Open {
+		if o {
+			open++
 		}
+	}
+	if open != 1 {
+		t.Errorf("%d of %d sidebar sections arrive open, want exactly 1 (the page you are on)", open, len(fresh.Open))
+	}
+	if len(fresh.Open) > 1 && !fresh.Open[1] {
+		t.Error("the Components section is not the one open on the components page")
 	}
 
 	if scriptless.BoxSeen {
@@ -431,13 +463,13 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		t.Errorf("with the marker off the rail shows %d of %d links; the nav is complete with or without a script", len(scriptless.Shown), fresh.Links)
 	}
 
-	if !showing(badge, "#partial-badge") {
+	if !showing(badge, on("en", "components", "partial-badge")) {
 		t.Error(`typing "badge" hid the badge partial`)
 	}
-	if showing(badge, "#partial-meter") {
+	if showing(badge, on("en", "components", "partial-meter")) {
 		t.Error(`typing "badge" left the meter partial on screen`)
 	}
-	if showing(badge, "#tokens-accent") {
+	if showing(badge, on("en", "tokens", "tokens-accent")) {
 		t.Error(`typing "badge" left a token group on screen`)
 	}
 	if badge.Folded == 0 {
@@ -447,23 +479,23 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		t.Error(`typing "badge" said there were no matches`)
 	}
 
-	if !showing(family, "#family-form") {
+	if !showing(family, on("en", "components", "family-form")) {
 		t.Error(`typing "form" hid the Form family's own heading`)
 	}
-	if !showing(family, "#partial-field-check") {
+	if !showing(family, on("en", "components", "partial-field-check")) {
 		t.Error(`typing "form" hid field-check, which is in the family that matched`)
 	}
 	// Display is not the family to check here: form-error lives in it,
 	// so "form" legitimately keeps it. List screen has nothing in it
 	// that matches, which is the case worth asserting.
-	if showing(family, "#family-list-screen") {
+	if showing(family, on("en", "components", "family-list-screen")) {
 		t.Error(`typing "form" left the List screen family's heading over an empty gap`)
 	}
-	if !showing(family, "#partial-form-error") {
+	if !showing(family, on("en", "components", "partial-form-error")) {
 		t.Error(`typing "form" hid form-error, which matches on its own name`)
 	}
 
-	if !showing(titled, "#shell-column") || !showing(titled, "#shell-topbar") || !showing(titled, "#shell-sidebar") {
+	if !showing(titled, on("en", "shells", "shell-column")) || !showing(titled, on("en", "shells", "shell-topbar")) || !showing(titled, on("en", "shells", "shell-sidebar")) {
 		t.Errorf(`typing a section's own name ("shells") did not reveal the section: %v`, titled.Shown)
 	}
 	if len(titled.Shown) != 3 {
@@ -472,6 +504,11 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 
 	if len(junk.Shown) != 0 {
 		t.Errorf("junk left %d entries on screen: %v", len(junk.Shown), junk.Shown)
+	}
+	// The page links are not entries; a query that matches nothing
+	// still leaves a reader a way to every page of the gallery.
+	if len(junk.Pages) != len(fresh.Pages) || len(fresh.Pages) == 0 {
+		t.Errorf("junk left %d of %d page links on screen; a page link is how you leave this page, not a search result", len(junk.Pages), len(fresh.Pages))
 	}
 	if !junk.Empty {
 		t.Error("junk matched nothing and the page never said so")
@@ -503,16 +540,16 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	// Both accent checks are stated as "the accented label is on
 	// screen", so a fold that has stopped folding fails as an empty
 	// rail rather than as a count nobody can read.
-	if !showing(accented, "#family-display") {
+	if !showing(accented, on("es", "components", "family-display")) {
 		t.Errorf(`on the Spanish page, "presentacion" did not find "Presentación": %v`, accented.Shown)
 	}
-	if !showing(accented, "#partial-badge") {
+	if !showing(accented, on("es", "components", "partial-badge")) {
 		t.Error(`"presentacion" found the family and not the partials under it`)
 	}
-	if showing(accented, "#family-form") {
+	if showing(accented, on("es", "components", "family-form")) {
 		t.Error(`"presentacion" left another family's heading on screen`)
 	}
-	if !showing(unaccented, "#tokens-surfaces-and-lines") {
+	if !showing(unaccented, on("es", "tokens", "tokens-surfaces-and-lines")) {
 		t.Errorf(`on the Spanish page, "lineas" did not find "Superficies y líneas": %v`, unaccented.Shown)
 	}
 
@@ -571,7 +608,9 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
 
-	url := rig.Origin + indexHref(RootTheme(), "en")
+	// The components page: since the split it is the one the callout
+	// sample lives on, and the one that frames most of the tree.
+	url := rig.Origin + pageHref(RootTheme(), "en", fileOf("components"))
 
 	// One example, named rather than picked by position: the callout
 	// is small, has no script and no menu, and is on the page in every
@@ -822,7 +861,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 // logged and not gated.
 func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
+	ctx, cancel := context.WithTimeout(rig.Context(), 420*time.Second)
 	defer cancel()
 
 	const measure = `(() => {
@@ -839,42 +878,76 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		  return JSON.stringify(out);
 		})()`
 
-	var desktop, mobile string
-	if err := chromedp.Run(ctx,
-		chromedp.EmulateViewport(1500, 1000),
-		chromedp.Navigate(rig.Origin+indexHref(RootTheme(), "en")),
-		chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
-		  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
-		  return "ok";
-		})()`, new(string)),
-		chromedp.Sleep(8*time.Second),
-		chromedp.Evaluate(measure, &desktop),
-		// And the same page on the other tab. The mobile height is
-		// one factor off the desktop one rather than a second table,
-		// so this is where that factor is checked.
-		chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--m input").forEach(i => i.click()); "ok"`, new(string)),
-		chromedp.Sleep(4*time.Second),
-		chromedp.Evaluate(measure, &mobile),
-	); err != nil {
-		t.Fatalf("measuring the frames: %v", err)
-	}
-
-	for _, tab := range []struct{ name, raw string }{{"Desktop", desktop}, {"Mobile", mobile}} {
-		measured(t, tab.name, tab.raw)
+	// Every page that frames anything, because previewHeights is one
+	// table over the whole tree: the partial samples are on
+	// components.html, the class idioms on primitives.html and the
+	// three shells on shells.html, and a height measured on one of them
+	// says nothing about the other two.
+	// The floor per page is derived, not guessed: every partial ui
+	// defines has a section on the components page, every idiom
+	// ui.Styleguide ships has one on the primitives page, and every
+	// shell has one on the shells page.
+	//
+	// This is also the only place "documented" and "has an example to
+	// look at" are joined, so the message it fails with has to name
+	// that first. A component documented with an empty section reads
+	// exactly like a frame that did not load from here, and the first
+	// of those is a rendering bug in the tree while the second is a
+	// flake in this job; a message that only offers the second sends
+	// the reader looking in the wrong place.
+	for _, tc := range []struct {
+		kind  string
+		least int
+		owed  string
+	}{
+		{"components", len(definedPartials(t)), "every partial ui.Templates() defines has a section here"},
+		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
+		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
+	} {
+		kind := tc.kind
+		var desktop, mobile string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(1500, 1000),
+			chromedp.Navigate(rig.Origin+pageHref(RootTheme(), "en", fileOf(kind))),
+			chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery),
+			chromedp.Evaluate(`(() => {
+			  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
+			  return "ok";
+			})()`, new(string)),
+			chromedp.Sleep(8*time.Second),
+			chromedp.Evaluate(measure, &desktop),
+			// And the same page on the other tab. The mobile height is
+			// one factor off the desktop one rather than a second table,
+			// so this is where that factor is checked.
+			chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--m input").forEach(i => i.click()); "ok"`, new(string)),
+			chromedp.Sleep(4*time.Second),
+			chromedp.Evaluate(measure, &mobile),
+		); err != nil {
+			t.Fatalf("measuring the %s frames: %v", kind, err)
+		}
+		for _, tab := range []struct{ name, raw string }{{"Desktop", desktop}, {"Mobile", mobile}} {
+			if n := measured(t, kind+" "+tab.name, tab.raw); n < tc.least {
+				t.Errorf("%s %s: %d sections have a rendered example, want at least %d — %s. "+
+					"Either something ui ships is documented with nothing to look at (a partial with no sample "+
+					"state, an idiom with no styleguide entry, a shell with no demo), or the frames on this "+
+					"page did not all load", kind, tab.name, n, tc.least, tc.owed)
+			}
+		}
 	}
 }
 
 // measured holds one tab's readings: section id → [what the document
-// needs, what the frame gives it].
-func measured(t *testing.T, tab, raw string) {
+// needs, what the frame gives it]. It returns how many sections it saw,
+// so the caller can insist the three pages between them measured the
+// whole gallery.
+func measured(t *testing.T, tab, raw string) int {
 	t.Helper()
 	var got map[string][2]int
 	if err := json.Unmarshal([]byte(raw), &got); err != nil {
 		t.Fatalf("%s: reading the measurements: %v", tab, err)
 	}
-	if len(got) < 40 {
-		t.Fatalf("%s: measured %d sections, which is not the whole page — the frames did not load", tab, len(got))
+	if len(got) == 0 {
+		t.Fatalf("%s: no section on this page has a rendered example at all — either the page rendered none, or no frame on it loaded", tab)
 	}
 	names := make([]string, 0, len(got))
 	for name := range got {
@@ -902,4 +975,5 @@ func measured(t *testing.T, tab, raw string) {
 			t.Logf("%s: %dpx of frame for %dpx of document — deliberate headroom, or a number to bring down", name, box, need)
 		}
 	}
+	return len(got)
 }

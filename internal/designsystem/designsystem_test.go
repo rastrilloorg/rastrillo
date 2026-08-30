@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -45,9 +46,40 @@ const treeDir = "../../docs/design-system"
 // attribute-escaping a run of markup costs about 40% on top, because
 // every quote in it becomes six characters. Add ~360 bytes of document
 // preamble and ~450 of widget markup per example, 110 examples per
-// index page, 36 index pages: 14.1 MiB, which is where it sits. The
-// ceiling has NOT moved for it; a third copy of every sample would
-// need it to, and that is the conversation to have before writing one.
+// gallery, 36 galleries: 14.5 MiB, which is where it sat before the
+// split.
+//
+// The split added 2.6 MiB and no content. The samples did not move
+// twice; what is repeated is the FRAME — the head with its inlined
+// dsCSS, the chrome, and the 7.6 KiB rail that is now the same on every
+// page — four more times per directory: 144 extra pages at ~19 KiB of
+// furniture each. 17,891,845 bytes, which is 85% of this ceiling.
+//
+// ── The two dsCSS numbers, because there are two ─────────────────────
+//
+// len(dsCSS) is 11,380 bytes and what reaches a page is 7,765. Neither
+// is a typo for the other: html/template's CSS sanitiser strips the
+// comments out of <style> text, and better than a third of that
+// constant is the comments explaining the preview widget's scaling and
+// the scriptless story. Measure the constant and you get the first
+// number; measure a rendered page and you get the second. The one that
+// costs disk is 7,765.
+//
+// ── The budget for the next page kind ────────────────────────────────
+//
+// Headroom is 3,079,675 bytes (2.94 MiB). Two more page kinds are
+// planned — icons and getting started — and 72 more pages at the
+// Overview stub's 19,281 bytes, which is furniture and nothing else,
+// costs 1.32 MiB. That leaves 1.62 MiB for what those pages actually
+// say, and the icons page is not the threat it looks: rastrillo.Icon
+// answers 11 slugs and 2,487 bytes of SVG in total. They fit.
+//
+// If a later page does not, the lever is the stylesheet before the
+// ceiling. dsCSS reaches all 181 gallery pages (180 plus the root
+// index, which is a copy of one of them) as the same 7,765 bytes every
+// time: 1.34 MiB gross, ~1.32 MiB net once a shared asset and a <link>
+// per page are paid for. Raising maxTreeBytes is the last resort, not
+// the first.
 const maxTreeBytes = 20 << 20
 
 // render is Render() with the error already fatal — every test here
@@ -119,38 +151,113 @@ func definedPartials(t *testing.T) []string {
 	return names
 }
 
-// Every partial ui ships is rendered on the page, marked by a comment
-// the renderer emits per partial section. The marker is the gate
-// surface deliberately: greping rendered HTML for a class or a string
-// would break every time a partial's markup is tidied, and this gate
-// is about coverage, not markup.
-func TestEveryPartialAppearsOnThePage(t *testing.T) {
-	page := string(render(t)[RootTheme()+"/en/index.html"])
-	if page == "" {
-		t.Fatalf("no %s/en/index.html in the rendered tree", RootTheme())
+// galleryFiles is the five section pages of one theme × locale
+// directory, in page order. Read off pageKinds() rather than spelled
+// out: a sixth page kind is covered by every gate that walks this the
+// day its row lands.
+func galleryFiles(theme, locale string) []string {
+	out := make([]string, 0, len(pageKinds()))
+	for _, pk := range pageKinds() {
+		out = append(out, theme+"/"+locale+"/"+pk.File)
 	}
-	for _, name := range definedPartials(t) {
-		if !strings.Contains(page, "<!-- partial: "+name+" -->") {
-			t.Errorf("partial %q is not on the page (no marker comment)", name)
+	return out
+}
+
+// galleryPage is one page of one directory, by kind, with a fatal if
+// the renderer did not produce it.
+func galleryPage(t *testing.T, files map[string][]byte, theme, locale, kind string) string {
+	t.Helper()
+	name := theme + "/" + locale + "/" + fileOf(kind)
+	page := string(files[name])
+	if page == "" {
+		t.Fatalf("no %s in the rendered tree", name)
+	}
+	return page
+}
+
+// markerCounts counts each NAME a marker comment carries, over a set of
+// pages: the union the two coverage gates below assert.
+//
+// The union is the whole point since the split. Before it, every
+// partial and every idiom was on one page, and "is the marker on this
+// page" was the same question as "is this partial documented at all".
+// It is not any more: the partials are on components.html and the
+// idioms on primitives.html, and a per-page gate would pass on a page
+// that had never had them — a partial dropped from its section would
+// satisfy the tokens page, the shells page and the overview, and the
+// build would stay green with the component missing from the tree.
+//
+// So the gates count over the whole directory, and they insist on
+// exactly one page rather than at least one: zero is a component that
+// vanished, and two is a section rendered twice, which is how a page
+// kind added by copying its neighbour goes wrong.
+func markerCounts(files map[string][]byte, pages []string, re *regexp.Regexp) map[string]int {
+	seen := map[string]int{}
+	for _, name := range pages {
+		for _, m := range re.FindAllStringSubmatch(string(files[name]), -1) {
+			seen[m[1]]++
+		}
+	}
+	return seen
+}
+
+// Every partial ui ships is rendered somewhere in each gallery, marked
+// by a comment the renderer emits per partial section. The marker is
+// the gate surface deliberately: greping rendered HTML for a class or a
+// string would break every time a partial's markup was tidied, and this
+// gate is about coverage, not markup.
+func TestEveryPartialAppearsAcrossThePages(t *testing.T) {
+	files := render(t)
+	want := definedPartials(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			where := theme + "/" + locale
+			found := markerCounts(files, galleryFiles(theme, locale), partialMarker)
+			for _, name := range want {
+				switch found[name] {
+				case 1:
+				case 0:
+					t.Errorf("%s: partial %q is on none of the %d pages (no marker comment anywhere in the directory)", where, name, len(pageKinds()))
+				default:
+					t.Errorf("%s: partial %q is marked on %d pages; a section is being rendered twice", where, name, found[name])
+				}
+			}
+			for name := range found {
+				if !slices.Contains(want, name) {
+					t.Errorf("%s: a page marks partial %q, which ui does not define", where, name)
+				}
+			}
 		}
 	}
 }
 
-// Every class idiom ui.Styleguide ships is rendered on the page, same
-// marker mechanism.
-func TestEveryStyleguideSampleAppears(t *testing.T) {
-	page := string(render(t)[RootTheme()+"/en/index.html"])
-	if page == "" {
-		t.Fatalf("no %s/en/index.html in the rendered tree", RootTheme())
-	}
-	names := make([]string, 0, len(ui.Styleguide()))
+// Every class idiom ui.Styleguide ships is rendered somewhere in each
+// gallery, same marker mechanism and the same union.
+func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {
+	files := render(t)
+	want := make([]string, 0, len(ui.Styleguide()))
 	for name := range ui.Styleguide() {
-		names = append(names, name)
+		want = append(want, name)
 	}
-	sort.Strings(names)
-	for _, name := range names {
-		if !strings.Contains(page, "<!-- idiom: "+name+" -->") {
-			t.Errorf("class idiom %q is not on the page (no marker comment)", name)
+	sort.Strings(want)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			where := theme + "/" + locale
+			found := markerCounts(files, galleryFiles(theme, locale), idiomMarker)
+			for _, name := range want {
+				switch found[name] {
+				case 1:
+				case 0:
+					t.Errorf("%s: class idiom %q is on none of the %d pages (no marker comment anywhere in the directory)", where, name, len(pageKinds()))
+				default:
+					t.Errorf("%s: class idiom %q is marked on %d pages; a section is being rendered twice", where, name, found[name])
+				}
+			}
+			for name := range found {
+				if !slices.Contains(want, name) {
+					t.Errorf("%s: a page marks class idiom %q, which ui.Styleguide does not ship", where, name)
+				}
+			}
 		}
 	}
 }
@@ -406,13 +513,16 @@ func localeOfPath(p string) string {
 	return parts[1]
 }
 
-// No index page may render a live modal. `.rst-modal-overlay` is
+// No gallery page may render a live modal. `.rst-modal-overlay` is
 // `position: fixed; inset: 0; z-index: 10` and
 // `body:has(.rst-backdrop) { overflow: hidden }`, so the modal sample
 // rendered inline did not sit in the gallery's flow at all: every index
 // page loaded with a full-viewport modal over it, the content behind it
 // unscrollable, and its Close link — the sample's own `/settings` —
-// a 404. That was the live bug on rastrillo.org/design-system.
+// a 404. That was the live bug on rastrillo.org/design-system. The rule
+// is the whole gallery's, not the overview's: five pages share one
+// stylesheet and any of them could grow a sample that laid an overlay
+// over it.
 //
 // The cure is the shells': escaped source in a <pre>, with the markup
 // live at its own URL. Escaped source cannot trip this gate, which is
@@ -425,31 +535,34 @@ func localeOfPath(p string) string {
 // the source and the demo link have to be there. A gate that only
 // forbade the live markup would pass just as happily on a page that had
 // dropped the modal idiom altogether.
-func TestNoIndexPageOpensAModalOverTheGallery(t *testing.T) {
+func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 	files := render(t)
-	names := make([]string, 0, len(files))
-	for name := range files {
-		if strings.HasSuffix(name, "index.html") {
-			names = append(names, name)
-		}
-	}
-	sort.Strings(names)
-	if len(names) == 0 {
-		t.Fatal("no index pages rendered")
-	}
-	for _, name := range names {
-		body := string(files[name])
-		for _, live := range []string{`class="rst-modal-overlay"`, `class="rst-backdrop"`} {
-			if strings.Contains(body, live) {
-				t.Errorf("%s renders a live %s — the overlay is fixed to the viewport and covers the page", name, live)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, name := range galleryFiles(theme, locale) {
+				body := string(files[name])
+				if body == "" {
+					t.Errorf("%s is missing", name)
+					continue
+				}
+				for _, live := range []string{`class="rst-modal-overlay"`, `class="rst-backdrop"`} {
+					if strings.Contains(body, live) {
+						t.Errorf("%s renders a live %s — the overlay is fixed to the viewport and covers the page", name, live)
+					}
+				}
 			}
-		}
-		if !strings.Contains(body, `class=&#34;rst-modal-overlay&#34;`) {
-			t.Errorf("%s does not show the modal sample as escaped source", name)
-		}
-		theme, locale := themeLocaleOfPath(name)
-		if href := modalHref(theme, locale); !strings.Contains(body, `href="`+href+`"`) {
-			t.Errorf("%s does not link its modal demo (%s)", name, href)
+			// The second half, on the one page that owes it. The modal
+			// idiom lives under UI primitives since the split, so that
+			// is where the escaped source and the demo link have to be
+			// — and naming the page rather than sweeping for it is what
+			// makes this fail if the idiom is dropped altogether.
+			page := galleryPage(t, files, theme, locale, "primitives")
+			if !strings.Contains(page, `class=&#34;rst-modal-overlay&#34;`) {
+				t.Errorf("%s/%s/%s does not show the modal sample as escaped source", theme, locale, fileOf("primitives"))
+			}
+			if href := modalHref(theme, locale); !strings.Contains(page, `href="`+href+`"`) {
+				t.Errorf("%s/%s/%s does not link its modal demo (%s)", theme, locale, fileOf("primitives"), href)
+			}
 		}
 	}
 }
@@ -465,9 +578,11 @@ func themeLocaleOfPath(p string) (theme, locale string) {
 	return parts[0], parts[1]
 }
 
-// Every theme × locale × shell combination is present, plus the root
-// index and the seven shared assets — the tree's shape is part of its
-// contract with the website's sync script.
+// Every theme × locale × page kind × shell combination is present, plus
+// the root index and the seven shared assets — the tree's shape is part
+// of its contract with the website's sync script. The page kinds come
+// off pageKinds(), so a sixth page is expected in every directory the
+// moment its row lands and nothing here has to be remembered.
 func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
@@ -477,7 +592,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	for _, theme := range ui.ThemeNames() {
 		want = append(want, "theme-"+theme+".css")
 		for _, locale := range rastrillo.BaseLocales() {
-			want = append(want, fmt.Sprintf("%s/%s/index.html", theme, locale))
+			want = append(want, galleryFiles(theme, locale)...)
 			want = append(want, fmt.Sprintf("%s/%s/modal.html", theme, locale))
 			for _, shell := range ui.LayoutNames() {
 				want = append(want, fmt.Sprintf("%s/%s/shells/%s.html", theme, locale, shell))
@@ -495,9 +610,10 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	// still be a valid document, just painted in the wrong palette.
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			path := fmt.Sprintf("%s/%s/index.html", theme, locale)
-			if want := `href="` + mountPrefix + `theme-` + theme + `.css"`; !strings.Contains(string(files[path]), want) {
-				t.Errorf("%s does not link its own theme (%s)", path, want)
+			for _, path := range galleryFiles(theme, locale) {
+				if want := `href="` + mountPrefix + `theme-` + theme + `.css"`; !strings.Contains(string(files[path]), want) {
+					t.Errorf("%s does not link its own theme (%s)", path, want)
+				}
 			}
 		}
 	}
@@ -537,7 +653,7 @@ func TestRootIndexIsTheDefaultThemeInEnglishAtTheTreeRoot(t *testing.T) {
 // natural-language date combobox both boot from the JavaScript the tree
 // ships, so the page has to give them something to boot on.
 func TestEnhancedControlsAreOnThePage(t *testing.T) {
-	page := string(render(t)[RootTheme()+"/en/index.html"])
+	page := galleryPage(t, render(t), RootTheme(), "en", "components")
 	// Read out of the preview documents, which is where every sample
 	// on this page now lives. Booting is the point of the assertion, so
 	// it is not enough that the attribute is somewhere in the file: the
@@ -598,67 +714,82 @@ func widgetsOf(page string) []string {
 // deselect the tab in another — and neither shows up in a screenshot.
 func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 	files := render(t)
-	page := string(files[RootTheme()+"/en/index.html"])
-	widgets := widgetsOf(page)
-	if len(widgets) == 0 {
-		t.Fatal("no preview widgets on the page at all")
-	}
-	// One per sample state, one per class idiom, one per shell.
-	if n := strings.Count(page, `<div class="ds-sample">`) + len(ui.LayoutNames()); n != len(widgets) {
-		t.Errorf("%d preview widgets for %d examples", len(widgets), n)
-	}
-	groups := map[string]bool{}
-	var withCode int
-	for i, w := range widgets {
-		radios := regexp.MustCompile(`<input type="radio" name="([^"]*)"( checked)?>`).FindAllStringSubmatch(w, -1)
-		if len(radios) < 2 || len(radios) > 3 {
-			t.Errorf("widget %d has %d tabs, want 2 (a framed page) or 3 (with its source)", i, len(radios))
-			continue
+	var total int
+	for _, name := range galleryFiles(RootTheme(), "en") {
+		page := string(files[name])
+		widgets := widgetsOf(page)
+		// One widget per sample state, and one per shell section — the
+		// only example on the tree whose frame is a page of the tree
+		// rather than a document written for it. Counted off the page's
+		// own markup rather than off a per-page-kind table, so a page
+		// that grows examples is covered without an entry here.
+		if n := strings.Count(page, `<div class="ds-sample">`) + strings.Count(page, `<section class="ds-shell"`); n != len(widgets) {
+			t.Errorf("%s: %d preview widgets for %d examples", name, len(widgets), n)
 		}
-		var checked int
-		for _, r := range radios {
-			if r[1] != radios[0][1] {
-				t.Errorf("widget %d: tabs in one widget carry two names (%q, %q), so they are not one group", i, radios[0][1], r[1])
+		total += len(widgets)
+		groups := map[string]bool{}
+		var withCode int
+		for i, w := range widgets {
+			radios := regexp.MustCompile(`<input type="radio" name="([^"]*)"( checked)?>`).FindAllStringSubmatch(w, -1)
+			if len(radios) < 2 || len(radios) > 3 {
+				t.Errorf("%s widget %d has %d tabs, want 2 (a framed page) or 3 (with its source)", name, i, len(radios))
+				continue
 			}
-			if r[2] != "" {
-				checked++
+			var checked int
+			for _, r := range radios {
+				if r[1] != radios[0][1] {
+					t.Errorf("%s widget %d: tabs in one widget carry two names (%q, %q), so they are not one group", name, i, radios[0][1], r[1])
+				}
+				if r[2] != "" {
+					checked++
+				}
+			}
+			if checked != 1 || radios[0][2] == "" {
+				t.Errorf("%s widget %d: %d tabs start checked and the first is %q; Desktop is the view a page with no interaction has to open on", name, i, checked, radios[0][2])
+			}
+			if groups[radios[0][1]] {
+				t.Errorf("%s widget %d: the radio name %q is already used by another widget on this page; choosing a tab in one would clear the other", name, i, radios[0][1])
+			}
+			groups[radios[0][1]] = true
+			if n := strings.Count(w, "<iframe"); n != 1 {
+				t.Errorf("%s widget %d frames %d documents, want 1", name, i, n)
+			}
+			if strings.Contains(w, "ds-view__tab--c") {
+				withCode++
+				if !strings.Contains(w, `<pre class="ds-src ds-view__code`) {
+					t.Errorf("%s widget %d offers a Code tab with no source behind it", name, i)
+				}
 			}
 		}
-		if checked != 1 || radios[0][2] == "" {
-			t.Errorf("widget %d: %d tabs start checked and the first is %q; Desktop is the view a page with no interaction has to open on", i, checked, radios[0][2])
+		// Only the shell demos are framed without their source: a shell
+		// is a Go template, not markup to copy.
+		if want := len(widgets) - strings.Count(page, `<section class="ds-shell"`); withCode != want {
+			t.Errorf("%s: %d widgets show source, want %d (all but the shell demos)", name, withCode, want)
 		}
-		if groups[radios[0][1]] {
-			t.Errorf("widget %d: the radio name %q is already used by another widget; choosing a tab in one would clear the other", i, radios[0][1])
-		}
-		groups[radios[0][1]] = true
-		if n := strings.Count(w, "<iframe"); n != 1 {
-			t.Errorf("widget %d frames %d documents, want 1", i, n)
-		}
-		if strings.Contains(w, "ds-view__tab--c") {
-			withCode++
-			if !strings.Contains(w, `<pre class="ds-src ds-view__code`) {
-				t.Errorf("widget %d offers a Code tab with no source behind it", i)
-			}
-		}
-	}
-	// Only the three shell demos are framed without their source: a
-	// shell is a Go template, not markup to copy.
-	if want := len(widgets) - len(ui.LayoutNames()); withCode != want {
-		t.Errorf("%d widgets show source, want %d (all but the shell demos)", withCode, want)
-	}
 
-	// The mechanism, asserted where it lives. Without these four rules
-	// the tabs are three radios that change nothing.
-	for _, rule := range []string{
-		`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
-		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
-		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
-		`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
-	} {
-		if !strings.Contains(page, rule) {
-			t.Errorf("the page carries no rule %q — the tabs would switch nothing", rule)
+		// The mechanism, asserted where it lives — on every page, because
+		// every page carries the whole stylesheet and any of them can
+		// frame an example. Without these four rules the tabs are three
+		// radios that change nothing.
+		for _, rule := range []string{
+			`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
+			`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
+			`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
+			`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
+		} {
+			if !strings.Contains(page, rule) {
+				t.Errorf("%s carries no rule %q — the tabs would switch nothing", name, rule)
+			}
 		}
 	}
+	// Asserted rather than assumed: a split that quietly stopped
+	// rendering a section would leave the per-page arithmetic above
+	// agreeing with itself on an empty page.
+	if total < 100 {
+		t.Errorf("the whole gallery frames %d examples; it has well over a hundred to frame", total)
+	}
+	t.Logf("%d preview widgets across %d pages", total, len(galleryFiles(RootTheme(), "en")))
+
 	// And nothing scripted, anywhere in the tree: an inline handler
 	// here would be a widget that stops working with scripts off.
 	for name, body := range files {
@@ -680,13 +811,23 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 // either. The source beside it keeps the real routes.
 func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	files := render(t)
-	page := string(files[RootTheme()+"/en/index.html"])
+	// Every preview document in the directory, not one page's: the
+	// samples are spread over components.html, primitives.html and
+	// shells.html since the split, and a sweep over one of them would
+	// leave the other two unchecked.
+	var docs []string
+	for _, name := range galleryFiles(RootTheme(), "en") {
+		docs = append(docs, srcdocs(string(files[name]))...)
+	}
+	if len(docs) == 0 {
+		t.Fatal("no preview documents anywhere in the gallery")
+	}
 	// The link half. TestEveryPageIsAWholeLocalisedDocument holds the
 	// whole tree to this, srcdocs included, and would fail first — but
 	// a gate named for links that did not look at one is a gate that
 	// can be quietly narrowed to nothing, so it looks.
 	var links int
-	for i, doc := range srcdocs(page) {
+	for i, doc := range docs {
 		for _, m := range anchorHref.FindAllStringSubmatch(doc, -1) {
 			links++
 			// "#" is what a dead route becomes; a fragment that names
@@ -702,7 +843,7 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	}
 
 	var forms, sinks int
-	for i, doc := range srcdocs(page) {
+	for i, doc := range docs {
 		n := strings.Count(doc, "<form")
 		if n == 0 {
 			if strings.Contains(doc, `name="ds-void"`) {
@@ -726,8 +867,8 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	// The other half: the Code tab is NOT deadened. A gallery that had
 	// quietly rewritten the routes a reader copies would be teaching
 	// the wrong markup.
-	if !strings.Contains(page, `href=&#34;/posts/1/edit&#34;`) {
-		t.Error("no sample source on the page keeps a real route — the Code tab has been deadened with the preview")
+	if !strings.Contains(galleryPage(t, files, RootTheme(), "en", "components"), `href=&#34;/posts/1/edit&#34;`) {
+		t.Error("no sample source on the components page keeps a real route — the Code tab has been deadened with the preview")
 	}
 }
 
@@ -745,28 +886,28 @@ func TestEveryDemoLinkOpensInANewTab(t *testing.T) {
 	away := regexp.MustCompile(`<a[^>]*\shref="([^"]*)"[^>]*>`)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			name := theme + "/" + locale + "/index.html"
-			page := string(files[name])
 			demos := map[string]bool{modalHref(theme, locale): true}
 			for _, shell := range ui.LayoutNames() {
 				demos[shellHref(theme, locale, shell)] = true
 			}
 			seen := map[string]int{}
-			for _, m := range away.FindAllStringSubmatch(page, -1) {
-				if !demos[m[1]] {
-					continue
-				}
-				seen[m[1]]++
-				if !strings.Contains(m[0], `target="_blank"`) || !strings.Contains(m[0], `rel="noopener"`) {
-					t.Errorf("%s: %s does not open in a new tab", name, m[0])
+			for _, name := range galleryFiles(theme, locale) {
+				for _, m := range away.FindAllStringSubmatch(string(files[name]), -1) {
+					if !demos[m[1]] {
+						continue
+					}
+					seen[m[1]]++
+					if !strings.Contains(m[0], `target="_blank"`) || !strings.Contains(m[0], `rel="noopener"`) {
+						t.Errorf("%s: %s does not open in a new tab", name, m[0])
+					}
 				}
 			}
-			// Two links to each shell demo (the rail and the section's
-			// own button), plus one to each shell chrome idiom's demo,
-			// and two to the modal (the rail and the idiom).
+			// The rail carries one link to each of them on all five
+			// pages, so nothing in the directory can link a demo
+			// without opening it in a tab, and nothing can drop one.
 			for href := range demos {
-				if seen[href] == 0 {
-					t.Errorf("%s: nothing links %s at all", name, href)
+				if want := len(pageKinds()); seen[href] < want {
+					t.Errorf("%s/%s: %s is linked %d times, want at least %d (the rail, on every page)", theme, locale, href, seen[href], want)
 				}
 			}
 		}
@@ -944,19 +1085,20 @@ var proseFixtureCollisions = map[string]string{
 	// The shell demos' sample screen says this as its own chrome and
 	// translates it (page.go's shellTemplate). samples.go passes the
 	// same words as page-header's ActionLabel, as fixture, on every
-	// gallery index — so on an index page an English "Write a post" is
-	// the fixture doing its job, and on a shell demo it would be a leak.
-	"Write a post": "index.html",
+	// components page — so there an English "Write a post" is the
+	// fixture doing its job, and on a shell demo it would be a leak.
+	"Write a post": "components.html",
 	// The modal idiom's sample and this package's own modal demo say
 	// the same two sentences, because the demo was written FROM the
 	// sample. The sample is a fixture — English markup a reader copies
 	// — and it used to be visible only as escaped source, which this
 	// sweep skips. It is now also rendered, inside its preview frame,
-	// so the English reaches the index page's bytes. On modal.html the
-	// same words are the page speaking and must be translated, and the
-	// sweep still says so there.
-	"Close settings": "index.html",
-	"Update the name and photo shown across the account.": "index.html",
+	// so the English reaches the primitives page's bytes, which is
+	// where the modal idiom lives. On modal.html the same words are the
+	// page speaking and must be translated, and the sweep still says so
+	// there.
+	"Close settings": "primitives.html",
+	"Update the name and photo shown across the account.": "primitives.html",
 }
 
 // escapedSource strips the <pre class="ds-src"> blocks out of a page.
@@ -1002,9 +1144,18 @@ var proseSentinels = []string{
 func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	files := render(t)
 	keys := proseKeysRendered(t)
-	en := string(files[RootTheme()+"/en/index.html"])
-	if en == "" {
-		t.Fatal("no English index page")
+	// All five English pages of the root theme, joined: the three
+	// sentinels are on three different pages since the split — the
+	// opening sentence on every one of them, the dead-link callout on
+	// the pages that frame samples, and the list-grid rule under UI
+	// primitives — and the point of a sentinel is that it is somewhere
+	// in English, not that it is on one named file.
+	var en string
+	for _, name := range galleryFiles(RootTheme(), "en") {
+		if files[name] == nil {
+			t.Fatalf("no %s in the tree", name)
+		}
+		en += string(files[name])
 	}
 	for _, s := range proseSentinels {
 		if !strings.Contains(en, s) {
@@ -1026,9 +1177,10 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	sort.Strings(names)
 	// Asserted, not assumed: a refactor that quietly narrowed what this
 	// loop walks would leave the gate passing over fewer pages, which
-	// is the failure mode it was just extended to fix. Per theme, per
-	// non-English locale: an index, a modal demo and one page per shell.
-	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (2 + len(ui.LayoutNames())); len(names) != want {
+	// is the failure mode it was once extended to fix. Per theme, per
+	// non-English locale: one page per kind, a modal demo and one page
+	// per shell.
+	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 1 + len(ui.LayoutNames())); len(names) != want {
 		t.Errorf("sweeping %d translated pages, want %d", len(names), want)
 	}
 
@@ -1067,69 +1219,91 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 // and each says which of its options is the current one. The scheme
 // toggle's server-rendered answer is System, because System is the only
 // state a page with no JavaScript can be in.
+//
+// Walked over every page kind, not just the Overview. That is not
+// thoroughness for its own sake: the switchers point at THIS page in
+// another theme or another language, and on index.html a switcher that
+// had forgotten which page it was on would emit the same URL as one
+// that had not. Reading only the Overview is reading the one page where
+// the bug is invisible.
 func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			name := theme + "/" + locale + "/index.html"
-			page := string(files[name])
-			// The chrome is read out of the page by its own element,
-			// not by cutting at main: the <style> block in the head
-			// mentions aria-pressed in a selector, and a looser slice
-			// counted the stylesheet as a fourth button.
-			_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
-			if !ok {
-				t.Errorf("%s: no gallery header", name)
-				continue
-			}
-			chrome, rest, ok := strings.Cut(after, "</header>")
-			if !ok {
-				t.Errorf("%s: the gallery header never closes", name)
-				continue
-			}
-			// The chrome moved inside the shell's main column when the
-			// sidebar landed, so what follows it is the content
-			// column rather than main itself. It is still the first
-			// thing in the reading order of the page's own content.
-			if !strings.HasPrefix(strings.TrimSpace(rest), `<div class="rst-page">`) {
-				t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
-			}
-			if _, chromeStart, _ := strings.Cut(page, `<main class="rst-shell__main" id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
-				t.Errorf("%s: the gallery header is not the first thing inside main", name)
-			}
-			// The theme switcher: one link per theme, exactly one current.
-			if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
-				t.Errorf("%s: %d themes marked current, want 1", name, n)
-			}
-			// The language switcher: one link per locale, exactly one current.
-			if n := strings.Count(chrome, `aria-current="true"`); n != 1 {
-				t.Errorf("%s: %d locales marked current, want 1", name, n)
-			}
-			if n := strings.Count(chrome, `<a href="`+mountPrefix); n != len(ui.ThemeNames())+len(rastrillo.BaseLocales()) {
-				t.Errorf("%s: the chrome has %d in-tree links, want one per theme and one per locale", name, n)
-			}
-			// The scheme toggle: three buttons, System pressed.
-			for _, value := range []string{"system", "light", "dark"} {
-				if !strings.Contains(chrome, `data-ds-scheme="`+value+`"`) {
-					t.Errorf("%s: the scheme toggle has no %s button", name, value)
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				page := string(files[name])
+				// The chrome is read out of the page by its own element,
+				// not by cutting at main: the <style> block in the head
+				// mentions aria-pressed in a selector, and a looser slice
+				// counted the stylesheet as a fourth button.
+				_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
+				if !ok {
+					t.Errorf("%s: no gallery header", name)
+					continue
 				}
-			}
-			if n := strings.Count(chrome, `aria-pressed="true"`); n != 1 {
-				t.Errorf("%s: %d scheme buttons pressed, want exactly 1 (System)", name, n)
-			}
-			if n := strings.Count(chrome, `aria-pressed="false"`); n != 2 {
-				t.Errorf("%s: %d scheme buttons unpressed, want 2", name, n)
-			}
-			if !strings.Contains(chrome, `data-ds-scheme="system" aria-pressed="true"`) {
-				t.Errorf("%s: System is not the pressed scheme with no JavaScript", name)
-			}
-			// Every one of the three is named, in this page's language.
-			for _, label := range []string{
-				proseIn(locale, "Theme"),
-				proseIn(locale, "Colour scheme"),
-			} {
-				if !strings.Contains(chrome, `aria-label="`+template.HTMLEscapeString(label)+`"`) {
-					t.Errorf("%s: the chrome has no group labelled %q", name, label)
+				chrome, rest, ok := strings.Cut(after, "</header>")
+				if !ok {
+					t.Errorf("%s: the gallery header never closes", name)
+					continue
+				}
+				// The chrome moved inside the shell's main column when the
+				// sidebar landed, so what follows it is the content
+				// column rather than main itself. It is still the first
+				// thing in the reading order of the page's own content.
+				if !strings.HasPrefix(strings.TrimSpace(rest), `<div class="rst-page">`) {
+					t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
+				}
+				if _, chromeStart, _ := strings.Cut(page, `<main class="rst-shell__main" id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
+					t.Errorf("%s: the gallery header is not the first thing inside main", name)
+				}
+				// The theme switcher: one link per theme, exactly one current.
+				if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
+					t.Errorf("%s: %d themes marked current, want 1", name, n)
+				}
+				// The language switcher: one link per locale, exactly one current.
+				if n := strings.Count(chrome, `aria-current="true"`); n != 1 {
+					t.Errorf("%s: %d locales marked current, want 1", name, n)
+				}
+				if n := strings.Count(chrome, `<a href="`+mountPrefix); n != len(ui.ThemeNames())+len(rastrillo.BaseLocales()) {
+					t.Errorf("%s: the chrome has %d in-tree links, want one per theme and one per locale", name, n)
+				}
+				// The scheme toggle: three buttons, System pressed.
+				for _, value := range []string{"system", "light", "dark"} {
+					if !strings.Contains(chrome, `data-ds-scheme="`+value+`"`) {
+						t.Errorf("%s: the scheme toggle has no %s button", name, value)
+					}
+				}
+				if n := strings.Count(chrome, `aria-pressed="true"`); n != 1 {
+					t.Errorf("%s: %d scheme buttons pressed, want exactly 1 (System)", name, n)
+				}
+				if n := strings.Count(chrome, `aria-pressed="false"`); n != 2 {
+					t.Errorf("%s: %d scheme buttons unpressed, want 2", name, n)
+				}
+				if !strings.Contains(chrome, `data-ds-scheme="system" aria-pressed="true"`) {
+					t.Errorf("%s: System is not the pressed scheme with no JavaScript", name)
+				}
+				// Every one of the three is named, in this page's language.
+				for _, label := range []string{
+					proseIn(locale, "Theme"),
+					proseIn(locale, "Colour scheme"),
+				} {
+					if !strings.Contains(chrome, `aria-label="`+template.HTMLEscapeString(label)+`"`) {
+						t.Errorf("%s: the chrome has no group labelled %q", name, label)
+					}
+				}
+				// Both switchers keep the reader on the page they are
+				// reading: choosing another theme from components.html
+				// lands on that theme's components.html, not back at the
+				// Overview. Asserted per page kind, because index.html is
+				// the one page where doing this right and doing it wrong
+				// produce the same URL — every switcher href there ends in
+				// index.html either way, so a gate that only read the
+				// Overview could not see the difference at all.
+				for _, m := range anchorHref.FindAllStringSubmatch(chrome, -1) {
+					if !strings.HasSuffix(m[1], "/"+pk.File) {
+						t.Errorf("%s: the chrome links %q, which is not this page in another theme or language", name, m[1])
+					}
 				}
 			}
 		}
@@ -1141,7 +1315,7 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 // would flash the system scheme at a reader who chose Dark, and pop the
 // control into a bar they are already looking at.
 func TestGalleryScriptLoadsBeforeTheBody(t *testing.T) {
-	page := string(render(t)[RootTheme()+"/en/index.html"])
+	page := galleryPage(t, render(t), RootTheme(), "en", "overview")
 	tag := `<script src="` + mountPrefix + `gallery.js"></script>`
 	i := strings.Index(page, tag)
 	if i < 0 {
@@ -1198,7 +1372,7 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if !strings.Contains(js, `removeAttribute("data-theme")`) {
 		t.Error("gallery.js never removes data-theme — System would not be reachable")
 	}
-	page := string(render(t)[RootTheme()+"/en/index.html"])
+	page := galleryPage(t, render(t), RootTheme(), "en", "overview")
 	if !strings.Contains(page, ".ds-scheme { display: none; }") {
 		t.Error("the page does not hide the scheme toggle by default — with scripts off it would look like a control that works")
 	}
@@ -1228,11 +1402,12 @@ var (
 	// headings, a sample's own form field) is not a nav target, and a
 	// section that lost its id is not one either.
 	anchorMarker = regexp.MustCompile(`id="([^"]*)" data-ds-anchor`)
-	// A link into this page. The rail's other links — the demo pages —
-	// are absolute paths, and TestEveryPageIsAWholeLocalisedDocument
-	// already holds those to files the tree contains.
-	navFragment   = regexp.MustCompile(`<a href="#([^"]*)"`)
-	navHref       = regexp.MustCompile(`<a href="([^"]*)"`)
+	// Every link in the rail. They are all absolute paths under the
+	// mount since the split — a page of this directory with a fragment
+	// on the end, or a demo page with none — and
+	// TestEveryPageIsAWholeLocalisedDocument holds them all to files
+	// the tree contains.
+	navHref       = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
 	elementID     = regexp.MustCompile(`\bid="([^"]*)"`)
 	partialMarker = regexp.MustCompile(`<!-- partial: (\S+) -->`)
 	idiomMarker   = regexp.MustCompile(`<!-- idiom: (\S+) -->`)
@@ -1277,75 +1452,167 @@ func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			name := theme + "/" + locale + "/index.html"
-			page := string(files[name])
-			rail := railOf(t, name, page)
-			if rail == "" {
-				continue
-			}
-
-			var anchors []string
-			for _, m := range anchorMarker.FindAllStringSubmatch(page, -1) {
-				anchors = append(anchors, m[1])
-			}
-			var fragments []string
-			for _, m := range navFragment.FindAllStringSubmatch(rail, -1) {
-				fragments = append(fragments, m[1])
-			}
-			if len(anchors) == 0 {
-				t.Errorf("%s: nothing on the page is anchored at all — the marker has stopped working, and this gate with it", name)
-				continue
-			}
-			if len(fragments) != len(anchors) {
-				t.Errorf("%s: the sidebar links %d fragments, the page anchors %d", name, len(fragments), len(anchors))
-			}
-			for i := range anchors {
-				if i >= len(fragments) {
-					t.Errorf("%s: nothing in the sidebar links #%s", name, anchors[i])
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				page := string(files[name])
+				rail := railOf(t, name, page)
+				if rail == "" {
 					continue
 				}
-				if fragments[i] != anchors[i] {
-					t.Errorf("%s: sidebar entry %d links #%s, the page's %dth anchor is #%s", name, i, fragments[i], i, anchors[i])
+
+				var anchors []string
+				for _, m := range anchorMarker.FindAllStringSubmatch(page, -1) {
+					anchors = append(anchors, m[1])
+				}
+				// The rail's entries for THIS page. Every entry in it is
+				// an absolute page address with a fragment on the end —
+				// the current page's included — so "the entries for this
+				// page" is a prefix match, and everything else in the
+				// rail belongs to one of the other four.
+				prefix := mountPrefix + theme + "/" + locale + "/" + pk.File + "#"
+				var fragments []string
+				for _, m := range navHref.FindAllStringSubmatch(rail, -1) {
+					if strings.HasPrefix(m[1], prefix) {
+						fragments = append(fragments, strings.TrimPrefix(m[1], prefix))
+					}
+				}
+				if len(fragments) != len(anchors) {
+					t.Errorf("%s: the sidebar links %d fragments of this page, the page anchors %d", name, len(fragments), len(anchors))
+				}
+				for i := range anchors {
+					if i >= len(fragments) {
+						t.Errorf("%s: nothing in the sidebar links #%s", name, anchors[i])
+						continue
+					}
+					if fragments[i] != anchors[i] {
+						t.Errorf("%s: sidebar entry %d links #%s, the page's %dth anchor is #%s", name, i, fragments[i], i, anchors[i])
+					}
+				}
+
+				// The anchors are the marker comments' own names, so the
+				// two coverage gates and this one are looking at one list.
+				linked := map[string]bool{}
+				for _, f := range fragments {
+					linked[f] = true
+				}
+				for _, kind := range []struct {
+					prefix string
+					re     *regexp.Regexp
+				}{{"partial", partialMarker}, {"idiom", idiomMarker}} {
+					for _, m := range kind.re.FindAllStringSubmatch(page, -1) {
+						if want := anchorID(kind.prefix, m[1]); !linked[want] {
+							t.Errorf("%s: %s %q is on this page and not in the sidebar (no %s%s)", name, kind.prefix, m[1], prefix, want)
+						}
+					}
+				}
+
+				// Everything the rail links is a page of this tree — the
+				// other four galleries, the demos, and this page itself.
+				// Exactly one link per shell demo plus the modal leaves
+				// the gallery altogether; they are the only entries in
+				// the rail that do.
+				gallery := map[string]bool{}
+				for _, p := range galleryFiles(theme, locale) {
+					gallery[mountPrefix+p] = true
+				}
+				var away int
+				for _, m := range navHref.FindAllStringSubmatch(rail, -1) {
+					if !strings.HasPrefix(m[1], mountPrefix) || !resolves(files, m[1]) {
+						t.Errorf("%s: the sidebar links %q, which is not a page of this tree", name, m[1])
+						continue
+					}
+					target, _, _ := strings.Cut(m[1], "#")
+					if !gallery[target] {
+						away++
+					}
+				}
+				if want := len(ui.LayoutNames()) + 1; away != want {
+					t.Errorf("%s: the sidebar has %d links out of the gallery, want %d (one per shell demo, plus the modal)", name, away, want)
 				}
 			}
-
-			// The anchors are the marker comments' own names, so the
-			// two coverage gates and this one are looking at one list.
-			linked := map[string]bool{}
-			for _, f := range fragments {
-				linked[f] = true
-			}
+			// The union, which is the half a per-page reading cannot
+			// see: every marker in the whole directory has a rail entry
+			// somewhere, so a partial that landed on no page at all
+			// fails here as well as in the coverage gates.
+			rail := railOf(t, theme+"/"+locale, string(files[theme+"/"+locale+"/"+fileOf("overview")]))
 			for _, kind := range []struct {
 				prefix string
 				re     *regexp.Regexp
 			}{{"partial", partialMarker}, {"idiom", idiomMarker}} {
-				found := kind.re.FindAllStringSubmatch(page, -1)
+				found := markerCounts(files, galleryFiles(theme, locale), kind.re)
 				if len(found) == 0 {
-					t.Errorf("%s: no %s markers on the page", name, kind.prefix)
+					t.Errorf("%s/%s: no %s markers anywhere in the directory", theme, locale, kind.prefix)
 				}
-				for _, m := range found {
-					if want := anchorID(kind.prefix, m[1]); !linked[want] {
-						t.Errorf("%s: %s %q is on the page and not in the sidebar (no #%s)", name, kind.prefix, m[1], want)
+				for marked := range found {
+					if want := "#" + anchorID(kind.prefix, marked); !strings.Contains(rail, want) {
+						t.Errorf("%s/%s: %s %q is somewhere in the directory and nowhere in the rail (no %s)", theme, locale, kind.prefix, marked, want)
 					}
 				}
 			}
+		}
+	}
+}
 
-			// Everything in the rail that is not a fragment leaves this
-			// document, and there is exactly one such link per shell
-			// demo plus the modal. They are the only reason the rail
-			// links off-page at all.
-			var away int
-			for _, m := range navHref.FindAllStringSubmatch(rail, -1) {
-				if strings.HasPrefix(m[1], "#") {
+// The rail is the same on all five pages of a directory, byte for byte
+// apart from which section carries `open aria-current="page"`.
+//
+// That is the promise the split makes to a reader: the whole vocabulary
+// is one list, and moving between the pages does not move the list
+// under them. It is easy to break by accident — a nav built per page
+// out of that page's own data would come out shorter on four of the
+// five, and every other gate here would still pass — so it is asserted
+// literally rather than left to be noticed.
+func TestTheRailIsTheSameOnEveryPage(t *testing.T) {
+	files := render(t)
+	current := strings.NewReplacer(` open aria-current="page"`, "", ` aria-current="page"`, "")
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			var first, firstName string
+			for _, name := range galleryFiles(theme, locale) {
+				rail := current.Replace(railOf(t, name, string(files[name])))
+				if rail == "" {
 					continue
 				}
-				away++
-				if !strings.HasPrefix(m[1], mountPrefix) || !resolves(files, m[1]) {
-					t.Errorf("%s: the sidebar links %q, which is not a page of this tree", name, m[1])
+				if first == "" {
+					first, firstName = rail, name
+					continue
+				}
+				if rail != first {
+					t.Errorf("%s and %s carry different rails", firstName, name)
 				}
 			}
-			if want := len(ui.LayoutNames()) + 1; away != want {
-				t.Errorf("%s: the sidebar has %d links off this page, want %d (one per shell demo, plus the modal)", name, away, want)
+			if first == "" {
+				t.Errorf("%s/%s: no rail on any page", theme, locale)
+			}
+		}
+	}
+}
+
+// Exactly one section of the rail is the page the reader is on, and it
+// is the right one. aria-current sits on the section rather than on a
+// link because the section IS the page: its entries are fragments of
+// it, and there is no single link in the rail that means "this page".
+func TestTheRailSaysWhichPageYouAreOn(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				rail := railOf(t, name, string(files[name]))
+				if n := strings.Count(rail, `aria-current="page"`); n != 1 {
+					t.Errorf("%s: %d sections of the rail are marked current, want 1", name, n)
+					continue
+				}
+				title := template.HTMLEscapeString(proseIn(locale, pk.Title))
+				// The current section is either a disclosure holding
+				// this page's entries, or — for a page with nothing
+				// anchored on it yet — the plain link that stands in
+				// for one. Either way it says this page's own name.
+				open := regexp.MustCompile(`(?s)<details open aria-current="page"><summary><span class="rst-caret" aria-hidden="true"><svg.*?</svg></span>` + regexp.QuoteMeta(title) + `</summary>`)
+				link := `<a class="ds-nav__page" href="` + mountPrefix + theme + "/" + locale + "/" + pk.File + `" aria-current="page">` + title + `</a>`
+				if !strings.Contains(rail, link) && !open.MatchString(rail) {
+					t.Errorf("%s: the current section of the rail is not %q", name, proseIn(locale, pk.Title))
+				}
 			}
 		}
 	}
@@ -1362,53 +1629,152 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			name := theme + "/" + locale + "/index.html"
-			page := string(files[name])
-			for _, want := range []string{
-				`<div class="rst-shell-sidebar">`,
-				`<details class="rst-shell__chrome">`,
-				`<aside class="rst-shell__rail ds-rail">`,
-				`<nav class="rst-shell__nav ds-nav" id="ds-nav"`,
-				`<main class="rst-shell__main" id="main">`,
-			} {
-				if !strings.Contains(page, want) {
-					t.Errorf("%s: the page is not laid out in the sidebar shell (no %s)", name, want)
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				page := string(files[name])
+				for _, want := range []string{
+					`<div class="rst-shell-sidebar">`,
+					`<details class="rst-shell__chrome">`,
+					`<aside class="rst-shell__rail ds-rail">`,
+					`<nav class="rst-shell__nav ds-nav" id="ds-nav"`,
+					`<main class="rst-shell__main" id="main">`,
+				} {
+					if !strings.Contains(page, want) {
+						t.Errorf("%s: the page is not laid out in the sidebar shell (no %s)", name, want)
+					}
+				}
+				// The filter: a real search input, in a search landmark,
+				// naming the nav it filters, with the "no matches" line
+				// rendered by the page and hidden until something needs it.
+				for _, want := range []string{
+					`<search class="ds-search">`,
+					`<input id="ds-filter" type="search"`,
+					`aria-controls="ds-nav"`,
+					`data-ds-filter`,
+					`data-ds-filter-empty role="status" hidden`,
+				} {
+					if !strings.Contains(page, want) {
+						t.Errorf("%s: the filter box is not there as specified (no %s)", name, want)
+					}
+				}
+				rail := railOf(t, name, page)
+				// One disclosure per page kind that has anything to
+				// list, plus Demos, and exactly one of them open: the
+				// section for the page you are reading. The rest are
+				// folded, which is what makes a rail carrying the whole
+				// vocabulary usable from any of the five pages.
+				// A page kind with a Nav function has entries to list
+				// and is therefore a disclosure; one without is a plain
+				// link. Demos is always a disclosure. Derived rather
+				// than counted so a sixth page kind needs nothing here.
+				sections := 1
+				for _, pk2 := range pageKinds() {
+					if pk2.Nav != nil {
+						sections++
+					}
+				}
+				if n := strings.Count(rail, "<details"); n != sections {
+					t.Errorf("%s: %d sidebar disclosures, want %d", name, n, sections)
+				}
+				want := 0
+				if pk.Nav != nil {
+					want = 1
+				}
+				if n := strings.Count(rail, "<details open"); n != want {
+					t.Errorf("%s: %d sidebar sections arrive open, want %d (the one this page is)", name, n, want)
+				}
+				// Every section says its name in this page's language,
+				// as a summary where it has entries and as a plain link
+				// where it has none yet.
+				for _, pk2 := range pageKinds() {
+					title := template.HTMLEscapeString(proseIn(locale, pk2.Title))
+					if pk2.Nav == nil {
+						if !strings.Contains(rail, `class="ds-nav__page"`) || !strings.Contains(rail, `>`+title+`</a>`) {
+							t.Errorf("%s: no sidebar link named %q for the page with nothing to list", name, proseIn(locale, pk2.Title))
+						}
+						continue
+					}
+					if !strings.Contains(rail, `</span>`+title+`</summary>`) {
+						t.Errorf("%s: no sidebar section named %q", name, proseIn(locale, pk2.Title))
+					}
+				}
+				if title := template.HTMLEscapeString(proseIn(locale, "Demos")); !strings.Contains(rail, `</span>`+title+`</summary>`) {
+					t.Errorf("%s: no sidebar section named %q", name, proseIn(locale, "Demos"))
+				}
+				// The disclosure glyph is the framework's own chevron,
+				// not a geometric-shape character in a ::before. It is
+				// aria-hidden because the section's name is right beside
+				// it, and it is the icon set's so it flips on [open]
+				// through tokens.css's own rule.
+				if n := strings.Count(rail, `<span class="rst-caret" aria-hidden="true"><svg`); n != sections {
+					t.Errorf("%s: %d rail disclosures draw a chevron, want %d", name, n, sections)
+				}
+				for _, glyph := range []string{"▸", "▾", `content: "\25b8"`, `content: "\25be"`} {
+					if strings.Contains(page, glyph) {
+						t.Errorf("%s still draws a disclosure glyph as the character %q", name, glyph)
+					}
+				}
+				if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections and demos")) + `"`; !strings.Contains(page, want) {
+					t.Errorf("%s: the sidebar nav is not named in this page's language", name)
 				}
 			}
-			// The filter: a real search input, in a search landmark,
-			// naming the nav it filters, with the "no matches" line
-			// rendered by the page and hidden until something needs it.
-			for _, want := range []string{
-				`<search class="ds-search">`,
-				`<input id="ds-filter" type="search"`,
-				`aria-controls="ds-nav"`,
-				`data-ds-filter`,
-				`data-ds-filter-empty role="status" hidden`,
-			} {
-				if !strings.Contains(page, want) {
-					t.Errorf("%s: the filter box is not there as specified (no %s)", name, want)
+		}
+	}
+}
+
+// The section tab strip over the page names every page of this
+// directory, exactly one of them current, and the current one is the
+// page you are on.
+//
+// It is the rail's job done again in a row, and it is not decoration:
+// below 800px the sidebar shell folds the rail away behind a
+// disclosure, so this strip is the only VISIBLE way between the five
+// pages on a phone. It shipped with no gate at all — dropping the
+// aria-current from it, and cutting it down to a single link, both left
+// the suite green — which is why the two assertions below are stated
+// separately rather than as one count.
+func TestTheSectionTabsNameEveryPage(t *testing.T) {
+	files := render(t)
+	strip := regexp.MustCompile(`(?s)<div class="ds-switch">.*?</div>`)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				found := strip.FindString(string(files[name]))
+				if found == "" {
+					t.Errorf("%s: no section tab strip", name)
+					continue
 				}
-			}
-			// Five sections, every one of them open on arrival: the
-			// rail is a table of contents first and a set of
-			// disclosures second.
-			rail := railOf(t, name, page)
-			if n := strings.Count(rail, "<details open>"); n != 5 {
-				t.Errorf("%s: %d open sidebar sections, want 5 (tokens, partials, idioms, shells, demos)", name, n)
-			}
-			if n := strings.Count(rail, "<details"); n != 5 {
-				t.Errorf("%s: %d sidebar sections, and not all of them start open", name, n)
-			}
-			// Each of them says its name in this page's language, and
-			// the nav says what it is.
-			for _, key := range []string{"Tokens", "Partials", "Class idioms", "Shells", "Demos"} {
-				want := "<summary>" + template.HTMLEscapeString(proseIn(locale, key)) + "</summary>"
-				if !strings.Contains(rail, want) {
-					t.Errorf("%s: no sidebar section named %q", name, proseIn(locale, key))
+				var links [][]string
+				for _, m := range regexp.MustCompile(`<a href="([^"]*)"([^>]*)>([^<]*)</a>`).FindAllStringSubmatch(found, -1) {
+					links = append(links, m)
 				}
-			}
-			if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections and demos")) + `"`; !strings.Contains(page, want) {
-				t.Errorf("%s: the sidebar nav is not named in this page's language", name)
+				if len(links) != len(pageKinds()) {
+					t.Errorf("%s: the section tabs have %d entries, want one per page kind (%d)", name, len(links), len(pageKinds()))
+					continue
+				}
+				var current int
+				for i, pk2 := range pageKinds() {
+					if want := pageHref(theme, locale, pk2.File); links[i][1] != want {
+						t.Errorf("%s: section tab %d links %q, want %q", name, i, links[i][1], want)
+					}
+					if want := template.HTMLEscapeString(proseIn(locale, pk2.Title)); links[i][3] != want {
+						t.Errorf("%s: section tab %d is labelled %q, want %q", name, i, links[i][3], want)
+					}
+					marked := strings.Contains(links[i][2], `aria-current="page"`)
+					if marked {
+						current++
+					}
+					if marked != (pk2.Kind == pk.Kind) {
+						t.Errorf("%s: the %s tab is marked current=%v; the page you are on is %s", name, pk2.Kind, marked, pk.Kind)
+					}
+				}
+				if current != 1 {
+					t.Errorf("%s: %d section tabs marked current, want exactly 1", name, current)
+				}
+				if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections")) + `"`; !strings.Contains(found, want) {
+					t.Errorf("%s: the section tabs are not named in this page's language", name)
+				}
 			}
 		}
 	}
@@ -1711,22 +2077,28 @@ func literalText(src string) []string {
 // sentence written straight into a template — the one thing the prose
 // table's own gates cannot see, because a string nobody registered is
 // not a key.
-func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
-	for _, tt := range []struct{ name, src string }{
-		{"indexTemplate", indexTemplate},
+// pageTemplates is every template constant this gate sweeps: the frame,
+// the preview widget, the five section bodies, and the two demo pages.
+// Built off bodyTemplates() so a page kind added to that table is swept
+// the day it lands rather than the day somebody remembers.
+func pageTemplates() []struct{ name, src string } {
+	out := []struct{ name, src string }{
+		{"pageTemplate", pageTemplate},
 		{"viewTemplate", viewTemplate},
 		{"modalTemplate", modalTemplate},
 		{"shellTemplate", shellTemplate},
-	} {
+	}
+	for _, body := range bodyTemplates() {
+		out = append(out, struct{ name, src string }{body.kind + "Body", body.src})
+	}
+	return out
+}
+
+func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
+	var allText, allPairs int
+	for _, tt := range pageTemplates() {
 		found := literalText(tt.src)
-		// viewTemplate says nothing of its own: every word in it is a
-		// {{P …}} and every attribute a field, so an empty result is
-		// the right answer there and a broken extractor everywhere
-		// else. Named, so a template that stopped writing text still
-		// fails this.
-		if len(found) == 0 && tt.name != "viewTemplate" {
-			t.Errorf("%s: no literal text found at all — the extractor has stopped working, and this gate with it", tt.name)
-		}
+		allText += len(found)
 		for _, s := range found {
 			if templateFixtures[s] {
 				continue
@@ -1738,10 +2110,9 @@ func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
 		// The pass literalText cannot make: the action is nulled before
 		// it runs, so a component's label handed over as a dict
 		// argument reaches the page without passing anything.
-		var pairs int
 		for _, action := range templateAction.FindAllString(tt.src, -1) {
 			for _, kv := range dictArguments(action) {
-				pairs++
+				allPairs++
 				name, value := kv[0], kv[1]
 				if dictMachineArgs[name] || dictFixtures[value] || !templateLetter.MatchString(value) {
 					continue
@@ -1751,15 +2122,21 @@ func TestNoUnregisteredEnglishInThePageTemplates(t *testing.T) {
 					"if it is sample data, add it to dictFixtures and say what it is.", tt.name, value, name)
 			}
 		}
-		// viewTemplate is the one page template with no dict call in
-		// it: it takes a previewView and writes it out, and every
-		// word on it is a {{P …}}. Named rather than exempted by a
-		// count, so a template that LOST its dict arguments still
-		// fails here.
-		if pairs == 0 && tt.name != "viewTemplate" {
-			t.Errorf("%s: no literal dict arguments found at all — the tokeniser has stopped working, and this pass with it", tt.name)
-		}
 	}
+	// The extractors' own self-check. It used to be made per template
+	// and named the two that legitimately say nothing of their own;
+	// since the split there are five bodies and three of them are all
+	// {{P …}} and field references, which is what a well-behaved body
+	// looks like. So the check is made over the whole set instead: a
+	// tokeniser that has stopped tokenising returns nothing anywhere,
+	// and that is what these two numbers catch.
+	if allText == 0 {
+		t.Error("no literal text found in any page template — the extractor has stopped working, and this gate with it")
+	}
+	if allPairs == 0 {
+		t.Error("no literal dict arguments found in any page template — the tokeniser has stopped working, and this pass with it")
+	}
+	t.Logf("%d literal runs and %d dict arguments across %d templates", allText, allPairs, len(pageTemplates()))
 }
 
 // TestVendoredAxeStaysOutOfTheTree is the other half of the containment

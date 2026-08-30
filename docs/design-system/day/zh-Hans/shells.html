@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hans" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>页面外壳 — rastrillo 设计系统 — day</title>
+<link rel="stylesheet" href="/design-system/tokens.css">
+<link rel="stylesheet" href="/design-system/theme-day.css">
+<style>
+.ds-head { border-top: 1px solid var(--rst-line); margin: var(--rst-sp-6) 0 var(--rst-sp-3); padding-top: var(--rst-sp-5); }
+.ds-head h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 0; }
+.ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+.ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
+.ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
+.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-chrome .rst-dropdown { position: relative; }
+.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+ 
+.ds-scheme { display: none; }
+:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+.ds-family { margin: var(--rst-sp-6) 0 0; }
+.ds-family > h3 { border-block-end: 1px solid var(--rst-line); font-size: 1.05rem; margin: 0 0 var(--rst-sp-2); padding-block-end: var(--rst-sp-2); }
+.ds-partial { margin: var(--rst-sp-5) 0; }
+.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+.ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
+.ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
+.ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
+.ds-toks { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
+.ds-tok { align-items: center; display: flex; gap: var(--rst-sp-3); min-inline-size: 0; }
+.ds-tok__text { min-inline-size: 0; }
+.ds-tok__name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-tok__value { color: var(--rst-text-muted); display: block; }
+.ds-chip { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); block-size: 2.25rem; flex: none; inline-size: 2.25rem; }
+.ds-chip--fill { background: var(--rst-accent); border-color: var(--rst-accent); }
+.ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
+.ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
+.ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+.ds-shell { margin: var(--rst-sp-5) 0; }
+.ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
+.ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
+.ds-src code { white-space: pre; }
+
+ 
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
+.ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
+.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
+.ds-view__tab + .ds-view__tab { border-inline-start: 0; }
+.ds-view__tab:first-of-type { border-end-start-radius: var(--rst-radius-sm); border-start-start-radius: var(--rst-radius-sm); }
+.ds-view__tab:last-of-type { border-end-end-radius: var(--rst-radius-sm); border-start-end-radius: var(--rst-radius-sm); }
+.ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
+.ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-view__stage { container-type: inline-size; }
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+@supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
+  .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
+}
+.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+.ds-view__code { display: none; margin-block-start: 0; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
+
+ 
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+ 
+.ds-nav > details > summary > .rst-caret { flex: none; }
+.ds-nav > details[aria-current] > summary { color: var(--rst-accent); }
+ 
+.ds-nav__page { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav__page[aria-current] { color: var(--rst-accent); }
+.ds-nav__page:hover { color: var(--rst-text); }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-nav .ds-nav__group { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block-start: var(--rst-sp-2); text-transform: uppercase; }
+ 
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+ 
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
+</style>
+<script src="/design-system/gallery.js"></script>
+<script defer src="/design-system/rastrillo.js"></script>
+<script defer src="/design-system/select.js"></script>
+<script defer src="/design-system/datetime.js"></script>
+</head>
+<body>
+<div class="rst-shell-sidebar">
+<a class="rst-skip" href="#main">跳到内容</a>
+<details class="rst-shell__chrome"><summary>菜单</summary></details>
+
+<aside class="rst-shell__rail ds-rail">
+  <search class="ds-search">
+    <label class="rst-sr-only" for="ds-filter">筛选</label>
+    <input id="ds-filter" type="search" placeholder="筛选" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+  </search>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>无匹配项</p>
+  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="章节与演示">
+    <a class="ds-nav__page" href="/design-system/day/zh-Hans/index.html">概览</a>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>设计变量</summary><a href="/design-system/day/zh-Hans/tokens.html#tokens-surfaces-and-lines">底面与线条</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-text">文字</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-accent">强调色</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-status-tones">状态色调</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-depth">层次</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-radius">圆角</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-type-family">字体族</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-type-scale">字号级数</a><a href="/design-system/day/zh-Hans/tokens.html#tokens-spacing">间距</a></details>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>组件</summary><a href="/design-system/day/zh-Hans/components.html#family-list-screen" class="ds-nav__group">列表页</a><a href="/design-system/day/zh-Hans/components.html#partial-page-header" class="rst-mono">page-header</a><a href="/design-system/day/zh-Hans/components.html#partial-list-bar" class="rst-mono">list-bar</a><a href="/design-system/day/zh-Hans/components.html#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="/design-system/day/zh-Hans/components.html#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="/design-system/day/zh-Hans/components.html#partial-list-row-action" class="rst-mono">list-row-action</a><a href="/design-system/day/zh-Hans/components.html#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="/design-system/day/zh-Hans/components.html#partial-dropdown" class="rst-mono">dropdown</a><a href="/design-system/day/zh-Hans/components.html#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="/design-system/day/zh-Hans/components.html#partial-pagination" class="rst-mono">pagination</a><a href="/design-system/day/zh-Hans/components.html#partial-empty-state" class="rst-mono">empty-state</a><a href="/design-system/day/zh-Hans/components.html#family-display" class="ds-nav__group">展示</a><a href="/design-system/day/zh-Hans/components.html#partial-status-pill" class="rst-mono">status-pill</a><a href="/design-system/day/zh-Hans/components.html#partial-badge" class="rst-mono">badge</a><a href="/design-system/day/zh-Hans/components.html#partial-meter" class="rst-mono">meter</a><a href="/design-system/day/zh-Hans/components.html#partial-person" class="rst-mono">person</a><a href="/design-system/day/zh-Hans/components.html#partial-callout" class="rst-mono">callout</a><a href="/design-system/day/zh-Hans/components.html#partial-detail-list" class="rst-mono">detail-list</a><a href="/design-system/day/zh-Hans/components.html#partial-notice" class="rst-mono">notice</a><a href="/design-system/day/zh-Hans/components.html#partial-form-error" class="rst-mono">form-error</a><a href="/design-system/day/zh-Hans/components.html#partial-job-status" class="rst-mono">job-status</a><a href="/design-system/day/zh-Hans/components.html#family-form" class="ds-nav__group">表单</a><a href="/design-system/day/zh-Hans/components.html#partial-field" class="rst-mono">field</a><a href="/design-system/day/zh-Hans/components.html#partial-field-text" class="rst-mono">field-text</a><a href="/design-system/day/zh-Hans/components.html#partial-field-textarea" class="rst-mono">field-textarea</a><a href="/design-system/day/zh-Hans/components.html#partial-field-select" class="rst-mono">field-select</a><a href="/design-system/day/zh-Hans/components.html#partial-field-check" class="rst-mono">field-check</a><a href="/design-system/day/zh-Hans/components.html#partial-choice-field" class="rst-mono">choice-field</a><a href="/design-system/day/zh-Hans/components.html#partial-field-date" class="rst-mono">field-date</a><a href="/design-system/day/zh-Hans/components.html#partial-field-time" class="rst-mono">field-time</a><a href="/design-system/day/zh-Hans/components.html#partial-field-datetime" class="rst-mono">field-datetime</a><a href="/design-system/day/zh-Hans/components.html#partial-field-daterange" class="rst-mono">field-daterange</a><a href="/design-system/day/zh-Hans/components.html#partial-form-foot" class="rst-mono">form-foot</a><a href="/design-system/day/zh-Hans/components.html#partial-confirm-form" class="rst-mono">confirm-form</a><a href="/design-system/day/zh-Hans/components.html#family-route" class="ds-nav__group">路由</a><a href="/design-system/day/zh-Hans/components.html#partial-error-page" class="rst-mono">error-page</a><a href="/design-system/day/zh-Hans/components.html#partial-back-nav" class="rst-mono">back-nav</a><a href="/design-system/day/zh-Hans/components.html#partial-locale-menu" class="rst-mono">locale-menu</a></details>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>界面基元</summary><a href="/design-system/day/zh-Hans/primitives.html#idiom-box" class="rst-mono">box</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-dropdown" class="rst-mono">dropdown</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-form-layout" class="rst-mono">form-layout</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-help" class="rst-mono">help</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-list-grid" class="rst-mono">list-grid</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-modal" class="rst-mono">modal</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-selbox" class="rst-mono">selbox</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-shell-sidebar" class="rst-mono">shell-sidebar</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-shell-topbar" class="rst-mono">shell-topbar</a><a href="/design-system/day/zh-Hans/primitives.html#idiom-tblock" class="rst-mono">tblock</a></details>
+    <details open aria-current="page"><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>页面外壳</summary><a href="/design-system/day/zh-Hans/shells.html#shell-column" class="rst-mono">column</a><a href="/design-system/day/zh-Hans/shells.html#shell-topbar" class="rst-mono">topbar</a><a href="/design-system/day/zh-Hans/shells.html#shell-sidebar" class="rst-mono">sidebar</a></details>
+    <details><summary><span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>演示</summary><a href="/design-system/day/zh-Hans/shells/column.html" target="_blank" rel="noopener">column 外壳</a><a href="/design-system/day/zh-Hans/shells/topbar.html" target="_blank" rel="noopener">topbar 外壳</a><a href="/design-system/day/zh-Hans/shells/sidebar.html" target="_blank" rel="noopener">sidebar 外壳</a><a href="/design-system/day/zh-Hans/modal.html" target="_blank" rel="noopener">模态框那条路由</a></details>
+  </nav>
+</aside>
+
+<main class="rst-shell__main" id="main">
+
+<header class="ds-chrome">
+  <nav class="rst-seg-tabs" aria-label="主题"><a href="/design-system/day/zh-Hans/shells.html" aria-current="page">day</a><a href="/design-system/plain/zh-Hans/shells.html">plain</a><a href="/design-system/signal/zh-Hans/shells.html">signal</a></nav>
+  <div class="ds-scheme" role="group" aria-label="配色方案"><button type="button" data-ds-scheme="system" aria-pressed="true">跟随系统</button><button type="button" data-ds-scheme="light" aria-pressed="false">浅色</button><button type="button" data-ds-scheme="dark" aria-pressed="false">深色</button></div>
+  <details class="rst-dropdown rst-locale" name="rst-menus">
+    <summary>语言<span class="rst-caret" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">，当前是简体中文</span></summary>
+    <div class="rst-dropdown__menu"><a href="/design-system/day/en/shells.html" lang="en" dir="ltr">English</a><a href="/design-system/day/ga/shells.html" lang="ga" dir="ltr">Gaeilge</a><a href="/design-system/day/zh-Hans/shells.html" lang="zh-Hans" dir="ltr" aria-current="true">简体中文</a><a href="/design-system/day/es/shells.html" lang="es" dir="ltr">Español</a><a href="/design-system/day/hi/shells.html" lang="hi" dir="ltr">हिन्दी</a><a href="/design-system/day/pt/shells.html" lang="pt" dir="ltr">Português</a><a href="/design-system/day/bn/shells.html" lang="bn" dir="ltr">বাংলা</a><a href="/design-system/day/ru/shells.html" lang="ru" dir="ltr">Русский</a><a href="/design-system/day/ja/shells.html" lang="ja" dir="ltr">日本語</a><a href="/design-system/day/yue/shells.html" lang="yue" dir="ltr">廣東話</a><a href="/design-system/day/vi/shells.html" lang="vi" dir="ltr">Tiếng Việt</a><a href="/design-system/day/ar/shells.html" lang="ar" dir="rtl">العربية</a></div>
+  </details>
+</header>
+
+<div class="rst-page">
+
+<header class="rst-page-header">
+  <div class="rst-page-header__titles">
+    <h1>rastrillo 设计系统</h1>
+    <p class="rst-page-header__sub">设计系统所提供内容的总览。主题：<strong>day</strong>。语言：<strong lang="zh-Hans">简体中文</strong>。</p>
+  </div>
+</header>
+
+<div class="ds-switch">
+  <nav class="rst-seg-tabs" aria-label="章节"><a href="/design-system/day/zh-Hans/index.html">概览</a><a href="/design-system/day/zh-Hans/tokens.html">设计变量</a><a href="/design-system/day/zh-Hans/components.html">组件</a><a href="/design-system/day/zh-Hans/primitives.html">界面基元</a><a href="/design-system/day/zh-Hans/shells.html" aria-current="page">页面外壳</a></nav>
+</div>
+
+
+<div class="ds-head"><h2 id="shells">页面外壳</h2></div>
+<p class="ds-lead">页面框架本身。rastrillo new 会把其中一个写成 templates/layout.html；页面填进内容的空洞，并按需要覆盖某些框架块。下面每个演示都是一整页，有自己的网址——打开一个，在全宽下才看得出 sidebar 的导航栏和 topbar 的页脚是真有地方。</p>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>这里的链接不可点</strong><p>链接不可点，示例源码另行提供。</p></div></div>
+
+<section class="ds-shell" id="shell-column" data-ds-anchor>
+<h3>column</h3>
+<p class="ds-lead">每个新生成的应用起步用的那张朴素居中页面：一个跳转链接、一个标题，和内容列。</p>
+<div class="ds-view" style="--ds-h: 780px; --ds-hm: 975px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
+<label class="ds-view__tab"><input type="radio" name="shell-column-0" checked>桌面</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="shell-column-0">手机</label>
+
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="column 外壳，以整页呈现" loading="lazy" src="/design-system/day/zh-Hans/shells/column.html"></iframe></div></div>
+
+</div>
+<p><a class="rst-btn" href="/design-system/day/zh-Hans/shells/column.html" target="_blank" rel="noopener">打开 column 外壳<span class="rst-sr-only"> (在新标签页中打开)</span></a></p>
+</section>
+
+<section class="ds-shell" id="shell-topbar" data-ds-anchor>
+<h3>topbar</h3>
+<p class="ds-lead">顶部横排的品牌、导航和账户菜单，页面下方有页脚。</p>
+<div class="ds-view" style="--ds-h: 780px; --ds-hm: 975px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
+<label class="ds-view__tab"><input type="radio" name="shell-topbar-0" checked>桌面</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="shell-topbar-0">手机</label>
+
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="topbar 外壳，以整页呈现" loading="lazy" src="/design-system/day/zh-Hans/shells/topbar.html"></iframe></div></div>
+
+</div>
+<p><a class="rst-btn" href="/design-system/day/zh-Hans/shells/topbar.html" target="_blank" rel="noopener">打开 topbar 外壳<span class="rst-sr-only"> (在新标签页中打开)</span></a></p>
+</section>
+
+<section class="ds-shell" id="shell-sidebar" data-ds-anchor>
+<h3>sidebar</h3>
+<p class="ds-lead">页面旁边的导航栏，宽度小于 800px 时收起为一个 details 折叠块。没有 JavaScript。</p>
+<div class="ds-view" style="--ds-h: 780px; --ds-hm: 975px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
+<label class="ds-view__tab"><input type="radio" name="shell-sidebar-0" checked>桌面</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="shell-sidebar-0">手机</label>
+
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="sidebar 外壳，以整页呈现" loading="lazy" src="/design-system/day/zh-Hans/shells/sidebar.html"></iframe></div></div>
+
+</div>
+<p><a class="rst-btn" href="/design-system/day/zh-Hans/shells/sidebar.html" target="_blank" rel="noopener">打开 sidebar 外壳<span class="rst-sr-only"> (在新标签页中打开)</span></a></p>
+</section>
+
+
+
+</div>
+</main>
+</div>
+</body>
+</html>

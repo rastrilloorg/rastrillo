@@ -1494,3 +1494,268 @@ claim about three files rather than about the system, which is worse
 than not generating at all.
 
 Both changes ship after v2.1.
+
+---
+
+## 6-v2.1b. Menus that fit the viewport (2026-08-30) — RULED, not yet started
+
+Paul: *"dropdowns should position themselves correctly no matter where
+they are on the screen ... a dropdown at the bottom right should
+position correctly to fit the viewport, bottom left etc. or an inline
+dropdown where there's not enough scroll room to show should drop up
+instead. If there's not enough viewport, the dropdown should scroll
+rather than overflow."*
+
+Three behaviours, and they do not cost the same.
+
+### 1. Scroll rather than overflow — a plain bug, fix it everywhere
+
+`.rst-combo__list` and `.rst-dtp__list` already carry `max-block-size`
+plus `overflow-y: auto`. `.rst-dropdown__menu` and
+`.rst-row-menu__panel` carry **neither** — no cap, no scroll. The
+twelve-locale language menu measures 388px, so on a short viewport its
+last entries are unreachable. Cap the menu surfaces against the space
+actually available and let them scroll. No new technology, no script,
+every browser.
+
+### 2. Flip — CSS anchor positioning, Chromium-first
+
+**RULED 2026-08-30 by Paul.** `position-try-fallbacks: flip-block,
+flip-inline` (with `position-area`) does exactly what he described,
+including the inline flip near the trailing edge, with zero script.
+
+It is Chromium-only today. That is accepted **with the reason recorded
+so nobody treats it as an oversight**: unsupported browsers fall back to
+today's fixed position, which is what they already do, so nothing
+regresses; and when Firefox and Safari ship it the behaviour arrives
+with no code change. The alternative — script — costs a shim split
+(`rastrillo.js` has 6 bytes), adds resize and scroll listeners to every
+page carrying a menu, and puts positioning *behind* JavaScript, so with
+script off it would be worse than the fixed position we have now. That
+trade is the wrong way round for a framework whose doctrine is that the
+scriptless path is the real one.
+
+Gate it honestly: the drive must assert the flip **where the engine
+supports it**, and must not silently pass by finding no support. A
+capability probe that fails when the probe itself stops working is the
+shape to use — this branch has shipped four gates that gated nothing.
+
+### 3. Top layer — NOT chosen, recorded so it is not re-proposed as new
+
+`popover` + anchor positioning would put menus in the top layer, where
+no ancestor can clip them (the `.rst-list` `overflow: hidden` bug this
+morning was exactly that class), and would bring native light dismiss,
+Escape and one-at-a-time — deleting shim code rather than adding it.
+
+Not chosen now because it replaces `<details>` as the baseline, and a
+browser without `popover` leaves the button inert, where `<details>`
+always works. It remains the most interesting long-term shape, and it is
+the natural companion to §6-v3's markup migration. Revisit it there,
+deliberately, not by accident.
+
+### 4. The scrollbar must not move the layout — RULED 2026-08-30 by Paul
+
+Paul: *"clicking between sections causes the page to jump depending on
+whether the scroll bar is present or not. Should we default to having it
+so that scrollbar doesn't shift the layout, with an opt-out?"* — yes,
+defaulted, with a token opt-out.
+
+```css
+:root { --rst-scrollbar-gutter: stable; }
+html  { scrollbar-gutter: var(--rst-scrollbar-gutter); }
+```
+
+A token rather than a class, for three reasons: the opt-out is one line
+in the app's own stylesheet (`--rst-scrollbar-gutter: auto`), it layers
+like every other token, and custom properties are untouched by §6-v3's
+markup migration, so this survives it without edit.
+
+**It fixes a second instance of the same bug.** `tokens.css:968` is
+`body:has(.rst-backdrop) { overflow: hidden }` — the modal's scroll
+lock. That removes the scrollbar the moment a modal opens, shifting the
+whole page sideways while the reader watches. One declaration fixes both.
+
+**The cost, chosen knowingly:** a page too short to scroll now reserves
+the gutter as well, so there is a thin empty strip at the trailing edge
+where there was none. That is what never shifting costs. `both-edges`
+was considered and not taken — it doubles the strip to keep centred
+content exactly centred, and this system's pages are already a
+max-width column inside a larger ground, so the asymmetry is not visible
+where it would matter.
+
+Support: Chrome 94+, Firefox 97+, Safari 18.2+; older engines ignore the
+declaration and land on today's behaviour — the same degradation shape
+as the anchor-positioning ruling above, and for the same reason.
+
+**Do not over-claim what this fixes.** macOS overlay scrollbars take no
+layout space, so on a default Mac there is nothing to shift. This is
+real on Windows and Linux, on macOS with "always show scrollbars", and
+inside the gallery's own preview iframes. Say that in the docs rather
+than implying it explains every jump anyone has seen.
+
+### 5. The optional flip helper — RULED 2026-08-30 by Paul, with amendments
+
+Paul asked for an optional script providing anchor positioning to Safari
+and Firefox, opt-out for anyone staying CSS-only. Accepted, with three
+amendments that all make it smaller.
+
+**Not named "shims".** "The shim" already means `rastrillo.js` here —
+`ShimJS()`, `TestShimIsSmall`, five uses inside the file, plus SKILL.md
+and templates.md. A `rastrillo-shims.js` would make every existing
+sentence about the shim ambiguous. The convention is one file per
+capability named for the capability (`select.js`, `datetime.js`), so
+this is `menufit.js`.
+
+A category name also invites a bucket: a file called shims grows until
+every app pays for bytes few of them need. One capability, one file, one
+legible cost.
+
+**Not a general polyfill.** A general anchor-positioning polyfill
+reimplements a layout algorithm by parsing stylesheets — a large
+dependency with real edge cases, bought to get something narrower than
+what it provides. What is actually needed is: if the menu does not fit
+below, put it above; if it does not fit inline, flip it. That is a short
+routine over `getBoundingClientRect`, run on the `<details>` toggle. No
+scroll or resize listeners — it only has to be correct at the moment of
+opening.
+
+**Self-disabling where the CSS works:**
+
+```js
+if (CSS.supports("position-try-fallbacks: flip-block")) return;
+```
+
+It therefore costs nothing in Chromium, cannot fight the CSS, and
+switches itself off in Safari and Firefox the day they ship anchor
+positioning — with no release from us. That property is what makes it
+worth having rather than a maintenance liability.
+
+**The opt-out is the absence of a `<script>` tag**, not a config flag.
+The scaffold writes the tag; deleting one line opts out, and is
+self-documenting in a way a flag is not. Its own byte budget, separate
+from `rastrillo.js` (16,378 of 16,384).
+
+The doctrine holds throughout: with no JavaScript at all, menus keep
+today's fixed position, which is what every browser does today. This
+file only ever moves an engine closer to the CSS we already wrote.
+
+### 6. Clearing a search must clear the search — RULED 2026-08-30 by Paul
+
+Paul, with a screenshot of a search field holding "sere" and a native ✕:
+*"clearing search doesn't actually clear the search ... can we provide a
+sensible default for what happens when the search is cleared ...
+presumably returning to a URL where there's no search? Some kind of hook
+anyway."*
+
+The ✕ in that screenshot is `::-webkit-search-cancel-button`, which does
+exactly what it is specified to do: it clears the input's VALUE. A form
+submits on submit, so nothing else happens — the results stand and the
+URL still carries `?q=sere`. The affordance looks like it worked.
+
+**The default is a link, not script.** When `Query` is non-empty,
+`list-bar-search` renders an `<a>` to the same `Action` carrying the
+`Hidden` pairs with `q` omitted. A real navigation: it works with
+JavaScript off, it is bookmarkable, and Back behaves. `ClearHref` is the
+hook — an app passing it wins over the computed default.
+
+**Suppress the native cancel button.** Leaving it beside the link is the
+bug rather than a redundancy: two affordances, one of which lies.
+
+**What clearing means, decided rather than left to fall out:**
+
+- Filters and sort survive. They ride in `Hidden`; the default carries
+  them and omits only `q`. "Clear the search" is not "reset the screen".
+- **Pagination is the case the framework cannot decide.** `Hidden` is
+  opaque name/value pairs — nothing tells the partial which one is the
+  page. A page number from a filtered result set is meaningless once the
+  filter is gone, but the partial cannot know to drop it, so the default
+  carries everything and `ClearHref` is how an app says "and reset to
+  page 1". Document that on the key, because otherwise every app meets
+  it once, in production.
+
+**Two constraints on the implementation:**
+
+- The clear target must be **at least 24×24 CSS px**. WCAG 2.2 AA target
+  size is gated in CI and already caught a 17px close chip on this
+  branch; an ✕ tucked inside a field is exactly that shape.
+- It needs a new catalog key for its accessible name — twelve locales,
+  and a trip through the copy gate with the rest of the new prose.
+
+### 7. The rail overflows the viewport by its own padding — REGRESSION, 2026-08-30
+
+Paul, with the live sidebar shell: *"Sidebar shell left nav is going off
+the edge of the viewport"* — the person at the rail's foot is clipped.
+
+Shipped this morning with the rail-foot change. `tokens.css:1133` gives
+the rail `padding: var(--rst-sp-4)` (1rem); `:1163` gives it
+`block-size: 100dvh`; and box-sizing is **deliberately not global** in
+this file (`:787` records why — it is set per component rather than in a
+`*` reset). So the rail is content-box: its border box is 100dvh + 32px,
+`position: sticky` at `inset-block-start: 0`, and the last 32px hang
+below the window. `overflow-y: auto` cannot help — the content fits the
+content box, so no scrollbar appears; the box is simply taller than the
+viewport.
+
+**Why the gate passed, which is the part worth keeping.** The drive
+asserts the person sits at the foot OF THE RAIL, and measured the rail
+at **932px in a 900px viewport**. That number is in the passing test's
+own output: 932 = 900 + 2×16. The assertion was true and the frame was
+wrong. Re-frame it against the viewport — the rail's border box must not
+exceed it — and the same drive would have failed on the day it landed.
+
+Fix per this file's convention: `box-sizing: border-box` on the rail
+itself, beside the components that already declare it, not a `*` reset.
+
+### 8. The collapsed rail needs a menu icon — RULED 2026-08-30 by Paul
+
+*"The sidebar shell should also provide a kebab / hamburger icon beside
+'Menu'."* — the `<summary>` of the disclosed rail below 800px, which is
+text-only today.
+
+**Vendor Lucide `menu`, do not reuse `kebab`.** The set is eleven slugs
+and has no hamburger. `kebab` means "more actions on this row"
+everywhere else in this system, and spending it on navigation blurs a
+distinction the vocabulary currently keeps. Add `menu` to `icons.go` and
+`IconSlugs()`; the Icons page (§6-v2.1 Task 5) derives from `IconSlugs()`
+rather than a literal list, so it picks the new icon up with no edit.
+
+`aria-hidden`, since it sits beside a visible text label.
+
+### 9. The topbar has no narrow layout — RULED 2026-08-30 by Paul
+
+*"The topbar shell should compact the menu and the dropdowns into a
+single dropdown, or some kind of overlay."*
+
+`.rst-shell__bar` (tokens.css:1112) is `display: flex; flex-wrap: wrap`
+and `.rst-shell__account` (:1118) carries `margin-inline-start: auto`.
+There is **no collapse breakpoint for the topbar at all** — so as the
+window narrows, the account and locale menus wrap onto a second row and
+the auto margin shoves them to the trailing edge, which is the state in
+Paul's screenshot. Nothing is broken; nothing was ever written.
+
+**Use the sidebar's mechanism, not a second one.** Below the same
+breakpoint the sidebar already uses (800px), the topbar's tail — nav,
+account, locale — collapses into ONE `<details>` disclosure behind the
+Lucide `menu` icon added in §8. Above it, CSS hides the `<summary>` and
+the tail lays out inline exactly as today, which is the same shape
+`.rst-shell__chrome` already uses in reverse. Two shells, one collapse
+idiom, one icon: that is the thing a design system is supposed to
+demonstrate.
+
+**The trap, named before anyone meets it.** The account menu is
+`<details class="rst-dropdown" name="rst-menus">`. Nesting it inside an
+outer `<details name="rst-menus">` means opening the account **closes
+its own parent** — the exclusivity that makes sibling menus behave is
+the thing that breaks nested ones. This system already documents that
+rule for `rst-menu-group` ("a nested group MUST name a different one or
+it closes its parent"); this is the first place in the framework's own
+shells where it applies. The outer disclosure takes a different group
+name, and the inner menus become nested groups.
+
+Zero JavaScript throughout: it is `<details>`, a media query and a pair
+of display rules.
+
+**Block names must survive.** Apps override `nav`, `account` and
+`locale`. Wrapping them in a disclosure is a layout change, not a
+contract change — the block names stay exactly as they are, or every
+app that overrides one breaks silently on upgrade.

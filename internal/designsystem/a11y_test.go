@@ -315,11 +315,25 @@ type a11yTarget struct {
 // the "why": a sample is only representative if you can say what would
 // be missed without each member.
 func a11yTargets() []a11yTarget {
+	page := func(theme, locale, kind string) string { return pageHref(theme, locale, fileOf(kind)) }
 	return []a11yTarget{
-		{"day/en index", indexHref("day", "en"), "the root page, the default theme, and the page with every component on it"},
-		{"plain/en index", indexHref("plain", "en"), "the theme with the least colour — where a contrast floor is closest to the line"},
-		{"signal/en index", indexHref("signal", "en"), "the theme with the most colour — the other end of the same risk"},
-		{"day/ar index", indexHref("day", "ar"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
+		// All five of the default theme's pages in English. They share
+		// a stylesheet and a rail, so four of them are cheap; each one
+		// carries a section of markup the other four do not, and a
+		// heading level or a landmark can only be wrong on the page it
+		// is on.
+		{"day/en overview", page("day", "en", "overview"), "the root page: the chrome, the rail and the page header with nothing else in the way"},
+		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
+		{"day/en components", page("day", "en", "components"), "the page with every component on it"},
+		{"day/en primitives", page("day", "en", "primitives"), "the class idioms, the callouts they carry, and the sample whose structure is a dialog"},
+		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
+		// The two colour ends, on the two pages that carry colour: the
+		// palette itself and the components painted in it.
+		{"plain/en tokens", page("plain", "en", "tokens"), "the theme with the least colour — where a contrast floor is closest to the line"},
+		{"plain/en components", page("plain", "en", "components"), "the same theme, in the components rather than in the chips"},
+		{"signal/en tokens", page("signal", "en", "tokens"), "the theme with the most colour — the other end of the same risk"},
+		{"signal/en components", page("signal", "en", "components"), "the same theme, in the components rather than in the chips"},
+		{"day/ar components", page("day", "ar", "components"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref("day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref("day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
 	}
@@ -347,7 +361,7 @@ var a11ySchemes = []string{"light", "dark"}
 //   - anything the next partial adds that nobody thought to check.
 func TestA11yScansTheGallery(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 600*time.Second)
+	ctx, cancel := context.WithTimeout(rig.Context(), 1200*time.Second)
 	defer cancel()
 
 	axeJS := axeSource(t)
@@ -392,7 +406,13 @@ type previewFrame struct{ Sel, Of string }
 // tomorrow is scanned tomorrow. The idiom half is capped, because the
 // idioms are a flat list of a dozen and scanning all of them in six
 // theme-scheme combinations buys less than it costs.
-func pickPreviewFrames(t *testing.T, bctx context.Context) []previewFrame {
+// pickPreviewFrames marks the frames to scan on whichever page is
+// loaded, and holds that page to what it owes. Since the split the
+// families are on components.html and the idioms on primitives.html, so
+// the caller says which it is looking at and the assertions follow: a
+// page missing the sections it is named for is a rendering failure, not
+// a smaller scan.
+func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previewFrame {
 	t.Helper()
 	const pick = `(() => {
 	  const mark = (sec, out) => {
@@ -422,19 +442,27 @@ func pickPreviewFrames(t *testing.T, bctx context.Context) []previewFrame {
 	if err := json.Unmarshal([]byte(raw), &got); err != nil {
 		t.Fatalf("decoding the frame list: %v", err)
 	}
-	// Every family on the page produced a frame. A family whose first
-	// example is not a framed preview would silently drop out of the
-	// scan otherwise, and that is a hole nobody would notice.
-	if len(got.Families) != got.FamilySections {
-		t.Fatalf("%d family sections on the page but only %d gave up a preview frame", got.FamilySections, len(got.Families))
+	switch kind {
+	case "components":
+		// Every family on the page produced a frame. A family whose
+		// first example is not a framed preview would silently drop out
+		// of the scan otherwise, and that is a hole nobody would notice.
+		if len(got.Families) != got.FamilySections {
+			t.Fatalf("%d family sections on the page but only %d gave up a preview frame", got.FamilySections, len(got.Families))
+		}
+		if got.FamilySections < len(families()) {
+			t.Fatalf("samples.go declares %d families; the components page has %d sections", len(families()), got.FamilySections)
+		}
+		return got.Families
+	case "primitives":
+		if len(got.Idioms) < 4 {
+			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Idioms), got.IdiomArticles)
+		}
+		return got.Idioms
+	default:
+		t.Fatalf("pickPreviewFrames: no frames expected on a %s page", kind)
+		return nil
 	}
-	if got.FamilySections < len(families()) {
-		t.Fatalf("samples.go declares %d families; the page has %d sections", len(families()), got.FamilySections)
-	}
-	if len(got.Idioms) < 4 {
-		t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Idioms), got.IdiomArticles)
-	}
-	return append(got.Families, got.Idioms...)
 }
 
 // TestA11yScansThePreviewDocuments scans inside the frames.
@@ -469,115 +497,117 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 
 	total, scans := 0, 0
 	for _, pg := range pages {
-		if err := chromedp.Run(ctx,
-			chromedp.Navigate(rig.Origin+indexHref(pg.theme, pg.locale)),
-			chromedp.WaitReady("body"),
-		); err != nil {
-			t.Fatalf("loading the %s/%s index: %v", pg.theme, pg.locale, err)
-		}
-		frames := pickPreviewFrames(t, ctx)
-
-		// Every picked frame is taken off lazy loading in one mutation,
-		// before any of them is waited for. Setting loading="eager" on
-		// a frame the viewport has already reached restarts its load,
-		// and a restart landing between "this document is ready" and
-		// "scan it" is a scan of a half-built document. That is not a
-		// hypothetical: the first version of this test reported four
-		// different preview pages as having no <title>, four different
-		// pages on each run, every one of which plainly had one. One
-		// mutation, then wait for stability, then scan.
-		if err := chromedp.Run(ctx, chromedp.Evaluate(
-			`document.querySelectorAll("iframe.ds-view__frame[id^=a11y-]").forEach(f => { f.loading = "eager"; })`, nil)); err != nil {
-			t.Fatalf("taking the preview frames off lazy loading: %v", err)
-		}
-
-		titles := make([]string, len(frames))
-		for i, f := range frames {
-			// Stable, not merely ready: the same document object twice,
-			// 150ms apart, complete and populated both times. A frame
-			// still being replaced fails the second look and the poll
-			// goes round.
-			ready := fmt.Sprintf(`(async () => {
-			  const f = document.querySelector(%q);
-			  f.scrollIntoView({block: "center"});
-			  const settled = () => {
-			    const d = f.contentDocument;
-			    return d && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
-			  };
-			  for (let i = 0; i < 200; i++) {
-			    const d = settled();
-			    if (d) {
-			      await new Promise(r => setTimeout(r, 150));
-			      if (settled() === d) return "ok " + JSON.stringify(d.title);
-			    }
-			    await new Promise(r => setTimeout(r, 50));
-			  }
-			  return "never settled";
-			})()`, f.Sel)
-			var state string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(ready, &state,
-				func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
-				t.Fatalf("%s: waiting for the frame: %v", f.Of, err)
+		for _, kind := range []string{"components", "primitives"} {
+			if err := chromedp.Run(ctx,
+				chromedp.Navigate(rig.Origin+pageHref(pg.theme, pg.locale, fileOf(kind))),
+				chromedp.WaitReady("body"),
+			); err != nil {
+				t.Fatalf("loading %s/%s %s: %v", pg.theme, pg.locale, kind, err)
 			}
-			if !strings.HasPrefix(state, "ok") {
-				t.Fatalf("%s: preview frame %s %s", f.Of, f.Sel, state)
-			}
-			titles[i] = state[3:]
+			frames := pickPreviewFrames(t, ctx, kind)
 
-			// The engine goes in here, into the document that just
-			// settled, rather than as a boot script the browser replays
-			// into every document a page creates. Two reasons, both
-			// learned the hard way. A boot script would parse half a
-			// megabyte of engine into all hundred-odd preview frames the
-			// index holds, most of which are never scanned. And an
-			// engine installed at document creation is bound to the
-			// document that existed then: when a lazy frame reloaded
-			// underneath it, the engine stayed attached to the empty
-			// document it was born in and cheerfully reported the sample
-			// as having no title, no headings and nothing to check.
-			// Injecting after the document has settled binds the two
-			// together by construction.
-			inject := fmt.Sprintf(`(() => {
-			  const d = document.querySelector(%q).contentDocument;
-			  const s = d.createElement("script");
-			  s.textContent = %s;
-			  d.head.appendChild(s);
-			  return typeof d.defaultView.axe;
-			})()`, f.Sel, mustJSON(axeJS))
-			var loaded string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(inject, &loaded)); err != nil {
-				t.Fatalf("%s: injecting axe into the frame: %v", f.Of, err)
+			// Every picked frame is taken off lazy loading in one mutation,
+			// before any of them is waited for. Setting loading="eager" on
+			// a frame the viewport has already reached restarts its load,
+			// and a restart landing between "this document is ready" and
+			// "scan it" is a scan of a half-built document. That is not a
+			// hypothetical: the first version of this test reported four
+			// different preview pages as having no <title>, four different
+			// pages on each run, every one of which plainly had one. One
+			// mutation, then wait for stability, then scan.
+			if err := chromedp.Run(ctx, chromedp.Evaluate(
+				`document.querySelectorAll("iframe.ds-view__frame[id^=a11y-]").forEach(f => { f.loading = "eager"; })`, nil)); err != nil {
+				t.Fatalf("taking the preview frames off lazy loading: %v", err)
 			}
-			if loaded != "object" {
-				t.Fatalf("%s: axe did not load in the frame (typeof axe = %s)", f.Of, loaded)
-			}
-		}
 
-		for _, scheme := range a11ySchemes {
-			// paint reaches into every frame's own <html>, which is what
-			// gallery.js does and the only way a frame gets the page's
-			// scheme: a frame declares color-scheme of its own, so the
-			// embedder's value is ignored.
-			paint(t, ctx, scheme)
+			titles := make([]string, len(frames))
 			for i, f := range frames {
-				// The frame's OWN engine, on the frame's own document.
-				// axe can reach into a frame from the embedder by
-				// postMessage, but that path went quiet after the third
-				// frame on a page holding a hundred of them and reported
-				// the empty result as a clean one — which is precisely
-				// the failure this gate exists to notice. Same-origin
-				// srcdoc means contentWindow.axe is right there, so the
-				// scan runs where the document is.
-				where := fmt.Sprintf("%s/%s %s preview %s %s", pg.theme, pg.locale, scheme, f.Of, titles[i])
-				engine := fmt.Sprintf("document.querySelector(%q).contentWindow.axe", f.Sel)
-				target := fmt.Sprintf("document.querySelector(%q).contentDocument", f.Sel)
-				total += report(t, where, scan(t, ctx, where, engine, target, "false"))
-				scans++
+				// Stable, not merely ready: the same document object twice,
+				// 150ms apart, complete and populated both times. A frame
+				// still being replaced fails the second look and the poll
+				// goes round.
+				ready := fmt.Sprintf(`(async () => {
+				  const f = document.querySelector(%q);
+				  f.scrollIntoView({block: "center"});
+				  const settled = () => {
+				    const d = f.contentDocument;
+				    return d && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
+				  };
+				  for (let i = 0; i < 200; i++) {
+				    const d = settled();
+				    if (d) {
+				      await new Promise(r => setTimeout(r, 150));
+				      if (settled() === d) return "ok " + JSON.stringify(d.title);
+				    }
+				    await new Promise(r => setTimeout(r, 50));
+				  }
+				  return "never settled";
+				})()`, f.Sel)
+				var state string
+				if err := chromedp.Run(ctx, chromedp.Evaluate(ready, &state,
+					func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+					t.Fatalf("%s: waiting for the frame: %v", f.Of, err)
+				}
+				if !strings.HasPrefix(state, "ok") {
+					t.Fatalf("%s: preview frame %s %s", f.Of, f.Sel, state)
+				}
+				titles[i] = state[3:]
+
+				// The engine goes in here, into the document that just
+				// settled, rather than as a boot script the browser replays
+				// into every document a page creates. Two reasons, both
+				// learned the hard way. A boot script would parse half a
+				// megabyte of engine into all hundred-odd preview frames the
+				// index holds, most of which are never scanned. And an
+				// engine installed at document creation is bound to the
+				// document that existed then: when a lazy frame reloaded
+				// underneath it, the engine stayed attached to the empty
+				// document it was born in and cheerfully reported the sample
+				// as having no title, no headings and nothing to check.
+				// Injecting after the document has settled binds the two
+				// together by construction.
+				inject := fmt.Sprintf(`(() => {
+				  const d = document.querySelector(%q).contentDocument;
+				  const s = d.createElement("script");
+				  s.textContent = %s;
+				  d.head.appendChild(s);
+				  return typeof d.defaultView.axe;
+				})()`, f.Sel, mustJSON(axeJS))
+				var loaded string
+				if err := chromedp.Run(ctx, chromedp.Evaluate(inject, &loaded)); err != nil {
+					t.Fatalf("%s: injecting axe into the frame: %v", f.Of, err)
+				}
+				if loaded != "object" {
+					t.Fatalf("%s: axe did not load in the frame (typeof axe = %s)", f.Of, loaded)
+				}
+			}
+
+			for _, scheme := range a11ySchemes {
+				// paint reaches into every frame's own <html>, which is what
+				// gallery.js does and the only way a frame gets the page's
+				// scheme: a frame declares color-scheme of its own, so the
+				// embedder's value is ignored.
+				paint(t, ctx, scheme)
+				for i, f := range frames {
+					// The frame's OWN engine, on the frame's own document.
+					// axe can reach into a frame from the embedder by
+					// postMessage, but that path went quiet after the third
+					// frame on a page holding a hundred of them and reported
+					// the empty result as a clean one — which is precisely
+					// the failure this gate exists to notice. Same-origin
+					// srcdoc means contentWindow.axe is right there, so the
+					// scan runs where the document is.
+					where := fmt.Sprintf("%s/%s %s %s preview %s %s", pg.theme, pg.locale, kind, scheme, f.Of, titles[i])
+					engine := fmt.Sprintf("document.querySelector(%q).contentWindow.axe", f.Sel)
+					target := fmt.Sprintf("document.querySelector(%q).contentDocument", f.Sel)
+					total += report(t, where, scan(t, ctx, where, engine, target, "false"))
+					scans++
+				}
 			}
 		}
 	}
 	if total == 0 {
-		t.Logf("clean: %d preview scans over %d pages × %d schemes, %v", scans, len(pages), len(a11ySchemes), axeTags)
+		t.Logf("clean: %d preview scans over %d galleries × 2 pages × %d schemes, %v", scans, len(pages), len(a11ySchemes), axeTags)
 	}
 }
 
@@ -599,12 +629,21 @@ func TestA11yReflowsAt320(t *testing.T) {
 	defer cancel()
 
 	// 320×640 is the criterion's own number: 1280 CSS px at 400% zoom.
-	pages := []struct{ name, href string }{
-		{"day/en index", indexHref("day", "en")},
-		{"day/ar index", indexHref("day", "ar")},
-		{"day/en modal", modalHref("day", "en")},
-		{"day/en sidebar shell", shellHref("day", "en", "sidebar")},
+	// Every page kind, because reflow is a property of the content: the
+	// token grid, the sample frames, the class-idiom callouts and the
+	// shell sections each lay themselves out differently, and a split
+	// that put them on separate pages put them in separate documents to
+	// measure.
+	pages := []struct{ name, href string }{}
+	for _, pk := range pageKinds() {
+		pages = append(pages, struct{ name, href string }{"day/en " + pk.Kind, pageHref("day", "en", pk.File)})
 	}
+	pages = append(pages,
+		struct{ name, href string }{"day/ar components", pageHref("day", "ar", fileOf("components"))},
+		struct{ name, href string }{"day/ar tokens", pageHref("day", "ar", fileOf("tokens"))},
+		struct{ name, href string }{"day/en modal", modalHref("day", "en")},
+		struct{ name, href string }{"day/en sidebar shell", shellHref("day", "en", "sidebar")},
+	)
 	// Overflow is measured on both edges, because "sideways" is not
 	// one direction: an LTR page spills past the right edge and an RTL
 	// page spills past the left, and a measurement that only knows
@@ -660,10 +699,10 @@ const focusablesJS = `'a[href], button:not([disabled]), input:not([disabled]):no
 //
 // Two things it has to get right that a first attempt does not.
 //
-// Focus inside a frame: the index is a hundred and ten <iframe srcdoc>
-// documents, and once focus enters one, the top document's
-// activeElement is the frame and stays the frame for every element
-// inside it. Read naively that looks like focus refusing to move —
+// Focus inside a frame: the components page is ninety-seven <iframe
+// srcdoc> documents (the Overview it split off from carries none), and
+// once focus enters one, the top document's activeElement is the frame
+// and stays the frame for every element inside it. Read naively that looks like focus refusing to move —
 // which is exactly what a keyboard trap looks like, and it is not one.
 // So the probe descends: through the frame, into the document, to the
 // element a person is actually on.
@@ -767,17 +806,29 @@ const walkJS = `(() => {
 // style that only exists while an element is focused, and a trap is a
 // property of a sequence rather than of a node.
 //
-// The walk: thirty Tabs through the index with real key events — real,
-// because :focus-visible is a heuristic about how the focus arrived,
-// and a script calling .focus() out of nowhere does not always earn the
-// ring. Every stop must show something (2.4.7) and must be a different
+// The walk: thirty Tabs with real key events — real, because
+// :focus-visible is a heuristic about how the focus arrived, and a
+// script calling .focus() out of nowhere does not always earn the ring.
+// Every stop must show something (2.4.7) and must be a different
 // element from the last (2.1.2, locally). Then the modal demo is walked
 // all the way round, which is the trap question answered globally: a
 // reader can always Tab their way back out.
 //
-// Thirty stops on the index reaches past the gallery's own chrome and
-// into the first preview documents, so the components' focus rings are
-// walked too, not only the furniture around them.
+// WHERE the thirty start is the whole design of this test, and it took
+// a review to get right. From the top of the page they land on the skip
+// link, the mobile chrome disclosure, the filter box and then
+// sixty-odd rail links — one control repeated until the budget runs
+// out, and nothing below the rail covered at all. Everything the split
+// added lives below it: the section tab strip, which is the only
+// visible way between the five pages once the shell folds the rail away
+// below 800px, and then the page's own content.
+//
+// So the walk Tabs past the rail first, unasserted, and spends its
+// thirty stops from the tab strip onwards. The seek is Tab presses too,
+// not a .focus() call, so the thirty are still a keyboard journey and
+// :focus-visible still means what it means. Where the rail's own stops
+// are covered: they are the same anchors on every page, and the axe
+// scan reads the rail on all twelve of its targets.
 func TestA11yWalksTheKeyboard(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
@@ -785,19 +836,43 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 
 	var count int
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(rig.Origin+indexHref("day", "en")),
+		chromedp.Navigate(rig.Origin+pageHref("day", "en", fileOf("components"))),
 		chromedp.WaitReady("body"),
 		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
 	); err != nil {
 		t.Fatalf("preparing the keyboard walk: %v", err)
 	}
-	t.Logf("index: %d focusable elements in its own document, before any frame", count)
+	t.Logf("components: %d focusable elements in its own document, before any frame", count)
+
+	// Tab past the rail. The stop this lands on is the first entry of
+	// the section tab strip, which is the first thing after the rail in
+	// the reading order — and the first stop the thirty below assert.
+	// Bounded rather than counted: the rail's length is a property of
+	// how many partials ui ships, and a seek that had to be updated
+	// every time one landed would be a second list to maintain.
+	const seekLimit = 250
+	inStrip := `!!(document.activeElement && document.activeElement.closest(".ds-switch"))`
+	var reached bool
+	for i := 0; i < seekLimit && !reached; i++ {
+		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(inStrip, &reached)); err != nil {
+			t.Fatalf("seeking to the section tabs, tab %d: %v", i+1, err)
+		}
+	}
+	if !reached {
+		t.Fatalf("%d Tabs never reached the section tab strip; the walk would have covered the rail and nothing else", seekLimit)
+	}
 
 	const steps = 30
 	rings := 0
 	for i := 0; i < steps; i++ {
+		// The first stop is where the seek left focus — the tab strip
+		// itself — so the Tab comes after the reading, not before it.
 		var raw string
-		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw)); err != nil {
+		actions := []chromedp.Action{chromedp.Evaluate(walkJS, &raw)}
+		if i > 0 {
+			actions = []chromedp.Action{chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw)}
+		}
+		if err := chromedp.Run(ctx, actions...); err != nil {
 			t.Fatalf("tab %d: %v", i+1, err)
 		}
 		var s struct {
@@ -808,7 +883,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 			t.Fatalf("tab %d: decoding: %v", i+1, err)
 		}
 		if s.Tag == "body" {
-			t.Fatalf("tab %d: focus left the document — the index has fewer than %d stops?", i+1, steps)
+			t.Fatalf("tab %d: focus left the document — the components page has fewer than %d stops after its rail?", i+1, steps)
 		}
 		if s.Same {
 			t.Errorf("tab %d: focus did not move off %s — keyboard trap (WCAG 2.1.2)", i+1, s.Tag)
@@ -828,7 +903,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 		}
 		rings++
 	}
-	t.Logf("index: %d of %d stops showed a focus indicator", rings, steps)
+	t.Logf("components: %d of %d stops below the rail showed a focus indicator", rings, steps)
 
 	// The full circuit, on the page small enough to walk all of.
 	var modalCount int
