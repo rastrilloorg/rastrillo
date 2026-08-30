@@ -860,11 +860,11 @@ an expansion of the pin.
 Requirements (1) and (2).
 
 **Every word on the page is translated**, not only the components on it.
-The renderer's own headings, leads, notes and control labels — 198 prose
+The renderer's own headings, leads, notes and control labels — 207 prose
 keys — go through a `P` helper against a catalog of the gallery's own,
 in the same twelve base locales the framework ships.
 `TestEveryProseKeyIsTranslated` fails on a missing entry;
-`TestNoEnglishProseReachesATranslatedPage` sweeps all 144 non-`en` pages
+`TestNoEnglishProseReachesATranslatedPage` sweeps all 165 non-`en` pages
 for English that slipped through, and it earned its keep twice: the
 first version could not see strings passed as `dict` arguments, so
 "Write a post", "Published" and "Draft" shipped untranslated on 99 shell
@@ -1007,6 +1007,17 @@ which is what it does in an app. Frame heights are measured off the
 engine, not guessed, and `TestPreviewFrameHeightsFitTheirContent` is
 that measuring drive, committed, so the numbers cannot rot.
 
+**The grip.** A preview is a window on its document rather than a fit to
+it — a taller sample scrolls inside its box — so `.ds-view__box` carries
+`resize: vertical` and the frame takes its height back off the box
+(`block-size: calc(100% / var(--ds-k))`). The first version had it the
+other way round, a fixed height on the frame, which gave the grip
+nothing to move: the box grew and the rendering inside it stayed the
+size it was, leaving ~300px of empty box under a 255px sample. Caught in
+review as a control that did nothing, and now measured — box 251 → 561,
+rendering 249 → 559, the framed document's own viewport 390 → 876 — with
+a drive leg that fails if the CSS is reverted.
+
 **Dead links (10).** `deaden()` runs over the live rendering only: every
 `href` that is not already a fragment or a page of this tree becomes
 `#`, and every `<form>` gains `target="ds-void"` with a hidden sink
@@ -1027,7 +1038,8 @@ and the button under each shell demo. The theme and language switchers
 deliberately stay in the tab you are reading, and
 `TestEveryDemoLinkOpensInANewTab` says which is which and why.
 
-**Cost.** 5.4 MiB → 14.63 MiB, index page 110,703 → 361,609 bytes, under
+**Cost.** 4.95 MiB → 14.63 MiB (5,185,476 bytes at `4eaeb39`), index
+page 110,703 → 374,287 bytes, under
 the unchanged 20 MiB ceiling, with the arithmetic in the gate's comment:
 each sample is written twice (escaped `srcdoc` plus escaped source) and
 attribute escaping costs ~40% because every quote becomes six

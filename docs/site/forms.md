@@ -211,17 +211,16 @@ everywhere else you write it yourself around a run of `field` partials:
 ```
 
 **The row aligns by the control line, not the bottom.** A field carrying
-an error is taller than the one beside it, and bottom-aligning the two
-lifted its control clear of its neighbour's and dropped the message
-across the field next door. Aligning at the top keeps every control on
-one line and lets each message flow under its own column, shifting
-nothing. A field with no label reserves the label's line anyway, so an
-unlabelled control still lines up with a labelled sibling's; a field
-whose label is long enough to wrap is a field that wants its own row.
+an error is taller than the one beside it, so aligning at the top is
+what keeps every control on one line; each message then flows under its
+own column and shifts nothing. A field with no label reserves the
+label's line anyway, so an unlabelled control still lines up with a
+labelled sibling's; a field whose label is long enough to wrap is a
+field that wants its own row.
 
 **Every field in a row has an 8rem floor**, and `rst-input--short` is
-8rem wide rather than an unbounded shrink. A row that runs out of width
-therefore wraps rather than squeezing its fields into slivers.
+8rem wide. A row that runs out of width wraps rather than squeezing its
+fields into slivers.
 
 **`rst-grow` is `flex: 1 1 12rem`, not `flex: 1`.** `flex: 1` is
 `flex: 1 1 0%` — a grown field with no basis, which collapses on a
@@ -236,11 +235,12 @@ rather than stretching the column and squeezing the field beside it.
 
 `rst-form` is a flex column with a `var(--rst-sp-5)` gap — 24px, the
 same rhythm `rst-form-flow` uses — and it zeroes the block margins of
-every child it holds. That is one spacing mechanism rather
-than two: fields carry margins of their own for use outside a form, and
-inside one those margins used to add to the gap, so two fields sat 40px
-apart and the form gained 16px of dead air at each end where nothing was
-being separated from anything.
+every child it holds. That is one spacing mechanism rather than two:
+fields carry margins of their own for use outside a form, and inside one
+those margins used to add to the gap. The gap was 8px then, so two
+fields sat 40px apart — 8 between them plus 16 above and 16 below — and
+the form gained 16px of dead air at each end where nothing was being
+separated from anything.
 
 It is stated as a rule over every child rather than a list of the
 classes the library happens to ship, because a list cannot name your own
@@ -250,9 +250,12 @@ selector: `rst-form__foot` and `rst-form-foot` keep their block-start
 margin, which is not rhythm but the extra air separating a closing
 action row from the last question above it.
 
-If you mean to override it, the rule is `.rst-form > *`, so an app class
-at one level of specificity loses. Say `.rst-form > .whatever` and you
-win.
+If you mean to override it, the shipped selector is
+`.rst-form > *:not(.rst-form__foot, .rst-form-foot)`, and a `:not()`
+takes the specificity of its most specific argument — so that is
+(0,2,0), exactly the weight of `.rst-form > .whatever`. You win the tie
+on source order, and you have it: the shell's `head` block puts your
+stylesheet after `tokens.css`.
 
 ## The busy button is not a guarantee
 

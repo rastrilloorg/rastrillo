@@ -367,15 +367,15 @@ of the things it exists to show. The rail carries a search box over a
 nav that links every section, every partial and every class idiom on the
 page — `TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives that
 list from the same markers the coverage gates read, so a new partial
-appears in the nav without anyone editing the nav. Typing in the box
-hides the entries that do not match, and any section left empty. Below
-800px the rail folds into the shell's own `<details>` chrome strip, with
-no script involved.
+shows up there without anyone touching it. Typing in the box hides the
+entries that do not match, and any section that empties out. Below 800px
+the rail folds into the shell's own `<details>` chrome strip, with no
+script involved.
 
 **Every word on the page is translated**, not only the components. The
-gallery's own headings, leads and notes go through one helper against a
-catalog of its own, in the same twelve locales the framework ships, so
-the language switcher changes the prose as well as the samples.
+gallery's headings, leads and notes come from a catalog of its own, in
+the same twelve locales the framework ships, so the language switcher
+changes the prose as well as the samples.
 `TestEveryProseKeyIsTranslated` fails on a missing entry, and
 `TestNoEnglishProseReachesATranslatedPage` fails on an English string
 that reached a page in another language.
@@ -393,7 +393,11 @@ Every example on the page is shown three ways behind one control:
 and nothing else — laid out at a virtual 1200px or 390px and scaled
 into whatever width you are reading at, so the desktop rendering is the
 desktop rendering on a phone. The tabs are radio inputs and `:has()`;
-no JavaScript is involved in switching them.
+no JavaScript is involved in switching them. Each preview is a window on
+its document rather than a fit to it, so a tall sample scrolls inside
+the box — and the box has a resize grip on its bottom edge. Drag it and
+the frame takes its new height, which means you see more of the
+document rather than more of the box.
 
 Giving each sample a document of its own is what makes the awkward ones
 work. The two shell frames carry their own `<main>` and the gallery
@@ -415,20 +419,21 @@ which are the ones worth copying.
 
 Three switchers sit in the header, top right. **Theme** is three links,
 one per theme, landing on the same page in that theme's palette.
-**Language** is the `locale-menu` dropdown, twelve entries, each keeping
-you on the page you were reading. **Colour scheme** is System / Light /
-Dark, and it is the only one of the three that needs JavaScript: it
-writes `data-theme` on `<html>`, remembers the choice in
-`localStorage`, and writes the same attribute onto every preview frame,
-because a colour scheme is not propagated into an embedded document that
-declares one of its own.
+**Colour scheme** is System / Light / Dark, and it is the only one of
+the three that needs JavaScript: it writes `data-theme` on `<html>`,
+remembers the choice in `localStorage`, and puts the same attribute on
+every preview frame, because a colour scheme does not reach into an
+embedded document that declares one of its own. **Language** is the
+`locale-menu` dropdown, twelve entries, each keeping you on the page you
+were reading.
 
-That script is `gallery.js`, the only JavaScript in the tree that is not
-part of the framework — furniture for the page rather than something an
-app is ever given, which is why it lives beside the renderer instead of
-in `ui`. It follows the same rules as its three neighbours anyway:
-first-party, no dependencies, no network, and inert-safe. The scheme
-toggle and the filter box are both `display: none` until the file sets
+The script behind that toggle is `gallery.js`, the only JavaScript in
+the tree that is not part of the framework — furniture for the page
+rather than something an app is ever given, which is why it lives beside
+the renderer instead of in `ui`. It follows the same rules as its three
+neighbours anyway:
+first-party, no dependencies, no network. The scheme toggle and the
+filter box are both `display: none` until the file sets
 `data-rst-js`, so with scripts off you get the nav and the theme's own
 `color-scheme: light dark` rather than two controls that cannot do
 anything.

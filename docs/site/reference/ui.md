@@ -205,8 +205,8 @@ button a busy state and every form a double-submit guard by default,
 with `data-busy="false"` as the opt-out and `data-busy-label` as the
 label swap; and it closes an open `<details>` menu on an outside click
 or Escape, which is the one part of the menu idiom the native element
-cannot express. `SelectJS` backs the
-enhanced select: it mirrors a `<select>` carrying `data-rst-select` as a
+cannot express. `SelectJS` backs the enhanced select: it mirrors a
+`<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one
 marked `data-rst-select="false"`. `DatetimeJS` backs the date fields: it
