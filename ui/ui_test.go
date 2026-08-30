@@ -2157,6 +2157,76 @@ func TestSrOnlyUtilityComesAfterTheRulesItMustBeat(t *testing.T) {
 	}
 }
 
+// A separator inside a menu panel is an <hr>, and a UA <hr> is a thick
+// inset 3D rule that looks nothing like the hairline the menus draw. The
+// rule that neutralises it existed but was scoped to one panel —
+// .rst-row-menu__panel — so the topbar account menu, which is a
+// .rst-dropdown__menu, rendered the browser's own. The panels are one
+// surface with three entry points, so the rule has to name all three.
+//
+// Selectors, not substrings: ".rst-dropdown__menu hr" is not satisfied
+// by ".rst-dropdown__menu hr" appearing inside some longer selector that
+// does not actually match a menu separator.
+func TestEveryMenuSurfaceStylesItsSeparator(t *testing.T) {
+	styled := map[string]bool{}
+	for _, rule := range leafRules(string(TokensCSS())) {
+		if !strings.Contains(rule.body, "border-top") {
+			continue
+		}
+		for _, sel := range selectorList(rule.selector) {
+			styled[sel] = true
+		}
+	}
+	for _, want := range []string{
+		".rst-row-menu__panel hr",
+		".rst-dropdown__menu hr",
+		".rst-locale hr",
+	} {
+		if !styled[want] {
+			t.Errorf("no rule draws the separator for %q; that menu renders the UA's thick inset <hr>", want)
+		}
+	}
+}
+
+// The sidebar rail's foot: the person block last, the language switcher
+// directly above it, and both in a wrapper the LAYOUT owns — the account
+// and locale blocks are app-supplied markup, so the shell cannot style
+// them by class, only by the box it puts them in. The geometry (pinned
+// to the foot, the menu opening upward) is measured on a real engine in
+// shell_browser_test.go; this pins the markup the geometry needs.
+func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
+	src, ok := Layout("sidebar")
+	if !ok {
+		t.Fatal("no sidebar layout")
+	}
+	s := string(src)
+	foot := strings.Index(s, `<div class="rst-shell__rail-foot">`)
+	if foot < 0 {
+		t.Fatal("layouts/sidebar.html has no rail foot; the profile has nothing to sit at the bottom of")
+	}
+	nav := strings.Index(s, `<nav class="rst-shell__nav">`)
+	if nav < 0 || nav > foot {
+		t.Error("the rail's nav does not come before its foot")
+	}
+	locale := strings.Index(s, `{{block "locale" .}}`)
+	account := strings.Index(s, `{{block "account" .}}`)
+	if locale < foot || account < foot {
+		t.Error("the locale and account blocks are not inside the rail's foot")
+	}
+	if locale > account {
+		t.Error("the account block comes before the locale block; the language switcher belongs directly above the profile")
+	}
+	// An un-overridden shell renders an empty wrapper, so the foot has
+	// to be genuinely empty for :empty to hide it — no whitespace text
+	// node between the two blocks. Same discipline as .rst-shell__foot.
+	if !strings.Contains(s, `<div class="rst-shell__rail-foot">{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>`) {
+		t.Error("the rail foot carries whitespace between its blocks; :empty will never match it and an un-overridden rail grows a stray gap")
+	}
+	if !strings.Contains(string(TokensCSS()), ".rst-shell__rail-foot:empty") {
+		t.Error("tokens.css does not hide an empty rail foot")
+	}
+}
+
 func TestLocaleMenuRenders(t *testing.T) {
 	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
 	items := []rastrillo.LocaleItem{

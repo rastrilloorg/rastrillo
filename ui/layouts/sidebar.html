@@ -23,12 +23,21 @@
 <aside class="rst-shell__rail">
 {{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
-{{/* account here is a bare slot in the rail: an override supplies the
-     whole thing, chrome included. Topbar's account block is the other
-     shape — the menu body inside a details/summary the layout owns — so
-     moving a block between the two shells needs an edit. */}}
-{{block "account" .}}{{end}}
-{{block "locale" .}}{{end}}
+{{/* The rail's foot: the language switcher, then the person, pinned to
+     the bottom of the rail by the wrapper's auto margin. The wrapper is
+     the layout's, not the app's, because both blocks inside it are
+     app-supplied markup the shell cannot style by class — the box it
+     puts them in is the only handle it has.
+
+     account here is a bare slot: an override supplies the whole thing,
+     chrome included. Topbar's account block is the other shape — the
+     menu body inside a details/summary the layout owns — so moving a
+     block between the two shells needs an edit.
+
+     Written on one line on purpose: an un-overridden shell must leave
+     this wrapper genuinely :empty, and a newline between the blocks
+     would be a text node that stops it matching. */}}
+<div class="rst-shell__rail-foot">{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>
 </aside>
 <main class="rst-shell__main" id="main">
 <div class="rst-page">
