@@ -2840,63 +2840,57 @@ func TestFieldDaterangeLegendCanBeHidden(t *testing.T) {
 	}
 }
 
-// browserJobFilterPattern pulls the -run filter out of the CI browser
-// job's ./ui/ step. Anchored on the flag and the package so it cannot
-// match some other step's -run.
-var browserJobFilterPattern = regexp.MustCompile(`go test -tags browser \./ui/ -run '\^\(([^)]*)\)\$'`)
+// browserJobPattern pulls the package list out of the CI browser
+// job's browser-tagged step. Anchored on the flags so it cannot match
+// some other step.
+var browserJobPattern = regexp.MustCompile(`go test -tags browser -p 1 ([^\n]*?) -count=1`)
 
-// testFuncPattern finds every top-level Go test function in a file.
-var testFuncPattern = regexp.MustCompile(`(?m)^func (Test\w+)\(t \*testing\.T\) \{`)
+// uiFilterPattern matches any attempt to run ./ui/ under a -run
+// filter, which is how this package was narrowed before issue #86 was
+// fixed and how it would quietly be narrowed again.
+var uiFilterPattern = regexp.MustCompile(`go test -tags browser [^\n]*\./ui/[^\n]*-run`)
 
-// The CI browser job runs ./harness/, ./webauthn/ and
-// ./internal/designsystem/ as whole packages, and ./ui/ only through a
-// -run filter naming the drives in ui/shell_browser_test.go — the ones
-// that run no script and so cannot hit issue #86, which is why ./ui/ is
-// otherwise excluded.
+// The CI browser job runs ./harness/, ./webauthn/, ./ui/ and
+// ./internal/designsystem/ as whole packages.
 //
-// A filter written as a list of names goes stale the first time someone
-// adds a drive next to the others: the new test would run locally, pass
-// review, and then run in no CI job — which is the exact failure this
-// branch has already shipped once. So the list is gated rather than
-// trusted. This test is deliberately NOT build-tagged: it must run in
-// the plain suite, where everyone sees it, even though the file it
-// reads only compiles under -tags browser.
-func TestTheScriptlessDrivesAreInTheBrowserJob(t *testing.T) {
-	const drives = "shell_browser_test.go"
-	src, err := os.ReadFile(drives)
-	if err != nil {
-		t.Fatalf("reading %s: %v", drives, err)
-	}
-	inFile := map[string]bool{}
-	for _, m := range testFuncPattern.FindAllStringSubmatch(string(src), -1) {
-		inFile[m[1]] = true
-	}
-	if len(inFile) == 0 {
-		t.Fatalf("%s declares no tests; this gate is measuring nothing", drives)
-	}
-
+// ./ui/ was excluded for a while, then run through a -run filter
+// naming three scriptless drives, because the script-driven ones were
+// 0-for-5 on GitHub's runner (issue #86). That turned out to be a real
+// gap in select.js rather than a runner fault, and it is fixed; the
+// filter is gone and the package runs whole.
+//
+// This gate is what keeps it that way. A -run filter is the cheapest
+// possible response to a red drive and it is silent: -run matching
+// nothing exits 0, so a narrowed step passes while testing less than
+// it claims, and a drive added next to the others would run in no CI
+// job at all — the exact failure this branch has already shipped once.
+// So the package list is gated rather than trusted.
+//
+// Deliberately NOT build-tagged: it must run in the plain suite, where
+// everyone sees it, even though the drives it protects only compile
+// under -tags browser.
+func TestTheUIDrivesRunWholeInTheBrowserJob(t *testing.T) {
 	const workflow = "../.github/workflows/ci.yml"
 	yml, err := os.ReadFile(workflow)
 	if err != nil {
 		t.Fatalf("reading %s: %v — the browser job is where these drives run", workflow, err)
 	}
-	m := browserJobFilterPattern.FindSubmatch(yml)
+
+	m := browserJobPattern.FindSubmatch(yml)
 	if m == nil {
-		t.Fatalf("%s has no anchored `go test -tags browser ./ui/ -run '^(…)$'` step; every drive in %s now runs in no CI job", workflow, drives)
+		t.Fatalf("%s has no anchored `go test -tags browser -p 1 … -count=1` step; every browser drive in this repo now runs in no CI job", workflow)
 	}
-	inCI := map[string]bool{}
-	for _, name := range strings.Split(string(m[1]), "|") {
-		inCI[strings.TrimSpace(name)] = true
+	var found bool
+	for _, pkg := range strings.Fields(string(m[1])) {
+		if pkg == "./ui/" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("the browser job's package list is %q, which does not include ./ui/; every drive in ui/browser_test.go and ui/shell_browser_test.go would run in no CI job", string(m[1]))
 	}
 
-	for name := range inFile {
-		if !inCI[name] {
-			t.Errorf("%s is in %s but not in the browser job's -run filter, so it runs in no CI job; add it to %s", name, drives, workflow)
-		}
-	}
-	for name := range inCI {
-		if !inFile[name] {
-			t.Errorf("the browser job's -run filter names %q, which is not in %s; -run matching nothing exits 0, so that step would pass while testing less than it claims", name, drives)
-		}
+	if loc := uiFilterPattern.FindIndex(yml); loc != nil {
+		t.Errorf("%s runs ./ui/ under a -run filter (%q): a filter matching nothing exits 0, so that step passes while testing less than it claims. Fix the drive instead", workflow, yml[loc[0]:loc[1]])
 	}
 }

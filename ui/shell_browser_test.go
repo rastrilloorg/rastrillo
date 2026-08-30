@@ -10,18 +10,17 @@
 //
 //	go test -tags browser -p 1 ./harness/ ./ui/ ./internal/designsystem/
 //
-// None of these is timing-sensitive the way the enhanced-select drive
-// in browser_test.go is: there is no script under test at all. Every
-// page here is static markup plus tokens.css and a theme, and the only
+// There is no script under test in this file at all: every page here
+// is static markup plus tokens.css and a theme, and the only
 // interaction is a click on a <details> summary, which the browser
 // handles synchronously.
 //
-// That is why THESE drives run in CI and that one does not. The browser
-// job's ./ui/ step is -run-filtered to the tests in this file (issue #86
-// is about the script-driven drives on GitHub's runner, and is not about
-// these). The filter is a list of names, so it can go stale —
-// TestTheScriptlessDrivesAreInTheBrowserJob, in the plain suite, fails
-// if a test is added here and not added to it.
+// For a while that made this file the only part of ./ui/ CI would run,
+// because the script-driven drives in browser_test.go were red on
+// GitHub's runner (issue #86). They are fixed, ./ui/ runs whole, and
+// nothing here needs naming in the workflow any more —
+// TestTheUIDrivesRunWholeInTheBrowserJob, in the plain suite, fails if
+// anyone narrows it back down.
 package ui
 
 import (

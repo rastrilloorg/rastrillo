@@ -237,6 +237,22 @@ function combo(native) {
       case "Escape": e.preventDefault(); close(); input.value = chosenLabel(); break;
     }
   });
+
+  // The same guard datetime.js carries, where the long version of this
+  // note lives. Enter belongs to the combobox, never to the form: a
+  // commit that also submits posts whatever the select held before the
+  // user chose. On a key a person presses, the keydown handler's
+  // preventDefault settles it — the engine derives the keypress from
+  // the keydown it just cancelled. On a SYNTHESISED key it does not:
+  // CDP, and every browser drive built on it, can deliver the keydown
+  // and the character as two independent events, so the second arrives
+  // with no memory of the first one's refusal, carrying the \r that
+  // implicit form submission listens for. Measured, not guessed (issue
+  // #86): without this line the select drive fired a submit on every
+  // run and passed only by outrunning the navigation.
+  input.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") e.preventDefault();
+  });
 }
 
 // Idempotent, so re-scanning is safe if a future change re-scans after
