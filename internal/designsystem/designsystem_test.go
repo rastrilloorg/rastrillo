@@ -31,6 +31,11 @@ import (
 // named constant instead of quietly not running.
 const treeCommitted = true
 
+// mountPath is the mount every gate in this package renders at: the one
+// rastrillo.org publishes. Render takes it as an argument now, so a gate
+// that spelled a different one would be testing a tree nobody serves.
+const mountPath = DefaultMount
+
 // treeDir is docs/design-system, relative to this package.
 const treeDir = "../../docs/design-system"
 
@@ -89,7 +94,7 @@ const maxTreeBytes = 20 << 20
 // starts the same way.
 func render(t *testing.T) map[string][]byte {
 	t.Helper()
-	files, err := Render()
+	files, err := Render(mountPath)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
@@ -563,7 +568,7 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 			if !strings.Contains(page, `class=&#34;rst-modal-overlay&#34;`) {
 				t.Errorf("%s/%s/%s does not show the modal sample as escaped source", theme, locale, fileOf("primitives"))
 			}
-			if href := modalHref(theme, locale); !strings.Contains(page, `href="`+href+`"`) {
+			if href := modalHref(mountPath, theme, locale); !strings.Contains(page, `href="`+href+`"`) {
 				t.Errorf("%s/%s/%s does not link its modal demo (%s)", theme, locale, fileOf("primitives"), href)
 			}
 		}
@@ -894,9 +899,9 @@ func TestEveryDemoLinkOpensInANewTab(t *testing.T) {
 	away := regexp.MustCompile(`<a[^>]*\shref="([^"]*)"[^>]*>`)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			demos := map[string]bool{modalHref(theme, locale): true, demoHref(theme, locale): true}
+			demos := map[string]bool{modalHref(mountPath, theme, locale): true, demoHref(mountPath, theme, locale): true}
 			for _, shell := range ui.LayoutNames() {
-				demos[shellHref(theme, locale, shell)] = true
+				demos[shellHref(mountPath, theme, locale, shell)] = true
 			}
 			seen := map[string]int{}
 			for _, name := range galleryFiles(theme, locale) {
@@ -949,7 +954,7 @@ func proseKeysRendered(t *testing.T) []string {
 	asked := map[string]bool{}
 	stop := setProseTrace(func(en string) { asked[en] = true })
 	defer stop()
-	if _, err := Render(); err != nil {
+	if _, err := Render(mountPath); err != nil {
 		t.Fatalf("Render: %v", err)
 	}
 	keys := make([]string, 0, len(asked))
@@ -1763,7 +1768,7 @@ func TestTheSectionTabsNameEveryPage(t *testing.T) {
 				}
 				var current int
 				for i, pk2 := range pageKinds() {
-					if want := pageHref(theme, locale, pk2.File); links[i][1] != want {
+					if want := pageHref(mountPath, theme, locale, pk2.File); links[i][1] != want {
 						t.Errorf("%s: section tab %d links %q, want %q", name, i, links[i][1], want)
 					}
 					if want := template.HTMLEscapeString(proseIn(locale, pk2.Title)); links[i][3] != want {
@@ -1881,7 +1886,7 @@ func TestEverySectionOfTheRailRoutesToItsOwnPage(t *testing.T) {
 				overviews := 0
 				for i, pk2 := range pageKinds() {
 					g := groups[i]
-					want := pageHref(theme, locale, pk2.File)
+					want := pageHref(mountPath, theme, locale, pk2.File)
 					title := template.HTMLEscapeString(proseIn(locale, pk2.Title))
 					if g.Title != title {
 						t.Errorf("%s: rail section %d is %q, want %q", name, i, g.Title, title)
@@ -1984,12 +1989,12 @@ func TestEveryPageEndsWithItsPlaceInTheSequence(t *testing.T) {
 				var want []string
 				if at > 0 {
 					prev := kinds[at-1]
-					want = append(want, `<a class="ds-updown__prev" href="`+pageHref(theme, locale, prev.File)+`">`+
+					want = append(want, `<a class="ds-updown__prev" href="`+pageHref(mountPath, theme, locale, prev.File)+`">`+
 						template.HTMLEscapeString(proseIn(locale, "Previous: {page}", "page", proseIn(locale, prev.Title)))+`</a>`)
 				}
 				if at < len(kinds)-1 {
 					next := kinds[at+1]
-					want = append(want, `<a class="ds-updown__next" href="`+pageHref(theme, locale, next.File)+`">`+
+					want = append(want, `<a class="ds-updown__next" href="`+pageHref(mountPath, theme, locale, next.File)+`">`+
 						template.HTMLEscapeString(proseIn(locale, "Next: {page}", "page", proseIn(locale, next.Title)))+`</a>`)
 				}
 				if got := strings.Join(want, ""); body != got {
@@ -2048,7 +2053,7 @@ func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
 				continue
 			}
 			for i, pk := range want {
-				if href := pageHref(theme, locale, pk.File); got[i][1] != href {
+				if href := pageHref(mountPath, theme, locale, pk.File); got[i][1] != href {
 					t.Errorf("%s: route %d links %q, want %q", name, i, got[i][1], href)
 				}
 				if title := template.HTMLEscapeString(proseIn(locale, pk.Title)); got[i][2] != title {
@@ -2064,7 +2069,7 @@ func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
 			}
 			// The Overview does not route to itself, and no other page
 			// carries the list at all.
-			if strings.Contains(found[0][1], `href="`+pageHref(theme, locale, fileOf("overview"))+`"`) {
+			if strings.Contains(found[0][1], `href="`+pageHref(mountPath, theme, locale, fileOf("overview"))+`"`) {
 				t.Errorf("%s: the Overview routes to itself", name)
 			}
 		}

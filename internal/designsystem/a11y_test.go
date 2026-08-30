@@ -315,7 +315,7 @@ type a11yTarget struct {
 // the "why": a sample is only representative if you can say what would
 // be missed without each member.
 func a11yTargets() []a11yTarget {
-	page := func(theme, locale, kind string) string { return pageHref(theme, locale, fileOf(kind)) }
+	page := func(theme, locale, kind string) string { return pageHref(mountPath, theme, locale, fileOf(kind)) }
 	return []a11yTarget{
 		// All five of the default theme's pages in English. They share
 		// a stylesheet and a rail, so four of them are cheap; each one
@@ -334,10 +334,10 @@ func a11yTargets() []a11yTarget {
 		{"signal/en tokens", page("signal", "en", "tokens"), "the theme with the most colour — the other end of the same risk"},
 		{"signal/en components", page("signal", "en", "components"), "the same theme, in the components rather than in the chips"},
 		{"day/ar components", page("day", "ar", "components"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
-		{"day/en modal", modalHref("day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
-		{"day/en sidebar shell", shellHref("day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
-		{"day/en demo app", demoHref("day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
-		{"day/ar demo app", demoHref("day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
+		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
+		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
+		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
+		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
 	}
 }
 
@@ -423,7 +423,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"
 			if err := chromedp.Run(ctx,
 				chromedp.EmulateViewport(390, 780),
-				chromedp.Navigate(rig.Origin+shellHref("day", "en", sh.shell)),
+				chromedp.Navigate(rig.Origin+shellHref(mountPath, "day", "en", sh.shell)),
 				chromedp.WaitVisible(sh.open, chromedp.ByQuery),
 				chromedp.Click(sh.open, chromedp.ByQuery),
 				chromedp.Evaluate(axeJS, nil),
@@ -573,7 +573,7 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 	for _, pg := range pages {
 		for _, kind := range []string{"components", "primitives"} {
 			if err := chromedp.Run(ctx,
-				chromedp.Navigate(rig.Origin+pageHref(pg.theme, pg.locale, fileOf(kind))),
+				chromedp.Navigate(rig.Origin+pageHref(mountPath, pg.theme, pg.locale, fileOf(kind))),
 				chromedp.WaitReady("body"),
 			); err != nil {
 				t.Fatalf("loading %s/%s %s: %v", pg.theme, pg.locale, kind, err)
@@ -710,13 +710,13 @@ func TestA11yReflowsAt320(t *testing.T) {
 	// measure.
 	pages := []struct{ name, href string }{}
 	for _, pk := range pageKinds() {
-		pages = append(pages, struct{ name, href string }{"day/en " + pk.Kind, pageHref("day", "en", pk.File)})
+		pages = append(pages, struct{ name, href string }{"day/en " + pk.Kind, pageHref(mountPath, "day", "en", pk.File)})
 	}
 	pages = append(pages,
-		struct{ name, href string }{"day/ar components", pageHref("day", "ar", fileOf("components"))},
-		struct{ name, href string }{"day/ar tokens", pageHref("day", "ar", fileOf("tokens"))},
-		struct{ name, href string }{"day/en modal", modalHref("day", "en")},
-		struct{ name, href string }{"day/en sidebar shell", shellHref("day", "en", "sidebar")},
+		struct{ name, href string }{"day/ar components", pageHref(mountPath, "day", "ar", fileOf("components"))},
+		struct{ name, href string }{"day/ar tokens", pageHref(mountPath, "day", "ar", fileOf("tokens"))},
+		struct{ name, href string }{"day/en modal", modalHref(mountPath, "day", "en")},
+		struct{ name, href string }{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar")},
 	)
 	// Overflow is measured on both edges, because "sideways" is not
 	// one direction: an LTR page spills past the right edge and an RTL
@@ -910,7 +910,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 
 	var count int
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(rig.Origin+pageHref("day", "en", fileOf("components"))),
+		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("components"))),
 		chromedp.WaitReady("body"),
 		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
 	); err != nil {
@@ -982,7 +982,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	// The full circuit, on the page small enough to walk all of.
 	var modalCount int
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(rig.Origin+modalHref("day", "en")),
+		chromedp.Navigate(rig.Origin+modalHref(mountPath, "day", "en")),
 		chromedp.WaitReady("body"),
 		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &modalCount),
 	); err != nil {

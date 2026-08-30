@@ -13,11 +13,11 @@ import (
 
 // ── The page model ───────────────────────────────────────────────────
 //
-// Every URL on a page is an absolute path under mountPath: an asset is
+// Every URL on a page is an absolute path under mount: an asset is
 // /design-system/tokens.css, a shell demo is
 // /design-system/day/en/shells/topbar.html, wherever the page holding
 // the link sits in the tree. There used to be a pair of "../../" depth
-// prefixes here instead; designsystem.go's mountPath comment has the
+// prefixes here instead; designsystem.go's mount comment has the
 // edge behaviour that made them wrong.
 //
 // The one thing absolute paths cost: a page can no longer link to
@@ -116,7 +116,7 @@ type pageView struct {
 	// renderBody, which is the only thing that ever sets it.
 	Body template.HTML
 
-	// Mount is mountPath, so the template can write
+	// Mount is mount, so the template can write
 	// href="{{.Mount}}/tokens.css" without knowing it.
 	Mount string
 
@@ -263,7 +263,7 @@ type pageKind struct {
 	Blurb string
 	// Nav reads this page's rail entries off the finished view. nil is
 	// a page with nothing anchored on it yet.
-	Nav func(theme, locale string, view pageView) []navItem
+	Nav func(mount, theme, locale string, view pageView) []navItem
 }
 
 func pageKinds() []pageKind {
@@ -297,48 +297,48 @@ func fileOf(kind string) string {
 // directory: an absolute page address with the fragment on the end.
 // Used for the current page's own entries too — see pageTemplate's
 // comment for why every entry in the rail has one shape.
-func anchorHrefIn(theme, locale, file, id string) string {
-	return pageHref(theme, locale, file) + "#" + id
+func anchorHrefIn(mount, theme, locale, file, id string) string {
+	return pageHref(mount, theme, locale, file) + "#" + id
 }
 
-func tokenNav(theme, locale string, view pageView) []navItem {
+func tokenNav(mount, theme, locale string, view pageView) []navItem {
 	file := fileOf("tokens")
 	var items []navItem
 	for _, g := range view.Colours {
-		items = append(items, navItem{Label: g.Title, Href: anchorHrefIn(theme, locale, file, g.ID)})
+		items = append(items, navItem{Label: g.Title, Href: anchorHrefIn(mount, theme, locale, file, g.ID)})
 	}
 	for _, g := range view.Structure {
-		items = append(items, navItem{Label: g.Title, Href: anchorHrefIn(theme, locale, file, g.ID)})
+		items = append(items, navItem{Label: g.Title, Href: anchorHrefIn(mount, theme, locale, file, g.ID)})
 	}
 	return items
 }
 
-func componentNav(theme, locale string, view pageView) []navItem {
+func componentNav(mount, theme, locale string, view pageView) []navItem {
 	file := fileOf("components")
 	var items []navItem
 	for _, fam := range view.Families {
-		items = append(items, navItem{Label: fam.Title, Href: anchorHrefIn(theme, locale, file, fam.ID), Group: true})
+		items = append(items, navItem{Label: fam.Title, Href: anchorHrefIn(mount, theme, locale, file, fam.ID), Group: true})
 		for _, p := range fam.Partials {
-			items = append(items, navItem{Label: p.Name, Href: anchorHrefIn(theme, locale, file, p.ID), Code: true})
+			items = append(items, navItem{Label: p.Name, Href: anchorHrefIn(mount, theme, locale, file, p.ID), Code: true})
 		}
 	}
 	return items
 }
 
-func primitiveNav(theme, locale string, view pageView) []navItem {
+func primitiveNav(mount, theme, locale string, view pageView) []navItem {
 	file := fileOf("primitives")
 	var items []navItem
 	for _, idiom := range view.Idioms {
-		items = append(items, navItem{Label: idiom.Name, Href: anchorHrefIn(theme, locale, file, idiom.ID), Code: true})
+		items = append(items, navItem{Label: idiom.Name, Href: anchorHrefIn(mount, theme, locale, file, idiom.ID), Code: true})
 	}
 	return items
 }
 
-func shellNav(theme, locale string, view pageView) []navItem {
+func shellNav(mount, theme, locale string, view pageView) []navItem {
 	file := fileOf("shells")
 	var items []navItem
 	for _, sh := range view.Shells {
-		items = append(items, navItem{Label: sh.Name, Href: anchorHrefIn(theme, locale, file, sh.ID), Code: true})
+		items = append(items, navItem{Label: sh.Name, Href: anchorHrefIn(mount, theme, locale, file, sh.ID), Code: true})
 	}
 	return items
 }
@@ -353,12 +353,12 @@ func shellNav(theme, locale string, view pageView) []navItem {
 // carries `open aria-current="page"`, which is what makes it a rail
 // rather than five tables of contents. TestTheRailIsTheSameOnEveryPage
 // holds that literally.
-func galleryNav(theme, locale, kind string, view pageView) []navSection {
+func galleryNav(mount, theme, locale, kind string, view pageView) []navSection {
 	out := make([]navSection, 0, len(pageKinds())+1)
 	for _, pk := range pageKinds() {
 		section := navSection{
 			Title:   proseIn(locale, pk.Title),
-			Href:    pageHref(theme, locale, pk.File),
+			Href:    pageHref(mount, theme, locale, pk.File),
 			Current: pk.Kind == kind,
 		}
 		if pk.Nav != nil {
@@ -369,7 +369,7 @@ func galleryNav(theme, locale, kind string, view pageView) []navSection {
 			// tokens.html and no way to tokens.html itself. A section
 			// with nothing to list is already a plain link to its own
 			// page, so it does not need a second one under it.
-			section.Items = append([]navItem{sectionOverview(locale, section)}, pk.Nav(theme, locale, view)...)
+			section.Items = append([]navItem{sectionOverview(locale, section)}, pk.Nav(mount, theme, locale, view)...)
 		}
 		out = append(out, section)
 	}
@@ -378,8 +378,8 @@ func galleryNav(theme, locale, kind string, view pageView) []navSection {
 	for _, sh := range view.Shells {
 		demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The {shell} shell", "shell", sh.Name), Href: sh.Href, Blank: true})
 	}
-	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The modal route"), Href: modalHref(theme, locale), Blank: true})
-	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The demo application"), Href: demoHref(theme, locale), Blank: true})
+	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The modal route"), Href: modalHref(mount, theme, locale), Blank: true})
+	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The demo application"), Href: demoHref(mount, theme, locale), Blank: true})
 	return append(out, demos)
 }
 
@@ -405,12 +405,12 @@ func sectionOverview(locale string, section navSection) navItem {
 
 // pageTabs is the strip of section tabs over the page: the same five
 // pages the rail names, in the same order, with the current one marked.
-func pageTabs(theme, locale, kind string) []navLink {
+func pageTabs(mount, theme, locale, kind string) []navLink {
 	out := make([]navLink, 0, len(pageKinds()))
 	for _, pk := range pageKinds() {
 		out = append(out, navLink{
 			Label:   proseIn(locale, pk.Title),
-			Href:    pageHref(theme, locale, pk.File),
+			Href:    pageHref(mount, theme, locale, pk.File),
 			Current: pk.Kind == kind,
 		})
 	}
@@ -426,7 +426,7 @@ func pageTabs(theme, locale, kind string) []navLink {
 // Derived from the table like everything else on this seam, so a sixth
 // page kind joins the sequence with no edit here: it becomes the last
 // page's next and the new last page.
-func pageSteps(theme, locale, kind string) (prev, next *navLink) {
+func pageSteps(mount, theme, locale, kind string) (prev, next *navLink) {
 	kinds := pageKinds()
 	at := -1
 	for i, pk := range kinds {
@@ -449,7 +449,7 @@ func pageSteps(theme, locale, kind string) (prev, next *navLink) {
 			// alone makes a reader click to find out where they are
 			// going, which is the whole of what this pair is for.
 			Label: proseIn(locale, format, "page", title),
-			Href:  pageHref(theme, locale, pk.File),
+			Href:  pageHref(mount, theme, locale, pk.File),
 		}
 	}
 	return step(at-1, "Previous: {page}"), step(at+1, "Next: {page}")
@@ -472,7 +472,7 @@ type routeView struct {
 // It is built for every page and rendered only by the Overview, which
 // is why the Overview's own row carries no Blurb: a page never routes
 // to itself.
-func pageRoutes(theme, locale, kind string) []routeView {
+func pageRoutes(mount, theme, locale, kind string) []routeView {
 	out := make([]routeView, 0, len(pageKinds())-1)
 	for _, pk := range pageKinds() {
 		if pk.Kind == kind {
@@ -481,7 +481,7 @@ func pageRoutes(theme, locale, kind string) []routeView {
 		out = append(out, routeView{
 			Label: proseIn(locale, pk.Title),
 			Blurb: proseIn(locale, pk.Blurb),
-			Href:  pageHref(theme, locale, pk.File),
+			Href:  pageHref(mount, theme, locale, pk.File),
 		})
 	}
 	return out
@@ -537,7 +537,7 @@ func slug(s string) string {
 // Where a page ends up in the tree does not change a byte of it: every
 // link it carries is absolute. Theme, locale and kind are the whole of
 // a page's identity.
-func renderGallery(theme, locale string) (map[string][]byte, error) {
+func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	tmpl, err := partialTree(locale)
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
@@ -568,11 +568,11 @@ func renderGallery(theme, locale string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	families, err := buildFamilies(tmpl, theme, locale)
+	families, err := buildFamilies(mount, tmpl, theme, locale)
 	if err != nil {
 		return nil, err
 	}
-	idioms, err := buildIdioms(tmpl, theme, locale)
+	idioms, err := buildIdioms(mount, tmpl, theme, locale)
 	if err != nil {
 		return nil, err
 	}
@@ -581,14 +581,14 @@ func renderGallery(theme, locale string) (map[string][]byte, error) {
 	base := pageView{
 		Theme: theme, Locale: locale, Dir: rastrillo.Dir(locale),
 		LocaleName: localeName,
-		Mount:      mountPath,
+		Mount:      mount,
 		Sub:        subhead(locale, theme, localeName),
 		Schemes:    schemeButtons(locale),
 		Colours:    localiseGroups(locale, colours),
 		Structure:  localiseGroups(locale, structure),
 		Families:   families,
 		Idioms:     idioms,
-		Shells:     shellViews(theme, locale),
+		Shells:     shellViews(mount, theme, locale),
 	}
 
 	out := make(map[string][]byte, len(pageKinds()))
@@ -596,15 +596,15 @@ func renderGallery(theme, locale string) (map[string][]byte, error) {
 		view := base
 		view.Kind = pk.Kind
 		view.Title = proseIn(locale, pk.Title)
-		view.Pages = pageTabs(theme, locale, pk.Kind)
-		view.Themes = themeLinks(theme, locale, pk.File)
-		view.Locales = localeLinks(theme, locale, pk.File)
-		view.Prev, view.Next = pageSteps(theme, locale, pk.Kind)
-		view.Routes = pageRoutes(theme, locale, pk.Kind)
-		view.Demo, view.DemoHref = demoView(theme, locale), demoHref(theme, locale)
+		view.Pages = pageTabs(mount, theme, locale, pk.Kind)
+		view.Themes = themeLinks(mount, theme, locale, pk.File)
+		view.Locales = localeLinks(mount, theme, locale, pk.File)
+		view.Prev, view.Next = pageSteps(mount, theme, locale, pk.Kind)
+		view.Routes = pageRoutes(mount, theme, locale, pk.Kind)
+		view.Demo, view.DemoHref = demoView(mount, theme, locale), demoHref(mount, theme, locale)
 		// Last, and off the finished view: the rail is a reading of the
 		// whole gallery, so it is built once everything it reads exists.
-		view.Nav = galleryNav(theme, locale, pk.Kind, view)
+		view.Nav = galleryNav(mount, theme, locale, pk.Kind, view)
 
 		body, err := renderBody(tmpl, pk.Kind, view)
 		if err != nil {
@@ -658,12 +658,12 @@ func renderBody(tmpl *template.Template, kind string, view pageView) (template.H
 // themeLinks is the theme switcher. It keeps the reader on the page
 // they are reading: choosing another theme from components.html lands
 // on that theme's components.html, not back at the overview.
-func themeLinks(theme, locale, file string) []navLink {
+func themeLinks(mount, theme, locale, file string) []navLink {
 	out := make([]navLink, 0, len(ui.ThemeNames()))
 	for _, name := range ui.ThemeNames() {
 		out = append(out, navLink{
 			Label:   name,
-			Href:    pageHref(name, locale, file),
+			Href:    pageHref(mount, name, locale, file),
 			Current: name == theme,
 		})
 	}
@@ -719,16 +719,16 @@ func subhead(locale, theme, localeName string) template.HTML {
 // switcher entry uses it, the current one included: the tree root is a
 // copy of day/en, so "the page you are on" and "this page's address"
 // are the same document even when they are two files.
-func indexHref(theme, locale string) string {
-	return pageHref(theme, locale, "index.html")
+func indexHref(mount, theme, locale string) string {
+	return pageHref(mount, theme, locale, "index.html")
 }
 
 // pageHref is the address of one page of one theme × locale directory.
 // Every link this renderer emits into the tree is built here or by one
 // of the two functions beside it (shellHref, modalHref), so the mount
 // path is spelled once.
-func pageHref(theme, locale, file string) string {
-	return mountPath + "/" + theme + "/" + locale + "/" + file
+func pageHref(mount, theme, locale, file string) string {
+	return mount + "/" + theme + "/" + locale + "/" + file
 }
 
 // localeLinks is the language switcher: the twelve shipped locales, each
@@ -746,11 +746,11 @@ func pageHref(theme, locale, file string) string {
 // in the gallery, so its switcher sends you back to the overview in the
 // language you picked, which is where the switcher is a component worth
 // looking at anyway.
-func localeLinks(theme, locale, file string) []localeLink {
+func localeLinks(mount, theme, locale, file string) []localeLink {
 	catalogs := rastrillo.BaseCatalogs()
 	out := make([]localeLink, 0, len(rastrillo.BaseLocales()))
 	for _, code := range rastrillo.BaseLocales() {
-		href := pageHref(theme, code, file)
+		href := pageHref(mount, theme, code, file)
 		out = append(out, localeLink{
 			Code:    code,
 			Name:    catalogs[code]["rastrillo.ui.locale_name"],
@@ -762,7 +762,7 @@ func localeLinks(theme, locale, file string) []localeLink {
 	return out
 }
 
-func shellViews(theme, locale string) []shellView {
+func shellViews(mount, theme, locale string) []shellView {
 	blurbs := map[string]string{
 		"column":  "The plain centred page every scaffolded app starts on: a skip link, a title, and the content column.",
 		"topbar":  "Brand, navigation and an account menu across the top, with a footer under the page.",
@@ -771,7 +771,7 @@ func shellViews(theme, locale string) []shellView {
 	out := make([]shellView, 0, len(ui.LayoutNames()))
 	for _, name := range ui.LayoutNames() {
 		id := anchorID("shell", name)
-		href := shellHref(theme, locale, name)
+		href := shellHref(mount, theme, locale, name)
 		out = append(out, shellView{
 			Name:  name,
 			ID:    id,
@@ -796,15 +796,15 @@ func shellViews(theme, locale string) []shellView {
 }
 
 // shellHref is one full-page shell demo's address.
-func shellHref(theme, locale, shell string) string {
-	return mountPath + "/" + theme + "/" + locale + "/shells/" + shell + ".html"
+func shellHref(mount, theme, locale, shell string) string {
+	return mount + "/" + theme + "/" + locale + "/shells/" + shell + ".html"
 }
 
 // modalHref is the modal demo's address — which is the whole point of
 // the demo. A modal is its own URL, so the sample that shows one open
 // has to be a page you navigate to, not a fragment of a gallery.
-func modalHref(theme, locale string) string {
-	return mountPath + "/" + theme + "/" + locale + "/modal.html"
+func modalHref(mount, theme, locale string) string {
+	return mount + "/" + theme + "/" + locale + "/modal.html"
 }
 
 // ── Partial samples ──────────────────────────────────────────────────
@@ -814,7 +814,7 @@ func modalHref(theme, locale string) string {
 // a gap in the documentation, not a reason to drop it off the page: it
 // gets its own section, its marker comment (so the coverage gate still
 // sees it), and a visible note saying it has no sample data yet.
-func buildFamilies(tmpl *template.Template, theme, locale string) ([]familyView, error) {
+func buildFamilies(mount string, tmpl *template.Template, theme, locale string) ([]familyView, error) {
 	claimed := map[string]bool{}
 	out := make([]familyView, 0, len(families())+1)
 	for _, fam := range families() {
@@ -833,7 +833,7 @@ func buildFamilies(tmpl *template.Template, theme, locale string) ([]familyView,
 				pv.States = append(pv.States, stateView{
 					State: proseIn(locale, s.State),
 					Note:  proseIn(locale, s.Note),
-					Preview: newPreview(theme, locale,
+					Preview: newPreview(mount, theme, locale,
 						fmt.Sprintf("%s-%d", pv.ID, i),
 						previewTitle(locale, doc.Name, s.State),
 						wrap(doc.Wrap, string(html)), heightOf(pv.ID)),
@@ -869,7 +869,7 @@ func buildFamilies(tmpl *template.Template, theme, locale string) ([]familyView,
 			if html, err := renderSample(tmpl, name, 0, sample{Data: map[string]any{}}, locale); err == nil {
 				pv.States = append(pv.States, stateView{
 					State: proseIn(locale, "Rendered from an empty data value"),
-					Preview: newPreview(theme, locale, pv.ID+"-0",
+					Preview: newPreview(mount, theme, locale, pv.ID+"-0",
 						previewTitle(locale, name, "Rendered from an empty data value"),
 						string(html), heightOf(pv.ID)),
 				})
@@ -1140,7 +1140,7 @@ var srcdocScripts = []struct {
 // it: gallery.js writes data-theme on each frame's own <html>, on load
 // and on every toggle. See its "the previews" section, and the drive
 // leg that measured the two apart.
-func srcdoc(theme, locale, title, body string) string {
+func srcdoc(mount, theme, locale, title, body string) string {
 	var b strings.Builder
 	b.WriteString("<!doctype html>\n")
 	b.WriteString(`<html lang="` + locale + `" dir="` + rastrillo.Dir(locale) + `">` + "\n")
@@ -1153,8 +1153,8 @@ func srcdoc(theme, locale, title, body string) string {
 	// a screen reader announces on entering the frame, so the two names
 	// agreeing is the point rather than a coincidence.
 	b.WriteString("<title>" + template.HTMLEscapeString(title) + "</title>\n")
-	b.WriteString(`<link rel="stylesheet" href="` + mountPath + `/tokens.css">` + "\n")
-	b.WriteString(`<link rel="stylesheet" href="` + mountPath + `/theme-` + theme + `.css">` + "\n")
+	b.WriteString(`<link rel="stylesheet" href="` + mount + `/tokens.css">` + "\n")
+	b.WriteString(`<link rel="stylesheet" href="` + mount + `/theme-` + theme + `.css">` + "\n")
 	// A component sample gets breathing room; a whole-page sample —
 	// a shell frame, the modal's backdrop — fills the frame, because
 	// insetting a page inside a page is not what any of them look
@@ -1165,7 +1165,7 @@ func srcdoc(theme, locale, title, body string) string {
 	for _, s := range srcdocScripts {
 		for _, hook := range s.hooks {
 			if strings.Contains(body, hook) {
-				b.WriteString(`<script defer src="` + mountPath + "/" + s.asset + `"></script>` + "\n")
+				b.WriteString(`<script defer src="` + mount + "/" + s.asset + `"></script>` + "\n")
 				break
 			}
 		}
@@ -1210,10 +1210,10 @@ var (
 // sample as it was written, routes and all, because those are the
 // hrefs somebody copying this markup wants — a gallery that had quietly
 // replaced them with # would be teaching the wrong thing.
-func deaden(html string) string {
+func deaden(mount, html string) string {
 	out := sampleHref.ReplaceAllStringFunc(html, func(m string) string {
 		v := m[len(`href="`) : len(m)-1]
-		if v == "" || strings.HasPrefix(v, "#") || strings.HasPrefix(v, mountPath+"/") {
+		if v == "" || strings.HasPrefix(v, "#") || strings.HasPrefix(v, mount+"/") {
 			return m
 		}
 		return `href="#"`
@@ -1249,11 +1249,11 @@ func previewTitle(locale, name, qualifier string) string {
 
 // newPreview is one example's widget: the source as written, and a
 // document holding the same markup with its links deadened.
-func newPreview(theme, locale, group, title, source string, height int) previewView {
+func newPreview(mount, theme, locale, group, title, source string, height int) previewView {
 	return previewView{
 		Group:  group,
 		Style:  previewStyle(height),
-		Doc:    srcdoc(theme, locale, title, deaden(source)),
+		Doc:    srcdoc(mount, theme, locale, title, deaden(mount, source)),
 		Source: source,
 		Title:  title,
 	}
@@ -1320,7 +1320,7 @@ var idiomRules = map[string]struct{ Title, Body string }{
 // its link wears, and the address it goes to.
 type demoIdiom struct {
 	Label string
-	Href  func(theme, locale string) string
+	Href  func(mount, theme, locale string) string
 }
 
 // demoIdioms are the three idioms whose preview is not the last word on
@@ -1333,11 +1333,11 @@ type demoIdiom struct {
 var demoIdioms = map[string]demoIdiom{
 	"shell-topbar": {
 		Label: "Open the topbar shell demo, a dedicated preview.",
-		Href:  func(theme, locale string) string { return shellHref(theme, locale, "topbar") },
+		Href:  func(mount, theme, locale string) string { return shellHref(mount, theme, locale, "topbar") },
 	},
 	"shell-sidebar": {
 		Label: "Open the sidebar shell demo, a standalone preview.",
-		Href:  func(theme, locale string) string { return shellHref(theme, locale, "sidebar") },
+		Href:  func(mount, theme, locale string) string { return shellHref(mount, theme, locale, "sidebar") },
 	},
 	"modal": {
 		Label: "See it live at the URL it belongs to",
@@ -1357,7 +1357,7 @@ var demoIdioms = map[string]demoIdiom{
 // an h4 there skipped a level. It read the same and described a
 // structure that was not there — which is the whole of WCAG 1.3.1, and
 // what the accessibility gate found the first time it ran.
-func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, error) {
+func buildIdioms(mount string, tmpl *template.Template, theme, locale string) ([]idiomView, error) {
 	samples := ui.Styleguide()
 	names := make([]string, 0, len(samples))
 	for name := range samples {
@@ -1372,12 +1372,12 @@ func buildIdioms(tmpl *template.Template, theme, locale string) ([]idiomView, er
 			Marker: marker("idiom", name),
 			Blurb:  proseIn(locale, idiomBlurbs[name]),
 		}
-		view.Preview = newPreview(theme, locale, view.ID+"-0",
+		view.Preview = newPreview(mount, theme, locale, view.ID+"-0",
 			previewTitle(locale, name, "UI primitives"),
 			samples[name], heightOf(view.ID))
 		if demo, ok := demoIdioms[name]; ok {
 			view.DemoLabel = proseIn(locale, demo.Label)
-			view.DemoHref = demo.Href(theme, locale)
+			view.DemoHref = demo.Href(mount, theme, locale)
 		}
 		if rule, ok := idiomRules[name]; ok {
 			var buf strings.Builder
@@ -1427,7 +1427,7 @@ var accountMarkup = map[string]template.HTML{
 // renderShell builds one full-page shell demo: ui.Layout's own template,
 // its chrome blocks filled with sample links so the frame is visible,
 // and a small representative screen in the content hole.
-func renderShell(theme, locale, shell string) ([]byte, error) {
+func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 	src, ok := ui.Layout(shell)
 	if !ok {
 		return nil, fmt.Errorf("no shell %q", shell)
@@ -1438,7 +1438,7 @@ func renderShell(theme, locale, shell string) ([]byte, error) {
 		if name == "theme.css" {
 			name = "theme-" + theme + ".css"
 		}
-		return mountPath + "/" + name
+		return mount + "/" + name
 	}
 	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
 	if err != nil {
@@ -1456,9 +1456,9 @@ func renderShell(theme, locale, shell string) ([]byte, error) {
 		Dir:     rastrillo.Dir(locale),
 		Name:    shell,
 		Title:   proseIn(locale, "The {shell} shell", "shell", shell) + " — " + proseIn(locale, "rastrillo design system"),
-		Mount:   mountPath,
-		Index:   indexHref(theme, locale),
-		Locales: localeLinks(theme, locale, "index.html"),
+		Mount:   mount,
+		Index:   indexHref(mount, theme, locale),
+		Locales: localeLinks(mount, theme, locale, "index.html"),
 		Account: accountMarkup[shell],
 	})
 	if err != nil {
@@ -1495,7 +1495,7 @@ type modalData struct {
 // because the page that would restore it is the page whose whole claim
 // is that it runs nothing. The claim is worth more than the
 // consistency.
-func renderModal(theme, locale string) ([]byte, error) {
+func renderModal(mount, theme, locale string) ([]byte, error) {
 	tmpl, err := partialTree(locale)
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
@@ -1508,9 +1508,9 @@ func renderModal(theme, locale string) ([]byte, error) {
 		Theme:  theme,
 		Locale: locale,
 		Dir:    rastrillo.Dir(locale),
-		Mount:  mountPath,
-		Index:  indexHref(theme, locale),
-		Self:   modalHref(theme, locale),
+		Mount:  mount,
+		Index:  indexHref(mount, theme, locale),
+		Self:   modalHref(mount, theme, locale),
 	})
 	if err != nil {
 		return nil, err
@@ -1553,8 +1553,8 @@ func renderModal(theme, locale string) ([]byte, error) {
 const demoShell = "sidebar"
 
 // demoHref is the demo application's address.
-func demoHref(theme, locale string) string {
-	return mountPath + "/" + theme + "/" + locale + "/demo.html"
+func demoHref(mount, theme, locale string) string {
+	return mount + "/" + theme + "/" + locale + "/demo.html"
 }
 
 // demoData is what the demo page executes against. Self is the page's
@@ -1571,7 +1571,7 @@ type demoData struct {
 }
 
 // renderDemo builds one theme × locale copy of the demo application.
-func renderDemo(theme, locale string) ([]byte, error) {
+func renderDemo(mount, theme, locale string) ([]byte, error) {
 	src, ok := ui.Layout(demoShell)
 	if !ok {
 		return nil, fmt.Errorf("no shell %q to build the demo application in", demoShell)
@@ -1582,7 +1582,7 @@ func renderDemo(theme, locale string) ([]byte, error) {
 		if name == "theme.css" {
 			name = "theme-" + theme + ".css"
 		}
-		return mountPath + "/" + name
+		return mount + "/" + name
 	}
 	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
 	if err != nil {
@@ -1598,11 +1598,11 @@ func renderDemo(theme, locale string) ([]byte, error) {
 	err = tmpl.ExecuteTemplate(&buf, "layout", demoData{
 		Locale:  locale,
 		Dir:     rastrillo.Dir(locale),
-		Mount:   mountPath,
+		Mount:   mount,
 		Title:   proseIn(locale, "The demo application") + " — " + proseIn(locale, "rastrillo design system"),
-		Index:   indexHref(theme, locale),
-		Self:    demoHref(theme, locale),
-		Locales: localeLinks(theme, locale, "demo.html"),
+		Index:   indexHref(mount, theme, locale),
+		Self:    demoHref(mount, theme, locale),
+		Locales: localeLinks(mount, theme, locale, "demo.html"),
 	})
 	if err != nil {
 		return nil, err
@@ -1614,11 +1614,11 @@ func renderDemo(theme, locale string) ([]byte, error) {
 // the same preview widget every example on this tree uses, loading the
 // real page rather than a copy of it, and with no Code tab — an
 // application is not a snippet to paste.
-func demoView(theme, locale string) previewView {
+func demoView(mount, theme, locale string) previewView {
 	return previewView{
 		Group: "demo-app-0",
 		Style: previewStyle(heightOf("demo-app")),
-		Src:   demoHref(theme, locale),
+		Src:   demoHref(mount, theme, locale),
 		Title: proseIn(locale, "The demo application"),
 	}
 }

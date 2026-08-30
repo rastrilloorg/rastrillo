@@ -45,7 +45,7 @@ import (
 // the drive would be measuring an unstyled, unscripted page.
 func treeHandler(t *testing.T) http.Handler {
 	t.Helper()
-	files, err := Render()
+	files, err := Render(mountPath)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
 
-	url := rig.Origin + indexHref(RootTheme(), "en")
+	url := rig.Origin + indexHref(mountPath, RootTheme(), "en")
 
 	var (
 		jsMarker                          string
@@ -296,12 +296,12 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	// The components page: the rail is the same on all five, and this
 	// is the one whose own section is the long one, so a filter that
 	// folded the current section away would show up here first.
-	url := rig.Origin + pageHref(RootTheme(), "en", fileOf("components"))
+	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("components"))
 	// The rail's entries are absolute page addresses with a fragment on
 	// the end, the current page's included, so every expectation below
 	// names the page it links as well as the fragment.
 	on := func(locale, kind, id string) string {
-		return anchorHrefIn(RootTheme(), locale, fileOf(kind), id)
+		return anchorHrefIn(mountPath, RootTheme(), locale, fileOf(kind), id)
 	}
 
 	var (
@@ -416,7 +416,7 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// typing them off an English keyboard types neither accent, and
 		// with the fold replaced by a plain toLowerCase both queries
 		// find nothing at all.
-		chromedp.Navigate(rig.Origin+pageHref(RootTheme(), "es", fileOf("components"))), at("navigated-es"),
+		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "es", fileOf("components"))), at("navigated-es"),
 		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("es-filter-visible"),
 		typing("presentacion"), at("typed-unaccented-family"),
 		chromedp.Evaluate(railProbe, &accented),
@@ -508,7 +508,7 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if want := len(ui.LayoutNames()) + 1; len(titled.Shown) != want {
 		t.Errorf(`typing "shells" left %d entries on screen, want the section's %d: %v`, len(titled.Shown), want, titled.Shown)
 	}
-	if !showing(titled, pageHref("day", "en", fileOf("shells"))) {
+	if !showing(titled, pageHref(mountPath, "day", "en", fileOf("shells"))) {
 		t.Errorf(`typing "shells" hid the section's own overview link: %v`, titled.Shown)
 	}
 
@@ -626,7 +626,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 
 	// The components page: since the split it is the one the callout
 	// sample lives on, and the one that frames most of the tree.
-	url := rig.Origin + pageHref(RootTheme(), "en", fileOf("components"))
+	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("components"))
 
 	// One example, named rather than picked by position: the callout
 	// is small, has no script and no menu, and is on the page in every
@@ -933,7 +933,7 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		var desktop, mobile string
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(1500, 1000),
-			chromedp.Navigate(rig.Origin+pageHref(RootTheme(), "en", fileOf(kind))),
+			chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
 			chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery),
 			chromedp.Evaluate(`(() => {
 			  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
@@ -1039,7 +1039,7 @@ func TestTheDemoApplicationSwitchesViewsWithNoScript(t *testing.T) {
 	  return out.join(",");
 	})()`
 
-	url := rig.Origin + demoHref(RootTheme(), "en")
+	url := rig.Origin + demoHref(mountPath, RootTheme(), "en")
 	var landed, ranScript, list, detail, back, views string
 	if err := chromedp.Run(ctx,
 		emulation.SetScriptExecutionDisabled(true),
@@ -1170,7 +1170,7 @@ func TestThePrevNextPairSitsAtTheEndsOfItsRow(t *testing.T) {
 			var raw string
 			if err := chromedp.Run(ctx,
 				chromedp.EmulateViewport(1280, 900),
-				chromedp.Navigate(rig.Origin+pageHref(RootTheme(), locale, pk.File)),
+				chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), locale, pk.File)),
 				chromedp.WaitVisible(`.ds-updown`, chromedp.ByQuery),
 				chromedp.Evaluate(measure, &raw),
 			); err != nil {
