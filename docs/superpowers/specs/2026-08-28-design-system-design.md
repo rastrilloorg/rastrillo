@@ -1420,3 +1420,68 @@ property is untouched.
 The teaching surface — `SKILL.md` (17,602/18,000), `docs/site`, the
 styleguide, the scaffold and the gates — must flip in the same commit as
 the partials, or an LLM reading a half-migrated corpus emits a mix.
+
+---
+
+## 6-v2.2. Remixability (2026-08-30) — RULED, not yet started
+
+Two changes with one motive: the system currently prescribes where it
+should offer. Paul's observation is the frame for both — *"Every
+Rastrillo app so far built has had it"* — and neither change is worth
+making if the result is a different single answer imposed just as hard.
+
+### The rake line is retired
+
+`.rst-page-header::after` draws a 2.5rem accent stroke over the header's
+1px rule, flush to the inline start. It is the library's one flourish
+and the reason every app looks like a rastrillo app. It also reads as a
+determinate progress bar at 12%, and not by resemblance: it is built
+from the same parts in the same order — a thin full-width track in the
+line colour with a shorter saturated segment filling it from the leading
+edge. The same markup would serve both.
+
+**RULED 2026-08-30 by Paul: the tinted hairline.** The header rule moves
+onto the theme axis as one derived token, and the `::after` goes away:
+
+```css
+/* tokens.css — structure, identical on every theme */
+.rst-page-header { border-bottom: 1px solid var(--rst-header-rule); }
+.rst-page-header::after { content: none; }
+
+/* themes/day.css */
+--rst-header-rule: color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line));
+/* themes/plain.css */
+--rst-header-rule: var(--rst-line);
+/* themes/signal.css */
+--rst-header-rule: color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line));
+```
+
+Derived rather than authored, so a theme that changes its accent gets a
+matching rule with no second value to keep in step — that drift is
+exactly what a fourth hand-authored colour per theme per scheme would
+produce.
+
+**The rule is decorative and carries no contrast floor.** The heading's
+size, weight and spacing carry the structure; the rule does not. Do not
+add it to the 26-pair contrast gate, and do not let a later pass argue
+it back up to meet a 3:1 floor it was never subject to. This sentence
+exists so that argument has already been answered.
+
+An app that wants its own sets one custom property, instead of fighting
+an `::after` it cannot remove. That is the whole point of the change.
+
+### The palette generator
+
+**RULED 2026-08-30 by Paul: a mood-driven generator constrained BY the
+contrast gate, not a shuffle.** A mood (calm, warm, technical,
+editorial) produces a palette *by construction* in OKLCH — lightness
+ladders derived so the documented pairs clear their floors — and
+anything that fails is rejected rather than shipped with a warning.
+
+The floor to hold is the one the three shipped themes hold: 26 pairs ×
+2 schemes, 4.5:1 for text and 3:1 for control borders. A generator whose
+output is not held to it turns the system's accessibility claim into a
+claim about three files rather than about the system, which is worse
+than not generating at all.
+
+Both changes ship after v2.1.
