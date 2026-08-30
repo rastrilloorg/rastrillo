@@ -2066,6 +2066,15 @@ scheme parameter their own contrast gate would have asserted the wrong
 pair **while passing**. Passing the literal background is therefore a
 bug removed from a downstream app, not a generalisation of ours.
 
+The sequence is recorded exactly, at Sheets' own request, because it is
+the argument for review rather than for anyone's discipline: the
+correction came first, from a second caller's unrelated requirement, and
+the consequence was found second, when Sheets sat down to write what
+their contrast gate would actually assert. Nobody caught it before
+writing. A second pair of eyes moved a bug from shipped to unwritten,
+which is a different and more repeatable thing than someone being
+careful.
+
 Scheme becomes the caller's business: resolved from the theme token in
 the ordinary case, from paper white in Docs', from whatever a cell
 actually sits on in Sheets'.
