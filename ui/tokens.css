@@ -1128,8 +1128,8 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
 .rst-field-range, [rst-field-range] { border: 0; margin: var(--rst-sp-4) 0; padding: 0; }
 .rst-field-range > legend, [rst-field-range] > legend { font-size: var(--rst-fs-sm); font-weight: 600; margin: 0 0 0.45rem; padding: 0; }
 .rst-field-range > .rst-field-row, [rst-field-range] > [rst-field-row] { margin: 0; }
-.rst-form-foot, [rst-form-foot] { align-items: center; background: var(--rst-bg); border-top: 1px solid var(--rst-line); bottom: 0; display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.75rem; padding: 0.8rem 0; position: sticky; z-index: 5; }
-.rst-form-foot .rst-form-foot__note, [rst-form-foot] [rst-form-foot-note] { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin-inline-end: auto; }
+.rst-form-bar, [rst-form-bar] { align-items: center; background: var(--rst-bg); border-top: 1px solid var(--rst-line); bottom: 0; display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.75rem; padding: 0.8rem 0; position: sticky; z-index: 5; }
+.rst-form-bar .rst-form-bar__note, [rst-form-bar] [rst-form-bar-note] { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); margin-inline-end: auto; }
 .rst-form-actions, [rst-form-actions] { display: flex; gap: 0.5rem; justify-content: flex-end; }
 /* form/form-foot — the container the form-foot partial's callers wrap
    fields in, and the closing action row form-foot itself emits. */
@@ -1150,16 +1150,18 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    plus its own two margins, which is the bug this rule exists to
    prevent. So: the form owns the block rhythm, full stop, and the two
    deliberate exceptions are exempted here where they can be read.
-   .rst-form__foot and .rst-form-foot both set a block-start margin that
+   .rst-form-foot and .rst-form-bar both set a block-start margin that
    is not rhythm — it is the extra air that separates a closing action
    row from the last question above it. */
 .rst-form, [rst-form] { display: flex; flex-direction: column; gap: var(--rst-sp-5); max-inline-size: 44rem; }
-.rst-form > *:not(.rst-form__foot, .rst-form-foot), [rst-form] > *:not(.rst-form__foot, [rst-form-foot]) { margin-block: 0; }
-/* The one class with no attribute twin: rst-form__foot would flatten to
-   rst-form-foot, which is a different rule above (the sticky action
-   bar). Two names, one attribute — so neither can take it until the
-   markup flip picks one of them and retires the other. */
-.rst-form__foot { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
+.rst-form > *:not(.rst-form-foot, .rst-form-bar), [rst-form] > *:not([rst-form-foot], [rst-form-bar]) { margin-block: 0; }
+/* The closing action row the form-foot partial emits. It was
+   rst-form__foot until the markup flip (spec §6-v3): BEM's __ flattens
+   to a hyphen, so it and the sticky save bar above wanted the same
+   attribute, and a name the partial emits is the one that should own
+   the name the partial is called. The save bar, which no partial emits
+   and every caller writes by hand, is rst-form-bar now. */
+.rst-form-foot, [rst-form-foot] { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
 
 @media (prefers-reduced-motion: reduce) {
   .rst-switch__track, [rst-switch-track], .rst-switch__track::after, [rst-switch-track]::after { transition: none; }
