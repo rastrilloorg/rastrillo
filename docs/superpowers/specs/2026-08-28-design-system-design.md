@@ -1552,3 +1552,43 @@ browser without `popover` leaves the button inert, where `<details>`
 always works. It remains the most interesting long-term shape, and it is
 the natural companion to §6-v3's markup migration. Revisit it there,
 deliberately, not by accident.
+
+### 4. The scrollbar must not move the layout — RULED 2026-08-30 by Paul
+
+Paul: *"clicking between sections causes the page to jump depending on
+whether the scroll bar is present or not. Should we default to having it
+so that scrollbar doesn't shift the layout, with an opt-out?"* — yes,
+defaulted, with a token opt-out.
+
+```css
+:root { --rst-scrollbar-gutter: stable; }
+html  { scrollbar-gutter: var(--rst-scrollbar-gutter); }
+```
+
+A token rather than a class, for three reasons: the opt-out is one line
+in the app's own stylesheet (`--rst-scrollbar-gutter: auto`), it layers
+like every other token, and custom properties are untouched by §6-v3's
+markup migration, so this survives it without edit.
+
+**It fixes a second instance of the same bug.** `tokens.css:968` is
+`body:has(.rst-backdrop) { overflow: hidden }` — the modal's scroll
+lock. That removes the scrollbar the moment a modal opens, shifting the
+whole page sideways while the reader watches. One declaration fixes both.
+
+**The cost, chosen knowingly:** a page too short to scroll now reserves
+the gutter as well, so there is a thin empty strip at the trailing edge
+where there was none. That is what never shifting costs. `both-edges`
+was considered and not taken — it doubles the strip to keep centred
+content exactly centred, and this system's pages are already a
+max-width column inside a larger ground, so the asymmetry is not visible
+where it would matter.
+
+Support: Chrome 94+, Firefox 97+, Safari 18.2+; older engines ignore the
+declaration and land on today's behaviour — the same degradation shape
+as the anchor-positioning ruling above, and for the same reason.
+
+**Do not over-claim what this fixes.** macOS overlay scrollbars take no
+layout space, so on a default Mac there is nothing to shift. This is
+real on Windows and Linux, on macOS with "always show scrollbars", and
+inside the gallery's own preview iframes. Say that in the docs rather
+than implying it explains every jump anyone has seen.
