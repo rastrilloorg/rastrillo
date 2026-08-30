@@ -2639,3 +2639,70 @@ worse for arriving as a mixture rather than as a migration. The
 migration is mechanical and one codemod covers both. Being early is not
 worth being inconsistent, and it is certainly not worth shipping
 unstyled.
+
+### Where the variant lives — RULED 2026-08-30 by Paul, on Fable's recommendation
+
+**No variant repo today. Primitives go app-local in each app. The
+variant becomes its own module the day the second app actually reaches
+for the first app's primitive — extraction day and creation day are the
+same day.**
+
+Fable 5 recommended it; the full reasoning is in
+`.superpowers/sdd/2026-08-30-design-system-v2-1/fable-variant-recommendation.md`.
+Three findings changed the argument:
+
+**The Go module objection was overstated.** Docs argued that sharing a
+package from inside an app module drags the whole application in. Fable
+built the scenario: with module graph pruning (Go ≥1.17) the heavy
+dependency does not reach the consumer's `go.mod` even as indirect,
+nothing from it compiles, and the build succeeds *with that dependency's
+source deleted* — only its `go.mod` is read. What is real is **version
+coupling**: the consumer would pin the application's release tags. That
+still rules out sharing from inside an app module, for a different
+reason than the one given.
+
+**And both apps skipped a step.** Neither ever needs to `go get` the
+other, because adoption day is the day the code moves out to a fresh
+module. The module boundary settles what shape the shared thing takes;
+it says nothing about when to create it.
+
+**Paul's larger intent argues for later.** A variant framework that
+`rastrillo new` can offer is a framework feature, and a bespoke repo
+built before any primitive exists is a contract designed from guesses
+whose accidents the framework feature would then have to accommodate —
+this section's own extraction lesson, one level up. App-local primitives
+teach what a variant contains; the first real extraction produces the
+CARLOS variant; that working variant shapes the framework feature as its
+first user.
+
+There is also a timing argument neither app raised: §6-v3 is ratified
+and unstarted, so a module created today is a versioned public surface
+born in the losing spelling with a breaking migration guaranteed in its
+first months. App-local code migrates by codemod, with no release.
+
+### A copy is the trigger
+
+The failure Fable expects from its own recommendation, and it is this
+project's native one: **extraction day never gets scheduled.** Under
+deadline one app copies the other's CSS into `static/` and drift begins.
+The frozen `tokens.css` is the proof that this is what actually happens.
+
+So the trigger is named as a cheap, observable act rather than a
+judgement: **the day either app copies or imports the other's primitive,
+the shared module is created that week and the copy deleted in the same
+change.** "A second consumer appears" is too abstract to ever fire.
+
+This is now a rule in `SKILL.md`, because it is not suite-specific —
+every rastrillo app has components that are the app's rather than the
+framework's.
+
+### The two-pin cost, contained
+
+A variant pins `ui`; apps pin the variant. Real, not decisive, and zero
+until the variant exists. MVS closes half automatically; the dangerous
+direction is an app upgrading `ui` past the variant's CSS, which fails
+**visually rather than at compile time**. Containment: the variant
+embeds its CSS from the module rather than being scaffold-copied — one
+pin, no frozen file — and declares its tested `ui` range for
+`rastrillo doctor` (§6-v2.3) to check, which is an extension of a
+mechanism already approved rather than a new one.
