@@ -1,6 +1,7 @@
 package designsystem
 
 import (
+	"bytes"
 	"fmt"
 	"html"
 	"html/template"
@@ -63,16 +64,15 @@ const mountPath = DefaultMount
 // markup runs to several kilobytes each — and their page clears the
 // budget by rather less than a locale's worth of prose.
 //
-// ── The two dsCSS numbers, because there are two ─────────────────────
+// ── The lever that used to be here ───────────────────────────────────
 //
-// len(dsCSS) is 11,380 bytes and what reaches a page is 7,765. Neither
-// is a typo for the other: html/template's CSS sanitiser strips the
-// comments out of <style> text, and better than a third of that constant
-// is the comments explaining the preview widget's scaling and the
-// scriptless story. Measure the constant and you get the first number;
-// measure a rendered page and you get the second. The one a reader waits
-// for is 7,765, on every page, inline — which is the lever to reach for
-// before this ceiling if a page ever sits just over it.
+// The gallery's own stylesheet was inlined into every page until v2.1,
+// and it was the first thing to reach for when a page sat just over
+// this ceiling: better than eight kilobytes, on all 397 of them, paid
+// again on every page a reader opened. It is gallery.css now, one asset
+// at the tree root, linked the way tokens.css and the theme are — so
+// the lever has been pulled and the numbers below are what is left.
+// There is no second copy of it anywhere to find.
 const maxPageBytes = 128 << 10
 
 // pageBudgetDebt names the pages over maxPageBytes, with the ceiling
@@ -753,7 +753,7 @@ func themeLocaleOfPath(p string) (theme, locale string) {
 }
 
 // Every theme × locale × page kind × shell combination is present, plus
-// the root index and the seven shared assets — the tree's shape is part
+// the root index and the eight shared assets — the tree's shape is part
 // of its contract with the website's sync script. The page kinds come
 // off pageKinds(), so a sixth page is expected in every directory the
 // moment its row lands and nothing here has to be remembered.
@@ -761,7 +761,8 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "select.js", "datetime.js", "gallery.js",
+		"tokens.css", "rastrillo.js", "select.js", "datetime.js",
+		"gallery.js", "gallery.css",
 	}
 	for _, theme := range ui.ThemeNames() {
 		want = append(want, "theme-"+theme+".css")
@@ -954,19 +955,22 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 			t.Errorf("%s: %d widgets show source, want %d (all but the framed pages)", name, withCode, want)
 		}
 
-		// The mechanism, asserted where it lives — on every page, because
-		// every page carries the whole stylesheet and any of them can
-		// frame an example. Without these four rules the tabs are three
-		// radios that change nothing.
-		for _, rule := range []string{
-			`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
-			`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
-			`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
-			`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
-		} {
-			if !strings.Contains(page, rule) {
-				t.Errorf("%s carries no rule %q — the tabs would switch nothing", name, rule)
-			}
+	}
+	// The mechanism, asserted where it lives — which is gallery.css,
+	// once, since the stylesheet stopped being inlined into all 397
+	// pages. Without these four rules the tabs are three radios that
+	// change nothing. TestEveryGalleryPageLinksTheStylesheet is the
+	// other half of the claim: these rules reach the pages because
+	// every page that frames an example loads this file.
+	css := string(GalleryCSS())
+	for _, rule := range []string{
+		`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
+		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
+		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
+		`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
+	} {
+		if !strings.Contains(css, rule) {
+			t.Errorf("gallery.css carries no rule %q — the tabs would switch nothing", rule)
 		}
 	}
 	// Asserted rather than assumed: a split that quietly stopped
@@ -1429,9 +1433,11 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 				name := theme + "/" + locale + "/" + pk.File
 				page := string(files[name])
 				// The chrome is read out of the page by its own element,
-				// not by cutting at main: the <style> block in the head
-				// mentions aria-pressed in a selector, and a looser slice
-				// counted the stylesheet as a fourth button.
+				// not by cutting at main. That was written when the
+				// head carried an inline <style> whose aria-pressed
+				// selector a looser slice counted as a fourth button;
+				// the stylesheet is an asset now, and reading the
+				// element is still the right instrument.
 				_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
 				if !ok {
 					t.Errorf("%s: no gallery header", name)
@@ -1505,6 +1511,101 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 	}
 }
 
+// dsClass finds a page using the gallery's own vocabulary: any element
+// whose class list carries a ds- name. Escaped source cannot trip it —
+// html/template writes a sample's quotes as &#34;, so class="…" occurs
+// only where a browser would actually apply the rule — and neither can
+// a preview document, which reaches the page inside a srcdoc attribute
+// with the same escaping.
+var dsClass = regexp.MustCompile(`class="[^"]*\bds-`)
+
+// Every page that wears the gallery's own classes links the gallery's
+// own stylesheet, and the stylesheet is in the tree.
+//
+// This is a gate the inline <style> did not need and the asset does.
+// The chrome, the rail, the swatch grid and the preview widget are all
+// ds- classes with nothing but gallery.css behind them: a page that
+// links tokens.css and the theme and misses this one is a valid,
+// green, entirely unstyled document — no rail, no frames, and the
+// scheme toggle painted display:none forever, because the rule that
+// reveals it lives here too.
+//
+// That is not hypothetical. rastrillo.org served /design-system exactly
+// like that once, when relative asset paths resolved against a
+// different base at the slash-less URL, and every other gate in this
+// file passed while it did.
+//
+// Written as "a page using the vocabulary loads it" rather than as a
+// list of page names, so a sixth page kind, a new demo or a shell that
+// grows a ds- class is covered on the day it lands. The floor under it
+// is the count: the ds- pages are most of the tree, so a matcher that
+// stopped matching would show up as a number far too small rather than
+// as a green run.
+func TestEveryGalleryPageLinksTheStylesheet(t *testing.T) {
+	files := render(t)
+	const asset = "gallery.css"
+	served, ok := files[asset]
+	if !ok {
+		t.Fatalf("the tree does not serve %s at its root", asset)
+	}
+	if !bytes.Equal(served, GalleryCSS()) {
+		t.Errorf("the tree serves %d bytes of %s and the package holds %d", len(served), asset, len(GalleryCSS()))
+	}
+	link := `<link rel="stylesheet" href="` + mountPrefix + asset + `">`
+
+	var styled, linked int
+	names := make([]string, 0, len(files))
+	for name := range files {
+		if strings.HasSuffix(name, ".html") {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		page := string(files[name])
+		uses := dsClass.MatchString(page)
+		has := strings.Contains(page, link)
+		if has {
+			linked++
+		}
+		if !uses {
+			continue
+		}
+		styled++
+		if !has {
+			t.Errorf("%s uses the gallery's own classes and does not link %s (want %s) — it renders unstyled", name, asset, link)
+		}
+	}
+	// The pages the renderer is meant to produce, named rather than
+	// inferred: a renderer that stopped emitting ds- classes altogether
+	// would satisfy the sweep above by having nothing to check.
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, name := range append(galleryFiles(theme, locale), "index.html") {
+				page := string(files[name])
+				if page == "" {
+					t.Errorf("%s is missing", name)
+					continue
+				}
+				if !strings.Contains(page, link) {
+					t.Errorf("%s does not link %s", name, asset)
+				}
+				// And it is linked rather than inlined again. The
+				// <style> block this replaced was 8,403 bytes on every
+				// one of these pages, and putting it back is the one
+				// regression a passing link check would not notice.
+				if strings.Contains(page, "<style>") {
+					t.Errorf("%s carries an inline <style> block; the gallery's CSS is an asset now", name)
+				}
+			}
+		}
+	}
+	if styled == 0 {
+		t.Error("no page in the tree uses a ds- class — the matcher has stopped matching, and this gate with it")
+	}
+	t.Logf("%d pages use the gallery's classes, %d link %s", styled, linked, asset)
+}
+
 // gallery.js is loaded before the body so the remembered scheme is
 // applied and the toggle revealed in the same parse — a deferred script
 // would flash the system scheme at a reader who chose Dark, and pop the
@@ -1567,21 +1668,27 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if !strings.Contains(js, `removeAttribute("data-theme")`) {
 		t.Error("gallery.js never removes data-theme — System would not be reachable")
 	}
-	page := galleryPage(t, render(t), RootTheme(), "en", "overview")
-	if !strings.Contains(page, ".ds-scheme { display: none; }") {
-		t.Error("the page does not hide the scheme toggle by default — with scripts off it would look like a control that works")
+	// The other half of the scriptless story is in the stylesheet the
+	// pages link, which is where it was when the pages carried it
+	// inline: hidden by default, revealed by the marker this script
+	// sets. Read off gallery.css rather than off a rendered page —
+	// the page's claim to these rules is the <link> now, and
+	// TestEveryGalleryPageLinksTheStylesheet is what holds it.
+	css := string(GalleryCSS())
+	if !strings.Contains(css, ".ds-scheme { display: none; }") {
+		t.Error("gallery.css does not hide the scheme toggle by default — with scripts off it would look like a control that works")
 	}
-	if !strings.Contains(page, `:root[data-rst-js] .ds-scheme`) {
-		t.Error("the page never reveals the scheme toggle for a reader who has JavaScript")
+	if !strings.Contains(css, `:root[data-rst-js] .ds-scheme`) {
+		t.Error("gallery.css never reveals the scheme toggle for a reader who has JavaScript")
 	}
 	// The filter tells the same story, in the same two rules. The nav
 	// under it is a complete list of every anchor on the page either
 	// way; the box that filters it is the part that needs a script.
-	if !strings.Contains(page, ".ds-search { display: none; }") {
-		t.Error("the page does not hide the filter box by default — with scripts off it would look like a control that works")
+	if !strings.Contains(css, ".ds-search { display: none; }") {
+		t.Error("gallery.css does not hide the filter box by default — with scripts off it would look like a control that works")
 	}
-	if !strings.Contains(page, `:root[data-rst-js] .ds-search`) {
-		t.Error("the page never reveals the filter box for a reader who has JavaScript")
+	if !strings.Contains(css, `:root[data-rst-js] .ds-search`) {
+		t.Error("gallery.css never reveals the filter box for a reader who has JavaScript")
 	}
 	if !strings.Contains(js, `querySelector("[data-ds-filter]")`) {
 		t.Error("gallery.js does not look for the filter box — the seam is empty")
@@ -2420,8 +2527,18 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 //   - the total the page gives for a scaffolded app is the arithmetic
 //     over the files rastrillo new actually writes — tokens.css, one
 //     theme, three scripts — and not the sum of the list, which
-//     includes two themes the app did not choose and gallery.js, which
-//     no app receives.
+//     includes two themes the app did not choose.
+//
+// And a fourth, which is an absence: this gallery's own furniture is
+// not on the page at all. gallery.js used to have a row, and gallery.css
+// would have got one when it stopped being inlined. Neither is anything
+// an app is handed, so neither belongs on a page an app author reads to
+// find out what they are handed — not as a row, not as a weight, not as
+// a parenthesis in the total saying it does not count. A row whose own
+// blurb explains that it should not be there is one to delete, not to
+// caveat. Asserted by name rather than left to the row count below,
+// because the count would also pass on a list that dropped tokens.css
+// and gained gallery.css.
 //
 // There used to be a third assertion here, on the page's PROSE: the
 // lead counted the files out loud — "two stylesheets and three
@@ -2460,11 +2577,6 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 				body []byte
 			}{n, scripts[n]})
 		}
-		want = append(want, struct {
-			file string
-			body []byte
-		}{"gallery.js", GalleryJS()})
-
 		app := len(ui.TokensCSS()) + len(themeCSS) + len(ui.ShimJS()) + len(ui.SelectJS()) + len(ui.DatetimeJS())
 		for _, locale := range rastrillo.BaseLocales() {
 			name := theme + "/" + locale + "/" + fileOf("getting-started")
@@ -2495,6 +2607,23 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 			}
 			if got := len(row.FindAllString(page, -1)); got != len(want) {
 				t.Errorf("%s lists %d files, the framework ships %d", name, got, len(want))
+			}
+			// The gallery's own furniture, nowhere a reader can see
+			// it: not a row, not a weight, not an anchor in the rail,
+			// not a sentence about it. Read below the <head>, which is
+			// where every page in this tree loads both files and has
+			// to — the assertion is about what the page SAYS, and the
+			// two names are code, so they are the same string in all
+			// twelve locales.
+			_, read, ok := strings.Cut(page, "</head>")
+			if !ok {
+				t.Errorf("%s: no </head>", name)
+				continue
+			}
+			for _, own := range []string{"gallery.js", "gallery.css", anchorID("asset", "gallery.js"), anchorID("asset", "gallery.css")} {
+				if strings.Contains(read, own) {
+					t.Errorf("%s mentions %s below the head. That file is this gallery's own plumbing: no scaffold writes it and no app receives it, so a page about what an app ships has nothing to say about it", name, own)
+				}
 			}
 			total := proseIn(locale, "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts.", "bytes", app)
 			if !strings.Contains(page, template.HTMLEscapeString(total)) {
@@ -2636,9 +2765,11 @@ var (
 	// argument to P routinely contains a single brace: {language} in
 	// the switcher's screen-reader text, {theme} in the tokens lead.
 	templateAction = regexp.MustCompile(`(?s)\{\{.*?\}\}`)
-	// A style or script element, taken whole. Stripped first: dsCSS is
-	// concatenated into indexTemplate, and CSS is full of the > and {
-	// characters the passes below are looking for.
+	// A style or script element, taken whole. Stripped first: the demo
+	// page's template carries its own <style>, and CSS is full of the >
+	// and { characters the passes below are looking for. The gallery's
+	// own stylesheet used to be concatenated in here too, which is what
+	// this was written for; it is a linked asset now.
 	templateBlock = regexp.MustCompile(`(?s)<(style|script)\b.*?</(style|script)>`)
 	templateTag   = regexp.MustCompile(`<[^>]*>`)
 	// The attributes whose values a person reads or hears. Everything

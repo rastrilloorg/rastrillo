@@ -242,7 +242,7 @@ type railState struct {
 // Every "is it there" question is asked of getComputedStyle, never of
 // the .hidden property. That is not fussiness: gallery.js sets the
 // property, and what actually takes a rail link off the screen is a CSS
-// rule in dsCSS outranking the shell's display:block. A probe reading
+// rule in gallery.css outranking the shell's display:block. A probe reading
 // .hidden would be asking the script to confirm its own opinion — and
 // would pass, green, with that rule deleted and sixty "hidden" links
 // painted down the page. It did.
