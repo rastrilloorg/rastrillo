@@ -26,9 +26,11 @@
 // step hangs until the deadline. The failure names the step it got to,
 // so it is legible rather than mysterious.
 //
-// CI runs this in its browser job on an otherwise idle runner; the
-// load-flake cost falls on whoever runs it deliberately on a busy
-// machine. Rerun before believing a failure, and read the reported
+// CI does NOT run this: ./ui/ is absent from the browser job on
+// purpose, because the same drive is 0-for-5 on GitHub's runner for a
+// second and unrelated reason (issue #86). So the whole cost of this
+// flake falls on whoever runs the drive deliberately, on a machine
+// that may be busy. Rerun before believing a failure, and read the reported
 // step: a real regression fails at a specific assertion, load flake
 // fails at a deadline after "read-mirrored-value" or later. Fixing it
 // properly likely means driving the widget through synthesised events

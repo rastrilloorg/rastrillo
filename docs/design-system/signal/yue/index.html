@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">篩選呢一版</label>
-    <input id="ds-filter" type="search" placeholder="篩選呢一版" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">篩選</label>
+    <input id="ds-filter" type="search" placeholder="篩選" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>呢度冇嘢啱</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>冇符合</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="章節同示範">
     <details open><summary>設計變數</summary><a href="#tokens-surfaces-and-lines">底面同線條</a><a href="#tokens-text">文字</a><a href="#tokens-accent">強調色</a><a href="#tokens-status-tones">狀態色調</a><a href="#tokens-depth">層次</a><a href="#tokens-radius">圓角</a><a href="#tokens-type-family">字體族</a><a href="#tokens-type-scale">字級</a><a href="#tokens-spacing">間距</a></details>
     <details open><summary>模板片段</summary><a href="#family-list-screen" class="ds-nav__group">清單畫面</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">展示</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">表單</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">路由</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>rastrillo 設計系統</h1>
-    <p class="rst-page-header__sub">框架帶埋嘅每一個片段、每一種類別慣用法同每一個設計變數，全部喺呢一版。主題係 <strong>signal</strong>，組件講嘅係<strong lang="yue">廣東話</strong>。</p>
+    <p class="rst-page-header__sub">設計系統提供嘅嘢嘅概覽。主題：<strong>signal</strong>。語言：<strong lang="yue">廣東話</strong>。</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="章節"><a href="#tokens">設計變數</a><a href="#partials">模板片段</a><a href="#idioms">類別慣用法</a><a href="#shells">頁面外殼</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>呢啲樣本裏面嘅連結去唔到任何地方</strong><p>預覽裏面每條連結喺入框之前都改寫成 #，所以撳落去乜都唔會發生，唔會帶你去呢個網站冇嘅一版。隔籬嘅代碼分頁保留住樣本寫嗰陣嘅路由，值得抄嘅係嗰啲。</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>呢度嘅連結唔會有反應</strong><p>連結唔會有反應，範例原始碼另外提供。</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">設計變數</h2></div>
-<p class="ds-lead">每個組件用嚟畫自己嘅自訂屬性。顏色同字體族嚟自主題（themes/signal.css）；字級同間距級數屬於結構，嚟自 tokens.css，喺每個主題都一樣。</p>
-<p class="ds-swatch-note">呢度印出嚟嘅係淺色嗰套值。深色嗰套係喺同一個檔案度手寫嘅——從來唔靠反轉——而 ui/contrast_test.go 會將兩套入面每一對有記錄嘅顏色壓住喺 WCAG 2.2 AA 嘅底線：文字 4.5:1，控制項邊框 3:1。啲色塊本身用 var() 上色，所以佢哋跟住你而家睇緊嗰套方案，喺深色模式下唔會同印出嚟嘅值夾到。</p>
+<p class="ds-lead">所有組件共用嘅自訂屬性。顏色同字體係主題嘅一部分（themes/signal.css）。字級同間距級數係結構，嚟自 tokens.css。</p>
+<p class="ds-swatch-note">呢度顯示淺色模式，所有值都用 light-dark。WCAG 2.2 AA 下限：文字 4.5:1，控件邊框 3:1。色塊等嘅顏色全部嚟自變數。</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>底面同線條</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">模板片段</h2></div>
-<p class="ds-lead">ui 帶嘅每一個模板片段，都擺喺真實畫面會令佢入到嘅狀態度。每個淨係收一個資料值，用 dict 即場砌出嚟。表單擺喺有內距嘅 rst-box 度，行擺喺 rst-list 度，因為呢啲片段就係咁假設——睇下面「類別慣用法」嗰兩條規則。</p>
-<p class="ds-note">每個樣本都喺自己一版入面成框，所以自己帶住 h1 嘅片段——page-header、error-page——唔會令呢一版有幾個 h1。</p>
-<p class="ds-note">樣本入面嘅內容喺每一版都保持英文：呢啲樣本嘅名、路由同標籤都係替身，譯咗佢哋就好似話框架本身帶住嗰啲字咁。外殼同模態框嘅示範啱啱相反——佢哋扮緊一個真嘅應用，所以佢哋個框架講嘅係你揀嗰種語言。</p>
+<p class="ds-lead">Partial 俾你預先整好、彼此一致嘅介面元件，喺伺服器度算好。</p>
+<p class="ds-note">下面每個範例都喺自己個框入面。</p>
+<p class="ds-note">範例內容用英文，範例外殼就譯咗。</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>清單畫面</h3>
-<p class="ds-lead">大部分應用花最多時間嘅嗰個畫面：一條標題列、一條工具列、一串行，同睇埋其餘嗰啲嘅方法。</p>
+<p class="ds-lead">一般嘅清單畫面：標題、工具列同行，喺桌面同手機都用得。</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">畫面嘅標題列：一個 h1、一個可有可無嘅副標題，同最多一個主要動作。</p>
+<p class="ds-lead">畫面嘅標題列：一個 h1、一個可選嘅副標題，同一個主要動作。</p>
 
 <div class="ds-sample">
 <p class="ds-state">標題、副標題同一個主要動作</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 嘅樣本，喺佢自己一版入面 — 標題、副標題同一個主要動作" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 範例嘅獨立預覽 — 標題、副標題同一個主要動作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;page-header 嘅樣本，喺佢自己一版入面 — 標題、副標題同一個主要動作&lt;/title&gt;
+&lt;title&gt;page-header 範例嘅獨立預覽 — 標題、副標題同一個主要動作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 嘅樣本，喺佢自己一版入面 — 淨係得標題" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 範例嘅獨立預覽 — 淨係得標題" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;page-header 嘅樣本，喺佢自己一版入面 — 淨係得標題&lt;/title&gt;
+&lt;title&gt;page-header 範例嘅獨立預覽 — 淨係得標題&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">清單卡片頂嘅工具列：搜尋表單，旁邊留返位擺篩選。</p>
+<p class="ds-lead">清單卡頂部嘅工具列，有搜尋同篩選。</p>
 
 <div class="ds-sample">
 <p class="ds-state">搜尋，加一個篩選下拉選單</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar 嘅樣本，喺佢自己一版入面 — 搜尋，加一個篩選下拉選單" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar 範例嘅獨立預覽 — 搜尋，加一個篩選下拉選單" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar 嘅樣本，喺佢自己一版入面 — 搜尋，加一個篩選下拉選單&lt;/title&gt;
+&lt;title&gt;list-bar 範例嘅獨立預覽 — 搜尋，加一個篩選下拉選單&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">淨係得個搜尋表單，畀淨係要搵嘢嘅清單用。就係一個普通嘅 method=&#34;get&#34; 表單。</p>
+<p class="ds-lead">淨係搜尋嘅清單用嘅獨立搜尋表單。普通嘅 method=&#34;get&#34; 表單。</p>
 
 <div class="ds-sample">
-<p class="ds-state">已經套咗一個搜尋詞</p>
+<p class="ds-state">有查詢</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 嘅樣本，喺佢自己一版入面 — 已經套咗一個搜尋詞" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 範例嘅獨立預覽 — 有查詢" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar-search 嘅樣本，喺佢自己一版入面 — 已經套咗一個搜尋詞&lt;/title&gt;
+&lt;title&gt;list-bar-search 範例嘅獨立預覽 — 有查詢&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 嘅樣本，喺佢自己一版入面 — 空，無障礙名稱嚟自目錄" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 範例嘅獨立預覽 — 空，無障礙名稱嚟自目錄" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar-search 嘅樣本，喺佢自己一版入面 — 空，無障礙名稱嚟自目錄&lt;/title&gt;
+&lt;title&gt;list-bar-search 範例嘅獨立預覽 — 空，無障礙名稱嚟自目錄&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜尋&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">冇 Placeholder，所以個輸入框嘅無障礙名稱嚟自框架目錄，用嘅係呢一版嘅語言。</p>
+<p class="ds-note">冇 Placeholder。輸入框嘅無障礙名稱嚟自當前語言嘅框架目錄。</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit 嘅樣本，喺佢自己一版入面 — 預設標籤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit 範例嘅獨立預覽 — 預設標籤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-search-submit 嘅樣本，喺佢自己一版入面 — 預設標籤&lt;/title&gt;
+&lt;title&gt;list-search-submit 範例嘅獨立預覽 — 預設標籤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜尋&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">你未用 Tab 掣跳入去之前，呢度咩都睇唔到——呢個就係成個組件。</p>
+<p class="ds-note">喺你用 Tab 掣入去之前，呢度乜都睇唔到。</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">清單嘅一行：記錄名做主連結，一行輔助資料，最多一個次要動作。</p>
+<p class="ds-lead">一行清單：記錄名做主要連結、一行附加資料，同一個次要動作。</p>
 
 <div class="ds-sample">
 <p class="ds-state">前面嘅記號、狀態同一個動作</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 嘅樣本，喺佢自己一版入面 — 前面嘅記號、狀態同一個動作" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 範例嘅獨立預覽 — 前面嘅記號、狀態同一個動作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-row-action 嘅樣本，喺佢自己一版入面 — 前面嘅記號、狀態同一個動作&lt;/title&gt;
+&lt;title&gt;list-row-action 範例嘅獨立預覽 — 前面嘅記號、狀態同一個動作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 嘅樣本，喺佢自己一版入面 — 淨係有名稱同輔助資料嗰行" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 範例嘅獨立預覽 — 淨係有名稱同輔助資料嗰行" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-row-action 嘅樣本，喺佢自己一版入面 — 淨係有名稱同輔助資料嗰行&lt;/title&gt;
+&lt;title&gt;list-row-action 範例嘅獨立預覽 — 淨係有名稱同輔助資料嗰行&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">由伺服器畫出嚟嘅連結組成嘅分段控制項。而家嗰個分頁只不過係某個連結上面嘅 aria-current，冇多過咁。</p>
+<p class="ds-lead">由伺服器算出嘅連結砌成嘅分段控件。目前嘅分頁就係連結上面嘅 aria-current。</p>
 
 <div class="ds-sample">
 <p class="ds-state">兩個分區</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs 嘅樣本，喺佢自己一版入面 — 兩個分區" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs 範例嘅獨立預覽 — 兩個分區" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;seg-tabs 嘅樣本，喺佢自己一版入面 — 兩個分區&lt;/title&gt;
+&lt;title&gt;seg-tabs 範例嘅獨立預覽 — 兩個分區&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 嘅樣本，喺佢自己一版入面 — 套咗一個選擇嘅篩選選單" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 範例嘅獨立預覽 — 套咗一個選擇嘅篩選選單" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;dropdown 嘅樣本，喺佢自己一版入面 — 套咗一個選擇嘅篩選選單&lt;/title&gt;
+&lt;title&gt;dropdown 範例嘅獨立預覽 — 套咗一個選擇嘅篩選選單&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar 嘅樣本，喺佢自己一版入面 — 揀咗三行" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar 範例嘅獨立預覽 — 揀咗三行" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;bulk-bar 嘅樣本，喺佢自己一版入面 — 揀咗三行&lt;/title&gt;
+&lt;title&gt;bulk-bar 範例嘅獨立預覽 — 揀咗三行&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 嘅樣本，喺佢自己一版入面 — 長清單嘅中間" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 範例嘅獨立預覽 — 長清單嘅中間" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;pagination 嘅樣本，喺佢自己一版入面 — 長清單嘅中間&lt;/title&gt;
+&lt;title&gt;pagination 範例嘅獨立預覽 — 長清單嘅中間&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 嘅樣本，喺佢自己一版入面 — 第一版，用預設嘅無障礙名稱" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 範例嘅獨立預覽 — 第一版，用預設嘅無障礙名稱" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;pagination 嘅樣本，喺佢自己一版入面 — 第一版，用預設嘅無障礙名稱&lt;/title&gt;
+&lt;title&gt;pagination 範例嘅獨立預覽 — 第一版，用預設嘅無障礙名稱&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">空狀態嘅卡片。空狀態係用嚟教人嘅：佢話你知呢度本來會有咩，同點樣整一個出嚟。</p>
+<p class="ds-lead">空狀態卡。空狀態，同埋開始嘅入口。</p>
 
 <div class="ds-sample">
 <p class="ds-state">帶一個用 POST 嘅行動呼籲</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 嘅樣本，喺佢自己一版入面 — 帶一個用 POST 嘅行動呼籲" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 範例嘅獨立預覽 — 帶一個用 POST 嘅行動呼籲" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;empty-state 嘅樣本，喺佢自己一版入面 — 帶一個用 POST 嘅行動呼籲&lt;/title&gt;
+&lt;title&gt;empty-state 範例嘅獨立預覽 — 帶一個用 POST 嘅行動呼籲&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 嘅樣本，喺佢自己一版入面 — 淨係一句" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 範例嘅獨立預覽 — 淨係一句" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;empty-state 嘅樣本，喺佢自己一版入面 — 淨係一句&lt;/title&gt;
+&lt;title&gt;empty-state 範例嘅獨立預覽 — 淨係一句&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">一筆記錄嘅狀態，做成一粒有顏色嘅藥丸標籤。狀態從來唔會淨係靠顏色——個標籤永遠都係睇得到嘅文字。</p>
+<p class="ds-lead">記錄狀態用有底色嘅膠囊標籤顯示，有顏色亦有文字。</p>
 
 <div class="ds-sample">
 <p class="ds-state">預設色調（neutral）</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 嘅樣本，喺佢自己一版入面 — 預設色調（neutral）" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 範例嘅獨立預覽 — 預設色調（neutral）" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 嘅樣本，喺佢自己一版入面 — 預設色調（neutral）&lt;/title&gt;
+&lt;title&gt;status-pill 範例嘅獨立預覽 — 預設色調（neutral）&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 嘅樣本，喺佢自己一版入面 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 範例嘅獨立預覽 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 嘅樣本，喺佢自己一版入面 — neutral&lt;/title&gt;
+&lt;title&gt;status-pill 範例嘅獨立預覽 — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 嘅樣本，喺佢自己一版入面 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 範例嘅獨立預覽 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 嘅樣本，喺佢自己一版入面 — positive&lt;/title&gt;
+&lt;title&gt;status-pill 範例嘅獨立預覽 — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 嘅樣本，喺佢自己一版入面 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 範例嘅獨立預覽 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 嘅樣本，喺佢自己一版入面 — warning&lt;/title&gt;
+&lt;title&gt;status-pill 範例嘅獨立預覽 — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 嘅樣本，喺佢自己一版入面 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 範例嘅獨立預覽 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 嘅樣本，喺佢自己一版入面 — negative&lt;/title&gt;
+&lt;title&gt;status-pill 範例嘅獨立預覽 — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -979,12 +979,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 嘅樣本，喺佢自己一版入面 — 冇色調（安靜嘅預設）" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 範例嘅獨立預覽 — 冇色調（安靜嘅預設）" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 嘅樣本，喺佢自己一版入面 — 冇色調（安靜嘅預設）&lt;/title&gt;
+&lt;title&gt;badge 範例嘅獨立預覽 — 冇色調（安靜嘅預設）&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 嘅樣本，喺佢自己一版入面 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 範例嘅獨立預覽 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 嘅樣本，喺佢自己一版入面 — neutral&lt;/title&gt;
+&lt;title&gt;badge 範例嘅獨立預覽 — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 嘅樣本，喺佢自己一版入面 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 範例嘅獨立預覽 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 嘅樣本，喺佢自己一版入面 — positive&lt;/title&gt;
+&lt;title&gt;badge 範例嘅獨立預覽 — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 嘅樣本，喺佢自己一版入面 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 範例嘅獨立預覽 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 嘅樣本，喺佢自己一版入面 — warning&lt;/title&gt;
+&lt;title&gt;badge 範例嘅獨立預覽 — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 嘅樣本，喺佢自己一版入面 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 範例嘅獨立預覽 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 嘅樣本，喺佢自己一版入面 — negative&lt;/title&gt;
+&lt;title&gt;badge 範例嘅獨立預覽 — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">一條有數字嘅容量條。個比例一定係文字——淨係一條條唔會自己帶住個數字。</p>
+<p class="ds-lead">有數字嘅容量條。</p>
 
 <div class="ds-sample">
 <p class="ds-state">空</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 嘅樣本，喺佢自己一版入面 — 空" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 範例嘅獨立預覽 — 空" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 嘅樣本，喺佢自己一版入面 — 空&lt;/title&gt;
+&lt;title&gt;meter 範例嘅獨立預覽 — 空&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 嘅樣本，喺佢自己一版入面 — 去到一半" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 範例嘅獨立預覽 — 去到一半" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 嘅樣本，喺佢自己一版入面 — 去到一半&lt;/title&gt;
+&lt;title&gt;meter 範例嘅獨立預覽 — 去到一半&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 嘅樣本，喺佢自己一版入面 — 就嚟滿" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 範例嘅獨立預覽 — 就嚟滿" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 嘅樣本，喺佢自己一版入面 — 就嚟滿&lt;/title&gt;
+&lt;title&gt;meter 範例嘅獨立預覽 — 就嚟滿&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 嘅樣本，喺佢自己一版入面 — 滿咗" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 範例嘅獨立預覽 — 滿咗" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 嘅樣本，喺佢自己一版入面 — 滿咗&lt;/title&gt;
+&lt;title&gt;meter 範例嘅獨立預覽 — 滿咗&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 嘅樣本，喺佢自己一版入面 — 超出額度" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 範例嘅獨立預覽 — 超出額度" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 嘅樣本，喺佢自己一版入面 — 超出額度&lt;/title&gt;
+&lt;title&gt;meter 範例嘅獨立預覽 — 超出額度&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">片段將填充夾住喺 100% 之內；講真話嘅係嗰個數字。</p>
+<p class="ds-note">填充喺 partial 入面被限制喺 100%。</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">首字母頭像、姓名同電郵：畀「記錄本身就係人」嗰類記錄用嘅身分格。</p>
+<p class="ds-lead">首字母頭像、姓名同電郵。用嚟快速認出代表人嘅記錄。</p>
 
 <div class="ds-sample">
 <p class="ds-state">姓名同電郵</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 嘅樣本，喺佢自己一版入面 — 姓名同電郵" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 範例嘅獨立預覽 — 姓名同電郵" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person 嘅樣本，喺佢自己一版入面 — 姓名同電郵&lt;/title&gt;
+&lt;title&gt;person 範例嘅獨立預覽 — 姓名同電郵&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 嘅樣本，喺佢自己一版入面 — 大碼，詳情頁頁首嘅尺寸" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 範例嘅獨立預覽 — 大碼，詳情頁頁首嘅尺寸" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person 嘅樣本，喺佢自己一版入面 — 大碼，詳情頁頁首嘅尺寸&lt;/title&gt;
+&lt;title&gt;person 範例嘅獨立預覽 — 大碼，詳情頁頁首嘅尺寸&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 嘅樣本，喺佢自己一版入面 — 冇首字母" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 範例嘅獨立預覽 — 冇首字母" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person 嘅樣本，喺佢自己一版入面 — 冇首字母&lt;/title&gt;
+&lt;title&gt;person 範例嘅獨立預覽 — 冇首字母&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 嘅樣本，喺佢自己一版入面 — 預設色調（info），冇標題" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 範例嘅獨立預覽 — 預設色調（info），冇標題" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 嘅樣本，喺佢自己一版入面 — 預設色調（info），冇標題&lt;/title&gt;
+&lt;title&gt;callout 範例嘅獨立預覽 — 預設色調（info），冇標題&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 嘅樣本，喺佢自己一版入面 — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 範例嘅獨立預覽 — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 嘅樣本，喺佢自己一版入面 — info&lt;/title&gt;
+&lt;title&gt;callout 範例嘅獨立預覽 — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 嘅樣本，喺佢自己一版入面 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 範例嘅獨立預覽 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 嘅樣本，喺佢自己一版入面 — positive&lt;/title&gt;
+&lt;title&gt;callout 範例嘅獨立預覽 — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 嘅樣本，喺佢自己一版入面 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 範例嘅獨立預覽 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 嘅樣本，喺佢自己一版入面 — warning&lt;/title&gt;
+&lt;title&gt;callout 範例嘅獨立預覽 — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 嘅樣本，喺佢自己一版入面 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 範例嘅獨立預覽 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 嘅樣本，喺佢自己一版入面 — negative&lt;/title&gt;
+&lt;title&gt;callout 範例嘅獨立預覽 — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 嘅樣本，喺佢自己一版入面 — negative，並且當警報咁報出嚟" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 範例嘅獨立預覽 — negative，並且當警報咁報出嚟" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 嘅樣本，喺佢自己一版入面 — negative，並且當警報咁報出嚟&lt;/title&gt;
+&lt;title&gt;callout 範例嘅獨立預覽 — negative，並且當警報咁報出嚟&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Alert 會加 role=&#34;alert&#34;。留返畀而家發生緊嘅問題，唔好用喺一般註釋度。</p>
+<p class="ds-note">alert 會加上 role=&#34;alert&#34;，用嚟顯示重要訊息。</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">一筆記錄嘅有標籤資料，寫成定義清單——詳情畫面嘅主體。Mono 用嚟標示機器味濃嘅值。</p>
+<p class="ds-lead">詳情畫面上關於某筆記錄嘅定義清單。等寬標記用喺偏機器嘅值。</p>
 
 <div class="ds-sample">
-<p class="ds-state">四項資料，其中一項機器味濃</p>
+<p class="ds-state">四項資料，其中一項偏機器</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list 嘅樣本，喺佢自己一版入面 — 四項資料，其中一項機器味濃" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list 範例嘅獨立預覽 — 四項資料，其中一項偏機器" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;detail-list 嘅樣本，喺佢自己一版入面 — 四項資料，其中一項機器味濃&lt;/title&gt;
+&lt;title&gt;detail-list 範例嘅獨立預覽 — 四項資料，其中一項偏機器&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice 嘅樣本，喺佢自己一版入面 — 一句「已儲存」嘅訊息" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice 範例嘅獨立預覽 — 一句「已儲存」嘅訊息" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;notice 嘅樣本，喺佢自己一版入面 — 一句「已儲存」嘅訊息&lt;/title&gt;
+&lt;title&gt;notice 範例嘅獨立預覽 — 一句「已儲存」嘅訊息&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error 嘅樣本，喺佢自己一版入面 — 畀人拒絕咗嘅提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error 範例嘅獨立預覽 — 畀人拒絕咗嘅提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-error 嘅樣本，喺佢自己一版入面 — 畀人拒絕咗嘅提交&lt;/title&gt;
+&lt;title&gt;form-error 範例嘅獨立預覽 — 畀人拒絕咗嘅提交&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 嘅樣本，喺佢自己一版入面 — 進行緊" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 範例嘅獨立預覽 — 進行緊" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status 嘅樣本，喺佢自己一版入面 — 進行緊&lt;/title&gt;
+&lt;title&gt;job-status 範例嘅獨立預覽 — 進行緊&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 嘅樣本，喺佢自己一版入面 — 完成咗" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 範例嘅獨立預覽 — 完成咗" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status 嘅樣本，喺佢自己一版入面 — 完成咗&lt;/title&gt;
+&lt;title&gt;job-status 範例嘅獨立預覽 — 完成咗&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 嘅樣本，喺佢自己一版入面 — 失敗" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 範例嘅獨立預覽 — 失敗" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status 嘅樣本，喺佢自己一版入面 — 失敗&lt;/title&gt;
+&lt;title&gt;job-status 範例嘅獨立預覽 — 失敗&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">標籤、輸入框、可有可無嘅提示、說明同錯誤——一般嘅文字類控制項，帶住一個明寫嘅 ID。</p>
+<p class="ds-lead">標籤、輸入框、可選提示、說明同錯誤。一般嘅文字類控件，有明確 ID。</p>
 
 <div class="ds-sample">
 <p class="ds-state">最簡單</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 嘅樣本，喺佢自己一版入面 — 最簡單" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 範例嘅獨立預覽 — 最簡單" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 嘅樣本，喺佢自己一版入面 — 最簡單&lt;/title&gt;
+&lt;title&gt;field 範例嘅獨立預覽 — 最簡單&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 嘅樣本，喺佢自己一版入面 — 帶一句提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 範例嘅獨立預覽 — 帶一句提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 嘅樣本，喺佢自己一版入面 — 帶一句提示&lt;/title&gt;
+&lt;title&gt;field 範例嘅獨立預覽 — 帶一句提示&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 嘅樣本，喺佢自己一版入面 — 控制項下面有一行說明" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 範例嘅獨立預覽 — 控制項下面有一行說明" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 嘅樣本，喺佢自己一版入面 — 控制項下面有一行說明&lt;/title&gt;
+&lt;title&gt;field 範例嘅獨立預覽 — 控制項下面有一行說明&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 嘅樣本，喺佢自己一版入面 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 範例嘅獨立預覽 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 嘅樣本，喺佢自己一版入面 — 必填&lt;/title&gt;
+&lt;title&gt;field 範例嘅獨立預覽 — 必填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 嘅樣本，喺佢自己一版入面 — 帶一個錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 範例嘅獨立預覽 — 帶一個錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 嘅樣本，喺佢自己一版入面 — 帶一個錯誤&lt;/title&gt;
+&lt;title&gt;field 範例嘅獨立預覽 — 帶一個錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 嘅樣本，喺佢自己一版入面 — 窄" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 範例嘅獨立預覽 — 窄" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 嘅樣本，喺佢自己一版入面 — 窄&lt;/title&gt;
+&lt;title&gt;field 範例嘅獨立預覽 — 窄&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">一個有標籤嘅文字輸入框，啲 id 由 Name 推出嚟。必填嘅星號係 aria-hidden——真正嘅程式訊號係輸入框上面嘅 required 屬性。</p>
+<p class="ds-lead">一個有標籤嘅文字輸入框，id 由 Name 推導出嚟。必填標記嘅星係 aria-hidden，輸入框嘅 required 屬性先係程式讀到嘅訊號。</p>
 
 <div class="ds-sample">
 <p class="ds-state">最簡單</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 嘅樣本，喺佢自己一版入面 — 最簡單" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 範例嘅獨立預覽 — 最簡單" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 嘅樣本，喺佢自己一版入面 — 最簡單&lt;/title&gt;
+&lt;title&gt;field-text 範例嘅獨立預覽 — 最簡單&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 嘅樣本，喺佢自己一版入面 — 帶一句提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 範例嘅獨立預覽 — 帶一句提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 嘅樣本，喺佢自己一版入面 — 帶一句提示&lt;/title&gt;
+&lt;title&gt;field-text 範例嘅獨立預覽 — 帶一句提示&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 嘅樣本，喺佢自己一版入面 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 範例嘅獨立預覽 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 嘅樣本，喺佢自己一版入面 — 必填&lt;/title&gt;
+&lt;title&gt;field-text 範例嘅獨立預覽 — 必填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 嘅樣本，喺佢自己一版入面 — 帶一個錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 範例嘅獨立預覽 — 帶一個錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 嘅樣本，喺佢自己一版入面 — 帶一個錯誤&lt;/title&gt;
+&lt;title&gt;field-text 範例嘅獨立預覽 — 帶一個錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 嘅樣本，喺佢自己一版入面 — 最簡單" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 範例嘅獨立預覽 — 最簡單" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 嘅樣本，喺佢自己一版入面 — 最簡單&lt;/title&gt;
+&lt;title&gt;field-textarea 範例嘅獨立預覽 — 最簡單&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 嘅樣本，喺佢自己一版入面 — 帶一句提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 範例嘅獨立預覽 — 帶一句提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 嘅樣本，喺佢自己一版入面 — 帶一句提示&lt;/title&gt;
+&lt;title&gt;field-textarea 範例嘅獨立預覽 — 帶一句提示&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 嘅樣本，喺佢自己一版入面 — 帶一個錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 範例嘅獨立預覽 — 帶一個錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 嘅樣本，喺佢自己一版入面 — 帶一個錯誤&lt;/title&gt;
+&lt;title&gt;field-textarea 範例嘅獨立預覽 — 帶一個錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 嘅樣本，喺佢自己一版入面 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 範例嘅獨立預覽 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 嘅樣本，喺佢自己一版入面 — 必填&lt;/title&gt;
+&lt;title&gt;field-textarea 範例嘅獨立預覽 — 必填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">field 個外殼包住一個原生 select。超過十個選項嗰陣，個 select 就會開 select.js 嘅可篩選組合框；但表單提交嘅仲係嗰個原生 select。</p>
 
 <div class="ds-sample">
-<p class="ds-state">三個選項——原生 select</p>
+<p class="ds-state">三個選項：原生 select</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 嘅樣本，喺佢自己一版入面 — 三個選項——原生 select" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 範例嘅獨立預覽 — 三個選項：原生 select" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 嘅樣本，喺佢自己一版入面 — 三個選項——原生 select&lt;/title&gt;
+&lt;title&gt;field-select 範例嘅獨立預覽 — 三個選項：原生 select&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">十二個選項——可以篩選嘅組合框</p>
+<p class="ds-state">十二個選項：可篩選嘅組合框</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 嘅樣本，喺佢自己一版入面 — 十二個選項——可以篩選嘅組合框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 範例嘅獨立預覽 — 十二個選項：可篩選嘅組合框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 嘅樣本，喺佢自己一版入面 — 十二個選項——可以篩選嘅組合框&lt;/title&gt;
+&lt;title&gt;field-select 範例嘅獨立預覽 — 十二個選項：可篩選嘅組合框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 嘅樣本，喺佢自己一版入面 — 十二個選項，Plain——明確唔要嗰個加強" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 範例嘅獨立預覽 — 十二個選項，Plain——明確唔要嗰個加強" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 嘅樣本，喺佢自己一版入面 — 十二個選項，Plain——明確唔要嗰個加強&lt;/title&gt;
+&lt;title&gt;field-select 範例嘅獨立預覽 — 十二個選項，Plain——明確唔要嗰個加強&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 範例嘅獨立預覽 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤&lt;/title&gt;
+&lt;title&gt;field-select 範例嘅獨立預覽 — 必填，仲有錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 嘅樣本，喺佢自己一版入面 — 手寫嘅，有 optgroup 分組" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 範例嘅獨立預覽 — 手寫嘅，有 optgroup 分組" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 嘅樣本，喺佢自己一版入面 — 手寫嘅，有 optgroup 分組&lt;/title&gt;
+&lt;title&gt;field-select 範例嘅獨立預覽 — 手寫嘅，有 optgroup 分組&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 嘅樣本，喺佢自己一版入面 — 開" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 範例嘅獨立預覽 — 開" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check 嘅樣本，喺佢自己一版入面 — 開&lt;/title&gt;
+&lt;title&gt;field-check 範例嘅獨立預覽 — 開&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 嘅樣本，喺佢自己一版入面 — 閂" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 範例嘅獨立預覽 — 閂" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check 嘅樣本，喺佢自己一版入面 — 閂&lt;/title&gt;
+&lt;title&gt;field-check 範例嘅獨立預覽 — 閂&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 嘅樣本，喺佢自己一版入面 — 已停用" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 範例嘅獨立預覽 — 已停用" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check 嘅樣本，喺佢自己一版入面 — 已停用&lt;/title&gt;
+&lt;title&gt;field-check 範例嘅獨立預覽 — 已停用&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 嘅樣本，喺佢自己一版入面 — 淨係揀一個" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 範例嘅獨立預覽 — 淨係揀一個" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;choice-field 嘅樣本，喺佢自己一版入面 — 淨係揀一個&lt;/title&gt;
+&lt;title&gt;choice-field 範例嘅獨立預覽 — 淨係揀一個&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 嘅樣本，喺佢自己一版入面 — 可以揀幾多個都得" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 範例嘅獨立預覽 — 可以揀幾多個都得" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;choice-field 嘅樣本，喺佢自己一版入面 — 可以揀幾多個都得&lt;/title&gt;
+&lt;title&gt;choice-field 範例嘅獨立預覽 — 可以揀幾多個都得&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">原生日期輸入框，加上 datetime.js 開嘅自然語言組合框（除非叫佢嗰陣傳咗 Plain）。試吓打「聽日」入去。</p>
 
 <div class="ds-sample">
-<p class="ds-state">加強咗——打「聽日」或者「3星期後」</p>
+<p class="ds-state">增強輸入：打「聽日」或者「3 個星期後」</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 嘅樣本，喺佢自己一版入面 — 加強咗——打「聽日」或者「3星期後」" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 範例嘅獨立預覽 — 增強輸入：打「聽日」或者「3 個星期後」" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 嘅樣本，喺佢自己一版入面 — 加強咗——打「聽日」或者「3星期後」&lt;/title&gt;
+&lt;title&gt;field-date 範例嘅獨立預覽 — 增強輸入：打「聽日」或者「3 個星期後」&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 範例嘅獨立預覽 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤&lt;/title&gt;
+&lt;title&gt;field-date 範例嘅獨立預覽 — 必填，仲有錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 嘅樣本，喺佢自己一版入面 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 範例嘅獨立預覽 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 嘅樣本，喺佢自己一版入面 — 有上下限&lt;/title&gt;
+&lt;title&gt;field-date 範例嘅獨立預覽 — 有上下限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 嘅樣本，喺佢自己一版入面 — Plain——冇加嘢嘅原生輸入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 範例嘅獨立預覽 — Plain——冇加嘢嘅原生輸入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 嘅樣本，喺佢自己一版入面 — Plain——冇加嘢嘅原生輸入框&lt;/title&gt;
+&lt;title&gt;field-date 範例嘅獨立預覽 — Plain——冇加嘢嘅原生輸入框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">一樣嘅外殼，今次包住原生時間輸入框。呢個加強讀嘅係鐘，唔係日曆。</p>
 
 <div class="ds-sample">
-<p class="ds-state">加強咗——打「19:30」或者「中午」</p>
+<p class="ds-state">增強輸入：打「七點半」或者「晏晝」</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 嘅樣本，喺佢自己一版入面 — 加強咗——打「19:30」或者「中午」" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 範例嘅獨立預覽 — 增強輸入：打「七點半」或者「晏晝」" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 嘅樣本，喺佢自己一版入面 — 加強咗——打「19:30」或者「中午」&lt;/title&gt;
+&lt;title&gt;field-time 範例嘅獨立預覽 — 增強輸入：打「七點半」或者「晏晝」&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 範例嘅獨立預覽 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤&lt;/title&gt;
+&lt;title&gt;field-time 範例嘅獨立預覽 — 必填，仲有錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 嘅樣本，喺佢自己一版入面 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 範例嘅獨立預覽 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 嘅樣本，喺佢自己一版入面 — 有上下限&lt;/title&gt;
+&lt;title&gt;field-time 範例嘅獨立預覽 — 有上下限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 嘅樣本，喺佢自己一版入面 — Plain——冇加嘢嘅原生輸入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 範例嘅獨立預覽 — Plain——冇加嘢嘅原生輸入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 嘅樣本，喺佢自己一版入面 — Plain——冇加嘢嘅原生輸入框&lt;/title&gt;
+&lt;title&gt;field-time 範例嘅獨立預覽 — Plain——冇加嘢嘅原生輸入框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">一個輸入框入面有日期同時間，一個值。</p>
 
 <div class="ds-sample">
-<p class="ds-state">加強咗——打「聽日」或者「3星期後」</p>
+<p class="ds-state">增強輸入：打「聽日」或者「3 個星期後」</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 嘅樣本，喺佢自己一版入面 — 加強咗——打「聽日」或者「3星期後」" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 範例嘅獨立預覽 — 增強輸入：打「聽日」或者「3 個星期後」" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 嘅樣本，喺佢自己一版入面 — 加強咗——打「聽日」或者「3星期後」&lt;/title&gt;
+&lt;title&gt;field-datetime 範例嘅獨立預覽 — 增強輸入：打「聽日」或者「3 個星期後」&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 範例嘅獨立預覽 — 必填，仲有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 嘅樣本，喺佢自己一版入面 — 必填，仲有錯誤&lt;/title&gt;
+&lt;title&gt;field-datetime 範例嘅獨立預覽 — 必填，仲有錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 嘅樣本，喺佢自己一版入面 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 範例嘅獨立預覽 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 嘅樣本，喺佢自己一版入面 — 有上下限&lt;/title&gt;
+&lt;title&gt;field-datetime 範例嘅獨立預覽 — 有上下限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 嘅樣本，喺佢自己一版入面 — Plain——冇加嘢嘅原生輸入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 範例嘅獨立預覽 — Plain——冇加嘢嘅原生輸入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 嘅樣本，喺佢自己一版入面 — Plain——冇加嘢嘅原生輸入框&lt;/title&gt;
+&lt;title&gt;field-datetime 範例嘅獨立預覽 — Plain——冇加嘢嘅原生輸入框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">開始同結束，做成一個有標籤嘅組。兩邊一定要用唔同嘅 Name——每邊都係用自己嗰個 Name 嚟砌 id。</p>
+<p class="ds-lead">開始同結束做一個有標籤嘅組合。兩者嘅 Name 必須唔同，因為 id 係由佢推導出嚟。</p>
 
 <div class="ds-sample">
 <p class="ds-state">日期同時間，預先填咗</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 嘅樣本，喺佢自己一版入面 — 日期同時間，預先填咗" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 範例嘅獨立預覽 — 日期同時間，預先填咗" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-daterange 嘅樣本，喺佢自己一版入面 — 日期同時間，預先填咗&lt;/title&gt;
+&lt;title&gt;field-daterange 範例嘅獨立預覽 — 日期同時間，預先填咗&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 嘅樣本，喺佢自己一版入面 — 淨係日期，結束嗰邊有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 範例嘅獨立預覽 — 淨係日期，結束嗰邊有錯誤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-daterange 嘅樣本，喺佢自己一版入面 — 淨係日期，結束嗰邊有錯誤&lt;/title&gt;
+&lt;title&gt;field-daterange 範例嘅獨立預覽 — 淨係日期，結束嗰邊有錯誤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 嘅樣本，喺佢自己一版入面 — 儲存同取消" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 範例嘅獨立預覽 — 儲存同取消" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 嘅樣本，喺佢自己一版入面 — 儲存同取消&lt;/title&gt;
+&lt;title&gt;form-foot 範例嘅獨立預覽 — 儲存同取消&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 嘅樣本，喺佢自己一版入面 — 淨係得提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 範例嘅獨立預覽 — 淨係得提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 嘅樣本，喺佢自己一版入面 — 淨係得提交&lt;/title&gt;
+&lt;title&gt;form-foot 範例嘅獨立預覽 — 淨係得提交&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 嘅樣本，喺佢自己一版入面 — 閒置——乜都未發生之前嘅掣" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 範例嘅獨立預覽 — 閒置——乜都未發生之前嘅掣" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 嘅樣本，喺佢自己一版入面 — 閒置——乜都未發生之前嘅掣&lt;/title&gt;
+&lt;title&gt;form-foot 範例嘅獨立預覽 — 閒置——乜都未發生之前嘅掣&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3379,7 +3379,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;a class=&#34;rst-btn&#34; href=&#34;/posts&#34;&gt;Back to posts&lt;/a&gt;
 &lt;/div&gt;&lt;/form&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">會改變啲嘢嘅掣要有載入狀態；淨係展開啲嘢嘅掣——展開區、下拉選單、分頁——就唔使。rastrillo.js 會將呢條規則用喺每個表單嘅每個提交掣度，唔使開任何嘢。</p>
+<p class="ds-note">會改變啲乜嘅按鈕會有載入狀態；淨係展開啲乜嘅按鈕（例如摺疊、下拉、分頁）就冇。rastrillo.js 會將呢條規則套落每個表單嘅每個提交按鈕，唔使開啟任何嘢。</p>
 </div>
 
 <div class="ds-sample">
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 嘅樣本，喺佢自己一版入面 — 處理緊——表單送出嗰陣 rastrillo.js 寫低嘅嘢" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 範例嘅獨立預覽 — 處理緊——表單送出嗰陣 rastrillo.js 寫低嘅嘢" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 嘅樣本，喺佢自己一版入面 — 處理緊——表單送出嗰陣 rastrillo.js 寫低嘅嘢&lt;/title&gt;
+&lt;title&gt;form-foot 範例嘅獨立預覽 — 處理緊——表單送出嗰陣 rastrillo.js 寫低嘅嘢&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 嘅樣本，喺佢自己一版入面 — 破壞性操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 範例嘅獨立預覽 — 破壞性操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;confirm-form 嘅樣本，喺佢自己一版入面 — 破壞性操作&lt;/title&gt;
+&lt;title&gt;confirm-form 範例嘅獨立預覽 — 破壞性操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 嘅樣本，喺佢自己一版入面 — 普通情況，取消用預設字眼" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 範例嘅獨立預覽 — 普通情況，取消用預設字眼" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;confirm-form 嘅樣本，喺佢自己一版入面 — 普通情況，取消用預設字眼&lt;/title&gt;
+&lt;title&gt;confirm-form 範例嘅獨立預覽 — 普通情況，取消用預設字眼&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">一個錯誤回應嘅整個主體：狀態、一句老實話、一條返去嘅路，同——如果係 500——管理員可以攞去 grep 嘅參考編號。</p>
+<p class="ds-lead">錯誤回應嘅整個主體：狀態、一句老實話、一條返轉頭嘅路，同管理員用得着嘅 500 參考編號。</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — 搵唔到</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 嘅樣本，喺佢自己一版入面 — 404 — 搵唔到" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 範例嘅獨立預覽 — 404 — 搵唔到" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 嘅樣本，喺佢自己一版入面 — 404 — 搵唔到&lt;/title&gt;
+&lt;title&gt;error-page 範例嘅獨立預覽 — 404 — 搵唔到&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 嘅樣本，喺佢自己一版入面 — 403 — 冇權限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 範例嘅獨立預覽 — 403 — 冇權限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 嘅樣本，喺佢自己一版入面 — 403 — 冇權限&lt;/title&gt;
+&lt;title&gt;error-page 範例嘅獨立預覽 — 403 — 冇權限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 嘅樣本，喺佢自己一版入面 — 422 — 處理唔到" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 範例嘅獨立預覽 — 422 — 處理唔到" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 嘅樣本，喺佢自己一版入面 — 422 — 處理唔到&lt;/title&gt;
+&lt;title&gt;error-page 範例嘅獨立預覽 — 422 — 處理唔到&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 嘅樣本，喺佢自己一版入面 — 500 — 伺服器出錯" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 範例嘅獨立預覽 — 500 — 伺服器出錯" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 嘅樣本，喺佢自己一版入面 — 500 — 伺服器出錯&lt;/title&gt;
+&lt;title&gt;error-page 範例嘅獨立預覽 — 500 — 伺服器出錯&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 嘅樣本，喺佢自己一版入面 — 503 — 用唔到" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 範例嘅獨立預覽 — 503 — 用唔到" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 嘅樣本，喺佢自己一版入面 — 503 — 用唔到&lt;/title&gt;
+&lt;title&gt;error-page 範例嘅獨立預覽 — 503 — 用唔到&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 嘅樣本，喺佢自己一版入面 — 其他任何情況——通用嗰對" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 範例嘅獨立預覽 — 其他任何情況——通用嗰對" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 嘅樣本，喺佢自己一版入面 — 其他任何情況——通用嗰對&lt;/title&gt;
+&lt;title&gt;error-page 範例嘅獨立預覽 — 其他任何情況——通用嗰對&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav 嘅樣本，喺佢自己一版入面 — 返去一筆記錄" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav 範例嘅獨立預覽 — 返去一筆記錄" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;back-nav 嘅樣本，喺佢自己一版入面 — 返去一筆記錄&lt;/title&gt;
+&lt;title&gt;back-nav 範例嘅獨立預覽 — 返去一筆記錄&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">語言切換器：一個 details 選單，入面係寄去 /_locale 嘅單一欄位 POST 表單，噉揀嘅結果就會入咗 locale cookie，而讀者仲留喺同一條路徑度。</p>
 
 <div class="ds-sample">
-<p class="ds-state">十二種語言，而家嗰種標咗出嚟</p>
+<p class="ds-state">十二種語言，目前嗰種會標示出嚟。</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu 嘅樣本，喺佢自己一版入面 — 十二種語言，而家嗰種標咗出嚟" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu 範例嘅獨立預覽 — 十二種語言，目前嗰種會標示出嚟。" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;locale-menu 嘅樣本，喺佢自己一版入面 — 十二種語言，而家嗰種標咗出嚟&lt;/title&gt;
+&lt;title&gt;locale-menu 範例嘅獨立預覽 — 十二種語言，目前嗰種會標示出嚟。&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">呢個會 POST 去 /_locale，而靜態頁面冇對應嘅伺服器——呢一版頁首嗰個切換器先係淨係用連結嘅版本。</p>
+<p class="ds-note">呢個會 POST 去 /_locale，噉就要有部伺服器。本頁自己個頁首嘅切換器係淨係用連結嘅版本。</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">類別慣用法</h2></div>
-<p class="ds-lead">片段做唔到嘅形狀，因為佢哋要包住淨係呼叫方先知嘅內容：分節卡片、資料格網、展開選單、外殼自己嘅框架。tokens.css 出啲類別，標記由應用寫。下面嘅嘢就係 ui.Styleguide 回傳嘅樣本本身，亦即係 ui 嘅測試攞去同 tokens.css 對嘅樣本——由呢度抄。</p>
+<p class="ds-lead">Partial 做唔到嘅形狀，因為佢哋包住嘅主體淨係叫嗰邊先知：區塊卡、資料格網、展開選單，同埋外殼自己嘅框架。tokens.css 提供類別，應用程式自己寫標記。下面全部就係 ui.Styleguide 回傳嘅嗰份範例，亦係 ui 嘅測試攞嚟同 tokens.css 對照嗰份。</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;box 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;box 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;dropdown 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;dropdown 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-layout 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;form-layout 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;help 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;help 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">真正嘅資料表格講法：卡片一次過定好啲欄，行淨係揀格。</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>畫面係直住疊落嚟</strong><p>一個畫面就係一條直欄：page-header，跟住 section-header 加卡片，再跟住下一個 section-header 加卡片，順住讀嘅次序。唔好將標題、段落同掣並排擺喺一個 flex 行入面。橫向排列淨係留畀自己帶住佢嘅慣用法：rst-box-head、rst-field-row、rst-lbar、rst-lrow 嘅格、rst-seg-tabs。</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>畫面係直住疊落嚟</strong><p>一個畫面就係一欄：page-header，跟住 section-header 加卡，再跟住下一個 section-header 加卡，按閱讀次序排。橫向排列淨係留返俾自己帶埋嘅寫法：rst-box-head、rst-field-row、rst-lbar、rst-lrow 格、rst-seg-tabs。</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-grid 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;list-grid 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;modal 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;modal 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;selbox 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;selbox 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;shell-sidebar 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;shell-sidebar 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/yue/shells/sidebar.html" target="_blank" rel="noopener">打開 sidebar 外殼嘅示範，同一份標記喺嗰度係一版真嘅頁面</a><span class="rst-sr-only"> (喺新分頁度打開)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/yue/shells/sidebar.html" target="_blank" rel="noopener">打開側欄外殼嘅示範，一個獨立預覽。</a><span class="rst-sr-only"> (喺新分頁度打開)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">topbar 外殼自己嘅框架，以標記形式呈現。Layout 將佢成套當模板送出——呢度就係入面嘅嘢。</p>
+<p class="ds-lead">頂欄外殼自己嘅框架，用標記寫出嚟。Layout 會將佢當成一整份範本提供。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">預覽</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;shell-topbar 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;shell-topbar 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/yue/shells/topbar.html" target="_blank" rel="noopener">打開 topbar 外殼嘅示範，同一份標記喺嗰度係一版真嘅頁面</a><span class="rst-sr-only"> (喺新分頁度打開)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/yue/shells/topbar.html" target="_blank" rel="noopener">打開頂欄外殼嘅示範，一個專用預覽。</a><span class="rst-sr-only"> (喺新分頁度打開)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">手機</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">代碼</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock 嘅樣本，喺佢自己一版入面 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock 範例嘅獨立預覽 — 類別慣用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;yue&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;tblock 嘅樣本，喺佢自己一版入面 — 類別慣用法&lt;/title&gt;
+&lt;title&gt;tblock 範例嘅獨立預覽 — 類別慣用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }

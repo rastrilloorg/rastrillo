@@ -365,7 +365,7 @@ func localiseGroups(locale string, groups []tokenGroup) []tokenGroup {
 // as text. See proseMarkup for why the escaping runs in that order.
 func subhead(locale, theme, localeName string) template.HTML {
 	return proseMarkup(locale,
-		"Every partial, class idiom and design token the framework ships, on one page. The theme is {theme} and the components speak {language}.",
+		"An overview of everything the design system provides. Theme: {theme}. Language: {language}.",
 		"theme", template.HTML("<strong>"+template.HTMLEscapeString(theme)+"</strong>"),
 		"language", template.HTML(`<strong lang="`+template.HTMLEscapeString(locale)+`">`+template.HTMLEscapeString(localeName)+"</strong>"),
 	)
@@ -872,7 +872,7 @@ func deaden(html string) string {
 //
 // TestEveryFrameTitleIsUniqueOnThePage holds the result.
 func previewTitle(locale, name, qualifier string) string {
-	t := proseIn(locale, "The {name} sample, in a page of its own", "name", name)
+	t := proseIn(locale, "{name} sample standalone preview", "name", name)
 	if qualifier == "" {
 		return t
 	}
@@ -926,7 +926,7 @@ var idiomBlurbs = map[string]string{
 	"modal":         "A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.",
 	"help":          "A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.",
 	"selbox":        "The selection checkbox a list row wears in select mode. Its label restates the row's identity.",
-	"shell-topbar":  "The topbar shell's own chrome, as markup. Layout ships it as a whole template — this is what is inside.",
+	"shell-topbar":  "The topbar shell's own chrome, as markup. Layout ships it as a whole template.",
 	"shell-sidebar": "The sidebar shell's chrome, collapsing below 800px into a details disclosure.",
 }
 
@@ -944,7 +944,6 @@ var idiomRules = map[string]struct{ Title, Body string }{
 	"list-grid": {
 		"Screens stack vertically",
 		"A screen is a column: page-header, then section-header + card, then the next section-header + card, in reading order. " +
-			"Do not compose a heading, a paragraph and a button side by side in a flex row. " +
 			"Horizontal arrangement is reserved for the idioms that ship it: rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.",
 	},
 }
@@ -965,11 +964,11 @@ type demoIdiom struct {
 // is a poor trade for a look at a demo.
 var demoIdioms = map[string]demoIdiom{
 	"shell-topbar": {
-		Label: "Open the topbar shell demo, where the same markup is a real page",
+		Label: "Open the topbar shell demo, a dedicated preview.",
 		Href:  func(theme, locale string) string { return shellHref(theme, locale, "topbar") },
 	},
 	"shell-sidebar": {
-		Label: "Open the sidebar shell demo, where the same markup is a real page",
+		Label: "Open the sidebar shell demo, a standalone preview.",
 		Href:  func(theme, locale string) string { return shellHref(theme, locale, "sidebar") },
 	},
 	"modal": {
@@ -1348,10 +1347,10 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">{{P "Filter this page"}}</label>
-    <input id="ds-filter" type="search" placeholder="{{P "Filter this page"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
+    <input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "Nothing here matches that"}}</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
 {{range .Nav}}    <details open><summary>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
 {{end}}  </nav>
@@ -1381,11 +1380,11 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
   <nav class="rst-seg-tabs" aria-label="{{P "Sections"}}"><a href="#tokens">{{P "Tokens"}}</a><a href="#partials">{{P "Partials"}}</a><a href="#idioms">{{P "Class idioms"}}</a><a href="#shells">{{P "Shells"}}</a></nav>
 </div>
 
-{{template "callout" dict "Tone" "info" "Title" (P "The links in these samples go nowhere") "Body" (P "Every link inside a preview is rewritten to # before it is framed, so clicking one does nothing rather than landing on a page this site does not have. The Code tab beside it keeps the routes the sample was written with, which are the ones worth copying.")}}
+{{template "callout" dict "Tone" "info" "Title" (P "Links here are inactive") "Body" (P "Links inactive, sample source provided.")}}
 
 <div class="ds-head"><h2 id="tokens">{{P "Tokens"}}</h2></div>
-<p class="ds-lead">{{P "The custom properties every component paints itself with. Colour and the type family come from the theme (themes/{theme}.css); the type scale and the spacing steps are structure and come from tokens.css, the same on every theme." "theme" .Theme}}</p>
-<p class="ds-swatch-note">{{P "The values printed here are the light ones. The dark set is authored by hand in the same file — never inverted — and ui/contrast_test.go holds every documented pair in both sets to the WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. The chips themselves are painted with var(), so they follow whichever scheme you are reading in, and they will not match the printed values in dark mode."}}</p>
+<p class="ds-lead">{{P "Shared custom properties for all components. Colour and the type are part of the theme (themes/{theme}.css). Type scale and the spacing steps are structure and come from tokens.css." "theme" .Theme}}</p>
+<p class="ds-swatch-note">{{P "Light mode shown here, light-dark for all values. WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. All colours in chips etc pull from the variables."}}</p>
 {{range .Colours}}
 <h3 class="ds-sub" id="{{.ID}}" data-ds-anchor>{{.Title}}</h3>
 <ul class="ds-toks">{{range .Rows}}<li class="ds-tok">{{if .Preview}}<span class="ds-chip" style="{{.Preview}}"></span>{{end}}<span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
@@ -1396,9 +1395,9 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 {{end}}
 
 <div class="ds-head"><h2 id="partials">{{P "Partials"}}</h2></div>
-<p class="ds-lead">{{P "Every template partial ui ships, in the states a real screen puts it in. Each one takes exactly one data value, built inline with dict. Forms sit in a padded rst-box and rows sit in a rst-list, because that is what these partials assume — see the two rules under Class idioms below."}}</p>
-<p class="ds-note">{{P "Each sample is framed in a page of its own, so a partial that owns an h1 — page-header, error-page — does not leave this page with several."}}</p>
-<p class="ds-note">{{P "Sample content stays English on every page: the names, the routes and the labels in these samples are stand-ins, and translating them would suggest the framework ships those words. The shell and modal demos are the other way round — they impersonate a real application, so their chrome speaks the language you chose."}}</p>
+<p class="ds-lead">{{P "Partials give you pre-built, consistent UI elements, rendered server-side."}}</p>
+<p class="ds-note">{{P "Each sample below in its own frame."}}</p>
+<p class="ds-note">{{P "Sample content in English. Sample shells translated."}}</p>
 {{range .Families}}
 <section class="ds-family" id="{{.ID}}" data-ds-anchor>
 <h3>{{.Title}}</h3>
@@ -1421,7 +1420,7 @@ const indexTemplate = `{{define "ds-index"}}<!doctype html>
 {{end}}
 
 <div class="ds-head"><h2 id="idioms">{{P "Class idioms"}}</h2></div>
-<p class="ds-lead">{{P "The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css — copy from here."}}</p>
+<p class="ds-lead">{{P "The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css."}}</p>
 {{range .Idioms}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
@@ -1523,7 +1522,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <main class="rst-page" id="main">
 {{template "page-header" dict "Title" "Settings" "Sub" (P "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up.")}}
 <div class="rst-box-head"><h2>Account</h2></div>
-<section class="rst-box"><p>{{P "One response rendered this screen and the panel over it. That is the whole idiom: the modal is a URL, the page underneath is what a Close click returns to, and neither of them is client state."}}</p></section>
+<section class="rst-box"><p>{{P "Modals get their own URL."}}</p></section>
 </main>
 </div>
 <div class="rst-modal-overlay">
@@ -1537,8 +1536,8 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
       <a class="rst-modal-close" href="{{.Index}}" aria-label="{{P "Close settings"}}">✕</a>
       <h2 id="modal-title">Profile</h2>
       <p>{{P "Update the name and photo shown across the account."}}</p>
-      <p>{{P "There is no JavaScript on this page. Closing is the ✕ above, a plain link; the tabs on the left are plain links too, which is why they stay on this URL instead of pretending to load a section."}}</p>
-      <p>{{P "In an application the ✕ would return you to the screen in the backdrop. Here it returns you to the gallery you opened this demo from, because that is the page that exists."}}</p>
+      <p>{{P "Close link designed to work without JS."}}</p>
+      <p>{{P "In an application the ✕ would return you to the screen in the backdrop."}}</p>
       <p><a class="rst-btn" href="{{.Index}}">{{P "Back to the design system"}}</a></p>
     </section>
   </dialog>

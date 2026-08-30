@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">Filtrar esta página</label>
-    <input id="ds-filter" type="search" placeholder="Filtrar esta página" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">Filtrar</label>
+    <input id="ds-filter" type="search" placeholder="Filtrar" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Nada aqui corresponde a isso</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Sem correspondências</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="Seções e demonstrações">
     <details open><summary>Tokens</summary><a href="#tokens-surfaces-and-lines">Superfícies e linhas</a><a href="#tokens-text">Texto</a><a href="#tokens-accent">Cor de destaque</a><a href="#tokens-status-tones">Tons de estado</a><a href="#tokens-depth">Profundidade</a><a href="#tokens-radius">Raio dos cantos</a><a href="#tokens-type-family">Família tipográfica</a><a href="#tokens-type-scale">Escala tipográfica</a><a href="#tokens-spacing">Espaçamento</a></details>
     <details open><summary>Parciais</summary><a href="#family-list-screen" class="ds-nav__group">Ecrã de lista</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">Apresentação</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">Formulário</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">Rota</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>sistema de design do rastrillo</h1>
-    <p class="rst-page-header__sub">Todos os parciais, idiomas de classes e tokens de design que a framework traz, numa só página. O tema é <strong>plain</strong> e os componentes falam <strong lang="pt">Português</strong>.</p>
+    <p class="rst-page-header__sub">Uma visão geral de tudo o que o sistema de design oferece. Tema: <strong>plain</strong>. Idioma: <strong lang="pt">Português</strong>.</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="Secções"><a href="#tokens">Tokens</a><a href="#partials">Parciais</a><a href="#idioms">Idiomas de classes</a><a href="#shells">Invólucros</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>As ligações destas amostras não levam a lado nenhum</strong><p>Todas as ligações dentro de uma pré-visualização são reescritas para # antes de serem enquadradas, por isso clicar numa delas não faz nada em vez de levar a uma página que este sítio não tem. O separador Código ao lado mantém as rotas com que a amostra foi escrita, que são as que vale a pena copiar.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>As ligações aqui não estão ativas</strong><p>Ligações inativas; o código do exemplo é fornecido.</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">Tokens</h2></div>
-<p class="ds-lead">As propriedades personalizadas com que cada componente se pinta. A cor e a família tipográfica vêm do tema (themes/plain.css); a escala tipográfica e os passos de espaçamento são estrutura e vêm do tokens.css, iguais em todos os temas.</p>
-<p class="ds-swatch-note">Os valores impressos aqui são os do modo claro. O conjunto escuro é escrito à mão no mesmo ficheiro — nunca invertido — e o ui/contrast_test.go segura cada par documentado dos dois conjuntos nos mínimos WCAG 2.2 AA: 4,5:1 para texto e 3:1 para contornos de controlos. As amostras de cor são pintadas com var(), por isso seguem o esquema em que está a ler e, no modo escuro, não vão coincidir com os valores impressos.</p>
+<p class="ds-lead">Propriedades personalizadas partilhadas por todos os componentes. A cor e a tipografia fazem parte do tema (themes/plain.css). A escala tipográfica e os passos de espaçamento são estrutura e vêm de tokens.css.</p>
+<p class="ds-swatch-note">Aqui é mostrado o modo claro; todos os valores usam light-dark. Mínimos WCAG 2.2 AA: 4,5:1 para texto e 3:1 para contornos de controlos. Todas as cores nos chips e afins vêm das variáveis.</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>Superfícies e linhas</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e0e0e0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#767676</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f4f4f4</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">Parciais</h2></div>
-<p class="ds-lead">Todos os parciais de modelo que o ui traz, nos estados em que um ecrã a sério os põe. Cada um recebe exatamente um valor de dados, construído ali mesmo com dict. Os formulários ficam num rst-box com espaçamento e as linhas num rst-list, porque é isso que estes parciais assumem — veja as duas regras em Idiomas de classes, mais abaixo.</p>
-<p class="ds-note">Cada amostra é enquadrada numa página própria, por isso um parcial com o seu próprio h1 — page-header, error-page — não deixa esta página com vários.</p>
-<p class="ds-note">O conteúdo das amostras fica em inglês em todas as páginas: os nomes, as rotas e as etiquetas destas amostras são substitutos, e traduzi-los daria a entender que a framework traz essas palavras. As demonstrações dos invólucros e do modal são ao contrário — fingem ser uma aplicação a sério, por isso a sua moldura fala a língua que escolheu.</p>
+<p class="ds-lead">Os parciais dão-lhe elementos de interface já feitos e coerentes entre si, renderizados no servidor.</p>
+<p class="ds-note">Cada exemplo abaixo fica na sua própria moldura.</p>
+<p class="ds-note">O conteúdo de exemplo está em inglês. Os invólucros de exemplo estão traduzidos.</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>Ecrã de lista</h3>
-<p class="ds-lead">O ecrã onde a maioria das aplicações passa a maior parte do tempo: uma barra de título, uma barra de ferramentas, uma série de linhas e uma forma de percorrer as restantes.</p>
+<p class="ds-lead">Ecrã de lista genérico com título, barra de ferramentas e linhas que funcionam em computador e em telemóvel.</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">A barra de título do ecrã: um h1, um subtítulo opcional e, no máximo, uma ação principal.</p>
+<p class="ds-lead">A barra de título do ecrã: um h1, um subtítulo opcional e uma ação principal.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Título, subtítulo e uma ação principal</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de page-header, numa página própria — Título, subtítulo e uma ação principal" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo page-header — Título, subtítulo e uma ação principal" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de page-header, numa página própria — Título, subtítulo e uma ação principal&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo page-header — Título, subtítulo e uma ação principal&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de page-header, numa página própria — Só o título" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo page-header — Só o título" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de page-header, numa página própria — Só o título&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo page-header — Só o título&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">A barra de ferramentas no topo de um cartão de lista: o formulário de pesquisa e espaço ao lado para um filtro.</p>
+<p class="ds-lead">A barra de ferramentas no topo de um cartão de lista, com pesquisa e filtro.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Pesquisa com um menu de filtro</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-bar, numa página própria — Pesquisa com um menu de filtro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-bar — Pesquisa com um menu de filtro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-bar, numa página própria — Pesquisa com um menu de filtro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-bar — Pesquisa com um menu de filtro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">O formulário de pesquisa sozinho, para uma lista que só pesquisa. Um formulário method=&#34;get&#34; vulgar.</p>
+<p class="ds-lead">Formulário de pesquisa sozinho, para listas que só pesquisam. Um formulário method=&#34;get&#34; comum.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Com uma consulta já aplicada</p>
+<p class="ds-state">Com uma consulta</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-bar-search, numa página própria — Com uma consulta já aplicada" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-bar-search — Com uma consulta" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-bar-search, numa página própria — Com uma consulta já aplicada&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-bar-search — Com uma consulta&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-bar-search, numa página própria — Vazio, com o nome acessível vindo do catálogo" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-bar-search — Vazio, com o nome acessível vindo do catálogo" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-bar-search, numa página própria — Vazio, com o nome acessível vindo do catálogo&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-bar-search — Vazio, com o nome acessível vindo do catálogo&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;Pesquisar&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Sem Placeholder, por isso o nome acessível do campo vem do catálogo da framework, na língua desta página.</p>
+<p class="ds-note">Sem Placeholder. O nome acessível do campo vem do catálogo da framework no idioma atual.</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-search-submit, numa página própria — Etiqueta por omissão" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-search-submit — Etiqueta por omissão" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-search-submit, numa página própria — Etiqueta por omissão&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-search-submit — Etiqueta por omissão&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;Pesquisar&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">Aqui não se vê nada até chegar com o tabulador — é esse todo o componente.</p>
+<p class="ds-note">Aqui não se vê nada até chegar com a tecla de tabulação.</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">Uma linha de lista: o nome do registo como ligação principal, uma linha de detalhe e, no máximo, uma ação secundária.</p>
+<p class="ds-lead">Uma linha de lista: o nome do registo como ligação principal, uma linha de dados e uma ação secundária.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Marca inicial, estado e uma ação</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-row-action, numa página própria — Marca inicial, estado e uma ação" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-row-action — Marca inicial, estado e uma ação" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-row-action, numa página própria — Marca inicial, estado e uma ação&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-row-action — Marca inicial, estado e uma ação&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-row-action, numa página própria — Só o nome e a linha de detalhe" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-row-action — Só o nome e a linha de detalhe" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-row-action, numa página própria — Só o nome e a linha de detalhe&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-row-action — Só o nome e a linha de detalhe&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">Um controlo segmentado de ligações desenhadas no servidor. O separador atual é um aria-current numa ligação, nada mais.</p>
+<p class="ds-lead">Um controlo segmentado de ligações renderizadas no servidor. O separador atual é aria-current numa ligação.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Duas secções</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de seg-tabs, numa página própria — Duas secções" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo seg-tabs — Duas secções" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de seg-tabs, numa página própria — Duas secções&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo seg-tabs — Duas secções&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de dropdown, numa página própria — Um menu de filtro com uma opção aplicada" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo dropdown — Um menu de filtro com uma opção aplicada" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de dropdown, numa página própria — Um menu de filtro com uma opção aplicada&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo dropdown — Um menu de filtro com uma opção aplicada&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de bulk-bar, numa página própria — Três linhas selecionadas" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo bulk-bar — Três linhas selecionadas" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de bulk-bar, numa página própria — Três linhas selecionadas&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo bulk-bar — Três linhas selecionadas&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de pagination, numa página própria — A meio de uma lista longa" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo pagination — A meio de uma lista longa" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de pagination, numa página própria — A meio de uma lista longa&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo pagination — A meio de uma lista longa&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de pagination, numa página própria — Primeira página, com o nome acessível por omissão" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo pagination — Primeira página, com o nome acessível por omissão" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de pagination, numa página própria — Primeira página, com o nome acessível por omissão&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo pagination — Primeira página, com o nome acessível por omissão&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">O cartão de estado vazio. Um estado vazio ensina: diz o que estaria aqui e como criar um.</p>
+<p class="ds-lead">O cartão de estado vazio. Um estado vazio com caminhos para os primeiros passos.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Com um apelo à ação por POST</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de empty-state, numa página própria — Com um apelo à ação por POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo empty-state — Com um apelo à ação por POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de empty-state, numa página própria — Com um apelo à ação por POST&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo empty-state — Com um apelo à ação por POST&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de empty-state, numa página própria — Só a frase" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo empty-state — Só a frase" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de empty-state, numa página própria — Só a frase&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo empty-state — Só a frase&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">O estado de um registo como uma etiqueta arredondada e colorida. O estado nunca é só cor — a etiqueta é sempre texto visível.</p>
+<p class="ds-lead">O estado de um registo como uma etiqueta colorida, com cor e texto.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Tom por omissão (neutral)</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de status-pill, numa página própria — Tom por omissão (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo status-pill — Tom por omissão (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de status-pill, numa página própria — Tom por omissão (neutral)&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo status-pill — Tom por omissão (neutral)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de status-pill, numa página própria — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo status-pill — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de status-pill, numa página própria — neutral&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo status-pill — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de status-pill, numa página própria — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo status-pill — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de status-pill, numa página própria — positive&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo status-pill — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de status-pill, numa página própria — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo status-pill — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de status-pill, numa página própria — warning&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo status-pill — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de status-pill, numa página própria — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo status-pill — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de status-pill, numa página própria — negative&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo status-pill — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -972,19 +972,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Uma etiqueta com contorno em maiúsculas, para marcas pequenas e fixas. Diferente do status-pill, que é o estado de um registo.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Sem tom (o valor discreto por omissão)</p>
+<p class="ds-state">Sem tom (o valor predefinido discreto)</p>
 <div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-badge-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de badge, numa página própria — Sem tom (o valor discreto por omissão)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo badge — Sem tom (o valor predefinido discreto)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de badge, numa página própria — Sem tom (o valor discreto por omissão)&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo badge — Sem tom (o valor predefinido discreto)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de badge, numa página própria — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo badge — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de badge, numa página própria — neutral&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo badge — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de badge, numa página própria — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo badge — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de badge, numa página própria — positive&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo badge — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de badge, numa página própria — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo badge — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de badge, numa página própria — warning&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo badge — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de badge, numa página própria — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo badge — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de badge, numa página própria — negative&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo badge — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">Uma barra de capacidade com o seu número. A fração é sempre texto — uma barra nunca leva o número sozinha.</p>
+<p class="ds-lead">Uma barra de capacidade com o seu número.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Vazio</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de meter, numa página própria — Vazio" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo meter — Vazio" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de meter, numa página própria — Vazio&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo meter — Vazio&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de meter, numa página própria — A meio" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo meter — A meio" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de meter, numa página própria — A meio&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo meter — A meio&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de meter, numa página própria — Quase cheio" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo meter — Quase cheio" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de meter, numa página própria — Quase cheio&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo meter — Quase cheio&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de meter, numa página própria — Cheio" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo meter — Cheio" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de meter, numa página própria — Cheio&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo meter — Cheio&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de meter, numa página própria — Acima do limite" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo meter — Acima do limite" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de meter, numa página própria — Acima do limite&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo meter — Acima do limite&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">O preenchimento está limitado a 100% no parcial; quem diz a verdade é o número.</p>
+<p class="ds-note">O preenchimento é limitado a 100% no parcial.</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">Avatar de iniciais, nome e e-mail: a célula de identidade para os tipos de registo que são pessoas.</p>
+<p class="ds-lead">Avatar com iniciais, nome e email. Serve para identificar depressa os registos de pessoas.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Nome e e-mail</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de person, numa página própria — Nome e e-mail" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo person — Nome e e-mail" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de person, numa página própria — Nome e e-mail&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo person — Nome e e-mail&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de person, numa página própria — Grande, o tamanho do cabeçalho de detalhe" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo person — Grande, o tamanho do cabeçalho de detalhe" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de person, numa página própria — Grande, o tamanho do cabeçalho de detalhe&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo person — Grande, o tamanho do cabeçalho de detalhe&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de person, numa página própria — Sem inicial" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo person — Sem inicial" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de person, numa página própria — Sem inicial&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo person — Sem inicial&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de callout, numa página própria — Tom por omissão (info), sem título" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo callout — Tom por omissão (info), sem título" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de callout, numa página própria — Tom por omissão (info), sem título&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo callout — Tom por omissão (info), sem título&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de callout, numa página própria — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo callout — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de callout, numa página própria — info&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo callout — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de callout, numa página própria — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo callout — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de callout, numa página própria — positive&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo callout — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de callout, numa página própria — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo callout — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de callout, numa página própria — warning&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo callout — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de callout, numa página própria — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo callout — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de callout, numa página própria — negative&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo callout — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de callout, numa página própria — negative, anunciado como alerta" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo callout — negative, anunciado como alerta" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de callout, numa página própria — negative, anunciado como alerta&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo callout — negative, anunciado como alerta&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Alert acrescenta role=&#34;alert&#34;. Guarde-o para problemas a acontecer, não para notas de fundo.</p>
+<p class="ds-note">alert acrescenta role=&#34;alert&#34; para mostrar mensagens importantes.</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">Os dados etiquetados de um registo como lista de definições — o corpo do ecrã de detalhe. Mono marca os valores mais de máquina.</p>
+<p class="ds-lead">Lista de definições sobre um registo num ecrã de detalhe. A marca mono é para valores de aspeto técnico.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Quatro dados, um deles de máquina</p>
+<p class="ds-state">Quatro dados, um de aspeto técnico</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de detail-list, numa página própria — Quatro dados, um deles de máquina" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo detail-list — Quatro dados, um de aspeto técnico" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de detail-list, numa página própria — Quatro dados, um deles de máquina&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo detail-list — Quatro dados, um de aspeto técnico&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de notice, numa página própria — Uma mensagem de guardado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo notice — Uma mensagem de guardado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de notice, numa página própria — Uma mensagem de guardado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo notice — Uma mensagem de guardado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de form-error, numa página própria — Um envio recusado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo form-error — Um envio recusado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de form-error, numa página própria — Um envio recusado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo form-error — Um envio recusado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de job-status, numa página própria — A decorrer" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo job-status — A decorrer" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de job-status, numa página própria — A decorrer&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo job-status — A decorrer&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de job-status, numa página própria — Terminado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo job-status — Terminado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de job-status, numa página própria — Terminado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo job-status — Terminado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de job-status, numa página própria — Falhou" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo job-status — Falhou" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de job-status, numa página própria — Falhou&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo job-status — Falhou&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">Etiqueta, campo, dica opcional, ajuda e erro — o controlo de tipo texto geral, com um ID explícito.</p>
+<p class="ds-lead">Etiqueta, campo, dica opcional, ajuda e erro. O controlo geral do tipo texto, com um ID explícito.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Simples</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field, numa página própria — Simples" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field — Simples" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field, numa página própria — Simples&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field — Simples&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field, numa página própria — Com uma dica" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field — Com uma dica" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field, numa página própria — Com uma dica&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field — Com uma dica&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field, numa página própria — Com ajuda por baixo do controlo" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field — Com ajuda por baixo do controlo" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field, numa página própria — Com ajuda por baixo do controlo&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field — Com ajuda por baixo do controlo&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field, numa página própria — Obrigatório" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field — Obrigatório" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field, numa página própria — Obrigatório&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field — Obrigatório&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field, numa página própria — Com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field — Com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field, numa página própria — Com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field — Com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field, numa página própria — Curto" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field — Curto" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field, numa página própria — Curto&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field — Curto&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">Um campo de texto com etiqueta, com os ids derivados de Name. O asterisco de obrigatório é aria-hidden — o sinal para o software é o atributo required do campo.</p>
+<p class="ds-lead">Um campo de texto com etiqueta; os ids derivam de Name. O asterisco do marcador de obrigatório é aria-hidden: o sinal programático é o atributo required do campo.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Simples</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-text, numa página própria — Simples" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-text — Simples" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-text, numa página própria — Simples&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-text — Simples&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-text, numa página própria — Com uma dica" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-text — Com uma dica" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-text, numa página própria — Com uma dica&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-text — Com uma dica&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-text, numa página própria — Obrigatório" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-text — Obrigatório" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-text, numa página própria — Obrigatório&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-text — Obrigatório&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-text, numa página própria — Com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-text — Com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-text, numa página própria — Com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-text — Com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-textarea, numa página própria — Simples" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-textarea — Simples" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-textarea, numa página própria — Simples&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-textarea — Simples&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-textarea, numa página própria — Com uma dica" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-textarea — Com uma dica" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-textarea, numa página própria — Com uma dica&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-textarea — Com uma dica&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-textarea, numa página própria — Com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-textarea — Com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-textarea, numa página própria — Com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-textarea — Com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-textarea, numa página própria — Obrigatório" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-textarea — Obrigatório" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-textarea, numa página própria — Obrigatório&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-textarea — Obrigatório&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">O invólucro do field à volta de um select nativo. A partir de dez opções, o select ativa a caixa com filtro do select.js; o que o formulário envia continua a ser o select nativo.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Três opções — um select nativo</p>
+<p class="ds-state">Três opções: um select nativo</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-select, numa página própria — Três opções — um select nativo" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-select — Três opções: um select nativo" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-select, numa página própria — Três opções — um select nativo&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-select — Três opções: um select nativo&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Doze opções — a caixa com filtro</p>
+<p class="ds-state">Doze opções: a caixa combinada com filtro</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-select, numa página própria — Doze opções — a caixa com filtro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-select — Doze opções: a caixa combinada com filtro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-select, numa página própria — Doze opções — a caixa com filtro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-select — Doze opções: a caixa combinada com filtro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-select, numa página própria — Doze opções, Plain — a melhoria recusada" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-select — Doze opções, Plain — a melhoria recusada" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-select, numa página própria — Doze opções, Plain — a melhoria recusada&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-select — Doze opções, Plain — a melhoria recusada&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-select, numa página própria — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-select — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-select, numa página própria — Obrigatório, com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-select — Obrigatório, com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-select, numa página própria — Escrito à mão, com optgroups" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-select — Escrito à mão, com optgroups" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-select, numa página própria — Escrito à mão, com optgroups&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-select — Escrito à mão, com optgroups&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-check, numa página própria — Ligado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-check — Ligado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-check, numa página própria — Ligado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-check — Ligado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-check, numa página própria — Desligado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-check — Desligado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-check, numa página própria — Desligado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-check — Desligado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-check, numa página própria — Desativado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-check — Desativado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-check, numa página própria — Desativado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-check — Desativado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de choice-field, numa página própria — Escolha uma" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo choice-field — Escolha uma" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de choice-field, numa página própria — Escolha uma&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo choice-field — Escolha uma&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de choice-field, numa página própria — Escolha as que quiser" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo choice-field — Escolha as que quiser" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de choice-field, numa página própria — Escolha as que quiser&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo choice-field — Escolha as que quiser&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Um campo de data nativo, mais a caixa de linguagem natural que o datetime.js ativa, a não ser que quem o usa passe Plain. Escreva &#34;amanhã&#34; nele.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Melhorado — escreva &#34;amanhã&#34; ou &#34;em 3 semanas&#34;</p>
+<p class="ds-state">Campo melhorado: escreva &#34;amanhã&#34; ou &#34;daqui a 3 semanas&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-date, numa página própria — Melhorado — escreva &#34;amanhã&#34; ou &#34;em 3 semanas&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-date — Campo melhorado: escreva &#34;amanhã&#34; ou &#34;daqui a 3 semanas&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-date, numa página própria — Melhorado — escreva &amp;#34;amanhã&amp;#34; ou &amp;#34;em 3 semanas&amp;#34;&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-date — Campo melhorado: escreva &amp;#34;amanhã&amp;#34; ou &amp;#34;daqui a 3 semanas&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-date, numa página própria — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-date — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-date, numa página própria — Obrigatório, com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-date — Obrigatório, com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-date, numa página própria — Com limites" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-date — Com limites" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-date, numa página própria — Com limites&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-date — Com limites&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-date, numa página própria — Plain — o campo nativo tal e qual" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-date — Plain — o campo nativo tal e qual" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-date, numa página própria — Plain — o campo nativo tal e qual&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-date — Plain — o campo nativo tal e qual&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">O mesmo invólucro à volta de um campo de hora nativo. A melhoria lê um relógio em vez de um calendário.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Melhorado — escreva &#34;19:30&#34; ou &#34;meio-dia&#34;</p>
+<p class="ds-state">Campo melhorado: escreva &#34;sete e meia&#34; ou &#34;meio-dia&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-time, numa página própria — Melhorado — escreva &#34;19:30&#34; ou &#34;meio-dia&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-time — Campo melhorado: escreva &#34;sete e meia&#34; ou &#34;meio-dia&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-time, numa página própria — Melhorado — escreva &amp;#34;19:30&amp;#34; ou &amp;#34;meio-dia&amp;#34;&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-time — Campo melhorado: escreva &amp;#34;sete e meia&amp;#34; ou &amp;#34;meio-dia&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-time, numa página própria — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-time — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-time, numa página própria — Obrigatório, com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-time — Obrigatório, com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-time, numa página própria — Com limites" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-time — Com limites" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-time, numa página própria — Com limites&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-time — Com limites&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-time, numa página própria — Plain — o campo nativo tal e qual" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-time — Plain — o campo nativo tal e qual" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-time, numa página própria — Plain — o campo nativo tal e qual&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-time — Plain — o campo nativo tal e qual&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Uma data e uma hora num só campo, um só valor.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Melhorado — escreva &#34;amanhã&#34; ou &#34;em 3 semanas&#34;</p>
+<p class="ds-state">Campo melhorado: escreva &#34;amanhã&#34; ou &#34;daqui a 3 semanas&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-datetime, numa página própria — Melhorado — escreva &#34;amanhã&#34; ou &#34;em 3 semanas&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-datetime — Campo melhorado: escreva &#34;amanhã&#34; ou &#34;daqui a 3 semanas&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-datetime, numa página própria — Melhorado — escreva &amp;#34;amanhã&amp;#34; ou &amp;#34;em 3 semanas&amp;#34;&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-datetime — Campo melhorado: escreva &amp;#34;amanhã&amp;#34; ou &amp;#34;daqui a 3 semanas&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-datetime, numa página própria — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-datetime — Obrigatório, com um erro" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-datetime, numa página própria — Obrigatório, com um erro&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-datetime — Obrigatório, com um erro&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-datetime, numa página própria — Com limites" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-datetime — Com limites" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-datetime, numa página própria — Com limites&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-datetime — Com limites&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-datetime, numa página própria — Plain — o campo nativo tal e qual" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-datetime — Plain — o campo nativo tal e qual" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-datetime, numa página própria — Plain — o campo nativo tal e qual&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-datetime — Plain — o campo nativo tal e qual&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">Um início e um fim como um só grupo etiquetado. As duas metades têm de levar Names diferentes — cada uma deriva os seus ids do seu.</p>
+<p class="ds-lead">Um início e um fim como um único grupo com etiqueta. Os Name têm de ser diferentes, porque é deles que derivam os ids.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Data e hora, com valores iniciais</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-daterange, numa página própria — Data e hora, com valores iniciais" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-daterange — Data e hora, com valores iniciais" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-daterange, numa página própria — Data e hora, com valores iniciais&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-daterange — Data e hora, com valores iniciais&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de field-daterange, numa página própria — Só datas, com um erro no fim" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo field-daterange — Só datas, com um erro no fim" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de field-daterange, numa página própria — Só datas, com um erro no fim&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo field-daterange — Só datas, com um erro no fim&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de form-foot, numa página própria — Guardar e cancelar" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo form-foot — Guardar e cancelar" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de form-foot, numa página própria — Guardar e cancelar&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo form-foot — Guardar e cancelar&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de form-foot, numa página própria — Só enviar" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo form-foot — Só enviar" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de form-foot, numa página própria — Só enviar&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo form-foot — Só enviar&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de form-foot, numa página própria — Em repouso — o botão antes de acontecer alguma coisa" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo form-foot — Em repouso — o botão antes de acontecer alguma coisa" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de form-foot, numa página própria — Em repouso — o botão antes de acontecer alguma coisa&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo form-foot — Em repouso — o botão antes de acontecer alguma coisa&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3379,7 +3379,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;a class=&#34;rst-btn&#34; href=&#34;/posts&#34;&gt;Back to posts&lt;/a&gt;
 &lt;/div&gt;&lt;/form&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">Um botão que MUDA alguma coisa ganha um estado de carregamento; um botão que apenas revela alguma coisa — uma divulgação, um menu, um separador — não. O rastrillo.js aplica essa regra a todos os botões de envio de todos os formulários, sem nada para ativar.</p>
+<p class="ds-note">Um botão que MUDA alguma coisa recebe um estado de carregamento; um botão que apenas revela alguma coisa — uma divulgação, um menu pendente, um separador — não. O rastrillo.js aplica essa regra a todos os botões de envio de todos os formulários, sem nada para ativar.</p>
 </div>
 
 <div class="ds-sample">
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de form-foot, numa página própria — A trabalhar — o que o rastrillo.js escreve quando o formulário sai" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo form-foot — A trabalhar — o que o rastrillo.js escreve quando o formulário sai" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de form-foot, numa página própria — A trabalhar — o que o rastrillo.js escreve quando o formulário sai&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo form-foot — A trabalhar — o que o rastrillo.js escreve quando o formulário sai&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de confirm-form, numa página própria — Destrutivo" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo confirm-form — Destrutivo" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de confirm-form, numa página própria — Destrutivo&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo confirm-form — Destrutivo&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de confirm-form, numa página própria — Caso normal, com a redação de cancelar por omissão" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo confirm-form — Caso normal, com a redação de cancelar por omissão" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de confirm-form, numa página própria — Caso normal, com a redação de cancelar por omissão&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo confirm-form — Caso normal, com a redação de cancelar por omissão&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">O corpo inteiro de uma resposta de erro: o estado, uma frase honesta, um caminho de volta e — no caso de um 500 — a referência que quem opera pode procurar com grep.</p>
+<p class="ds-lead">O corpo inteiro de uma resposta de erro: o estado, uma frase honesta, um caminho de volta e referências de 500 que um administrador pode usar.</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — não encontrado</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de error-page, numa página própria — 404 — não encontrado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo error-page — 404 — não encontrado" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de error-page, numa página própria — 404 — não encontrado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo error-page — 404 — não encontrado&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de error-page, numa página própria — 403 — proibido" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo error-page — 403 — proibido" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de error-page, numa página própria — 403 — proibido&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo error-page — 403 — proibido&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de error-page, numa página própria — 422 — não processável" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo error-page — 422 — não processável" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de error-page, numa página própria — 422 — não processável&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo error-page — 422 — não processável&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de error-page, numa página própria — 500 — erro do servidor" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo error-page — 500 — erro do servidor" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de error-page, numa página própria — 500 — erro do servidor&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo error-page — 500 — erro do servidor&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de error-page, numa página própria — 503 — indisponível" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo error-page — 503 — indisponível" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de error-page, numa página própria — 503 — indisponível&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo error-page — 503 — indisponível&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de error-page, numa página própria — Qualquer outro caso — o par genérico" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo error-page — Qualquer outro caso — o par genérico" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de error-page, numa página própria — Qualquer outro caso — o par genérico&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo error-page — Qualquer outro caso — o par genérico&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de back-nav, numa página própria — Voltar a um registo" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo back-nav — Voltar a um registo" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de back-nav, numa página própria — Voltar a um registo&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo back-nav — Voltar a um registo&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">O seletor de idioma: um menu details com formulários POST de um só campo para /_locale, para que a escolha fique no cookie de idioma e quem lê se mantenha no mesmo caminho.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Doze idiomas, com o atual assinalado</p>
+<p class="ds-state">Doze idiomas, com o atual destacado.</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de locale-menu, numa página própria — Doze idiomas, com o atual assinalado" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo locale-menu — Doze idiomas, com o atual destacado." loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de locale-menu, numa página própria — Doze idiomas, com o atual assinalado&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo locale-menu — Doze idiomas, com o atual destacado.&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">Este faz POST para /_locale, para o qual uma página estática não tem servidor — o seletor no cabeçalho desta própria página é a versão só com ligações.</p>
+<p class="ds-note">Este envia para /_locale, o que exigiria um servidor. O seletor no cabeçalho desta página é a versão só com ligações.</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">Idiomas de classes</h2></div>
-<p class="ds-lead">As formas que um parcial não pode ser, porque envolvem um corpo que só quem as usa conhece: o cartão de secção, a grelha de dados, o menu desdobrável, a moldura própria dos invólucros. O tokens.css traz as classes e a aplicação escreve a marcação. Tudo o que está abaixo é exatamente a amostra que o ui.Styleguide devolve, que é a amostra que os testes do ui confrontam com o tokens.css — copie daqui.</p>
+<p class="ds-lead">As formas que um parcial não pode ser, porque envolvem um corpo que só quem chama conhece: o cartão de secção, a grelha de dados, o menu de revelação e a moldura própria dos invólucros. O tokens.css traz as classes e a aplicação escreve a marcação. Tudo o que está abaixo é exatamente o exemplo que ui.Styleguide devolve, que é o exemplo que os testes de ui confrontam com tokens.css.</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de box, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo box — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de box, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo box — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de dropdown, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo dropdown — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de dropdown, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo dropdown — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de form-layout, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo form-layout — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de form-layout, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo form-layout — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de help, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo help — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de help, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo help — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">O vocabulário a sério das tabelas de dados: o cartão define as suas colunas uma vez e as linhas só escolhem células.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Os ecrãs empilham-se na vertical</strong><p>Um ecrã é uma coluna: page-header, depois section-header &#43; cartão, depois o section-header &#43; cartão seguinte, por ordem de leitura. Não ponha um título, um parágrafo e um botão lado a lado numa linha flex. A disposição horizontal está reservada aos idiomas que a trazem: rst-box-head, rst-field-row, rst-lbar, as células de rst-lrow e rst-seg-tabs.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Os ecrãs empilham-se na vertical</strong><p>Um ecrã é uma coluna: page-header, depois section-header &#43; cartão, depois o section-header &#43; cartão seguinte, por ordem de leitura. A disposição horizontal fica reservada às expressões que a trazem: rst-box-head, rst-field-row, rst-lbar, células rst-lrow, rst-seg-tabs.</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>Computador</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de list-grid, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo list-grid — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de list-grid, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo list-grid — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de modal, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo modal — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de modal, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo modal — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de selbox, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo selbox — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de selbox, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo selbox — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de shell-sidebar, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo shell-sidebar — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de shell-sidebar, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo shell-sidebar — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/plain/pt/shells/sidebar.html" target="_blank" rel="noopener">Abra a demonstração do invólucro sidebar, onde a mesma marcação é uma página a sério</a><span class="rst-sr-only"> (abre num separador novo)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/plain/pt/shells/sidebar.html" target="_blank" rel="noopener">Abrir a demonstração do invólucro com barra lateral, uma pré-visualização autónoma.</a><span class="rst-sr-only"> (abre num separador novo)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">A moldura própria do invólucro topbar, como marcação. O Layout entrega-a como modelo inteiro — isto é o que está lá dentro.</p>
+<p class="ds-lead">A moldura do próprio invólucro com barra superior, em marcação. O Layout entrega-a como um modelo inteiro.</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Pré-visualização</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de shell-topbar, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo shell-topbar — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de shell-topbar, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo shell-topbar — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/plain/pt/shells/topbar.html" target="_blank" rel="noopener">Abra a demonstração do invólucro topbar, onde a mesma marcação é uma página a sério</a><span class="rst-sr-only"> (abre num separador novo)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/plain/pt/shells/topbar.html" target="_blank" rel="noopener">Abrir a demonstração do invólucro com barra superior, uma pré-visualização dedicada.</a><span class="rst-sr-only"> (abre num separador novo)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">Telemóvel</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">Código</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="A amostra de tblock, numa página própria — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Pré-visualização autónoma do exemplo tblock — Idiomas de classes" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;pt&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;A amostra de tblock, numa página própria — Idiomas de classes&lt;/title&gt;
+&lt;title&gt;Pré-visualização autónoma do exemplo tblock — Idiomas de classes&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }

@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">Фильтровать эту страницу</label>
-    <input id="ds-filter" type="search" placeholder="Фильтровать эту страницу" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">Фильтр</label>
+    <input id="ds-filter" type="search" placeholder="Фильтр" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Здесь ничего не совпадает</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Совпадений нет</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="Разделы и демо">
     <details open><summary>Токены</summary><a href="#tokens-surfaces-and-lines">Поверхности и линии</a><a href="#tokens-text">Текст</a><a href="#tokens-accent">Акцент</a><a href="#tokens-status-tones">Тона статусов</a><a href="#tokens-depth">Глубина</a><a href="#tokens-radius">Скругление</a><a href="#tokens-type-family">Семейство шрифтов</a><a href="#tokens-type-scale">Шкала кегля</a><a href="#tokens-spacing">Отступы</a></details>
     <details open><summary>Партиалы</summary><a href="#family-list-screen" class="ds-nav__group">Экран списка</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">Отображение</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">Форма</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">Маршрут</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>дизайн-система rastrillo</h1>
-    <p class="rst-page-header__sub">Каждый партиал, каждая идиома классов и каждый токен, которые несёт фреймворк, на одной странице. Тема — <strong>signal</strong>, а компоненты говорят на <strong lang="ru">Русский</strong>.</p>
+    <p class="rst-page-header__sub">Обзор всего, что даёт дизайн-система. Тема: <strong>signal</strong>. Язык: <strong lang="ru">Русский</strong>.</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="Разделы"><a href="#tokens">Токены</a><a href="#partials">Партиалы</a><a href="#idioms">Идиомы классов</a><a href="#shells">Оболочки</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Ссылки в этих образцах никуда не ведут</strong><p>Каждая ссылка внутри предпросмотра переписывается в # перед тем, как попасть в рамку, поэтому клик по ней ничего не делает, а не ведёт на страницу, которой на этом сайте нет. Соседняя вкладка «Код» сохраняет маршруты, с которыми образец был написан, — копировать стоит именно их.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Ссылки здесь неактивны</strong><p>Ссылки неактивны, исходник примера приложен.</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">Токены</h2></div>
-<p class="ds-lead">Пользовательские свойства, которыми каждый компонент себя красит. Цвет и семейство шрифтов приходят из темы (themes/signal.css); шкала кегля и шаги отступов — это структура, они приходят из tokens.css и одинаковы во всех темах.</p>
-<p class="ds-swatch-note">Здесь напечатаны светлые значения. Тёмный набор написан вручную в том же файле — никогда не инверсией — и ui/contrast_test.go держит каждую задокументированную пару в обоих наборах на порогах WCAG 2.2 AA: 4,5:1 для текста и 3:1 для границ элементов управления. Сами плашки покрашены через var(), поэтому следуют той схеме, в которой вы читаете, и в тёмной теме не совпадут с напечатанными значениями.</p>
+<p class="ds-lead">Общие пользовательские свойства для всех компонентов. Цвет и шрифт — часть темы (themes/signal.css). Шкала размеров и шаги отступов — это структура, они приходят из tokens.css.</p>
+<p class="ds-swatch-note">Здесь показан светлый режим; все значения заданы через light-dark. Пороги WCAG 2.2 AA: 4,5:1 для текста и 3:1 для границ элементов. Все цвета в образцах и прочем берутся из переменных.</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>Поверхности и линии</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">Партиалы</h2></div>
-<p class="ds-lead">Каждый шаблонный партиал, который несёт ui, в тех состояниях, в которые его ставит настоящий экран. Каждый принимает ровно одно значение данных, собранное на месте через dict. Формы лежат в rst-box с отступами, а строки — в rst-list, потому что именно это они предполагают; см. два правила в разделе «Идиомы классов» ниже.</p>
-<p class="ds-note">Каждый образец обрамлён в собственной странице, поэтому партиал со своим h1 — page-header, error-page — не оставляет на этой странице несколько.</p>
-<p class="ds-note">Содержимое образцов остаётся английским на любой странице: имена, маршруты и подписи в этих образцах — заглушки, и переводить их значило бы намекать, что фреймворк несёт именно эти слова. Демонстрации оболочек и модального окна устроены наоборот: они изображают настоящее приложение, поэтому их обрамление говорит на языке, который вы выбрали.</p>
+<p class="ds-lead">Партиалы дают готовые и согласованные между собой элементы интерфейса, отрисованные на сервере.</p>
+<p class="ds-note">Каждый пример ниже — в своей рамке.</p>
+<p class="ds-note">Содержимое примеров на английском. Каркасы примеров переведены.</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>Экран списка</h3>
-<p class="ds-lead">Экран, на котором большинство приложений проводит большую часть времени: строка заголовка, панель инструментов, вереница строк и способ пройти по остальным.</p>
+<p class="ds-lead">Обычный экран списка: заголовок, панель инструментов и строки, работающие и на десктопе, и на телефоне.</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">Строка заголовка экрана: h1, необязательный подзаголовок и не более одного главного действия.</p>
+<p class="ds-lead">Заголовочная полоса экрана: h1, необязательный подзаголовок и основное действие.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Заголовок, подзаголовок и одно главное действие</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец page-header на отдельной странице — Заголовок, подзаголовок и одно главное действие" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера page-header — Заголовок, подзаголовок и одно главное действие" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец page-header на отдельной странице — Заголовок, подзаголовок и одно главное действие&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера page-header — Заголовок, подзаголовок и одно главное действие&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец page-header на отдельной странице — Только заголовок" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера page-header — Только заголовок" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец page-header на отдельной странице — Только заголовок&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера page-header — Только заголовок&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">Панель инструментов вверху карточки списка: форма поиска и место рядом под фильтр.</p>
+<p class="ds-lead">Панель инструментов вверху карточки списка, с поиском и фильтром.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Поиск с выпадающим фильтром</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-bar на отдельной странице — Поиск с выпадающим фильтром" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-bar — Поиск с выпадающим фильтром" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-bar на отдельной странице — Поиск с выпадающим фильтром&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-bar — Поиск с выпадающим фильтром&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">Форма поиска сама по себе, для списка, который только ищет. Обычная форма method=&#34;get&#34;.</p>
+<p class="ds-lead">Отдельная форма поиска для списков, которые только ищут. Обычная форма method=&#34;get&#34;.</p>
 
 <div class="ds-sample">
-<p class="ds-state">С уже применённым запросом</p>
+<p class="ds-state">С запросом</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-bar-search на отдельной странице — С уже применённым запросом" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-bar-search — С запросом" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-bar-search на отдельной странице — С уже применённым запросом&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-bar-search — С запросом&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-bar-search на отдельной странице — Пусто, доступное имя берётся из каталога" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-bar-search — Пусто, доступное имя берётся из каталога" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-bar-search на отдельной странице — Пусто, доступное имя берётся из каталога&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-bar-search — Пусто, доступное имя берётся из каталога&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;Поиск&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Placeholder не задан, поэтому доступное имя поля берётся из каталога фреймворка на языке этой страницы.</p>
+<p class="ds-note">Без Placeholder. Доступное имя поля берётся из каталога фреймворка на текущем языке.</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-search-submit на отдельной странице — Подпись по умолчанию" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-search-submit — Подпись по умолчанию" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-search-submit на отдельной странице — Подпись по умолчанию&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-search-submit — Подпись по умолчанию&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;Поиск&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">Здесь ничего не видно, пока вы не дойдёте сюда табуляцией, — в этом весь компонент.</p>
+<p class="ds-note">Здесь ничего не видно, пока вы не перейдёте сюда клавишей Tab.</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">Одна строка списка: имя записи как главная ссылка, строка сведений и не более одного второстепенного действия.</p>
+<p class="ds-lead">Одна строка списка: имя записи как основная ссылка, строка сведений и второстепенное действие.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Начальная метка, статус и одно действие</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-row-action на отдельной странице — Начальная метка, статус и одно действие" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-row-action — Начальная метка, статус и одно действие" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-row-action на отдельной странице — Начальная метка, статус и одно действие&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-row-action — Начальная метка, статус и одно действие&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-row-action на отдельной странице — Только имя и строка сведений" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-row-action — Только имя и строка сведений" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-row-action на отдельной странице — Только имя и строка сведений&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-row-action — Только имя и строка сведений&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">Сегментированный переключатель из ссылок, отрисованных сервером. Текущая вкладка — это aria-current на ссылке, и ничего больше.</p>
+<p class="ds-lead">Сегментированный переключатель из ссылок, отрисованных на сервере. Текущая вкладка — это aria-current на ссылке.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Два раздела</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец seg-tabs на отдельной странице — Два раздела" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера seg-tabs — Два раздела" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец seg-tabs на отдельной странице — Два раздела&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера seg-tabs — Два раздела&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец dropdown на отдельной странице — Меню фильтра с одним применённым выбором" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера dropdown — Меню фильтра с одним применённым выбором" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец dropdown на отдельной странице — Меню фильтра с одним применённым выбором&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера dropdown — Меню фильтра с одним применённым выбором&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец bulk-bar на отдельной странице — Выбрано три строки" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера bulk-bar — Выбрано три строки" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец bulk-bar на отдельной странице — Выбрано три строки&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера bulk-bar — Выбрано три строки&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец pagination на отдельной странице — Середина длинного списка" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера pagination — Середина длинного списка" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец pagination на отдельной странице — Середина длинного списка&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера pagination — Середина длинного списка&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец pagination на отдельной странице — Первая страница, доступное имя по умолчанию" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера pagination — Первая страница, доступное имя по умолчанию" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец pagination на отдельной странице — Первая страница, доступное имя по умолчанию&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера pagination — Первая страница, доступное имя по умолчанию&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">Карточка пустого состояния. Пустое состояние учит: оно говорит, что здесь было бы и как это создать.</p>
+<p class="ds-lead">Карточка пустого состояния. Пустое состояние с подсказками, с чего начать.</p>
 
 <div class="ds-sample">
 <p class="ds-state">С призывом к действию через POST</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец empty-state на отдельной странице — С призывом к действию через POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера empty-state — С призывом к действию через POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец empty-state на отдельной странице — С призывом к действию через POST&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера empty-state — С призывом к действию через POST&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец empty-state на отдельной странице — Только фраза" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера empty-state — Только фраза" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец empty-state на отдельной странице — Только фраза&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера empty-state — Только фраза&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">Статус записи в виде цветной плашки. Состояние никогда не передаётся одним цветом — подпись всегда видимый текст.</p>
+<p class="ds-lead">Статус записи в виде цветной плашки — цвет и подпись.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Тон по умолчанию (neutral)</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец status-pill на отдельной странице — Тон по умолчанию (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера status-pill — Тон по умолчанию (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец status-pill на отдельной странице — Тон по умолчанию (neutral)&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера status-pill — Тон по умолчанию (neutral)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец status-pill на отдельной странице — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера status-pill — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец status-pill на отдельной странице — neutral&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера status-pill — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец status-pill на отдельной странице — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера status-pill — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец status-pill на отдельной странице — positive&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера status-pill — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец status-pill на отдельной странице — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера status-pill — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец status-pill на отдельной странице — warning&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера status-pill — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец status-pill на отдельной странице — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера status-pill — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец status-pill на отдельной странице — negative&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера status-pill — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -972,19 +972,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Небольшая рамочная метка прописными буквами для статичных пометок. Это не status-pill: тот показывает статус записи.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Без тона (тихий вариант по умолчанию)</p>
+<p class="ds-state">Без тона (тихое значение по умолчанию)</p>
 <div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-badge-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец badge на отдельной странице — Без тона (тихий вариант по умолчанию)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера badge — Без тона (тихое значение по умолчанию)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец badge на отдельной странице — Без тона (тихий вариант по умолчанию)&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера badge — Без тона (тихое значение по умолчанию)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец badge на отдельной странице — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера badge — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец badge на отдельной странице — neutral&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера badge — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец badge на отдельной странице — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера badge — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец badge на отдельной странице — positive&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера badge — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец badge на отдельной странице — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера badge — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец badge на отдельной странице — warning&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера badge — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец badge на отдельной странице — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера badge — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец badge на отдельной странице — negative&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера badge — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">Полоса заполнения вместе с числом. Доля всегда написана словами — одна полоса никогда не несёт число сама.</p>
+<p class="ds-lead">Полоса заполнения вместе с числом.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Пусто</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец meter на отдельной странице — Пусто" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера meter — Пусто" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец meter на отдельной странице — Пусто&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера meter — Пусто&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец meter на отдельной странице — Наполовину" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера meter — Наполовину" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец meter на отдельной странице — Наполовину&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера meter — Наполовину&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец meter на отдельной странице — Почти заполнено" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера meter — Почти заполнено" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец meter на отдельной странице — Почти заполнено&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера meter — Почти заполнено&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец meter на отдельной странице — Заполнено" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера meter — Заполнено" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец meter на отдельной странице — Заполнено&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера meter — Заполнено&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец meter на отдельной странице — Сверх лимита" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера meter — Сверх лимита" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец meter на отдельной странице — Сверх лимита&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера meter — Сверх лимита&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">Заполнение в партиале ограничено 100%; правду говорит число.</p>
+<p class="ds-note">Заполнение ограничено 100% внутри партиала.</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">Аватар из инициалов, имя и почта: ячейка личности для тех типов записей, которые являются людьми.</p>
+<p class="ds-lead">Аватар с инициалами, имя и почта. Помогает быстро узнать записи о людях.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Имя и почта</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец person на отдельной странице — Имя и почта" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера person — Имя и почта" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец person на отдельной странице — Имя и почта&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера person — Имя и почта&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец person на отдельной странице — Крупный — размер для шапки экрана просмотра" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера person — Крупный — размер для шапки экрана просмотра" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец person на отдельной странице — Крупный — размер для шапки экрана просмотра&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера person — Крупный — размер для шапки экрана просмотра&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец person на отдельной странице — Без инициала" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера person — Без инициала" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец person на отдельной странице — Без инициала&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера person — Без инициала&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец callout на отдельной странице — Тон по умолчанию (info), без заголовка" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера callout — Тон по умолчанию (info), без заголовка" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец callout на отдельной странице — Тон по умолчанию (info), без заголовка&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера callout — Тон по умолчанию (info), без заголовка&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец callout на отдельной странице — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера callout — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец callout на отдельной странице — info&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера callout — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец callout на отдельной странице — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера callout — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец callout на отдельной странице — positive&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера callout — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец callout на отдельной странице — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера callout — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец callout на отдельной странице — warning&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера callout — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец callout на отдельной странице — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера callout — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец callout на отдельной странице — negative&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера callout — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец callout на отдельной странице — negative, объявляется как предупреждение" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера callout — negative, объявляется как предупреждение" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец callout на отдельной странице — negative, объявляется как предупреждение&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера callout — negative, объявляется как предупреждение&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Alert добавляет role=&#34;alert&#34;. Оставьте его для происходящих проблем, а не для фоновых заметок.</p>
+<p class="ds-note">alert добавляет role=&#34;alert&#34;, чтобы показывать важные сообщения.</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">Помеченные факты записи в виде списка определений — тело экрана просмотра. Mono отмечает машинные по виду значения.</p>
+<p class="ds-lead">Список определений о записи на экране подробностей. Моноширинная пометка — для машинных значений.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Четыре факта, один из них машинный</p>
+<p class="ds-state">Четыре факта, один машинный</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец detail-list на отдельной странице — Четыре факта, один из них машинный" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера detail-list — Четыре факта, один машинный" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец detail-list на отдельной странице — Четыре факта, один из них машинный&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера detail-list — Четыре факта, один машинный&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец notice на отдельной странице — Сообщение о сохранении" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера notice — Сообщение о сохранении" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец notice на отдельной странице — Сообщение о сохранении&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера notice — Сообщение о сохранении&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец form-error на отдельной странице — Отклонённая отправка" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера form-error — Отклонённая отправка" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец form-error на отдельной странице — Отклонённая отправка&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера form-error — Отклонённая отправка&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец job-status на отдельной странице — Выполняется" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера job-status — Выполняется" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец job-status на отдельной странице — Выполняется&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера job-status — Выполняется&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец job-status на отдельной странице — Готово" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера job-status — Готово" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец job-status на отдельной странице — Готово&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера job-status — Готово&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец job-status на отдельной странице — Не удалось" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера job-status — Не удалось" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец job-status на отдельной странице — Не удалось&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера job-status — Не удалось&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">Подпись, поле, необязательная подсказка, справка и ошибка — обычный текстовый элемент управления, с явным ID.</p>
+<p class="ds-lead">Подпись, поле, необязательная подсказка, пояснение и ошибка. Обычный текстовый элемент с явным ID.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Без ничего</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field на отдельной странице — Без ничего" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field — Без ничего" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field на отдельной странице — Без ничего&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field — Без ничего&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field на отдельной странице — С подсказкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field — С подсказкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field на отдельной странице — С подсказкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field — С подсказкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field на отдельной странице — Со справкой под элементом управления" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field — Со справкой под элементом управления" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field на отдельной странице — Со справкой под элементом управления&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field — Со справкой под элементом управления&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field на отдельной странице — Обязательное" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field — Обязательное" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field на отдельной странице — Обязательное&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field — Обязательное&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field на отдельной странице — С ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field — С ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field на отдельной странице — С ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field — С ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field на отдельной странице — Короткое" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field — Короткое" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field на отдельной странице — Короткое&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field — Короткое&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">Одно текстовое поле с подписью, id выводятся из Name. Звёздочка обязательности — aria-hidden: программный признак это атрибут required на поле.</p>
+<p class="ds-lead">Одно текстовое поле с подписью, идентификаторы выводятся из Name. Звёздочка обязательности помечена aria-hidden: программный сигнал — атрибут required у поля.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Без ничего</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-text на отдельной странице — Без ничего" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-text — Без ничего" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-text на отдельной странице — Без ничего&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-text — Без ничего&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-text на отдельной странице — С подсказкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-text — С подсказкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-text на отдельной странице — С подсказкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-text — С подсказкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-text на отдельной странице — Обязательное" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-text — Обязательное" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-text на отдельной странице — Обязательное&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-text — Обязательное&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-text на отдельной странице — С ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-text — С ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-text на отдельной странице — С ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-text — С ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-textarea на отдельной странице — Без ничего" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-textarea — Без ничего" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-textarea на отдельной странице — Без ничего&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-textarea — Без ничего&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-textarea на отдельной странице — С подсказкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-textarea — С подсказкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-textarea на отдельной странице — С подсказкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-textarea — С подсказкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-textarea на отдельной странице — С ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-textarea — С ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-textarea на отдельной странице — С ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-textarea — С ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-textarea на отдельной странице — Обязательное" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-textarea — Обязательное" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-textarea на отдельной странице — Обязательное&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-textarea — Обязательное&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Обёртка field вокруг родного select. Больше десяти вариантов — и select включает комбобокс с фильтром из select.js; отправляет форма всё равно родной select.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Три варианта — родной select</p>
+<p class="ds-state">Три варианта: обычный select</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-select на отдельной странице — Три варианта — родной select" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-select — Три варианта: обычный select" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-select на отдельной странице — Три варианта — родной select&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-select — Три варианта: обычный select&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Двенадцать вариантов — комбобокс с фильтром</p>
+<p class="ds-state">Двенадцать вариантов: комбобокс с фильтром</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-select на отдельной странице — Двенадцать вариантов — комбобокс с фильтром" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-select — Двенадцать вариантов: комбобокс с фильтром" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-select на отдельной странице — Двенадцать вариантов — комбобокс с фильтром&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-select — Двенадцать вариантов: комбобокс с фильтром&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-select на отдельной странице — Двенадцать вариантов, Plain — от улучшения отказались" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-select — Двенадцать вариантов, Plain — от улучшения отказались" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-select на отдельной странице — Двенадцать вариантов, Plain — от улучшения отказались&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-select — Двенадцать вариантов, Plain — от улучшения отказались&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-select на отдельной странице — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-select — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-select на отдельной странице — Обязательное, с ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-select — Обязательное, с ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-select на отдельной странице — Написан вручную, с optgroup" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-select — Написан вручную, с optgroup" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-select на отдельной странице — Написан вручную, с optgroup&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-select — Написан вручную, с optgroup&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-check на отдельной странице — Включено" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-check — Включено" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-check на отдельной странице — Включено&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-check — Включено&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-check на отдельной странице — Выключено" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-check — Выключено" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-check на отдельной странице — Выключено&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-check — Выключено&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-check на отдельной странице — Отключено" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-check — Отключено" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-check на отдельной странице — Отключено&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-check — Отключено&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец choice-field на отдельной странице — Выберите одно" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера choice-field — Выберите одно" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец choice-field на отдельной странице — Выберите одно&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера choice-field — Выберите одно&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец choice-field на отдельной странице — Выберите любые" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера choice-field — Выберите любые" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец choice-field на отдельной странице — Выберите любые&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера choice-field — Выберите любые&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Обычное поле даты плюс комбобокс с разбором обычной речи, который включает datetime.js, если вызывающий не передал Plain. Наберите в нём &#34;завтра&#34;.</p>
 
 <div class="ds-sample">
-<p class="ds-state">С улучшением — наберите &#34;завтра&#34; или &#34;через 3 недели&#34;</p>
+<p class="ds-state">Улучшенное поле: введите «завтра» или «через 3 недели»</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-date на отдельной странице — С улучшением — наберите &#34;завтра&#34; или &#34;через 3 недели&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-date — Улучшенное поле: введите «завтра» или «через 3 недели»" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-date на отдельной странице — С улучшением — наберите &amp;#34;завтра&amp;#34; или &amp;#34;через 3 недели&amp;#34;&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-date — Улучшенное поле: введите «завтра» или «через 3 недели»&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-date на отдельной странице — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-date — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-date на отдельной странице — Обязательное, с ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-date — Обязательное, с ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-date на отдельной странице — С границами" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-date — С границами" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-date на отдельной странице — С границами&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-date — С границами&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-date на отдельной странице — Plain — голое родное поле" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-date — Plain — голое родное поле" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-date на отдельной странице — Plain — голое родное поле&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-date — Plain — голое родное поле&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Та же обёртка вокруг родного поля времени. Улучшение читает часы, а не календарь.</p>
 
 <div class="ds-sample">
-<p class="ds-state">С улучшением — наберите &#34;19:30&#34; или &#34;полдень&#34;</p>
+<p class="ds-state">Улучшенное поле: введите «полвосьмого» или «полдень»</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-time на отдельной странице — С улучшением — наберите &#34;19:30&#34; или &#34;полдень&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-time — Улучшенное поле: введите «полвосьмого» или «полдень»" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-time на отдельной странице — С улучшением — наберите &amp;#34;19:30&amp;#34; или &amp;#34;полдень&amp;#34;&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-time — Улучшенное поле: введите «полвосьмого» или «полдень»&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-time на отдельной странице — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-time — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-time на отдельной странице — Обязательное, с ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-time — Обязательное, с ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-time на отдельной странице — С границами" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-time — С границами" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-time на отдельной странице — С границами&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-time — С границами&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-time на отдельной странице — Plain — голое родное поле" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-time — Plain — голое родное поле" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-time на отдельной странице — Plain — голое родное поле&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-time — Plain — голое родное поле&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Дата и время в одном поле, одно значение.</p>
 
 <div class="ds-sample">
-<p class="ds-state">С улучшением — наберите &#34;завтра&#34; или &#34;через 3 недели&#34;</p>
+<p class="ds-state">Улучшенное поле: введите «завтра» или «через 3 недели»</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-datetime на отдельной странице — С улучшением — наберите &#34;завтра&#34; или &#34;через 3 недели&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-datetime — Улучшенное поле: введите «завтра» или «через 3 недели»" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-datetime на отдельной странице — С улучшением — наберите &amp;#34;завтра&amp;#34; или &amp;#34;через 3 недели&amp;#34;&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-datetime — Улучшенное поле: введите «завтра» или «через 3 недели»&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-datetime на отдельной странице — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-datetime — Обязательное, с ошибкой" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-datetime на отдельной странице — Обязательное, с ошибкой&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-datetime — Обязательное, с ошибкой&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-datetime на отдельной странице — С границами" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-datetime — С границами" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-datetime на отдельной странице — С границами&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-datetime — С границами&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-datetime на отдельной странице — Plain — голое родное поле" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-datetime — Plain — голое родное поле" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-datetime на отдельной странице — Plain — голое родное поле&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-datetime — Plain — голое родное поле&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">Начало и конец как одна помеченная группа. У половин должны быть разные Name — каждая выводит свои id из своего.</p>
+<p class="ds-lead">Начало и конец как одна помеченная группа. Значения Name должны различаться, потому что из них выводятся идентификаторы.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Дата и время, с начальными значениями</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-daterange на отдельной странице — Дата и время, с начальными значениями" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-daterange — Дата и время, с начальными значениями" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-daterange на отдельной странице — Дата и время, с начальными значениями&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-daterange — Дата и время, с начальными значениями&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец field-daterange на отдельной странице — Только даты, с ошибкой на конце" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера field-daterange — Только даты, с ошибкой на конце" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец field-daterange на отдельной странице — Только даты, с ошибкой на конце&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера field-daterange — Только даты, с ошибкой на конце&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец form-foot на отдельной странице — Сохранить и отменить" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера form-foot — Сохранить и отменить" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец form-foot на отдельной странице — Сохранить и отменить&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера form-foot — Сохранить и отменить&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец form-foot на отдельной странице — Только отправка" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера form-foot — Только отправка" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец form-foot на отдельной странице — Только отправка&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера form-foot — Только отправка&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец form-foot на отдельной странице — В покое — кнопка до того, как что-либо произошло" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера form-foot — В покое — кнопка до того, как что-либо произошло" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец form-foot на отдельной странице — В покое — кнопка до того, как что-либо произошло&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера form-foot — В покое — кнопка до того, как что-либо произошло&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец form-foot на отдельной странице — В работе — то, что rastrillo.js пишет на выходе" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера form-foot — В работе — то, что rastrillo.js пишет на выходе" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец form-foot на отдельной странице — В работе — то, что rastrillo.js пишет на выходе&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера form-foot — В работе — то, что rastrillo.js пишет на выходе&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец confirm-form на отдельной странице — Необратимое действие" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера confirm-form — Необратимое действие" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец confirm-form на отдельной странице — Необратимое действие&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера confirm-form — Необратимое действие&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец confirm-form на отдельной странице — Обычный случай, текст отмены по умолчанию" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера confirm-form — Обычный случай, текст отмены по умолчанию" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец confirm-form на отдельной странице — Обычный случай, текст отмены по умолчанию&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера confirm-form — Обычный случай, текст отмены по умолчанию&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">Всё тело ответа об ошибке: статус, одна честная фраза, путь назад и — для 500 — ссылка, которую администратор может найти через grep.</p>
+<p class="ds-lead">Всё тело ответа с ошибкой: статус, одна честная фраза, путь назад и ссылки для 500, которыми может воспользоваться администратор.</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — не найдено</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец error-page на отдельной странице — 404 — не найдено" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера error-page — 404 — не найдено" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец error-page на отдельной странице — 404 — не найдено&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера error-page — 404 — не найдено&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец error-page на отдельной странице — 403 — нет доступа" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера error-page — 403 — нет доступа" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец error-page на отдельной странице — 403 — нет доступа&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера error-page — 403 — нет доступа&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец error-page на отдельной странице — 422 — не удалось обработать" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера error-page — 422 — не удалось обработать" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец error-page на отдельной странице — 422 — не удалось обработать&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера error-page — 422 — не удалось обработать&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец error-page на отдельной странице — 500 — ошибка сервера" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера error-page — 500 — ошибка сервера" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец error-page на отдельной странице — 500 — ошибка сервера&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера error-page — 500 — ошибка сервера&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец error-page на отдельной странице — 503 — недоступно" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера error-page — 503 — недоступно" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец error-page на отдельной странице — 503 — недоступно&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера error-page — 503 — недоступно&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец error-page на отдельной странице — Всё остальное — общая пара" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера error-page — Всё остальное — общая пара" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец error-page на отдельной странице — Всё остальное — общая пара&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера error-page — Всё остальное — общая пара&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец back-nav на отдельной странице — Назад к записи" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера back-nav — Назад к записи" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец back-nav на отдельной странице — Назад к записи&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера back-nav — Назад к записи&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Переключатель языка: меню на details из POST-форм с одним полем на /_locale, чтобы выбор попал в cookie локали, а читатель остался на том же пути.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Двенадцать языков, текущий отмечен</p>
+<p class="ds-state">Двенадцать языков, текущий выделен.</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец locale-menu на отдельной странице — Двенадцать языков, текущий отмечен" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера locale-menu — Двенадцать языков, текущий выделен." loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец locale-menu на отдельной странице — Двенадцать языков, текущий отмечен&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера locale-menu — Двенадцать языков, текущий выделен.&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">Этот шлёт POST на /_locale, а у статической страницы для этого нет сервера: переключатель в шапке самой этой страницы — вариант на одних ссылках.</p>
+<p class="ds-note">Этот отправляет POST на /_locale, а для этого нужен сервер. Переключатель в шапке самой страницы — версия только на ссылках.</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">Идиомы классов</h2></div>
-<p class="ds-lead">Формы, которыми партиал быть не может, потому что они оборачивают тело, известное только вызывающему: карточка раздела, сетка данных, раскрывающееся меню, собственное обрамление оболочек. Классы даёт tokens.css, разметку пишет приложение. Всё ниже — ровно тот образец, который возвращает ui.Styleguide, то есть образец, который тесты ui сверяют с tokens.css. Копируйте отсюда.</p>
+<p class="ds-lead">Формы, которыми партиал быть не может, потому что они оборачивают тело, известное только вызывающему: карточка раздела, сетка данных, раскрывающееся меню и собственная обвязка каркасов. tokens.css поставляет классы, а разметку пишет приложение. Всё, что ниже, — ровно тот образец, который возвращает ui.Styleguide, и тот же образец тесты ui сверяют с tokens.css.</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец box на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера box — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец box на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера box — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец dropdown на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера dropdown — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец dropdown на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера dropdown — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец form-layout на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера form-layout — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец form-layout на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера form-layout — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец help на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера help — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец help на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера help — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">Настоящий словарь таблиц данных: карточка задаёт колонки один раз, строки только выбирают ячейки.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Экраны складываются по вертикали</strong><p>Экран — это колонка: page-header, затем section-header и карточка, затем следующий section-header и карточка, в порядке чтения. Не ставьте заголовок, абзац и кнопку рядом во flex-строке. Горизонтальная раскладка оставлена тем идиомам, которые её несут: rst-box-head, rst-field-row, rst-lbar, ячейки rst-lrow, rst-seg-tabs.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Экраны складываются по вертикали</strong><p>Экран — это столбец: page-header, затем section-header и карточка, затем следующий section-header и карточка, в порядке чтения. Горизонтальная раскладка оставлена тем приёмам, которые её несут: rst-box-head, rst-field-row, rst-lbar, ячейки rst-lrow, rst-seg-tabs.</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>Компьютер</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец list-grid на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера list-grid — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец list-grid на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера list-grid — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец modal на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера modal — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец modal на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера modal — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец selbox на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера selbox — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец selbox на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера selbox — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец shell-sidebar на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера shell-sidebar — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец shell-sidebar на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера shell-sidebar — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/ru/shells/sidebar.html" target="_blank" rel="noopener">Откройте демонстрацию оболочки sidebar, где та же разметка — настоящая страница</a><span class="rst-sr-only"> (откроется в новой вкладке)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/ru/shells/sidebar.html" target="_blank" rel="noopener">Откройте демо каркаса с боковой панелью — отдельный просмотр.</a><span class="rst-sr-only"> (откроется в новой вкладке)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">Собственное обрамление оболочки topbar, в виде разметки. Layout отдаёт его целым шаблоном — а вот что у него внутри.</p>
+<p class="ds-lead">Собственная обвязка каркаса с верхней панелью, в виде разметки. Layout поставляет её как целый шаблон.</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Предпросмотр</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец shell-topbar на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера shell-topbar — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец shell-topbar на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера shell-topbar — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/ru/shells/topbar.html" target="_blank" rel="noopener">Откройте демонстрацию оболочки topbar, где та же разметка — настоящая страница</a><span class="rst-sr-only"> (откроется в новой вкладке)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/ru/shells/topbar.html" target="_blank" rel="noopener">Откройте демо каркаса с верхней панелью — отдельный просмотр для него.</a><span class="rst-sr-only"> (откроется в новой вкладке)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">Телефон</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">Код</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Образец tblock на отдельной странице — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Отдельный просмотр примера tblock — Идиомы классов" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ru&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Образец tblock на отдельной странице — Идиомы классов&lt;/title&gt;
+&lt;title&gt;Отдельный просмотр примера tblock — Идиомы классов&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }

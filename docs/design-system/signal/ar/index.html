@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">تصفية هذه الصفحة</label>
-    <input id="ds-filter" type="search" placeholder="تصفية هذه الصفحة" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">تصفية</label>
+    <input id="ds-filter" type="search" placeholder="تصفية" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>لا شيء هنا يطابق ذلك</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>لا توجد نتائج</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="الأقسام والعروض التوضيحية">
     <details open><summary>الرموز</summary><a href="#tokens-surfaces-and-lines">الأسطح والخطوط</a><a href="#tokens-text">النص</a><a href="#tokens-accent">لون التمييز</a><a href="#tokens-status-tones">نغمات الحالة</a><a href="#tokens-depth">العمق</a><a href="#tokens-radius">استدارة الأركان</a><a href="#tokens-type-family">عائلة الخط</a><a href="#tokens-type-scale">سُلّم أحجام الخط</a><a href="#tokens-spacing">التباعد</a></details>
     <details open><summary>الأجزاء</summary><a href="#family-list-screen" class="ds-nav__group">شاشة القائمة</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">العرض</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">النموذج</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">المسار</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>نظام تصميم rastrillo</h1>
-    <p class="rst-page-header__sub">كل جزء وكل أسلوب أصناف وكل رمز تصميم يقدّمه الإطار، في صفحة واحدة. السمة هي <strong>signal</strong>، والمكوّنات تتحدث <strong lang="ar">العربية</strong>.</p>
+    <p class="rst-page-header__sub">نظرة عامة على كل ما يوفّره نظام التصميم. السمة: <strong>signal</strong>. اللغة: <strong lang="ar">العربية</strong>.</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="الأقسام"><a href="#tokens">الرموز</a><a href="#partials">الأجزاء</a><a href="#idioms">أساليب الأصناف</a><a href="#shells">الهياكل</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>روابط هذه العيّنات لا تؤدّي إلى شيء</strong><p>كلّ رابط داخل المعاينة يُعاد كتابته إلى # قبل وضعه في الإطار، فالنقر عليه لا يفعل شيئًا بدل أن يأخذك إلى صفحة لا يملكها هذا الموقع. أمّا تبويب الشيفرة إلى جانبه فيحتفظ بالمسارات التي كُتبت بها العيّنة، وهي التي يستحقّ نسخها.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>الروابط هنا غير مفعّلة</strong><p>الروابط غير مفعّلة، ومصدر العيّنة متاح.</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">الرموز</h2></div>
-<p class="ds-lead">الخصائص المخصّصة التي يرسم بها كل مكوّن نفسه. اللون وعائلة الخط يأتيان من السمة (‎themes/signal.css‎)، أما سُلّم أحجام الخط ودرجات التباعد فهي بنية تأتي من ‎tokens.css‎ وهي نفسها في كل سمة.</p>
-<p class="ds-swatch-note">القيم المطبوعة هنا هي قيم الوضع الفاتح. أما المجموعة الداكنة فمكتوبة يدويًّا في الملف نفسه — لا بالعكس أبدًا — ويُبقي ‎ui/contrast_test.go‎ كل زوج موثّق في المجموعتين عند حدود WCAG 2.2 AA الدنيا: 4.5:1 للنص و3:1 لحدود عناصر التحكّم. أما مربّعات اللون فتُطلى بـ ‎var()‎، فتتبع النظام الذي تقرأ فيه ولن تطابق القيم المطبوعة في الوضع الداكن.</p>
+<p class="ds-lead">خصائص مخصّصة مشتركة بين كل المكوّنات. اللون والخط جزء من السمة (themes/signal.css). سلّم الأحجام ودرجات التباعد بنية، وتأتي من tokens.css.</p>
+<p class="ds-swatch-note">يُعرض هنا الوضع الفاتح، وكل القيم مكتوبة بـ light-dark. حدود WCAG 2.2 AA الدنيا: 4.5:1 للنص و3:1 لحدود عناصر التحكّم. كل الألوان في الرقائق وغيرها تأتي من المتغيّرات.</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>الأسطح والخطوط</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">الأجزاء</h2></div>
-<p class="ds-lead">كل جزء قالبي يقدّمه ui، في الحالات التي تضعه فيها شاشة حقيقية. ويأخذ كلٌّ منها قيمة بيانات واحدة بالضبط، تُبنى في مكانها بـ dict. النماذج داخل ‎rst-box‎ ذي حشو، والصفوف داخل ‎rst-list‎، لأن هذه الأجزاء تفترض ذلك — انظر القاعدتين في «أساليب الأصناف» أدناه.</p>
-<p class="ds-note">كل عيّنة مؤطَّرة في صفحة خاصّة بها، فالجزء الذي يملك عنوان h1 — مثل page-header و error-page — لا يترك هذه الصفحة بعدّة عناوين.</p>
-<p class="ds-note">يبقى محتوى العيّنات بالإنجليزية في كل صفحة: فالأسماء والمسارات والتسميات في هذه العيّنات بدائل مؤقتة، وترجمتها توحي بأن الإطار يقدّم تلك الكلمات نفسها. أما عروض الهياكل والنافذة المشروطة فعلى العكس — إنها تتقمّص تطبيقًا حقيقيًّا، فيتحدث إطارها باللغة التي اخترتها.</p>
+<p class="ds-lead">تمنحك الأجزاء عناصر واجهة جاهزة ومتّسقة فيما بينها، تُبنى في الخادم.</p>
+<p class="ds-note">كل عيّنة أدناه داخل إطارها الخاص.</p>
+<p class="ds-note">محتوى العيّنات بالإنجليزية. أمّا أغلفة العيّنات فمترجمة.</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>شاشة القائمة</h3>
-<p class="ds-lead">الشاشة التي تقضي فيها معظم التطبيقات معظم وقتها: شريط عنوان، وشريط أدوات، وسلسلة صفوف، وطريقة للمرور على بقيّتها.</p>
+<p class="ds-lead">شاشة قائمة عامة فيها عنوان وشريط أدوات وصفوف، تعمل على سطح المكتب وعلى الهاتف.</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">شريط عنوان الشاشة: عنوان h1، وعنوان فرعي اختياري، وإجراء رئيسي واحد على الأكثر.</p>
+<p class="ds-lead">شريط عنوان الشاشة: عنصر h1، وعنوان فرعي اختياري، وإجراء رئيسي.</p>
 
 <div class="ds-sample">
 <p class="ds-state">عنوان وعنوان فرعي وإجراء رئيسي</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة page-header، في صفحة خاصّة بها — عنوان وعنوان فرعي وإجراء رئيسي" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة page-header — عنوان وعنوان فرعي وإجراء رئيسي" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة page-header، في صفحة خاصّة بها — عنوان وعنوان فرعي وإجراء رئيسي&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة page-header — عنوان وعنوان فرعي وإجراء رئيسي&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة page-header، في صفحة خاصّة بها — العنوان وحده" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة page-header — العنوان وحده" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة page-header، في صفحة خاصّة بها — العنوان وحده&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة page-header — العنوان وحده&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">شريط الأدوات أعلى بطاقة القائمة: نموذج البحث، ومتّسع إلى جانبه لتصفية.</p>
+<p class="ds-lead">شريط الأدوات أعلى بطاقة القائمة، مع البحث والتصفية.</p>
 
 <div class="ds-sample">
 <p class="ds-state">بحث مع قائمة تصفية منسدلة</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-bar، في صفحة خاصّة بها — بحث مع قائمة تصفية منسدلة" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-bar — بحث مع قائمة تصفية منسدلة" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-bar، في صفحة خاصّة بها — بحث مع قائمة تصفية منسدلة&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-bar — بحث مع قائمة تصفية منسدلة&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">نموذج البحث وحده، لقائمة لا تفعل غير البحث. نموذج ‎method=&#34;get&#34;‎ عادي.</p>
+<p class="ds-lead">نموذج بحث قائم بذاته للقوائم التي تبحث فقط. نموذج method=&#34;get&#34; عادي.</p>
 
 <div class="ds-sample">
-<p class="ds-state">مع استعلام مطبَّق سلفًا</p>
+<p class="ds-state">مع استعلام</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-bar-search، في صفحة خاصّة بها — مع استعلام مطبَّق سلفًا" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-bar-search — مع استعلام" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-bar-search، في صفحة خاصّة بها — مع استعلام مطبَّق سلفًا&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-bar-search — مع استعلام&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-bar-search، في صفحة خاصّة بها — فارغ، والاسم الوصفي من الفهرس" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-bar-search — فارغ، والاسم الوصفي من الفهرس" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-bar-search، في صفحة خاصّة بها — فارغ، والاسم الوصفي من الفهرس&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-bar-search — فارغ، والاسم الوصفي من الفهرس&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;بحث&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">لا يوجد Placeholder، فيأتي الاسم الوصفي للحقل من فهرس الإطار بلغة هذه الصفحة.</p>
+<p class="ds-note">بلا Placeholder. الاسم المتاح للوصول لحقل الإدخال يأتي من كتالوج إطار العمل باللغة الحالية.</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-search-submit، في صفحة خاصّة بها — التسمية الافتراضية" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-search-submit — التسمية الافتراضية" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-search-submit، في صفحة خاصّة بها — التسمية الافتراضية&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-search-submit — التسمية الافتراضية&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;بحث&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">لا يظهر هنا شيء حتى تصل إليه بمفتاح Tab — وهذا هو المكوّن كله.</p>
+<p class="ds-note">لا يظهر هنا شيء إلى أن تصل إليه بمفتاح Tab.</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">صفٌّ واحد من القائمة: اسم السجل رابطًا رئيسيًا، وسطر بيانات فرعية، وإجراء ثانوي واحد على الأكثر.</p>
+<p class="ds-lead">صف واحد من القائمة: اسم السجل رابطًا رئيسيًا، وسطر معلومات، وإجراء ثانوي.</p>
 
 <div class="ds-sample">
 <p class="ds-state">علامة في المقدّمة وحالة وإجراء واحد</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-row-action، في صفحة خاصّة بها — علامة في المقدّمة وحالة وإجراء واحد" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-row-action — علامة في المقدّمة وحالة وإجراء واحد" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-row-action، في صفحة خاصّة بها — علامة في المقدّمة وحالة وإجراء واحد&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-row-action — علامة في المقدّمة وحالة وإجراء واحد&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-row-action، في صفحة خاصّة بها — الاسم وسطر البيانات الفرعية فقط" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-row-action — الاسم وسطر البيانات الفرعية فقط" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-row-action، في صفحة خاصّة بها — الاسم وسطر البيانات الفرعية فقط&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-row-action — الاسم وسطر البيانات الفرعية فقط&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">عنصر مجزّأ من روابط يبنيها الخادم. التبويب الحالي ليس إلا ‎aria-current‎ على رابط، لا أكثر.</p>
+<p class="ds-lead">عنصر تحكّم مقسّم مكوّن من روابط تُبنى في الخادم. التبويب الحالي هو aria-current على رابط.</p>
 
 <div class="ds-sample">
 <p class="ds-state">قسمان</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة seg-tabs، في صفحة خاصّة بها — قسمان" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة seg-tabs — قسمان" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة seg-tabs، في صفحة خاصّة بها — قسمان&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة seg-tabs — قسمان&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة dropdown، في صفحة خاصّة بها — قائمة تصفية بخيار واحد مطبَّق" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة dropdown — قائمة تصفية بخيار واحد مطبَّق" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة dropdown، في صفحة خاصّة بها — قائمة تصفية بخيار واحد مطبَّق&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة dropdown — قائمة تصفية بخيار واحد مطبَّق&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة bulk-bar، في صفحة خاصّة بها — ثلاثة صفوف محدَّدة" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة bulk-bar — ثلاثة صفوف محدَّدة" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة bulk-bar، في صفحة خاصّة بها — ثلاثة صفوف محدَّدة&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة bulk-bar — ثلاثة صفوف محدَّدة&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة pagination، في صفحة خاصّة بها — في وسط قائمة طويلة" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة pagination — في وسط قائمة طويلة" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة pagination، في صفحة خاصّة بها — في وسط قائمة طويلة&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة pagination — في وسط قائمة طويلة&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة pagination، في صفحة خاصّة بها — الصفحة الأولى، بالاسم الوصفي الافتراضي" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة pagination — الصفحة الأولى، بالاسم الوصفي الافتراضي" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة pagination، في صفحة خاصّة بها — الصفحة الأولى، بالاسم الوصفي الافتراضي&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة pagination — الصفحة الأولى، بالاسم الوصفي الافتراضي&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">بطاقة الحالة الفارغة. الحالة الفارغة تُعلِّم: تقول ما الذي كان سيظهر هنا وكيف تصنع واحدًا.</p>
+<p class="ds-lead">بطاقة الحالة الفارغة. حالة فارغة مع مداخل للخطوات الأولى.</p>
 
 <div class="ds-sample">
 <p class="ds-state">مع دعوة إلى إجراء عبر POST</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة empty-state، في صفحة خاصّة بها — مع دعوة إلى إجراء عبر POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة empty-state — مع دعوة إلى إجراء عبر POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة empty-state، في صفحة خاصّة بها — مع دعوة إلى إجراء عبر POST&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة empty-state — مع دعوة إلى إجراء عبر POST&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة empty-state، في صفحة خاصّة بها — الجملة وحدها" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة empty-state — الجملة وحدها" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة empty-state، في صفحة خاصّة بها — الجملة وحدها&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة empty-state — الجملة وحدها&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">حالة السجل في هيئة شارة ملوّنة. الحالة لا تُنقل باللون وحده أبدًا، فالتسمية نصّ ظاهر دائمًا.</p>
+<p class="ds-lead">حالة السجل على هيئة شارة ملوّنة، باللون وبالنص معًا.</p>
 
 <div class="ds-sample">
 <p class="ds-state">النغمة الافتراضية (neutral)</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة status-pill، في صفحة خاصّة بها — النغمة الافتراضية (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة status-pill — النغمة الافتراضية (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة status-pill، في صفحة خاصّة بها — النغمة الافتراضية (neutral)&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة status-pill — النغمة الافتراضية (neutral)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة status-pill، في صفحة خاصّة بها — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة status-pill — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة status-pill، في صفحة خاصّة بها — neutral&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة status-pill — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة status-pill، في صفحة خاصّة بها — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة status-pill — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة status-pill، في صفحة خاصّة بها — positive&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة status-pill — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة status-pill، في صفحة خاصّة بها — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة status-pill — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة status-pill، في صفحة خاصّة بها — warning&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة status-pill — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة status-pill، في صفحة خاصّة بها — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة status-pill — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة status-pill، في صفحة خاصّة بها — negative&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة status-pill — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -972,19 +972,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">شارة محاطة بإطار بحروف كبيرة، للعلامات الصغيرة الثابتة. وهي غير ‎status-pill‎ الذي يعبّر عن حالة السجل.</p>
 
 <div class="ds-sample">
-<p class="ds-state">بلا نغمة (الافتراضي الهادئ)</p>
+<p class="ds-state">بلا نبرة (القيمة الافتراضية الهادئة)</p>
 <div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-badge-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة badge، في صفحة خاصّة بها — بلا نغمة (الافتراضي الهادئ)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة badge — بلا نبرة (القيمة الافتراضية الهادئة)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة badge، في صفحة خاصّة بها — بلا نغمة (الافتراضي الهادئ)&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة badge — بلا نبرة (القيمة الافتراضية الهادئة)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة badge، في صفحة خاصّة بها — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة badge — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة badge، في صفحة خاصّة بها — neutral&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة badge — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة badge، في صفحة خاصّة بها — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة badge — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة badge، في صفحة خاصّة بها — positive&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة badge — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة badge، في صفحة خاصّة بها — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة badge — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة badge، في صفحة خاصّة بها — warning&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة badge — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة badge، في صفحة خاصّة بها — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة badge — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة badge، في صفحة خاصّة بها — negative&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة badge — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">شريط سعة مع رقمه. النسبة مكتوبة دائمًا، فالشريط وحده لا يحمل الرقم أبدًا.</p>
+<p class="ds-lead">شريط سعة مع رقمه.</p>
 
 <div class="ds-sample">
 <p class="ds-state">فارغ</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة meter، في صفحة خاصّة بها — فارغ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة meter — فارغ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة meter، في صفحة خاصّة بها — فارغ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة meter — فارغ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة meter، في صفحة خاصّة بها — في منتصف الطريق" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة meter — في منتصف الطريق" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة meter، في صفحة خاصّة بها — في منتصف الطريق&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة meter — في منتصف الطريق&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة meter، في صفحة خاصّة بها — يكاد يمتلئ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة meter — يكاد يمتلئ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة meter، في صفحة خاصّة بها — يكاد يمتلئ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة meter — يكاد يمتلئ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة meter، في صفحة خاصّة بها — ممتلئ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة meter — ممتلئ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة meter، في صفحة خاصّة بها — ممتلئ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة meter — ممتلئ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة meter، في صفحة خاصّة بها — تجاوز الحدّ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة meter — تجاوز الحدّ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة meter، في صفحة خاصّة بها — تجاوز الحدّ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة meter — تجاوز الحدّ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">يُقصَر الملء عند 100% داخل الجزء، والرقم هو الذي يقول الحقيقة.</p>
+<p class="ds-note">يُقيَّد الملء عند 100% داخل الجزء.</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">صورة بالأحرف الأولى واسم وبريد: خلية الهوية لأنواع السجلات التي هي أشخاص.</p>
+<p class="ds-lead">صورة بالأحرف الأولى واسم وبريد. تساعد على تمييز سجلات الأشخاص بسرعة.</p>
 
 <div class="ds-sample">
 <p class="ds-state">الاسم والبريد</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة person، في صفحة خاصّة بها — الاسم والبريد" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة person — الاسم والبريد" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة person، في صفحة خاصّة بها — الاسم والبريد&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة person — الاسم والبريد&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة person، في صفحة خاصّة بها — كبير، وهو مقاس ترويسة شاشة العرض" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة person — كبير، وهو مقاس ترويسة شاشة العرض" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة person، في صفحة خاصّة بها — كبير، وهو مقاس ترويسة شاشة العرض&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة person — كبير، وهو مقاس ترويسة شاشة العرض&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة person، في صفحة خاصّة بها — بلا حرف أول" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة person — بلا حرف أول" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة person، في صفحة خاصّة بها — بلا حرف أول&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة person — بلا حرف أول&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة callout، في صفحة خاصّة بها — النغمة الافتراضية (info)، بلا عنوان" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة callout — النغمة الافتراضية (info)، بلا عنوان" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة callout، في صفحة خاصّة بها — النغمة الافتراضية (info)، بلا عنوان&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة callout — النغمة الافتراضية (info)، بلا عنوان&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة callout، في صفحة خاصّة بها — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة callout — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة callout، في صفحة خاصّة بها — info&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة callout — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة callout، في صفحة خاصّة بها — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة callout — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة callout، في صفحة خاصّة بها — positive&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة callout — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة callout، في صفحة خاصّة بها — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة callout — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة callout، في صفحة خاصّة بها — warning&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة callout — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة callout، في صفحة خاصّة بها — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة callout — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة callout، في صفحة خاصّة بها — negative&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة callout — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة callout، في صفحة خاصّة بها — negative، ويُعلَن بوصفه تنبيهًا" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة callout — negative، ويُعلَن بوصفه تنبيهًا" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة callout، في صفحة خاصّة بها — negative، ويُعلَن بوصفه تنبيهًا&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة callout — negative، ويُعلَن بوصفه تنبيهًا&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">يضيف Alert السمة ‎role=&#34;alert&#34;‎. احتفظ به للمشكلات الجارية لا للملاحظات العابرة.</p>
+<p class="ds-note">يضيف alert السمة role=&#34;alert&#34; لعرض الرسائل المهمة.</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">حقائق السجل الموسومة في صورة قائمة تعريفات، وهي متن شاشة العرض. وتُعلَّم القيم ذات الطابع الآلي بـ Mono.</p>
+<p class="ds-lead">قائمة تعريفات عن سجل في شاشة التفاصيل. علامة mono للقيم ذات الطابع الآلي.</p>
 
 <div class="ds-sample">
-<p class="ds-state">أربع حقائق، إحداها ذات طابع آلي</p>
+<p class="ds-state">أربع معلومات، إحداها ذات طابع آلي</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة detail-list، في صفحة خاصّة بها — أربع حقائق، إحداها ذات طابع آلي" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة detail-list — أربع معلومات، إحداها ذات طابع آلي" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة detail-list، في صفحة خاصّة بها — أربع حقائق، إحداها ذات طابع آلي&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة detail-list — أربع معلومات، إحداها ذات طابع آلي&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة notice، في صفحة خاصّة بها — رسالة حفظ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة notice — رسالة حفظ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة notice، في صفحة خاصّة بها — رسالة حفظ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة notice — رسالة حفظ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة form-error، في صفحة خاصّة بها — إرسال مرفوض" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة form-error — إرسال مرفوض" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة form-error، في صفحة خاصّة بها — إرسال مرفوض&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة form-error — إرسال مرفوض&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة job-status، في صفحة خاصّة بها — قيد التنفيذ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة job-status — قيد التنفيذ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة job-status، في صفحة خاصّة بها — قيد التنفيذ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة job-status — قيد التنفيذ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة job-status، في صفحة خاصّة بها — انتهى" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة job-status — انتهى" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة job-status، في صفحة خاصّة بها — انتهى&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة job-status — انتهى&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة job-status، في صفحة خاصّة بها — فشل" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة job-status — فشل" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة job-status، في صفحة خاصّة بها — فشل&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة job-status — فشل&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">تسمية وحقل وتلميح اختياري ومساعدة وخطأ — عنصر التحكّم النصّي العام، بمعرّف صريح.</p>
+<p class="ds-lead">تسمية وحقل إدخال وتلميح اختياري وشرح وخطأ. عنصر التحكّم النصّي العام، بمعرّف صريح.</p>
 
 <div class="ds-sample">
 <p class="ds-state">مجرّد</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field، في صفحة خاصّة بها — مجرّد" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field — مجرّد" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field، في صفحة خاصّة بها — مجرّد&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field — مجرّد&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field، في صفحة خاصّة بها — مع تلميح" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field — مع تلميح" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field، في صفحة خاصّة بها — مع تلميح&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field — مع تلميح&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field، في صفحة خاصّة بها — مع مساعدة أسفل عنصر التحكّم" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field — مع مساعدة أسفل عنصر التحكّم" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field، في صفحة خاصّة بها — مع مساعدة أسفل عنصر التحكّم&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field — مع مساعدة أسفل عنصر التحكّم&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field، في صفحة خاصّة بها — مطلوب" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field — مطلوب" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field، في صفحة خاصّة بها — مطلوب&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field — مطلوب&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field، في صفحة خاصّة بها — مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field — مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field، في صفحة خاصّة بها — مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field — مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field، في صفحة خاصّة بها — قصير" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field — قصير" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field، في صفحة خاصّة بها — قصير&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field — قصير&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">حقل نصّي واحد بتسمية، ومعرّفاته مشتقّة من Name. نجمة الإلزام مخفيّة بـ ‎aria-hidden‎، والإشارة البرمجية هي سمة required على الحقل.</p>
+<p class="ds-lead">حقل نصّي واحد بتسمية، والمعرّفات مشتقّة من Name. نجمة علامة الإلزام تحمل aria-hidden، والإشارة البرمجية هي السمة required على الحقل.</p>
 
 <div class="ds-sample">
 <p class="ds-state">مجرّد</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-text، في صفحة خاصّة بها — مجرّد" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-text — مجرّد" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-text، في صفحة خاصّة بها — مجرّد&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-text — مجرّد&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-text، في صفحة خاصّة بها — مع تلميح" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-text — مع تلميح" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-text، في صفحة خاصّة بها — مع تلميح&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-text — مع تلميح&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-text، في صفحة خاصّة بها — مطلوب" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-text — مطلوب" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-text، في صفحة خاصّة بها — مطلوب&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-text — مطلوب&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-text، في صفحة خاصّة بها — مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-text — مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-text، في صفحة خاصّة بها — مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-text — مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-textarea، في صفحة خاصّة بها — مجرّد" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-textarea — مجرّد" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-textarea، في صفحة خاصّة بها — مجرّد&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-textarea — مجرّد&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-textarea، في صفحة خاصّة بها — مع تلميح" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-textarea — مع تلميح" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-textarea، في صفحة خاصّة بها — مع تلميح&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-textarea — مع تلميح&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-textarea، في صفحة خاصّة بها — مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-textarea — مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-textarea، في صفحة خاصّة بها — مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-textarea — مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-textarea، في صفحة خاصّة بها — مطلوب" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-textarea — مطلوب" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-textarea، في صفحة خاصّة بها — مطلوب&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-textarea — مطلوب&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">غلاف field حول عنصر select أصلي. فإذا تجاوزت الخيارات عشرة فعّل الـ select صندوق التحرير والسرد القابل للتصفية في ‎select.js‎؛ ومع ذلك يظل ما يرسله النموذج هو الـ select الأصلي.</p>
 
 <div class="ds-sample">
-<p class="ds-state">ثلاثة خيارات — عنصر select أصلي</p>
+<p class="ds-state">ثلاثة خيارات: عنصر select الأصلي</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-select، في صفحة خاصّة بها — ثلاثة خيارات — عنصر select أصلي" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-select — ثلاثة خيارات: عنصر select الأصلي" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-select، في صفحة خاصّة بها — ثلاثة خيارات — عنصر select أصلي&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-select — ثلاثة خيارات: عنصر select الأصلي&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">اثنا عشر خيارًا — صندوق التحرير والسرد القابل للتصفية</p>
+<p class="ds-state">اثنا عشر خيارًا: مربّع الاختيار القابل للتصفية</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-select، في صفحة خاصّة بها — اثنا عشر خيارًا — صندوق التحرير والسرد القابل للتصفية" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-select — اثنا عشر خيارًا: مربّع الاختيار القابل للتصفية" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-select، في صفحة خاصّة بها — اثنا عشر خيارًا — صندوق التحرير والسرد القابل للتصفية&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-select — اثنا عشر خيارًا: مربّع الاختيار القابل للتصفية&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-select، في صفحة خاصّة بها — اثنا عشر خيارًا، Plain — مع رفض التحسين" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-select — اثنا عشر خيارًا، Plain — مع رفض التحسين" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-select، في صفحة خاصّة بها — اثنا عشر خيارًا، Plain — مع رفض التحسين&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-select — اثنا عشر خيارًا، Plain — مع رفض التحسين&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-select، في صفحة خاصّة بها — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-select — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-select، في صفحة خاصّة بها — مطلوب، مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-select — مطلوب، مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-select، في صفحة خاصّة بها — مكتوب يدويًا، مع optgroup" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-select — مكتوب يدويًا، مع optgroup" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-select، في صفحة خاصّة بها — مكتوب يدويًا، مع optgroup&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-select — مكتوب يدويًا، مع optgroup&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-check، في صفحة خاصّة بها — مُشغَّل" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-check — مُشغَّل" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-check، في صفحة خاصّة بها — مُشغَّل&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-check — مُشغَّل&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-check، في صفحة خاصّة بها — مُطفأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-check — مُطفأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-check، في صفحة خاصّة بها — مُطفأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-check — مُطفأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-check، في صفحة خاصّة بها — معطَّل" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-check — معطَّل" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-check، في صفحة خاصّة بها — معطَّل&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-check — معطَّل&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة choice-field، في صفحة خاصّة بها — اختر واحدًا" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة choice-field — اختر واحدًا" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة choice-field، في صفحة خاصّة بها — اختر واحدًا&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة choice-field — اختر واحدًا&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة choice-field، في صفحة خاصّة بها — اختر ما شئت" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة choice-field — اختر ما شئت" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة choice-field، في صفحة خاصّة بها — اختر ما شئت&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة choice-field — اختر ما شئت&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">حقل تاريخ أصلي، ومعه صندوق التحرير والسرد الذي يفعّله datetime.js ويفهم اللغة الطبيعية، ما لم يمرّر المستدعي Plain. اكتب فيه &#34;غدًا&#34;.</p>
 
 <div class="ds-sample">
-<p class="ds-state">مُحسَّن — اكتب &#34;غدًا&#34; أو &#34;بعد 3 أسابيع&#34;</p>
+<p class="ds-state">حقل مُحسَّن: اكتب «غدًا» أو «بعد 3 أسابيع»</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-date، في صفحة خاصّة بها — مُحسَّن — اكتب &#34;غدًا&#34; أو &#34;بعد 3 أسابيع&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-date — حقل مُحسَّن: اكتب «غدًا» أو «بعد 3 أسابيع»" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-date، في صفحة خاصّة بها — مُحسَّن — اكتب &amp;#34;غدًا&amp;#34; أو &amp;#34;بعد 3 أسابيع&amp;#34;&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-date — حقل مُحسَّن: اكتب «غدًا» أو «بعد 3 أسابيع»&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-date، في صفحة خاصّة بها — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-date — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-date، في صفحة خاصّة بها — مطلوب، مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-date — مطلوب، مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-date، في صفحة خاصّة بها — بحدّين" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-date — بحدّين" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-date، في صفحة خاصّة بها — بحدّين&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-date — بحدّين&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-date، في صفحة خاصّة بها — Plain — الحقل الأصلي كما هو" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-date — Plain — الحقل الأصلي كما هو" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-date، في صفحة خاصّة بها — Plain — الحقل الأصلي كما هو&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-date — Plain — الحقل الأصلي كما هو&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">الغلاف نفسه حول حقل وقت أصلي. والتحسين هنا يقرأ ساعة لا تقويمًا.</p>
 
 <div class="ds-sample">
-<p class="ds-state">مُحسَّن — اكتب &#34;19:30&#34; أو &#34;الظهر&#34;</p>
+<p class="ds-state">حقل مُحسَّن: اكتب «السابعة والنصف» أو «الظهر»</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-time، في صفحة خاصّة بها — مُحسَّن — اكتب &#34;19:30&#34; أو &#34;الظهر&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-time — حقل مُحسَّن: اكتب «السابعة والنصف» أو «الظهر»" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-time، في صفحة خاصّة بها — مُحسَّن — اكتب &amp;#34;19:30&amp;#34; أو &amp;#34;الظهر&amp;#34;&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-time — حقل مُحسَّن: اكتب «السابعة والنصف» أو «الظهر»&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-time، في صفحة خاصّة بها — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-time — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-time، في صفحة خاصّة بها — مطلوب، مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-time — مطلوب، مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-time، في صفحة خاصّة بها — بحدّين" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-time — بحدّين" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-time، في صفحة خاصّة بها — بحدّين&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-time — بحدّين&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-time، في صفحة خاصّة بها — Plain — الحقل الأصلي كما هو" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-time — Plain — الحقل الأصلي كما هو" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-time، في صفحة خاصّة بها — Plain — الحقل الأصلي كما هو&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-time — Plain — الحقل الأصلي كما هو&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">تاريخ ووقت في حقل واحد، وقيمة واحدة.</p>
 
 <div class="ds-sample">
-<p class="ds-state">مُحسَّن — اكتب &#34;غدًا&#34; أو &#34;بعد 3 أسابيع&#34;</p>
+<p class="ds-state">حقل مُحسَّن: اكتب «غدًا» أو «بعد 3 أسابيع»</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-datetime، في صفحة خاصّة بها — مُحسَّن — اكتب &#34;غدًا&#34; أو &#34;بعد 3 أسابيع&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-datetime — حقل مُحسَّن: اكتب «غدًا» أو «بعد 3 أسابيع»" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-datetime، في صفحة خاصّة بها — مُحسَّن — اكتب &amp;#34;غدًا&amp;#34; أو &amp;#34;بعد 3 أسابيع&amp;#34;&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-datetime — حقل مُحسَّن: اكتب «غدًا» أو «بعد 3 أسابيع»&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-datetime، في صفحة خاصّة بها — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-datetime — مطلوب، مع خطأ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-datetime، في صفحة خاصّة بها — مطلوب، مع خطأ&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-datetime — مطلوب، مع خطأ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-datetime، في صفحة خاصّة بها — بحدّين" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-datetime — بحدّين" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-datetime، في صفحة خاصّة بها — بحدّين&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-datetime — بحدّين&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-datetime، في صفحة خاصّة بها — Plain — الحقل الأصلي كما هو" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-datetime — Plain — الحقل الأصلي كما هو" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-datetime، في صفحة خاصّة بها — Plain — الحقل الأصلي كما هو&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-datetime — Plain — الحقل الأصلي كما هو&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">بداية ونهاية في مجموعة واحدة موسومة. يجب أن يحمل النصفان اسمَي Name مختلفين، فكلٌّ يشتقّ معرّفاته من اسمه.</p>
+<p class="ds-lead">بداية ونهاية ضمن مجموعة واحدة بتسمية. يجب أن تختلف قيم Name، لأن المعرّفات تُشتقّ منها.</p>
 
 <div class="ds-sample">
 <p class="ds-state">تاريخ ووقت، بقيم مبدئية</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-daterange، في صفحة خاصّة بها — تاريخ ووقت، بقيم مبدئية" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-daterange — تاريخ ووقت، بقيم مبدئية" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-daterange، في صفحة خاصّة بها — تاريخ ووقت، بقيم مبدئية&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-daterange — تاريخ ووقت، بقيم مبدئية&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة field-daterange، في صفحة خاصّة بها — تواريخ فقط، مع خطأ على طرف النهاية" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة field-daterange — تواريخ فقط، مع خطأ على طرف النهاية" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة field-daterange، في صفحة خاصّة بها — تواريخ فقط، مع خطأ على طرف النهاية&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة field-daterange — تواريخ فقط، مع خطأ على طرف النهاية&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة form-foot، في صفحة خاصّة بها — الحفظ والإلغاء" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة form-foot — الحفظ والإلغاء" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة form-foot، في صفحة خاصّة بها — الحفظ والإلغاء&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة form-foot — الحفظ والإلغاء&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة form-foot، في صفحة خاصّة بها — الإرسال فقط" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة form-foot — الإرسال فقط" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة form-foot، في صفحة خاصّة بها — الإرسال فقط&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة form-foot — الإرسال فقط&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة form-foot، في صفحة خاصّة بها — في السكون — الزر قبل أن يحدث أي شيء" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة form-foot — في السكون — الزر قبل أن يحدث أي شيء" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة form-foot، في صفحة خاصّة بها — في السكون — الزر قبل أن يحدث أي شيء&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة form-foot — في السكون — الزر قبل أن يحدث أي شيء&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3379,7 +3379,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;a class=&#34;rst-btn&#34; href=&#34;/posts&#34;&gt;Back to posts&lt;/a&gt;
 &lt;/div&gt;&lt;/form&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">الزر الذي يُغيّر شيئًا يحصل على حالة تحميل؛ أما الزر الذي يكشف شيئًا فقط — كتلة إظهار، قائمة منسدلة، تبويب — فلا. يطبّق rastrillo.js هذه القاعدة على كل زر إرسال في كل نموذج، دون أي شيء يجب تفعيله.</p>
+<p class="ds-note">الزر الذي يُغيّر شيئًا يحصل على حالة تحميل، أما الزر الذي يكشف شيئًا فقط — كطيّ أو قائمة منسدلة أو تبويب — فلا. يطبّق rastrillo.js هذه القاعدة على كل زر إرسال في كل نموذج، دون أي شيء تفعّله.</p>
 </div>
 
 <div class="ds-sample">
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة form-foot، في صفحة خاصّة بها — قيد العمل — ما يكتبه rastrillo.js عند خروج النموذج" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة form-foot — قيد العمل — ما يكتبه rastrillo.js عند خروج النموذج" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة form-foot، في صفحة خاصّة بها — قيد العمل — ما يكتبه rastrillo.js عند خروج النموذج&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة form-foot — قيد العمل — ما يكتبه rastrillo.js عند خروج النموذج&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة confirm-form، في صفحة خاصّة بها — إجراء مُتلِف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة confirm-form — إجراء مُتلِف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة confirm-form، في صفحة خاصّة بها — إجراء مُتلِف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة confirm-form — إجراء مُتلِف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة confirm-form، في صفحة خاصّة بها — الحالة العادية، بصياغة الإلغاء الافتراضية" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة confirm-form — الحالة العادية، بصياغة الإلغاء الافتراضية" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة confirm-form، في صفحة خاصّة بها — الحالة العادية، بصياغة الإلغاء الافتراضية&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة confirm-form — الحالة العادية، بصياغة الإلغاء الافتراضية&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">متن استجابة الخطأ كاملًا: الحالة، وجملة صادقة واحدة، وطريق للعودة، وفي حالة 500 الرقم المرجعي الذي يبحث عنه المشغّل بـ grep.</p>
+<p class="ds-lead">جسد استجابة الخطأ كاملًا: الحالة، وجملة صادقة واحدة، وطريق للعودة، ومراجع الخطأ 500 التي يفيد منها المشرف.</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — غير موجود</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة error-page، في صفحة خاصّة بها — 404 — غير موجود" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة error-page — 404 — غير موجود" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة error-page، في صفحة خاصّة بها — 404 — غير موجود&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة error-page — 404 — غير موجود&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة error-page، في صفحة خاصّة بها — 403 — ممنوع" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة error-page — 403 — ممنوع" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة error-page، في صفحة خاصّة بها — 403 — ممنوع&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة error-page — 403 — ممنوع&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة error-page، في صفحة خاصّة بها — 422 — تعذّرت المعالجة" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة error-page — 422 — تعذّرت المعالجة" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة error-page، في صفحة خاصّة بها — 422 — تعذّرت المعالجة&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة error-page — 422 — تعذّرت المعالجة&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة error-page، في صفحة خاصّة بها — 500 — خطأ في الخادم" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة error-page — 500 — خطأ في الخادم" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة error-page، في صفحة خاصّة بها — 500 — خطأ في الخادم&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة error-page — 500 — خطأ في الخادم&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة error-page، في صفحة خاصّة بها — 503 — غير متاح" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة error-page — 503 — غير متاح" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة error-page، في صفحة خاصّة بها — 503 — غير متاح&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة error-page — 503 — غير متاح&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة error-page، في صفحة خاصّة بها — أي حالة أخرى — الزوج العام" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة error-page — أي حالة أخرى — الزوج العام" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة error-page، في صفحة خاصّة بها — أي حالة أخرى — الزوج العام&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة error-page — أي حالة أخرى — الزوج العام&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة back-nav، في صفحة خاصّة بها — العودة إلى سجل" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة back-nav — العودة إلى سجل" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة back-nav، في صفحة خاصّة بها — العودة إلى سجل&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة back-nav — العودة إلى سجل&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">مبدّل اللغة: قائمة details من نماذج POST بحقل واحد إلى ‎/_locale‎، فيستقر الاختيار في ملفّ تعريف اللغة ويبقى القارئ على المسار نفسه.</p>
 
 <div class="ds-sample">
-<p class="ds-state">اثنتا عشرة لغة، والحالية معلَّمة</p>
+<p class="ds-state">اثنتا عشرة لغة، والحالية مميّزة.</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة locale-menu، في صفحة خاصّة بها — اثنتا عشرة لغة، والحالية معلَّمة" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة locale-menu — اثنتا عشرة لغة، والحالية مميّزة." loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة locale-menu، في صفحة خاصّة بها — اثنتا عشرة لغة، والحالية معلَّمة&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة locale-menu — اثنتا عشرة لغة، والحالية مميّزة.&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">هذه ترسل POST إلى ‎/_locale‎، ولا خادم لذلك في صفحة ساكنة — والمبدّل في ترويسة هذه الصفحة نفسها هو النسخة المبنيّة على الروابط وحدها.</p>
+<p class="ds-note">هذا يرسل إلى /_locale، وذلك يتطلّب خادمًا. أمّا المبدّل في ترويسة هذه الصفحة فهو النسخة المبنيّة على الروابط وحدها.</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">أساليب الأصناف</h2></div>
-<p class="ds-lead">الأشكال التي لا يستطيع الجزء أن يكونها، لأنها تلفّ متنًا لا يعرفه إلا المستدعي: بطاقة القسم، وشبكة البيانات، وقائمة الإظهار، وإطار الهياكل نفسها. يقدّم ‎tokens.css‎ الأصناف ويكتب التطبيق الشيفرة. وكل ما تحت هذا هو بالضبط العيّنة التي يعيدها ‎ui.Styleguide‎، وهي العيّنة التي تقابلها اختبارات ui بـ ‎tokens.css‎ — انسخ من هنا.</p>
+<p class="ds-lead">الأشكال التي لا يمكن أن يكونها الجزء، لأنها تغلّف جسدًا لا يعرفه إلا المُستدعي: بطاقة القسم، وشبكة البيانات، وقائمة الكشف، وهيكل الأغلفة نفسه. يوفّر tokens.css الأصناف، ويكتب التطبيق الترميز. وكل ما في الأسفل هو بالضبط العيّنة التي يعيدها ui.Styleguide، وهي العيّنة نفسها التي تقابلها اختبارات ui بـ tokens.css.</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة box، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة box — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة box، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة box — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة dropdown، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة dropdown — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة dropdown، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة dropdown — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة form-layout، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة form-layout — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة form-layout، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة form-layout — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة help، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة help — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة help، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة help — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">مفردات جداول البيانات الحقيقية: البطاقة تحدّد أعمدتها مرة واحدة، والصفوف تختار الخلايا فحسب.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>الشاشات تتراصّ رأسيًّا</strong><p>الشاشة عمود واحد: page-header، ثم section-header مع بطاقة، ثم section-header التالي مع بطاقته، بترتيب القراءة. لا تضع عنوانًا وفقرة وزرًّا جنبًا إلى جنب في صف flex. الترتيب الأفقي محجوز للأساليب التي تحمله أصلًا: rst-box-head و rst-field-row و rst-lbar وخلايا rst-lrow و rst-seg-tabs.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>الشاشات تتراصّ رأسيًّا</strong><p>الشاشة عمود واحد: page-header، ثم section-header وبطاقة، ثم section-header وبطاقة أخرى، بترتيب القراءة. أمّا الترتيب الأفقي فمحجوز للأساليب التي تأتي به: rst-box-head وrst-field-row وrst-lbar وخلايا rst-lrow وrst-seg-tabs.</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>سطح المكتب</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة list-grid، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة list-grid — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة list-grid، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة list-grid — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة modal، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة modal — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة modal، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة modal — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة selbox، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة selbox — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة selbox، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة selbox — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة shell-sidebar، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة shell-sidebar — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة shell-sidebar، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة shell-sidebar — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/ar/shells/sidebar.html" target="_blank" rel="noopener">افتح عرض الهيكل sidebar، حيث تكون هذه الشيفرة نفسها صفحة حقيقية</a><span class="rst-sr-only"> (يُفتح في علامة تبويب جديدة)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/ar/shells/sidebar.html" target="_blank" rel="noopener">افتح عرض الهيكل ذي الشريط الجانبي، وهو معاينة مستقلة.</a><span class="rst-sr-only"> (يُفتح في علامة تبويب جديدة)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">إطار الهيكل topbar نفسه، في صورة شيفرة. يقدّمه Layout قالبًا كاملًا — وهذا ما بداخله.</p>
+<p class="ds-lead">هيكل الغلاف ذي الشريط العلوي نفسه، بصيغة الترميز. يقدّمه Layout كقالب كامل.</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">معاينة</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة shell-topbar، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة shell-topbar — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة shell-topbar، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة shell-topbar — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/ar/shells/topbar.html" target="_blank" rel="noopener">افتح عرض الهيكل topbar، حيث تكون هذه الشيفرة نفسها صفحة حقيقية</a><span class="rst-sr-only"> (يُفتح في علامة تبويب جديدة)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/ar/shells/topbar.html" target="_blank" rel="noopener">افتح عرض الهيكل ذي الشريط العلوي، وله معاينة خاصّة به.</a><span class="rst-sr-only"> (يُفتح في علامة تبويب جديدة)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">الهاتف</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">الشيفرة</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="عيّنة tblock، في صفحة خاصّة بها — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="معاينة مستقلة لعيّنة tblock — أساليب الأصناف" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;ar&#34; dir=&#34;rtl&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;عيّنة tblock، في صفحة خاصّة بها — أساليب الأصناف&lt;/title&gt;
+&lt;title&gt;معاينة مستقلة لعيّنة tblock — أساليب الأصناف&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }

@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">इस पृष्ठ को छानें</label>
-    <input id="ds-filter" type="search" placeholder="इस पृष्ठ को छानें" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">फ़िल्टर</label>
+    <input id="ds-filter" type="search" placeholder="फ़िल्टर" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>यहाँ ऐसा कुछ नहीं मिला</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>कोई मिलान नहीं</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="अनुभाग और डेमो">
     <details open><summary>टोकन</summary><a href="#tokens-surfaces-and-lines">सतहें और रेखाएँ</a><a href="#tokens-text">पाठ</a><a href="#tokens-accent">उभार रंग</a><a href="#tokens-status-tones">स्थिति के टोन</a><a href="#tokens-depth">गहराई</a><a href="#tokens-radius">कोने की त्रिज्या</a><a href="#tokens-type-family">टाइप फ़ैमिली</a><a href="#tokens-type-scale">टाइप स्केल</a><a href="#tokens-spacing">अंतराल</a></details>
     <details open><summary>पार्शियल</summary><a href="#family-list-screen" class="ds-nav__group">सूची स्क्रीन</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">प्रदर्शन</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">फ़ॉर्म</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">रूट</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>rastrillo डिज़ाइन सिस्टम</h1>
-    <p class="rst-page-header__sub">फ़्रेमवर्क के साथ आने वाला हर पार्शियल, हर क्लास मुहावरा और हर डिज़ाइन टोकन, एक ही पृष्ठ पर। थीम है <strong>signal</strong> और घटक <strong lang="hi">हिन्दी</strong> बोलते हैं।</p>
+    <p class="rst-page-header__sub">डिज़ाइन सिस्टम जो कुछ देता है, उसका अवलोकन। थीम: <strong>signal</strong>। भाषा: <strong lang="hi">हिन्दी</strong>।</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="खंड"><a href="#tokens">टोकन</a><a href="#partials">पार्शियल</a><a href="#idioms">क्लास मुहावरे</a><a href="#shells">शेल</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>इन नमूनों के लिंक कहीं नहीं ले जाते</strong><p>हर प्रीव्यू के भीतर का लिंक फ़्रेम में डालने से पहले # में बदल दिया जाता है, इसलिए उस पर क्लिक करने से कुछ नहीं होता, बजाय इसके कि आप ऐसे पेज पर पहुँचें जो इस साइट पर है ही नहीं। बगल का कोड टैब वही रूट रखता है जिनके साथ नमूना लिखा गया था, और नक़ल करने लायक वही हैं।</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>यहाँ के लिंक निष्क्रिय हैं</strong><p>लिंक निष्क्रिय, नमूने का स्रोत साथ में दिया गया है।</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">टोकन</h2></div>
-<p class="ds-lead">वे कस्टम प्रॉपर्टी जिनसे हर घटक ख़ुद को रंगता है। रंग और टाइप फ़ैमिली थीम से आते हैं (themes/signal.css); टाइप स्केल और स्पेसिंग के चरण संरचना हैं और tokens.css से आते हैं, हर थीम पर एक जैसे।</p>
-<p class="ds-swatch-note">यहाँ छपे मान हल्के वाले हैं। गहरा सेट उसी फ़ाइल में हाथ से लिखा गया है — कभी उलटकर नहीं — और ui/contrast_test.go दोनों सेटों की हर दर्ज जोड़ी को WCAG 2.2 AA की न्यूनतम सीमाओं पर कसता है: पाठ के लिए 4.5:1, नियंत्रण की किनारियों के लिए 3:1। रंग के टुकड़े ख़ुद var() से रंगे जाते हैं, इसलिए वे उसी योजना का पालन करते हैं जिसमें आप पढ़ रहे हैं, और गहरे मोड में छपे मानों से मेल नहीं खाएँगे।</p>
+<p class="ds-lead">सभी कॉम्पोनेंट के लिए साझा कस्टम प्रॉपर्टीज़। रंग और टाइप थीम का हिस्सा हैं (themes/signal.css)। टाइप स्केल और स्पेसिंग चरण संरचना हैं और tokens.css से आते हैं।</p>
+<p class="ds-swatch-note">यहाँ लाइट मोड दिख रहा है; सभी मान light-dark से आते हैं। WCAG 2.2 AA न्यूनतम: टेक्स्ट के लिए 4.5:1, कंट्रोल बॉर्डर के लिए 3:1। चिप वगैरह के सभी रंग वेरिएबल से आते हैं।</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>सतहें और रेखाएँ</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#f4f5f8</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#dde0e7</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#6d7482</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#eef0f4</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">पार्शियल</h2></div>
-<p class="ds-lead">ui के साथ आने वाला हर टेम्पलेट पार्शियल, उन्हीं स्थितियों में जिनमें कोई असली स्क्रीन उसे रखती है। हर एक ठीक एक डेटा मान लेता है, जो dict से वहीं बनाया गया है। फ़ॉर्म पैडिंग वाले rst-box में और पंक्तियाँ rst-list में बैठती हैं, क्योंकि ये पार्शियल यही मानते हैं — नीचे क्लास मुहावरों वाले दो नियम देखिए।</p>
-<p class="ds-note">हर नमूना अपने ही एक पेज में फ़्रेम होता है, इसलिए जिस पार्शियल का अपना h1 है — page-header, error-page — वह इस पृष्ठ पर कई h1 नहीं छोड़ता।</p>
-<p class="ds-note">नमूनों की सामग्री हर पृष्ठ पर अंग्रेज़ी में ही रहती है: इन नमूनों के नाम, रूट और लेबल केवल जगह भरने वाले हैं, और उन्हें अनुवाद करने से लगेगा कि फ़्रेमवर्क वही शब्द लेकर आता है। शेल और मोडल के डेमो इसके उलट हैं — वे एक असली ऐप्लिकेशन होने का अभिनय करते हैं, इसलिए उनका ढाँचा उसी भाषा में बोलता है जो आपने चुनी।</p>
+<p class="ds-lead">पार्शियल आपको पहले से बने, आपस में एक जैसे UI तत्व देते हैं, जो सर्वर पर रेंडर होते हैं।</p>
+<p class="ds-note">नीचे का हर नमूना अपने ही फ़्रेम में है।</p>
+<p class="ds-note">नमूना सामग्री अंग्रेज़ी में। नमूना शेल अनूदित हैं।</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>सूची स्क्रीन</h3>
-<p class="ds-lead">वह स्क्रीन जिस पर ज़्यादातर ऐप्लिकेशन अपना ज़्यादातर समय बिताती हैं: एक शीर्षक पट्टी, एक टूलबार, पंक्तियों की एक क़तार, और बाक़ी तक पहुँचने का रास्ता।</p>
+<p class="ds-lead">सामान्य सूची स्क्रीन: शीर्षक, टूलबार और पंक्तियाँ, जो डेस्कटॉप और मोबाइल दोनों पर काम करती हैं।</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">स्क्रीन की शीर्षक पट्टी: एक h1, एक वैकल्पिक उपशीर्षक, और अधिक से अधिक एक मुख्य क्रिया।</p>
+<p class="ds-lead">स्क्रीन की टाइटल बार: एक h1, एक वैकल्पिक उपशीर्षक, और एक मुख्य क्रिया।</p>
 
 <div class="ds-sample">
 <p class="ds-state">शीर्षक, उपशीर्षक और एक मुख्य क्रिया</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header का नमूना, अपने ही एक पेज में — शीर्षक, उपशीर्षक और एक मुख्य क्रिया" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header नमूने का स्वतंत्र पूर्वावलोकन — शीर्षक, उपशीर्षक और एक मुख्य क्रिया" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;page-header का नमूना, अपने ही एक पेज में — शीर्षक, उपशीर्षक और एक मुख्य क्रिया&lt;/title&gt;
+&lt;title&gt;page-header नमूने का स्वतंत्र पूर्वावलोकन — शीर्षक, उपशीर्षक और एक मुख्य क्रिया&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header का नमूना, अपने ही एक पेज में — सिर्फ़ शीर्षक" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ शीर्षक" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;page-header का नमूना, अपने ही एक पेज में — सिर्फ़ शीर्षक&lt;/title&gt;
+&lt;title&gt;page-header नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ शीर्षक&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">सूची कार्ड के ऊपर की टूलबार: खोज फ़ॉर्म, और उसके बग़ल में फ़िल्टर के लिए जगह।</p>
+<p class="ds-lead">सूची कार्ड के ऊपर की टूलबार, खोज और फ़िल्टर के साथ।</p>
 
 <div class="ds-sample">
 <p class="ds-state">खोज, साथ में फ़िल्टर ड्रॉपडाउन</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar का नमूना, अपने ही एक पेज में — खोज, साथ में फ़िल्टर ड्रॉपडाउन" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar नमूने का स्वतंत्र पूर्वावलोकन — खोज, साथ में फ़िल्टर ड्रॉपडाउन" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar का नमूना, अपने ही एक पेज में — खोज, साथ में फ़िल्टर ड्रॉपडाउन&lt;/title&gt;
+&lt;title&gt;list-bar नमूने का स्वतंत्र पूर्वावलोकन — खोज, साथ में फ़िल्टर ड्रॉपडाउन&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">अकेला खोज फ़ॉर्म, उस सूची के लिए जो सिर्फ़ खोजती है। एक साधारण method=&#34;get&#34; फ़ॉर्म।</p>
+<p class="ds-lead">सिर्फ़ खोज वाली सूचियों के लिए अकेला खोज फ़ॉर्म। एक सामान्य method=&#34;get&#34; फ़ॉर्म।</p>
 
 <div class="ds-sample">
-<p class="ds-state">पहले से लागू खोज-शब्द के साथ</p>
+<p class="ds-state">एक क्वेरी के साथ</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search का नमूना, अपने ही एक पेज में — पहले से लागू खोज-शब्द के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search नमूने का स्वतंत्र पूर्वावलोकन — एक क्वेरी के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar-search का नमूना, अपने ही एक पेज में — पहले से लागू खोज-शब्द के साथ&lt;/title&gt;
+&lt;title&gt;list-bar-search नमूने का स्वतंत्र पूर्वावलोकन — एक क्वेरी के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search का नमूना, अपने ही एक पेज में — ख़ाली, सुगम्य नाम कैटलॉग से" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search नमूने का स्वतंत्र पूर्वावलोकन — ख़ाली, सुगम्य नाम कैटलॉग से" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar-search का नमूना, अपने ही एक पेज में — ख़ाली, सुगम्य नाम कैटलॉग से&lt;/title&gt;
+&lt;title&gt;list-bar-search नमूने का स्वतंत्र पूर्वावलोकन — ख़ाली, सुगम्य नाम कैटलॉग से&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;खोजें&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">कोई Placeholder नहीं, इसलिए इनपुट का सुगम्य नाम फ़्रेमवर्क कैटलॉग से, इसी पृष्ठ की भाषा में आता है।</p>
+<p class="ds-note">कोई Placeholder नहीं। इनपुट का सुलभ नाम मौजूदा भाषा के फ़्रेमवर्क कैटलॉग से आता है।</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit का नमूना, अपने ही एक पेज में — डिफ़ॉल्ट लेबल" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit नमूने का स्वतंत्र पूर्वावलोकन — डिफ़ॉल्ट लेबल" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-search-submit का नमूना, अपने ही एक पेज में — डिफ़ॉल्ट लेबल&lt;/title&gt;
+&lt;title&gt;list-search-submit नमूने का स्वतंत्र पूर्वावलोकन — डिफ़ॉल्ट लेबल&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;खोजें&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">जब तक आप Tab से यहाँ नहीं पहुँचते, कुछ दिखता नहीं — यही पूरा घटक है।</p>
+<p class="ds-note">जब तक आप टैब से यहाँ नहीं पहुँचते, यहाँ कुछ दिखाई नहीं देता।</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">सूची की एक पंक्ति: रिकॉर्ड का नाम मुख्य लिंक के रूप में, एक मेटा पंक्ति, और अधिक से अधिक एक गौण क्रिया।</p>
+<p class="ds-lead">एक सूची पंक्ति: रिकॉर्ड का नाम मुख्य लिंक के रूप में, एक मेटा पंक्ति, और एक द्वितीयक क्रिया।</p>
 
 <div class="ds-sample">
 <p class="ds-state">आरंभिक निशान, स्थिति और एक क्रिया</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action का नमूना, अपने ही एक पेज में — आरंभिक निशान, स्थिति और एक क्रिया" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action नमूने का स्वतंत्र पूर्वावलोकन — आरंभिक निशान, स्थिति और एक क्रिया" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-row-action का नमूना, अपने ही एक पेज में — आरंभिक निशान, स्थिति और एक क्रिया&lt;/title&gt;
+&lt;title&gt;list-row-action नमूने का स्वतंत्र पूर्वावलोकन — आरंभिक निशान, स्थिति और एक क्रिया&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action का नमूना, अपने ही एक पेज में — सिर्फ़ नाम और मेटा पंक्ति" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ नाम और मेटा पंक्ति" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-row-action का नमूना, अपने ही एक पेज में — सिर्फ़ नाम और मेटा पंक्ति&lt;/title&gt;
+&lt;title&gt;list-row-action नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ नाम और मेटा पंक्ति&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">सर्वर पर बने लिंक का खंडित नियंत्रण। मौजूदा टैब बस किसी लिंक पर aria-current है, इससे ज़्यादा कुछ नहीं।</p>
+<p class="ds-lead">सर्वर पर रेंडर किए गए लिंक का सेगमेंटेड कंट्रोल। मौजूदा टैब लिंक पर aria-current है।</p>
 
 <div class="ds-sample">
 <p class="ds-state">दो खंड</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs का नमूना, अपने ही एक पेज में — दो खंड" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs नमूने का स्वतंत्र पूर्वावलोकन — दो खंड" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;seg-tabs का नमूना, अपने ही एक पेज में — दो खंड&lt;/title&gt;
+&lt;title&gt;seg-tabs नमूने का स्वतंत्र पूर्वावलोकन — दो खंड&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown का नमूना, अपने ही एक पेज में — एक चुनाव लागू किए हुए फ़िल्टर मेन्यू" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown नमूने का स्वतंत्र पूर्वावलोकन — एक चुनाव लागू किए हुए फ़िल्टर मेन्यू" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;dropdown का नमूना, अपने ही एक पेज में — एक चुनाव लागू किए हुए फ़िल्टर मेन्यू&lt;/title&gt;
+&lt;title&gt;dropdown नमूने का स्वतंत्र पूर्वावलोकन — एक चुनाव लागू किए हुए फ़िल्टर मेन्यू&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar का नमूना, अपने ही एक पेज में — तीन पंक्तियाँ चुनी हुई" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar नमूने का स्वतंत्र पूर्वावलोकन — तीन पंक्तियाँ चुनी हुई" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;bulk-bar का नमूना, अपने ही एक पेज में — तीन पंक्तियाँ चुनी हुई&lt;/title&gt;
+&lt;title&gt;bulk-bar नमूने का स्वतंत्र पूर्वावलोकन — तीन पंक्तियाँ चुनी हुई&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination का नमूना, अपने ही एक पेज में — लंबी सूची के बीच में" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination नमूने का स्वतंत्र पूर्वावलोकन — लंबी सूची के बीच में" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;pagination का नमूना, अपने ही एक पेज में — लंबी सूची के बीच में&lt;/title&gt;
+&lt;title&gt;pagination नमूने का स्वतंत्र पूर्वावलोकन — लंबी सूची के बीच में&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination का नमूना, अपने ही एक पेज में — पहला पृष्ठ, डिफ़ॉल्ट सुगम्य नाम" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination नमूने का स्वतंत्र पूर्वावलोकन — पहला पृष्ठ, डिफ़ॉल्ट सुगम्य नाम" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;pagination का नमूना, अपने ही एक पेज में — पहला पृष्ठ, डिफ़ॉल्ट सुगम्य नाम&lt;/title&gt;
+&lt;title&gt;pagination नमूने का स्वतंत्र पूर्वावलोकन — पहला पृष्ठ, डिफ़ॉल्ट सुगम्य नाम&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">ख़ाली अवस्था का कार्ड। ख़ाली अवस्था सिखाती है: वह बताती है कि यहाँ क्या होता और उसे बनाया कैसे जाए।</p>
+<p class="ds-lead">खाली-स्थिति कार्ड। खाली स्थिति, शुरुआती कदमों के रास्तों के साथ।</p>
 
 <div class="ds-sample">
 <p class="ds-state">POST वाली कार्रवाई-बुलावे के साथ</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state का नमूना, अपने ही एक पेज में — POST वाली कार्रवाई-बुलावे के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state नमूने का स्वतंत्र पूर्वावलोकन — POST वाली कार्रवाई-बुलावे के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;empty-state का नमूना, अपने ही एक पेज में — POST वाली कार्रवाई-बुलावे के साथ&lt;/title&gt;
+&lt;title&gt;empty-state नमूने का स्वतंत्र पूर्वावलोकन — POST वाली कार्रवाई-बुलावे के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state का नमूना, अपने ही एक पेज में — सिर्फ़ वाक्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ वाक्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;empty-state का नमूना, अपने ही एक पेज में — सिर्फ़ वाक्य&lt;/title&gt;
+&lt;title&gt;empty-state नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ वाक्य&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">रिकॉर्ड की स्थिति, रंगी हुई गोली के रूप में। स्थिति कभी सिर्फ़ रंग से नहीं बताई जाती — लेबल हमेशा दिखने वाला पाठ होता है।</p>
+<p class="ds-lead">रिकॉर्ड की स्थिति एक रंगीन पिल के रूप में, रंग और लेबल दोनों के साथ।</p>
 
 <div class="ds-sample">
 <p class="ds-state">डिफ़ॉल्ट टोन (neutral)</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill का नमूना, अपने ही एक पेज में — डिफ़ॉल्ट टोन (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill नमूने का स्वतंत्र पूर्वावलोकन — डिफ़ॉल्ट टोन (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill का नमूना, अपने ही एक पेज में — डिफ़ॉल्ट टोन (neutral)&lt;/title&gt;
+&lt;title&gt;status-pill नमूने का स्वतंत्र पूर्वावलोकन — डिफ़ॉल्ट टोन (neutral)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill का नमूना, अपने ही एक पेज में — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill नमूने का स्वतंत्र पूर्वावलोकन — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill का नमूना, अपने ही एक पेज में — neutral&lt;/title&gt;
+&lt;title&gt;status-pill नमूने का स्वतंत्र पूर्वावलोकन — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill का नमूना, अपने ही एक पेज में — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill नमूने का स्वतंत्र पूर्वावलोकन — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill का नमूना, अपने ही एक पेज में — positive&lt;/title&gt;
+&lt;title&gt;status-pill नमूने का स्वतंत्र पूर्वावलोकन — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill का नमूना, अपने ही एक पेज में — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill नमूने का स्वतंत्र पूर्वावलोकन — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill का नमूना, अपने ही एक पेज में — warning&lt;/title&gt;
+&lt;title&gt;status-pill नमूने का स्वतंत्र पूर्वावलोकन — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill का नमूना, अपने ही एक पेज में — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill नमूने का स्वतंत्र पूर्वावलोकन — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill का नमूना, अपने ही एक पेज में — negative&lt;/title&gt;
+&lt;title&gt;status-pill नमूने का स्वतंत्र पूर्वावलोकन — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -979,12 +979,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge का नमूना, अपने ही एक पेज में — कोई टोन नहीं (शांत डिफ़ॉल्ट)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge नमूने का स्वतंत्र पूर्वावलोकन — कोई टोन नहीं (शांत डिफ़ॉल्ट)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge का नमूना, अपने ही एक पेज में — कोई टोन नहीं (शांत डिफ़ॉल्ट)&lt;/title&gt;
+&lt;title&gt;badge नमूने का स्वतंत्र पूर्वावलोकन — कोई टोन नहीं (शांत डिफ़ॉल्ट)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge का नमूना, अपने ही एक पेज में — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge नमूने का स्वतंत्र पूर्वावलोकन — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge का नमूना, अपने ही एक पेज में — neutral&lt;/title&gt;
+&lt;title&gt;badge नमूने का स्वतंत्र पूर्वावलोकन — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge का नमूना, अपने ही एक पेज में — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge नमूने का स्वतंत्र पूर्वावलोकन — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge का नमूना, अपने ही एक पेज में — positive&lt;/title&gt;
+&lt;title&gt;badge नमूने का स्वतंत्र पूर्वावलोकन — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge का नमूना, अपने ही एक पेज में — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge नमूने का स्वतंत्र पूर्वावलोकन — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge का नमूना, अपने ही एक पेज में — warning&lt;/title&gt;
+&lt;title&gt;badge नमूने का स्वतंत्र पूर्वावलोकन — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge का नमूना, अपने ही एक पेज में — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge नमूने का स्वतंत्र पूर्वावलोकन — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge का नमूना, अपने ही एक पेज में — negative&lt;/title&gt;
+&lt;title&gt;badge नमूने का स्वतंत्र पूर्वावलोकन — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">क्षमता की पट्टी, अपने अंक के साथ। अनुपात हमेशा पाठ में होता है — अकेली पट्टी कभी अंक नहीं बताती।</p>
+<p class="ds-lead">क्षमता बार, अपने आँकड़े के साथ।</p>
 
 <div class="ds-sample">
 <p class="ds-state">ख़ाली</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter का नमूना, अपने ही एक पेज में — ख़ाली" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter नमूने का स्वतंत्र पूर्वावलोकन — ख़ाली" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter का नमूना, अपने ही एक पेज में — ख़ाली&lt;/title&gt;
+&lt;title&gt;meter नमूने का स्वतंत्र पूर्वावलोकन — ख़ाली&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter का नमूना, अपने ही एक पेज में — कुछ हद तक भरा" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter नमूने का स्वतंत्र पूर्वावलोकन — कुछ हद तक भरा" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter का नमूना, अपने ही एक पेज में — कुछ हद तक भरा&lt;/title&gt;
+&lt;title&gt;meter नमूने का स्वतंत्र पूर्वावलोकन — कुछ हद तक भरा&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter का नमूना, अपने ही एक पेज में — लगभग भरा हुआ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter नमूने का स्वतंत्र पूर्वावलोकन — लगभग भरा हुआ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter का नमूना, अपने ही एक पेज में — लगभग भरा हुआ&lt;/title&gt;
+&lt;title&gt;meter नमूने का स्वतंत्र पूर्वावलोकन — लगभग भरा हुआ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter का नमूना, अपने ही एक पेज में — भरा हुआ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter नमूने का स्वतंत्र पूर्वावलोकन — भरा हुआ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter का नमूना, अपने ही एक पेज में — भरा हुआ&lt;/title&gt;
+&lt;title&gt;meter नमूने का स्वतंत्र पूर्वावलोकन — भरा हुआ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter का नमूना, अपने ही एक पेज में — तय सीमा से ऊपर" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter नमूने का स्वतंत्र पूर्वावलोकन — तय सीमा से ऊपर" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter का नमूना, अपने ही एक पेज में — तय सीमा से ऊपर&lt;/title&gt;
+&lt;title&gt;meter नमूने का स्वतंत्र पूर्वावलोकन — तय सीमा से ऊपर&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">पार्शियल में भराव 100% पर रोक दिया जाता है; सच्चाई अंक बताता है।</p>
+<p class="ds-note">पार्शियल में भराव 100% पर सीमित रहता है।</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">आद्याक्षरों वाला अवतार, नाम और ईमेल: उन रिकॉर्ड प्रकारों के लिए पहचान कोशिका जो लोग हैं।</p>
+<p class="ds-lead">आद्याक्षर अवतार, नाम और ईमेल। लोगों के रिकॉर्ड जल्दी पहचानने के लिए।</p>
 
 <div class="ds-sample">
 <p class="ds-state">नाम और ईमेल</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person का नमूना, अपने ही एक पेज में — नाम और ईमेल" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person नमूने का स्वतंत्र पूर्वावलोकन — नाम और ईमेल" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person का नमूना, अपने ही एक पेज में — नाम और ईमेल&lt;/title&gt;
+&lt;title&gt;person नमूने का स्वतंत्र पूर्वावलोकन — नाम और ईमेल&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person का नमूना, अपने ही एक पेज में — बड़ा, दिखाने वाली स्क्रीन के शीर्ष का आकार" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person नमूने का स्वतंत्र पूर्वावलोकन — बड़ा, दिखाने वाली स्क्रीन के शीर्ष का आकार" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person का नमूना, अपने ही एक पेज में — बड़ा, दिखाने वाली स्क्रीन के शीर्ष का आकार&lt;/title&gt;
+&lt;title&gt;person नमूने का स्वतंत्र पूर्वावलोकन — बड़ा, दिखाने वाली स्क्रीन के शीर्ष का आकार&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person का नमूना, अपने ही एक पेज में — बिना आद्याक्षर" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person नमूने का स्वतंत्र पूर्वावलोकन — बिना आद्याक्षर" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person का नमूना, अपने ही एक पेज में — बिना आद्याक्षर&lt;/title&gt;
+&lt;title&gt;person नमूने का स्वतंत्र पूर्वावलोकन — बिना आद्याक्षर&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout का नमूना, अपने ही एक पेज में — डिफ़ॉल्ट टोन (info), बिना शीर्षक" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout नमूने का स्वतंत्र पूर्वावलोकन — डिफ़ॉल्ट टोन (info), बिना शीर्षक" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout का नमूना, अपने ही एक पेज में — डिफ़ॉल्ट टोन (info), बिना शीर्षक&lt;/title&gt;
+&lt;title&gt;callout नमूने का स्वतंत्र पूर्वावलोकन — डिफ़ॉल्ट टोन (info), बिना शीर्षक&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout का नमूना, अपने ही एक पेज में — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout नमूने का स्वतंत्र पूर्वावलोकन — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout का नमूना, अपने ही एक पेज में — info&lt;/title&gt;
+&lt;title&gt;callout नमूने का स्वतंत्र पूर्वावलोकन — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout का नमूना, अपने ही एक पेज में — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout नमूने का स्वतंत्र पूर्वावलोकन — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout का नमूना, अपने ही एक पेज में — positive&lt;/title&gt;
+&lt;title&gt;callout नमूने का स्वतंत्र पूर्वावलोकन — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout का नमूना, अपने ही एक पेज में — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout नमूने का स्वतंत्र पूर्वावलोकन — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout का नमूना, अपने ही एक पेज में — warning&lt;/title&gt;
+&lt;title&gt;callout नमूने का स्वतंत्र पूर्वावलोकन — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout का नमूना, अपने ही एक पेज में — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout नमूने का स्वतंत्र पूर्वावलोकन — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout का नमूना, अपने ही एक पेज में — negative&lt;/title&gt;
+&lt;title&gt;callout नमूने का स्वतंत्र पूर्वावलोकन — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout का नमूना, अपने ही एक पेज में — negative, चेतावनी के रूप में घोषित" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout नमूने का स्वतंत्र पूर्वावलोकन — negative, चेतावनी के रूप में घोषित" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout का नमूना, अपने ही एक पेज में — negative, चेतावनी के रूप में घोषित&lt;/title&gt;
+&lt;title&gt;callout नमूने का स्वतंत्र पूर्वावलोकन — negative, चेतावनी के रूप में घोषित&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Alert जोड़ता है role=&#34;alert&#34;। इसे चल रही समस्याओं के लिए रखिए, आम टिप्पणियों के लिए नहीं।</p>
+<p class="ds-note">alert, role=&#34;alert&#34; जोड़ता है ताकि ज़रूरी संदेश दिखाए जा सकें।</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">किसी रिकॉर्ड के लेबल वाले तथ्य, परिभाषा सूची के रूप में — दिखाने वाली स्क्रीन का मुख्य भाग। Mono मशीनी क़िस्म के मानों को चिह्नित करता है।</p>
+<p class="ds-lead">विवरण स्क्रीन पर किसी रिकॉर्ड की डेफ़िनिशन लिस्ट। मोनो चिह्न मशीन जैसे मानों के लिए।</p>
 
 <div class="ds-sample">
-<p class="ds-state">चार तथ्य, जिनमें एक मशीनी क़िस्म का</p>
+<p class="ds-state">चार तथ्य, एक मशीन जैसा</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list का नमूना, अपने ही एक पेज में — चार तथ्य, जिनमें एक मशीनी क़िस्म का" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list नमूने का स्वतंत्र पूर्वावलोकन — चार तथ्य, एक मशीन जैसा" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;detail-list का नमूना, अपने ही एक पेज में — चार तथ्य, जिनमें एक मशीनी क़िस्म का&lt;/title&gt;
+&lt;title&gt;detail-list नमूने का स्वतंत्र पूर्वावलोकन — चार तथ्य, एक मशीन जैसा&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice का नमूना, अपने ही एक पेज में — सहेजे जाने का संदेश" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice नमूने का स्वतंत्र पूर्वावलोकन — सहेजे जाने का संदेश" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;notice का नमूना, अपने ही एक पेज में — सहेजे जाने का संदेश&lt;/title&gt;
+&lt;title&gt;notice नमूने का स्वतंत्र पूर्वावलोकन — सहेजे जाने का संदेश&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error का नमूना, अपने ही एक पेज में — अस्वीकृत सबमिशन" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error नमूने का स्वतंत्र पूर्वावलोकन — अस्वीकृत सबमिशन" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-error का नमूना, अपने ही एक पेज में — अस्वीकृत सबमिशन&lt;/title&gt;
+&lt;title&gt;form-error नमूने का स्वतंत्र पूर्वावलोकन — अस्वीकृत सबमिशन&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status का नमूना, अपने ही एक पेज में — चल रहा है" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status नमूने का स्वतंत्र पूर्वावलोकन — चल रहा है" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status का नमूना, अपने ही एक पेज में — चल रहा है&lt;/title&gt;
+&lt;title&gt;job-status नमूने का स्वतंत्र पूर्वावलोकन — चल रहा है&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status का नमूना, अपने ही एक पेज में — पूरा हुआ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status नमूने का स्वतंत्र पूर्वावलोकन — पूरा हुआ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status का नमूना, अपने ही एक पेज में — पूरा हुआ&lt;/title&gt;
+&lt;title&gt;job-status नमूने का स्वतंत्र पूर्वावलोकन — पूरा हुआ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status का नमूना, अपने ही एक पेज में — विफल" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status नमूने का स्वतंत्र पूर्वावलोकन — विफल" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status का नमूना, अपने ही एक पेज में — विफल&lt;/title&gt;
+&lt;title&gt;job-status नमूने का स्वतंत्र पूर्वावलोकन — विफल&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">लेबल, इनपुट, वैकल्पिक संकेत, सहायता और त्रुटि — सामान्य पाठ-जैसा नियंत्रण, स्पष्ट ID के साथ।</p>
+<p class="ds-lead">लेबल, इनपुट, वैकल्पिक संकेत, सहायता और त्रुटि। सामान्य टेक्स्ट जैसा कंट्रोल, स्पष्ट ID के साथ।</p>
 
 <div class="ds-sample">
 <p class="ds-state">सादा</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field का नमूना, अपने ही एक पेज में — सादा" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field नमूने का स्वतंत्र पूर्वावलोकन — सादा" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field का नमूना, अपने ही एक पेज में — सादा&lt;/title&gt;
+&lt;title&gt;field नमूने का स्वतंत्र पूर्वावलोकन — सादा&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field का नमूना, अपने ही एक पेज में — एक संकेत के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field नमूने का स्वतंत्र पूर्वावलोकन — एक संकेत के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field का नमूना, अपने ही एक पेज में — एक संकेत के साथ&lt;/title&gt;
+&lt;title&gt;field नमूने का स्वतंत्र पूर्वावलोकन — एक संकेत के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field का नमूना, अपने ही एक पेज में — नियंत्रण के नीचे सहायता के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field नमूने का स्वतंत्र पूर्वावलोकन — नियंत्रण के नीचे सहायता के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field का नमूना, अपने ही एक पेज में — नियंत्रण के नीचे सहायता के साथ&lt;/title&gt;
+&lt;title&gt;field नमूने का स्वतंत्र पूर्वावलोकन — नियंत्रण के नीचे सहायता के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field का नमूना, अपने ही एक पेज में — अनिवार्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field का नमूना, अपने ही एक पेज में — अनिवार्य&lt;/title&gt;
+&lt;title&gt;field नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field का नमूना, अपने ही एक पेज में — त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field नमूने का स्वतंत्र पूर्वावलोकन — त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field का नमूना, अपने ही एक पेज में — त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field नमूने का स्वतंत्र पूर्वावलोकन — त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field का नमूना, अपने ही एक पेज में — छोटा" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field नमूने का स्वतंत्र पूर्वावलोकन — छोटा" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field का नमूना, अपने ही एक पेज में — छोटा&lt;/title&gt;
+&lt;title&gt;field नमूने का स्वतंत्र पूर्वावलोकन — छोटा&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">एक लेबल वाला पाठ इनपुट, जिसकी id Name से बनती हैं। अनिवार्यता का तारा aria-hidden है — असली प्रोग्रामी संकेत इनपुट का required गुण है।</p>
+<p class="ds-lead">एक लेबल वाला टेक्स्ट इनपुट, ids Name से बनते हैं। अनिवार्य चिह्न का तारा aria-hidden है। प्रोग्रामेटिक संकेत इनपुट का required एट्रिब्यूट है।</p>
 
 <div class="ds-sample">
 <p class="ds-state">सादा</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text का नमूना, अपने ही एक पेज में — सादा" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text नमूने का स्वतंत्र पूर्वावलोकन — सादा" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text का नमूना, अपने ही एक पेज में — सादा&lt;/title&gt;
+&lt;title&gt;field-text नमूने का स्वतंत्र पूर्वावलोकन — सादा&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text का नमूना, अपने ही एक पेज में — एक संकेत के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text नमूने का स्वतंत्र पूर्वावलोकन — एक संकेत के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text का नमूना, अपने ही एक पेज में — एक संकेत के साथ&lt;/title&gt;
+&lt;title&gt;field-text नमूने का स्वतंत्र पूर्वावलोकन — एक संकेत के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text का नमूना, अपने ही एक पेज में — अनिवार्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text का नमूना, अपने ही एक पेज में — अनिवार्य&lt;/title&gt;
+&lt;title&gt;field-text नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text का नमूना, अपने ही एक पेज में — त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text नमूने का स्वतंत्र पूर्वावलोकन — त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text का नमूना, अपने ही एक पेज में — त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-text नमूने का स्वतंत्र पूर्वावलोकन — त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea का नमूना, अपने ही एक पेज में — सादा" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea नमूने का स्वतंत्र पूर्वावलोकन — सादा" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea का नमूना, अपने ही एक पेज में — सादा&lt;/title&gt;
+&lt;title&gt;field-textarea नमूने का स्वतंत्र पूर्वावलोकन — सादा&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea का नमूना, अपने ही एक पेज में — एक संकेत के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea नमूने का स्वतंत्र पूर्वावलोकन — एक संकेत के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea का नमूना, अपने ही एक पेज में — एक संकेत के साथ&lt;/title&gt;
+&lt;title&gt;field-textarea नमूने का स्वतंत्र पूर्वावलोकन — एक संकेत के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea का नमूना, अपने ही एक पेज में — त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea नमूने का स्वतंत्र पूर्वावलोकन — त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea का नमूना, अपने ही एक पेज में — त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-textarea नमूने का स्वतंत्र पूर्वावलोकन — त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea का नमूना, अपने ही एक पेज में — अनिवार्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea का नमूना, अपने ही एक पेज में — अनिवार्य&lt;/title&gt;
+&lt;title&gt;field-textarea नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">मूल select के चारों ओर field का आवरण। दस से ज़्यादा विकल्प होने पर select, select.js का छाँटने योग्य कॉम्बोबॉक्स चालू कर देता है; फ़ॉर्म फिर भी वही मूल select भेजता है।</p>
 
 <div class="ds-sample">
-<p class="ds-state">तीन विकल्प — मूल select</p>
+<p class="ds-state">तीन विकल्प: नेटिव select</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select का नमूना, अपने ही एक पेज में — तीन विकल्प — मूल select" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select नमूने का स्वतंत्र पूर्वावलोकन — तीन विकल्प: नेटिव select" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select का नमूना, अपने ही एक पेज में — तीन विकल्प — मूल select&lt;/title&gt;
+&lt;title&gt;field-select नमूने का स्वतंत्र पूर्वावलोकन — तीन विकल्प: नेटिव select&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">बारह विकल्प — छाँटने योग्य कॉम्बोबॉक्स</p>
+<p class="ds-state">बारह विकल्प: फ़िल्टर करने योग्य कॉम्बोबॉक्स</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select का नमूना, अपने ही एक पेज में — बारह विकल्प — छाँटने योग्य कॉम्बोबॉक्स" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select नमूने का स्वतंत्र पूर्वावलोकन — बारह विकल्प: फ़िल्टर करने योग्य कॉम्बोबॉक्स" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select का नमूना, अपने ही एक पेज में — बारह विकल्प — छाँटने योग्य कॉम्बोबॉक्स&lt;/title&gt;
+&lt;title&gt;field-select नमूने का स्वतंत्र पूर्वावलोकन — बारह विकल्प: फ़िल्टर करने योग्य कॉम्बोबॉक्स&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select का नमूना, अपने ही एक पेज में — बारह विकल्प, Plain — संवर्धन से मना कर दिया गया" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select नमूने का स्वतंत्र पूर्वावलोकन — बारह विकल्प, Plain — संवर्धन से मना कर दिया गया" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select का नमूना, अपने ही एक पेज में — बारह विकल्प, Plain — संवर्धन से मना कर दिया गया&lt;/title&gt;
+&lt;title&gt;field-select नमूने का स्वतंत्र पूर्वावलोकन — बारह विकल्प, Plain — संवर्धन से मना कर दिया गया&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-select नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select का नमूना, अपने ही एक पेज में — हाथ से लिखा हुआ, optgroup के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select नमूने का स्वतंत्र पूर्वावलोकन — हाथ से लिखा हुआ, optgroup के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select का नमूना, अपने ही एक पेज में — हाथ से लिखा हुआ, optgroup के साथ&lt;/title&gt;
+&lt;title&gt;field-select नमूने का स्वतंत्र पूर्वावलोकन — हाथ से लिखा हुआ, optgroup के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check का नमूना, अपने ही एक पेज में — चालू" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check नमूने का स्वतंत्र पूर्वावलोकन — चालू" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check का नमूना, अपने ही एक पेज में — चालू&lt;/title&gt;
+&lt;title&gt;field-check नमूने का स्वतंत्र पूर्वावलोकन — चालू&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check का नमूना, अपने ही एक पेज में — बंद" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check नमूने का स्वतंत्र पूर्वावलोकन — बंद" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check का नमूना, अपने ही एक पेज में — बंद&lt;/title&gt;
+&lt;title&gt;field-check नमूने का स्वतंत्र पूर्वावलोकन — बंद&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check का नमूना, अपने ही एक पेज में — निष्क्रिय" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check नमूने का स्वतंत्र पूर्वावलोकन — निष्क्रिय" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check का नमूना, अपने ही एक पेज में — निष्क्रिय&lt;/title&gt;
+&lt;title&gt;field-check नमूने का स्वतंत्र पूर्वावलोकन — निष्क्रिय&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field का नमूना, अपने ही एक पेज में — एक चुनें" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field नमूने का स्वतंत्र पूर्वावलोकन — एक चुनें" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;choice-field का नमूना, अपने ही एक पेज में — एक चुनें&lt;/title&gt;
+&lt;title&gt;choice-field नमूने का स्वतंत्र पूर्वावलोकन — एक चुनें&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field का नमूना, अपने ही एक पेज में — जितने चाहें चुनें" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field नमूने का स्वतंत्र पूर्वावलोकन — जितने चाहें चुनें" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;choice-field का नमूना, अपने ही एक पेज में — जितने चाहें चुनें&lt;/title&gt;
+&lt;title&gt;choice-field नमूने का स्वतंत्र पूर्वावलोकन — जितने चाहें चुनें&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">एक मूल तारीख़ इनपुट, और उसके साथ datetime.js का सहज-भाषा कॉम्बोबॉक्स — जब तक बुलाने वाला Plain न भेजे। इसमें &#34;कल&#34; लिखकर देखें।</p>
 
 <div class="ds-sample">
-<p class="ds-state">बेहतर किया हुआ — &#34;कल&#34; या &#34;3 सप्ताह में&#34; लिखिए</p>
+<p class="ds-state">उन्नत इनपुट: लिखें &#34;कल&#34; या &#34;3 हफ़्ते में&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date का नमूना, अपने ही एक पेज में — बेहतर किया हुआ — &#34;कल&#34; या &#34;3 सप्ताह में&#34; लिखिए" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date नमूने का स्वतंत्र पूर्वावलोकन — उन्नत इनपुट: लिखें &#34;कल&#34; या &#34;3 हफ़्ते में&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date का नमूना, अपने ही एक पेज में — बेहतर किया हुआ — &amp;#34;कल&amp;#34; या &amp;#34;3 सप्ताह में&amp;#34; लिखिए&lt;/title&gt;
+&lt;title&gt;field-date नमूने का स्वतंत्र पूर्वावलोकन — उन्नत इनपुट: लिखें &amp;#34;कल&amp;#34; या &amp;#34;3 हफ़्ते में&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-date नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date का नमूना, अपने ही एक पेज में — सीमाओं के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date नमूने का स्वतंत्र पूर्वावलोकन — सीमाओं के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date का नमूना, अपने ही एक पेज में — सीमाओं के साथ&lt;/title&gt;
+&lt;title&gt;field-date नमूने का स्वतंत्र पूर्वावलोकन — सीमाओं के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date का नमूना, अपने ही एक पेज में — Plain — बिना कुछ जोड़े मूल इनपुट" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date नमूने का स्वतंत्र पूर्वावलोकन — Plain — बिना कुछ जोड़े मूल इनपुट" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date का नमूना, अपने ही एक पेज में — Plain — बिना कुछ जोड़े मूल इनपुट&lt;/title&gt;
+&lt;title&gt;field-date नमूने का स्वतंत्र पूर्वावलोकन — Plain — बिना कुछ जोड़े मूल इनपुट&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">वही आवरण, इस बार मूल समय इनपुट के चारों ओर। यह संवर्धन कैलेंडर नहीं, घड़ी पढ़ता है।</p>
 
 <div class="ds-sample">
-<p class="ds-state">बेहतर किया हुआ — &#34;19:30&#34; या &#34;दोपहर&#34; लिखिए</p>
+<p class="ds-state">उन्नत इनपुट: लिखें &#34;साढ़े सात&#34; या &#34;दोपहर&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time का नमूना, अपने ही एक पेज में — बेहतर किया हुआ — &#34;19:30&#34; या &#34;दोपहर&#34; लिखिए" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time नमूने का स्वतंत्र पूर्वावलोकन — उन्नत इनपुट: लिखें &#34;साढ़े सात&#34; या &#34;दोपहर&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time का नमूना, अपने ही एक पेज में — बेहतर किया हुआ — &amp;#34;19:30&amp;#34; या &amp;#34;दोपहर&amp;#34; लिखिए&lt;/title&gt;
+&lt;title&gt;field-time नमूने का स्वतंत्र पूर्वावलोकन — उन्नत इनपुट: लिखें &amp;#34;साढ़े सात&amp;#34; या &amp;#34;दोपहर&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-time नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time का नमूना, अपने ही एक पेज में — सीमाओं के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time नमूने का स्वतंत्र पूर्वावलोकन — सीमाओं के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time का नमूना, अपने ही एक पेज में — सीमाओं के साथ&lt;/title&gt;
+&lt;title&gt;field-time नमूने का स्वतंत्र पूर्वावलोकन — सीमाओं के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time का नमूना, अपने ही एक पेज में — Plain — बिना कुछ जोड़े मूल इनपुट" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time नमूने का स्वतंत्र पूर्वावलोकन — Plain — बिना कुछ जोड़े मूल इनपुट" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time का नमूना, अपने ही एक पेज में — Plain — बिना कुछ जोड़े मूल इनपुट&lt;/title&gt;
+&lt;title&gt;field-time नमूने का स्वतंत्र पूर्वावलोकन — Plain — बिना कुछ जोड़े मूल इनपुट&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">एक ही इनपुट में तारीख़ और समय, एक ही मान।</p>
 
 <div class="ds-sample">
-<p class="ds-state">बेहतर किया हुआ — &#34;कल&#34; या &#34;3 सप्ताह में&#34; लिखिए</p>
+<p class="ds-state">उन्नत इनपुट: लिखें &#34;कल&#34; या &#34;3 हफ़्ते में&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime का नमूना, अपने ही एक पेज में — बेहतर किया हुआ — &#34;कल&#34; या &#34;3 सप्ताह में&#34; लिखिए" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime नमूने का स्वतंत्र पूर्वावलोकन — उन्नत इनपुट: लिखें &#34;कल&#34; या &#34;3 हफ़्ते में&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime का नमूना, अपने ही एक पेज में — बेहतर किया हुआ — &amp;#34;कल&amp;#34; या &amp;#34;3 सप्ताह में&amp;#34; लिखिए&lt;/title&gt;
+&lt;title&gt;field-datetime नमूने का स्वतंत्र पूर्वावलोकन — उन्नत इनपुट: लिखें &amp;#34;कल&amp;#34; या &amp;#34;3 हफ़्ते में&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime का नमूना, अपने ही एक पेज में — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-datetime नमूने का स्वतंत्र पूर्वावलोकन — अनिवार्य, त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime का नमूना, अपने ही एक पेज में — सीमाओं के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime नमूने का स्वतंत्र पूर्वावलोकन — सीमाओं के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime का नमूना, अपने ही एक पेज में — सीमाओं के साथ&lt;/title&gt;
+&lt;title&gt;field-datetime नमूने का स्वतंत्र पूर्वावलोकन — सीमाओं के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime का नमूना, अपने ही एक पेज में — Plain — बिना कुछ जोड़े मूल इनपुट" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime नमूने का स्वतंत्र पूर्वावलोकन — Plain — बिना कुछ जोड़े मूल इनपुट" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime का नमूना, अपने ही एक पेज में — Plain — बिना कुछ जोड़े मूल इनपुट&lt;/title&gt;
+&lt;title&gt;field-datetime नमूने का स्वतंत्र पूर्वावलोकन — Plain — बिना कुछ जोड़े मूल इनपुट&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">शुरुआत और अंत, एक ही लेबल वाले समूह के रूप में। दोनों हिस्सों के Name अलग होने चाहिए — हर हिस्सा अपनी id अपने ही Name से बनाता है।</p>
+<p class="ds-lead">शुरुआत और अंत, एक ही लेबल वाले समूह के रूप में। दोनों के Name अलग होने चाहिए, क्योंकि ids उन्हीं से बनते हैं।</p>
 
 <div class="ds-sample">
 <p class="ds-state">तारीख़ और समय, पहले से भरे हुए</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange का नमूना, अपने ही एक पेज में — तारीख़ और समय, पहले से भरे हुए" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange नमूने का स्वतंत्र पूर्वावलोकन — तारीख़ और समय, पहले से भरे हुए" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-daterange का नमूना, अपने ही एक पेज में — तारीख़ और समय, पहले से भरे हुए&lt;/title&gt;
+&lt;title&gt;field-daterange नमूने का स्वतंत्र पूर्वावलोकन — तारीख़ और समय, पहले से भरे हुए&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange का नमूना, अपने ही एक पेज में — सिर्फ़ तारीख़ें, अंत वाले हिस्से में त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ तारीख़ें, अंत वाले हिस्से में त्रुटि के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-daterange का नमूना, अपने ही एक पेज में — सिर्फ़ तारीख़ें, अंत वाले हिस्से में त्रुटि के साथ&lt;/title&gt;
+&lt;title&gt;field-daterange नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ तारीख़ें, अंत वाले हिस्से में त्रुटि के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot का नमूना, अपने ही एक पेज में — सहेजें और रद्द करें" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot नमूने का स्वतंत्र पूर्वावलोकन — सहेजें और रद्द करें" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot का नमूना, अपने ही एक पेज में — सहेजें और रद्द करें&lt;/title&gt;
+&lt;title&gt;form-foot नमूने का स्वतंत्र पूर्वावलोकन — सहेजें और रद्द करें&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot का नमूना, अपने ही एक पेज में — सिर्फ़ सबमिट" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ सबमिट" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot का नमूना, अपने ही एक पेज में — सिर्फ़ सबमिट&lt;/title&gt;
+&lt;title&gt;form-foot नमूने का स्वतंत्र पूर्वावलोकन — सिर्फ़ सबमिट&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot का नमूना, अपने ही एक पेज में — निष्क्रिय — कुछ भी होने से पहले का बटन" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot नमूने का स्वतंत्र पूर्वावलोकन — निष्क्रिय — कुछ भी होने से पहले का बटन" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot का नमूना, अपने ही एक पेज में — निष्क्रिय — कुछ भी होने से पहले का बटन&lt;/title&gt;
+&lt;title&gt;form-foot नमूने का स्वतंत्र पूर्वावलोकन — निष्क्रिय — कुछ भी होने से पहले का बटन&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3379,7 +3379,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;a class=&#34;rst-btn&#34; href=&#34;/posts&#34;&gt;Back to posts&lt;/a&gt;
 &lt;/div&gt;&lt;/form&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">जो बटन कुछ बदलता है उसे लोडिंग स्थिति मिलती है; जो बटन सिर्फ़ कुछ दिखाता है — डिस्क्लोज़र, ड्रॉपडाउन, टैब — उसे नहीं। rastrillo.js यह नियम हर फ़ॉर्म के हर सबमिट बटन पर लगाता है, कुछ भी चालू करने की ज़रूरत नहीं।</p>
+<p class="ds-note">जो बटन कुछ बदलता है, उसे लोडिंग स्थिति मिलती है; जो बटन सिर्फ़ कुछ दिखाता है — जैसे डिस्क्लोज़र, ड्रॉपडाउन, टैब — उसे नहीं। rastrillo.js यह नियम हर फ़ॉर्म के हर सबमिट बटन पर लगाता है, कुछ भी चालू करने की ज़रूरत नहीं।</p>
 </div>
 
 <div class="ds-sample">
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot का नमूना, अपने ही एक पेज में — काम चल रहा है — फ़ॉर्म जाते समय rastrillo.js जो लिखता है" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot नमूने का स्वतंत्र पूर्वावलोकन — काम चल रहा है — फ़ॉर्म जाते समय rastrillo.js जो लिखता है" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot का नमूना, अपने ही एक पेज में — काम चल रहा है — फ़ॉर्म जाते समय rastrillo.js जो लिखता है&lt;/title&gt;
+&lt;title&gt;form-foot नमूने का स्वतंत्र पूर्वावलोकन — काम चल रहा है — फ़ॉर्म जाते समय rastrillo.js जो लिखता है&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form का नमूना, अपने ही एक पेज में — विनाशकारी" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form नमूने का स्वतंत्र पूर्वावलोकन — विनाशकारी" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;confirm-form का नमूना, अपने ही एक पेज में — विनाशकारी&lt;/title&gt;
+&lt;title&gt;confirm-form नमूने का स्वतंत्र पूर्वावलोकन — विनाशकारी&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form का नमूना, अपने ही एक पेज में — सामान्य, रद्द के डिफ़ॉल्ट शब्दों के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form नमूने का स्वतंत्र पूर्वावलोकन — सामान्य, रद्द के डिफ़ॉल्ट शब्दों के साथ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;confirm-form का नमूना, अपने ही एक पेज में — सामान्य, रद्द के डिफ़ॉल्ट शब्दों के साथ&lt;/title&gt;
+&lt;title&gt;confirm-form नमूने का स्वतंत्र पूर्वावलोकन — सामान्य, रद्द के डिफ़ॉल्ट शब्दों के साथ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">त्रुटि उत्तर का पूरा भाग: स्थिति, एक ईमानदार वाक्य, लौटने का रास्ता, और — 500 के लिए — वह संदर्भ जिसे संचालक grep कर सकता है।</p>
+<p class="ds-lead">त्रुटि प्रतिक्रिया का पूरा हिस्सा: स्थिति, एक सच्चा वाक्य, वापस जाने का रास्ता, और 500 के संदर्भ जो एक प्रशासक काम में ले सके।</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — नहीं मिला</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page का नमूना, अपने ही एक पेज में — 404 — नहीं मिला" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page नमूने का स्वतंत्र पूर्वावलोकन — 404 — नहीं मिला" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page का नमूना, अपने ही एक पेज में — 404 — नहीं मिला&lt;/title&gt;
+&lt;title&gt;error-page नमूने का स्वतंत्र पूर्वावलोकन — 404 — नहीं मिला&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page का नमूना, अपने ही एक पेज में — 403 — पहुँच नहीं" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page नमूने का स्वतंत्र पूर्वावलोकन — 403 — पहुँच नहीं" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page का नमूना, अपने ही एक पेज में — 403 — पहुँच नहीं&lt;/title&gt;
+&lt;title&gt;error-page नमूने का स्वतंत्र पूर्वावलोकन — 403 — पहुँच नहीं&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page का नमूना, अपने ही एक पेज में — 422 — संसाधित नहीं हो सका" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page नमूने का स्वतंत्र पूर्वावलोकन — 422 — संसाधित नहीं हो सका" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page का नमूना, अपने ही एक पेज में — 422 — संसाधित नहीं हो सका&lt;/title&gt;
+&lt;title&gt;error-page नमूने का स्वतंत्र पूर्वावलोकन — 422 — संसाधित नहीं हो सका&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page का नमूना, अपने ही एक पेज में — 500 — सर्वर त्रुटि" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page नमूने का स्वतंत्र पूर्वावलोकन — 500 — सर्वर त्रुटि" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page का नमूना, अपने ही एक पेज में — 500 — सर्वर त्रुटि&lt;/title&gt;
+&lt;title&gt;error-page नमूने का स्वतंत्र पूर्वावलोकन — 500 — सर्वर त्रुटि&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page का नमूना, अपने ही एक पेज में — 503 — उपलब्ध नहीं" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page नमूने का स्वतंत्र पूर्वावलोकन — 503 — उपलब्ध नहीं" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page का नमूना, अपने ही एक पेज में — 503 — उपलब्ध नहीं&lt;/title&gt;
+&lt;title&gt;error-page नमूने का स्वतंत्र पूर्वावलोकन — 503 — उपलब्ध नहीं&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page का नमूना, अपने ही एक पेज में — बाक़ी सब कुछ — सामान्य जोड़ी" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page नमूने का स्वतंत्र पूर्वावलोकन — बाक़ी सब कुछ — सामान्य जोड़ी" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page का नमूना, अपने ही एक पेज में — बाक़ी सब कुछ — सामान्य जोड़ी&lt;/title&gt;
+&lt;title&gt;error-page नमूने का स्वतंत्र पूर्वावलोकन — बाक़ी सब कुछ — सामान्य जोड़ी&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav का नमूना, अपने ही एक पेज में — किसी रिकॉर्ड पर वापस" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav नमूने का स्वतंत्र पूर्वावलोकन — किसी रिकॉर्ड पर वापस" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;back-nav का नमूना, अपने ही एक पेज में — किसी रिकॉर्ड पर वापस&lt;/title&gt;
+&lt;title&gt;back-nav नमूने का स्वतंत्र पूर्वावलोकन — किसी रिकॉर्ड पर वापस&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">भाषा बदलने वाला: एक details मेन्यू, जिसमें /_locale को भेजे जाने वाले एक-फ़ील्ड POST फ़ॉर्म हैं, ताकि चुनाव locale कुकी में जा बैठे और पाठक उसी पथ पर बना रहे।</p>
 
 <div class="ds-sample">
-<p class="ds-state">बारह भाषाएँ, मौजूदा वाली चिह्नित</p>
+<p class="ds-state">बारह भाषाएँ, मौजूदा भाषा उभरी हुई।</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu का नमूना, अपने ही एक पेज में — बारह भाषाएँ, मौजूदा वाली चिह्नित" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu नमूने का स्वतंत्र पूर्वावलोकन — बारह भाषाएँ, मौजूदा भाषा उभरी हुई।" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;locale-menu का नमूना, अपने ही एक पेज में — बारह भाषाएँ, मौजूदा वाली चिह्नित&lt;/title&gt;
+&lt;title&gt;locale-menu नमूने का स्वतंत्र पूर्वावलोकन — बारह भाषाएँ, मौजूदा भाषा उभरी हुई।&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">यह वाला /_locale पर POST करता है, जिसके लिए स्थिर पृष्ठ के पास कोई सर्वर नहीं है — इसी पृष्ठ के शीर्ष में जो स्विचर है, वही सिर्फ़-लिंक वाला संस्करण है।</p>
+<p class="ds-note">यह /_locale पर पोस्ट करता है, जिसके लिए एक सर्वर चाहिए। इस पृष्ठ के अपने हेडर वाला स्विचर सिर्फ़ लिंक वाला संस्करण है।</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">क्लास मुहावरे</h2></div>
-<p class="ds-lead">वे आकार जो कोई पार्शियल हो ही नहीं सकता, क्योंकि वे उस भीतरी हिस्से को लपेटते हैं जिसे सिर्फ़ बुलाने वाला जानता है: खंड कार्ड, डेटा ग्रिड, डिस्क्लोज़र मेन्यू, शेल का अपना ढाँचा। क्लास tokens.css देता है और मार्कअप ऐप्लिकेशन लिखती है। नीचे जो कुछ है, वह ठीक वही नमूना है जो ui.Styleguide लौटाता है, यानी वही नमूना जिसे ui के परीक्षण tokens.css के सामने रखते हैं — यहीं से नक़ल कीजिए।</p>
+<p class="ds-lead">वे आकृतियाँ जो पार्शियल नहीं हो सकतीं, क्योंकि वे ऐसे भाग को घेरती हैं जिसे सिर्फ़ कॉल करने वाला जानता है: सेक्शन कार्ड, डेटा ग्रिड, डिस्क्लोज़र मेन्यू, और शेल का अपना ढाँचा। tokens.css क्लास देता है और ऐप मार्कअप लिखता है। नीचे जो कुछ है वह ठीक वही नमूना है जो ui.Styleguide लौटाता है, और वही नमूना ui की जाँचें tokens.css के सामने रखती हैं।</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;box का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;box नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;dropdown का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;dropdown नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-layout का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;form-layout नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;help का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;help नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">डेटा तालिका की असली शब्दावली: कार्ड अपने स्तंभ एक बार तय करता है, पंक्तियाँ बस कोशिकाएँ चुनती हैं।</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>स्क्रीनें ऊपर से नीचे जमती हैं</strong><p>स्क्रीन एक स्तंभ है: page-header, फिर section-header &#43; कार्ड, फिर अगला section-header &#43; कार्ड, पढ़ने के क्रम में। शीर्षक, अनुच्छेद और बटन को एक flex पंक्ति में अग़ल-बग़ल मत रखिए। क्षैतिज व्यवस्था उन्हीं मुहावरों के लिए है जो उसे साथ लाते हैं: rst-box-head, rst-field-row, rst-lbar, rst-lrow की कोशिकाएँ, rst-seg-tabs।</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>स्क्रीनें ऊपर से नीचे जमती हैं</strong><p>एक स्क्रीन एक स्तंभ है: page-header, फिर section-header &#43; कार्ड, फिर अगला section-header &#43; कार्ड, पढ़ने के क्रम में। क्षैतिज व्यवस्था उन्हीं मुहावरों के लिए है जो उसे साथ लाते हैं: rst-box-head, rst-field-row, rst-lbar, rst-lrow कोशिकाएँ, rst-seg-tabs।</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>डेस्कटॉप</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-grid का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;list-grid नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;modal का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;modal नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;selbox का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;selbox नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;shell-sidebar का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;shell-sidebar नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/hi/shells/sidebar.html" target="_blank" rel="noopener">sidebar शेल का डेमो खोलिए, जहाँ वही मार्कअप एक असली पृष्ठ है</a><span class="rst-sr-only"> (नए टैब में खुलता है)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/hi/shells/sidebar.html" target="_blank" rel="noopener">साइडबार शेल का डेमो खोलें, एक स्वतंत्र पूर्वावलोकन।</a><span class="rst-sr-only"> (नए टैब में खुलता है)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">topbar शेल का अपना ढाँचा, मार्कअप के रूप में। Layout उसे पूरे टेम्पलेट के रूप में देता है — यह उसके भीतर का हिस्सा है।</p>
+<p class="ds-lead">टॉपबार शेल का अपना ढाँचा, मार्कअप के रूप में। Layout इसे एक पूरे टेम्पलेट की तरह देता है।</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">पूर्वावलोकन</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;shell-topbar का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;shell-topbar नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/signal/hi/shells/topbar.html" target="_blank" rel="noopener">topbar शेल का डेमो खोलिए, जहाँ वही मार्कअप एक असली पृष्ठ है</a><span class="rst-sr-only"> (नए टैब में खुलता है)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/signal/hi/shells/topbar.html" target="_blank" rel="noopener">टॉपबार शेल का डेमो खोलें, एक अलग पूर्वावलोकन।</a><span class="rst-sr-only"> (नए टैब में खुलता है)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">मोबाइल</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">कोड</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock का नमूना, अपने ही एक पेज में — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;hi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;tblock का नमूना, अपने ही एक पेज में — क्लास मुहावरे&lt;/title&gt;
+&lt;title&gt;tblock नमूने का स्वतंत्र पूर्वावलोकन — क्लास मुहावरे&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }

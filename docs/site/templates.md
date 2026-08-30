@@ -254,6 +254,17 @@ holding the explanation. Horizontal arrangement is reserved for the
 idioms that ship it: `rst-box-head`, `rst-field-row`, `rst-lbar`,
 `rst-lrow` cells, `rst-seg-tabs`.
 
+### State is never colour alone
+
+A tone tells you how to feel about a value; it never carries the value.
+`status-pill` always renders its label, `meter` always prints its
+fraction as text beside the bar, and `badge` is a word before it is a
+colour — so a reader who cannot separate your positive green from your
+negative red still reads the same screen you do. `callout` with `Alert`
+adds `role="alert"`, which interrupts a screen reader mid-sentence:
+reserve it for a problem happening now, and leave ambient notes as the
+ordinary tones.
+
 ## Date and time fields
 
 Four partials, each `field-text`'s envelope — label, hint, error, the

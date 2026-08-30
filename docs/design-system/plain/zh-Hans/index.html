@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">筛选本页</label>
-    <input id="ds-filter" type="search" placeholder="筛选本页" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">筛选</label>
+    <input id="ds-filter" type="search" placeholder="筛选" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>这里没有匹配的内容</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>无匹配项</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="章节与演示">
     <details open><summary>设计变量</summary><a href="#tokens-surfaces-and-lines">底面与线条</a><a href="#tokens-text">文字</a><a href="#tokens-accent">强调色</a><a href="#tokens-status-tones">状态色调</a><a href="#tokens-depth">层次</a><a href="#tokens-radius">圆角</a><a href="#tokens-type-family">字体族</a><a href="#tokens-type-scale">字号级数</a><a href="#tokens-spacing">间距</a></details>
     <details open><summary>模板片段</summary><a href="#family-list-screen" class="ds-nav__group">列表页</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">展示</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">表单</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">路由</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>rastrillo 设计系统</h1>
-    <p class="rst-page-header__sub">框架提供的每一个片段、每一种类惯用法和每一个设计变量，都在这一页上。主题是 <strong>plain</strong>，组件说的是<strong lang="zh-Hans">简体中文</strong>。</p>
+    <p class="rst-page-header__sub">设计系统所提供内容的总览。主题：<strong>plain</strong>。语言：<strong lang="zh-Hans">简体中文</strong>。</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="章节"><a href="#tokens">设计变量</a><a href="#partials">模板片段</a><a href="#idioms">类惯用法</a><a href="#shells">页面外壳</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>这些样例里的链接哪儿也不去</strong><p>预览里的每个链接在装进框架之前都被改写成 #，所以点它不会有任何反应，而不是把你带到这个站点没有的页面。旁边的代码标签保留样例原本写的路由，那才是值得复制的。</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>这里的链接不可点</strong><p>链接不可点，示例源码另行提供。</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">设计变量</h2></div>
-<p class="ds-lead">每个组件用来给自己上色的自定义属性。颜色和字体族来自主题（themes/plain.css）；字号级数和间距级数属于结构，来自 tokens.css，在每个主题上都一样。</p>
-<p class="ds-swatch-note">这里印出来的是浅色那一套值。深色那一套是在同一个文件里手写的——从不靠反转——而 ui/contrast_test.go 会把两套里每一对有记录的颜色都压在 WCAG 2.2 AA 的底线上：文字 4.5:1，控件边框 3:1。色块本身用 var() 上色，所以它们跟着你正在看的方案走，在深色模式下不会和印出来的值对上。</p>
+<p class="ds-lead">所有组件共用的自定义属性。颜色和字体属于主题（themes/plain.css）。字号级别和间距步长属于结构，来自 tokens.css。</p>
+<p class="ds-swatch-note">这里显示的是浅色模式，所有值都用 light-dark。WCAG 2.2 AA 下限：文本 4.5:1，控件边框 3:1。色块等处的颜色都取自变量。</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>底面与线条</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e0e0e0</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#767676</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f4f4f4</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">模板片段</h2></div>
-<p class="ds-lead">ui 提供的每一个模板片段，都放在真实页面会让它处于的状态里。每个片段只接受一个数据值，用 dict 就地构造。表单放在有内边距的 rst-box 里，行放在 rst-list 里，因为这些片段就是这么假定的——见下面「类惯用法」里的两条规则。</p>
-<p class="ds-note">每个样例都在自己的一页里成框，所以自带 h1 的片段——page-header、error-page——不会让这一页出现好几个 h1。</p>
-<p class="ds-note">样例里的内容在每一页上都保持英文：这些样例中的名字、路由和标签都是替身，翻译它们会让人以为框架本身带着那些词。外壳和模态框的演示正好相反——它们在扮演一个真实的应用，所以它们的框架说的是你选的语言。</p>
+<p class="ds-lead">Partial 提供预先做好、彼此一致的界面元素，在服务器端渲染。</p>
+<p class="ds-note">下面每个示例都在自己的框里。</p>
+<p class="ds-note">示例内容为英文，示例外壳已翻译。</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>列表页</h3>
-<p class="ds-lead">大多数应用大部分时间停留的那个页面：一条标题栏、一条工具栏、一串行，以及翻看其余部分的办法。</p>
+<p class="ds-lead">通用列表页：标题、工具栏和行，桌面和移动端都适用。</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">页面的标题栏：一个 h1、一个可选的副标题，以及最多一个主要操作。</p>
+<p class="ds-lead">页面的标题栏：一个 h1、可选的副标题，以及一个主操作。</p>
 
 <div class="ds-sample">
 <p class="ds-state">标题、副标题和一个主要操作</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 的样例，放在它自己的页面里 — 标题、副标题和一个主要操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 示例的独立预览 — 标题、副标题和一个主要操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;page-header 的样例，放在它自己的页面里 — 标题、副标题和一个主要操作&lt;/title&gt;
+&lt;title&gt;page-header 示例的独立预览 — 标题、副标题和一个主要操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 的样例，放在它自己的页面里 — 只有标题" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="page-header 示例的独立预览 — 只有标题" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;page-header 的样例，放在它自己的页面里 — 只有标题&lt;/title&gt;
+&lt;title&gt;page-header 示例的独立预览 — 只有标题&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">列表卡片顶部的工具栏：搜索表单，旁边留出放筛选的位置。</p>
+<p class="ds-lead">列表卡片顶部的工具栏，带搜索和筛选。</p>
 
 <div class="ds-sample">
 <p class="ds-state">搜索，外加一个筛选下拉菜单</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar 的样例，放在它自己的页面里 — 搜索，外加一个筛选下拉菜单" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar 示例的独立预览 — 搜索，外加一个筛选下拉菜单" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar 的样例，放在它自己的页面里 — 搜索，外加一个筛选下拉菜单&lt;/title&gt;
+&lt;title&gt;list-bar 示例的独立预览 — 搜索，外加一个筛选下拉菜单&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">单独的搜索表单，给只需要搜索的列表用。就是一个普通的 method=&#34;get&#34; 表单。</p>
+<p class="ds-lead">只做搜索的列表使用的独立搜索表单。一个普通的 method=&#34;get&#34; 表单。</p>
 
 <div class="ds-sample">
-<p class="ds-state">已经带着一个查询词</p>
+<p class="ds-state">已有查询</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 的样例，放在它自己的页面里 — 已经带着一个查询词" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 示例的独立预览 — 已有查询" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar-search 的样例，放在它自己的页面里 — 已经带着一个查询词&lt;/title&gt;
+&lt;title&gt;list-bar-search 示例的独立预览 — 已有查询&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 的样例，放在它自己的页面里 — 空，可访问名称取自目录" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 示例的独立预览 — 空，可访问名称取自目录" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-bar-search 的样例，放在它自己的页面里 — 空，可访问名称取自目录&lt;/title&gt;
+&lt;title&gt;list-bar-search 示例的独立预览 — 空，可访问名称取自目录&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">没有 Placeholder，所以输入框的可访问名称来自框架目录，用的是这一页的语言。</p>
+<p class="ds-note">没有 Placeholder。输入框的可访问名称来自当前语言的框架目录。</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit 的样例，放在它自己的页面里 — 默认标签" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-search-submit 示例的独立预览 — 默认标签" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-search-submit 的样例，放在它自己的页面里 — 默认标签&lt;/title&gt;
+&lt;title&gt;list-search-submit 示例的独立预览 — 默认标签&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">在你用 Tab 键跳进去之前，这里什么也看不见——这就是这个组件的全部。</p>
+<p class="ds-note">在你用 Tab 键进入之前，这里什么都看不到。</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">一行列表：记录名称作为主链接，一行辅助信息，最多一个次要操作。</p>
+<p class="ds-lead">一条列表行：记录名称作为主链接、一行附加信息，以及一个次要操作。</p>
 
 <div class="ds-sample">
 <p class="ds-state">前导标记、状态和一个操作</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 的样例，放在它自己的页面里 — 前导标记、状态和一个操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 示例的独立预览 — 前导标记、状态和一个操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-row-action 的样例，放在它自己的页面里 — 前导标记、状态和一个操作&lt;/title&gt;
+&lt;title&gt;list-row-action 示例的独立预览 — 前导标记、状态和一个操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 的样例，放在它自己的页面里 — 只有名称和辅助信息行" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-row-action 示例的独立预览 — 只有名称和辅助信息行" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-row-action 的样例，放在它自己的页面里 — 只有名称和辅助信息行&lt;/title&gt;
+&lt;title&gt;list-row-action 示例的独立预览 — 只有名称和辅助信息行&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">一组由服务器渲染的链接组成的分段控件。当前标签只是某个链接上的 aria-current，仅此而已。</p>
+<p class="ds-lead">由服务器渲染的链接组成的分段控件。当前标签就是链接上的 aria-current。</p>
 
 <div class="ds-sample">
 <p class="ds-state">两个分区</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs 的样例，放在它自己的页面里 — 两个分区" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="seg-tabs 示例的独立预览 — 两个分区" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;seg-tabs 的样例，放在它自己的页面里 — 两个分区&lt;/title&gt;
+&lt;title&gt;seg-tabs 示例的独立预览 — 两个分区&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 的样例，放在它自己的页面里 — 已应用一项选择的筛选菜单" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 示例的独立预览 — 已应用一项选择的筛选菜单" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;dropdown 的样例，放在它自己的页面里 — 已应用一项选择的筛选菜单&lt;/title&gt;
+&lt;title&gt;dropdown 示例的独立预览 — 已应用一项选择的筛选菜单&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar 的样例，放在它自己的页面里 — 选中了三行" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="bulk-bar 示例的独立预览 — 选中了三行" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;bulk-bar 的样例，放在它自己的页面里 — 选中了三行&lt;/title&gt;
+&lt;title&gt;bulk-bar 示例的独立预览 — 选中了三行&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 的样例，放在它自己的页面里 — 长列表的中间" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 示例的独立预览 — 长列表的中间" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;pagination 的样例，放在它自己的页面里 — 长列表的中间&lt;/title&gt;
+&lt;title&gt;pagination 示例的独立预览 — 长列表的中间&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 的样例，放在它自己的页面里 — 第一页，使用默认的可访问名称" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="pagination 示例的独立预览 — 第一页，使用默认的可访问名称" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;pagination 的样例，放在它自己的页面里 — 第一页，使用默认的可访问名称&lt;/title&gt;
+&lt;title&gt;pagination 示例的独立预览 — 第一页，使用默认的可访问名称&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">空状态卡片。空状态是用来教人的：它说明这里本该有什么，以及怎么做一个出来。</p>
+<p class="ds-lead">空状态卡片。空状态，并给出开始的入口。</p>
 
 <div class="ds-sample">
 <p class="ds-state">带一个 POST 的行动召唤</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 的样例，放在它自己的页面里 — 带一个 POST 的行动召唤" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 示例的独立预览 — 带一个 POST 的行动召唤" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;empty-state 的样例，放在它自己的页面里 — 带一个 POST 的行动召唤&lt;/title&gt;
+&lt;title&gt;empty-state 示例的独立预览 — 带一个 POST 的行动召唤&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 的样例，放在它自己的页面里 — 只有一句话" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="empty-state 示例的独立预览 — 只有一句话" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;empty-state 的样例，放在它自己的页面里 — 只有一句话&lt;/title&gt;
+&lt;title&gt;empty-state 示例的独立预览 — 只有一句话&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">记录的状态，做成一枚着色的胶囊标签。状态从来不只靠颜色——标签始终是看得见的文字。</p>
+<p class="ds-lead">记录状态显示为带底色的胶囊标签，有颜色也有文字。</p>
 
 <div class="ds-sample">
 <p class="ds-state">默认色调（neutral）</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 的样例，放在它自己的页面里 — 默认色调（neutral）" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 示例的独立预览 — 默认色调（neutral）" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 的样例，放在它自己的页面里 — 默认色调（neutral）&lt;/title&gt;
+&lt;title&gt;status-pill 示例的独立预览 — 默认色调（neutral）&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 的样例，放在它自己的页面里 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 示例的独立预览 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 的样例，放在它自己的页面里 — neutral&lt;/title&gt;
+&lt;title&gt;status-pill 示例的独立预览 — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 的样例，放在它自己的页面里 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 示例的独立预览 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 的样例，放在它自己的页面里 — positive&lt;/title&gt;
+&lt;title&gt;status-pill 示例的独立预览 — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 的样例，放在它自己的页面里 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 示例的独立预览 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 的样例，放在它自己的页面里 — warning&lt;/title&gt;
+&lt;title&gt;status-pill 示例的独立预览 — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 的样例，放在它自己的页面里 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="status-pill 示例的独立预览 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;status-pill 的样例，放在它自己的页面里 — negative&lt;/title&gt;
+&lt;title&gt;status-pill 示例的独立预览 — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -972,19 +972,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">一枚大写字母的带边框小标记。它和 status-pill 不同：后者表示记录的状态。</p>
 
 <div class="ds-sample">
-<p class="ds-state">没有色调（安静的默认值）</p>
+<p class="ds-state">无色调（安静的默认值）</p>
 <div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-badge-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 的样例，放在它自己的页面里 — 没有色调（安静的默认值）" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 示例的独立预览 — 无色调（安静的默认值）" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 的样例，放在它自己的页面里 — 没有色调（安静的默认值）&lt;/title&gt;
+&lt;title&gt;badge 示例的独立预览 — 无色调（安静的默认值）&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 的样例，放在它自己的页面里 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 示例的独立预览 — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 的样例，放在它自己的页面里 — neutral&lt;/title&gt;
+&lt;title&gt;badge 示例的独立预览 — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 的样例，放在它自己的页面里 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 示例的独立预览 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 的样例，放在它自己的页面里 — positive&lt;/title&gt;
+&lt;title&gt;badge 示例的独立预览 — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 的样例，放在它自己的页面里 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 示例的独立预览 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 的样例，放在它自己的页面里 — warning&lt;/title&gt;
+&lt;title&gt;badge 示例的独立预览 — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 的样例，放在它自己的页面里 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="badge 示例的独立预览 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;badge 的样例，放在它自己的页面里 — negative&lt;/title&gt;
+&lt;title&gt;badge 示例的独立预览 — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">带数字的容量条。比例始终是文字——单靠一根条永远不表示数字。</p>
+<p class="ds-lead">带数字的容量条。</p>
 
 <div class="ds-sample">
 <p class="ds-state">空</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 的样例，放在它自己的页面里 — 空" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 示例的独立预览 — 空" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 的样例，放在它自己的页面里 — 空&lt;/title&gt;
+&lt;title&gt;meter 示例的独立预览 — 空&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 的样例，放在它自己的页面里 — 进行到一半" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 示例的独立预览 — 进行到一半" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 的样例，放在它自己的页面里 — 进行到一半&lt;/title&gt;
+&lt;title&gt;meter 示例的独立预览 — 进行到一半&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 的样例，放在它自己的页面里 — 快满了" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 示例的独立预览 — 快满了" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 的样例，放在它自己的页面里 — 快满了&lt;/title&gt;
+&lt;title&gt;meter 示例的独立预览 — 快满了&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 的样例，放在它自己的页面里 — 已满" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 示例的独立预览 — 已满" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 的样例，放在它自己的页面里 — 已满&lt;/title&gt;
+&lt;title&gt;meter 示例的独立预览 — 已满&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 的样例，放在它自己的页面里 — 超出额度" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="meter 示例的独立预览 — 超出额度" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;meter 的样例，放在它自己的页面里 — 超出额度&lt;/title&gt;
+&lt;title&gt;meter 示例的独立预览 — 超出额度&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">片段把填充夹在 100% 以内；说实话的是那个数字。</p>
+<p class="ds-note">填充在 partial 里被限制在 100%。</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">首字母头像、姓名和邮箱：给“记录就是人”这类记录用的身份单元格。</p>
+<p class="ds-lead">首字母头像、姓名和邮箱。用来快速辨认代表人的记录。</p>
 
 <div class="ds-sample">
 <p class="ds-state">姓名和邮箱</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 的样例，放在它自己的页面里 — 姓名和邮箱" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 示例的独立预览 — 姓名和邮箱" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person 的样例，放在它自己的页面里 — 姓名和邮箱&lt;/title&gt;
+&lt;title&gt;person 示例的独立预览 — 姓名和邮箱&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 的样例，放在它自己的页面里 — 大号，详情页页眉的尺寸" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 示例的独立预览 — 大号，详情页页眉的尺寸" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person 的样例，放在它自己的页面里 — 大号，详情页页眉的尺寸&lt;/title&gt;
+&lt;title&gt;person 示例的独立预览 — 大号，详情页页眉的尺寸&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 的样例，放在它自己的页面里 — 没有首字母" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="person 示例的独立预览 — 没有首字母" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;person 的样例，放在它自己的页面里 — 没有首字母&lt;/title&gt;
+&lt;title&gt;person 示例的独立预览 — 没有首字母&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 的样例，放在它自己的页面里 — 默认色调（info），没有标题" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 示例的独立预览 — 默认色调（info），没有标题" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 的样例，放在它自己的页面里 — 默认色调（info），没有标题&lt;/title&gt;
+&lt;title&gt;callout 示例的独立预览 — 默认色调（info），没有标题&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 的样例，放在它自己的页面里 — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 示例的独立预览 — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 的样例，放在它自己的页面里 — info&lt;/title&gt;
+&lt;title&gt;callout 示例的独立预览 — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 的样例，放在它自己的页面里 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 示例的独立预览 — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 的样例，放在它自己的页面里 — positive&lt;/title&gt;
+&lt;title&gt;callout 示例的独立预览 — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 的样例，放在它自己的页面里 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 示例的独立预览 — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 的样例，放在它自己的页面里 — warning&lt;/title&gt;
+&lt;title&gt;callout 示例的独立预览 — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 的样例，放在它自己的页面里 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 示例的独立预览 — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 的样例，放在它自己的页面里 — negative&lt;/title&gt;
+&lt;title&gt;callout 示例的独立预览 — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 的样例，放在它自己的页面里 — negative，并作为警报播报" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="callout 示例的独立预览 — negative，并作为警报播报" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;callout 的样例，放在它自己的页面里 — negative，并作为警报播报&lt;/title&gt;
+&lt;title&gt;callout 示例的独立预览 — negative，并作为警报播报&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Alert 会加上 role=&#34;alert&#34;。把它留给正在发生的问题，不要用在环境说明上。</p>
+<p class="ds-note">alert 会加上 role=&#34;alert&#34;，用于显示重要信息。</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">记录的带标签事实，写成一个定义列表——详情页的主体。Mono 用来标记偏机器味的值。</p>
+<p class="ds-lead">详情页上关于某条记录的定义列表。等宽标记用于偏机器的值。</p>
 
 <div class="ds-sample">
-<p class="ds-state">四条事实，其中一条偏机器味</p>
+<p class="ds-state">四条信息，其中一条偏机器</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list 的样例，放在它自己的页面里 — 四条事实，其中一条偏机器味" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="detail-list 示例的独立预览 — 四条信息，其中一条偏机器" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;detail-list 的样例，放在它自己的页面里 — 四条事实，其中一条偏机器味&lt;/title&gt;
+&lt;title&gt;detail-list 示例的独立预览 — 四条信息，其中一条偏机器&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice 的样例，放在它自己的页面里 — 一条“已保存”的消息" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="notice 示例的独立预览 — 一条“已保存”的消息" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;notice 的样例，放在它自己的页面里 — 一条“已保存”的消息&lt;/title&gt;
+&lt;title&gt;notice 示例的独立预览 — 一条“已保存”的消息&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error 的样例，放在它自己的页面里 — 一次被拒绝的提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-error 示例的独立预览 — 一次被拒绝的提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-error 的样例，放在它自己的页面里 — 一次被拒绝的提交&lt;/title&gt;
+&lt;title&gt;form-error 示例的独立预览 — 一次被拒绝的提交&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 的样例，放在它自己的页面里 — 进行中" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 示例的独立预览 — 进行中" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status 的样例，放在它自己的页面里 — 进行中&lt;/title&gt;
+&lt;title&gt;job-status 示例的独立预览 — 进行中&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 的样例，放在它自己的页面里 — 已完成" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 示例的独立预览 — 已完成" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status 的样例，放在它自己的页面里 — 已完成&lt;/title&gt;
+&lt;title&gt;job-status 示例的独立预览 — 已完成&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 的样例，放在它自己的页面里 — 失败" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="job-status 示例的独立预览 — 失败" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;job-status 的样例，放在它自己的页面里 — 失败&lt;/title&gt;
+&lt;title&gt;job-status 示例的独立预览 — 失败&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">标签、输入框、可选提示、帮助和错误——通用的文本类控件，带一个显式的 ID。</p>
+<p class="ds-lead">标签、输入框、可选提示、帮助文本和错误。通用的类文本控件，带一个显式 ID。</p>
 
 <div class="ds-sample">
 <p class="ds-state">最简</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 的样例，放在它自己的页面里 — 最简" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 示例的独立预览 — 最简" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 的样例，放在它自己的页面里 — 最简&lt;/title&gt;
+&lt;title&gt;field 示例的独立预览 — 最简&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 的样例，放在它自己的页面里 — 带一条提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 示例的独立预览 — 带一条提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 的样例，放在它自己的页面里 — 带一条提示&lt;/title&gt;
+&lt;title&gt;field 示例的独立预览 — 带一条提示&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 的样例，放在它自己的页面里 — 控件下方带一行帮助文字" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 示例的独立预览 — 控件下方带一行帮助文字" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 的样例，放在它自己的页面里 — 控件下方带一行帮助文字&lt;/title&gt;
+&lt;title&gt;field 示例的独立预览 — 控件下方带一行帮助文字&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 的样例，放在它自己的页面里 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 示例的独立预览 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 的样例，放在它自己的页面里 — 必填&lt;/title&gt;
+&lt;title&gt;field 示例的独立预览 — 必填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 的样例，放在它自己的页面里 — 带一个错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 示例的独立预览 — 带一个错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 的样例，放在它自己的页面里 — 带一个错误&lt;/title&gt;
+&lt;title&gt;field 示例的独立预览 — 带一个错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 的样例，放在它自己的页面里 — 窄" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field 示例的独立预览 — 窄" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field 的样例，放在它自己的页面里 — 窄&lt;/title&gt;
+&lt;title&gt;field 示例的独立预览 — 窄&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">一个带标签的文本输入框，id 由 Name 推导而来。必填标记的星号是 aria-hidden——真正的程序信号是输入框上的 required 属性。</p>
+<p class="ds-lead">一个带标签的文本输入框，id 由 Name 推导而来。必填标记的星号是 aria-hidden，输入框的 required 属性才是程序可读的信号。</p>
 
 <div class="ds-sample">
 <p class="ds-state">最简</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 的样例，放在它自己的页面里 — 最简" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 示例的独立预览 — 最简" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 的样例，放在它自己的页面里 — 最简&lt;/title&gt;
+&lt;title&gt;field-text 示例的独立预览 — 最简&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 的样例，放在它自己的页面里 — 带一条提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 示例的独立预览 — 带一条提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 的样例，放在它自己的页面里 — 带一条提示&lt;/title&gt;
+&lt;title&gt;field-text 示例的独立预览 — 带一条提示&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 的样例，放在它自己的页面里 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 示例的独立预览 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 的样例，放在它自己的页面里 — 必填&lt;/title&gt;
+&lt;title&gt;field-text 示例的独立预览 — 必填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 的样例，放在它自己的页面里 — 带一个错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-text 示例的独立预览 — 带一个错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-text 的样例，放在它自己的页面里 — 带一个错误&lt;/title&gt;
+&lt;title&gt;field-text 示例的独立预览 — 带一个错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 的样例，放在它自己的页面里 — 最简" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 示例的独立预览 — 最简" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 的样例，放在它自己的页面里 — 最简&lt;/title&gt;
+&lt;title&gt;field-textarea 示例的独立预览 — 最简&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 的样例，放在它自己的页面里 — 带一条提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 示例的独立预览 — 带一条提示" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 的样例，放在它自己的页面里 — 带一条提示&lt;/title&gt;
+&lt;title&gt;field-textarea 示例的独立预览 — 带一条提示&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 的样例，放在它自己的页面里 — 带一个错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 示例的独立预览 — 带一个错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 的样例，放在它自己的页面里 — 带一个错误&lt;/title&gt;
+&lt;title&gt;field-textarea 示例的独立预览 — 带一个错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 的样例，放在它自己的页面里 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-textarea 示例的独立预览 — 必填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-textarea 的样例，放在它自己的页面里 — 必填&lt;/title&gt;
+&lt;title&gt;field-textarea 示例的独立预览 — 必填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">field 的外壳包住一个原生 select。超过十个选项时，这个 select 会启用 select.js 里可筛选的组合框；但表单提交的仍然是那个原生 select。</p>
 
 <div class="ds-sample">
-<p class="ds-state">三个选项——原生 select</p>
+<p class="ds-state">三个选项：原生 select</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 的样例，放在它自己的页面里 — 三个选项——原生 select" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 示例的独立预览 — 三个选项：原生 select" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 的样例，放在它自己的页面里 — 三个选项——原生 select&lt;/title&gt;
+&lt;title&gt;field-select 示例的独立预览 — 三个选项：原生 select&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">十二个选项——可筛选的组合框</p>
+<p class="ds-state">十二个选项：可筛选的组合框</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 的样例，放在它自己的页面里 — 十二个选项——可筛选的组合框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 示例的独立预览 — 十二个选项：可筛选的组合框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 的样例，放在它自己的页面里 — 十二个选项——可筛选的组合框&lt;/title&gt;
+&lt;title&gt;field-select 示例的独立预览 — 十二个选项：可筛选的组合框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 的样例，放在它自己的页面里 — 十二个选项，Plain——明确不要增强" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 示例的独立预览 — 十二个选项，Plain——明确不要增强" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 的样例，放在它自己的页面里 — 十二个选项，Plain——明确不要增强&lt;/title&gt;
+&lt;title&gt;field-select 示例的独立预览 — 十二个选项，Plain——明确不要增强&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 的样例，放在它自己的页面里 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 示例的独立预览 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 的样例，放在它自己的页面里 — 必填，并带错误&lt;/title&gt;
+&lt;title&gt;field-select 示例的独立预览 — 必填，并带错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 的样例，放在它自己的页面里 — 手写的，带 optgroup 分组" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-select 示例的独立预览 — 手写的，带 optgroup 分组" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-select 的样例，放在它自己的页面里 — 手写的，带 optgroup 分组&lt;/title&gt;
+&lt;title&gt;field-select 示例的独立预览 — 手写的，带 optgroup 分组&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 的样例，放在它自己的页面里 — 开" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 示例的独立预览 — 开" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check 的样例，放在它自己的页面里 — 开&lt;/title&gt;
+&lt;title&gt;field-check 示例的独立预览 — 开&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 的样例，放在它自己的页面里 — 关" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 示例的独立预览 — 关" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check 的样例，放在它自己的页面里 — 关&lt;/title&gt;
+&lt;title&gt;field-check 示例的独立预览 — 关&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 的样例，放在它自己的页面里 — 已禁用" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-check 示例的独立预览 — 已禁用" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-check 的样例，放在它自己的页面里 — 已禁用&lt;/title&gt;
+&lt;title&gt;field-check 示例的独立预览 — 已禁用&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 的样例，放在它自己的页面里 — 只能选一个" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 示例的独立预览 — 只能选一个" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;choice-field 的样例，放在它自己的页面里 — 只能选一个&lt;/title&gt;
+&lt;title&gt;choice-field 示例的独立预览 — 只能选一个&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 的样例，放在它自己的页面里 — 可多选" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="choice-field 示例的独立预览 — 可多选" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;choice-field 的样例，放在它自己的页面里 — 可多选&lt;/title&gt;
+&lt;title&gt;choice-field 示例的独立预览 — 可多选&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">一个原生日期输入框，外加 datetime.js 启用的自然语言组合框（除非调用方传了 Plain）。试着输入「明天」。</p>
 
 <div class="ds-sample">
-<p class="ds-state">增强版——输入「明天」或者「3周后」</p>
+<p class="ds-state">增强输入：键入“明天”或“3 周后”</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 的样例，放在它自己的页面里 — 增强版——输入「明天」或者「3周后」" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 示例的独立预览 — 增强输入：键入“明天”或“3 周后”" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 的样例，放在它自己的页面里 — 增强版——输入「明天」或者「3周后」&lt;/title&gt;
+&lt;title&gt;field-date 示例的独立预览 — 增强输入：键入“明天”或“3 周后”&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 的样例，放在它自己的页面里 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 示例的独立预览 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 的样例，放在它自己的页面里 — 必填，并带错误&lt;/title&gt;
+&lt;title&gt;field-date 示例的独立预览 — 必填，并带错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 的样例，放在它自己的页面里 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 示例的独立预览 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 的样例，放在它自己的页面里 — 有上下限&lt;/title&gt;
+&lt;title&gt;field-date 示例的独立预览 — 有上下限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 的样例，放在它自己的页面里 — Plain——不加修饰的原生输入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-date 示例的独立预览 — Plain——不加修饰的原生输入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-date 的样例，放在它自己的页面里 — Plain——不加修饰的原生输入框&lt;/title&gt;
+&lt;title&gt;field-date 示例的独立预览 — Plain——不加修饰的原生输入框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">同样的外壳，包着一个原生时间输入框。这次增强读的是钟点，不是日历。</p>
 
 <div class="ds-sample">
-<p class="ds-state">增强版——输入「19:30」或者「中午」</p>
+<p class="ds-state">增强输入：键入“七点半”或“中午”</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 的样例，放在它自己的页面里 — 增强版——输入「19:30」或者「中午」" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 示例的独立预览 — 增强输入：键入“七点半”或“中午”" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 的样例，放在它自己的页面里 — 增强版——输入「19:30」或者「中午」&lt;/title&gt;
+&lt;title&gt;field-time 示例的独立预览 — 增强输入：键入“七点半”或“中午”&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 的样例，放在它自己的页面里 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 示例的独立预览 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 的样例，放在它自己的页面里 — 必填，并带错误&lt;/title&gt;
+&lt;title&gt;field-time 示例的独立预览 — 必填，并带错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 的样例，放在它自己的页面里 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 示例的独立预览 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 的样例，放在它自己的页面里 — 有上下限&lt;/title&gt;
+&lt;title&gt;field-time 示例的独立预览 — 有上下限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 的样例，放在它自己的页面里 — Plain——不加修饰的原生输入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-time 示例的独立预览 — Plain——不加修饰的原生输入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-time 的样例，放在它自己的页面里 — Plain——不加修饰的原生输入框&lt;/title&gt;
+&lt;title&gt;field-time 示例的独立预览 — Plain——不加修饰的原生输入框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">一个输入框里的日期和时间，一个值。</p>
 
 <div class="ds-sample">
-<p class="ds-state">增强版——输入「明天」或者「3周后」</p>
+<p class="ds-state">增强输入：键入“明天”或“3 周后”</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 的样例，放在它自己的页面里 — 增强版——输入「明天」或者「3周后」" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 示例的独立预览 — 增强输入：键入“明天”或“3 周后”" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 的样例，放在它自己的页面里 — 增强版——输入「明天」或者「3周后」&lt;/title&gt;
+&lt;title&gt;field-datetime 示例的独立预览 — 增强输入：键入“明天”或“3 周后”&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 的样例，放在它自己的页面里 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 示例的独立预览 — 必填，并带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 的样例，放在它自己的页面里 — 必填，并带错误&lt;/title&gt;
+&lt;title&gt;field-datetime 示例的独立预览 — 必填，并带错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 的样例，放在它自己的页面里 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 示例的独立预览 — 有上下限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 的样例，放在它自己的页面里 — 有上下限&lt;/title&gt;
+&lt;title&gt;field-datetime 示例的独立预览 — 有上下限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 的样例，放在它自己的页面里 — Plain——不加修饰的原生输入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-datetime 示例的独立预览 — Plain——不加修饰的原生输入框" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-datetime 的样例，放在它自己的页面里 — Plain——不加修饰的原生输入框&lt;/title&gt;
+&lt;title&gt;field-datetime 示例的独立预览 — Plain——不加修饰的原生输入框&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">起点和终点作为一个带标签的组。两半必须用不同的 Name——各自的 id 都是从自己的 Name 推出来的。</p>
+<p class="ds-lead">起点和终点作为一个带标签的整体。两者的 Name 必须不同，因为 id 是由它推导出来的。</p>
 
 <div class="ds-sample">
 <p class="ds-state">日期和时间，已预填</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 的样例，放在它自己的页面里 — 日期和时间，已预填" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 示例的独立预览 — 日期和时间，已预填" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-daterange 的样例，放在它自己的页面里 — 日期和时间，已预填&lt;/title&gt;
+&lt;title&gt;field-daterange 示例的独立预览 — 日期和时间，已预填&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 的样例，放在它自己的页面里 — 只有日期，结束一侧带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="field-daterange 示例的独立预览 — 只有日期，结束一侧带错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;field-daterange 的样例，放在它自己的页面里 — 只有日期，结束一侧带错误&lt;/title&gt;
+&lt;title&gt;field-daterange 示例的独立预览 — 只有日期，结束一侧带错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 的样例，放在它自己的页面里 — 保存和取消" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 示例的独立预览 — 保存和取消" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 的样例，放在它自己的页面里 — 保存和取消&lt;/title&gt;
+&lt;title&gt;form-foot 示例的独立预览 — 保存和取消&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 的样例，放在它自己的页面里 — 只有提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 示例的独立预览 — 只有提交" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 的样例，放在它自己的页面里 — 只有提交&lt;/title&gt;
+&lt;title&gt;form-foot 示例的独立预览 — 只有提交&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 的样例，放在它自己的页面里 — 空闲——任何事情发生之前的按钮" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 示例的独立预览 — 空闲——任何事情发生之前的按钮" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 的样例，放在它自己的页面里 — 空闲——任何事情发生之前的按钮&lt;/title&gt;
+&lt;title&gt;form-foot 示例的独立预览 — 空闲——任何事情发生之前的按钮&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3379,7 +3379,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;a class=&#34;rst-btn&#34; href=&#34;/posts&#34;&gt;Back to posts&lt;/a&gt;
 &lt;/div&gt;&lt;/form&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">会改变某样东西的按钮要有加载状态；只是展开某样东西的按钮——展开块、下拉菜单、标签页——不需要。rastrillo.js 会把这条规则用在每个表单的每个提交按钮上，没有什么要开启的。</p>
+<p class="ds-note">会改变什么的按钮有加载状态；只是展开什么的按钮（例如折叠、下拉、标签页）没有。rastrillo.js 对每个表单里的每个提交按钮都套用这条规则，无需选择启用。</p>
 </div>
 
 <div class="ds-sample">
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 的样例，放在它自己的页面里 — 工作中——表单送出时 rastrillo.js 写下的样子" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-foot 示例的独立预览 — 工作中——表单送出时 rastrillo.js 写下的样子" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-foot 的样例，放在它自己的页面里 — 工作中——表单送出时 rastrillo.js 写下的样子&lt;/title&gt;
+&lt;title&gt;form-foot 示例的独立预览 — 工作中——表单送出时 rastrillo.js 写下的样子&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 的样例，放在它自己的页面里 — 破坏性操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 示例的独立预览 — 破坏性操作" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;confirm-form 的样例，放在它自己的页面里 — 破坏性操作&lt;/title&gt;
+&lt;title&gt;confirm-form 示例的独立预览 — 破坏性操作&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 的样例，放在它自己的页面里 — 普通情况，取消用默认措辞" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="confirm-form 示例的独立预览 — 普通情况，取消用默认措辞" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;confirm-form 的样例，放在它自己的页面里 — 普通情况，取消用默认措辞&lt;/title&gt;
+&lt;title&gt;confirm-form 示例的独立预览 — 普通情况，取消用默认措辞&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">一个错误响应的整个主体：状态、一句实话、一条回去的路，以及——如果是 500——运维人员可以拿去 grep 的参考编号。</p>
+<p class="ds-lead">错误响应的整个主体：状态码、一句实话、一条回头的路，以及管理员用得上的 500 参考编号。</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — 找不到</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 的样例，放在它自己的页面里 — 404 — 找不到" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 示例的独立预览 — 404 — 找不到" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 的样例，放在它自己的页面里 — 404 — 找不到&lt;/title&gt;
+&lt;title&gt;error-page 示例的独立预览 — 404 — 找不到&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 的样例，放在它自己的页面里 — 403 — 无权限" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 示例的独立预览 — 403 — 无权限" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 的样例，放在它自己的页面里 — 403 — 无权限&lt;/title&gt;
+&lt;title&gt;error-page 示例的独立预览 — 403 — 无权限&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 的样例，放在它自己的页面里 — 422 — 无法处理" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 示例的独立预览 — 422 — 无法处理" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 的样例，放在它自己的页面里 — 422 — 无法处理&lt;/title&gt;
+&lt;title&gt;error-page 示例的独立预览 — 422 — 无法处理&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 的样例，放在它自己的页面里 — 500 — 服务器错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 示例的独立预览 — 500 — 服务器错误" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 的样例，放在它自己的页面里 — 500 — 服务器错误&lt;/title&gt;
+&lt;title&gt;error-page 示例的独立预览 — 500 — 服务器错误&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 的样例，放在它自己的页面里 — 503 — 暂时不可用" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 示例的独立预览 — 503 — 暂时不可用" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 的样例，放在它自己的页面里 — 503 — 暂时不可用&lt;/title&gt;
+&lt;title&gt;error-page 示例的独立预览 — 503 — 暂时不可用&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 的样例，放在它自己的页面里 — 其他任何情况——通用的一对" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="error-page 示例的独立预览 — 其他任何情况——通用的一对" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;error-page 的样例，放在它自己的页面里 — 其他任何情况——通用的一对&lt;/title&gt;
+&lt;title&gt;error-page 示例的独立预览 — 其他任何情况——通用的一对&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav 的样例，放在它自己的页面里 — 返回一条记录" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="back-nav 示例的独立预览 — 返回一条记录" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;back-nav 的样例，放在它自己的页面里 — 返回一条记录&lt;/title&gt;
+&lt;title&gt;back-nav 示例的独立预览 — 返回一条记录&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">语言切换器：一个 details 菜单，里面是发往 /_locale 的单字段 POST 表单，这样选择会落进 locale cookie，而读者仍留在同一个路径上。</p>
 
 <div class="ds-sample">
-<p class="ds-state">十二种语言，当前那一种已标出</p>
+<p class="ds-state">十二种语言，当前的一种被标出。</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu 的样例，放在它自己的页面里 — 十二种语言，当前那一种已标出" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="locale-menu 示例的独立预览 — 十二种语言，当前的一种被标出。" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;locale-menu 的样例，放在它自己的页面里 — 十二种语言，当前那一种已标出&lt;/title&gt;
+&lt;title&gt;locale-menu 示例的独立预览 — 十二种语言，当前的一种被标出。&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">这一个会 POST 到 /_locale，而静态页面没有对应的服务器——这一页顶部那个切换器才是只用链接的版本。</p>
+<p class="ds-note">这一个会 POST 到 /_locale，那需要一台服务器。本页页眉里的切换器是纯链接的版本。</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">类惯用法</h2></div>
-<p class="ds-lead">那些片段做不到的形状，因为它们要包住只有调用方才知道的内容：分节卡片、数据网格、折叠菜单、外壳自己的框架。tokens.css 提供类，标记由应用来写。下面这些正是 ui.Styleguide 返回的样例，也就是 ui 的测试拿来对着 tokens.css 检查的样例——请从这里复制。</p>
+<p class="ds-lead">partial 无法成为的那些形状，因为它们包住的主体只有调用方知道：区块卡片、数据网格、展开菜单，以及外壳自身的框架。tokens.css 提供类名，应用自己写标记。下面的内容就是 ui.Styleguide 返回的那份示例，也是 ui 的测试拿来比对 tokens.css 的那一份。</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="box 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;box 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;box 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="dropdown 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;dropdown 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;dropdown 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="form-layout 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;form-layout 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;form-layout 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="help 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;help 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;help 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">真正的数据表格语汇：卡片一次性定好列，行只负责挑单元格。</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>页面是竖着堆起来的</strong><p>一个页面就是一列：page-header，然后 section-header 加卡片，再下一个 section-header 加卡片，按阅读顺序排下去。不要把标题、段落和按钮并排塞进一个 flex 行。横向排布只留给自带它的惯用法：rst-box-head、rst-field-row、rst-lbar、rst-lrow 的单元格、rst-seg-tabs。</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>页面是竖着堆起来的</strong><p>一个页面就是一列：page-header，然后 section-header &#43; 卡片，再下一个 section-header &#43; 卡片，按阅读顺序排下去。横向排列只留给自带它的写法：rst-box-head、rst-field-row、rst-lbar、rst-lrow 单元格、rst-seg-tabs。</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-grid 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;list-grid 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;list-grid 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="modal 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;modal 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;modal 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="selbox 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;selbox 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;selbox 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-sidebar 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;shell-sidebar 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;shell-sidebar 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/plain/zh-Hans/shells/sidebar.html" target="_blank" rel="noopener">打开 sidebar 外壳的演示，同样的标记在那里是一整页真实页面</a><span class="rst-sr-only"> (在新标签页中打开)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/plain/zh-Hans/shells/sidebar.html" target="_blank" rel="noopener">打开侧栏外壳演示，一个独立预览。</a><span class="rst-sr-only"> (在新标签页中打开)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">topbar 外壳自己的框架，以标记形式呈现。Layout 把它整套当模板发出来——这里是它里面的东西。</p>
+<p class="ds-lead">顶栏外壳自身的框架，以标记形式呈现。Layout 把它作为一整套模板提供。</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="shell-topbar 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;shell-topbar 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;shell-topbar 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/plain/zh-Hans/shells/topbar.html" target="_blank" rel="noopener">打开 topbar 外壳的演示，同样的标记在那里是一整页真实页面</a><span class="rst-sr-only"> (在新标签页中打开)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/plain/zh-Hans/shells/topbar.html" target="_blank" rel="noopener">打开顶栏外壳演示，一个专门的预览。</a><span class="rst-sr-only"> (在新标签页中打开)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">手机</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">代码</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock 的样例，放在它自己的页面里 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="tblock 示例的独立预览 — 类惯用法" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;tblock 的样例，放在它自己的页面里 — 类惯用法&lt;/title&gt;
+&lt;title&gt;tblock 示例的独立预览 — 类惯用法&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-plain.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }

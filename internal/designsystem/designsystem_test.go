@@ -887,7 +887,7 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 
 // proseLeakFloor is the length above which an English prose string is a
 // sentence and below which it is a word. Only the sentences are swept
-// for; today that is 158 of the 207 keys, and the other 49 — "Theme",
+// for; today that is 156 of the 207 keys, and the other 51 — "Theme",
 // "Tokens", "Sections", "Shells", "Required", "Type scale", "Pick one",
 // every switcher label and every one-word state — are not swept for at
 // all. Those three numbers are len([]rune(key)) >= proseLeakFloor over
@@ -903,15 +903,18 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 // reached the page — for the strings where that proof cannot be had.
 //
 // It cannot be had because a bare English word occurs on a translated
-// page for reasons that are nothing to do with prose. Four keys
-// actually collide today, and they are the justification for the floor
-// rather than an exhaustive list of what it exempts: "Failed" and
-// "Full" are status-pill labels a fixture chose, "Display" is inside
-// the count line's "Displaying 1–20", and "On" is a substring of half
-// the English in the page's sample data. Gating those would fail on
-// fixtures, which is the opposite of what this gate is for. Twelve
-// characters is the shortest key that is a phrase; below it, matching a
-// bare word proves nothing either way.
+// page for reasons that are nothing to do with prose. Of the 51 short
+// keys, eleven actually collide today — "Display", "Published", "On",
+// "Draft", "Failed", "Full", "Filter", "Form", "Text", "Tokens",
+// "Demos" — and they are the justification for the floor rather than a
+// list to maintain. "Failed" and "Full" are status-pill labels a
+// fixture chose, "Display" is inside the count line's "Displaying
+// 1–20", and "On" is a substring of half the English in the page's
+// sample data. Gating those would fail on fixtures, which is the
+// opposite of what this gate is for. Twelve characters is the shortest
+// key that is a phrase; below it, matching a bare word proves nothing
+// either way. Count the collisions again too: set the floor to 0 and
+// the sweep names them.
 const proseLeakFloor = 12
 
 // proseFixtureCollisions names the prose keys that are ALSO sample data
@@ -981,8 +984,8 @@ func escapedSource(page string) string {
 // — drop a key from prose.go and it stops being checked — and these
 // three cannot be: the gate asserts they are present in English first.
 var proseSentinels = []string{
-	"Every partial, class idiom and design token the framework ships, on one page.",
-	"The links in these samples go nowhere",
+	"An overview of everything the design system provides.",
+	"Links here are inactive",
 	"Screens stack vertically",
 }
 

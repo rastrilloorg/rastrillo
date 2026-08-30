@@ -97,10 +97,10 @@
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">
-    <label class="rst-sr-only" for="ds-filter">Lọc trang này</label>
-    <input id="ds-filter" type="search" placeholder="Lọc trang này" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    <label class="rst-sr-only" for="ds-filter">Lọc</label>
+    <input id="ds-filter" type="search" placeholder="Lọc" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
-  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Không có gì ở đây khớp với nội dung đó</p>
+  <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>Không có kết quả</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="Các mục và bản demo">
     <details open><summary>Token</summary><a href="#tokens-surfaces-and-lines">Nền và đường kẻ</a><a href="#tokens-text">Chữ</a><a href="#tokens-accent">Màu nhấn</a><a href="#tokens-status-tones">Sắc thái trạng thái</a><a href="#tokens-depth">Chiều sâu</a><a href="#tokens-radius">Bo góc</a><a href="#tokens-type-family">Họ chữ</a><a href="#tokens-type-scale">Thang cỡ chữ</a><a href="#tokens-spacing">Khoảng cách</a></details>
     <details open><summary>Mảnh giao diện</summary><a href="#family-list-screen" class="ds-nav__group">Màn hình danh sách</a><a href="#partial-page-header" class="rst-mono">page-header</a><a href="#partial-list-bar" class="rst-mono">list-bar</a><a href="#partial-list-bar-search" class="rst-mono">list-bar-search</a><a href="#partial-list-search-submit" class="rst-mono">list-search-submit</a><a href="#partial-list-row-action" class="rst-mono">list-row-action</a><a href="#partial-seg-tabs" class="rst-mono">seg-tabs</a><a href="#partial-dropdown" class="rst-mono">dropdown</a><a href="#partial-bulk-bar" class="rst-mono">bulk-bar</a><a href="#partial-pagination" class="rst-mono">pagination</a><a href="#partial-empty-state" class="rst-mono">empty-state</a><a href="#family-display" class="ds-nav__group">Hiển thị</a><a href="#partial-status-pill" class="rst-mono">status-pill</a><a href="#partial-badge" class="rst-mono">badge</a><a href="#partial-meter" class="rst-mono">meter</a><a href="#partial-person" class="rst-mono">person</a><a href="#partial-callout" class="rst-mono">callout</a><a href="#partial-detail-list" class="rst-mono">detail-list</a><a href="#partial-notice" class="rst-mono">notice</a><a href="#partial-form-error" class="rst-mono">form-error</a><a href="#partial-job-status" class="rst-mono">job-status</a><a href="#family-form" class="ds-nav__group">Biểu mẫu</a><a href="#partial-field" class="rst-mono">field</a><a href="#partial-field-text" class="rst-mono">field-text</a><a href="#partial-field-textarea" class="rst-mono">field-textarea</a><a href="#partial-field-select" class="rst-mono">field-select</a><a href="#partial-field-check" class="rst-mono">field-check</a><a href="#partial-choice-field" class="rst-mono">choice-field</a><a href="#partial-field-date" class="rst-mono">field-date</a><a href="#partial-field-time" class="rst-mono">field-time</a><a href="#partial-field-datetime" class="rst-mono">field-datetime</a><a href="#partial-field-daterange" class="rst-mono">field-daterange</a><a href="#partial-form-foot" class="rst-mono">form-foot</a><a href="#partial-confirm-form" class="rst-mono">confirm-form</a><a href="#family-route" class="ds-nav__group">Tuyến</a><a href="#partial-error-page" class="rst-mono">error-page</a><a href="#partial-back-nav" class="rst-mono">back-nav</a><a href="#partial-locale-menu" class="rst-mono">locale-menu</a></details>
@@ -126,7 +126,7 @@
 <header class="rst-page-header">
   <div class="rst-page-header__titles">
     <h1>hệ thống thiết kế rastrillo</h1>
-    <p class="rst-page-header__sub">Mọi mảnh giao diện, lối dùng lớp và token thiết kế mà framework mang theo, gói trong một trang. Chủ đề là <strong>day</strong> và các thành phần nói <strong lang="vi">Tiếng Việt</strong>.</p>
+    <p class="rst-page-header__sub">Tổng quan mọi thứ hệ thống thiết kế cung cấp. Chủ đề: <strong>day</strong>. Ngôn ngữ: <strong lang="vi">Tiếng Việt</strong>.</p>
   </div>
 </header>
 
@@ -134,11 +134,11 @@
   <nav class="rst-seg-tabs" aria-label="Các mục"><a href="#tokens">Token</a><a href="#partials">Mảnh giao diện</a><a href="#idioms">Lối dùng lớp</a><a href="#shells">Khung trang</a></nav>
 </div>
 
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Các liên kết trong những mẫu này không dẫn đi đâu cả</strong><p>Mọi liên kết bên trong một bản xem trước đều được viết lại thành # trước khi đưa vào khung, nên bấm vào cũng không xảy ra gì thay vì dẫn tới một trang mà site này không có. Thẻ Mã bên cạnh vẫn giữ các tuyến mà mẫu được viết ra, và đó mới là thứ đáng sao chép.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Các liên kết ở đây không hoạt động</strong><p>Liên kết không hoạt động, mã nguồn mẫu được cung cấp kèm.</p></div></div>
 
 <div class="ds-head"><h2 id="tokens">Token</h2></div>
-<p class="ds-lead">Các thuộc tính tùy chỉnh mà mỗi thành phần dùng để tự tô vẽ. Màu và họ chữ đến từ chủ đề (themes/day.css); thang cỡ chữ và các bậc khoảng cách là phần cấu trúc, đến từ tokens.css và giống nhau ở mọi chủ đề.</p>
-<p class="ds-swatch-note">Các giá trị in ở đây là của bộ sáng. Bộ tối được viết tay trong cùng tệp — không bao giờ đảo ngược — và ui/contrast_test.go giữ mọi cặp đã ghi chép trong cả hai bộ ở mức sàn WCAG 2.2 AA: 4,5:1 cho chữ, 3:1 cho viền điều khiển. Bản thân các ô màu được tô bằng var(), nên chúng đi theo bảng màu bạn đang đọc, và ở chế độ tối sẽ không khớp với các giá trị in ra.</p>
+<p class="ds-lead">Các thuộc tính tuỳ chỉnh dùng chung cho mọi thành phần. Màu và kiểu chữ thuộc về chủ đề (themes/day.css). Thang cỡ chữ và các bước giãn cách là cấu trúc, đến từ tokens.css.</p>
+<p class="ds-swatch-note">Ở đây hiển thị chế độ sáng; mọi giá trị đều dùng light-dark. Ngưỡng WCAG 2.2 AA: 4,5:1 cho chữ và 3:1 cho viền điều khiển. Mọi màu trong các ô mẫu và chỗ khác đều lấy từ biến.</p>
 
 <h3 class="ds-sub" id="tokens-surfaces-and-lines" data-ds-anchor>Nền và đường kẻ</h3>
 <ul class="ds-toks"><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-bg)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-bg</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line</span><span class="ds-tok__value">#e5e7eb</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-line-strong)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-line-strong</span><span class="ds-tok__value">#7f8792</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface</span><span class="ds-tok__value">#ffffff</span></span></li><li class="ds-tok"><span class="ds-chip" style="background: var(--rst-surface-2)"></span><span class="ds-tok__text rst-mono"><span class="ds-tok__name">--rst-surface-2</span><span class="ds-tok__value">#f6f7f8</span></span></li></ul>
@@ -170,18 +170,18 @@
 
 
 <div class="ds-head"><h2 id="partials">Mảnh giao diện</h2></div>
-<p class="ds-lead">Mọi mảnh mẫu mà ui mang theo, ở những trạng thái một màn hình thật đặt chúng vào. Mỗi mảnh nhận đúng một giá trị dữ liệu, dựng ngay tại chỗ bằng dict. Biểu mẫu nằm trong rst-box có đệm còn các hàng nằm trong rst-list, vì đó là điều các mảnh này mặc định — xem hai quy tắc ở phần Lối dùng lớp bên dưới.</p>
-<p class="ds-note">Mỗi mẫu được đóng khung trong một trang riêng, nên một mảnh có h1 của chính nó — page-header, error-page — không để lại trang này với nhiều h1.</p>
-<p class="ds-note">Nội dung trong các mẫu vẫn để tiếng Anh trên mọi trang: tên, tuyến và nhãn ở đây chỉ là thứ đứng thay, dịch chúng sẽ khiến người ta tưởng framework mang sẵn những chữ đó. Các bản trình diễn khung trang và hộp thoại thì ngược lại — chúng đóng vai một ứng dụng thật, nên bộ khung của chúng nói đúng ngôn ngữ bạn đã chọn.</p>
+<p class="ds-lead">Partial cho bạn những thành phần giao diện dựng sẵn, nhất quán với nhau, được kết xuất ở phía máy chủ.</p>
+<p class="ds-note">Mỗi mẫu bên dưới nằm trong khung riêng của nó.</p>
+<p class="ds-note">Nội dung mẫu để tiếng Anh. Phần vỏ mẫu thì được dịch.</p>
 
 <section class="ds-family" id="family-list-screen" data-ds-anchor>
 <h3>Màn hình danh sách</h3>
-<p class="ds-lead">Màn hình mà phần lớn ứng dụng ở lại lâu nhất: một thanh tiêu đề, một thanh công cụ, một chuỗi hàng, và cách đi tiếp qua phần còn lại.</p>
+<p class="ds-lead">Màn hình danh sách thông thường: tiêu đề, thanh công cụ và các hàng, chạy được cả trên máy tính lẫn điện thoại.</p>
 
 <!-- partial: page-header -->
 <article class="ds-partial" id="partial-page-header" data-ds-anchor>
 <h4 class="rst-mono">page-header</h4>
-<p class="ds-lead">Thanh tiêu đề của màn hình: một h1, một tiêu đề phụ tùy chọn, và nhiều nhất một hành động chính.</p>
+<p class="ds-lead">Thanh tiêu đề của màn hình: một h1, một phụ đề tuỳ chọn và một hành động chính.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Tiêu đề, tiêu đề phụ và một hành động chính</p>
@@ -191,12 +191,12 @@
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu page-header, trong một trang riêng — Tiêu đề, tiêu đề phụ và một hành động chính" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu page-header — Tiêu đề, tiêu đề phụ và một hành động chính" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu page-header, trong một trang riêng — Tiêu đề, tiêu đề phụ và một hành động chính&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu page-header — Tiêu đề, tiêu đề phụ và một hành động chính&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -232,12 +232,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-page-header-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-page-header-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu page-header, trong một trang riêng — Chỉ có tiêu đề" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu page-header — Chỉ có tiêu đề" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu page-header, trong một trang riêng — Chỉ có tiêu đề&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu page-header — Chỉ có tiêu đề&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -266,7 +266,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar -->
 <article class="ds-partial" id="partial-list-bar" data-ds-anchor>
 <h4 class="rst-mono">list-bar</h4>
-<p class="ds-lead">Thanh công cụ trên đầu thẻ danh sách: biểu mẫu tìm kiếm, và chỗ bên cạnh dành cho một bộ lọc.</p>
+<p class="ds-lead">Thanh công cụ ở đầu thẻ danh sách, có tìm kiếm và bộ lọc.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Tìm kiếm kèm trình đơn lọc</p>
@@ -276,12 +276,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-bar, trong một trang riêng — Tìm kiếm kèm trình đơn lọc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-bar — Tìm kiếm kèm trình đơn lọc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-bar, trong một trang riêng — Tìm kiếm kèm trình đơn lọc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-bar — Tìm kiếm kèm trình đơn lọc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -334,22 +334,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-bar-search -->
 <article class="ds-partial" id="partial-list-bar-search" data-ds-anchor>
 <h4 class="rst-mono">list-bar-search</h4>
-<p class="ds-lead">Riêng biểu mẫu tìm kiếm, dành cho danh sách chỉ cần tìm. Một biểu mẫu method=&#34;get&#34; bình thường.</p>
+<p class="ds-lead">Biểu mẫu tìm kiếm đứng riêng, cho những danh sách chỉ tìm kiếm. Một biểu mẫu method=&#34;get&#34; thông thường.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Đã áp dụng sẵn một truy vấn</p>
+<p class="ds-state">Có truy vấn</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-bar-search, trong một trang riêng — Đã áp dụng sẵn một truy vấn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-bar-search — Có truy vấn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-bar-search, trong một trang riêng — Đã áp dụng sẵn một truy vấn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-bar-search — Có truy vấn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -384,12 +384,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-bar-search, trong một trang riêng — Trống, tên trợ năng lấy từ danh mục" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-bar-search — Trống, tên trợ năng lấy từ danh mục" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-bar-search, trong một trang riêng — Trống, tên trợ năng lấy từ danh mục&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-bar-search — Trống, tên trợ năng lấy từ danh mục&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -411,7 +411,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;Tìm kiếm&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Không có Placeholder, nên tên trợ năng của ô nhập lấy từ danh mục của framework, bằng ngôn ngữ của trang này.</p>
+<p class="ds-note">Không có Placeholder. Tên trợ năng của ô nhập lấy từ danh mục của framework trong ngôn ngữ hiện tại.</p>
 </div>
 
 </article>
@@ -429,12 +429,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-search-submit-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-search-submit-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-search-submit, trong một trang riêng — Nhãn mặc định" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-search-submit — Nhãn mặc định" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-search-submit, trong một trang riêng — Nhãn mặc định&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-search-submit — Nhãn mặc định&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -447,7 +447,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;section class=&#34;rst-box&#34;&gt;&lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;Tìm kiếm&lt;/button&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">Ở đây không thấy gì cho tới khi bạn nhấn Tab vào nó — đó là toàn bộ thành phần này.</p>
+<p class="ds-note">Không có gì hiện ra ở đây cho đến khi bạn dùng phím Tab đi vào.</p>
 </div>
 
 </article>
@@ -455,7 +455,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: list-row-action -->
 <article class="ds-partial" id="partial-list-row-action" data-ds-anchor>
 <h4 class="rst-mono">list-row-action</h4>
-<p class="ds-lead">Một hàng danh sách: tên bản ghi làm liên kết chính, một dòng thông tin phụ, và nhiều nhất một hành động phụ.</p>
+<p class="ds-lead">Một hàng danh sách: tên bản ghi làm liên kết chính, một dòng thông tin phụ và một hành động phụ.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Dấu dẫn đầu, trạng thái và một hành động</p>
@@ -465,12 +465,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-row-action, trong một trang riêng — Dấu dẫn đầu, trạng thái và một hành động" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-row-action — Dấu dẫn đầu, trạng thái và một hành động" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-row-action, trong một trang riêng — Dấu dẫn đầu, trạng thái và một hành động&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-row-action — Dấu dẫn đầu, trạng thái và một hành động&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -504,12 +504,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-row-action-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-row-action-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-row-action, trong một trang riêng — Chỉ có tên và dòng thông tin phụ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-row-action — Chỉ có tên và dòng thông tin phụ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-row-action, trong một trang riêng — Chỉ có tên và dòng thông tin phụ&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-row-action — Chỉ có tên và dòng thông tin phụ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -534,7 +534,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: seg-tabs -->
 <article class="ds-partial" id="partial-seg-tabs" data-ds-anchor>
 <h4 class="rst-mono">seg-tabs</h4>
-<p class="ds-lead">Một điều khiển phân đoạn gồm các liên kết dựng ở máy chủ. Thẻ hiện tại chỉ là aria-current trên một liên kết, không hơn.</p>
+<p class="ds-lead">Một điều khiển phân đoạn gồm các liên kết dựng từ máy chủ. Tab hiện tại là aria-current trên một liên kết.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Hai mục</p>
@@ -544,12 +544,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-seg-tabs-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-seg-tabs-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu seg-tabs, trong một trang riêng — Hai mục" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu seg-tabs — Hai mục" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu seg-tabs, trong một trang riêng — Hai mục&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu seg-tabs — Hai mục&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -580,12 +580,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-dropdown-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-dropdown-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu dropdown, trong một trang riêng — Trình đơn lọc đã áp dụng một lựa chọn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu dropdown — Trình đơn lọc đã áp dụng một lựa chọn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu dropdown, trong một trang riêng — Trình đơn lọc đã áp dụng một lựa chọn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu dropdown — Trình đơn lọc đã áp dụng một lựa chọn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -631,12 +631,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-bulk-bar-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu bulk-bar, trong một trang riêng — Đã chọn ba hàng" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu bulk-bar — Đã chọn ba hàng" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu bulk-bar, trong một trang riêng — Đã chọn ba hàng&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu bulk-bar — Đã chọn ba hàng&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -668,12 +668,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu pagination, trong một trang riêng — Giữa một danh sách dài" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu pagination — Giữa một danh sách dài" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu pagination, trong một trang riêng — Giữa một danh sách dài&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu pagination — Giữa một danh sách dài&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -699,12 +699,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-pagination-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-pagination-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu pagination, trong một trang riêng — Trang đầu, tên trợ năng mặc định" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu pagination — Trang đầu, tên trợ năng mặc định" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu pagination, trong một trang riêng — Trang đầu, tên trợ năng mặc định&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu pagination — Trang đầu, tên trợ năng mặc định&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -727,7 +727,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: empty-state -->
 <article class="ds-partial" id="partial-empty-state" data-ds-anchor>
 <h4 class="rst-mono">empty-state</h4>
-<p class="ds-lead">Thẻ trạng thái rỗng. Một trạng thái rỗng là để chỉ dẫn: nó nói ở đây lẽ ra có gì và làm thế nào để tạo một cái.</p>
+<p class="ds-lead">Thẻ trạng thái trống. Trạng thái trống kèm lối vào cho các bước bắt đầu.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Kèm một lời kêu gọi hành động bằng POST</p>
@@ -737,12 +737,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu empty-state, trong một trang riêng — Kèm một lời kêu gọi hành động bằng POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu empty-state — Kèm một lời kêu gọi hành động bằng POST" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu empty-state, trong một trang riêng — Kèm một lời kêu gọi hành động bằng POST&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu empty-state — Kèm một lời kêu gọi hành động bằng POST&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -781,12 +781,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-empty-state-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-empty-state-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu empty-state, trong một trang riêng — Chỉ một câu" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu empty-state — Chỉ một câu" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu empty-state, trong một trang riêng — Chỉ một câu&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu empty-state — Chỉ một câu&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -817,7 +817,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: status-pill -->
 <article class="ds-partial" id="partial-status-pill" data-ds-anchor>
 <h4 class="rst-mono">status-pill</h4>
-<p class="ds-lead">Trạng thái của bản ghi dưới dạng một viên nhãn có màu. Trạng thái không bao giờ chỉ là màu — nhãn luôn là chữ nhìn thấy được.</p>
+<p class="ds-lead">Trạng thái bản ghi dưới dạng viên nhãn có màu, gồm màu và nhãn chữ.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Sắc thái mặc định (neutral)</p>
@@ -827,12 +827,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu status-pill, trong một trang riêng — Sắc thái mặc định (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu status-pill — Sắc thái mặc định (neutral)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu status-pill, trong một trang riêng — Sắc thái mặc định (neutral)&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu status-pill — Sắc thái mặc định (neutral)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -856,12 +856,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu status-pill, trong một trang riêng — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu status-pill — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu status-pill, trong một trang riêng — neutral&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu status-pill — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -885,12 +885,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu status-pill, trong một trang riêng — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu status-pill — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu status-pill, trong một trang riêng — positive&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu status-pill — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -914,12 +914,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu status-pill, trong một trang riêng — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu status-pill — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu status-pill, trong một trang riêng — warning&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu status-pill — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -943,12 +943,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-status-pill-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-status-pill-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu status-pill, trong một trang riêng — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu status-pill — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu status-pill, trong một trang riêng — negative&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu status-pill — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -972,19 +972,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Một chip có viền, chữ in hoa, dùng cho những dấu hiệu nhỏ và cố định. Khác với status-pill, vốn là trạng thái của bản ghi.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Không sắc thái (mặc định trầm lặng)</p>
+<p class="ds-state">Không có tông (mặc định trầm)</p>
 <div class="ds-view" style="--ds-h: 70px; --ds-hm: 87px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-badge-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu badge, trong một trang riêng — Không sắc thái (mặc định trầm lặng)" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu badge — Không có tông (mặc định trầm)" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu badge, trong một trang riêng — Không sắc thái (mặc định trầm lặng)&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu badge — Không có tông (mặc định trầm)&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1008,12 +1008,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu badge, trong một trang riêng — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu badge — neutral" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu badge, trong một trang riêng — neutral&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu badge — neutral&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1037,12 +1037,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu badge, trong một trang riêng — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu badge — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu badge, trong một trang riêng — positive&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu badge — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1066,12 +1066,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu badge, trong một trang riêng — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu badge — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu badge, trong một trang riêng — warning&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu badge — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1095,12 +1095,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-badge-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-badge-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu badge, trong một trang riêng — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu badge — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu badge, trong một trang riêng — negative&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu badge — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1121,7 +1121,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: meter -->
 <article class="ds-partial" id="partial-meter" data-ds-anchor>
 <h4 class="rst-mono">meter</h4>
-<p class="ds-lead">Một thanh dung lượng kèm con số. Tỷ lệ luôn là chữ — một thanh không bao giờ tự mang con số.</p>
+<p class="ds-lead">Thanh dung lượng kèm con số.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Trống</p>
@@ -1131,12 +1131,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu meter, trong một trang riêng — Trống" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu meter — Trống" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu meter, trong một trang riêng — Trống&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu meter — Trống&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1160,12 +1160,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu meter, trong một trang riêng — Được một phần" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu meter — Được một phần" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu meter, trong một trang riêng — Được một phần&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu meter — Được một phần&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1189,12 +1189,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu meter, trong một trang riêng — Gần đầy" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu meter — Gần đầy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu meter, trong một trang riêng — Gần đầy&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu meter — Gần đầy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1218,12 +1218,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu meter, trong một trang riêng — Đầy" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu meter — Đầy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu meter, trong một trang riêng — Đầy&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu meter — Đầy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1247,12 +1247,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-meter-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-meter-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu meter, trong một trang riêng — Vượt hạn mức" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu meter — Vượt hạn mức" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu meter, trong một trang riêng — Vượt hạn mức&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu meter — Vượt hạn mức&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1265,7 +1265,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;span class=&#34;rst-meter&#34;&gt;&lt;span class=&#34;rst-meter__bar&#34;&gt;&lt;i style=&#34;--rst-meter-fill: 100%&#34;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&#34;rst-meter__num&#34;&gt;700/500&lt;/span&gt;&lt;/span&gt;</code></pre>
 </div>
-<p class="ds-note">Phần lấp đầy bị chặn ở 100% trong mảnh này; con số mới là thứ nói thật.</p>
+<p class="ds-note">Phần tô được giới hạn ở 100% trong partial.</p>
 </div>
 
 </article>
@@ -1273,7 +1273,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: person -->
 <article class="ds-partial" id="partial-person" data-ds-anchor>
 <h4 class="rst-mono">person</h4>
-<p class="ds-lead">Ảnh đại diện bằng chữ đầu, tên và email: ô danh tính cho những loại bản ghi vốn là con người.</p>
+<p class="ds-lead">Ảnh đại diện chữ cái đầu, tên và email. Giúp nhận ra nhanh các bản ghi về người.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Tên và email</p>
@@ -1283,12 +1283,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu person, trong một trang riêng — Tên và email" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu person — Tên và email" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu person, trong một trang riêng — Tên và email&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu person — Tên và email&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1312,12 +1312,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu person, trong một trang riêng — Cỡ lớn, kích thước cho đầu trang xem" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu person — Cỡ lớn, kích thước cho đầu trang xem" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu person, trong một trang riêng — Cỡ lớn, kích thước cho đầu trang xem&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu person — Cỡ lớn, kích thước cho đầu trang xem&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1341,12 +1341,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-person-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-person-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu person, trong một trang riêng — Không có chữ đầu" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu person — Không có chữ đầu" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu person, trong một trang riêng — Không có chữ đầu&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu person — Không có chữ đầu&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1377,12 +1377,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu callout, trong một trang riêng — Sắc thái mặc định (info), không tiêu đề" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu callout — Sắc thái mặc định (info), không tiêu đề" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu callout, trong một trang riêng — Sắc thái mặc định (info), không tiêu đề&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu callout — Sắc thái mặc định (info), không tiêu đề&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1406,12 +1406,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu callout, trong một trang riêng — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu callout — info" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu callout, trong một trang riêng — info&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu callout — info&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1435,12 +1435,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu callout, trong một trang riêng — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu callout — positive" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu callout, trong một trang riêng — positive&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu callout — positive&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1464,12 +1464,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu callout, trong một trang riêng — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu callout — warning" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu callout, trong một trang riêng — warning&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu callout — warning&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1493,12 +1493,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu callout, trong một trang riêng — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu callout — negative" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu callout, trong một trang riêng — negative&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu callout — negative&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1522,12 +1522,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-callout-5">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-callout-5">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu callout, trong một trang riêng — negative, được đọc lên như một cảnh báo" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu callout — negative, được đọc lên như một cảnh báo" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu callout, trong một trang riêng — negative, được đọc lên như một cảnh báo&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu callout — negative, được đọc lên như một cảnh báo&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1540,7 +1540,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 "></iframe></div></div>
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-callout&#34; data-tone=&#34;negative&#34; role=&#34;alert&#34;&gt;&lt;span class=&#34;rst-callout__ic&#34; aria-hidden=&#34;true&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;12&#34; cy=&#34;12&#34; r=&#34;10&#34;/&gt;&lt;path d=&#34;m15 9-6 6&#34;/&gt;&lt;path d=&#34;m9 9 6 6&#34;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;div class=&#34;rst-callout__body&#34;&gt;&lt;strong&gt;The import stopped&lt;/strong&gt;&lt;p&gt;Nothing was changed. Fix row 91 and try again.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note">Alert thêm role=&#34;alert&#34;. Hãy để dành nó cho những sự cố đang diễn ra, không dùng cho ghi chú thông thường.</p>
+<p class="ds-note">alert thêm role=&#34;alert&#34; để hiển thị những thông báo quan trọng.</p>
 </div>
 
 </article>
@@ -1548,22 +1548,22 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: detail-list -->
 <article class="ds-partial" id="partial-detail-list" data-ds-anchor>
 <h4 class="rst-mono">detail-list</h4>
-<p class="ds-lead">Các dữ kiện có nhãn của một bản ghi, dưới dạng danh sách định nghĩa — phần thân của màn hình xem. Mono đánh dấu những giá trị mang tính máy móc.</p>
+<p class="ds-lead">Danh sách định nghĩa về một bản ghi trên màn hình chi tiết. Dấu mono dành cho các giá trị thiên về máy.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Bốn dữ kiện, một trong số đó mang tính máy móc</p>
+<p class="ds-state">Bốn thông tin, một cái thiên về máy</p>
 <div class="ds-view" style="--ds-h: 230px; --ds-hm: 287px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-detail-list-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-detail-list-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-detail-list-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu detail-list, trong một trang riêng — Bốn dữ kiện, một trong số đó mang tính máy móc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu detail-list — Bốn thông tin, một cái thiên về máy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu detail-list, trong một trang riêng — Bốn dữ kiện, một trong số đó mang tính máy móc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu detail-list — Bốn thông tin, một cái thiên về máy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1612,12 +1612,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-notice-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-notice-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu notice, trong một trang riêng — Một thông báo đã lưu" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu notice — Một thông báo đã lưu" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu notice, trong một trang riêng — Một thông báo đã lưu&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu notice — Một thông báo đã lưu&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1648,12 +1648,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-error-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-error-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu form-error, trong một trang riêng — Một lần gửi bị từ chối" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu form-error — Một lần gửi bị từ chối" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu form-error, trong một trang riêng — Một lần gửi bị từ chối&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu form-error — Một lần gửi bị từ chối&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1684,12 +1684,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu job-status, trong một trang riêng — Đang chạy" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu job-status — Đang chạy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu job-status, trong một trang riêng — Đang chạy&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu job-status — Đang chạy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1722,12 +1722,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu job-status, trong một trang riêng — Đã xong" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu job-status — Đã xong" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu job-status, trong một trang riêng — Đã xong&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu job-status — Đã xong&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1759,12 +1759,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-job-status-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-job-status-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu job-status, trong một trang riêng — Thất bại" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu job-status — Thất bại" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu job-status, trong một trang riêng — Thất bại&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu job-status — Thất bại&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1799,7 +1799,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field -->
 <article class="ds-partial" id="partial-field" data-ds-anchor>
 <h4 class="rst-mono">field</h4>
-<p class="ds-lead">Nhãn, ô nhập, gợi ý tùy chọn, trợ giúp và lỗi — điều khiển dạng chữ dùng chung, với một ID ghi rõ.</p>
+<p class="ds-lead">Nhãn, ô nhập, gợi ý tuỳ chọn, trợ giúp và lỗi. Điều khiển dạng chữ thông thường, có ID rõ ràng.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Trơn</p>
@@ -1809,12 +1809,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field, trong một trang riêng — Trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field — Trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field, trong một trang riêng — Trơn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field — Trơn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1843,12 +1843,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field, trong một trang riêng — Kèm một gợi ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field — Kèm một gợi ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field, trong một trang riêng — Kèm một gợi ý&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field — Kèm một gợi ý&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1877,12 +1877,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field, trong một trang riêng — Kèm trợ giúp bên dưới điều khiển" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field — Kèm trợ giúp bên dưới điều khiển" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field, trong một trang riêng — Kèm trợ giúp bên dưới điều khiển&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field — Kèm trợ giúp bên dưới điều khiển&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1913,12 +1913,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field, trong một trang riêng — Bắt buộc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field — Bắt buộc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field, trong một trang riêng — Bắt buộc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field — Bắt buộc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1947,12 +1947,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field, trong một trang riêng — Kèm một lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field — Kèm một lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field, trong một trang riêng — Kèm một lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field — Kèm một lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -1983,12 +1983,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-5">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-5">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field, trong một trang riêng — Ngắn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field — Ngắn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field, trong một trang riêng — Ngắn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field — Ngắn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2014,7 +2014,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-text -->
 <article class="ds-partial" id="partial-field-text" data-ds-anchor>
 <h4 class="rst-mono">field-text</h4>
-<p class="ds-lead">Một ô nhập chữ có nhãn, các id sinh ra từ Name. Dấu sao báo bắt buộc là aria-hidden — tín hiệu cho phần mềm là thuộc tính required trên ô nhập.</p>
+<p class="ds-lead">Một ô nhập chữ có nhãn, id suy ra từ Name. Dấu sao của chỉ báo bắt buộc là aria-hidden; tín hiệu cho máy đọc là thuộc tính required của ô nhập.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Trơn</p>
@@ -2024,12 +2024,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-text, trong một trang riêng — Trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-text — Trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-text, trong một trang riêng — Trơn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-text — Trơn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2060,12 +2060,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-text, trong một trang riêng — Kèm một gợi ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-text — Kèm một gợi ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-text, trong một trang riêng — Kèm một gợi ý&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-text — Kèm một gợi ý&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2098,12 +2098,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-text, trong một trang riêng — Bắt buộc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-text — Bắt buộc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-text, trong một trang riêng — Bắt buộc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-text — Bắt buộc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2134,12 +2134,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-text-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-text-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-text, trong một trang riêng — Kèm một lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-text — Kèm một lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-text, trong một trang riêng — Kèm một lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-text — Kèm một lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2179,12 +2179,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-textarea, trong một trang riêng — Trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-textarea — Trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-textarea, trong một trang riêng — Trơn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-textarea — Trơn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2215,12 +2215,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-textarea, trong một trang riêng — Kèm một gợi ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-textarea — Kèm một gợi ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-textarea, trong một trang riêng — Kèm một gợi ý&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-textarea — Kèm một gợi ý&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2253,12 +2253,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-textarea, trong một trang riêng — Kèm một lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-textarea — Kèm một lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-textarea, trong một trang riêng — Kèm một lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-textarea — Kèm một lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2291,12 +2291,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-textarea-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-textarea-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-textarea, trong một trang riêng — Bắt buộc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-textarea — Bắt buộc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-textarea, trong một trang riêng — Bắt buộc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-textarea — Bắt buộc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2327,19 +2327,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Lớp vỏ của field bọc quanh một select gốc. Quá mười lựa chọn thì select bật hộp kết hợp có lọc trong select.js; thứ biểu mẫu gửi đi vẫn là select gốc.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Ba lựa chọn — select gốc</p>
+<p class="ds-state">Ba lựa chọn: select gốc</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-select, trong một trang riêng — Ba lựa chọn — select gốc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-select — Ba lựa chọn: select gốc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-select, trong một trang riêng — Ba lựa chọn — select gốc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-select — Ba lựa chọn: select gốc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2361,19 +2361,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 </div>
 
 <div class="ds-sample">
-<p class="ds-state">Mười hai lựa chọn — hộp kết hợp có lọc</p>
+<p class="ds-state">Mười hai lựa chọn: hộp chọn có lọc</p>
 <div class="ds-view" style="--ds-h: 300px; --ds-hm: 375px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-select-1" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-select, trong một trang riêng — Mười hai lựa chọn — hộp kết hợp có lọc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-select — Mười hai lựa chọn: hộp chọn có lọc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-select, trong một trang riêng — Mười hai lựa chọn — hộp kết hợp có lọc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-select — Mười hai lựa chọn: hộp chọn có lọc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2405,12 +2405,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-select, trong một trang riêng — Mười hai lựa chọn, Plain — đã từ chối phần tăng cường" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-select — Mười hai lựa chọn, Plain — đã từ chối phần tăng cường" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-select, trong một trang riêng — Mười hai lựa chọn, Plain — đã từ chối phần tăng cường&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-select — Mười hai lựa chọn, Plain — đã từ chối phần tăng cường&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2439,12 +2439,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-select, trong một trang riêng — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-select — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-select, trong một trang riêng — Bắt buộc, kèm lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-select — Bắt buộc, kèm lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2475,12 +2475,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-select-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-select-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-select, trong một trang riêng — Viết tay, có optgroup" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-select — Viết tay, có optgroup" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-select, trong một trang riêng — Viết tay, có optgroup&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-select — Viết tay, có optgroup&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2527,12 +2527,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-check, trong một trang riêng — Bật" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-check — Bật" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-check, trong một trang riêng — Bật&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-check — Bật&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2557,12 +2557,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-check, trong một trang riêng — Tắt" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-check — Tắt" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-check, trong một trang riêng — Tắt&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-check — Tắt&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2587,12 +2587,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-check-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-check-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-check, trong một trang riêng — Bị vô hiệu" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-check — Bị vô hiệu" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-check, trong một trang riêng — Bị vô hiệu&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-check — Bị vô hiệu&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2624,12 +2624,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu choice-field, trong một trang riêng — Chọn một" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu choice-field — Chọn một" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu choice-field, trong một trang riêng — Chọn một&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu choice-field — Chọn một&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2654,12 +2654,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-choice-field-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-choice-field-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu choice-field, trong một trang riêng — Chọn bao nhiêu tùy ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu choice-field — Chọn bao nhiêu tùy ý" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu choice-field, trong một trang riêng — Chọn bao nhiêu tùy ý&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu choice-field — Chọn bao nhiêu tùy ý&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2684,19 +2684,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Một ô nhập ngày gốc, kèm hộp kết hợp hiểu ngôn ngữ tự nhiên mà datetime.js bật lên, trừ khi nơi gọi truyền Plain. Hãy gõ &#34;ngày mai&#34; vào đó.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Có tăng cường — gõ &#34;ngày mai&#34; hoặc &#34;3 tuần nữa&#34;</p>
+<p class="ds-state">Ô nhập nâng cao: gõ &#34;ngày mai&#34; hoặc &#34;sau 3 tuần&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-date-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-date, trong một trang riêng — Có tăng cường — gõ &#34;ngày mai&#34; hoặc &#34;3 tuần nữa&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-date — Ô nhập nâng cao: gõ &#34;ngày mai&#34; hoặc &#34;sau 3 tuần&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-date, trong một trang riêng — Có tăng cường — gõ &amp;#34;ngày mai&amp;#34; hoặc &amp;#34;3 tuần nữa&amp;#34;&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-date — Ô nhập nâng cao: gõ &amp;#34;ngày mai&amp;#34; hoặc &amp;#34;sau 3 tuần&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2730,12 +2730,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-date, trong một trang riêng — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-date — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-date, trong một trang riêng — Bắt buộc, kèm lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-date — Bắt buộc, kèm lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2769,12 +2769,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-date, trong một trang riêng — Có giới hạn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-date — Có giới hạn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-date, trong một trang riêng — Có giới hạn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-date — Có giới hạn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2806,12 +2806,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-date-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-date-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-date, trong một trang riêng — Plain — ô nhập gốc để trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-date — Plain — ô nhập gốc để trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-date, trong một trang riêng — Plain — ô nhập gốc để trơn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-date — Plain — ô nhập gốc để trơn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2842,19 +2842,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Cũng lớp vỏ ấy, lần này bọc quanh một ô nhập giờ gốc. Phần tăng cường đọc đồng hồ chứ không đọc lịch.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Có tăng cường — gõ &#34;19:30&#34; hoặc &#34;giữa trưa&#34;</p>
+<p class="ds-state">Ô nhập nâng cao: gõ &#34;bảy rưỡi&#34; hoặc &#34;giữa trưa&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-time-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-time, trong một trang riêng — Có tăng cường — gõ &#34;19:30&#34; hoặc &#34;giữa trưa&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-time — Ô nhập nâng cao: gõ &#34;bảy rưỡi&#34; hoặc &#34;giữa trưa&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-time, trong một trang riêng — Có tăng cường — gõ &amp;#34;19:30&amp;#34; hoặc &amp;#34;giữa trưa&amp;#34;&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-time — Ô nhập nâng cao: gõ &amp;#34;bảy rưỡi&amp;#34; hoặc &amp;#34;giữa trưa&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2888,12 +2888,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-time, trong một trang riêng — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-time — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-time, trong một trang riêng — Bắt buộc, kèm lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-time — Bắt buộc, kèm lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2927,12 +2927,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-time, trong một trang riêng — Có giới hạn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-time — Có giới hạn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-time, trong một trang riêng — Có giới hạn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-time — Có giới hạn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -2964,12 +2964,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-time-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-time-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-time, trong một trang riêng — Plain — ô nhập gốc để trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-time — Plain — ô nhập gốc để trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-time, trong một trang riêng — Plain — ô nhập gốc để trơn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-time — Plain — ô nhập gốc để trơn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3000,19 +3000,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Ngày và giờ trong một ô nhập, một giá trị.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Có tăng cường — gõ &#34;ngày mai&#34; hoặc &#34;3 tuần nữa&#34;</p>
+<p class="ds-state">Ô nhập nâng cao: gõ &#34;ngày mai&#34; hoặc &#34;sau 3 tuần&#34;</p>
 <div class="ds-view" style="--ds-h: 330px; --ds-hm: 412px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-field-datetime-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-datetime, trong một trang riêng — Có tăng cường — gõ &#34;ngày mai&#34; hoặc &#34;3 tuần nữa&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-datetime — Ô nhập nâng cao: gõ &#34;ngày mai&#34; hoặc &#34;sau 3 tuần&#34;" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-datetime, trong một trang riêng — Có tăng cường — gõ &amp;#34;ngày mai&amp;#34; hoặc &amp;#34;3 tuần nữa&amp;#34;&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-datetime — Ô nhập nâng cao: gõ &amp;#34;ngày mai&amp;#34; hoặc &amp;#34;sau 3 tuần&amp;#34;&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3046,12 +3046,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-datetime, trong một trang riêng — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-datetime — Bắt buộc, kèm lỗi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-datetime, trong một trang riêng — Bắt buộc, kèm lỗi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-datetime — Bắt buộc, kèm lỗi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3085,12 +3085,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-datetime, trong một trang riêng — Có giới hạn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-datetime — Có giới hạn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-datetime, trong một trang riêng — Có giới hạn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-datetime — Có giới hạn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3122,12 +3122,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-datetime-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-datetime-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-datetime, trong một trang riêng — Plain — ô nhập gốc để trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-datetime — Plain — ô nhập gốc để trơn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-datetime, trong một trang riêng — Plain — ô nhập gốc để trơn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-datetime — Plain — ô nhập gốc để trơn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3155,7 +3155,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: field-daterange -->
 <article class="ds-partial" id="partial-field-daterange" data-ds-anchor>
 <h4 class="rst-mono">field-daterange</h4>
-<p class="ds-lead">Điểm bắt đầu và điểm kết thúc thành một nhóm có nhãn. Hai nửa phải mang Name khác nhau — mỗi bên tự sinh id từ Name của mình.</p>
+<p class="ds-lead">Một điểm bắt đầu và một điểm kết thúc trong cùng một nhóm có nhãn. Các Name phải khác nhau, vì id được suy ra từ chúng.</p>
 
 <div class="ds-sample">
 <p class="ds-state">Ngày và giờ, đã điền sẵn</p>
@@ -3165,12 +3165,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-daterange, trong một trang riêng — Ngày và giờ, đã điền sẵn" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-daterange — Ngày và giờ, đã điền sẵn" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-daterange, trong một trang riêng — Ngày và giờ, đã điền sẵn&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-daterange — Ngày và giờ, đã điền sẵn&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3220,12 +3220,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-field-daterange-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-field-daterange-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu field-daterange, trong một trang riêng — Chỉ ngày, kèm lỗi ở phần kết thúc" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu field-daterange — Chỉ ngày, kèm lỗi ở phần kết thúc" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu field-daterange, trong một trang riêng — Chỉ ngày, kèm lỗi ở phần kết thúc&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu field-daterange — Chỉ ngày, kèm lỗi ở phần kết thúc&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3284,12 +3284,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu form-foot, trong một trang riêng — Lưu và hủy" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu form-foot — Lưu và hủy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu form-foot, trong một trang riêng — Lưu và hủy&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu form-foot — Lưu và hủy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3320,12 +3320,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu form-foot, trong một trang riêng — Chỉ có nút gửi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu form-foot — Chỉ có nút gửi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu form-foot, trong một trang riêng — Chỉ có nút gửi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu form-foot — Chỉ có nút gửi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3354,12 +3354,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu form-foot, trong một trang riêng — Nghỉ — nút trước khi có chuyện gì xảy ra" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu form-foot — Nghỉ — nút trước khi có chuyện gì xảy ra" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu form-foot, trong một trang riêng — Nghỉ — nút trước khi có chuyện gì xảy ra&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu form-foot — Nghỉ — nút trước khi có chuyện gì xảy ra&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3379,7 +3379,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;a class=&#34;rst-btn&#34; href=&#34;/posts&#34;&gt;Back to posts&lt;/a&gt;
 &lt;/div&gt;&lt;/form&gt;&lt;/section&gt;</code></pre>
 </div>
-<p class="ds-note">Nút LÀM THAY ĐỔI một thứ gì đó thì có trạng thái đang tải; nút chỉ hiện ra một thứ gì đó — khối mở rộng, menu thả xuống, thẻ — thì không. rastrillo.js áp dụng quy tắc đó cho mọi nút gửi trong mọi biểu mẫu, không cần bật gì cả.</p>
+<p class="ds-note">Nút LÀM THAY ĐỔI điều gì đó sẽ có trạng thái đang tải; nút chỉ mở ra điều gì đó — một khối bung, một menu thả xuống, một tab — thì không. rastrillo.js áp dụng quy tắc đó cho mọi nút gửi trong mọi biểu mẫu, không có gì phải bật lên.</p>
 </div>
 
 <div class="ds-sample">
@@ -3390,12 +3390,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-form-foot-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-form-foot-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu form-foot, trong một trang riêng — Đang xử lý — thứ rastrillo.js viết ra khi biểu mẫu rời đi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu form-foot — Đang xử lý — thứ rastrillo.js viết ra khi biểu mẫu rời đi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu form-foot, trong một trang riêng — Đang xử lý — thứ rastrillo.js viết ra khi biểu mẫu rời đi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu form-foot — Đang xử lý — thứ rastrillo.js viết ra khi biểu mẫu rời đi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3433,12 +3433,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu confirm-form, trong một trang riêng — Hành động phá hủy" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu confirm-form — Hành động phá hủy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu confirm-form, trong một trang riêng — Hành động phá hủy&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu confirm-form — Hành động phá hủy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3463,12 +3463,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-confirm-form-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-confirm-form-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu confirm-form, trong một trang riêng — Trường hợp thường, chữ hủy theo mặc định" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu confirm-form — Trường hợp thường, chữ hủy theo mặc định" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu confirm-form, trong một trang riêng — Trường hợp thường, chữ hủy theo mặc định&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu confirm-form — Trường hợp thường, chữ hủy theo mặc định&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3496,7 +3496,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <!-- partial: error-page -->
 <article class="ds-partial" id="partial-error-page" data-ds-anchor>
 <h4 class="rst-mono">error-page</h4>
-<p class="ds-lead">Toàn bộ phần thân của một phản hồi lỗi: trạng thái, một câu nói thật, lối quay lại, và — với lỗi 500 — mã tham chiếu để người vận hành grep.</p>
+<p class="ds-lead">Toàn bộ phần thân của một phản hồi lỗi: mã trạng thái, một câu nói thật, một lối quay lại, và mã tham chiếu 500 mà quản trị viên dùng được.</p>
 
 <div class="ds-sample">
 <p class="ds-state">404 — không tìm thấy</p>
@@ -3506,12 +3506,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu error-page, trong một trang riêng — 404 — không tìm thấy" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu error-page — 404 — không tìm thấy" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu error-page, trong một trang riêng — 404 — không tìm thấy&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu error-page — 404 — không tìm thấy&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3545,12 +3545,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-1">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-1">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu error-page, trong một trang riêng — 403 — không có quyền" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu error-page — 403 — không có quyền" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu error-page, trong một trang riêng — 403 — không có quyền&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu error-page — 403 — không có quyền&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3584,12 +3584,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-2">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-2">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu error-page, trong một trang riêng — 422 — không xử lý được" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu error-page — 422 — không xử lý được" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu error-page, trong một trang riêng — 422 — không xử lý được&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu error-page — 422 — không xử lý được&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3623,12 +3623,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-3">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-3">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu error-page, trong một trang riêng — 500 — lỗi máy chủ" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu error-page — 500 — lỗi máy chủ" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu error-page, trong một trang riêng — 500 — lỗi máy chủ&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu error-page — 500 — lỗi máy chủ&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3664,12 +3664,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-4">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-4">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu error-page, trong một trang riêng — 503 — không khả dụng" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu error-page — 503 — không khả dụng" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu error-page, trong một trang riêng — 503 — không khả dụng&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu error-page — 503 — không khả dụng&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3703,12 +3703,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-error-page-5">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-error-page-5">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu error-page, trong một trang riêng — Mọi trường hợp khác — cặp chung" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu error-page — Mọi trường hợp khác — cặp chung" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu error-page, trong một trang riêng — Mọi trường hợp khác — cặp chung&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu error-page — Mọi trường hợp khác — cặp chung&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3749,12 +3749,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-back-nav-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-back-nav-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu back-nav, trong một trang riêng — Quay lại một bản ghi" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu back-nav — Quay lại một bản ghi" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu back-nav, trong một trang riêng — Quay lại một bản ghi&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu back-nav — Quay lại một bản ghi&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3778,19 +3778,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <p class="ds-lead">Bộ chuyển ngôn ngữ: một trình đơn details gồm các biểu mẫu POST một trường gửi tới /_locale, để lựa chọn rơi vào cookie ngôn ngữ còn người đọc vẫn ở nguyên đường dẫn cũ.</p>
 
 <div class="ds-sample">
-<p class="ds-state">Mười hai ngôn ngữ, ngôn ngữ hiện tại được đánh dấu</p>
+<p class="ds-state">Mười hai ngôn ngữ, ngôn ngữ hiện tại được làm nổi.</p>
 <div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-locale-menu-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu locale-menu, trong một trang riêng — Mười hai ngôn ngữ, ngôn ngữ hiện tại được đánh dấu" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu locale-menu — Mười hai ngôn ngữ, ngôn ngữ hiện tại được làm nổi." loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu locale-menu, trong một trang riêng — Mười hai ngôn ngữ, ngôn ngữ hiện tại được đánh dấu&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu locale-menu — Mười hai ngôn ngữ, ngôn ngữ hiện tại được làm nổi.&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3837,7 +3837,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;/div&gt;
 &lt;/details&gt;</code></pre>
 </div>
-<p class="ds-note">Cái này POST tới /_locale, mà một trang tĩnh thì không có máy chủ cho việc đó — bộ chuyển ở phần đầu của chính trang này mới là bản chỉ dùng liên kết.</p>
+<p class="ds-note">Cái này gửi POST tới /_locale, việc đó cần có máy chủ. Bộ chuyển trong phần đầu của chính trang này là bản chỉ dùng liên kết.</p>
 </div>
 
 </article>
@@ -3846,7 +3846,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 
 <div class="ds-head"><h2 id="idioms">Lối dùng lớp</h2></div>
-<p class="ds-lead">Những hình dạng mà một mảnh không thể là, vì chúng bọc quanh phần thân chỉ bên gọi mới biết: thẻ mục, lưới dữ liệu, trình đơn bung mở, bộ khung riêng của các shell. tokens.css cấp các lớp còn ứng dụng viết phần mã. Mọi thứ bên dưới đúng là mẫu mà ui.Styleguide trả về, cũng chính là mẫu mà các bài kiểm thử của ui đối chiếu với tokens.css — hãy sao chép từ đây.</p>
+<p class="ds-lead">Những hình thù mà một partial không thể là, vì chúng bọc lấy một phần thân chỉ bên gọi mới biết: thẻ mục, lưới dữ liệu, menu bung ra, và khung riêng của các lớp vỏ. tokens.css cung cấp các lớp, còn ứng dụng viết mã đánh dấu. Mọi thứ bên dưới đúng là mẫu mà ui.Styleguide trả về, cũng là mẫu mà các bài kiểm tra của ui đối chiếu với tokens.css.</p>
 
 <!-- idiom: box -->
 <article class="ds-partial" id="idiom-box" data-ds-anchor>
@@ -3859,12 +3859,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-box-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-box-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu box, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu box — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu box, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu box — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3893,12 +3893,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-dropdown-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-dropdown-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu dropdown, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu dropdown — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu dropdown, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu dropdown — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -3940,12 +3940,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-form-layout-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-form-layout-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu form-layout, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu form-layout — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu form-layout, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu form-layout — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4025,12 +4025,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-help-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-help-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu help, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu help — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu help, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu help — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4050,19 +4050,19 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <article class="ds-partial" id="idiom-list-grid" data-ds-anchor>
 <h3 class="rst-mono">list-grid</h3>
 <p class="ds-lead">Bộ từ vựng thật của bảng dữ liệu: thẻ định các cột một lần, các hàng chỉ chọn ô.</p>
-<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Màn hình xếp chồng theo chiều dọc</strong><p>Một màn hình là một cột: page-header, rồi section-header cùng thẻ, rồi section-header và thẻ tiếp theo, theo thứ tự đọc. Đừng xếp tiêu đề, đoạn văn và nút cạnh nhau trong một hàng flex. Sắp xếp ngang chỉ dành cho những lối dùng vốn đã mang sẵn nó: rst-box-head, rst-field-row, rst-lbar, các ô rst-lrow, rst-seg-tabs.</p></div></div>
+<div class="rst-callout" data-tone="info"><span class="rst-callout__ic" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div class="rst-callout__body"><strong>Màn hình xếp chồng theo chiều dọc</strong><p>Một màn hình là một cột: page-header, rồi section-header cùng thẻ, rồi section-header và thẻ tiếp theo, theo thứ tự đọc. Cách xếp ngang chỉ dành cho những lối viết vốn mang sẵn nó: rst-box-head, rst-field-row, rst-lbar, các ô rst-lrow, rst-seg-tabs.</p></div></div>
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 280px; --ds-hm: 350px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
 <label class="ds-view__tab"><input type="radio" name="idiom-list-grid-0" checked>Máy tính</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-list-grid-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-list-grid-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu list-grid, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu list-grid — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu list-grid, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu list-grid — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4112,12 +4112,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-modal-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-modal-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu modal, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu modal — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu modal, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu modal — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4176,12 +4176,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-selbox-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-selbox-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu selbox, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu selbox — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu selbox, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu selbox — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4208,12 +4208,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-sidebar-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-sidebar-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu shell-sidebar, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu shell-sidebar — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu shell-sidebar, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu shell-sidebar — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4240,13 +4240,13 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;main class=&#34;rst-shell__main&#34; id=&#34;main&#34;&gt;&lt;div class=&#34;rst-page&#34;&gt;Content.&lt;/div&gt;&lt;/main&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/day/vi/shells/sidebar.html" target="_blank" rel="noopener">Mở bản trình diễn khung sidebar, nơi chính đoạn mã đó là một trang thật</a><span class="rst-sr-only"> (mở trong tab mới)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/day/vi/shells/sidebar.html" target="_blank" rel="noopener">Mở bản trình diễn khung có thanh bên, một trang xem trước riêng.</a><span class="rst-sr-only"> (mở trong tab mới)</span>.</p></div>
 </article>
 
 <!-- idiom: shell-topbar -->
 <article class="ds-partial" id="idiom-shell-topbar" data-ds-anchor>
 <h3 class="rst-mono">shell-topbar</h3>
-<p class="ds-lead">Bộ khung riêng của shell topbar, dưới dạng mã. Layout giao nó như một mẫu trọn gói — còn đây là phần bên trong.</p>
+<p class="ds-lead">Khung riêng của vỏ có thanh trên, dưới dạng mã đánh dấu. Layout cung cấp nó như một mẫu hoàn chỉnh.</p>
 
 <div class="ds-sample"><div class="ds-view" style="--ds-h: 250px; --ds-hm: 312px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">Xem trước</legend>
@@ -4254,12 +4254,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-shell-topbar-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-shell-topbar-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu shell-topbar, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu shell-topbar — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu shell-topbar, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu shell-topbar — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
@@ -4291,7 +4291,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;footer class=&#34;rst-shell__foot&#34;&gt;Made with rastrillo&lt;/footer&gt;
 &lt;/div&gt;</code></pre>
 </div>
-<p class="ds-note"><a href="/design-system/day/vi/shells/topbar.html" target="_blank" rel="noopener">Mở bản trình diễn khung topbar, nơi chính đoạn mã đó là một trang thật</a><span class="rst-sr-only"> (mở trong tab mới)</span>.</p></div>
+<p class="ds-note"><a href="/design-system/day/vi/shells/topbar.html" target="_blank" rel="noopener">Mở bản trình diễn khung có thanh trên, một trang xem trước riêng cho nó.</a><span class="rst-sr-only"> (mở trong tab mới)</span>.</p></div>
 </article>
 
 <!-- idiom: tblock -->
@@ -4305,12 +4305,12 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="idiom-tblock-0">Điện thoại</label>
 <label class="ds-view__tab ds-view__tab--c"><input type="radio" name="idiom-tblock-0">Mã</label>
 </fieldset>
-<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Mẫu tblock, trong một trang riêng — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="Xem trước riêng mẫu tblock — Lối dùng lớp" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;vi&#34; dir=&#34;ltr&#34;&gt;
 &lt;head&gt;
 &lt;meta charset=&#34;utf-8&#34;&gt;
 &lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
-&lt;title&gt;Mẫu tblock, trong một trang riêng — Lối dùng lớp&lt;/title&gt;
+&lt;title&gt;Xem trước riêng mẫu tblock — Lối dùng lớp&lt;/title&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
 &lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-day.css&#34;&gt;
 &lt;style&gt;body { padding: 1rem; }
