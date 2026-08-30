@@ -2055,8 +2055,32 @@ As of 2026-08-30, with **17 commits on main since v0.19.0 was tagged on
 - `Pair`, the allocation entry point, `rastrillo doctor`, the semantic
   elements of §6-v2.4, the tinted header rule — **RULED**.
 
-**The gap between RELEASED and ON MAIN is the one that will bite**, and
-it is currently six days and seventeen commits wide. A downstream app
+### Two ways to check this and get a confident wrong answer
+
+Both were hit for real on 2026-08-30, and neither errors — they answer,
+and the answer disagrees with reality. That is the failure shape worth
+naming, because a tool that fails loudly teaches you something and a
+tool that lies does not.
+
+**Never cite your working tree.** A downstream app reported this
+package's state from a checkout sitting on a feature branch
+(`vault-client`, tip `ae9a1c0` — which is not an ancestor of `main` and
+never was), and quoted a real line number from it. Everything it said
+was true of the tree it was standing on. Cite `origin/main` after a
+fetch, or a tag, and say which.
+
+**`git branch -r --merged origin/main` is blind here.** This repo
+squash-merges, so a merged branch is not an ancestor of `main` and the
+command reports nothing for it. Reaching for `--merged` to check whether
+`design-system-v2` landed returns an empty list and reads as "it never
+merged", while `main` carries every line of it. Check for the content,
+not the ancestry.
+
+**The gap between RELEASED and ON MAIN is the one that will bite.**
+**18 commits ahead of v0.19.0, counted at `ac287b5` on 2026-08-30** —
+stamped rather than stated, because a bare number in a spec ages into a
+wrong fact, and this one aged within the hour of being written. The
+count moves; the gap is the point. A downstream app
 reading this document and running `go get` gets neither the themes nor
 the shells. That is an argument for releasing, not for footnotes.
 
