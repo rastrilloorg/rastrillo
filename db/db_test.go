@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -187,5 +188,30 @@ func TestWriterSerialized(t *testing.T) {
 	defer d.Close()
 	if got := d.writer.Stats().MaxOpenConnections; got != 1 {
 		t.Fatalf("writer MaxOpenConnections = %d, want 1", got)
+	}
+}
+
+// A time.Time in a bare numeric zone (as mail.ParseDate yields for a
+// "+0100" Date header) must come back as a time, not a string the
+// driver could not parse.
+func TestTimesInNumericZonesRoundTrip(t *testing.T) {
+	d, err := Open(filepath.Join(t.TempDir(), "t.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err := d.G.Exec("CREATE TABLE stamps (id INTEGER PRIMARY KEY, at DATETIME)").Error; err != nil {
+		t.Fatal(err)
+	}
+	in := time.Date(2026, 8, 30, 13, 44, 12, 0, time.FixedZone("", 3600))
+	if err := d.G.Exec("INSERT INTO stamps (at) VALUES (?)", in).Error; err != nil {
+		t.Fatal(err)
+	}
+	var out time.Time
+	if err := d.G.Raw("SELECT at FROM stamps").Scan(&out).Error; err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if !out.Equal(in) {
+		t.Fatalf("got %v, want %v", out, in)
 	}
 }
