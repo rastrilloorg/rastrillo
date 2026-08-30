@@ -1592,3 +1592,49 @@ layout space, so on a default Mac there is nothing to shift. This is
 real on Windows and Linux, on macOS with "always show scrollbars", and
 inside the gallery's own preview iframes. Say that in the docs rather
 than implying it explains every jump anyone has seen.
+
+### 5. The optional flip helper — RULED 2026-08-30 by Paul, with amendments
+
+Paul asked for an optional script providing anchor positioning to Safari
+and Firefox, opt-out for anyone staying CSS-only. Accepted, with three
+amendments that all make it smaller.
+
+**Not named "shims".** "The shim" already means `rastrillo.js` here —
+`ShimJS()`, `TestShimIsSmall`, five uses inside the file, plus SKILL.md
+and templates.md. A `rastrillo-shims.js` would make every existing
+sentence about the shim ambiguous. The convention is one file per
+capability named for the capability (`select.js`, `datetime.js`), so
+this is `menufit.js`.
+
+A category name also invites a bucket: a file called shims grows until
+every app pays for bytes few of them need. One capability, one file, one
+legible cost.
+
+**Not a general polyfill.** A general anchor-positioning polyfill
+reimplements a layout algorithm by parsing stylesheets — a large
+dependency with real edge cases, bought to get something narrower than
+what it provides. What is actually needed is: if the menu does not fit
+below, put it above; if it does not fit inline, flip it. That is a short
+routine over `getBoundingClientRect`, run on the `<details>` toggle. No
+scroll or resize listeners — it only has to be correct at the moment of
+opening.
+
+**Self-disabling where the CSS works:**
+
+```js
+if (CSS.supports("position-try-fallbacks: flip-block")) return;
+```
+
+It therefore costs nothing in Chromium, cannot fight the CSS, and
+switches itself off in Safari and Firefox the day they ship anchor
+positioning — with no release from us. That property is what makes it
+worth having rather than a maintenance liability.
+
+**The opt-out is the absence of a `<script>` tag**, not a config flag.
+The scaffold writes the tag; deleting one line opts out, and is
+self-documenting in a way a flag is not. Its own byte budget, separate
+from `rastrillo.js` (16,378 of 16,384).
+
+The doctrine holds throughout: with no JavaScript at all, menus keep
+today's fixed position, which is what every browser does today. This
+file only ever moves an engine closer to the CSS we already wrote.
