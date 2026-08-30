@@ -14,20 +14,24 @@ is the reasons.
 
 ## The slugs are Rastrillo's, not a vendor's
 
-Eleven slugs, and they mean the same thing in every app whatever set
+Twelve slugs, and they mean the same thing in every app whatever set
 backs them:
 
 ```text
 alert-triangle  check  check-circle  chevron-down  help-circle
-info  kebab  plus  search  x  x-circle
+info  kebab  menu  plus  search  x  x-circle
 ```
 
 `rastrillo.IconSlugs()` is the list.
 
-This matters more than it sounds. Five of the eleven differ from
+This matters more than it sounds. Five of the twelve differ from
 Lucide's canonical names — `kebab` is Lucide's `ellipsis-vertical`, and
 v1 renamed `check-circle`, `alert-triangle`, `x-circle` and
 `help-circle` — so even the Lucide set carries a translation table.
+
+`kebab` and `menu` are the pair worth keeping straight: `kebab` is the
+three dots that mean "more actions on this row", `menu` the three lines
+that mean navigation. The shells use `menu` when they collapse.
 
 The payoff is that `{{icon "search"}}` means the same thing everywhere
 and the shipped `ui/` partials never change when the set does.
