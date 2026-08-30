@@ -2599,3 +2599,43 @@ corrected on 2026-08-30.
 The bar that made it look like a library component — two callers at
 design time — is the right bar for *extraction*. It says nothing about
 *where to*, and I collapsed the two.
+
+### Extraction and destination are different questions
+
+Worth stating as a rule, because every piece a downstream app hands
+upward will raise both and they have different answers:
+
+- **Should this be extracted?** Two independent callers need it. That is
+  the bar, and it is about whether a shared thing exists.
+- **Where does it go?** Whose vocabulary is it in? A component two
+  CARLOS apps need is the suite's. A component two *rastrillo* apps of
+  any kind would need is the framework's. Being shared says nothing
+  about which.
+
+**And "two callers at design time" is weaker evidence than it sounds** —
+that was my phrase and it overstates. Two specs that both describe
+wanting a thing are two guesses about usage; two working
+implementations are two facts. Extraction from working code shows you
+the shape both callers actually needed, including the parts neither
+spec predicted. Prefer app-local until a second app genuinely reaches
+for the first one's component.
+
+That is the answer to "where does the variant live": **nowhere yet.**
+Build the primitives app-local in Sheets and Docs, and let the variant
+be created when a real second consumer appears rather than because a
+ruling made room for one. A variant repo with one consumer is exactly
+what the extraction bar exists to prevent.
+
+### Which spelling a variant writes
+
+A variant depends on `ui`, and `ui`'s shipped `tokens.css` styles
+`class="rst-*"`. So a variant written today writes **classes**, and
+migrates alongside the framework's own 585 call sites when §6-v3 lands.
+
+Not because classes are right, but because a page carrying `ui`'s
+classes and a variant's attributes has two spellings of the same
+vocabulary in one document — precisely what §6-v3 exists to prevent, and
+worse for arriving as a mixture rather than as a migration. The
+migration is mechanical and one codemod covers both. Being early is not
+worth being inconsistent, and it is certainly not worth shipping
+unstyled.
