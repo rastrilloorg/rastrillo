@@ -2020,3 +2020,204 @@ every width. Nothing in this repo does, but apps upgrade — so it is
 written down in `docs/site/templates.md` under Shells, where an upgrader
 will meet it, and the layout's own comment no longer says the three
 blocks "are direct children of the bar again".
+
+---
+
+## 6-v2.2b. The colour engine (2026-08-30) — designed with two downstream callers
+
+§6-v2.2 ruled a mood-driven palette generator constrained by the contrast
+gate. Two CARLOS apps then arrived needing the same machinery for a
+different purpose, and their requirements changed the design before any
+of it was written. Both are recorded here with attribution, because the
+reasoning is what has to survive: someone will later try to simplify
+each of these back, and every one of them is load-bearing.
+
+The apps: **Sheets** (`amadan.net/carlos/sheets`) — cell fills,
+conditional formatting, presence cursors, XLSX round-trip. **Docs** —
+text highlights, comment-thread author colours, presence cursors,
+collaborator avatars.
+
+### Two entry points, not one
+
+```
+Pair(hue, chroma, background) -> {fill, on-fill}   // contrast-correct by construction
+Allocate(keys, avoid)         -> ([]intent, separated bool)
+```
+
+Contrast-correctness and mutual distinguishability are **different
+guarantees**. Merging them gives a function that means different things
+depending on its arguments, which is the shape of API nobody can gate.
+An allocated intent still resolves through `Pair` against whatever
+background it lands on.
+
+### The background is a literal colour, never a scheme
+
+The first draft took `(hue, chroma, scheme)`. Docs killed it: their
+canvas is a white page on a neutral ground **in every theme, including
+dark**, so a highlight must be contrast-correct against paper white, not
+against the theme's surface token. A scheme enum cannot express that —
+it can only mean "the theme surface for this scheme".
+
+Sheets then showed it was worse than a missing case. Their fills
+frequently do not sit on the sheet surface at all: conditional
+formatting paints *under* a user fill, a selected cell sits on the
+selection tint, a frozen header sits on something else again. Under a
+scheme parameter their own contrast gate would have asserted the wrong
+pair **while passing**. Passing the literal background is therefore a
+bug removed from a downstream app, not a generalisation of ours.
+
+Scheme becomes the caller's business: resolved from the theme token in
+the ordinary case, from paper white in Docs', from whatever a cell
+actually sits on in Sheets'.
+
+### Allocation: separation is hard, stability is best-effort
+
+You cannot guarantee both. Two people in one document can hash adjacent,
+so a hash that gives cross-document stability cannot also give
+in-document separation. **Separation is the guarantee**, because it is
+the one carrying meaning; stability is documented as best-effort. Hash
+for the preferred allocation, displace the later arrival on collision.
+
+**Determinism is a correctness requirement, not a nicety.** Allocation
+must be a pure function of a canonically ordered key set, never of
+arrival order — otherwise two clients rendering the same document
+disagree about who is which colour, which is worse than no colour at
+all. "Displace the later arrival" means later in the canonical order,
+not later in wall-clock time at one client.
+
+`Allocate` takes an `avoid` set (Sheets' requirement) so a caller can
+keep already-allocated hues out of a new allocation; collisions then
+only happen past the set's capacity, which is the honest limit rather
+than an accident.
+
+### The key is opaque and the framework knows nothing about users
+
+Callers pass a stable opaque key and own what it means. Docs has
+commenters with no account — a guest becomes a member at the moment they
+write, so their key is the membership row; Sheets uses a member id. `ui`
+has no business knowing what an identity is, and this keeps it out.
+
+### Past capacity, say so rather than lie
+
+`Allocate` returns the allocation **plus a flag that separation is no
+longer guaranteed**. Silently reusing hues would be the lie. This needs
+no other mechanism because the framework's existing rule already does
+the work: colour never carries meaning alone, so every author carries a
+name or initials regardless — past capacity, colour degrades to
+decoration and the label carries identity by itself. The flag exists so
+a caller leaning on colour can stop.
+
+### Why a bounded offered set
+
+A free colour wheel cannot be proven; a fixed set of offered hues can be
+proven at build time exactly the way the 26 documented pairs already
+are. That is the distinction between a generator that is gated and one
+that is hoped for — the same distinction that ruled out a palette
+randomiser in §6-v2.2.
+
+### The resolved hex is part of the API
+
+XLSX round-trips fills as hex in both directions, so a caller needs the
+concrete colour per background, not only the intent. Storing intent and
+never a colour is insufficient for a real caller. Import mapping hex to
+the nearest offered intent stays the app's problem.
+
+### Sequencing
+
+Sheets needs this before v2.2 can land, and is building a deliberately
+crippled shim: a hand-computed table of six to eight intents behind this
+exact signature, gated by a contrast test using **the same floors and
+the same arithmetic** as `ui/contrast_test.go`, with a deletion trigger
+linking this section. There is no algorithm in it to diverge from. Their
+chosen intents and hand-computed pairs come back here as input to the
+generator's offered set.
+
+---
+
+## 6-v2.3. `rastrillo doctor` (2026-08-30) — APPROVED by Paul
+
+Compares an app's frozen `static/*` — `tokens.css` above all — against
+the module's embedded copies, reports drift, and offers to re-copy.
+
+**Two reasons, and it needs both to be worth building.** First:
+`tokens.css` is written into `static/` at scaffold time and frozen
+there, while partials upgrade with the module, so an app silently runs
+new markup against old CSS. That is currently a manual step in a
+runbook, which means a step people skip. Second: §6-v3's markup
+migration is staged *because* of this trap, and its middle stage needs
+exactly this comparison to tell an app whether it is safe to flip
+spellings.
+
+Named downstream consumer: the Sheets app, which asked for it and said
+it would adopt it the day it ships. That is what moved it from an idea
+to work.
+
+---
+
+## 6-v2.4. Semantic elements and common data formats (2026-08-30)
+
+**RULED by Paul:** native semantic elements now; schema.org microdata
+later **only if a real machine consumer appears**; and both the partial
+changes and a new "Common data formats" gallery page.
+
+**Microformats were considered and not taken.** h-card/p-name/u-url are
+classes, and §6-v3 reserves `class` for utilities and the app's own CSS
+— adopting them would reintroduce class-as-semantics in the same release
+that removes it, and every doc sentence explaining the rule would gain
+an exception. If a machine-readable vocabulary is ever needed, microdata
+is attribute-based and agrees with the grammar instead of fighting it.
+
+**Nothing in this list is used anywhere in the framework today.**
+Verified: no `<time>`, `<data>`, `<meter>`, `<progress>`, `<address>`,
+`<abbr>`, `<bdi>`, `<figure>` in any partial or layout. The `meter`
+partial is spans and an `<i>`; `job-status` is a div.
+
+| Element | Where | Why |
+|---|---|---|
+| `<bdi>` | any user-supplied name in running text | Twelve locales including Arabic. A Hebrew or Arabic name inside an English sentence reorders the line without it. Non-obvious, and currently wrong |
+| `<time>` | list rows, detail lists, job status | Machine-readable dates the framework already parses with `Intl` |
+| `<progress>` | `job-status` while running | The native element for exactly this |
+| `<meter>` | the `meter` partial | Named after an element it does not use |
+| `<data>` | stat headlines, identifiers, quantities | See below |
+| `<abbr>` | WCAG, AA, RTL in the gallery's prose | Free, and the gallery is where a reader meets them |
+| `<figure>`/`<figcaption>` | the preview frames | A frame with a caption is literally this |
+| `<output>` | computed form values | Where a form shows a derived result |
+| `<address>` | shell footer and article byline ONLY | See the correction below |
+
+**`<address>` is the one most likely to be got wrong**, and it was named
+in the request. It marks contact information *for its nearest `<article>`
+or `<body>` ancestor* — the author of that content. It is **not** for
+postal addresses generally and **not** for a list of people. The
+`person` partial must not become `<address>`: a user row is data about a
+person, not the document's authorship.
+
+**`<data>` buys machine-readability, not accessibility.**
+`<data value="4120">4.1k</data>` gives the exact figure to a machine
+while a person reads the abbreviation. But `value` is **not exposed to
+assistive technology** — a screen reader announces the text. If an
+abbreviation loses something a person needs, the fix is visible text or
+an accessible name, never `value`. And time and duration take `<time>`,
+not `<data>`; that is the distinction that gets got wrong.
+
+**Dashboard stats.** Paul: "headline dashboard stats, secondary stats,
+then maybe some widget variants, possibly inspired by titogo". The
+titogo precedent, quoted from `internal/instance/styles/admin/dashboard_page.css`:
+
+> stat-band — the joined instrument strip that opens a dashboard or a
+> report: the lead reading (usually money) oversized, companion counts
+> divided by hairlines in the same card. Labels ride above their number,
+> one eyebrow grammar for every cell. Flex so any cell count works.
+
+That is the headline/secondary split already solved once by a real
+dashboard: **one component with a lead cell, not two components**. Under
+§6-v3's grammar, `<div rst-stat="lead">` beside `<div rst-stat>`.
+
+The framework's existing rules already decide the hard part: a delta
+(+12%, −4%) may never be green-or-red alone, and the number is always
+visible text — the same rule `meter` follows today.
+
+**The Common data formats page** collects dates, durations, numbers,
+currency, percentages, file sizes, identifiers, people and addresses,
+each with the element that carries it and how it renders across the
+twelve catalogs. It connects to work already done: `datetime.js` derives
+its whole vocabulary from `Intl`.
