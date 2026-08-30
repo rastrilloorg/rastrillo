@@ -2299,3 +2299,86 @@ currency, percentages, file sizes, identifiers, people and addresses,
 each with the element that carries it and how it renders across the
 twelve catalogs. It connects to work already done: `datetime.js` derives
 its whole vocabulary from `Intl`.
+
+---
+
+## 6-v2.5. The tree stops being committed (2026-08-30) — RULED by Paul
+
+The generated gallery is committed at `docs/design-system/`, vendored
+into the website by `sync-docs.mjs`, and served as static files. Paul
+ruled it should be generated **during the website build** instead.
+
+### Why, with the numbers that made the case
+
+The tree is **20 MB against 14 MB for the entire rest of the
+repository** — the framework, three example apps and all the prose. It
+is rewritten whole on every change that touches `ui`: eight commits in
+three days. `.git` is 43 MB, and most of that is this artifact's
+history rather than the artifact.
+
+So the largest thing in the repo is machine output, and it is also the
+noisiest thing in every diff. `maxTreeBytes` was a brake on that ratio,
+and the question it was really standing in for is this one.
+
+### What this buys, and it is more than the megabytes
+
+**Freshness stops being a gate and becomes structural.**
+`TestDesignSystemIsCurrent` exists only because a committed copy can
+drift from its generator. Delete the copy and the drift is
+unrepresentable — there is no second thing to disagree. A gate deleted
+because its failure mode cannot occur is the best kind of deletion; it
+is not the same as a gate deleted because nobody wanted to fix it.
+
+The orphan walk goes with it, for the same reason.
+
+### The mechanism: a public `cmd/dsgen`
+
+Go's `internal/` rule means the website cannot run
+`go run …/internal/designsystem/cmd/dsgen@<sha>` — internal packages are
+unreachable from outside the module. So the command moves to
+**`cmd/dsgen`** at the repo root and becomes part of rastrillo's
+published surface; `internal/designsystem` stays internal and the
+public command calls it.
+
+**That is a real commitment and is recorded as one.** The generator
+gains version compatibility expectations it did not have while it was
+internal. It takes an output directory and a mount path; it must not
+grow flags that encode the website's opinions.
+
+The website runs it at build time against a pinned sha. The pin already
+exists: `src/_data/docsversion.json` records the rastrillo sha the docs
+were vendored from, and that same sha generates the gallery.
+
+**Cost:** the website build gains a Go toolchain and a module fetch,
+taking its `build` check from ~13s to roughly a minute. Accepted.
+
+### The size gate changes meaning, so it changes shape
+
+A whole-tree ceiling was a proxy for *repo* reviewability. Once the tree
+is not in the repo, the thing that matters is what a reader waits for —
+which is **per-page weight**, and is what Paul actually complained
+about. Replace `maxTreeBytes` with a per-page budget. That is a better
+gate on its own merits: it fails on the page that got heavy rather than
+on the total, and `components.html` at 325 KB would have tripped it long
+before the total came near any ceiling.
+
+### What is honestly lost
+
+The rendered output stops being diffable. That has had real value today:
+seeing 37 files change in a commit is what surfaced a controller mistake
+that swept an implementer's in-flight tree into an unrelated commit.
+`dsgen` writing to a local, git-ignored directory keeps that available
+for inspection — it just stops being a thing the repo carries.
+
+### Consequential changes
+
+- The a11y scan serves the tree from disk today
+  (`a11y_test.go:139`, `http.FileServer(http.Dir(treeDir))`). It serves
+  `Render()`'s output from an in-memory FS instead — strictly more
+  direct, because it then scans exactly what would be published rather
+  than what was committed.
+- `sync-docs.mjs` keeps vendoring the 49 markdown pages byte-for-byte;
+  only the gallery moves.
+- The website's file-count guard changes shape: it can no longer compare
+  a vendored count, so it verifies the generator ran and produced the
+  page kinds it expects.
