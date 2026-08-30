@@ -2150,6 +2150,29 @@ are. That is the distinction between a generator that is gated and one
 that is hoped for — the same distinction that ruled out a palette
 randomiser in §6-v2.2.
 
+**The set must be proven against every background it can be rendered
+on, not one.** Paul ruled Docs' canvas as light by default with a dark
+canvas as a *per-person* preference, which means the same stored
+highlight is read against paper white by one person and dark paper by
+another, in the same document, at the same time. So an offered intent
+is only sound if `Pair` clears the floor for it against **each** of the
+backgrounds the suite can render: paper white, dark paper, and the theme
+surfaces. An intent that works on white and fails on dark paper is not
+an offered intent; it is a trap with a build gate that agreed with it.
+
+That multiplies the build-time proof by the number of backgrounds, which
+is the correct cost — and it is another thing a `scheme` parameter could
+not have expressed, because two of those backgrounds exist inside the
+same scheme.
+
+**Export resolves against the print background, structurally.** Paul
+also ruled that print and export always render true colours regardless
+of the reading preference. That is a caller decision, and Docs is making
+it structural rather than disciplinary — their export renderer will have
+no access to the preference at all, so it cannot pick up the dark
+resolution. Worth copying: a rule enforced by what a component can
+reach beats a rule enforced by remembering.
+
 ### The resolved hex is part of the API
 
 XLSX round-trips fills as hex in both directions, so a caller needs the
