@@ -1917,3 +1917,42 @@ removed outright — which is what §10 asked for after the first two
 navigation surfaces in the same file shipped ungated. The gates walk
 `pageKinds()`, so a sixth page kind is expected on all three the day its
 row lands.
+
+### The demo application as built (2026-08-30)
+
+`<theme>/<locale>/demo.html`, 36 copies, built in the sidebar shell —
+named rather than derived, because a demo has to pick one and the
+sidebar is the richest of the three. It is framed at the top of the
+Overview under Paul's paragraph, linked full-page from there and from
+the rail's Demos section on every page.
+
+Three views in one document, as Paul chose: a dashboard, the request
+list, and one request open. The switching is `:target` — each view has
+an address of its own, so the back button walks them and a reader can
+copy a link to the detail view out of the frame. That is the
+URL-per-view idiom in the only currency a static file has, and the
+demo's own callout says so rather than implying a route it does not
+have.
+
+The rules are written so the DASHBOARD is what hides, not what shows:
+`#view-requests` and `#view-request` are hidden until targeted, and the
+dashboard is hidden only when one of them is. Where `:has()` is missing
+the last rule drops and the page degrades to every view stacked and
+readable, rather than to a blank screen. The rail's current item is the
+same trick, and it is honest about being visual only: a real app renders
+each view at its own route and puts `aria-current` on the link
+server-side.
+
+The framework's three scripts load, because a real app gets them, and
+none of them does any of the switching.
+`TestTheDemoApplicationSwitchesViewsWithNoScript` drives the whole
+journey — land, follow the rail to the list, follow a row into the
+record, follow the back link out — with script execution disabled in the
+engine, and asserts exactly one view is painted at every stop.
+Mutation-verified by deleting the rule that hides the dashboard: the
+drive then reports two views painted at three of the four stops.
+
+The app's own words are prose keys and translated; its records — the
+names, the subjects, the dates, the queue, the brand — stay English on
+every copy, which is the boundary `templateFixtures` and
+`proseFixtureCollisions` already draw for the shell and modal demos.

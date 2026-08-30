@@ -153,6 +153,11 @@ type pageView struct {
 	// Built for every page, rendered by the Overview. See pageRoutes.
 	Routes []routeView
 
+	// Demo is the demo application, framed, and DemoHref is the same
+	// page at its own address. The Overview renders both; see demoView.
+	Demo     previewView
+	DemoHref string
+
 	// Nav is the sidebar: derived from the five fields above it, once
 	// they are built, so it cannot list anything the page does not
 	// render and cannot miss anything it does. See galleryNav.
@@ -374,6 +379,7 @@ func galleryNav(theme, locale, kind string, view pageView) []navSection {
 		demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The {shell} shell", "shell", sh.Name), Href: sh.Href, Blank: true})
 	}
 	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The modal route"), Href: modalHref(theme, locale), Blank: true})
+	demos.Items = append(demos.Items, navItem{Label: proseIn(locale, "The demo application"), Href: demoHref(theme, locale), Blank: true})
 	return append(out, demos)
 }
 
@@ -595,6 +601,7 @@ func renderGallery(theme, locale string) (map[string][]byte, error) {
 		view.Locales = localeLinks(theme, locale, pk.File)
 		view.Prev, view.Next = pageSteps(theme, locale, pk.Kind)
 		view.Routes = pageRoutes(theme, locale, pk.Kind)
+		view.Demo, view.DemoHref = demoView(theme, locale), demoHref(theme, locale)
 		// Last, and off the finished view: the rail is a reading of the
 		// whole gallery, so it is built once everything it reads exists.
 		view.Nav = galleryNav(theme, locale, pk.Kind, view)
@@ -1066,6 +1073,10 @@ var previewHeights = map[string]int{
 	// The three shell demos, which are whole pages.
 	// One height for the three, because they sit under one another and
 	// the sidebar's rail is the tallest of them.
+	// The demo application, framed at the top of the Overview. Taller
+	// than the shells because it is a screen with content in it rather
+	// than a frame with a sentence in it.
+	"demo-app":      780,
 	"shell-column":  780,
 	"shell-topbar":  780,
 	"shell-sidebar": 780,
@@ -1497,6 +1508,213 @@ func renderModal(theme, locale string) ([]byte, error) {
 	return []byte(buf.String()), nil
 }
 
+// ── The demo application ─────────────────────────────────────────────
+//
+// The question a first-time reader arrives with is "what does an app
+// built with this look like?", and every other page in this tree
+// answers a smaller one: what does a token look like, what does a
+// partial look like, what does a page frame look like. So the Overview
+// frames an application — a dashboard, a list of requests and one
+// request open — before it says a word about any of that.
+//
+// One page with three views inside it rather than three pages, which
+// is Paul's choice and the honest constraint of a static tree. The
+// views are :target: each has an address of its own, the browser's back
+// button walks them, and a reader can copy a link to the detail view
+// out of the frame. That is the framework's URL-per-view idiom rendered
+// in the only currency a single static file has, and the demo says so
+// on the page rather than implying a route it does not have.
+//
+// The framework's own three scripts load on it, because a real app gets
+// them and this is meant to read as a real app — and not one of them
+// does any of the switching. TestTheDemoApplicationSwitchesViewsWithNoScript
+// drives the whole journey with script execution disabled in the
+// engine, which is the strongest form of that claim. gallery.js loads
+// too, restoring the colour scheme a reader chose in the gallery,
+// exactly as the shell demos do.
+
+// demoShell is the page frame the demo application is built in. Named,
+// not derived: a demo has to pick one shell, and the sidebar is the
+// richest of the three — a rail of real navigation, a person at its
+// foot and a main column — which is what makes it read as an
+// application rather than as a page with a border round it. Renaming
+// the shell in ui/layouts fails Render() rather than quietly falling
+// back to another one; see renderDemo.
+const demoShell = "sidebar"
+
+// demoHref is the demo application's address.
+func demoHref(theme, locale string) string {
+	return mountPath + "/" + theme + "/" + locale + "/demo.html"
+}
+
+// demoData is what the demo page executes against. Self is the page's
+// own address, which the language switcher uses so choosing a language
+// keeps you in the app; Index is the gallery it came from.
+type demoData struct {
+	Locale  string
+	Dir     string
+	Mount   string
+	Title   string
+	Index   string
+	Self    string
+	Locales []localeLink
+}
+
+// renderDemo builds one theme × locale copy of the demo application.
+func renderDemo(theme, locale string) ([]byte, error) {
+	src, ok := ui.Layout(demoShell)
+	if !ok {
+		return nil, fmt.Errorf("no shell %q to build the demo application in", demoShell)
+	}
+	funcs := galleryFuncs(locale)
+	funcs["asset"] = func(p string) string {
+		name := strings.TrimPrefix(p, "static/")
+		if name == "theme.css" {
+			name = "theme-" + theme + ".css"
+		}
+		return mountPath + "/" + name
+	}
+	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
+	if err != nil {
+		return nil, fmt.Errorf("parsing partials: %w", err)
+	}
+	if _, err := tmpl.Parse(string(src)); err != nil {
+		return nil, fmt.Errorf("parsing the %s shell: %w", demoShell, err)
+	}
+	if _, err := tmpl.Parse(demoTemplate); err != nil {
+		return nil, fmt.Errorf("parsing the demo application: %w", err)
+	}
+	var buf strings.Builder
+	err = tmpl.ExecuteTemplate(&buf, "layout", demoData{
+		Locale:  locale,
+		Dir:     rastrillo.Dir(locale),
+		Mount:   mountPath,
+		Title:   proseIn(locale, "The demo application") + " — " + proseIn(locale, "rastrillo design system"),
+		Index:   indexHref(theme, locale),
+		Self:    demoHref(theme, locale),
+		Locales: localeLinks(theme, locale, "demo.html"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return []byte(buf.String()), nil
+}
+
+// demoView is the widget the Overview frames the demo application in:
+// the same preview widget every example on this tree uses, loading the
+// real page rather than a copy of it, and with no Code tab — an
+// application is not a snippet to paste.
+func demoView(theme, locale string) previewView {
+	return previewView{
+		Group: "demo-app-0",
+		Style: previewStyle(heightOf("demo-app")),
+		Src:   demoHref(theme, locale),
+		Title: proseIn(locale, "The demo application"),
+	}
+}
+
+// demoCSS is the whole of the demo's own stylesheet, and it is worth
+// reading for how little of it there is: everything visible on the page
+// is tokens.css, and this is the view switching plus a three-up grid
+// for the dashboard's numbers.
+//
+// The switching, in four rules. The list and the detail view are hidden
+// until they are the :target; the dashboard is shown until one of them
+// is, which is what makes the address with no fragment land somewhere.
+// Written that way round on purpose: where :has() is missing the last
+// rule drops and the page degrades to every view stacked and readable,
+// rather than to a blank screen.
+//
+// The rail's current item is the same trick. A real rastrillo app
+// renders each view at its own route and puts aria-current on the link
+// server-side; a single document cannot know which view is showing
+// without asking CSS, so the marker here is visual — background, colour
+// and weight, the three signals tokens.css uses for aria-current — and
+// the screen's own <h1> is what actually tells a reader where they are.
+const demoCSS = `
+#view-requests, #view-request { display: none; }
+#view-requests:target, #view-request:target { display: block; }
+body:has(#view-requests:target) #view-dashboard,
+body:has(#view-request:target) #view-dashboard { display: none; }
+body:not(:has(#view-requests:target, #view-request:target)) .rst-shell__nav a[href="#view-dashboard"],
+body:has(#view-requests:target) .rst-shell__nav a[href="#view-requests"],
+body:has(#view-request:target) .rst-shell__nav a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.app-stats { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-block-end: var(--rst-sp-5); }
+.app-stats > .rst-box { margin: 0; }
+.app-stat__n { font-size: 1.9rem; font-weight: 650; line-height: 1.1; margin: 0; }
+.app-stat__l { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0.2rem 0 0; }
+`
+
+// demoTemplate fills every block demoShell leaves open, and then the
+// content hole with the three views.
+//
+// The record data — the names, the subjects, the dates, the app's own
+// name — stays English on every copy, the same rule the shell demos
+// follow: it is what an app's database holds, not what the framework
+// says, and translating a person's name would be a stranger thing to
+// do than leaving it. Everything the APPLICATION says — its screens,
+// its controls, its statuses — is a prose key like the rest of this
+// tree.
+const demoTemplate = `
+{{define "head"}}<script src="{{.Mount}}/gallery.js"></script>
+<style>` + demoCSS + `</style>{{end}}
+{{define "lang"}}{{.Locale}}{{end}}
+{{define "dir"}}{{.Dir}}{{end}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "brand"}}<a class="rst-shell__brand" href="#view-dashboard">Harbour</a>{{end}}
+{{define "nav"}}<a href="#view-dashboard">{{P "Dashboard"}}</a><a href="#view-requests">{{P "Requests"}}</a>{{end}}
+{{define "locale"}}<details class="rst-dropdown rst-locale" name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{define "account"}}<div class="rst-shell__account"><a class="rst-person" href="#view-dashboard"><span class="rst-person__av" aria-hidden="true">A</span><span class="rst-person__meta"><span class="rst-person__name">Ada Lovelace</span><span class="rst-person__email">ada@example.com</span></span></a></div>{{end}}
+{{define "content"}}
+<section class="app-view" id="view-dashboard">
+{{template "page-header" dict "Title" (P "Dashboard") "Sub" (P "Everything the team has waiting this morning.")}}
+<div class="app-stats">
+<section class="rst-box"><p class="app-stat__n">24</p><p class="app-stat__l">{{P "Open requests"}}</p></section>
+<section class="rst-box"><p class="app-stat__n">6</p><p class="app-stat__l">{{P "Waiting on us"}}</p></section>
+<section class="rst-box"><p class="app-stat__n">41</p><p class="app-stat__l">{{P "Resolved this week"}}</p></section>
+</div>
+<div class="rst-box-head"><h2>{{P "Mailbox storage"}}</h2></div>
+<section class="rst-box">{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>
+<div class="rst-box-head"><h2>{{P "Latest activity"}}</h2><a class="rst-btn" href="#view-requests">{{P "Requests"}}</a></div>
+<div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px">
+<div class="rst-lrow rst-lrow--head"><span>Subject</span><span class="rst-m-hide">Status</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
+</div>
+</section>
+
+<section class="app-view" id="view-requests">
+{{template "page-header" dict "Title" (P "Requests") "Sub" (P "Every request in the queue, newest first.") "ActionHref" "#view-requests" "ActionLabel" (P "New request") "ActionIcon" "plus"}}
+{{template "seg-tabs" dict "Label" (P "Requests") "Items" (list (dict "Label" (P "All") "Href" "#view-requests" "Current" true) (dict "Label" (P "Open") "Href" "#view-requests") (dict "Label" (P "Resolved") "Href" "#view-requests"))}}
+<div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px 120px">
+{{template "list-bar" dict "SearchAction" "#view-requests" "Placeholder" (P "Search requests")}}
+<div class="rst-lrow rst-lrow--head"><span>Subject</span><span class="rst-m-hide">Status</span><span class="rst-m-hide">Updated</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
+<div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
+</div>
+<p class="rst-count-line">{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
+{{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" "#view-requests") (dict "Label" "3" "Href" "#view-requests"))}}
+</section>
+
+<section class="app-view" id="view-request">
+{{template "back-nav" dict "Href" "#view-requests" "Label" (P "Requests")}}
+{{template "page-header" dict "Title" "Invoice #4471 never arrived" "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
+<p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" "Billing"}}</p>
+<div class="rst-box-head"><h2>{{P "Details"}}</h2></div>
+<section class="rst-box">{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12"))}}</section>
+<div class="rst-box-head"><h2>{{P "Reply"}}</h2></div>
+<section class="rst-box"><form class="rst-form" method="post" action="#view-request">
+{{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
+{{template "form-foot" dict "Submit" (P "Send reply") "CancelHref" "#view-requests" "CancelLabel" (P "Cancel")}}
+</form></section>
+{{template "callout" dict "Tone" "info" "Title" (P "Three screens, three addresses") "Body" (P "Each view here has an address of its own, the way a rastrillo app gives every screen a URL. Turn JavaScript off and this page behaves exactly the same: the switching is CSS reading the address bar.")}}
+</section>
+{{end}}
+`
+
 // ── The page itself ──────────────────────────────────────────────────
 
 // dsCSS is the page's own chrome: the swatch grid, the sample frames and
@@ -1812,6 +2030,12 @@ const deadLinkCallout = `{{template "callout" dict "Tone" "info" "Title" (P "Lin
 const overviewBody = `{{define "ds-body-overview"}}
 <div class="ds-head"><h2 id="overview">{{P "Overview"}}</h2></div>
 <p class="ds-intro">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
+<section class="ds-demo" id="demo-app">
+<h3 class="ds-sub">{{P "The demo application"}}</h3>
+<p class="ds-lead">{{P "A working application built out of nothing but this system: a dashboard, a list and one record open, each at an address of its own, and nothing on it that needs JavaScript to work."}}</p>
+{{template "ds-view" .Demo}}
+<p class="ds-note"><a href="{{.DemoHref}}" target="_blank" rel="noopener">{{P "Open the demo application"}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>.</p>
+</section>
 <h3 class="ds-sub">{{P "Where to go next"}}</h3>
 <ul class="ds-routes">{{range .Routes}}
 <li><a href="{{.Href}}">{{.Label}}</a><span>{{.Blurb}}</span></li>{{end}}

@@ -909,6 +909,7 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		least int
 		owed  string
 	}{
+		{"overview", 1, "the demo application is framed here"},
 		{"components", len(definedPartials(t)), "every partial ui.Templates() defines has a section here"},
 		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
 		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
@@ -985,4 +986,86 @@ func measured(t *testing.T, tab, raw string) int {
 		}
 	}
 	return len(got)
+}
+
+// ── The demo application ─────────────────────────────────────────────
+
+// The demo application is the page the Overview frames before it says a
+// word about a token, and its whole claim is that it is an application
+// with no JavaScript in it: three screens, three addresses, and the
+// switching done by CSS reading the address bar.
+//
+// That claim cannot be checked in Go — a static reading of demo.html
+// sees three sections and a stylesheet, and every one of them is
+// present whether the rules work or not. So it is driven, with script
+// execution DISABLED in the engine, which is the strongest form of the
+// claim: not "the framework's scripts are not needed", but "no script
+// runs at all and the app still works".
+//
+// The journey is the one a reader takes. Land on it, and the dashboard
+// is what you get. Follow the rail to the list. Follow a row into the
+// record. Follow the back link out again. At every stop, exactly one
+// screen is on the page — a second visible view would be two <h1>s and
+// two page headers stacked, which reads as a broken build rather than
+// as an app.
+func TestTheDemoApplicationSwitchesViewsWithNoScript(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancel()
+
+	// Which of the three views the engine is actually painting, read
+	// off computed style rather than off the markup: display: none is
+	// the whole mechanism, so it is the thing to ask about.
+	const shown = `(() => {
+	  const out = [];
+	  for (const v of document.querySelectorAll(".app-view")) {
+	    if (getComputedStyle(v).display !== "none") out.push(v.id);
+	  }
+	  return out.join(",");
+	})()`
+
+	url := rig.Origin + demoHref(RootTheme(), "en")
+	var landed, ranScript, list, detail, back, views string
+	if err := chromedp.Run(ctx,
+		emulation.SetScriptExecutionDisabled(true),
+		// Wide enough that the sidebar shell shows its rail: below
+		// 800px it folds behind a disclosure, and the rail's links are
+		// not clickable until a reader opens it. The app's navigation
+		// is what this drive follows, so it drives the width where the
+		// navigation is on screen.
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(url),
+		chromedp.WaitReady("body"),
+		chromedp.Evaluate(`document.querySelectorAll(".app-view").length + ""`, &views),
+		// gallery.js is the only script the page loads, and with
+		// execution disabled it has not run — so nothing below can be
+		// a script doing the work.
+		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &ranScript),
+		chromedp.Evaluate(shown, &landed),
+		chromedp.Click(`.rst-shell__nav a[href="#view-requests"]`, chromedp.ByQuery),
+		chromedp.Evaluate(shown, &list),
+		chromedp.Click(`#view-requests .rst-lrow a[href="#view-request"]`, chromedp.ByQuery),
+		chromedp.Evaluate(shown, &detail),
+		chromedp.Click(`#view-request .rst-back-nav a`, chromedp.ByQuery),
+		chromedp.Evaluate(shown, &back),
+	); err != nil {
+		t.Fatalf("driving the demo application: %v", err)
+	}
+
+	if views != "3" {
+		t.Fatalf("the demo application has %s views, want 3 (a dashboard, a list and a record)", views)
+	}
+	if ranScript != "(none)" {
+		t.Fatalf("gallery.js ran with script execution disabled (data-rst-js=%q) — this drive proves nothing", ranScript)
+	}
+	for _, step := range []struct{ where, got, want string }{
+		{"landing on it with no fragment", landed, "view-dashboard"},
+		{"following the rail to the list", list, "view-requests"},
+		{"following a row into the record", detail, "view-request"},
+		{"following the back link out again", back, "view-requests"},
+	} {
+		if step.got != step.want {
+			t.Errorf("%s: the visible views are %q, want exactly %q", step.where, step.got, step.want)
+		}
+	}
 }

@@ -78,6 +78,7 @@ const mountPath = "/design-system"
 //	<theme>/<locale>/primitives.html      which is the whole of that list
 //	<theme>/<locale>/shells.html
 //	<theme>/<locale>/modal.html           36 modal demos, one per gallery
+//	<theme>/<locale>/demo.html            36 copies of the demo app
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
 //	rastrillo.js select.js datetime.js    the framework's three scripts
@@ -116,6 +117,11 @@ func Render() (map[string][]byte, error) {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"modal.html", err)
 			}
 			out[dir+"modal.html"] = modal
+			demo, err := renderDemo(theme, locale)
+			if err != nil {
+				return nil, fmt.Errorf("designsystem: %s: %w", dir+"demo.html", err)
+			}
+			out[dir+"demo.html"] = demo
 			for _, shell := range ui.LayoutNames() {
 				demo, err := renderShell(theme, locale, shell)
 				if err != nil {

@@ -594,6 +594,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 		for _, locale := range rastrillo.BaseLocales() {
 			want = append(want, galleryFiles(theme, locale)...)
 			want = append(want, fmt.Sprintf("%s/%s/modal.html", theme, locale))
+			want = append(want, fmt.Sprintf("%s/%s/demo.html", theme, locale))
 			for _, shell := range ui.LayoutNames() {
 				want = append(want, fmt.Sprintf("%s/%s/shells/%s.html", theme, locale, shell))
 			}
@@ -723,7 +724,13 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		// rather than a document written for it. Counted off the page's
 		// own markup rather than off a per-page-kind table, so a page
 		// that grows examples is covered without an entry here.
-		if n := strings.Count(page, `<div class="ds-sample">`) + strings.Count(page, `<section class="ds-shell"`); n != len(widgets) {
+		// The examples whose frame is a page of this tree rather than a
+		// document written for it: the three shell demos, and the demo
+		// application on the Overview. Neither kind offers a Code tab —
+		// a shell's source is a Go template, and an application is not
+		// a snippet to paste.
+		framedPages := strings.Count(page, `<section class="ds-shell"`) + strings.Count(page, `<section class="ds-demo"`)
+		if n := strings.Count(page, `<div class="ds-sample">`) + framedPages; n != len(widgets) {
 			t.Errorf("%s: %d preview widgets for %d examples", name, len(widgets), n)
 		}
 		total += len(widgets)
@@ -761,10 +768,8 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 				}
 			}
 		}
-		// Only the shell demos are framed without their source: a shell
-		// is a Go template, not markup to copy.
-		if want := len(widgets) - strings.Count(page, `<section class="ds-shell"`); withCode != want {
-			t.Errorf("%s: %d widgets show source, want %d (all but the shell demos)", name, withCode, want)
+		if want := len(widgets) - framedPages; withCode != want {
+			t.Errorf("%s: %d widgets show source, want %d (all but the framed pages)", name, withCode, want)
 		}
 
 		// The mechanism, asserted where it lives — on every page, because
@@ -886,7 +891,7 @@ func TestEveryDemoLinkOpensInANewTab(t *testing.T) {
 	away := regexp.MustCompile(`<a[^>]*\shref="([^"]*)"[^>]*>`)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			demos := map[string]bool{modalHref(theme, locale): true}
+			demos := map[string]bool{modalHref(theme, locale): true, demoHref(theme, locale): true}
 			for _, shell := range ui.LayoutNames() {
 				demos[shellHref(theme, locale, shell)] = true
 			}
@@ -1178,9 +1183,9 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	// Asserted, not assumed: a refactor that quietly narrowed what this
 	// loop walks would leave the gate passing over fewer pages, which
 	// is the failure mode it was once extended to fix. Per theme, per
-	// non-English locale: one page per kind, a modal demo and one page
-	// per shell.
-	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 1 + len(ui.LayoutNames())); len(names) != want {
+	// non-English locale: one page per kind, a modal demo, the demo
+	// application and one page per shell.
+	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + len(ui.LayoutNames())); len(names) != want {
 		t.Errorf("sweeping %d translated pages, want %d", len(names), want)
 	}
 
@@ -1526,8 +1531,8 @@ func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
 						away++
 					}
 				}
-				if want := len(ui.LayoutNames()) + 1; away != want {
-					t.Errorf("%s: the sidebar has %d links out of the gallery, want %d (one per shell demo, plus the modal)", name, away, want)
+				if want := len(ui.LayoutNames()) + 2; away != want {
+					t.Errorf("%s: the sidebar has %d links out of the gallery, want %d (one per shell demo, plus the modal and the demo application)", name, away, want)
 				}
 			}
 			// The union, which is the half a per-page reading cannot
@@ -2251,6 +2256,31 @@ var templateFixtures = map[string]bool{
 	"Profile":       true,
 	"Billing":       true,
 	"Notifications": true,
+	// The demo application's records. Everything the APPLICATION says
+	// — its screens, its controls, its statuses — is a prose key and is
+	// translated; this is what its database would hold. A person's
+	// name, a request's subject, a date, a queue name and the app's own
+	// brand are content, and translating them would suggest the
+	// framework ships those words.
+	"Harbour":                            true,
+	"Ada Lovelace":                       true,
+	"ada@example.com":                    true,
+	"A":                                  true,
+	"Subject":                            true,
+	"Updated":                            true,
+	"Invoice #4471 never arrived":        true,
+	"Card declined on renewal":           true,
+	"Export takes twenty minutes":        true,
+	"Seat count is wrong on the invoice": true,
+	"Fiona Reid · 09:12":                 true,
+	"Otto Neurath · 08:40":               true,
+	"Hedy Lamarr · 11 August":            true,
+	"Fiona Reid · Billing":               true,
+	"Otto Neurath · Billing":             true,
+	"Mary Sherman · Data":                true,
+	"Hedy Lamarr · Billing":              true,
+	"12 August":                          true,
+	"11 August":                          true,
 }
 
 // dictFixtures is the literal English a dict argument is allowed to
@@ -2263,6 +2293,10 @@ var templateFixtures = map[string]bool{
 var dictFixtures = map[string]bool{
 	"Posts":    true, // the shell demos' sample screen
 	"Settings": true, // the modal demo's
+	// The demo application's one open record: the subject it is a
+	// request about, and the queue it sits in.
+	"Invoice #4471 never arrived": true,
+	"Billing":                     true,
 }
 
 // dictMachineArgs are the argument names whose value is a machine's,
@@ -2281,6 +2315,7 @@ var dictFixtures = map[string]bool{
 var dictMachineArgs = map[string]bool{
 	"Tone": true, "Icon": true, "ActionIcon": true,
 	"Href": true, "ActionHref": true, "HomeHref": true, "BackHref": true,
+	"SearchAction": true, "CancelHref": true,
 	"Name": true, "ID": true, "Class": true, "Value": true,
 }
 
@@ -2400,6 +2435,7 @@ func pageTemplates() []struct{ name, src string } {
 		{"viewTemplate", viewTemplate},
 		{"modalTemplate", modalTemplate},
 		{"shellTemplate", shellTemplate},
+		{"demoTemplate", demoTemplate},
 	}
 	for _, body := range bodyTemplates() {
 		out = append(out, struct{ name, src string }{body.kind + "Body", body.src})

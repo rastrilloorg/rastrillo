@@ -336,6 +336,8 @@ func a11yTargets() []a11yTarget {
 		{"day/ar components", page("day", "ar", "components"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref("day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref("day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
+		{"day/en demo app", demoHref("day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
+		{"day/ar demo app", demoHref("day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
 	}
 }
 
