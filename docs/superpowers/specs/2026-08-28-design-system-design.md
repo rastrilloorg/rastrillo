@@ -1494,3 +1494,61 @@ claim about three files rather than about the system, which is worse
 than not generating at all.
 
 Both changes ship after v2.1.
+
+---
+
+## 6-v2.1b. Menus that fit the viewport (2026-08-30) — RULED, not yet started
+
+Paul: *"dropdowns should position themselves correctly no matter where
+they are on the screen ... a dropdown at the bottom right should
+position correctly to fit the viewport, bottom left etc. or an inline
+dropdown where there's not enough scroll room to show should drop up
+instead. If there's not enough viewport, the dropdown should scroll
+rather than overflow."*
+
+Three behaviours, and they do not cost the same.
+
+### 1. Scroll rather than overflow — a plain bug, fix it everywhere
+
+`.rst-combo__list` and `.rst-dtp__list` already carry `max-block-size`
+plus `overflow-y: auto`. `.rst-dropdown__menu` and
+`.rst-row-menu__panel` carry **neither** — no cap, no scroll. The
+twelve-locale language menu measures 388px, so on a short viewport its
+last entries are unreachable. Cap the menu surfaces against the space
+actually available and let them scroll. No new technology, no script,
+every browser.
+
+### 2. Flip — CSS anchor positioning, Chromium-first
+
+**RULED 2026-08-30 by Paul.** `position-try-fallbacks: flip-block,
+flip-inline` (with `position-area`) does exactly what he described,
+including the inline flip near the trailing edge, with zero script.
+
+It is Chromium-only today. That is accepted **with the reason recorded
+so nobody treats it as an oversight**: unsupported browsers fall back to
+today's fixed position, which is what they already do, so nothing
+regresses; and when Firefox and Safari ship it the behaviour arrives
+with no code change. The alternative — script — costs a shim split
+(`rastrillo.js` has 6 bytes), adds resize and scroll listeners to every
+page carrying a menu, and puts positioning *behind* JavaScript, so with
+script off it would be worse than the fixed position we have now. That
+trade is the wrong way round for a framework whose doctrine is that the
+scriptless path is the real one.
+
+Gate it honestly: the drive must assert the flip **where the engine
+supports it**, and must not silently pass by finding no support. A
+capability probe that fails when the probe itself stops working is the
+shape to use — this branch has shipped four gates that gated nothing.
+
+### 3. Top layer — NOT chosen, recorded so it is not re-proposed as new
+
+`popover` + anchor positioning would put menus in the top layer, where
+no ancestor can clip them (the `.rst-list` `overflow: hidden` bug this
+morning was exactly that class), and would bring native light dismiss,
+Escape and one-at-a-time — deleting shim code rather than adding it.
+
+Not chosen now because it replaces `<details>` as the baseline, and a
+browser without `popover` leaves the button inert, where `<details>`
+always works. It remains the most interesting long-term shape, and it is
+the natural companion to §6-v3's markup migration. Revisit it there,
+deliberately, not by accident.
