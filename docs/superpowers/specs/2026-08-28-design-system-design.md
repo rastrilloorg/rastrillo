@@ -2180,6 +2180,26 @@ concrete colour per background, not only the intent. Storing intent and
 never a colour is insufficient for a real caller. Import mapping hex to
 the nearest offered intent stays the app's problem.
 
+### Declared consumers
+
+Recorded because an API with named consumers changes differently from
+one without: these are who breaks if a signature moves, and the list is
+the reason several of the decisions above are not negotiable.
+
+**CARLOS Docs** (`carlos/docs`) — `Pair` for text highlight and comment
+author colours, against **four** backgrounds (paper white, dark paper,
+and the theme surfaces; the first two are Docs-defined literals it will
+supply with its intent set). The allocation entry point for comment
+threads, presence cursors and collaborator avatars, with a membership
+row as the opaque key for guests who have no account. `rastrillo doctor`,
+replacing a manual re-copy step it carries in its upgrade runbook today.
+
+**CARLOS Sheets** (`carlos/sheets`) — `Pair` for cell fills and
+conditional formatting, against backgrounds that are frequently not the
+sheet surface (a conditional format under a user fill, the selection
+tint, a frozen header). The allocation entry point for presence cursors.
+The resolved hex for XLSX round-trip. `rastrillo doctor`, same reason.
+
 ### Sequencing
 
 Sheets needs this before v2.2 can land, and is building a deliberately
