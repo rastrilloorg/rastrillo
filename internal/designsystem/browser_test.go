@@ -23,6 +23,7 @@ package designsystem
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"path"
 	"sort"
@@ -295,6 +296,31 @@ func showing(state railState, href string) bool {
 //     they have finished with;
 //   - the box is visible with scripts off, which is a control that
 //     cannot work.
+//
+// discloseIndex is where one page kind's section sits among the rail's
+// <details> elements, which is not its position in pageKinds(): a page
+// kind with nothing anchored on it yet draws as a plain <a> rather than
+// a disclosure and takes no slot here.
+//
+// Derived rather than written down. This drive used to say 1 for the
+// Components section, and 1 stopped being Components the day a page
+// kind landed ahead of it — a stale index in a test is a test that has
+// quietly changed what it asserts. It panics on a kind that is not in
+// the table for the same reason fileOf does: the caller read the name
+// out of the table.
+func discloseIndex(kind string) int {
+	at := 0
+	for _, pk := range pageKinds() {
+		if pk.Kind == kind {
+			return at
+		}
+		if pk.Nav != nil {
+			at++
+		}
+	}
+	panic("designsystem: no page kind " + kind)
+}
+
 func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
@@ -412,7 +438,7 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// A section the reader collapses by hand is opened by a query
 		// that finds something in it, and folded back when the query
 		// goes.
-		chromedp.Evaluate(`document.querySelectorAll("#ds-nav details")[1].open = false`, nil),
+		chromedp.Evaluate(fmt.Sprintf(`document.querySelectorAll("#ds-nav details")[%d].open = false`, discloseIndex("components")), nil),
 		typing("badge"), at("typed-into-collapsed"),
 		chromedp.KeyEvent(kb.Escape), at("escaped-again"),
 		chromedp.Evaluate(railProbe, &restored),
@@ -460,8 +486,8 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if open != 1 {
 		t.Errorf("%d of %d sidebar sections arrive open, want exactly 1 (the page you are on)", open, len(fresh.Open))
 	}
-	if len(fresh.Open) > 1 && !fresh.Open[1] {
-		t.Error("the Components section is not the one open on the components page")
+	if at := discloseIndex("components"); len(fresh.Open) > at && !fresh.Open[at] {
+		t.Errorf("the Components section (disclosure %d of %d) is not the one open on the components page", at, len(fresh.Open))
 	}
 
 	if scriptless.BoxSeen {
@@ -570,7 +596,7 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		t.Errorf(`on the Spanish page, "lineas" did not find "Superficies y líneas": %v`, unaccented.Shown)
 	}
 
-	if len(restored.Open) < 2 || restored.Open[1] {
+	if at := discloseIndex("components"); len(restored.Open) <= at || restored.Open[at] {
 		t.Error("a section the reader collapsed by hand was left open by a search that has been cleared")
 	}
 	if len(restored.Shown) != restored.Links {
