@@ -1681,7 +1681,7 @@ bug rather than a redundancy: two affordances, one of which lies.
 - It needs a new catalog key for its accessible name — twelve locales,
   and a trip through the copy gate with the rest of the new prose.
 
-### 7. The rail overflows the viewport by its own padding — REGRESSION, 2026-08-30
+### 7. The rail overflows the viewport by its own padding — REGRESSION, 2026-08-30 — AS BUILT (2026-08-30)
 
 Paul, with the live sidebar shell: *"Sidebar shell left nav is going off
 the edge of the viewport"* — the person at the rail's foot is clipped.
@@ -1706,7 +1706,7 @@ exceed it — and the same drive would have failed on the day it landed.
 Fix per this file's convention: `box-sizing: border-box` on the rail
 itself, beside the components that already declare it, not a `*` reset.
 
-### 8. The collapsed rail needs a menu icon — RULED 2026-08-30 by Paul
+### 8. The collapsed rail needs a menu icon — RULED 2026-08-30 by Paul — AS BUILT (2026-08-30)
 
 *"The sidebar shell should also provide a kebab / hamburger icon beside
 'Menu'."* — the `<summary>` of the disclosed rail below 800px, which is
@@ -1721,7 +1721,7 @@ rather than a literal list, so it picks the new icon up with no edit.
 
 `aria-hidden`, since it sits beside a visible text label.
 
-### 9. The topbar has no narrow layout — RULED 2026-08-30 by Paul
+### 9. The topbar has no narrow layout — RULED 2026-08-30 by Paul — AS BUILT (2026-08-30)
 
 *"The topbar shell should compact the menu and the dropdowns into a
 single dropdown, or some kind of overlay."*
@@ -1833,3 +1833,57 @@ page kind with no edit.
 
 Two prose keys — the visible label and the accessible-name pattern —
 eleven translations each.
+
+### §7–§9 as built (2026-08-30)
+
+Built as ruled, with one deviation in §9 and one addition to all three.
+
+**§7.** `box-sizing: border-box` on `.rst-shell-sidebar >
+.rst-shell__rail`, beside the components that already declare it. The
+gate is re-framed: `railReading` now carries `Viewport`, `RailOverhang`
+and `PersonOverhang`, and the drive asserts the rail's border box does
+not exceed the window, that the sticky rail's bottom edge is not below
+it, and that the person at its foot is not off-screen. Mutation-verified
+— restored to `content-box`, the old frame passes reporting "rail 932px
+in a 900px viewport" and the new frame fails on all three assertions
+with the same numbers. A third leg drives 1280×420, where the honest
+claim is weaker and is stated as such: the rail must fit the window, and
+anything that does not fit inside the rail must be reachable by
+scrolling it.
+
+**§8.** Lucide `menu` as a twelfth slug in `icons.go`, `IconSlugs()` and
+both scaffoldable sets (`internal/iconsets`; Font Awesome's is `bars`).
+`kebab` untouched, and `TestMenuAndKebabAreDifferentGlyphs` fails if a
+later edit points one at the other. Both shells' collapse summaries
+carry it, aria-hidden beside their own visible label; so does the
+gallery's own chrome strip.
+
+**§9, and the deviation.** The tail is an adjacent SIBLING of the
+disclosure — `.rst-shell__menu[open] + .rst-shell__tail` — rather than
+its content. The ruling described the tail as the disclosure's content;
+that shape cannot produce the wide layout, because a closed `<details>`
+hides its own content and no rule reliably un-hides it across engines
+(`::details-content` is too new to be the floor a shell stands on). The
+sibling shape is the one `.rst-shell__chrome` already uses, which is
+what the ruling pointed at, and above 800px `display: contents` on the
+tail promotes nav, account and locale back to direct flex items of the
+bar, so the wide layout is unchanged down to the auto margin.
+
+The trap survives the deviation and is worth restating for that reason:
+`<details name>` exclusivity is **document-wide, not sibling-scoped**,
+so keeping the account menu out of the disclosure's subtree buys nothing
+on its own. The disclosure takes `name="rst-shell-menu"`. Two gates:
+`TestEveryMenuDefaultsToTheSharedExclusivityGroup` reads the name off
+the layout, and the browser drive opens the account menu inside the
+collapsed tail and asserts the disclosure is still open. Both were
+mutation-verified against `name="rst-menus"`.
+
+**Common to all three: the shells are now driven against viewports.**
+`TestTheTopbarCollapsesItsTailBehindOneDisclosure` drives 1280, 800
+(the breakpoint matches at its own width), 390 and 320 with no script on
+the page, and `TestA11yScansTheShellsCollapsed` scans both shells at
+390px with the disclosure open, in light and dark, and measures the
+summary against WCAG 2.2 SC 2.5.8's 24×24 — a target size axe's default
+tag set does not check. That gap, not the three bugs, was the finding:
+every scan in the tree ran at a width where neither collapse control
+exists.

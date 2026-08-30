@@ -21,6 +21,27 @@
 <a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
 <header class="rst-shell__bar">
 {{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+{{/* The narrow layout. Below 800px the bar's tail — nav, account,
+     locale — hides behind this disclosure; above it, tokens.css hides
+     the summary and gives .rst-shell__tail display: contents, so the
+     three blocks are direct children of the bar again and lay out
+     exactly as they did before this element existed. The sidebar
+     collapses at the same width behind the same icon: two shells, one
+     idiom.
+
+     name="rst-menus", and the rst-menus group is exactly what it
+     must not be. <details name> exclusivity is document-wide, so a
+     disclosure in the menus' group would be closed by the account menu
+     it just revealed. The tail is also a SIBLING rather than this
+     element's content, which is how .rst-shell__chrome does it: a
+     closed <details> hides its own content, and the wide layout cannot
+     be recovered from inside one.
+
+     The three block names below are unchanged — nav, account, locale.
+     Apps override them; a wrapper is a layout change, not a contract
+     change. */}}
+<details class="rst-shell__menu" name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
+<div class="rst-shell__tail">
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
 <details class="rst-dropdown rst-shell__account" name="rst-menus">
 <summary>{{T "rastrillo.ui.shell_account"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary>
@@ -32,6 +53,7 @@
 <div class="rst-dropdown__menu">{{block "account" .}}{{end}}</div>
 </details>
 {{block "locale" .}}{{end}}
+</div>
 </header>
 <main class="rst-page" id="main">
 {{template "content" .}}

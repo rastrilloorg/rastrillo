@@ -1591,7 +1591,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <body>
 <div class="rst-shell-sidebar">
 <a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-<details class="rst-shell__chrome"><summary>{{T "rastrillo.ui.shell_menu"}}</summary></details>
+<details class="rst-shell__chrome"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
 
 <aside class="rst-shell__rail ds-rail">
   <search class="ds-search">

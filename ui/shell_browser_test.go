@@ -187,11 +187,52 @@ func TestAMenuOpenedInsideAListCardEscapesTheCard(t *testing.T) {
 // railReading is where the sidebar shell's rail puts things, in the
 // window Paul was looking at.
 type railReading struct {
-	RailHeight   int
-	FootGap      int
-	MenuLift     int
+	RailHeight int
+	FootGap    int
+	MenuLift   int
+	// The frame the first version of this drive did not have. FootGap
+	// answers "is the person at the foot of the rail", which was true
+	// on the day the rail overflowed the window by its own padding —
+	// the rail was 932px in a 900px viewport, the number was in this
+	// test's own passing output, and the person was at the foot of a box
+	// whose last 32px were under the fold. Viewport and the two
+	// overhangs are what turn a claim about the rail into a claim about
+	// the window it has to fit.
+	Viewport       int
+	RailOverhang   int
+	PersonOverhang int
+	// How much of the rail is out of its own view. The 100dvh rail is
+	// overflow-y: auto, so at a short viewport the honest claim is not
+	// "the person is on screen" but "the rail fits the window AND
+	// scrolls to whatever does not fit inside it".
+	RailScroll   int
 	LocaleBefore bool
 }
+
+// railMeasure is the one reading every leg of the rail drive takes, so
+// a viewport added below cannot quietly measure less than the ones
+// above it — which is how the frame went missing the first time.
+const railMeasure = `(() => {
+  const rail = document.querySelector(".rst-shell__rail");
+  const person = document.querySelector("#rail-person");
+  const loc = document.querySelector("#rail-locale");
+  const sum = loc.querySelector("summary");
+  const menu = loc.querySelector(".rst-dropdown__menu");
+  const r = rail.getBoundingClientRect();
+  const p = person.getBoundingClientRect();
+  const s = sum.getBoundingClientRect();
+  const m = menu.getBoundingClientRect();
+  return JSON.stringify({
+    RailHeight: Math.round(r.height),
+    FootGap: Math.round(r.bottom - p.bottom),
+    MenuLift: Math.round(s.top - m.bottom),
+    Viewport: window.innerHeight,
+    RailOverhang: Math.round(r.bottom - window.innerHeight),
+    RailScroll: rail.scrollHeight - rail.clientHeight,
+    PersonOverhang: Math.round(p.bottom - window.innerHeight),
+    LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING)
+  });
+})()`
 
 // TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward
 // is the other live-page bug: the sidebar shell left the person block
@@ -244,23 +285,7 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
-		  const rail = document.querySelector(".rst-shell__rail");
-		  const person = document.querySelector("#rail-person");
-		  const loc = document.querySelector("#rail-locale");
-		  const sum = loc.querySelector("summary");
-		  const menu = loc.querySelector(".rst-dropdown__menu");
-		  const r = rail.getBoundingClientRect();
-		  const p = person.getBoundingClientRect();
-		  const s = sum.getBoundingClientRect();
-		  const m = menu.getBoundingClientRect();
-		  return JSON.stringify({
-		    RailHeight: Math.round(r.height),
-		    FootGap: Math.round(r.bottom - p.bottom),
-		    MenuLift: Math.round(s.top - m.bottom),
-		    LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING)
-		  });
-		})()`, &raw),
+		chromedp.Evaluate(railMeasure, &raw),
 	); err != nil {
 		t.Fatalf("driving the sidebar rail: %v", err)
 	}
@@ -270,9 +295,42 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		t.Fatalf("reading the measurement (%q): %v", raw, err)
 	}
 
+	// Logged, not just asserted: the number that gave the regression
+	// away was already in this test's passing output — "a 932px rail" at
+	// a 900px viewport — and nobody read it, because nothing in the
+	// output said what it was supposed to be compared to. It says so now.
+	t.Logf("wide: rail %dpx in a %dpx viewport (rail overhang %dpx, person overhang %dpx), person %dpx above the rail's foot",
+		got.RailHeight, got.Viewport, got.RailOverhang, got.PersonOverhang, got.FootGap)
+
 	// Sanity: the rail is the full-height column this claim is about.
 	if got.RailHeight < 600 {
 		t.Fatalf("the rail is only %dpx tall in a 900px window; it is not the sticky full-height rail this drive measures", got.RailHeight)
+	}
+
+	// THE FRAME. Everything below asks where things sit inside the rail;
+	// this asks whether the rail sits inside the window, which is the
+	// question the first version of this drive never put and the one the
+	// regression it missed was an answer to.
+	//
+	// block-size: 100dvh is a promise about the viewport, so the box
+	// that has to keep it is the BORDER box: with the rail as a content
+	// box its padding was added on top, the border box came to
+	// 100dvh + 2×var(--rst-sp-4), and a rail sticky at
+	// inset-block-start: 0 hung its last 32px under the foot of the
+	// window. overflow-y: auto is no defence — the content fits the
+	// content box, so no scrollbar is ever owed — and no assertion about
+	// where the person sits INSIDE the rail can see it.
+	if got.RailHeight > got.Viewport {
+		t.Errorf("the rail's border box is %dpx in a %dpx viewport: it is %dpx taller than the window it is sized against, so whatever sits at its foot is under the fold. box-sizing on the rail is the fix",
+			got.RailHeight, got.Viewport, got.RailHeight-got.Viewport)
+	}
+	if got.RailOverhang > 0 {
+		t.Errorf("the sticky rail's bottom edge is %dpx below the foot of a %dpx window", got.RailOverhang, got.Viewport)
+	}
+	// And the symptom, measured where a reader met it: the person block
+	// at the rail's foot, clipped by the window rather than by the rail.
+	if got.PersonOverhang > 0 {
+		t.Errorf("the person block at the rail's foot ends %dpx below the foot of the window: it is off-screen with nothing to scroll to reach it", got.PersonOverhang)
 	}
 	// A rail's padding is var(--rst-sp-4); anything inside a couple of
 	// steps of the bottom edge is at the foot, anything further is not.
@@ -306,23 +364,7 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
-		  const rail = document.querySelector(".rst-shell__rail");
-		  const person = document.querySelector("#rail-person");
-		  const loc = document.querySelector("#rail-locale");
-		  const sum = loc.querySelector("summary");
-		  const menu = loc.querySelector(".rst-dropdown__menu");
-		  const r = rail.getBoundingClientRect();
-		  const p = person.getBoundingClientRect();
-		  const s = sum.getBoundingClientRect();
-		  const m = menu.getBoundingClientRect();
-		  return JSON.stringify({
-		    RailHeight: Math.round(r.height),
-		    FootGap: Math.round(r.bottom - p.bottom),
-		    MenuLift: Math.round(s.top - m.bottom),
-		    LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING)
-		  });
-		})()`, &narrow),
+		chromedp.Evaluate(railMeasure, &narrow),
 	); err != nil {
 		t.Fatalf("driving the collapsed rail: %v", err)
 	}
@@ -330,6 +372,7 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	if err := json.Unmarshal([]byte(narrow), &small); err != nil {
 		t.Fatalf("reading the collapsed measurement (%q): %v", narrow, err)
 	}
+	t.Logf("collapsed: rail %dpx in a %dpx viewport, person %dpx above the rail's foot", small.RailHeight, small.Viewport, small.FootGap)
 	if small.RailHeight == 0 {
 		t.Fatal("the disclosed rail has no height below 800px; the chrome strip does not open it")
 	}
@@ -341,6 +384,275 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	}
 	if small.MenuLift >= 0 {
 		t.Errorf("the language menu still opens upward in the collapsed rail (%dpx above its summary); below 800px there is nothing above it but the nav", small.MenuLift)
+	}
+
+	// And a SHORT window, which is the other half of "fits the
+	// viewport" and the half a desktop reviewer never sees. 1280×420 is
+	// a laptop with the devtools open, or a phone in landscape: wide
+	// enough for the full-height rail, too short for its content.
+	//
+	// The claim here is deliberately weaker than the one above, because
+	// the honest one is weaker: the rail must still fit the window, and
+	// whatever does not fit INSIDE the rail must be reachable by
+	// scrolling it. A person below the fold of a rail that scrolls is
+	// fine; a person below the fold of a rail that does not is the bug
+	// this test is named after, one viewport smaller.
+	var shortRaw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 420),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
+		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
+		chromedp.Evaluate(railMeasure, &shortRaw),
+	); err != nil {
+		t.Fatalf("driving the rail in a short window: %v", err)
+	}
+	var short railReading
+	if err := json.Unmarshal([]byte(shortRaw), &short); err != nil {
+		t.Fatalf("reading the short-window measurement (%q): %v", shortRaw, err)
+	}
+	t.Logf("short: rail %dpx in a %dpx viewport (overhang %dpx, %dpx of scroll), person overhang %dpx",
+		short.RailHeight, short.Viewport, short.RailOverhang, short.RailScroll, short.PersonOverhang)
+	if short.RailHeight > short.Viewport {
+		t.Errorf("the rail's border box is %dpx in a %dpx viewport: a short window overflows for the same reason a tall one did", short.RailHeight, short.Viewport)
+	}
+	if short.RailOverhang > 0 {
+		t.Errorf("the sticky rail hangs %dpx below the foot of a %dpx window", short.RailOverhang, short.Viewport)
+	}
+	if short.PersonOverhang > 0 && short.RailScroll <= 0 {
+		t.Errorf("the person block ends %dpx below the window and the rail has no scroll (%dpx) to reach it: it is unreachable, not merely off-screen", short.PersonOverhang, short.RailScroll)
+	}
+}
+
+// barReading is one measurement of the topbar shell's bar: what the
+// collapse control and the tail are doing, how the tail's three blocks
+// are laid out, and whether the bar spills sideways.
+type barReading struct {
+	MenuShown    bool // the disclosure's summary is drawn
+	MenuOpen     bool // ...and its open attribute is set
+	TailShown    bool // nav/account/locale are on the page at all
+	Rows         int  // distinct block-start positions among the three: 1 = inline, 3 = stacked
+	AccountEndPx int  // gap from the account menu's inline end to the bar's
+	AccountMenu  bool // the account dropdown's panel is drawn
+	Overflow     int  // how far the document scrolls past its own client width
+}
+
+// TestTheTopbarCollapsesItsTailBehindOneDisclosure is §9: the topbar
+// shell had no narrow layout at all. .rst-shell__bar is a wrapping flex
+// row and .rst-shell__account has margin-inline-start: auto, so
+// narrowing the window did not collapse anything — it wrapped the
+// account and locale menus onto a second row and shoved them to the
+// trailing edge. Nothing was broken; nothing had been written.
+//
+// Three claims, in the order they matter:
+//
+//  1. Wide, nothing changed. Above 800px the disclosure is not drawn and
+//     nav, account and locale sit inline on the bar's own row with the
+//     account at the inline end, which is the layout that shipped before
+//     the collapse existed.
+//  2. Narrow, one control. Below 800px the tail is not drawn until the
+//     disclosure is opened, and opened it is a stack rather than a
+//     second wrapped row.
+//  3. THE TRAP. The account menu is <details name="rst-menus">. Opening
+//     it must not close the navigation it was opened from. <details
+//     name> exclusivity is document-wide rather than sibling-scoped, so
+//     this is not bought by keeping the two elements out of each other's
+//     subtree — the disclosure has to be in a different group, and this
+//     is the assertion that says so out loud.
+//
+// There is no script on this page: the shell's <script> tags resolve to
+// addresses this mux does not serve, exactly as the rail drive above
+// leaves them. So everything here is <details>, a media query and two
+// display rules, which is the claim §9 makes.
+func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
+	src, ok := Layout("topbar")
+	if !ok {
+		t.Fatal("no topbar layout")
+	}
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
+		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
+		"iconAssets": func() template.HTML { return "" },
+	}).Parse(string(src)))
+	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "account"}}<a href="#">Profile</a><a href="#">Sign out</a>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "locale"}}<details class="rst-dropdown rst-locale" id="bar-locale" name="rst-menus"><summary>Language</summary><div class="rst-dropdown__menu"><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
+
+	var page strings.Builder
+	if err := tmpl.ExecuteTemplate(&page, "layout", nil); err != nil {
+		t.Fatalf("rendering the topbar shell: %v", err)
+	}
+	html := page.String()
+
+	mux := http.NewServeMux()
+	stylesheets(t, mux)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, html)
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+	defer cancel()
+
+	const measure = `(() => {
+	  const shown = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+	  const bar = document.querySelector(".rst-shell__bar");
+	  const menu = document.querySelector(".rst-shell__menu");
+	  const tail = document.querySelector(".rst-shell__tail");
+	  const nav = document.querySelector(".rst-shell__nav");
+	  const account = document.querySelector(".rst-shell__account");
+	  const locale = document.querySelector("#bar-locale");
+	  const panel = account.querySelector(".rst-dropdown__menu");
+	  // Rows by overlap, not by equal tops: the bar is align-items:
+	  // center, so three inline blocks of three different heights sit on
+	  // one row with three different top edges. Two boxes are on the
+	  // same row when their vertical ranges overlap.
+	  const boxes = [nav, account, locale].filter(shown)
+	    .map(el => el.getBoundingClientRect()).sort((a, b) => a.top - b.top);
+	  let rows = 0, edge = -Infinity;
+	  for (const b of boxes) {
+	    if (b.top >= edge - 1) rows++;
+	    if (b.bottom > edge) edge = b.bottom;
+	  }
+	  const de = document.documentElement;
+	  return JSON.stringify({
+	    MenuShown: shown(menu.querySelector("summary")),
+	    MenuOpen: menu.open,
+	    TailShown: shown(nav) || shown(account) || shown(locale),
+	    Rows: rows,
+	    AccountEndPx: Math.round(bar.getBoundingClientRect().right - account.getBoundingClientRect().right),
+	    AccountMenu: shown(panel),
+	    Overflow: de.scrollWidth - de.clientWidth
+	  });
+	})()`
+
+	read := func(t *testing.T, raw string) barReading {
+		t.Helper()
+		var got barReading
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("reading the measurement (%q): %v", raw, err)
+		}
+		return got
+	}
+
+	// 1. Wide: the collapse is not there.
+	var wideRaw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`.rst-shell__bar`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &wideRaw),
+	); err != nil {
+		t.Fatalf("driving the wide topbar: %v", err)
+	}
+	wide := read(t, wideRaw)
+	if wide.MenuShown {
+		t.Error("the collapse disclosure is drawn at 1280px; above 800px the bar lays its tail out inline and the control has nothing to do")
+	}
+	if !wide.TailShown {
+		t.Fatal("nav, account and locale are not drawn at 1280px at all: the wide layout is gone, not preserved")
+	}
+	if wide.Rows != 1 {
+		t.Errorf("the bar's three tail blocks sit on %d rows at 1280px, want 1 — the wide layout is one row and the collapse must not have changed it", wide.Rows)
+	}
+	if wide.AccountEndPx > 120 {
+		t.Errorf("the account menu ends %dpx short of the bar's inline end; margin-inline-start: auto is no longer reaching it", wide.AccountEndPx)
+	}
+
+	// 1b. And at exactly 800px, which is the breakpoint itself. A
+	// min-width query matches AT its own width, so 800 is the wide
+	// layout and 799 is the narrow one; an off-by-one here is a window
+	// width at which the bar has neither layout.
+	var edgeRaw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(800, 780),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`.rst-shell__bar`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &edgeRaw),
+	); err != nil {
+		t.Fatalf("driving the topbar at the breakpoint: %v", err)
+	}
+	if edge := read(t, edgeRaw); edge.MenuShown || !edge.TailShown || edge.Rows != 1 {
+		t.Errorf("at exactly 800px the bar shows control=%v tail=%v on %d rows; a min-width query matches at its own width, so 800px is the wide layout",
+			edge.MenuShown, edge.TailShown, edge.Rows)
+	}
+
+	// 2. Narrow: one control, and the tail behind it.
+	var closedRaw, openRaw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(390, 780),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`.rst-shell__menu > summary`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &closedRaw),
+		chromedp.Click(`.rst-shell__menu > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`.rst-shell__tail .rst-shell__nav`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &openRaw),
+	); err != nil {
+		t.Fatalf("driving the collapsed topbar: %v", err)
+	}
+	closed, open := read(t, closedRaw), read(t, openRaw)
+	if !closed.MenuShown {
+		t.Fatal("there is no collapse control at 390px: the topbar still has no narrow layout")
+	}
+	if closed.TailShown {
+		t.Error("nav, account and locale are still drawn at 390px with the disclosure closed; the tail did not collapse, it only gained a button")
+	}
+	if closed.Overflow > 1 {
+		t.Errorf("the collapsed topbar spills %dpx sideways at 390px", closed.Overflow)
+	}
+	if !open.TailShown {
+		t.Fatal("opening the disclosure at 390px revealed nothing")
+	}
+	if open.Rows != 3 {
+		t.Errorf("the opened tail puts its three blocks on %d rows, want 3 — collapsed, they stack; a wrapped row is the state this replaced", open.Rows)
+	}
+	if open.Overflow > 1 {
+		t.Errorf("the opened topbar spills %dpx sideways at 390px", open.Overflow)
+	}
+
+	// 3. The trap: opening the account menu must not close the
+	// navigation it was opened from.
+	var trapRaw string
+	if err := chromedp.Run(ctx,
+		chromedp.Click(`.rst-shell__account > summary`, chromedp.ByQuery),
+		// Settle rather than WaitVisible: the failure this step exists
+		// for is the account menu never becoming visible, because it
+		// closed the disclosure it lives behind. Waiting for it would
+		// report that as a timeout instead of as the three sentences
+		// below, and a timeout says nothing about <details name>.
+		chromedp.Sleep(250*time.Millisecond),
+		chromedp.Evaluate(measure, &trapRaw),
+	); err != nil {
+		t.Fatalf("opening the account menu inside the collapsed tail: %v", err)
+	}
+	trap := read(t, trapRaw)
+	if !trap.MenuOpen {
+		t.Error("opening the account menu CLOSED the disclosure it sits behind: the two <details> are in one exclusivity group, and <details name> exclusivity is document-wide rather than sibling-scoped. Give the disclosure a group of its own")
+	}
+	if !trap.TailShown {
+		t.Error("the tail vanished when the account menu opened; the navigation a reader opened the menu from is gone from under them")
+	}
+	if !trap.AccountMenu {
+		t.Error("the account menu's panel is not drawn inside the collapsed tail")
+	}
+
+	// 4. And the smallest viewport the shells promise, with the tail
+	// open, because a stack that fits at 390px can still spill at 320.
+	var tinyRaw string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(320, 640),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`.rst-shell__menu > summary`, chromedp.ByQuery),
+		chromedp.Click(`.rst-shell__menu > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`.rst-shell__tail .rst-shell__nav`, chromedp.ByQuery),
+		chromedp.Evaluate(measure, &tinyRaw),
+	); err != nil {
+		t.Fatalf("driving the collapsed topbar at 320px: %v", err)
+	}
+	if tiny := read(t, tinyRaw); tiny.Overflow > 1 {
+		t.Errorf("the opened topbar spills %dpx sideways at 320px", tiny.Overflow)
 	}
 }
 
