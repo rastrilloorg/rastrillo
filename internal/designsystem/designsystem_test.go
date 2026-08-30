@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/internal/iconsets"
 	"github.com/carlosframework/rastrillo/ui"
 )
 
@@ -36,12 +37,17 @@ const mountPath = DefaultMount
 // locale), so a new section has room to land without an argument, and it
 // is small enough that the page is on screen rather than arriving.
 //
-// components.html DOES NOT PASS IT. It is 332,827 bytes in day/en and
-// 387,029 in signal/hi — three times the budget, and 5.7 times the next
-// heaviest page. It is the page the ruling was about. It is recorded in
-// pageBudgetDebt below rather than fixed here, because fixing it is a
-// change to what the page contains and this commit is a change to what
-// is gated.
+// components.html DOES NOT PASS IT: roughly three times the budget, and
+// several times the next heaviest page. It is the page the ruling was
+// about. It is recorded in pageBudgetDebt below rather than fixed here,
+// because fixing it is a change to what the page contains and this
+// commit is a change to what is gated.
+//
+// The exact figure is deliberately not written here. It moved 2,759
+// bytes in the two days this comment first carried it, which is the
+// species of number this package spent a whole task removing.
+// TestEveryPageStaysUnderItsBudget logs the heaviest page and the tree
+// total on every run; read it there.
 //
 // ── Where the weight is, because the next page will be asked ─────────
 //
@@ -84,10 +90,63 @@ const maxPageBytes = 128 << 10
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
 var pageBudgetDebt = map[string]int{
-	// 387,029 bytes at its worst (signal/hi). The fix is not a bigger
-	// number: it is the Code tabs, which write every sample into the
-	// page a second time for a tab most readers never open.
+	// Its worst is in the widest locale, and the gate's own log says
+	// what it is today. The fix is not a bigger number: it is the Code
+	// tabs, which write every sample into the page a second time for a
+	// tab most readers never open.
 	"components.html": 400 << 10,
+}
+
+// TestEveryOutboundLinkIsAllowedAndUsed is the other half of
+// outboundLinks: an entry nothing renders is a permission slip nobody
+// asked for, and it goes.
+//
+// The used half matters more than it looks. The one entry is the Icons
+// page's only route to lucide.dev; if that link is ever dropped or
+// reworded away, this fails rather than leaving the exemption standing
+// for whatever gets added next.
+func TestEveryOutboundLinkIsAllowedAndUsed(t *testing.T) {
+	files := render(t)
+	seen := map[string]int{}
+	for name, body := range files {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		for _, m := range anchorHref.FindAllStringSubmatch(string(body), -1) {
+			if strings.HasPrefix(m[1], "#") || strings.HasPrefix(m[1], mountPrefix) {
+				continue
+			}
+			seen[m[1]]++
+		}
+	}
+	for href, why := range outboundLinks {
+		if !strings.HasPrefix(href, "https://") {
+			t.Errorf("outboundLinks[%q] is not https; this tree does not send a reader to plaintext", href)
+		}
+		if why == "" {
+			t.Errorf("outboundLinks[%q] has no reason beside it", href)
+		}
+		if seen[href] == 0 {
+			t.Errorf("outboundLinks names %q and nothing in the tree links it: delete the entry", href)
+		}
+	}
+	for href, n := range seen {
+		if _, ok := outboundLinks[href]; !ok {
+			t.Errorf("%d links go to %q, which is not in outboundLinks", n, href)
+		}
+	}
+	// Asserted rather than assumed: an extractor that stopped matching
+	// would leave both loops above walking nothing and passing.
+	if len(seen) == 0 {
+		t.Error("no off-tree links found at all — either the Icons page has lost its provenance link, or this gate has stopped looking")
+	}
+	t.Logf("%d off-tree addresses, %d links to them", len(seen), func() int {
+		n := 0
+		for _, c := range seen {
+			n += c
+		}
+		return n
+	}())
 }
 
 // render is Render() with the error already fatal — every test here
@@ -396,6 +455,28 @@ var anchorHref = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
 // mountPrefix is where every internal link starts.
 const mountPrefix = mountPath + "/"
 
+// outboundLinks is the whole list of addresses this tree is allowed to
+// point at that are not in it, each with the reason it is there. Same
+// convention as pageBudgetDebt above and axeExempt in a11y_test.go: a
+// gate that is not enforcing something in one named place says so in a
+// table rather than by quietly not enforcing it.
+//
+// The rule the sweep below enforces is "nothing a reader clicks lands
+// on a 404", and until the Icons page every link that satisfied it was
+// a file in this tree. That made "outside the tree" and "a sample route
+// pointing at an app that does not exist" the same test, which they are
+// not: a sample's /orders/AB3PX is deadened to "#" precisely BECAUSE it
+// would 404, and lucide.dev is a published site that is the answer to
+// "where did these glyphs come from".
+//
+// The table is exact strings, not prefixes, and every entry has to be
+// used — TestEveryOutboundLinkIsAllowedAndUsed holds both halves — so it
+// cannot become a licence for the next link somebody feels like adding.
+var outboundLinks = map[string]string{
+	"https://lucide.dev": "the Icons page's provenance: the set the framework vendors, " +
+		"under the ISC licence, and the only place a reader can see the rest of it",
+}
+
 // srcdocAttr finds the documents the previews carry. Every example on
 // an index page is framed rather than rendered inline, and the frame's
 // whole document lives in a srcdoc attribute — HTML-escaped, which is
@@ -541,8 +622,12 @@ func wholeDocument(t *testing.T, files map[string][]byte, name, locale, body str
 		if strings.HasPrefix(href, "#") {
 			continue
 		}
+		if _, allowed := outboundLinks[href]; allowed {
+			continue
+		}
 		if !strings.HasPrefix(href, mountPrefix) {
-			t.Errorf("%s: link %q goes outside this tree; a sample link is rewritten to \"#\" so following it cannot 404", name, href)
+			t.Errorf("%s: link %q goes outside this tree; a sample link is rewritten to \"#\" so following it cannot 404. "+
+				"If it is a real published address this page has a reason to name, put it in outboundLinks with that reason.", name, href)
 			continue
 		}
 		if !resolves(files, href) {
@@ -1198,7 +1283,7 @@ var proseSentinels = []string{
 func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	files := render(t)
 	keys := proseKeysRendered(t)
-	// All five English pages of the root theme, joined: the three
+	// Every English page of the root theme, joined: the three
 	// sentinels are on three different pages since the split — the
 	// opening sentence on every one of them, the dead-link callout on
 	// the pages that frame samples, and the list-grid rule under UI
@@ -2122,6 +2207,246 @@ func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
 		name := RootTheme() + "/en/" + pk.File
 		if list.MatchString(string(files[name])) {
 			t.Errorf("%s: carries the Overview's route list", name)
+		}
+	}
+}
+
+// ── The two derived pages ────────────────────────────────────────────
+
+// iconsLeadProse and iconsVocabProse are the two sentences on the Icons
+// page that state a number. They are held here as literals for the same
+// reason Paul's paragraph is: the gate below re-renders each of them
+// from rastrillo.IconSlugs() and compares, so a page that had started
+// counting its own icons wrong — or writing a number down — fails
+// against the set rather than against a second guess.
+//
+// Rewording either sentence means editing it here too. That is the
+// cost, and it is the point: the numbers in them are claims about
+// IconSlugs(), and a claim wants a gate.
+// provenanceLine pulls the address the page printed under each icon out
+// of the rendered HTML, and lucideNameShape says what a name may look
+// like. Together they are the half of the provenance check that does not
+// go back through iconsets.LucideName — see the gate's own comment.
+var (
+	provenanceLine  = regexp.MustCompile(`lucide\.dev/icons/([^<]*)</span>`)
+	lucideNameShape = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+)
+
+const (
+	iconsLeadProse  = "{total} slugs, vendored as inline SVG and compiled into the binary: no build step, no second origin, and they work with no network at all. Each one is sized from the text beside it by tokens.css's own .icon rule, which is the size you are looking at here. A slug nothing answers renders nothing, so a typo costs a missing icon rather than a page that died mid-response."
+	iconsVocabProse = "{renamed} of the {total} differ from the name lucide.dev publishes, so even the Lucide set carries a translation of its own. Where the last line under an icon does not repeat its name, that is one of them. The payoff is that one call means the same glyph whichever set an app scaffolds, and the shipped partials never change when the set does."
+)
+
+// The Icons page is a reading of rastrillo.IconSlugs() and of nothing
+// else.
+//
+// This is the gate the brief asked for in as many words: a thirteenth
+// slug has to appear on the page with no edit to the page's code. The
+// way to hold that is not to check the twelve that are there — a list
+// of twelve in here would be exactly the list of twelve the page was
+// forbidden to have — but to check the page against the set, in both
+// directions, on every count:
+//
+//   - every slug the framework answers has a section, with its name,
+//     the call that renders it, the markup Icon actually returns, and
+//     the lucide.dev address the glyph came from;
+//   - the page draws exactly as many icons as the set has, so a
+//     thirteenth slug that the page did not pick up fails here rather
+//     than being quietly absent;
+//   - both numbers the page says out loud are re-rendered from the set
+//     and compared, so neither can be typed.
+//
+// A thirteenth slug therefore fails NOTHING here if the page is derived
+// (it just appears) and fails three separate assertions if it is not.
+//
+// ── What this gate can and cannot see about provenance ───────────────
+//
+// The address beside each slug is checked TWICE, and the two checks are
+// worth telling apart because a review found the first one alone
+// overclaiming.
+//
+// The first is against iconsets.LucideName — the same function
+// buildIcons called to render it. That holds the PAGE to the function,
+// which is the bug this page could plausibly grow (a row that lost its
+// provenance, a page that stopped calling it), and it cannot see the
+// function itself being wrong: strip a glyph's class marker and both
+// sides agree on the same empty answer.
+//
+// The second is independent of that function entirely. Every address
+// the page actually rendered is pulled back out of the HTML and read as
+// a name: non-empty, and shaped like a slug. That is what catches the
+// failure the function's own bug produces — 36 pages of dangling
+// "lucide.dev/icons/" — without needing a second source of truth for
+// what Lucide calls things.
+//
+// A wrong-but-well-formed name is the one thing neither check can see,
+// and it is not this package's to see: internal/iconsets holds
+// LucideName against the vendored glyph data, the five renamed slugs
+// and kebab by name. Two packages, one CI line.
+func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
+	files := render(t)
+	slugs := rastrillo.IconSlugs()
+	if len(slugs) == 0 {
+		t.Fatal("rastrillo.IconSlugs() is empty; there is nothing for this gate to read")
+	}
+	renamed := 0
+	for _, slug := range slugs {
+		if name := iconsets.LucideName(slug); name != "" && name != slug {
+			renamed++
+		}
+	}
+	drawn := regexp.MustCompile(`<li class="ds-tok" id="icon-`)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			name := theme + "/" + locale + "/" + fileOf("icons")
+			page := string(files[name])
+			if page == "" {
+				t.Errorf("%s is missing", name)
+				continue
+			}
+			for _, slug := range slugs {
+				for _, want := range []string{
+					`id="` + anchorID("icon", slug) + `" data-ds-anchor`,
+					`<span class="ds-tok__name">` + slug + `</span>`,
+					template.HTMLEscapeString(`{{icon "` + slug + `"}}`),
+					string(rastrillo.Icon(slug)),
+					"lucide.dev/icons/" + iconsets.LucideName(slug),
+				} {
+					if !strings.Contains(page, want) {
+						t.Errorf("%s: the page does not carry %q for slug %q — the page is not reading IconSlugs()", name, want, slug)
+					}
+				}
+			}
+			if got := len(drawn.FindAllString(page, -1)); got != len(slugs) {
+				t.Errorf("%s draws %d icons, the framework answers %d slugs", name, got, len(slugs))
+			}
+			// Read back what the page actually printed, without asking
+			// LucideName what it should have been. A dangling address
+			// is the shape a broken provenance takes on a published
+			// page, and it is visible from here alone.
+			printed := provenanceLine.FindAllStringSubmatch(page, -1)
+			if len(printed) != len(slugs) {
+				t.Errorf("%s prints %d provenance addresses, want one per slug (%d)", name, len(printed), len(slugs))
+			}
+			for _, m := range printed {
+				if !lucideNameShape.MatchString(m[1]) {
+					t.Errorf("%s prints the address %q, which names no icon — a reader is being sent to a dangling lucide.dev/icons/",
+						name, "lucide.dev/icons/"+m[1])
+				}
+			}
+			for _, tc := range []struct {
+				what string
+				want string
+			}{
+				{"the lead", proseIn(locale, iconsLeadProse, "total", len(slugs))},
+				{"the vocabulary sentence", proseIn(locale, iconsVocabProse, "renamed", renamed, "total", len(slugs))},
+			} {
+				if !strings.Contains(page, template.HTMLEscapeString(tc.want)) {
+					t.Errorf("%s: %s does not read %q — either a number on this page is typed rather than counted, or the sentence was reworded without updating this gate", name, tc.what, tc.want)
+				}
+			}
+		}
+	}
+	t.Logf("%d slugs, %d of them renamed from Lucide's own", len(slugs), renamed)
+}
+
+// The Getting started page's weights are len() of the assets the tree
+// actually serves, not numbers anybody wrote down.
+//
+// Three separate things, and the third is the one that makes the other
+// two worth having:
+//
+//   - every shipped file has a row, with its own anchor and a link to
+//     the copy of it in this tree;
+//   - the weight on that row is the length of THAT file, re-measured
+//     here off the rendered tree, so the number beside a download and
+//     the download itself cannot disagree;
+//   - the total the page gives for a scaffolded app is the arithmetic
+//     over the files rastrillo new actually writes — tokens.css, one
+//     theme, three scripts — and not the sum of the list, which
+//     includes two themes the app did not choose and gallery.js, which
+//     no app receives.
+//
+// The last assertion is about the page's PROSE rather than its numbers:
+// the lead says "two stylesheets and three scripts", which is a count
+// nothing derives. If a fourth script ever ships, this fails and names
+// the sentence, rather than leaving a page that says three beside a
+// list of four.
+func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
+	files := render(t)
+	scripts := map[string][]byte{
+		"rastrillo.js": ui.ShimJS(),
+		"select.js":    ui.SelectJS(),
+		"datetime.js":  ui.DatetimeJS(),
+	}
+	if len(scripts) != 3 {
+		t.Errorf("the page's lead says \"two stylesheets and three scripts\"; a scaffolded app now gets %d scripts. Reword the lead (and its eleven translations) as well as this table.", len(scripts))
+	}
+	row := regexp.MustCompile(`<li id="asset-`)
+	for _, theme := range ui.ThemeNames() {
+		themeCSS, ok := ui.ThemeCSS(theme)
+		if !ok {
+			t.Fatalf("no theme %q", theme)
+		}
+		// The files the page lists, in the order it lists them, built
+		// the way the page builds them: off ui, not off a list here.
+		want := []struct {
+			file string
+			body []byte
+		}{{"tokens.css", ui.TokensCSS()}}
+		for _, n := range ui.ThemeNames() {
+			css, _ := ui.ThemeCSS(n)
+			want = append(want, struct {
+				file string
+				body []byte
+			}{"theme-" + n + ".css", css})
+		}
+		for _, n := range []string{"rastrillo.js", "select.js", "datetime.js"} {
+			want = append(want, struct {
+				file string
+				body []byte
+			}{n, scripts[n]})
+		}
+		want = append(want, struct {
+			file string
+			body []byte
+		}{"gallery.js", GalleryJS()})
+
+		app := len(ui.TokensCSS()) + len(themeCSS) + len(ui.ShimJS()) + len(ui.SelectJS()) + len(ui.DatetimeJS())
+		for _, locale := range rastrillo.BaseLocales() {
+			name := theme + "/" + locale + "/" + fileOf("getting-started")
+			page := string(files[name])
+			if page == "" {
+				t.Errorf("%s is missing", name)
+				continue
+			}
+			for _, a := range want {
+				served, ok := files[a.file]
+				if !ok {
+					t.Errorf("%s: the page lists %s and the tree does not serve it", name, a.file)
+					continue
+				}
+				if len(served) != len(a.body) {
+					t.Errorf("%s: the tree serves %d bytes of %s and the library holds %d — the download and the number beside it are different files", name, len(served), a.file, len(a.body))
+				}
+				weight := template.HTMLEscapeString(proseIn(locale, "{bytes} bytes", "bytes", len(served)))
+				for _, w := range []string{
+					`id="` + anchorID("asset", a.file) + `" data-ds-anchor`,
+					`href="` + mountPrefix + a.file + `"`,
+					weight,
+				} {
+					if !strings.Contains(page, w) {
+						t.Errorf("%s: no %q for %s — the weight on this page is not len() of the file it names", name, w, a.file)
+					}
+				}
+			}
+			if got := len(row.FindAllString(page, -1)); got != len(want) {
+				t.Errorf("%s lists %d files, the framework ships %d", name, got, len(want))
+			}
+			total := proseIn(locale, "A scaffolded app is handed {bytes} bytes of that: tokens.css, one theme and the three scripts. gallery.js is not in the total, and neither are the themes an app did not choose.", "bytes", app)
+			if !strings.Contains(page, template.HTMLEscapeString(total)) {
+				t.Errorf("%s: the page does not say %q — the app total is not the arithmetic over what rastrillo new writes", name, total)
+			}
 		}
 	}
 }

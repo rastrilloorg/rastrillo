@@ -95,6 +95,37 @@ func Slugs() []string {
 	}
 }
 
+// LucideName is the name lucide.dev publishes one rastrillo slug under.
+//
+// Read off the vendored Lucide set's own CDN element rather than
+// written out in a second table beside it: the class lucide-static's
+// webfont binds to IS that icon's Lucide name, so the two cannot drift,
+// and a slug the framework grows without a Lucide glyph answers ""
+// here instead of a stale guess. TestEverySetCoversEverySlug already
+// fails on such a slug, so an empty answer means the build is broken
+// somewhere louder than this.
+//
+// It is what lets the design system show each icon's provenance without
+// keeping a list of twelve names anywhere: internal/designsystem calls
+// this once per rastrillo.IconSlugs() entry.
+func LucideName(slug string) string {
+	const marker = `class="icon icon-`
+	g, ok := sets["lucide"].glyphs[slug]
+	if !ok {
+		return ""
+	}
+	i := strings.Index(g.Element, marker)
+	if i < 0 {
+		return ""
+	}
+	rest := g.Element[i+len(marker):]
+	j := strings.IndexByte(rest, '"')
+	if j < 0 {
+		return ""
+	}
+	return rest[:j]
+}
+
 // Names lists the sets an app can choose, sorted.
 func Names() []string {
 	out := make([]string, 0, len(sets))

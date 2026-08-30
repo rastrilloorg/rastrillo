@@ -311,7 +311,9 @@ func a11yTargets() []a11yTarget {
 		// heading level or a landmark can only be wrong on the page it
 		// is on.
 		{"day/en overview", page("day", "en", "overview"), "the root page: the chrome, the rail and the page header with nothing else in the way"},
+		{"day/en getting started", page("day", "en", "getting-started"), "a page of prose, a list of links out to the assets and two source blocks: the plainest document in the tree, and the one where a heading level or a list semantic has nothing else to hide behind"},
 		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
+		{"day/en icons", page("day", "en", "icons"), "one inline SVG per slug the framework answers, each aria-hidden beside its own name: the one page in the tree where an icon is the content rather than furniture, and where an accessible name accidentally coming off a decorative glyph would show"},
 		{"day/en components", page("day", "en", "components"), "the page with every component on it"},
 		{"day/en primitives", page("day", "en", "primitives"), "the class idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
@@ -326,6 +328,46 @@ func a11yTargets() []a11yTarget {
 		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
 		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
 		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
+	}
+}
+
+// TestEveryPageKindHasAnAccessibilityTarget holds the curated list to
+// the table.
+//
+// a11yTargets() is a REPRESENTATIVE sample with a written reason per
+// entry, and that is worth keeping: scanning 253 pages would say
+// nothing the twelve do not, and the reasons are what make the sample
+// arguable. What it must not be is a list that quietly stops covering
+// something.
+//
+// A page kind added to pageKinds() whose author forgets an entry here
+// is never axe-scanned at all, and the only evidence is that a log line
+// says "16 pages" where it used to say 14 — a number nobody reads.
+// TestA11yReflowsAt320 already walks pageKinds(); this is the same
+// assurance for the scan, without giving up the curation: the entry
+// still has to be written by hand, with its own reason, and this says
+// so when it has not been.
+//
+// The check is on the FILE, not on a theme or a locale, because which
+// theme and language a page kind is best scanned in is exactly the
+// judgement the list exists to record.
+func TestEveryPageKindHasAnAccessibilityTarget(t *testing.T) {
+	targets := a11yTargets()
+	if len(targets) == 0 {
+		t.Fatal("a11yTargets() is empty; the scan is scanning nothing")
+	}
+	for _, pk := range pageKinds() {
+		found := ""
+		for _, tc := range targets {
+			if strings.Contains(tc.href, "/"+pk.File) {
+				found = tc.name
+				break
+			}
+		}
+		if found == "" {
+			t.Errorf("no axe target covers %s (page kind %q). Every page kind is scanned: add an entry to a11yTargets() "+
+				"naming the theme and locale you chose and the reason that page is worth a scan of its own.", pk.File, pk.Kind)
+		}
 	}
 }
 
