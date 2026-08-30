@@ -881,13 +881,22 @@ a.rst-nm:hover { color: var(--rst-accent); }
    scroll in place at the foot of the window instead of flipping up into
    the room above it.
 
-   position-visibility pays for the fixed positioning above. A fixed
-   panel is deliberately outside every scrolling ancestor's clip — that
-   is how a menu opened inside a card escapes it — but the anchor is
-   NOT, so scrolling a rail's nav until the menu's own button was gone
-   left the menu painted over unrelated content with nothing under it.
+   position-visibility covers the fixed positioning above. A fixed panel
+   is deliberately outside every scrolling ancestor's clip — that is how
+   a menu opened inside a card escapes it — but the anchor is NOT, so a
+   rail's nav scrolled until the menu's own button is gone could leave
+   the menu painted over unrelated content with nothing under it.
    anchors-visible ties the panel's visibility to its anchor's: when the
-   button goes, the menu goes. */
+   button goes, the menu goes.
+
+   It is a no-op in Chromium today, and that is written down rather than
+   left to be rediscovered: Chromium's INITIAL value for the property is
+   already anchors-visible, on every element. The CSS spec's initial
+   value is `always`. So this declaration is not what produces today's
+   behaviour — it is what keeps it if an engine ever aligns with the
+   spec, which would otherwise orphan every menu here with no warning at
+   all. ui's TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt
+   watches for exactly that, and says the same at more length. */
 .rst-dropdown__menu,
 .rst-row-menu__panel {
   max-block-size: min(20rem, max(calc(100dvh - 6rem), 8rem));

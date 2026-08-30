@@ -1764,26 +1764,46 @@ type orphanReading struct {
 }
 
 // TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt is the price
-// of the fixed positioning the flip needs, paid.
+// of the fixed positioning the flip needs, watched.
 //
 // A fixed panel is deliberately outside every scrolling ancestor's clip
 // — that is how a menu opened inside a list card escapes the card — and
 // Chromium keeps it tracking its anchor through both window and
 // inner-scroller scrolls. But the ANCHOR is still inside the clip, so
-// scrolling a rail's nav until the menu's own button had gone left the
-// menu painted, over unrelated content, with nothing under it. The
-// sidebar rail with its thirty-odd links is the live case.
+// scrolling a rail's nav until the menu's own button is gone could
+// leave the menu painted over unrelated content with nothing under it.
+// The sidebar rail with its thirty-odd links is the live case.
 //
-// position-visibility: anchors-visible ties the two together: when the
-// button goes, the menu goes.
+// WHAT THIS DRIVE ACTUALLY GATES, stated plainly because the mutation
+// run says something a comment could easily be written to hide.
+// tokens.css writes `position-visibility: anchors-visible` on the
+// panel, and DELETING THAT LINE DOES NOT FAIL THIS TEST. Chromium's
+// initial value for the property is already anchors-visible — measured,
+// on body and on a plain fixed box as well as on an anchored one — so
+// the behaviour below is the engine's default and the declaration is a
+// no-op today.
 //
-// The always-visible control beside it is what stops this drive being
-// able to pass by mistake. The second scroller's panel overrides the
-// declaration back to `always`, so it MUST still be painted after the
-// same scroll. If the drive's way of asking "is this visible?" ever
-// starts answering no to everything — a changed API, a mis-selected
-// element, a scroll that moved the wrong box — the control fails and
-// says so, instead of the subject passing for the wrong reason.
+// The declaration stays anyway, and the reason is not superstition: the
+// CSS spec's initial value is `always`, not anchors-visible. Chromium is
+// the one diverging, in the safe direction, and an engine that aligned
+// with the spec tomorrow would orphan every menu in the library with no
+// other warning. The line is what makes the behaviour ours rather than
+// borrowed, and the computed-value assertion below is what notices if
+// the line and the default ever both go. Forcing the property to
+// `always` — the spec-aligned engine, simulated — fails this drive on
+// both the computed value and the geometry.
+//
+// So this is a WATCH on the engine rather than a proof of our CSS, and
+// it is worth having as one: it is the only thing anywhere that would
+// catch the orphaned menu coming back.
+//
+// The always-visible control is what stops it passing by mistake. The
+// second scroller's panel overrides the property to `always`, so it
+// MUST still be painted after the same scroll. If the drive's way of
+// asking "is this painted?" ever starts answering no to everything — a
+// changed API, a mis-selected element, a scroll that moved the wrong
+// box — the control fails and says so, instead of the subject passing
+// for the wrong reason.
 func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 	// Hand-written markup, the way tokens.css says these idioms are
 	// used, because the second scroller needs an override the partial
@@ -1890,6 +1910,13 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 	}
 	if before.SupportsBogus {
 		t.Fatal("CSS.supports agreed to a position-visibility value that does not exist; the support check above is worthless")
+	}
+	// The used value, whether it came from tokens.css or from the
+	// engine's own initial value. This is the assertion that goes red if
+	// Chromium ever aligns with the spec (whose initial value is
+	// `always`) AND our own declaration has been lost along the way.
+	if before.Visibility != "anchors-visible" {
+		t.Errorf("the menu resolves position-visibility: %s, want anchors-visible — with `always` a menu outlives the button that opened it", before.Visibility)
 	}
 	if !before.Painted {
 		t.Fatalf("the menu is not painted before anything has scrolled — the middle of it hits %s. This drive is measuring the wrong element.", before.Hit)
