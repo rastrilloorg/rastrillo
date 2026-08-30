@@ -59,7 +59,7 @@ const extraFixture = `
      <a class="rst-btn rst-btn--primary" href="#a">Primary</a>
      <a class="rst-btn rst-btn--ghost" href="#a">Ghost</a>
      <button class="rst-btn rst-btn--danger" type="button">Danger</button>
-     <button class="rst-btn" type="button" aria-busy="true" disabled><span class="rst-btn__spin rst-spin" aria-hidden="true"></span>Saving</button></p>
+     <button class="rst-btn" type="button" aria-busy="true" disabled><span class="rst-spin" aria-hidden="true"></span>Saving</button></p>
 
   <p><span class="rst-badge rst-badge--positive">Paid</span>
      <span class="rst-badge rst-badge--warning">Due</span>
@@ -302,7 +302,7 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 
 	spellings := map[string]string{
 		"class": fixture,
-		"attr":  attributeMarkup(fixture),
+		"attr":  attributeSpelling(fixture),
 		"bare":  bareRSTMarkup(fixture),
 	}
 	if spellings["attr"] == spellings["class"] {

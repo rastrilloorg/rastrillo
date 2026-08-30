@@ -639,8 +639,8 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 			`<link rel="stylesheet" href="/theme.css">` +
 			`<script defer src="/select.js"></script></head><body>` +
 			`<form method="post" action="/submit">` +
-			`<label class="rst-field__label" for="city">City</label>` +
-			`<select class="rst-input" id="city" name="city" data-rst-select` +
+			`<label rst-field-label for="city">City</label>` +
+			`<select rst-input id="city" name="city" data-rst-select` +
 			` data-rst-select-filter="Type to filter"` +
 			` data-rst-select-results="{n} results"` +
 			` data-rst-select-result-one="1 result">` +
@@ -657,8 +657,8 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 			`</select>` +
 			// The markup-side opt-out, on a select far past the size that
 			// would otherwise enhance: it must stay a plain native select.
-			`<label class="rst-field__label" for="team">Team</label>` +
-			`<select class="rst-input" id="team" name="team" data-rst-select="false">`)
+			`<label rst-field-label for="team">Team</label>` +
+			`<select rst-input id="team" name="team" data-rst-select="false">`)
 		for i := 1; i <= 40; i++ {
 			fmt.Fprintf(&body, `<option value="%d">Team %d</option>`, i, i)
 		}
@@ -905,10 +905,10 @@ func menuPage(t *testing.T) http.Handler {
 			`<link rel="stylesheet" href="/theme.css">`+
 			`<script defer src="/rastrillo.js"></script></head><body>`+
 			// The header dropdown, in the shared group.
-			`<header class="rst-shell__bar">`+
-			`<details class="rst-dropdown rst-shell__account" name="`+MenuGroupDefault+`" id="account">`+
+			`<header rst-shell-bar>`+
+			`<details rst-dropdown rst-shell-account name="`+MenuGroupDefault+`" id="account">`+
 			`<summary id="account-summary">Account</summary>`+
-			`<div class="rst-dropdown__menu"><a id="account-item" href="#settings">Settings</a></div>`+
+			`<div rst-dropdown-menu><a id="account-item" href="#settings">Settings</a></div>`+
 			`</details></header>`+
 			// A list-bar filter dropdown with a nested submenu whose group
 			// is deliberately different. The search form is here for the
@@ -917,34 +917,34 @@ func menuPage(t *testing.T) http.Handler {
 			// menu — right-aligned to the summary, 176px wide — opens
 			// inside the viewport instead of off the left edge, where
 			// nothing can click it.
-			`<div class="rst-lbar">`+
-			`<search><form class="rst-search" method="get">`+
+			`<div rst-lbar>`+
+			`<search><form rst-search method="get">`+
 			`<input type="search" name="q" aria-label="Search"></form></search>`+
-			`<details class="rst-dropdown" name="`+MenuGroupDefault+`" id="filter">`+
+			`<details rst-dropdown name="`+MenuGroupDefault+`" id="filter">`+
 			`<summary id="filter-summary">Filter</summary>`+
-			`<div class="rst-dropdown__menu">`+
+			`<div rst-dropdown-menu>`+
 			`<a id="filter-item" href="#paid">Paid</a>`+
-			`<details class="rst-menu-group" name="rst-menus-price" id="submenu">`+
+			`<details rst-menu-group name="rst-menus-price" id="submenu">`+
 			`<summary id="submenu-summary">Price</summary>`+
 			`<div><a id="submenu-item" href="#free">Free</a></div></details>`+
 			`</div></details></div>`+
 			// A row menu, in the shared group.
-			`<div class="rst-card" style="--rst-cols: 1fr 32px">`+
-			`<div class="rst-lrow"><a class="rst-nm" href="#row">Grace Hopper</a>`+
-			`<details class="rst-row-menu" name="`+MenuGroupDefault+`" id="rowmenu">`+
+			`<div rst-card style="--rst-cols: 1fr 32px">`+
+			`<div rst-lrow><a class="rst-nm" href="#row">Grace Hopper</a>`+
+			`<details rst-row-menu name="`+MenuGroupDefault+`" id="rowmenu">`+
 			`<summary id="rowmenu-summary" aria-label="Actions for Grace Hopper">…</summary>`+
-			`<div class="rst-row-menu__panel"><a href="#view">View</a></div>`+
+			`<div rst-row-menu-panel><a href="#view">View</a></div>`+
 			`</details></div></div>`+
 			// Outside the group, both of them: the sidebar's chrome strip
 			// and a toggle-block. Neither is a menu.
-			`<details class="rst-shell__chrome" id="chrome" open><summary id="chrome-summary">Menu</summary></details>`+
-			`<div class="rst-tblock"><label class="rst-tblock__head">`+
+			`<details rst-shell-chrome id="chrome" open><summary id="chrome-summary">Menu</summary></details>`+
+			`<div rst-tblock><label rst-tblock-head>`+
 			`<input type="checkbox" id="tblock-input" name="notify" checked>`+
-			`<span class="rst-switch__track" aria-hidden="true"></span>`+
-			`<span><span class="rst-tblock__title">Email notifications</span></span></label>`+
-			`<div class="rst-tblock__body">Body.</div></div>`+
+			`<span rst-switch-track aria-hidden="true"></span>`+
+			`<span><span rst-tblock-title>Email notifications</span></span></label>`+
+			`<div rst-tblock-body>Body.</div></div>`+
 			// Somewhere unambiguous to click that is not inside any menu.
-			`<main class="rst-page" id="main"><p id="elsewhere">Nothing here.</p></main>`+
+			`<main rst-page id="main"><p id="elsewhere">Nothing here.</p></main>`+
 			`</body></html>`)
 	})
 	return mux
@@ -1285,8 +1285,8 @@ func fieldRowPage(t *testing.T) http.Handler {
 		fmt.Fprintf(&body, `<!doctype html><html lang="en" dir=%q><head><meta charset="utf-8">`+
 			`<title>rows</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
-			`<script defer src="/datetime.js"></script></head><body class="rst-page">`+
-			`<form class="rst-form" method="post" action="/submit">`, dir)
+			`<script defer src="/datetime.js"></script></head><body rst-page>`+
+			`<form rst-form method="post" action="/submit">`, dir)
 		if err := tmpl.ExecuteTemplate(&body, "field-daterange", map[string]any{
 			"Legend": "Booking", "Kind": "date",
 			"Start": map[string]any{"Name": "dr_from", "Label": "From", "Value": "2026-09-04"},
@@ -1296,30 +1296,30 @@ func fieldRowPage(t *testing.T) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		body.WriteString(`<div class="rst-field-row" id="addr">` +
-			`<div class="rst-field rst-grow"><label class="rst-field__label" for="city">City</label>` +
-			`<input class="rst-input" type="text" id="city" name="city" value="Dublin"></div>` +
-			`<div class="rst-field"><label class="rst-field__label" for="zip">ZIP</label>` +
-			`<input class="rst-input rst-input--short" type="text" id="zip" name="zip" value="D02 XY45"></div>` +
+		body.WriteString(`<div rst-field-row id="addr">` +
+			`<div class="rst-grow" rst-field><label rst-field-label for="city">City</label>` +
+			`<input rst-input type="text" id="city" name="city" value="Dublin"></div>` +
+			`<div rst-field><label rst-field-label for="zip">ZIP</label>` +
+			`<input rst-input="short" type="text" id="zip" name="zip" value="D02 XY45"></div>` +
 			`</div>`)
 		// Both halves in error, one message far longer than the other:
 		// the case where a message, left to contribute to its field's
 		// max-content width, stretched its own column and squeezed its
 		// neighbour.
-		body.WriteString(`<div class="rst-field-row" id="both">` +
-			`<div class="rst-field"><label class="rst-field__label" for="b_one">Opens</label>` +
-			`<input class="rst-input" type="text" id="b_one" name="b_one" aria-invalid="true" aria-describedby="b_one-error">` +
-			`<small class="rst-field__error" id="b_one-error">This start is in the past and the booking window closed on Tuesday, so pick another one.</small></div>` +
-			`<div class="rst-field"><label class="rst-field__label" for="b_two">Closes</label>` +
-			`<input class="rst-input" type="text" id="b_two" name="b_two" aria-invalid="true" aria-describedby="b_two-error">` +
-			`<small class="rst-field__error" id="b_two-error">Too late.</small></div>` +
+		body.WriteString(`<div rst-field-row id="both">` +
+			`<div rst-field><label rst-field-label for="b_one">Opens</label>` +
+			`<input rst-input type="text" id="b_one" name="b_one" aria-invalid="true" aria-describedby="b_one-error">` +
+			`<small rst-field-error id="b_one-error">This start is in the past and the booking window closed on Tuesday, so pick another one.</small></div>` +
+			`<div rst-field><label rst-field-label for="b_two">Closes</label>` +
+			`<input rst-input type="text" id="b_two" name="b_two" aria-invalid="true" aria-describedby="b_two-error">` +
+			`<small rst-field-error id="b_two-error">Too late.</small></div>` +
 			`</div>`)
 		// A labelled field beside one with no label at all: the reserved
 		// label line is the only thing keeping the two controls level.
-		body.WriteString(`<div class="rst-field-row" id="nolabel">` +
-			`<div class="rst-field"><label class="rst-field__label" for="n_one">Reference</label>` +
-			`<input class="rst-input" type="text" id="n_one" name="n_one"></div>` +
-			`<div class="rst-field"><input class="rst-input" type="text" id="n_two" name="n_two" aria-label="Check digit"></div>` +
+		body.WriteString(`<div rst-field-row id="nolabel">` +
+			`<div rst-field><label rst-field-label for="n_one">Reference</label>` +
+			`<input rst-input type="text" id="n_one" name="n_one"></div>` +
+			`<div rst-field><input rst-input type="text" id="n_two" name="n_two" aria-label="Check digit"></div>` +
 			`</div>`)
 		body.WriteString(`<button type="submit" id="go">Save</button></form></body></html>`)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -1581,7 +1581,7 @@ const busyStateJS = `(function () {
   var f = document.getElementById("two");
   var s = document.getElementById("save");
   var d = document.getElementById("draft");
-  var spin = s.querySelector(".rst-btn__spin");
+  var spin = s.querySelector("[rst-spin]");
   var cs = spin && getComputedStyle(spin);
   return [
     "form:" + (f.getAttribute("aria-busy") || "-"),
@@ -1612,7 +1612,7 @@ const invalidStateJS = `(function () {
     "form:" + (f.getAttribute("aria-busy") || "-"),
     "btn:" + (b.getAttribute("aria-busy") || "-"),
     "btn-off:" + b.disabled,
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
     "valid:" + f.checkValidity(),
   ].join(" ");
 })()`
@@ -1625,7 +1625,7 @@ const optOutStateJS = `(function () {
     "form:" + (f.getAttribute("aria-busy") || "-"),
     "btn:" + (b.getAttribute("aria-busy") || "-"),
     "btn-off:" + b.disabled,
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
   ].join(" ");
 })()`
 
@@ -1638,7 +1638,7 @@ const quietStateJS = `(function () {
     "form:" + (f.getAttribute("aria-busy") || "-"),
     "btn:" + (b.getAttribute("aria-busy") || "-"),
     "btn-off:" + b.disabled,
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
   ].join(" ");
 })()`
 
@@ -1653,7 +1653,7 @@ const shadowStateJS = `(function () {
     "shadowed:" + (f.target && f.target.tagName === "INPUT"),
     "form:" + (f.getAttribute("aria-busy") || "-"),
     "btn:" + (b.getAttribute("aria-busy") || "-"),
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
   ].join(" ");
 })()`
 
@@ -1670,7 +1670,7 @@ const backStateJS = `(function () {
     "btn-off:" + b.disabled,
     "btn-text:" + b.textContent.trim(),
     "idle-label:" + (b.getAttribute("data-idle-label") || "-"),
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
   ].join(" ");
 })()`
 
@@ -1690,7 +1690,7 @@ func dialogState(dlg, form, btn string) string {
     "form:" + (f.getAttribute("aria-busy") || "-"),
     "btn:" + (b.getAttribute("aria-busy") || "-"),
     "btn-off:" + b.disabled,
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
   ].join(" ");
 })()`
 }
@@ -1710,7 +1710,7 @@ const extBackStateJS = `(function () {
     "btn-off:" + b.disabled,
     "btn-text:" + b.textContent.trim(),
     "idle-label:" + (b.getAttribute("data-idle-label") || "-"),
-    "spin:" + (b.querySelector(".rst-btn__spin") ? "yes" : "no"),
+    "spin:" + (b.querySelector("[rst-spin]") ? "yes" : "no"),
   ].join(" ");
 })()`
 
@@ -1786,36 +1786,36 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`<script defer src="/rastrillo.js"></script></head><body>`+
 			// Two submit buttons in one form: the clicked one goes busy,
 			// the other keeps its name, its value and its wits.
-			`<form id="two" class="rst-form" method="post" action="/submit">`+
+			`<form id="two" rst-form method="post" action="/submit">`+
 			`<input type="hidden" name="note" value="hello">`+
-			`<div class="rst-form__foot">`+
-			`<button id="save" class="rst-btn rst-btn--primary" type="submit" name="action" value="save" data-busy-label="Saving…">Save post</button>`+
-			`<button id="draft" class="rst-btn" type="submit" name="action" value="draft">Save draft</button>`+
+			`<div rst-form-foot>`+
+			`<button id="save" rst-btn="primary" type="submit" name="action" value="save" data-busy-label="Saving…">Save post</button>`+
+			`<button id="draft" rst-btn type="submit" name="action" value="draft">Save draft</button>`+
 			`</div></form>`+
 			// A form the browser will refuse: constraint validation
 			// fires before the submit event, so nothing here may end up
 			// looking busy.
-			`<form id="needs-title" class="rst-form" method="post" action="/submit">`+
-			`<input class="rst-input" id="title" name="title" required>`+
-			`<button id="try" class="rst-btn" type="submit">Publish</button>`+
+			`<form id="needs-title" rst-form method="post" action="/submit">`+
+			`<input rst-input id="title" name="title" required>`+
+			`<button id="try" rst-btn type="submit">Publish</button>`+
 			`</form>`+
 			// The opt-out, twice: once on the form, once on the button.
 			// The button-level one still guards the form — the guard is
 			// the substance, and only the loading state is being
 			// declined.
-			`<form id="out" class="rst-form" method="post" action="/submit" data-busy="false">`+
-			`<button id="optout" class="rst-btn" type="submit" name="action" value="optout">Opt out</button>`+
+			`<form id="out" rst-form method="post" action="/submit" data-busy="false">`+
+			`<button id="optout" rst-btn type="submit" name="action" value="optout">Opt out</button>`+
 			`</form>`+
-			`<form id="quiet" class="rst-form" method="post" action="/submit">`+
-			`<button id="quietbtn" class="rst-btn" type="submit" name="action" value="quiet" data-busy="false">Quietly</button>`+
+			`<form id="quiet" rst-form method="post" action="/submit">`+
+			`<button id="quietbtn" rst-btn type="submit" name="action" value="quiet" data-busy="false">Quietly</button>`+
 			`</form>`+
 			// A control named "target" — a target amount, an ordinary
 			// field name — which shadows HTMLFormElement.target with the
 			// input itself. Reading the property instead of the
 			// attribute switches the whole rule off for this form.
-			`<form id="shadow" class="rst-form" method="post" action="/submit">`+
+			`<form id="shadow" rst-form method="post" action="/submit">`+
 			`<input type="hidden" name="target" value="42">`+
-			`<button id="shadowgo" class="rst-btn" type="submit" name="action" value="shadow">Set target</button>`+
+			`<button id="shadowgo" rst-btn type="submit" name="action" value="shadow">Set target</button>`+
 			`</form>`+
 			// The standard dialog close pattern. It submits nowhere:
 			// method="dialog" closes the <dialog> and leaves the page
@@ -1823,7 +1823,7 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			// state armed here and the dialog would be wedged shut.
 			`<dialog id="dlg"><p>A dialog.</p>`+
 			`<form id="dlgform" method="dialog">`+
-			`<button id="dlgclose" class="rst-btn" type="submit">Close</button>`+
+			`<button id="dlgclose" rst-btn type="submit">Close</button>`+
 			`</form></dialog>`+
 			// The same close reached through the SUBMITTER instead of
 			// the form: an ordinary POST form whose button carries
@@ -1832,20 +1832,20 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			// and a rule that reads only the form's method arms a
 			// guard here that nothing will ever clear.
 			`<dialog id="fmdlg"><p>Another dialog.</p>`+
-			`<form id="fmform" class="rst-form" method="post" action="/submit">`+
-			`<button id="fmclose" class="rst-btn" type="submit" formmethod="dialog">Close</button>`+
+			`<form id="fmform" rst-form method="post" action="/submit">`+
+			`<button id="fmclose" rst-btn type="submit" formmethod="dialog">Close</button>`+
 			`</form></dialog>`+
 			// A submit button that belongs to a form it does not live
 			// in — the toolbar/sticky-header Save the form attribute
 			// exists for. It navigates, so the back-button leg covers
 			// it too.
-			`<form id="ext" class="rst-form" method="post" action="/go"></form>`+
-			`<div class="rst-form__foot">`+
-			`<button id="extgo" class="rst-btn rst-btn--primary" type="submit" form="ext" name="action" value="ext" data-busy-label="Sending…">Save</button>`+
+			`<form id="ext" rst-form method="post" action="/go"></form>`+
+			`<div rst-form-foot>`+
+			`<button id="extgo" rst-btn="primary" type="submit" form="ext" name="action" value="ext" data-busy-label="Sending…">Save</button>`+
 			`</div>`+
 			// The form that really navigates, for the back-button leg.
-			`<form id="nav" class="rst-form" method="post" action="/go">`+
-			`<button id="navgo" class="rst-btn rst-btn--primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
+			`<form id="nav" rst-form method="post" action="/go">`+
+			`<button id="navgo" rst-btn="primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
 			`</form>`+
 			`</body></html>`)
 	})

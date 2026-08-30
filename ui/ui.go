@@ -33,9 +33,9 @@
 // Three container elements the partials assume but do not emit, because
 // they belong to the app's own page markup:
 //
-//	<div class="rst-page">   — the centred content column every screen sits in
-//	<div class="rst-list">   — the card wrapping a list-bar and a run of rows
-//	<form class="rst-form">  — the column a run of fields and a form-foot sit in
+//	<div rst-page>   — the centred content column every screen sits in
+//	<div rst-list>   — the card wrapping a list-bar and a run of rows
+//	<form rst-form>  — the column a run of fields and a form-foot sit in
 //
 // rst-list and rst-card have no padding by design: they hold rows, and
 // each row pads itself. Anything that is not a row — a form, prose, a
@@ -94,8 +94,8 @@
 // box — the section card. Its heading is a sibling before the card, not
 // inside it:
 //
-//	<div class="rst-box-head"><h2>Payout</h2><a class="rst-btn" href="/payout/edit">Edit</a></div>
-//	<section class="rst-box"><p>…</p><div class="rst-box-foot">Last updated 2 hours ago</div></section>
+//	<div rst-box-head><h2>Payout</h2><a rst-btn href="/payout/edit">Edit</a></div>
+//	<section rst-box><p>…</p><div rst-box-foot>Last updated 2 hours ago</div></section>
 //
 // list grid — the real data-table vocabulary. It is a layout grid of
 // divs on purpose, not a <table>: the columns come from one --rst-cols
@@ -108,15 +108,15 @@
 // kebab); rows only choose cells. A head row carries rst-lrow--head; a
 // data row's identity cell is rst-nm, a column hidden below 800px is
 // rst-m-hide, and the per-row overflow menu is a native
-// <details class="rst-row-menu"> — no JavaScript:
+// <details rst-row-menu> — no JavaScript:
 //
-//	<div class="rst-card" style="--rst-cols: 2fr 110px 32px">
-//	  <div class="rst-lrow rst-lrow--head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
-//	  <div class="rst-lrow">
+//	<div rst-card style="--rst-cols: 2fr 110px 32px">
+//	  <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
+//	  <div rst-lrow>
 //	    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
 //	    <span class="rst-m-hide rst-cell-mut">Paid</span>
-//	    <details class="rst-row-menu" name="rst-menus"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
-//	      <div class="rst-row-menu__panel"><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
+//	    <details rst-row-menu name="rst-menus"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
+//	      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
 //	    </details>
 //	  </div>
 //	</div>
@@ -141,11 +141,11 @@
 //
 // rst-caret is the disclosure arrow that flips on [open]:
 //
-//	<details class="rst-dropdown" name="rst-menus">
-//	  <summary>Filter<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">Filter orders: Paid</span></summary>
-//	  <div class="rst-dropdown__menu">
+//	<details rst-dropdown name="rst-menus">
+//	  <summary>Filter<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">Filter orders: Paid</span></summary>
+//	  <div rst-dropdown-menu>
 //	    <a aria-current="true" href="/orders?status=paid">Paid</a>
-//	    <details class="rst-menu-group" name="rst-menus-price" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
+//	    <details rst-menu-group name="rst-menus-price" open><summary>Price</summary><div><a href="/orders?price=free">Free</a></div></details>
 //	  </div>
 //	</details>
 //
@@ -153,7 +153,7 @@
 // the unfiltered URL, so removing a filter is ordinary navigation, no
 // JavaScript:
 //
-//	<span class="rst-ftok"><span class="rst-ftok__k">Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span>
+//	<span rst-ftok><span rst-ftok-k>Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span>
 //
 // toggle-block — a bordered card whose head is a switch and whose body
 // reveals only while that switch is on, via :has() — zero JavaScript.
@@ -162,12 +162,12 @@
 // DOM) revealed fields carry. The reveal is a display convenience, never
 // a second source of truth:
 //
-//	<div class="rst-tblock">
-//	  <label class="rst-tblock__head"><input type="checkbox" name="notify" checked>
-//	    <span class="rst-switch__track" aria-hidden="true"></span>
-//	    <span><span class="rst-tblock__title">Email notifications</span><span class="rst-tblock__desc">Sent for every reply.</span></span>
+//	<div rst-tblock>
+//	  <label rst-tblock-head><input type="checkbox" name="notify" checked>
+//	    <span rst-switch-track aria-hidden="true"></span>
+//	    <span><span rst-tblock-title>Email notifications</span><span rst-tblock-desc>Sent for every reply.</span></span>
 //	  </label>
-//	  <div class="rst-tblock__body">…</div>
+//	  <div rst-tblock-body>…</div>
 //	</div>
 //
 // modal route — a modal is its own URL, not client state. The response
@@ -192,11 +192,11 @@
 // accessible name fails axe's aria-dialog-name and is announced as
 // "dialog" and nothing else:
 //
-//	<div class="rst-backdrop" inert>…the page a Close click returns to…</div>
-//	<div class="rst-modal-overlay">
-//	  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+//	<div rst-backdrop inert>…the page a Close click returns to…</div>
+//	<div rst-modal-overlay>
+//	  <dialog rst-modal-panel open aria-labelledby="modal-title">
 //	    <nav><a href="/settings/profile" aria-current="page">Profile</a><a href="/settings/billing">Billing</a></nav>
-//	    <section><a class="rst-modal-close" href="/settings" aria-label="Close settings">✕</a><h2 id="modal-title">Profile</h2>…</section>
+//	    <section><a rst-modal-close href="/settings" aria-label="Close settings">✕</a><h2 id="modal-title">Profile</h2>…</section>
 //	  </dialog>
 //	</div>
 //
@@ -206,21 +206,21 @@
 // the accessible name, so the link carries its own full-sentence
 // aria-label regardless:
 //
-//	<a class="rst-help rst-tip" href="/help/orders" target="_blank" rel="noopener" aria-label="Help: orders" data-tip="About orders">{{icon "help-circle"}}</a>
+//	<a rst-help rst-tip href="/help/orders" target="_blank" rel="noopener" aria-label="Help: orders" data-tip="About orders">{{icon "help-circle"}}</a>
 //
 // selbox — the selection checkbox a list row wears in select mode. Its
 // label restates the row's own identity rather than a bare "checkbox 3
 // of 12", the same disambiguation list-row-action's ActionAria and
 // row-menu's per-row aria-label already use:
 //
-//	<label class="rst-selbox"><input type="checkbox" aria-label="Select order AB3PX"></label>
+//	<label rst-selbox><input type="checkbox" aria-label="Select order AB3PX"></label>
 //
 // shell — the page frame's own chrome. rst-shell-topbar wraps a
 // rst-shell__bar holding rst-shell__brand, rst-shell__nav,
 // rst-shell__account and, below the page, rst-shell__foot;
 // rst-shell-sidebar wraps a rst-shell__rail of rst-shell__group-labelled
 // nav beside rst-shell__main, collapsing below 800px into a
-// <details class="rst-shell__chrome"> — no JavaScript. Both carry
+// <details rst-shell-chrome> — no JavaScript. Both carry
 // rst-skip, the skip link. The canonical markup is Styleguide's
 // "shell-topbar" and "shell-sidebar", and an app does not usually write
 // any of it by hand: Layout ships the three shells as whole templates

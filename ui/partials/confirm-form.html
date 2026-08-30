@@ -36,7 +36,7 @@
               in the DOM, before the submit button — see the doc comment
               above: that order is load-bearing for tab order, not
               incidental to how the default renders. */}}
-{{define "confirm-form"}}<form class="rst-form-actions" method="post" action="{{.Action}}">{{range .Hidden}}<input type="hidden" name="{{index . 0}}" value="{{index . 1}}">{{end}}{{if .CancelHref}}<a class="rst-btn rst-btn--ghost" href="{{.CancelHref}}">{{if .CancelLabel}}{{.CancelLabel}}{{else}}{{T "rastrillo.ui.cancel"}}{{end}}</a>{{end}}<button type="submit" class="rst-btn{{if .Danger}} rst-btn--danger{{else}} rst-btn--primary{{end}}">{{.Label}}</button></form>{{end}}
+{{define "confirm-form"}}<form rst-form-actions method="post" action="{{.Action}}">{{range .Hidden}}<input type="hidden" name="{{index . 0}}" value="{{index . 1}}">{{end}}{{if .CancelHref}}<a rst-btn="ghost" href="{{.CancelHref}}">{{if .CancelLabel}}{{.CancelLabel}}{{else}}{{T "rastrillo.ui.cancel"}}{{end}}</a>{{end}}<button type="submit" rst-btn="{{if .Danger}}danger{{else}}primary{{end}}">{{.Label}}</button></form>{{end}}
 
 {{/* back-nav — the ← return link above a confirm or detail page. A
      <nav>, not a paragraph: it is navigation, and a screen-reader user
@@ -46,10 +46,10 @@
      own rst-shell__nav is unnamed for the same reason; pagination and
      seg-tabs are labelled because their link text is "1", "Next",
      "Basics", which names nothing on its own). */}}
-{{define "back-nav"}}<nav class="rst-back-nav"><a href="{{.Href}}">← {{.Label}}</a></nav>{{end}}
+{{define "back-nav"}}<nav rst-back-nav><a href="{{.Href}}">← {{.Label}}</a></nav>{{end}}
 
 {{/* notice — a one-line calm confirmation; renders nothing when empty. */}}
-{{define "notice"}}{{if .}}<p class="rst-notice" role="status">{{.}}</p>{{end}}{{end}}
+{{define "notice"}}{{if .}}<p rst-notice role="status">{{.}}</p>{{end}}{{end}}
 
 {{/* form-error — a one-line validation failure; renders nothing when empty. */}}
-{{define "form-error"}}{{if .}}<p class="rst-form-error" role="alert">{{.}}</p>{{end}}{{end}}
+{{define "form-error"}}{{if .}}<p rst-form-error role="alert">{{.}}</p>{{end}}{{end}}

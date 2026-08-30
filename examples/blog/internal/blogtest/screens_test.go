@@ -85,18 +85,18 @@ func TestAllStockPartialsAppearAcrossTheApp(t *testing.T) {
 	out := combined.String()
 
 	markers := map[string]string{
-		"page-header":        `<header class="rst-page-header">`,
-		"list-bar":           `<div class="rst-lbar">`,
-		"list-bar-search":    `<form class="rst-search"`,
+		"page-header":        `<header rst-page-header>`,
+		"list-bar":           `<div rst-lbar>`,
+		"list-bar-search":    `<form rst-search`,
 		"list-search-submit": `<button class="rst-sr-only" type="submit">`,
-		"list-row-action":    `<div class="rst-row">`,
-		"status-pill":        `<span class="rst-status"`,
-		"empty-state":        `<div class="rst-empty">`,
-		"pagination":         `<nav class="rst-pagination"`,
-		"rst-form":           `<form class="rst-form"`,
-		"field-text":         `<input class="rst-input"`,
-		"field-textarea":     `<textarea class="rst-textarea"`,
-		"form-foot":          `<div class="rst-form__foot">`,
+		"list-row-action":    `<div rst-row>`,
+		"status-pill":        `<span rst-status`,
+		"empty-state":        `<div rst-empty>`,
+		"pagination":         `<nav rst-pagination`,
+		"rst-form":           `<form rst-form`,
+		"field-text":         `<input rst-input`,
+		"field-textarea":     `<textarea rst-textarea`,
+		"form-foot":          `<div rst-form-foot>`,
 	}
 	for name, marker := range markers {
 		if !strings.Contains(out, marker) {
@@ -114,7 +114,7 @@ func TestEveryScreenHasAPageHeaderAndATitle(t *testing.T) {
 		// the New and Edit screens the (single) ejected form.html
 		// covers — the exclusion this test used to need for them is
 		// gone along with the reason for it.
-		if !strings.Contains(html, `<header class="rst-page-header">`) {
+		if !strings.Contains(html, `<header rst-page-header>`) {
 			t.Errorf("%s has no page header", name)
 		}
 		m := titleRe.FindStringSubmatch(html)
@@ -128,12 +128,12 @@ func TestAdminListScreenCarriesItsStockComponents(t *testing.T) {
 	screens := populatedScreens(t)
 	html := screens["/admin/posts"]
 	for _, want := range []string{
-		`<header class="rst-page-header">`,
-		`<div class="rst-lbar">`,
-		`<form class="rst-search"`,
+		`<header rst-page-header>`,
+		`<div rst-lbar>`,
+		`<form rst-search`,
 		`<button class="rst-sr-only" type="submit">`,
-		`<div class="rst-row">`,
-		`<nav class="rst-pagination"`,
+		`<div rst-row>`,
+		`<nav rst-pagination`,
 	} {
 		wantContains(t, html, want)
 	}

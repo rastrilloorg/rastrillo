@@ -6,7 +6,7 @@
          Label  string, required — the property name
          Value  string, required — the property value
          Mono   bool, optional — marks machine-ish values */}}
-{{define "detail-list"}}<dl class="rst-detail">
+{{define "detail-list"}}<dl rst-detail>
   {{- range .Items}}
   <dt>{{.Label}}</dt>
   <dd{{if .Mono}} class="rst-mono"{{end}}>{{.Value}}</dd>

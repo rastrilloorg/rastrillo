@@ -22,7 +22,7 @@
 {{define "content"}}
 {{if .IsNew}}
 {{template "page-header" dict "Title" "New post" "Sub" "It starts as a draft — nothing is public until you publish it."}}
-<form class="rst-form" method="post" action="/admin/posts">
+<form rst-form method="post" action="/admin/posts">
 {{template "field-text" dict "Name" "Title" "Label" (T "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
 {{template "field-textarea" dict "Name" "Body" "Label" (T "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T "ui.cancel")}}
@@ -32,14 +32,14 @@
 <div class="blog-status">
 {{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
 {{if .Published}}
-<form method="post" action="{{.UnpublishHref}}"><button class="rst-btn" type="submit">Unpublish</button></form>
-<a class="rst-btn" href="{{.ViewHref}}">View</a>
+<form method="post" action="{{.UnpublishHref}}"><button rst-btn type="submit">Unpublish</button></form>
+<a rst-btn href="{{.ViewHref}}">View</a>
 {{else}}
-<form method="post" action="{{.PublishHref}}"><button class="rst-btn" type="submit">Publish</button></form>
+<form method="post" action="{{.PublishHref}}"><button rst-btn type="submit">Publish</button></form>
 {{end}}
-<form method="post" action="{{.DeleteHref}}"><button class="rst-btn" type="submit">Delete</button></form>
+<form method="post" action="{{.DeleteHref}}"><button rst-btn type="submit">Delete</button></form>
 </div>
-<form class="rst-form" method="post" action="{{.BasicsAction}}">
+<form rst-form method="post" action="{{.BasicsAction}}">
 {{template "field-text" dict "Name" "Title" "Label" (T "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
 {{template "field-textarea" dict "Name" "Body" "Label" (T "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T "ui.cancel")}}

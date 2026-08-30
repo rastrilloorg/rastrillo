@@ -8,4 +8,4 @@
        Initial  string, optional — defaults to nothing rendered in the
                 avatar when empty (the dashed empty-avatar state)
        Large    bool, optional */}}
-{{define "person"}}<a class="rst-person{{if .Large}} rst-person--lg{{end}}" href="{{.Href}}"><span class="rst-person__av{{if not .Initial}} rst-person__av--empty{{end}}" aria-hidden="true">{{.Initial}}</span><span class="rst-person__meta"><span class="rst-person__name">{{.Name}}</span>{{with .Email}}<span class="rst-person__email">{{.}}</span>{{end}}</span></a>{{end}}
+{{define "person"}}<a rst-person{{if .Large}}="lg"{{end}} href="{{.Href}}"><span rst-person-av{{if not .Initial}}="empty"{{end}} aria-hidden="true">{{.Initial}}</span><span rst-person-meta><span rst-person-name>{{.Name}}</span>{{with .Email}}<span rst-person-email>{{.}}</span>{{end}}</span></a>{{end}}

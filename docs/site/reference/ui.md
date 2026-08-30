@@ -33,8 +33,8 @@ partial's file carries its data contract in a comment above the
 authoritative list.
 
 The partials assume three containers they do not emit, because those
-belong to your page markup: `<div class="rst-page">`,
-`<div class="rst-list">` and `<form class="rst-form">`.
+belong to your page markup: `<div rst-page>`,
+`<div rst-list>` and `<form rst-form>`.
 
 ## Funcs
 

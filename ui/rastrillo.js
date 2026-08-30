@@ -7,9 +7,9 @@
 
    Two sections are on by default instead, because neither has a
    per-instance decision to make. Light dismiss for the menu idioms keys
-   off the rst-dropdown / rst-row-menu classes: a menu that closes on an
-   outside click on one screen and not the next is worse than either rule
-   applied everywhere. The busy rule keys off nothing at all — every
+   off the rst-dropdown / rst-row-menu attributes: a menu that closes on
+   an outside click on one screen and not the next is worse than either
+   rule applied everywhere. The busy rule keys off nothing at all — every
    submit button in every form that goes somewhere is covered, because
    a button that changes something should say so while it works, and a
    form that double-submits on a second click is a bug on every screen.
@@ -44,11 +44,10 @@
    direct navigation. Reserved: the framework's own handlers do not
    read it today.
 
-   Menus (no attribute — see above): an open <details class="rst-dropdown">,
-   <details class="rst-row-menu"> or nested <details class="rst-menu-group">
-   closes on a click outside it and on Escape. Which of them is open at
-   once is still the native <details name> group, with no script involved
-   at all.
+   Menus (no attribute — see above): an open <details rst-dropdown>,
+   <details rst-row-menu> or nested <details rst-menu-group> closes on a
+   click outside it and on Escape. Which of them is open at once is still
+   the native <details name> group, with no script involved at all.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -174,7 +173,7 @@
       if (b.form !== form && !form.contains(b)) return;
       b.disabled = false;
       b.removeAttribute("aria-busy");
-      var spin = b.querySelector(".rst-btn__spin");
+      var spin = b.querySelector("[rst-spin]");
       if (spin) spin.remove();
       var idle = b.getAttribute("data-idle-label");
       if (idle === null) return;
@@ -226,7 +225,7 @@
         // children, which is the one shape this cannot draw a spinner
         // on. tokens.css stops it rotating under reduced motion.
         var spin = document.createElement("span");
-        spin.className = "rst-spin rst-btn__spin";
+        spin.setAttribute("rst-spin", "");
         spin.setAttribute("aria-hidden", "true");
         btn.insertBefore(spin, btn.firstChild);
       }
@@ -280,8 +279,8 @@
   // MENUS. A sidebar's disclosure strip and a settings switch are not
   // menus; closing them because a click landed elsewhere would fight the
   // user rather than help.
-  var MENUS = "details.rst-dropdown[open], details.rst-menu-group[open], " +
-    "details.rst-row-menu[open]";
+  var MENUS = "details[rst-dropdown][open], details[rst-menu-group][open], " +
+    "details[rst-row-menu][open]";
 
   // except is the clicked node: the menu containing it stays open, which
   // is what keeps a click on a menu item — or on the summary of a menu

@@ -245,9 +245,9 @@ does not promise you.
 They belong to your page markup, so the library does not emit them:
 
 ```html
-<div class="rst-page">   <!-- the centred content column every screen sits in -->
-<div class="rst-list">   <!-- the card wrapping a list-bar and a run of rows -->
-<form class="rst-form">  <!-- the column a run of fields and a form-foot sit in -->
+<div rst-page>   <!-- the centred content column every screen sits in -->
+<div rst-list>   <!-- the card wrapping a list-bar and a run of rows -->
+<form rst-form>  <!-- the column a run of fields and a form-foot sit in -->
 ```
 
 There is also a class idiom vocabulary — section box, list grid,
@@ -268,9 +268,9 @@ The padded card for arbitrary content is `rst-box`, with its heading as
 a sibling `rst-box-head` before it:
 
 ```html
-<div class="rst-box-head"><h2>Sign in</h2></div>
-<section class="rst-box">
-  <form class="rst-form" method="post" action="/signin">…</form>
+<div rst-box-head><h2>Sign in</h2></div>
+<section rst-box>
+  <form rst-form method="post" action="/signin">…</form>
 </section>
 ```
 
@@ -710,7 +710,7 @@ default. A page overrides only what it cares about, by redefining the
 block:
 
 ```html
-{{define "brand"}}<a class="rst-shell__brand" href="/">Notes</a>{{end}}
+{{define "brand"}}<a rst-shell-brand href="/">Notes</a>{{end}}
 {{define "nav"}}
   <a href="/" aria-current="page">Notes</a>
   <a href="/archive">Archive</a>
@@ -737,7 +737,7 @@ the head, so your own CSS wins the ties it should win against
 
 `account` is the one asymmetric block, and it is worth knowing which
 shell you are in. In `topbar` the layout owns the `<details
-class="rst-dropdown rst-shell__account">` and its summary, so your
+rst-dropdown rst-shell-account>` and its summary, so your
 `account` block is the **menu body only** — the links that go inside
 `.rst-dropdown__menu`. In `sidebar` there is no dropdown: `account` is a
 bare slot in the rail, and you supply the whole thing. Move a block
@@ -750,7 +750,7 @@ topbar; `rst-shell-sidebar`, `rst-shell__rail`, `rst-shell__chrome`,
 `rst-shell__group` and `rst-shell__main` for the sidebar; and
 `rst-skip`, the skip link, which all three shells carry — `column`
 included. The sidebar's mobile collapse is that
-`<details class="rst-shell__chrome">` and nothing else — no JavaScript,
+`<details rst-shell-chrome>` and nothing else — no JavaScript,
 like every other idiom here.
 
 ### Upgrading: the topbar's tail is a level deeper

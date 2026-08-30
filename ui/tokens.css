@@ -266,8 +266,14 @@ body {
   opacity: 0.8;
 }
 /* The ring must not be squeezed by a long label, and must not stretch
-   with the button's align-items: center default. */
-.rst-btn__spin, [rst-btn-spin] {
+   with the button's align-items: center default.
+
+   Placed by shape rather than by a name of its own: the busy spinner is
+   the shim's rst-spin child of an rst-btn, and there is nothing else it
+   could be. rst-btn__spin was the second name for one thing, and the
+   grammar of §6-v3 is explicit that a part is styled structurally where
+   structure says it. The shim now writes one attribute. */
+.rst-btn > .rst-spin, [rst-btn] > [rst-spin] {
   align-self: center;
   flex: none;
 }
@@ -347,7 +353,7 @@ body {
    Both selectors are wrapped in :where() to weigh NOTHING — (0,0,0),
    not the (0,2,0) a bare `.rst-list > :first-child` would carry. That is
    the whole mechanism by which a child that owns its own shape keeps it:
-   a bare <form class="rst-search"> or a .rst-empty as the direct first
+   a bare <form rst-search> or a .rst-empty as the direct first
    or last child of a card declares its radius at (0,1,0) and therefore
    wins, and so does any app class doing the same. Source order does NOT
    decide this and cannot be relied on to — an earlier draft of this
@@ -402,7 +408,7 @@ body {
 }
 /* list-bar-search wraps its form in <search>, the landmark element, so
    the strip's flex child is the <search>, not the form. Both are sized
-   here: an app that hand-writes a bare <form class="rst-search"> into
+   here: an app that hand-writes a bare <form rst-search> into
    its own .rst-lbar keeps the layout it had before the element landed. */
 .rst-lbar > search,
 [rst-lbar] > search,

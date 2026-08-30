@@ -32,7 +32,7 @@ func TestIndexEmptyState(t *testing.T) {
 	wantStatus(t, rec, http.StatusOK)
 	body := rec.Body.String()
 
-	wantContains(t, body, `<div class="rst-empty">`)
+	wantContains(t, body, `<div rst-empty>`)
 	wantContains(t, body, "Nothing published yet. Check back soon.")
 	// A reader cannot act on an empty blog, so no call to action.
 	wantNotContains(t, body, "rst-empty__cta")
@@ -47,7 +47,7 @@ func TestIndexSecondPageShowsTheEleventhPost(t *testing.T) {
 	first := get(t, app, "/")
 	wantStatus(t, first, http.StatusOK)
 	wantNotContains(t, first.Body.String(), "Post 01")
-	wantContains(t, first.Body.String(), `<nav class="rst-pagination"`)
+	wantContains(t, first.Body.String(), `<nav rst-pagination`)
 
 	second := get(t, app, "/?page=2")
 	wantStatus(t, second, http.StatusOK)

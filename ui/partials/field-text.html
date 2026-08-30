@@ -23,13 +23,13 @@
        Error         string, optional — validation message; also sets
                      aria-invalid
        Autocomplete  string, optional — the autocomplete attribute */}}
-{{define "field-text"}}<div class="rst-field">
-  <label class="rst-field__label" for="{{.Name}}">{{.Label}}{{if .Required}} <span class="rst-field__required" aria-hidden="true">*</span>{{end}}</label>
-  <input class="rst-input" id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+{{define "field-text"}}<div rst-field>
+  <label rst-field-label for="{{.Name}}">{{.Label}}{{if .Required}} <span rst-field-required aria-hidden="true">*</span>{{end}}</label>
+  <input rst-input id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
   {{- if .Hint}}
-  <small class="rst-field__hint" id="{{.Name}}-hint">{{.Hint}}</small>
+  <small rst-field-hint id="{{.Name}}-hint">{{.Hint}}</small>
   {{- end}}
   {{- if .Error}}
-  <small class="rst-field__error" id="{{.Name}}-error">{{.Error}}</small>
+  <small rst-field-error id="{{.Name}}-error">{{.Error}}</small>
   {{- end}}
 </div>{{end}}

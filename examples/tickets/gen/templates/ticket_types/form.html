@@ -23,7 +23,7 @@
                        edit-advanced POST target */}}
 {{define "content"}}
 {{if .IsNew}}
-<form class="rst-form" method="post" action="/admin/ticket_types">
+<form rst-form method="post" action="/admin/ticket_types">
 {{template "field-text" dict "Name" "Name" "Label" (T "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (T (index .Errors "Name")) "Required" true}}
 {{template "field-text" dict "Name" "Price" "Label" (T "resource.ticket_types.field.price") "Value" .Fields.Price "Error" (T (index .Errors "Price")) "Required" true}}
 {{template "field-text" dict "Name" "Status" "Label" (T "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (T (index .Errors "Status"))}}
@@ -31,13 +31,13 @@
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T "ui.cancel")}}
 </form>
 {{else}}
-<form class="rst-form" method="post" action="{{.BasicsAction}}">
+<form rst-form method="post" action="{{.BasicsAction}}">
 {{template "field-text" dict "Name" "Name" "Label" (T "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (T (index .Errors "Name")) "Required" true}}
 {{template "field-text" dict "Name" "Price" "Label" (T "resource.ticket_types.field.price") "Value" .Fields.Price "Error" (T (index .Errors "Price")) "Required" true}}
 {{template "field-text" dict "Name" "Status" "Label" (T "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (T (index .Errors "Status"))}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T "ui.cancel")}}
 </form>
-<form class="rst-form" method="post" action="{{.AdvancedAction}}">
+<form rst-form method="post" action="{{.AdvancedAction}}">
 {{template "field-text" dict "Name" "MaxPerOrder" "Label" (T "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (T (index .Errors "MaxPerOrder"))}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T "ui.cancel")}}
 </form>

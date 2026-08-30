@@ -38,22 +38,22 @@ func TestNewPostFormRenders(t *testing.T) {
 	wantStatus(t, rec, http.StatusOK)
 	body := rec.Body.String()
 
-	wantContains(t, body, `<form class="rst-form" method="post" action="/admin/posts">`)
-	wantContains(t, body, `class="rst-field"`)
-	wantContains(t, body, `<label class="rst-field__label" for="Title">Title</label>`)
-	wantContains(t, body, `<input class="rst-input" id="Title" name="Title" type="text">`)
-	wantContains(t, body, `<textarea class="rst-textarea" id="Body" name="Body">`)
-	wantContains(t, body, `<button class="rst-btn rst-btn--primary" type="submit">Save</button>`)
-	wantContains(t, body, `<header class="rst-page-header">`)
+	wantContains(t, body, `<form rst-form method="post" action="/admin/posts">`)
+	wantContains(t, body, `rst-field`)
+	wantContains(t, body, `<label rst-field-label for="Title">Title</label>`)
+	wantContains(t, body, `<input rst-input id="Title" name="Title" type="text">`)
+	wantContains(t, body, `<textarea rst-textarea id="Body" name="Body">`)
+	wantContains(t, body, `<button rst-btn="primary" type="submit">Save</button>`)
+	wantContains(t, body, `<header rst-page-header>`)
 	wantContains(t, body, `<h1>New post</h1>`)
 	// No required marker: the manifest declares no required fields. No
 	// status pill or publish/unpublish/delete controls either — a post
 	// that doesn't exist yet cannot be published, unpublished, deleted
 	// or viewed; templates/posts/form.html (ejected) guards that whole
 	// strip on !IsNew (see genrender.go's formStripData doc comment).
-	wantNotContains(t, body, `class="rst-field__required"`)
+	wantNotContains(t, body, `rst-field-required`)
 	wantNotContains(t, body, `required>`)
-	wantNotContains(t, body, `class="rst-status"`)
+	wantNotContains(t, body, `rst-status`)
 	wantNotContains(t, body, `/publish"`)
 	wantNotContains(t, body, `/unpublish"`)
 	wantNotContains(t, body, `/delete"`)
@@ -125,7 +125,7 @@ func TestShowPageRendersFields(t *testing.T) {
 	wantContains(t, body, `<h1>Release notes</h1>`)
 	wantContains(t, body, "The body.")
 	wantContains(t, body, fmt.Sprintf(`href="/admin/posts/%d/edit"`, id))
-	wantContains(t, body, `<header class="rst-page-header">`)
+	wantContains(t, body, `<header rst-page-header>`)
 }
 
 func TestShowWithAMissingIdIs404(t *testing.T) {
@@ -143,11 +143,11 @@ func TestEditShowsCurrentValues(t *testing.T) {
 	wantStatus(t, rec, http.StatusOK)
 	body := rec.Body.String()
 
-	wantContains(t, body, `class="rst-field"`)
+	wantContains(t, body, `rst-field`)
 	wantContains(t, body, `value="Release notes"`)
 	wantContains(t, body, "The body.")
 	wantContains(t, body, fmt.Sprintf(`action="/admin/posts/%d/edit-basics"`, id))
-	wantContains(t, body, `<header class="rst-page-header">`)
+	wantContains(t, body, `<header rst-page-header>`)
 	wantContains(t, body, `<h1>Release notes</h1>`)
 }
 
@@ -162,7 +162,7 @@ func TestEditShowsTheDraftPillAndAPublishControl(t *testing.T) {
 	wantStatus(t, rec, http.StatusOK)
 	body := rec.Body.String()
 
-	wantContains(t, body, `<span class="rst-status" data-tone="neutral">Draft</span>`)
+	wantContains(t, body, `<span rst-status rst-tone="neutral">Draft</span>`)
 	wantContains(t, body, fmt.Sprintf(`action="/admin/posts/%d/publish"`, id))
 	wantContains(t, body, fmt.Sprintf(`action="/admin/posts/%d/delete"`, id))
 	wantNotContains(t, body, fmt.Sprintf(`action="/admin/posts/%d/unpublish"`, id))
@@ -179,7 +179,7 @@ func TestEditShowsThePublishedPillAndAnUnpublishControl(t *testing.T) {
 	wantStatus(t, rec, http.StatusOK)
 	body := rec.Body.String()
 
-	wantContains(t, body, `<span class="rst-status" data-tone="positive">Published</span>`)
+	wantContains(t, body, `<span rst-status rst-tone="positive">Published</span>`)
 	wantContains(t, body, fmt.Sprintf(`action="/admin/posts/%d/unpublish"`, id))
 	wantContains(t, body, fmt.Sprintf(`href="/posts/%d"`, id))
 	wantContains(t, body, fmt.Sprintf(`action="/admin/posts/%d/delete"`, id))

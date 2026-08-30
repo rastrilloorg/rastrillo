@@ -204,9 +204,9 @@ city and a postcode, a start and an end. `field-daterange` emits one;
 everywhere else you write it yourself around a run of `field` partials:
 
 ```html
-<div class="rst-field-row">
-  <div class="rst-field rst-grow">…City…</div>
-  <div class="rst-field">…<input class="rst-input rst-input--short">…</div>
+<div rst-field-row>
+  <div class="rst-grow" rst-field>…City…</div>
+  <div rst-field>…<input rst-input="short">…</div>
 </div>
 ```
 

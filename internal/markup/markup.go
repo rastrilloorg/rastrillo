@@ -82,6 +82,7 @@ var Renamed = map[string]string{
 // stylesheet has never heard of, sitting in markup an LLM copies.
 var Dropped = map[string]string{
 	"rst-dropdown__summary": "no rule: the summary is styled structurally, by [rst-dropdown] > summary",
+	"rst-btn__spin":         "no rule: the busy spinner is styled structurally, by [rst-btn] > [rst-spin]",
 }
 
 // Attribute translates one rst- class name into the attribute that
@@ -118,9 +119,10 @@ func MigrateClass(class string) (name, variant string, ok, drop bool) {
 var (
 	classInSelector = regexp.MustCompile(`\.(rst-[A-Za-z0-9_-]+)`)
 	toneInSelector  = regexp.MustCompile(`\[data-tone="([a-z]+)"\]`)
-	// A data-tone that is a real attribute rather than a selector: it
-	// follows whitespace in a tag, where a selector's follows a [.
-	toneInMarkup = regexp.MustCompile(`(\s)data-tone=(\\?")`)
+	// A data-tone that is a real attribute rather than a selector. A
+	// selector's follows a [; an attribute's follows whitespace, or the
+	// opening quote of the Go literal a test writes it in.
+	toneInMarkup = regexp.MustCompile("([\\s`'\"])data-tone=(\\\\?\")")
 )
 
 // Selector is the attribute twin of one tokens.css selector: every

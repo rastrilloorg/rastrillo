@@ -610,7 +610,7 @@ func TestListBarSearchRendersTheClearLink(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("rendering a search that carries its own q: %v", err)
 	}
-	if want := `class="rst-search__clear" href="/posts?sort=newest"`; !strings.Contains(carryingQ.String(), want) {
+	if want := `rst-search-clear href="/posts?sort=newest"`; !strings.Contains(carryingQ.String(), want) {
 		t.Errorf("the clear link is not %s — it is handing the query back:\n%s", want, carryingQ.String())
 	}
 

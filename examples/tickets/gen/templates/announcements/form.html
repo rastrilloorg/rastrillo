@@ -23,13 +23,13 @@
                        form) */}}
 {{define "content"}}
 {{if .IsNew}}
-<form class="rst-form" method="post" action="/admin/announcements">
+<form rst-form method="post" action="/admin/announcements">
 {{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" (T (index .Errors "Title")) "Required" true}}
 {{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" (T (index .Errors "Body"))}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T "ui.cancel")}}
 </form>
 {{else}}
-<form class="rst-form" method="post" action="{{.BasicsAction}}">
+<form rst-form method="post" action="{{.BasicsAction}}">
 {{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" (T (index .Errors "Title")) "Required" true}}
 {{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" (T (index .Errors "Body"))}}
 {{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T "ui.cancel")}}

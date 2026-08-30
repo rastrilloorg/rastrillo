@@ -34,7 +34,7 @@ func TestShimContract(t *testing.T) {
 		// The busy rule: the spinner it builds, the submitter it reads
 		// (only the clicked button goes busy), and the cancelled-submit
 		// hand-back.
-		"rst-spin rst-btn__spin", "e.submitter", "defaultPrevented",
+		`spin.setAttribute("rst-spin", "")`, "e.submitter", "defaultPrevented",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.

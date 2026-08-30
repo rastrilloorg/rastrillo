@@ -47,13 +47,13 @@ func TestTheGrammar(t *testing.T) {
 			`b.WriteString("<div rst-dropdown-menu>")`},
 		// Templated class lists: the conditional moves into the value.
 		{`<span class="rst-badge{{with .Tone}} rst-badge--{{.}}{{end}}">`,
-			`<span rst-badge="{{with .Tone}}{{.}}{{end}}">`},
+			`<span rst-badge{{with .Tone}}="{{.}}"{{end}}>`},
 		{`<input class="rst-input{{if .Short}} rst-input--short{{end}}">`,
-			`<input rst-input="{{if .Short}}short{{end}}">`},
+			`<input rst-input{{if .Short}}="short"{{end}}>`},
 		{`<button class="rst-btn{{if .Danger}} rst-btn--danger{{else}} rst-btn--primary{{end}}">`,
 			`<button rst-btn="{{if .Danger}}danger{{else}}primary{{end}}">`},
 		{`<span class="rst-person__av{{if not .Initial}} rst-person__av--empty{{end}}">`,
-			`<span rst-person-av="{{if not .Initial}}empty{{end}}">`},
+			`<span rst-person-av{{if not .Initial}}="empty"{{end}}>`},
 		// A whole class attribute inside a conditional: the value has no
 		// action in it, so it is an ordinary literal list.
 		{`<legend{{if .Hidden}} class="rst-sr-only"{{end}}>`, `<legend{{if .Hidden}} class="rst-sr-only"{{end}}>`},
@@ -61,6 +61,13 @@ func TestTheGrammar(t *testing.T) {
 		// A CSS selector is not markup: neither of these moves.
 		{`.rst-box { color: red }`, `.rst-box { color: red }`},
 		{`.rst-status[data-tone="positive"] { color: red }`, `.rst-status[data-tone="positive"] { color: red }`},
+		// A class attribute that opens a Go literal has no whitespace
+		// in front of it, and is still an attribute.
+		{"wantContains(t, body, `class=\"rst-field\"`)", "wantContains(t, body, `rst-field`)"},
+		{"strings.Contains(got, `class=\"rst-status\" data-tone=\"positive\"`)",
+			"strings.Contains(got, `rst-status rst-tone=\"positive\"`)"},
+		// data-class= and superclass= are not the class attribute.
+		{`<div data-class="rst-box">`, `<div data-class="rst-box">`},
 		// A <details name> group is a value, not a class.
 		{`<details class="rst-row-menu" name="rst-menus">`, `<details rst-row-menu name="rst-menus">`},
 	} {

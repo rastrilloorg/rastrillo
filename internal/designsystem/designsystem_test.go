@@ -699,11 +699,11 @@ func localeOfPath(p string) string {
 // over it.
 //
 // The cure is the shells': escaped source in a <pre>, with the markup
-// live at its own URL. Escaped source cannot trip this gate, which is
-// what makes a plain string match the right instrument —
-// html/template writes the sample's quotes as &#34; inside the <code>
-// element, so `class="rst-modal-overlay"` occurs only where a browser
-// would actually lay the overlay out.
+// live at its own URL. Escaped source cannot trip this gate, and since
+// the markup flip the discriminator is the angle bracket rather than
+// the quote: an attribute name is not escaped, but the < that opens the
+// tag it sits in becomes &lt;. So `<div rst-modal-overlay` occurs only
+// where a browser would actually lay the overlay out.
 //
 // The second half of the gate is the one that matters a year from now:
 // the source and the demo link have to be there. A gate that only
@@ -719,7 +719,7 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 					t.Errorf("%s is missing", name)
 					continue
 				}
-				for _, live := range []string{`class="rst-modal-overlay"`, `class="rst-backdrop"`} {
+				for _, live := range []string{`<div rst-modal-overlay`, `<div rst-backdrop`} {
 					if strings.Contains(body, live) {
 						t.Errorf("%s renders a live %s — the overlay is fixed to the viewport and covers the page", name, live)
 					}
@@ -731,7 +731,7 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 			// — and naming the page rather than sweeping for it is what
 			// makes this fail if the idiom is dropped altogether.
 			page := galleryPage(t, files, theme, locale, "primitives")
-			if !strings.Contains(page, `class=&#34;rst-modal-overlay&#34;`) {
+			if !strings.Contains(page, `&lt;div rst-modal-overlay&gt;`) {
 				t.Errorf("%s/%s/%s does not show the modal sample as escaped source", theme, locale, fileOf("primitives"))
 			}
 			if href := modalHref(mountPath, theme, locale); !strings.Contains(page, `href="`+href+`"`) {
@@ -1452,10 +1452,10 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 				// sidebar landed, so what follows it is the content
 				// column rather than main itself. It is still the first
 				// thing in the reading order of the page's own content.
-				if !strings.HasPrefix(strings.TrimSpace(rest), `<div class="rst-page">`) {
+				if !strings.HasPrefix(strings.TrimSpace(rest), `<div rst-page>`) {
 					t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
 				}
-				if _, chromeStart, _ := strings.Cut(page, `<main class="rst-shell__main" id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
+				if _, chromeStart, _ := strings.Cut(page, `<main rst-shell-main id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
 					t.Errorf("%s: the gallery header is not the first thing inside main", name)
 				}
 				// The theme switcher: one link per theme, exactly one current.
@@ -1720,7 +1720,7 @@ var (
 // somewhere in a sample cannot make the rail look complete.
 func railOf(t *testing.T, name, page string) string {
 	t.Helper()
-	_, after, ok := strings.Cut(page, `<nav class="rst-shell__nav ds-nav" id="ds-nav"`)
+	_, after, ok := strings.Cut(page, `<nav class="ds-nav" rst-shell-nav id="ds-nav"`)
 	if !ok {
 		t.Errorf("%s: no sidebar nav", name)
 		return ""
@@ -1910,7 +1910,7 @@ func TestTheRailSaysWhichPageYouAreOn(t *testing.T) {
 				// this page's entries, or — for a page with nothing
 				// anchored on it yet — the plain link that stands in
 				// for one. Either way it says this page's own name.
-				open := regexp.MustCompile(`(?s)<details open aria-current="page"><summary><span class="rst-caret" aria-hidden="true"><svg.*?</svg></span>` + regexp.QuoteMeta(title) + `</summary>`)
+				open := regexp.MustCompile(`(?s)<details open aria-current="page"><summary><span rst-caret aria-hidden="true"><svg.*?</svg></span>` + regexp.QuoteMeta(title) + `</summary>`)
 				link := `<a class="ds-nav__page" href="` + mountPrefix + theme + "/" + locale + "/" + pk.File + `" aria-current="page">` + title + `</a>`
 				if !strings.Contains(rail, link) && !open.MatchString(rail) {
 					t.Errorf("%s: the current section of the rail is not %q", name, proseIn(locale, pk.Title))
@@ -1935,11 +1935,11 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 				name := theme + "/" + locale + "/" + pk.File
 				page := string(files[name])
 				for _, want := range []string{
-					`<div class="rst-shell-sidebar">`,
-					`<details class="rst-shell__chrome">`,
-					`<aside class="rst-shell__rail ds-rail">`,
-					`<nav class="rst-shell__nav ds-nav" id="ds-nav"`,
-					`<main class="rst-shell__main" id="main">`,
+					`<div rst-shell-sidebar>`,
+					`<details rst-shell-chrome>`,
+					`<aside class="ds-rail" rst-shell-rail>`,
+					`<nav class="ds-nav" rst-shell-nav id="ds-nav"`,
+					`<main rst-shell-main id="main">`,
 				} {
 					if !strings.Contains(page, want) {
 						t.Errorf("%s: the page is not laid out in the sidebar shell (no %s)", name, want)
@@ -2008,7 +2008,7 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 				// aria-hidden because the section's name is right beside
 				// it, and it is the icon set's so it flips on [open]
 				// through tokens.css's own rule.
-				if n := strings.Count(rail, `<span class="rst-caret" aria-hidden="true"><svg`); n != sections {
+				if n := strings.Count(rail, `<span rst-caret aria-hidden="true"><svg`); n != sections {
 					t.Errorf("%s: %d rail disclosures draw a chevron, want %d", name, n, sections)
 				}
 				for _, glyph := range []string{"▸", "▾", `content: "\25b8"`, `content: "\25be"`} {
@@ -2100,7 +2100,7 @@ var railSection = regexp.MustCompile(`(?s)<details([^>]*)><summary>.*?</summary>
 
 // railTitle reads the section's own name out of either shape: past the
 // caret icon in a <summary>, or the whole text of the plain link.
-var railTitle = regexp.MustCompile(`(?s)<summary>(?:<span class="rst-caret" aria-hidden="true">.*?</span>)?(.*?)</summary>`)
+var railTitle = regexp.MustCompile(`(?s)<summary>(?:<span rst-caret aria-hidden="true">.*?</span>)?(.*?)</summary>`)
 
 // railSections splits one rendered rail into its groups, in order.
 type railGroup struct {

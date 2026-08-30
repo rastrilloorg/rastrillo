@@ -23,11 +23,11 @@
               resolved through T ("rastrillo.ui.pagination" — "Pagination"
               in the framework base catalog; see Funcs/FuncsWith). An app
               passing its own Label always wins over T. */}}
-{{define "pagination"}}<nav class="rst-pagination" aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
+{{define "pagination"}}<nav rst-pagination aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
   {{- if .Items}}{{range .Items}}
-  {{- if .Gap}}<span class="rst-pagination__gap" aria-hidden="true">…</span>
+  {{- if .Gap}}<span rst-pagination-gap aria-hidden="true">…</span>
   {{- else if .Current}}<span aria-current="page">{{.Label}}</span>
-  {{- else if .Disabled}}<span class="rst-pagination__disabled">{{.Label}}</span>
+  {{- else if .Disabled}}<span rst-pagination-disabled>{{.Label}}</span>
   {{- else}}<a href="{{.Href}}">{{.Label}}</a>
   {{- end}}
   {{- end}}{{end}}

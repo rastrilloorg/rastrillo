@@ -299,7 +299,12 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   another's, extract it to a shared module that week and delete
   the copy. A copy is the trigger — "a second consumer appears" never
   fires.
-- **UI: `rst-list`/`rst-card` hold rows only (unpadded by design).**
+- **UI: the vocabulary is attributes, not classes.** `<div rst-box>`,
+  `<a rst-btn="primary">`, `<div rst-callout-body>`; `class` carries
+  only `rst-sr-only`, `rst-mono`, `rst-m-hide`, `rst-grow`, `rst-nm`,
+  `rst-danger`, `rst-cell-mut`. `rastrillo markup --fix` converts an app
+  written the old way. `rst-list`/`rst-card` hold rows only (unpadded
+  by design).
   Forms, prose, links go in `rst-box` with a sibling `rst-box-head`.
   Screens stack vertically — never heading, paragraph and button in one
   flex row; a notice with a CTA is a `callout` ending in a link. State

@@ -17,18 +17,18 @@
 {{block "head" .}}{{end}}
 </head>
 <body>
-<div class="rst-shell-sidebar">
-<a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<div rst-shell-sidebar>
+<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
 {{/* The narrow-screen nav strip. The icon is aria-hidden because the
      visible label beside it is already the accessible name, and it is
      Lucide `menu` rather than `kebab` — kebab means "more actions on
      this row" everywhere else in this vocabulary. No name attribute:
      joining the rst-menus exclusivity group would let any menu a
      reader opens take the whole navigation away. */}}
-<details class="rst-shell__chrome"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
-<aside class="rst-shell__rail">
-{{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
-<nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
+<details rst-shell-chrome><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
+<aside rst-shell-rail>
+{{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+<nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
 {{/* The rail's foot: the language switcher, then the person, pinned to
      the bottom of the rail by the wrapper's auto margin. The wrapper is
      the layout's, not the app's, because both blocks inside it are
@@ -43,10 +43,10 @@
      Written on one line on purpose: an un-overridden shell must leave
      this wrapper genuinely :empty, and a newline between the blocks
      would be a text node that stops it matching. */}}
-<div class="rst-shell__rail-foot">{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>
+<div rst-shell-rail-foot>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>
 </aside>
-<main class="rst-shell__main" id="main">
-<div class="rst-page">
+<main rst-shell-main id="main">
+<div rst-page>
 {{template "content" .}}
 </div>
 </main>

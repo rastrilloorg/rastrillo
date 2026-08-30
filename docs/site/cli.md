@@ -1,6 +1,6 @@
 # 🤖 The CLI
 
-One binary, six commands. Install it with:
+One binary, seven commands. Install it with:
 
 ```sh
 go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
@@ -261,6 +261,56 @@ add it, because asking for `--fix` is asking.
 Drift and version mismatch are separate codes because they call for
 opposite actions: one means "re-copy these", the other means "do not
 re-copy anything yet".
+
+## rastrillo markup
+
+```sh
+rastrillo markup [--fix] [dir]
+```
+
+Rewrites an app's markup from the class spelling of the UI vocabulary to
+the attribute spelling: `<div class="rst-box">` becomes `<div rst-box>`,
+`class="rst-callout__body"` becomes `rst-callout-body`, `class="rst-btn
+rst-btn--primary"` becomes `rst-btn="primary"`, and `data-tone` becomes
+`rst-tone`. Seven utility classes stay in `class`, because that is what
+`class` is for: `rst-sr-only`, `rst-mono`, `rst-m-hide`, `rst-grow`,
+`rst-nm`, `rst-danger` and `rst-cell-mut`.
+
+It reads templates, Go source (markup in a string literal or a doc
+comment), Markdown, JavaScript and CSS, and it is the same tool the
+framework flipped itself with.
+
+| Flag | Purpose |
+|---|---|
+| `--fix` | Write the rewrite. Without it, the command reports what would change and exits 3 |
+
+Run it after upgrading the module, and **re-copy `tokens.css` first** —
+`rastrillo doctor --fix`. An app on the frozen class-only stylesheet
+whose partials have started emitting attributes renders unstyled, and
+that is the one failure this staging exists to avoid.
+
+Rewriting is idempotent, so running it twice, or over a tree half of
+which is already done, changes nothing the second time.
+
+### Two things it will not do
+
+It never touches `static/tokens.css`, `static/theme.css`,
+`static/rastrillo.js`, `static/select.js` or `static/datetime.js`. Those
+are copies of the library's, and `doctor` is what refreshes them;
+rewriting one here would make your copy differ from the library's for
+good.
+
+It leaves alone any class list whose shape it cannot take apart, and
+prints it for you to read. A wrong guess renders unstyled and looks like
+markup somebody wrote on purpose.
+
+### Your own stylesheet
+
+The report ends with every `.rst-` selector in your own CSS. A rule you
+wrote against `.rst-lrow` stops matching the moment your markup says
+`rst-lrow`, and no test in your app will notice. Change them to
+attribute selectors — `.rst-lrow` becomes `[rst-lrow]` — which weigh the
+same, so nothing in your cascade moves.
 
 ## rastrillo vectors
 

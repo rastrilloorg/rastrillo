@@ -12,4 +12,4 @@
 
      Resolving an app's raw status value to a Tone/Label pair is product
      logic and stays in the calling app. */}}
-{{define "status-pill"}}<span class="rst-status" data-tone="{{if .Tone}}{{.Tone}}{{else}}neutral{{end}}">{{.Label}}</span>{{end}}
+{{define "status-pill"}}<span rst-status rst-tone="{{if .Tone}}{{.Tone}}{{else}}neutral{{end}}">{{.Label}}</span>{{end}}

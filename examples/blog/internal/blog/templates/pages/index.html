@@ -1,7 +1,7 @@
 {{define "content"}}
 {{template "page-header" dict "Title" "The blog" "Sub" "Notes, in the order they were written."}}
 {{if .Rows}}
-<div class="rst-list">
+<div rst-list>
 {{range .Rows}}{{template "list-row-action" dict "Href" .Href "Main" .Main "Sub" .Sub}}
 {{end}}
 </div>

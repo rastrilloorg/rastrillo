@@ -103,8 +103,8 @@ func TestAMenuOpenedInsideAListCardEscapesTheCard(t *testing.T) {
 		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
 			`<title>list card</title><link rel="stylesheet" href="/tokens.css">` +
 			`<link rel="stylesheet" href="/theme.css"></head><body>` +
-			`<div class="rst-page"><form method="post" action="/act">` +
-			`<div class="rst-list">`)
+			`<div rst-page><form method="post" action="/act">` +
+			`<div rst-list>`)
 		data := map[string]any{
 			"DoneHref": "/posts", "Count": "3 selected",
 			"MenuLabel": "Actions",
@@ -296,8 +296,8 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	}).Parse(string(src)))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "account"}}<div class="rst-shell__account" id="rail-person"><a class="rst-person" href="#"><span class="rst-person__av" aria-hidden="true">G</span><span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span><span class="rst-person__email">grace@example.com</span></span></a></div>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "locale"}}<details class="rst-dropdown rst-locale" id="rail-locale" name="rst-menus"><summary>Language</summary><div class="rst-dropdown__menu"><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "account"}}<div rst-shell-account id="rail-person"><a rst-person href="#"><span rst-person-av aria-hidden="true">G</span><span rst-person-meta><span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span></span></a></div>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "locale"}}<details rst-dropdown rst-locale id="rail-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 
 	// Cloned BEFORE anything executes: html/template refuses to Clone a
 	// tree that has already run.
@@ -588,7 +588,7 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "account"}}<a href="#">Profile</a><a href="#">Sign out</a>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "locale"}}<details class="rst-dropdown rst-locale" id="bar-locale" name="rst-menus"><summary>Language</summary><div class="rst-dropdown__menu"><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "locale"}}<details rst-dropdown rst-locale id="bar-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 
 	var page strings.Builder
 	if err := tmpl.ExecuteTemplate(&page, "layout", nil); err != nil {
@@ -792,7 +792,7 @@ func (c cornerReading) uniform() bool {
 //
 // Written before it was true. A bare `.rst-list > :first-child` weighs
 // (0,2,0) and beats .rst-search's and .rst-empty's (0,1,0) in every
-// source order, so a hand-written <form class="rst-search"> as the
+// source order, so a hand-written <form rst-search> as the
 // direct first child of a list card painted 7px on its top corners and
 // 6px on its bottom ones in day — lopsided, and the exact arrangement
 // ui/partials/list-bar-search.html exists to support. The gallery does
@@ -821,8 +821,8 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 	} else {
 		t.Fatalf("list-bar-search no longer renders a <form>: %q", searchForm.String())
 	}
-	empty := `<div class="rst-empty"><p>Nothing here yet.</p></div>`
-	row := `<div class="rst-row"><span>A row</span></div>`
+	empty := `<div rst-empty><p>Nothing here yet.</p></div>`
+	row := `<div rst-row><span>A row</span></div>`
 
 	// Each case: a self-shaped element in the position under test
 	// inside a card, and the same element loose on the page. Plus the
@@ -833,14 +833,14 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 		name, inCard, loose string
 		wantOwn             bool
 	}{
-		{"a bare search form as the first child", `<div class="rst-list">` + bare + row + `</div>`, bare, true},
-		{"an empty state as the last child", `<div class="rst-list">` + row + empty + `</div>`, empty, true},
-		{"a plain row as the first child", `<div class="rst-list">` + row + row + `</div>`, row, false},
+		{"a bare search form as the first child", `<div rst-list>` + bare + row + `</div>`, bare, true},
+		{"an empty state as the last child", `<div rst-list>` + row + empty + `</div>`, empty, true},
+		{"a plain row as the first child", `<div rst-list>` + row + row + `</div>`, row, false},
 	}
 
 	var body strings.Builder
 	for i, c := range cases {
-		fmt.Fprintf(&body, `<div id="in-%d" class="rst-page">%s</div><div id="out-%d" class="rst-page">%s</div>`, i, c.inCard, i, c.loose)
+		fmt.Fprintf(&body, `<div id="in-%d" rst-page>%s</div><div id="out-%d" rst-page>%s</div>`, i, c.inCard, i, c.loose)
 	}
 	pageHTML := body.String()
 
@@ -1101,9 +1101,9 @@ func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
 				// Hand-written, the way tokens.css says the row-menu
 				// idiom is used, and here so the drive covers BOTH
 				// panels the new rule names rather than one of them.
-				b.WriteString(`<details class="rst-row-menu" name="rst-menu-` + c.id + `">` +
+				b.WriteString(`<details rst-row-menu name="rst-menu-` + c.id + `">` +
 					`<summary aria-label="Actions">` + string(rastrillo.Icon("kebab")) + `</summary>` +
-					`<div class="rst-row-menu__panel">`)
+					`<div rst-row-menu-panel>`)
 				for _, it := range items {
 					b.WriteString(`<a href="#">` + it.(map[string]any)["Label"].(string) + `</a>`)
 				}
@@ -1465,7 +1465,7 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		return `<!doctype html><html lang="en" dir="` + dir + `"><head><meta charset="utf-8">` +
 			`<title>search</title><link rel="stylesheet" href="/tokens.css">` +
 			`<link rel="stylesheet" href="/theme.css"></head><body>` +
-			`<div class="rst-page"><div class="rst-list">` + search.String() + `</div></div></body></html>`
+			`<div rst-page><div rst-list>` + search.String() + `</div></div></body></html>`
 	}
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -1811,9 +1811,9 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 	scroller := func(id, panelStyle string) string {
 		return `<div id="` + id + `" style="block-size:220px;inline-size:320px;overflow-y:auto;` +
 			`border:1px solid #888;margin:24px">` +
-			`<details class="rst-dropdown" id="` + id + `-menu" name="rst-menu-` + id + `">` +
+			`<details rst-dropdown id="` + id + `-menu" name="rst-menu-` + id + `">` +
 			`<summary>Menu</summary>` +
-			`<div class="rst-dropdown__menu" style="` + panelStyle + `">` +
+			`<div rst-dropdown-menu style="` + panelStyle + `">` +
 			`<a href="#">One</a><a href="#">Two</a><a href="#">Three</a>` +
 			`</div></details>` +
 			`<div style="block-size:1200px">tall</div></div>`

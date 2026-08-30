@@ -79,8 +79,11 @@ func Rewrite(src []byte) ([]byte, []Note) {
 }
 
 // findClassAttr returns the index of the next class= that is a real
-// attribute — one that follows whitespace, the way an attribute in a
-// tag always does — rather than the tail of some longer word.
+// attribute rather than the tail of some longer word. An attribute
+// usually follows whitespace, but a test's Go literal opens on one
+// (`class="rst-field"`), so the rule is the general one: the byte
+// before it is not part of an identifier. That keeps data-class= and
+// superclass= out.
 func findClassAttr(s string, from int) int {
 	for i := from; ; {
 		k := strings.Index(s[i:], "class=")
@@ -88,14 +91,16 @@ func findClassAttr(s string, from int) int {
 			return -1
 		}
 		k += i
-		if k == 0 || isSpace(s[k-1]) {
+		if k == 0 || !isIdentByte(s[k-1]) {
 			return k
 		}
 		i = k + len("class=")
 	}
 }
 
-func isSpace(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\r' }
+func isIdentByte(c byte) bool {
+	return c == '-' || c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+}
 
 // readAttrValue reads an attribute value that starts at k, in either of
 // the two quotings this repository writes markup in: a plain "…", and
@@ -129,6 +134,13 @@ type attr struct {
 	name     string
 	variants []string
 	expr     string
+	// When a conditional can produce no variant at all, the whole
+	// value — the = and the quotes with it — is written inside that
+	// conditional, so the attribute renders bare rather than empty:
+	// rst-person{{if .Large}}="lg"{{end}}. html/template reads an
+	// action in that position and both branches leave the parser in
+	// the same state, so it is a shape it can compile.
+	open, closes string
 }
 
 func rewriteClassValue(value, q string) (string, error) {
@@ -176,6 +188,10 @@ func render(kept []string, attrs []*attr, q string) string {
 		parts = append(parts, "class="+q+strings.Join(kept, " ")+q)
 	}
 	for _, a := range attrs {
+		if a.open != "" {
+			parts = append(parts, a.name+a.open+"="+q+a.expr+q+a.closes)
+			continue
+		}
 		value := strings.Join(a.variants, " ")
 		if a.expr != "" {
 			if value != "" {
@@ -197,14 +213,16 @@ func render(kept []string, attrs []*attr, q string) string {
 // that adds a modifier of a kind the head already names.
 //
 //	class="rst-badge{{with .Tone}} rst-badge--{{.}}{{end}}"
-//	  ->  rst-badge="{{with .Tone}}{{.}}{{end}}"
+//	  ->  rst-badge{{with .Tone}}="{{.}}"{{end}}
 //	class="rst-btn{{if .Danger}} rst-btn--danger{{else}} rst-btn--primary{{end}}"
 //	  ->  rst-btn="{{if .Danger}}danger{{else}}primary{{end}}"
 //
-// The whole conditional moves inside the value, which is why one rule
-// covers both an optional modifier and a choice between two: the
-// branch that adds nothing yields an empty value, and [rst-badge]
-// matches an empty value exactly as it matches a bare attribute.
+// Which of the two depends on whether the conditional can produce no
+// modifier at all. A branchless {{if}} or {{with}} can, so the = and
+// the quotes go inside it and the attribute renders bare — which is
+// what a reader copying the gallery should see. A choice between two
+// modifiers always produces one, so the conditional goes in the value,
+// where it reads as what it is.
 //
 // Anything else is left alone and reported. A class list whose
 // structure this cannot read is a handful of lines for a human, and a
@@ -247,7 +265,7 @@ func rewriteTemplatedClassValue(value, q string) (string, error) {
 	if drop || !ok {
 		return "", fmt.Errorf(`class=%q builds a modifier of %s, which does not migrate: left as it was`, value, kind)
 	}
-	expr := regexp.MustCompile(`\s*`+regexp.QuoteMeta(kind+"--")).ReplaceAllString(rest, "")
+	strip := regexp.MustCompile(`\s*` + regexp.QuoteMeta(kind+"--"))
 
 	a := (*attr)(nil)
 	for _, cand := range attrs {
@@ -259,6 +277,23 @@ func rewriteTemplatedClassValue(value, q string) (string, error) {
 		a = &attr{name: name}
 		attrs = append(attrs, a)
 	}
-	a.expr = expr
+
+	actions := tmplAction.FindAllString(rest, -1)
+	branchless := len(a.variants) == 0 &&
+		len(actions) >= 2 &&
+		strings.HasPrefix(actions[len(actions)-1], "{{end") &&
+		strings.HasSuffix(rest, actions[len(actions)-1])
+	for _, act := range actions {
+		if strings.HasPrefix(act, "{{else") {
+			branchless = false
+		}
+	}
+	if branchless {
+		a.open = actions[0]
+		a.closes = actions[len(actions)-1]
+		a.expr = strip.ReplaceAllString(rest[len(a.open):len(rest)-len(a.closes)], "")
+		return render(kept, attrs, q), nil
+	}
+	a.expr = strip.ReplaceAllString(rest, "")
 	return render(kept, attrs, q), nil
 }

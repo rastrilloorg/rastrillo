@@ -17,10 +17,10 @@
 {{block "head" .}}{{end}}
 </head>
 <body>
-<div class="rst-shell-topbar">
-<a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-<header class="rst-shell__bar">
-{{block "brand" .}}<a class="rst-shell__brand" href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+<div rst-shell-topbar>
+<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<header rst-shell-bar>
+{{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 {{/* The narrow layout. Below 800px the bar's tail — nav, account,
      locale — hides behind this disclosure; above it, tokens.css hides
      the summary and gives .rst-shell__tail display: contents, so the
@@ -56,25 +56,25 @@
      Use a descendant selector, or target .rst-shell__nav directly.
      docs/site/templates.md says the same thing where an upgrader will
      meet it. */}}
-<details class="rst-shell__menu" name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
-<div class="rst-shell__tail">
-<nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>
-<details class="rst-dropdown rst-shell__account" name="rst-menus">
-<summary>{{T "rastrillo.ui.shell_account"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+<details rst-shell-menu name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
+<div rst-shell-tail>
+<nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
+<details rst-dropdown rst-shell-account name="rst-menus">
+<summary>{{T "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
 {{/* account here is the dropdown's MENU BODY, not the whole menu: the
      layout owns the details/summary, so an override supplies only the
      links that sit inside .rst-dropdown__menu. Sidebar's account block
      is the other shape — a bare slot in the rail — so moving a block
      between the two shells needs an edit. */}}
-<div class="rst-dropdown__menu">{{block "account" .}}{{end}}</div>
+<div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
 </details>
 {{block "locale" .}}{{end}}
 </div>
 </header>
-<main class="rst-page" id="main">
+<main rst-page id="main">
 {{template "content" .}}
 </main>
-<footer class="rst-shell__foot">{{block "foot" .}}{{end}}</footer>
+<footer rst-shell-foot>{{block "foot" .}}{{end}}</footer>
 </div>
 </body>
 </html>

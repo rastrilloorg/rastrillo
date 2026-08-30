@@ -40,7 +40,7 @@
      toolbar strip lays out exactly as it did.
 
      This renders the <search> and the form it wraps, with no other
-     wrapper: drop it straight into a <div class="rst-list"> card for a
+     wrapper: drop it straight into a <div rst-list> card for a
      list that only searches, or let list-bar wrap it in a toolbar
      strip.
 
@@ -92,11 +92,11 @@
      them, page number included, and a page number from a searched
      result set is usually meaningless once the search is gone. Pass
      ClearHref to say "and go back to page 1". */}}
-{{define "list-bar-search"}}<search><form class="rst-search" method="get"{{if .Action}} action="{{.Action}}"{{end}}>
+{{define "list-bar-search"}}<search><form rst-search method="get"{{if .Action}} action="{{.Action}}"{{end}}>
   {{icon "search"}}
   <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}">
   {{- if .Query}}
-  <a class="rst-search__clear" href="{{searchClear .}}" aria-label="{{T "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
+  <a rst-search-clear href="{{searchClear .}}" aria-label="{{T "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
   {{- end}}
   {{- if .Hidden}}{{range .Hidden}}
   <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">

@@ -13,8 +13,8 @@
        Error     string, optional — validation message
        Short     bool, optional — compact width
        Autofocus bool, optional */}}
-{{define "field"}}<div class="rst-field"><label class="rst-field__label" for="{{.ID}}">{{.Label}}{{with .Hint}} <span class="rst-field__hint">({{.}})</span>{{end}}</label>
-<input class="rst-input{{if .Short}} rst-input--short{{end}}" type="{{or .Type "text"}}" id="{{.ID}}" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Autofocus}} autofocus{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Maxlength}} maxlength="{{.}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>
-{{if .Error}}<p class="rst-field__error" id="{{.ID}}-error" role="alert">{{.Error}}</p>
-{{else if .Help}}<p class="rst-field__help" id="{{.ID}}-help">{{.Help}}</p>
+{{define "field"}}<div rst-field><label rst-field-label for="{{.ID}}">{{.Label}}{{with .Hint}} <span rst-field-hint>({{.}})</span>{{end}}</label>
+<input rst-input{{if .Short}}="short"{{end}} type="{{or .Type "text"}}" id="{{.ID}}" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Autofocus}} autofocus{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Maxlength}} maxlength="{{.}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>
+{{if .Error}}<p rst-field-error id="{{.ID}}-error" role="alert">{{.Error}}</p>
+{{else if .Help}}<p rst-field-help id="{{.ID}}-help">{{.Help}}</p>
 {{end}}</div>{{end}}

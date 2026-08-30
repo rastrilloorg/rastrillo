@@ -8,7 +8,7 @@
      .rst-row__main > a::after in tokens.css) and the pill sits above it.
      Both stay independently keyboard-reachable.
 
-     Wrap a run of rows in <div class="rst-list">…</div>.
+     Wrap a run of rows in <div rst-list>…</div>.
 
      Keys:
        Href         string, required — the row's primary target
@@ -34,15 +34,15 @@
        LeadInitial  string, optional — the one or two characters inside
                     it. The marker is aria-hidden: it repeats
                     information the name already carries. */}}
-{{define "list-row-action"}}<div class="rst-row">
+{{define "list-row-action"}}<div rst-row>
   {{- if .Lead}}
-  <span class="rst-row__lead" data-lead="{{.Lead}}" aria-hidden="true">{{if .LeadInitial}}{{.LeadInitial}}{{end}}</span>
+  <span rst-row-lead data-lead="{{.Lead}}" aria-hidden="true">{{if .LeadInitial}}{{.LeadInitial}}{{end}}</span>
   {{- end}}
-  <span class="rst-row__main"><a href="{{.Href}}">{{.Main}}</a>{{if .Sub}}<small class="rst-row__sub">{{.Sub}}</small>{{end}}</span>
+  <span rst-row-main><a href="{{.Href}}">{{.Main}}</a>{{if .Sub}}<small rst-row-sub>{{.Sub}}</small>{{end}}</span>
   {{- if .StatusLabel}}
   {{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
   {{- end}}
   {{- if .ActionHref}}
-  <a class="rst-row__action" href="{{.ActionHref}}"{{if .ActionAria}} aria-label="{{.ActionAria}}"{{end}}>{{.ActionLabel}}</a>
+  <a rst-row-action href="{{.ActionHref}}"{{if .ActionAria}} aria-label="{{.ActionAria}}"{{end}}>{{.ActionLabel}}</a>
   {{- end}}
 </div>{{end}}

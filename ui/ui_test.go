@@ -395,7 +395,7 @@ func TestReducedMotionDisablesEveryTransition(t *testing.T) {
 
 func TestStatusPillRendersLabelAndTone(t *testing.T) {
 	got := render(t, "status-pill", map[string]any{"Tone": "positive", "Label": "Published"})
-	if !strings.Contains(got, `data-tone="positive"`) {
+	if !strings.Contains(got, `rst-tone="positive"`) {
 		t.Errorf("missing tone attribute: %s", got)
 	}
 	if !strings.Contains(got, "Published") {
@@ -418,10 +418,10 @@ func TestStatusPillAlwaysCarriesTextLabel(t *testing.T) {
 // rather than rendering an empty attribute.
 func TestStatusPillMinimalFixture(t *testing.T) {
 	got := render(t, "status-pill", map[string]any{"Label": "Draft"})
-	if !strings.Contains(got, `data-tone="neutral"`) {
+	if !strings.Contains(got, `rst-tone="neutral"`) {
 		t.Errorf("missing Tone did not fall back to neutral: %s", got)
 	}
-	if strings.Contains(got, `data-tone=""`) {
+	if strings.Contains(got, `rst-tone=""`) {
 		t.Errorf("rendered an empty tone attribute: %s", got)
 	}
 }
@@ -497,10 +497,10 @@ func TestEmptyStateLinkCTA(t *testing.T) {
 	// A real heading, not a styled paragraph: styling a <p> to look like
 	// a heading is WCAG 2.2 failure F2 (1.3.1) and heading navigation
 	// skips it entirely.
-	if !strings.Contains(got, `<h2 class="rst-empty__title">Nothing here yet</h2>`) {
+	if !strings.Contains(got, `<h2 rst-empty-title>Nothing here yet</h2>`) {
 		t.Errorf("title is not a real heading element: %s", got)
 	}
-	if !strings.Contains(got, `<a class="rst-btn rst-btn--primary" href="/posts/new">Write a post</a>`) {
+	if !strings.Contains(got, `<a rst-btn="primary" href="/posts/new">Write a post</a>`) {
 		t.Errorf("missing link CTA: %s", got)
 	}
 	if strings.Contains(got, "<form") {
@@ -549,7 +549,7 @@ func TestEmptyStatePostCTAWithoutHidden(t *testing.T) {
 func TestListBarSearchMinimalFixture(t *testing.T) {
 	got := render(t, "list-bar-search", map[string]any{"Action": "/posts"})
 	for _, want := range []string{
-		`<search><form class="rst-search"`, `method="get"`, `action="/posts"`,
+		`<search><form rst-search`, `method="get"`, `action="/posts"`,
 		`type="search"`, `name="q"`, `<svg`, `type="submit"`, `</form></search>`,
 	} {
 		if !strings.Contains(got, want) {
@@ -633,7 +633,7 @@ func TestListBarWrapsTheSearchFormInAToolbarStrip(t *testing.T) {
 		"Hidden":       [][2]string{{"sort", "newest"}},
 	})
 	for _, want := range []string{
-		`<div class="rst-lbar">`, `<search><form class="rst-search"`,
+		`<div rst-lbar>`, `<search><form rst-search`,
 		`action="/posts"`, `value="notes"`, `placeholder="Search posts"`,
 		`<input type="hidden" name="sort" value="newest">`,
 	} {
@@ -661,7 +661,7 @@ func TestListBarRendersAFilterDropdownWhenGivenOne(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<details class="rst-dropdown" name="rst-menus">`,
+		`<details rst-dropdown name="rst-menus">`,
 		`aria-label="Filter by status: All"`,
 		`<a href="/admin/posts?status=draft">Drafts</a>`,
 	} {
@@ -676,7 +676,7 @@ func TestListBarRendersAFilterDropdownWhenGivenOne(t *testing.T) {
 // lost default would show up.
 func TestListBarMinimalFixture(t *testing.T) {
 	got := render(t, "list-bar", map[string]any{"SearchAction": "/posts"})
-	if !strings.Contains(got, `<div class="rst-lbar">`) {
+	if !strings.Contains(got, `<div rst-lbar>`) {
 		t.Errorf("missing toolbar strip: %s", got)
 	}
 	if !strings.Contains(got, `action="/posts"`) {
@@ -756,7 +756,7 @@ func TestPaginationRendersEveryItemKind(t *testing.T) {
 	})
 	for _, want := range []string{
 		`aria-label="Pagination"`,
-		`<span class="rst-pagination__disabled">Previous</span>`,
+		`<span rst-pagination-disabled>Previous</span>`,
 		`<span aria-current="page">1</span>`,
 		`<a href="/posts?page=2">2</a>`,
 		`aria-hidden="true"`,
@@ -796,7 +796,7 @@ func TestPaginationLabelOverride(t *testing.T) {
 // An empty page strip must render an empty nav, not an Execute error.
 func TestPaginationWithNoItems(t *testing.T) {
 	got := render(t, "pagination", map[string]any{})
-	if !strings.Contains(got, `<nav class="rst-pagination"`) {
+	if !strings.Contains(got, `<nav rst-pagination`) {
 		t.Errorf("missing nav: %s", got)
 	}
 	if strings.Contains(got, "<a ") {
@@ -813,7 +813,7 @@ func TestMeterClampsAndAlwaysShowsTheNumber(t *testing.T) {
 	if !strings.Contains(under, "--rst-meter-fill: 0%") {
 		t.Errorf("percent not clamped low: %s", under)
 	}
-	if !strings.Contains(over, `<span class="rst-meter__num">7/5</span>`) {
+	if !strings.Contains(over, `<span rst-meter-num>7/5</span>`) {
 		t.Errorf("the fraction text is the accessible value and must render: %s", over)
 	}
 }
@@ -824,12 +824,12 @@ func TestCalloutTones(t *testing.T) {
 		"warning": "M12 9v4", "negative": "m15 9-6 6",
 	} {
 		got := render(t, "callout", map[string]any{"Tone": tone, "Body": "b"})
-		if !strings.Contains(got, `data-tone="`+tone+`"`) || !strings.Contains(got, iconFrag) {
+		if !strings.Contains(got, `rst-tone="`+tone+`"`) || !strings.Contains(got, iconFrag) {
 			t.Errorf("tone %s: wrong attribute or icon: %s", tone, got)
 		}
 	}
 	plain := render(t, "callout", map[string]any{"Body": "b"})
-	if !strings.Contains(plain, `data-tone="info"`) {
+	if !strings.Contains(plain, `rst-tone="info"`) {
 		t.Errorf("default tone is info: %s", plain)
 	}
 	if strings.Contains(plain, `role="alert"`) {
@@ -847,7 +847,7 @@ func TestPersonAvatarIsDecorationOnly(t *testing.T) {
 		t.Errorf("avatar must be aria-hidden: %s", got)
 	}
 	empty := render(t, "person", map[string]any{"Href": "/x", "Name": "N"})
-	if !strings.Contains(empty, "rst-person__av--empty") {
+	if !strings.Contains(empty, `rst-person-av="empty"`) {
 		t.Errorf("missing Initial renders the empty-avatar state: %s", empty)
 	}
 }
@@ -1178,7 +1178,7 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 		t.Errorf("the pagination nav has no accessible name: %s", page)
 	}
 	field := render(t, "field", fixtureFor(t, "field"))
-	if !strings.Contains(field, `<label class="rst-field__label" for="email">`) {
+	if !strings.Contains(field, `<label rst-field-label for="email">`) {
 		t.Errorf("the field's input has no wired label: %s", field)
 	}
 	choice := render(t, "choice-field", fixtureFor(t, "choice-field"))
@@ -1197,7 +1197,7 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 func TestRenderEverythingSmoke(t *testing.T) {
 	tmpl := parseAll(t)
 	var buf strings.Builder
-	buf.WriteString(`<div class="rst-page">`)
+	buf.WriteString(`<div rst-page>`)
 	for _, p := range allPartials() {
 		if err := tmpl.ExecuteTemplate(&buf, p.Name, p.Data); err != nil {
 			t.Fatalf("ExecuteTemplate(%q): %v", p.Name, err)
@@ -1207,14 +1207,14 @@ func TestRenderEverythingSmoke(t *testing.T) {
 	out := buf.String()
 
 	markers := map[string]string{
-		"page-header":        `<header class="rst-page-header">`,
-		"list-bar":           `<div class="rst-lbar">`,
-		"list-bar-search":    `<form class="rst-search"`,
+		"page-header":        `<header rst-page-header>`,
+		"list-bar":           `<div rst-lbar>`,
+		"list-bar-search":    `<form rst-search`,
 		"list-search-submit": `<button class="rst-sr-only" type="submit">`,
-		"list-row-action":    `<div class="rst-row">`,
-		"status-pill":        `<span class="rst-status"`,
-		"empty-state":        `<div class="rst-empty">`,
-		"pagination":         `<nav class="rst-pagination"`,
+		"list-row-action":    `<div rst-row>`,
+		"status-pill":        `<span rst-status`,
+		"empty-state":        `<div rst-empty>`,
+		"pagination":         `<nav rst-pagination`,
 	}
 	for name, marker := range markers {
 		if !strings.Contains(out, marker) {
@@ -1267,11 +1267,11 @@ func TestListRowActionRendersAStatusPill(t *testing.T) {
 		"StatusTone": "positive", "StatusLabel": "Published",
 		"ActionHref": "/posts/1", "ActionLabel": "View",
 	})
-	if !strings.Contains(got, `<span class="rst-status" data-tone="positive">Published</span>`) {
+	if !strings.Contains(got, `<span rst-status rst-tone="positive">Published</span>`) {
 		t.Errorf("status pill missing or wrong: %s", got)
 	}
 	// The pill sits in the right-hand group, before the action pill.
-	if strings.Index(got, `class="rst-status"`) > strings.Index(got, `class="rst-row__action"`) {
+	if strings.Index(got, `rst-status`) > strings.Index(got, `rst-row-action`) {
 		t.Errorf("status pill rendered after the action pill: %s", got)
 	}
 }
@@ -1289,7 +1289,7 @@ func TestListRowActionStatusPillAbsentByDefault(t *testing.T) {
 // Previous visually identical to a live link.
 func TestDisabledPaginationChipIsStyled(t *testing.T) {
 	got := render(t, "pagination", fixtureFor(t, "pagination"))
-	if !strings.Contains(got, `class="rst-pagination__disabled"`) {
+	if !strings.Contains(got, `rst-pagination-disabled`) {
 		t.Errorf("disabled item lost its class: %s", got)
 	}
 	css := string(TokensCSS())
@@ -1357,7 +1357,7 @@ func TestFieldWiresHelpAndError(t *testing.T) {
 // input, and the visible track is aria-hidden decoration on top of it.
 func TestFieldCheckIsARealCheckbox(t *testing.T) {
 	got := render(t, "field-check", map[string]any{"Name": "on", "Label": "Enable", "Checked": true})
-	for _, want := range []string{`type="checkbox"`, "checked", `aria-hidden="true"`, "rst-switch__track"} {
+	for _, want := range []string{`type="checkbox"`, "checked", `aria-hidden="true"`, "rst-switch-track"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
 		}
@@ -1388,7 +1388,7 @@ func TestSegTabsMarksCurrent(t *testing.T) {
 func TestConfirmFormShape(t *testing.T) {
 	got := render(t, "confirm-form", fixtureFor(t, "confirm-form"))
 	for _, want := range []string{`method="post"`, `action="/orders/1/refund"`,
-		`<input type="hidden" name="csrf" value="tok">`, "rst-btn--danger",
+		`<input type="hidden" name="csrf" value="tok">`, `rst-btn="danger"`,
 		`href="/orders/1"`, ">Cancel</a>"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
@@ -1400,7 +1400,7 @@ func TestConfirmFormShape(t *testing.T) {
 	}
 	// Cancel precedes the submit button in the DOM — the sole source of
 	// both visual order and tab order now that no CSS reorders them.
-	if cancel, submit := strings.Index(got, `<a class="rst-btn rst-btn--ghost"`), strings.Index(got, `<button type="submit"`); cancel == -1 || submit == -1 || cancel > submit {
+	if cancel, submit := strings.Index(got, `<a rst-btn="ghost"`), strings.Index(got, `<button type="submit"`); cancel == -1 || submit == -1 || cancel > submit {
 		t.Errorf("cancel must precede the submit button in the DOM: %s", got)
 	}
 	// Hidden inputs render in the caller's slice order, not key-sorted —
@@ -1415,7 +1415,7 @@ func TestConfirmFormShape(t *testing.T) {
 
 func TestBackNavRendersArrowLink(t *testing.T) {
 	got := render(t, "back-nav", fixtureFor(t, "back-nav"))
-	if !strings.Contains(got, `<nav class="rst-back-nav">`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
+	if !strings.Contains(got, `<nav rst-back-nav>`) || !strings.Contains(got, `href="/orders/1"`) || !strings.Contains(got, "← Order AB3PX") {
 		t.Errorf("missing back-nav shape: %s", got)
 	}
 }
@@ -1515,17 +1515,51 @@ func TestStyleguideSamplesRender(t *testing.T) {
 	}
 }
 
-// rstClassPattern extracts one rst- class token, including its optional
-// BEM __element and --modifier suffixes.
-var rstClassPattern = regexp.MustCompile(`rst-[a-z-]+(?:__[a-z-]+)?(?:--[a-z-]+)?`)
+// The vocabulary is attributes now (design doc §6-v3), so the drift
+// checks below read attributes rather than class lists.
+//
+// Extraction runs over open tags rather than the whole sample string,
+// for the reason the class version had: the list-grid sample's inline
+// style="--rst-cols: …" is a custom property read with var(), never a
+// selector, and it is not an attribute of ours. Reading only inside a
+// tag also keeps prose that happens to name a kind out of the set.
+var (
+	openTagPattern   = regexp.MustCompile(`<[a-zA-Z][^>]*>`)
+	rstAttrPattern   = regexp.MustCompile(`(?:^|\s)(rst-[a-z0-9-]+)(?:="([^"]*)")?`)
+	classAttrPattern = regexp.MustCompile(`class="[^"]*"`)
+)
 
-// classAttrPattern isolates class="..." attribute values, so extraction
-// runs over actual class tokens rather than the whole sample string —
-// the list-grid sample's inline `style="--rst-cols: …"` also matches
-// rstClassPattern (as "rst-cols"), but --rst-cols is a custom property
-// read with var(), never a class selector, and checking it against
-// tokens.css with a leading "." would be a false positive.
-var classAttrPattern = regexp.MustCompile(`class="([^"]*)"`)
+// rstVocabulary is every rst- attribute a piece of markup writes, as
+// the selector tokens.css would need for it: "rst-box" for a kind or a
+// part, and "rst-lrow~=head" for a variant, one entry per variant in
+// the value.
+func rstVocabulary(markup string) map[string]bool {
+	seen := map[string]bool{}
+	for _, tag := range openTagPattern.FindAllString(markup, -1) {
+		// The class attribute still carries the seven utilities, and
+		// their names look exactly like an attribute's once the quotes
+		// are ignored. Take it out of the tag before reading.
+		tag = classAttrPattern.ReplaceAllString(tag, "")
+		for _, m := range rstAttrPattern.FindAllStringSubmatch(tag, -1) {
+			seen[m[1]] = true
+			for _, variant := range strings.Fields(m[2]) {
+				if !strings.Contains(variant, "{{") {
+					seen[m[1]+"~="+variant] = true
+				}
+			}
+		}
+	}
+	return seen
+}
+
+// tokensStyle reports whether tokens.css carries a selector for one
+// entry of that vocabulary.
+func tokensStyle(css, name string) bool {
+	if kind, variant, ok := strings.Cut(name, "~="); ok {
+		return strings.Contains(css, "["+kind+"~=\""+variant+"\"]")
+	}
+	return strings.Contains(css, "["+name+"]")
+}
 
 // TestIdiomClassesAreStyled is the F10 lesson in both directions: every
 // class a sample emits must have a selector in tokens.css (a sample
@@ -1536,41 +1570,47 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
 	seen := map[string]bool{}
 	for _, sample := range Styleguide() {
-		for _, attr := range classAttrPattern.FindAllStringSubmatch(sample, -1) {
-			for _, class := range rstClassPattern.FindAllString(attr[1], -1) {
-				seen[class] = true
-			}
+		for name := range rstVocabulary(sample) {
+			seen[name] = true
 		}
 	}
-	for class := range seen {
-		if !strings.Contains(css, "."+class) {
-			t.Errorf("tokens.css has no selector for %q (used in a styleguide sample)", class)
+	for name := range seen {
+		if !tokensStyle(css, name) {
+			t.Errorf("tokens.css has no selector for %q (used in a styleguide sample)", name)
+		}
+	}
+
+	// The three utilities the list-grid sample carries stay classes,
+	// which is the grammar (§6-v3), so they are checked as classes.
+	for _, class := range []string{"rst-m-hide", "rst-nm", "rst-cell-mut", "rst-danger"} {
+		if !strings.Contains(css, "."+class) || !strings.Contains(Styleguide()["list-grid"], class) {
+			t.Errorf("utility %q is not both styled and demonstrated", class)
 		}
 	}
 
 	// The selectors this task's Step 1 added to tokens.css, listed
 	// literally: each one must appear in at least one sample above.
-	for _, class := range []string{
+	for _, name := range []string{
 		"rst-box", "rst-box-head", "rst-box-foot",
-		"rst-card", "rst-lrow", "rst-lrow--head", "rst-m-hide", "rst-nm", "rst-cell-mut",
+		"rst-card", "rst-lrow", "rst-lrow~=head",
 		"rst-no-match", "rst-count-line",
-		"rst-row-menu", "rst-row-menu__panel", "rst-danger",
-		"rst-dropdown", "rst-dropdown__menu", "rst-menu-group", "rst-caret",
+		"rst-row-menu", "rst-row-menu-panel",
+		"rst-dropdown", "rst-dropdown-menu", "rst-menu-group", "rst-caret",
 		"rst-ftok",
 	} {
-		if !seen[class] {
-			t.Errorf("selector %q was added to tokens.css this task but no styleguide sample uses it", class)
+		if !seen[name] {
+			t.Errorf("selector %q was added to tokens.css this task but no styleguide sample uses it", name)
 		}
 	}
 
 	// Task 3's form-layout selectors: no partial emits these (they wrap a
 	// caller-composed run of fields, not a single data shape), so the
 	// "form-layout" sample above is their only exercise.
-	for _, class := range []string{
-		"rst-form-flow", "rst-field-row", "rst-grow", "rst-form-foot", "rst-form-foot__note", "rst-form-actions",
+	for _, name := range []string{
+		"rst-form-flow", "rst-field-row", "rst-form-bar", "rst-form-bar-note", "rst-form-actions",
 	} {
-		if !seen[class] {
-			t.Errorf("selector %q was added to tokens.css in the form-layout task but no styleguide sample uses it", class)
+		if !seen[name] {
+			t.Errorf("selector %q was added to tokens.css in the form-layout task but no styleguide sample uses it", name)
 		}
 	}
 
@@ -1581,28 +1621,28 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 	// (rst-bulkbar*) are excluded here on purpose: bulk-bar is a real
 	// partial, already exercised by allPartials()/TestRenderEverythingSmoke,
 	// and checked directly in TestRoutesFamilyPartialClassesAreStyled below.
-	for _, class := range []string{
-		"rst-tblock", "rst-tblock__head", "rst-tblock__title", "rst-tblock__desc", "rst-tblock__body",
+	for _, name := range []string{
+		"rst-tblock", "rst-tblock-head", "rst-tblock-title", "rst-tblock-desc", "rst-tblock-body",
 		"rst-backdrop", "rst-modal-overlay", "rst-modal-panel", "rst-modal-close",
 		"rst-help", "rst-tip", "rst-selbox",
 	} {
-		if !seen[class] {
-			t.Errorf("selector %q was added to tokens.css in the routes-family task but no styleguide sample uses it", class)
+		if !seen[name] {
+			t.Errorf("selector %q was added to tokens.css in the routes-family task but no styleguide sample uses it", name)
 		}
 	}
 	// The shell selectors: same rule again for the page frames. A shell
 	// is markup an app's own layout template writes, so no partial and
 	// no other sample can carry these — the two shell samples above are
 	// their only exercise, in both directions.
-	for _, class := range []string{
+	for _, name := range []string{
 		"rst-skip",
-		"rst-shell-topbar", "rst-shell__bar", "rst-shell__brand", "rst-shell__nav",
-		"rst-shell__account", "rst-shell__foot",
-		"rst-shell__menu", "rst-shell__tail",
-		"rst-shell-sidebar", "rst-shell__chrome", "rst-shell__rail", "rst-shell__group", "rst-shell__main",
+		"rst-shell-topbar", "rst-shell-bar", "rst-shell-brand", "rst-shell-nav",
+		"rst-shell-account", "rst-shell-foot",
+		"rst-shell-menu", "rst-shell-tail",
+		"rst-shell-sidebar", "rst-shell-chrome", "rst-shell-rail", "rst-shell-group", "rst-shell-main",
 	} {
-		if !seen[class] {
-			t.Errorf("selector %q was added to tokens.css in the shells task but no styleguide sample uses it", class)
+		if !seen[name] {
+			t.Errorf("selector %q was added to tokens.css in the shells task but no styleguide sample uses it", name)
 		}
 	}
 }
@@ -1653,22 +1693,20 @@ func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
 }
 
 // The same drift check the styleguide samples get, for the shells that
-// ship as whole templates: every rst- class the layout files emit must
-// resolve to a selector in tokens.css. TestIdiomClassesAreStyled covers
-// the samples; a layout is markup no sample carries, so without this a
-// shell could name a class the stylesheet never defines.
+// ship as whole templates: every rst- attribute the layout files emit
+// must resolve to a selector in tokens.css. TestIdiomClassesAreStyled
+// covers the samples; a layout is markup no sample carries, so without
+// this a shell could name a kind the stylesheet never defines.
 func TestLayoutClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
-	for _, name := range LayoutNames() {
-		src, ok := Layout(name)
+	for _, layoutName := range LayoutNames() {
+		src, ok := Layout(layoutName)
 		if !ok {
-			t.Fatalf("Layout(%q) missing", name)
+			t.Fatalf("Layout(%q) missing", layoutName)
 		}
-		for _, attr := range classAttrPattern.FindAllStringSubmatch(string(src), -1) {
-			for _, class := range rstClassPattern.FindAllString(attr[1], -1) {
-				if !strings.Contains(css, "."+class) {
-					t.Errorf("tokens.css has no selector for %q (used in layouts/%s.html)", class, name)
-				}
+		for name := range rstVocabulary(string(src)) {
+			if !tokensStyle(css, name) {
+				t.Errorf("tokens.css has no selector for %q (used in layouts/%s.html)", name, layoutName)
 			}
 		}
 	}
@@ -1682,13 +1720,13 @@ func TestLayoutClassesAreStyled(t *testing.T) {
 // that every class they can render resolves to a tokens.css selector.
 func TestRoutesFamilyPartialClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
-	for _, class := range []string{
-		"rst-btn--ghost", "rst-btn--danger",
+	for _, name := range []string{
+		"rst-btn~=ghost", "rst-btn~=danger",
 		"rst-back-nav", "rst-notice", "rst-form-error",
-		"rst-bulkbar", "rst-bulkbar__close", "rst-bulkbar__count", "rst-bulkbar__escalate",
+		"rst-bulkbar", "rst-bulkbar-close", "rst-bulkbar-count", "rst-bulkbar-escalate",
 	} {
-		if !strings.Contains(css, "."+class) {
-			t.Errorf("tokens.css has no selector for %q", class)
+		if !tokensStyle(css, name) {
+			t.Errorf("tokens.css has no selector for %q", name)
 		}
 	}
 }
@@ -1703,9 +1741,9 @@ func TestRoutesFamilyPartialClassesAreStyled(t *testing.T) {
 // a future reader does not "fix" it by inventing a rule for it.
 func TestJobStatusPartialClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
-	for _, class := range []string{"rst-spin"} {
-		if !strings.Contains(css, "."+class) {
-			t.Errorf("tokens.css has no selector for %q", class)
+	for _, name := range []string{"rst-spin"} {
+		if !tokensStyle(css, name) {
+			t.Errorf("tokens.css has no selector for %q", name)
 		}
 	}
 }
@@ -1715,7 +1753,7 @@ func TestJobStatusPartialClassesAreStyled(t *testing.T) {
 // that promise.
 func TestDropdownExclusivityIsNative(t *testing.T) {
 	sample := Styleguide()["dropdown"]
-	if !strings.Contains(sample, `<details class="rst-dropdown" name=`) {
+	if !strings.Contains(sample, `<details rst-dropdown name=`) {
 		t.Errorf("dropdown sample's outer <details> carries no name attribute: %s", sample)
 	}
 	if strings.Contains(sample, "<script") {
@@ -1764,7 +1802,7 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	if !ok {
 		t.Fatal(`Layout("topbar") reports no such layout`)
 	}
-	if !strings.Contains(string(layout), `rst-shell__account" `+group) {
+	if !strings.Contains(string(layout), `rst-shell-account `+group) {
 		t.Errorf("the topbar shell's account dropdown is outside the exclusivity group:\n%s", layout)
 	}
 
@@ -1806,7 +1844,7 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	// altogether — but a name in the shared group would break it even
 	// so, because the exclusivity does not care about nesting.
 	for _, tag := range detailsOpenTags(string(layout)) {
-		if !strings.Contains(tag, `class="rst-shell__menu"`) {
+		if !strings.Contains(tag, `rst-shell-menu`) {
 			continue
 		}
 		m := detailsNamePattern.FindStringSubmatch(tag)
@@ -1818,7 +1856,7 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 			t.Errorf("the topbar's narrow-screen disclosure joined %q; opening the account menu would close the navigation it was opened from: %s", MenuGroupDefault, tag)
 		}
 	}
-	if !strings.Contains(string(layout), `class="rst-shell__menu"`) {
+	if !strings.Contains(string(layout), `rst-shell-menu`) {
 		t.Error("the topbar shell has no narrow-screen disclosure; below 800px its nav, account and locale have nowhere to go")
 	}
 }
@@ -1835,28 +1873,22 @@ func TestBothShellsCollapseBehindTheMenuIcon(t *testing.T) {
 		t.Fatal(`rastrillo.Icon("menu") is empty: the shells' collapse has no icon to draw`)
 	}
 	for _, c := range []struct{ layout, class string }{
-		{"topbar", "rst-shell__menu"},
-		{"sidebar", "rst-shell__chrome"},
+		{"topbar", "rst-shell-menu"},
+		{"sidebar", "rst-shell-chrome"},
 	} {
 		src, ok := Layout(c.layout)
 		if !ok {
 			t.Fatalf("Layout(%q) missing", c.layout)
 		}
-		want := `<details class="` + c.class + `"`
-		i := strings.Index(string(src), want)
+		i := strings.Index(string(src), `<details `+c.class)
 		if i < 0 {
-			// The topbar's disclosure carries a name attribute, so match
-			// the class wherever it sits in the tag.
-			i = strings.Index(string(src), `class="`+c.class+`"`)
-		}
-		if i < 0 {
-			t.Errorf("layouts/%s.html has no .%s disclosure", c.layout, c.class)
+			t.Errorf("layouts/%s.html has no [%s] disclosure", c.layout, c.class)
 			continue
 		}
 		rest := string(src)[i:]
 		end := strings.Index(rest, "</summary>")
 		if end < 0 {
-			t.Errorf("layouts/%s.html's .%s disclosure has no summary", c.layout, c.class)
+			t.Errorf("layouts/%s.html's [%s] disclosure has no summary", c.layout, c.class)
 			continue
 		}
 		summary := rest[:end]
@@ -1966,14 +1998,14 @@ func TestNestedMenuGroupNeverSharesItsParentsName(t *testing.T) {
 func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
 	sample := Styleguide()["modal"]
 	for _, want := range []string{
-		`<dialog class="rst-modal-panel" open `, `</dialog>`,
-		`<div class="rst-modal-overlay">`, `<div class="rst-backdrop" inert>`,
+		`<dialog rst-modal-panel open `, `</dialog>`,
+		`<div rst-modal-overlay>`, `<div rst-backdrop inert>`,
 	} {
 		if !strings.Contains(sample, want) {
 			t.Errorf("modal sample missing %q: %s", want, sample)
 		}
 	}
-	if strings.Contains(sample, `<div class="rst-modal-panel">`) {
+	if strings.Contains(sample, `<div rst-modal-panel>`) {
 		t.Errorf("the modal panel is still a div: %s", sample)
 	}
 	// A dialog role with no accessible name is announced as "dialog" and
@@ -2038,8 +2070,8 @@ func TestDropdownRendersADetailsMenuOfLinks(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<details class="rst-dropdown" name="rst-menus">`,
-		`<summary class="rst-btn rst-dropdown__summary" aria-label="Filter by status: All">All`,
+		`<details rst-dropdown name="rst-menus">`,
+		`<summary rst-btn aria-label="Filter by status: All">All`,
 		`<a href="/admin/posts" aria-current="true">All`,
 		`<a href="/admin/posts?status=draft">Drafts</a>`,
 	} {
@@ -2077,12 +2109,12 @@ func TestFieldTextMaximalFixture(t *testing.T) {
 		"Autocomplete": "off",
 	})
 	for _, want := range []string{
-		`<div class="rst-field">`,
-		`<label class="rst-field__label" for="title">Title`,
-		`<span class="rst-field__required" aria-hidden="true">*</span>`,
-		`<input class="rst-input" id="title" name="title" type="text" value="Hello" autocomplete="off" required aria-invalid="true" aria-describedby="title-hint title-error">`,
-		`<small class="rst-field__hint" id="title-hint">Shown in the list.</small>`,
-		`<small class="rst-field__error" id="title-error">Title is required.</small>`,
+		`<div rst-field>`,
+		`<label rst-field-label for="title">Title`,
+		`<span rst-field-required aria-hidden="true">*</span>`,
+		`<input rst-input id="title" name="title" type="text" value="Hello" autocomplete="off" required aria-invalid="true" aria-describedby="title-hint title-error">`,
+		`<small rst-field-hint id="title-hint">Shown in the list.</small>`,
+		`<small rst-field-error id="title-error">Title is required.</small>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
@@ -2092,7 +2124,7 @@ func TestFieldTextMaximalFixture(t *testing.T) {
 
 func TestFieldTextMinimalFixture(t *testing.T) {
 	got := render(t, "field-text", map[string]any{"Name": "q", "Label": "Query"})
-	if !strings.Contains(got, `<input class="rst-input" id="q" name="q" type="text">`) {
+	if !strings.Contains(got, `<input rst-input id="q" name="q" type="text">`) {
 		t.Errorf("minimal input wrong: %s", got)
 	}
 	for _, absent := range []string{"aria-describedby", "aria-invalid", "required", "value=", "rst-field__hint", "rst-field__error"} {
@@ -2120,10 +2152,10 @@ func TestFieldTextareaMaximalFixture(t *testing.T) {
 		"Rows": 18, "Required": true, "Hint": "Plain text.", "Error": "Too long.",
 	})
 	for _, want := range []string{
-		`<label class="rst-field__label" for="body">Body`,
-		`<textarea class="rst-textarea" id="body" name="body" rows="18" required aria-invalid="true" aria-describedby="body-hint body-error">Hello`,
-		`<small class="rst-field__hint" id="body-hint">Plain text.</small>`,
-		`<small class="rst-field__error" id="body-error">Too long.</small>`,
+		`<label rst-field-label for="body">Body`,
+		`<textarea rst-textarea id="body" name="body" rows="18" required aria-invalid="true" aria-describedby="body-hint body-error">Hello`,
+		`<small rst-field-hint id="body-hint">Plain text.</small>`,
+		`<small rst-field-error id="body-error">Too long.</small>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
@@ -2133,7 +2165,7 @@ func TestFieldTextareaMaximalFixture(t *testing.T) {
 
 func TestFieldTextareaMinimalFixture(t *testing.T) {
 	got := render(t, "field-textarea", map[string]any{"Name": "notes", "Label": "Notes"})
-	if !strings.Contains(got, `<textarea class="rst-textarea" id="notes" name="notes"></textarea>`) {
+	if !strings.Contains(got, `<textarea rst-textarea id="notes" name="notes"></textarea>`) {
 		t.Errorf("minimal textarea wrong: %s", got)
 	}
 	if strings.Contains(got, "rows=") {
@@ -2146,9 +2178,9 @@ func TestFormFootRendersSubmitAndCancel(t *testing.T) {
 		"Submit": "Save", "CancelHref": "/admin/posts", "CancelLabel": "Back to posts",
 	})
 	for _, want := range []string{
-		`<div class="rst-form__foot">`,
-		`<button class="rst-btn rst-btn--primary" type="submit">Save</button>`,
-		`<a class="rst-btn" href="/admin/posts">Back to posts</a>`,
+		`<div rst-form-foot>`,
+		`<button rst-btn="primary" type="submit">Save</button>`,
+		`<a rst-btn href="/admin/posts">Back to posts</a>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
@@ -2180,7 +2212,7 @@ func TestDetailListRendersLabelValueRows(t *testing.T) {
 		},
 	})
 	for _, want := range []string{
-		`<dl class="rst-detail">`,
+		`<dl rst-detail>`,
 		`<dt>Title</dt>`, `<dd>Hello</dd>`,
 		`<dt>Price</dt>`, `<dd class="rst-mono">$1.00</dd>`,
 	} {
@@ -2192,7 +2224,7 @@ func TestDetailListRendersLabelValueRows(t *testing.T) {
 
 func TestDetailListEmptyItemsRendersEmptyList(t *testing.T) {
 	got := render(t, "detail-list", map[string]any{"Items": []any{}})
-	if !strings.Contains(got, `<dl class="rst-detail">`) || strings.Contains(got, "<dt>") {
+	if !strings.Contains(got, `<dl rst-detail>`) || strings.Contains(got, "<dt>") {
 		t.Errorf("empty detail-list wrong: %s", got)
 	}
 }
@@ -2381,11 +2413,11 @@ func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
 		t.Fatal("no sidebar layout")
 	}
 	s := string(src)
-	foot := strings.Index(s, `<div class="rst-shell__rail-foot">`)
+	foot := strings.Index(s, `<div rst-shell-rail-foot>`)
 	if foot < 0 {
 		t.Fatal("layouts/sidebar.html has no rail foot; the profile has nothing to sit at the bottom of")
 	}
-	nav := strings.Index(s, `<nav class="rst-shell__nav">`)
+	nav := strings.Index(s, `<nav rst-shell-nav>`)
 	if nav < 0 || nav > foot {
 		t.Error("the rail's nav does not come before its foot")
 	}
@@ -2400,7 +2432,7 @@ func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
 	// An un-overridden shell renders an empty wrapper, so the foot has
 	// to be genuinely empty for :empty to hide it — no whitespace text
 	// node between the two blocks. Same discipline as .rst-shell__foot.
-	if !strings.Contains(s, `<div class="rst-shell__rail-foot">{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>`) {
+	if !strings.Contains(s, `<div rst-shell-rail-foot>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>`) {
 		t.Error("the rail foot carries whitespace between its blocks; :empty will never match it and an un-overridden rail grows a stray gap")
 	}
 	if !strings.Contains(string(TokensCSS()), ".rst-shell__rail-foot:empty") {
@@ -2420,7 +2452,7 @@ func TestLocaleMenuRenders(t *testing.T) {
 	}
 	out := b.String()
 	for _, want := range []string{
-		`<details class="rst-dropdown rst-locale"`,
+		`<details rst-dropdown rst-locale`,
 		`action="/_locale"`,
 		`name="locale" value="ga"`,
 		`name="return" value="/orders?page=2"`,
@@ -2599,7 +2631,7 @@ func TestErrorPageWordsTheFiveKnownStatuses(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("status %d: title %q missing from:\n%s", status, want, got)
 		}
-		if !strings.Contains(got, `<p class="rst-error__status">`+fmt.Sprint(status)+`</p>`) {
+		if !strings.Contains(got, `<p rst-error-status>`+fmt.Sprint(status)+`</p>`) {
 			t.Errorf("status %d: the status itself is not shown:\n%s", status, got)
 		}
 		if strings.Contains(got, "rastrillo.ui.") {
@@ -2641,7 +2673,7 @@ func TestErrorPageCallerWordingWins(t *testing.T) {
 // bidi fix, and the reason the ref is not pre-wrapped by the caller.
 func TestErrorPageReferenceLine(t *testing.T) {
 	got := render(t, "error-page", map[string]any{"Status": 500, "Ref": "k3f9tq"})
-	if !strings.Contains(got, `<p class="rst-error__ref rst-mono" dir="auto">Reference: k3f9tq</p>`) {
+	if !strings.Contains(got, `<p class="rst-mono" rst-error-ref dir="auto">Reference: k3f9tq</p>`) {
 		t.Errorf("reference line is not interpolated with dir=auto:\n%s", got)
 	}
 	if strings.Contains(got, "{ref}") {
@@ -2732,8 +2764,8 @@ func TestDateFieldsRenderNativeInputs(t *testing.T) {
 		fixture := fixtureFor(t, c.partial)
 		name, _ := fixture["Name"].(string)
 		for _, want := range []string{
-			`<div class="rst-field">`,
-			`<label class="rst-field__label" for="` + name + `">`,
+			`<div rst-field>`,
+			`<label rst-field-label for="` + name + `">`,
 			`type="` + c.typ + `"`,
 			`id="` + name + `"`, `name="` + name + `"`,
 			`value="` + fixture["Value"].(string) + `"`,
@@ -2848,8 +2880,8 @@ func TestDateFieldsWireHintAndError(t *testing.T) {
 		})
 		for _, want := range []string{
 			`aria-describedby="when-hint when-error"`, ` aria-invalid="true"`,
-			`<small class="rst-field__hint" id="when-hint">Any time today.</small>`,
-			`<small class="rst-field__error" id="when-error">Pick one.</small>`,
+			`<small rst-field-hint id="when-hint">Any time today.</small>`,
+			`<small rst-field-error id="when-error">Pick one.</small>`,
 		} {
 			if !strings.Contains(both, want) {
 				t.Errorf("%s is missing %q:\n%s", partial, want, both)
@@ -2877,7 +2909,7 @@ func TestDateFieldsWireHintAndError(t *testing.T) {
 func TestDateFieldsRequiredMarkerIsAriaHidden(t *testing.T) {
 	for _, partial := range []string{"field-date", "field-time", "field-datetime"} {
 		got := render(t, partial, map[string]any{"Name": "when", "Label": "When", "Required": true})
-		if !strings.Contains(got, `<span class="rst-field__required" aria-hidden="true">*</span>`) {
+		if !strings.Contains(got, `<span rst-field-required aria-hidden="true">*</span>`) {
 			t.Errorf("%s: required marker missing or exposed:\n%s", partial, got)
 		}
 	}
@@ -2889,10 +2921,10 @@ func TestFieldDaterangeWrapsTwoFields(t *testing.T) {
 	got := render(t, "field-daterange", fixtureFor(t, "field-daterange"))
 	for _, want := range []string{
 		"<fieldset", "<legend", ">When</legend>",
-		`<div class="rst-field-row" data-rst-range="session">`,
+		`<div rst-field-row data-rst-range="session">`,
 		`name="starts_at"`, `name="ends_at"`,
 		`type="datetime-local"`,
-		`<small class="rst-field__error" id="ends_at-error">The end comes before the start.</small>`,
+		`<small rst-field-error id="ends_at-error">The end comes before the start.</small>`,
 		`aria-describedby="ends_at-error"`,
 	} {
 		if !strings.Contains(got, want) {
@@ -2913,7 +2945,7 @@ func TestFieldDaterangeSeedIsOptional(t *testing.T) {
 		"Start":  map[string]any{"Name": "a", "Label": "From"},
 		"End":    map[string]any{"Name": "b", "Label": "To"},
 	})
-	if !strings.Contains(got, `<div class="rst-field-row" data-rst-range>`) {
+	if !strings.Contains(got, `<div rst-field-row data-rst-range>`) {
 		t.Errorf("unseeded range lost its marker attribute:\n%s", got)
 	}
 }
@@ -2939,7 +2971,7 @@ func TestFieldDaterangeKindDate(t *testing.T) {
 // the fieldset with the browser's default border and nobody notice.
 func TestDaterangeFieldsetIsStyled(t *testing.T) {
 	got := render(t, "field-daterange", fixtureFor(t, "field-daterange"))
-	if !strings.Contains(got, `<fieldset class="rst-field-range">`) {
+	if !strings.Contains(got, `<fieldset rst-field-range>`) {
 		t.Errorf("daterange fieldset lost its class:\n%s", got)
 	}
 	// Read as a selector rather than as the literal ".rst-field-range {":

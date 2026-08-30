@@ -49,7 +49,7 @@ func TestCoexistenceRoundTrip(t *testing.T) {
 	edit := get(t, app, editHref)
 	wantStatus(t, edit, http.StatusOK)
 	wantContains(t, edit.Body.String(), `value="Shipping the manifest system"`)
-	wantContains(t, edit.Body.String(), `<span class="rst-status" data-tone="positive">Published</span>`)
+	wantContains(t, edit.Body.String(), `<span rst-status rst-tone="positive">Published</span>`)
 	unpublishHref := fmt.Sprintf("/admin/posts/%d/unpublish", published)
 	wantContains(t, edit.Body.String(), fmt.Sprintf(`action="%s"`, unpublishHref))
 
@@ -74,7 +74,7 @@ func TestCoexistenceRoundTrip(t *testing.T) {
 	// doesn't exist yet).
 	newForm := get(t, app, "/admin/posts/new")
 	wantStatus(t, newForm, http.StatusOK)
-	wantNotContains(t, newForm.Body.String(), `class="rst-status"`)
+	wantNotContains(t, newForm.Body.String(), `rst-status`)
 
 	created := post(t, app, "/admin/posts", url.Values{
 		"Title": {"A brand new post"},
@@ -89,7 +89,7 @@ func TestCoexistenceRoundTrip(t *testing.T) {
 	newEditHref := newShowHref + "/edit"
 	newEdit := get(t, app, newEditHref)
 	wantStatus(t, newEdit, http.StatusOK)
-	wantContains(t, newEdit.Body.String(), `<span class="rst-status" data-tone="neutral">Draft</span>`)
+	wantContains(t, newEdit.Body.String(), `<span rst-status rst-tone="neutral">Draft</span>`)
 	newPublishHref := newShowHref + "/publish"
 	wantContains(t, newEdit.Body.String(), fmt.Sprintf(`action="%s"`, newPublishHref))
 
