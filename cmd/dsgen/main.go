@@ -72,39 +72,49 @@ func run() error {
 		return fmt.Errorf("-out is required (a directory to write the gallery into)")
 	}
 
-	files, err := designsystem.Render(*mount)
+	root, n, total, err := write(*out, *mount)
 	if err != nil {
 		return err
 	}
 
-	root, err := filepath.Abs(*out)
+	fmt.Printf("dsgen: wrote %d files, %d bytes, to %s (mounted at %s)\n", n, total, root, *mount)
+	return nil
+}
+
+// write renders the gallery at mount and puts it under out, returning
+// the absolute directory it wrote and what it wrote there. Separate from
+// run so the flags and the work can be tested apart.
+func write(out, mount string) (root string, files, bytes int, err error) {
+	rendered, err := designsystem.Render(mount)
 	if err != nil {
-		return fmt.Errorf("resolving -out: %w", err)
-	}
-	if err := clear(root, files); err != nil {
-		return err
+		return "", 0, 0, err
 	}
 
-	names := make([]string, 0, len(files))
-	for name := range files {
+	root, err = filepath.Abs(out)
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("resolving -out: %w", err)
+	}
+	if err := clear(root, rendered); err != nil {
+		return "", 0, 0, err
+	}
+
+	names := make([]string, 0, len(rendered))
+	for name := range rendered {
 		names = append(names, name)
 	}
 	sort.Strings(names)
 
-	var total int
 	for _, name := range names {
 		dest := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-			return fmt.Errorf("mkdir for %s: %w", name, err)
+			return "", 0, 0, fmt.Errorf("mkdir for %s: %w", name, err)
 		}
-		if err := os.WriteFile(dest, files[name], 0o644); err != nil {
-			return fmt.Errorf("writing %s: %w", name, err)
+		if err := os.WriteFile(dest, rendered[name], 0o644); err != nil {
+			return "", 0, 0, fmt.Errorf("writing %s: %w", name, err)
 		}
-		total += len(files[name])
+		bytes += len(rendered[name])
 	}
-
-	fmt.Printf("dsgen: wrote %d files, %d bytes, to %s (mounted at %s)\n", len(files), total, root, *mount)
-	return nil
+	return root, len(rendered), bytes, nil
 }
 
 // clear removes the previous run's output and nothing else: for each
