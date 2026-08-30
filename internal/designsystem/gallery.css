@@ -1,0 +1,186 @@
+/* gallery.css is the gallery's own chrome: the swatch grid, the sample
+   frames, the section rhythm, the rail and the preview widget. None of
+   it is vocabulary an app should reach for, and tokens.css shipping a
+   class only one page uses is how a stylesheet starts to rot — so it
+   is neither in tokens.css nor in a theme. Every value here is a
+   token, so the page's own furniture changes theme with everything
+   else.
+
+   It lives beside the renderer rather than in ui/ for gallery.js's
+   reason: no scaffold writes it, no app receives it, and the only
+   pages that load it are the ones this package renders. It is a file
+   rather than a Go string constant for gallery.js's other reason —
+   a stylesheet is edited as CSS, with a syntax highlighter and a
+   linter.
+
+   It used to be inlined into every page's <style>, and it is one asset
+   at the tree root now, linked the way tokens.css and the theme are.
+   That is most of eight kilobytes off every page in the tree, and it
+   makes a missing <link> a new way to render a page unstyled — the
+   live bug this tree has had once already, when relative asset paths
+   broke at the slash-less URL. TestEveryGalleryPageLinksTheStylesheet
+   holds every page to carrying it. */
+
+.ds-head { border-top: 1px solid var(--rst-line); margin: var(--rst-sp-6) 0 var(--rst-sp-3); padding-top: var(--rst-sp-5); }
+.ds-head h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 0; }
+.ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+.ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
+.ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
+.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-chrome .rst-dropdown { position: relative; }
+.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+/* The toggle is hidden until gallery.js says it is there. With scripts
+   off it never appears, and the page stays on the theme's own
+   color-scheme: light dark — which is the System position anyway, so
+   nothing is lost but a control that could not have worked. The
+   attribute is set while the head is still parsing, so this is not a
+   reveal the reader sees happen. */
+.ds-scheme { display: none; }
+:root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+.ds-partial { margin: var(--rst-sp-5) 0; }
+.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+.ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
+.ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
+.ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
+.ds-toks { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
+.ds-tok { align-items: center; display: flex; gap: var(--rst-sp-3); min-inline-size: 0; }
+.ds-tok__text { min-inline-size: 0; }
+.ds-tok__name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-tok__value { color: var(--rst-text-muted); display: block; }
+.ds-chip { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); block-size: 2.25rem; flex: none; inline-size: 2.25rem; }
+.ds-chip--fill { background: var(--rst-accent); border-color: var(--rst-accent); }
+.ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
+.ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
+.ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+/* The Icons page reuses the token grid: one chip per icon, and the icon
+   inside it at the 1em tokens.css gives it, which is the size a
+   component draws it at rather than a poster of it. The call under the
+   name is long enough to overrun a 13rem column on a 320px screen, so
+   this is the one place in the grid that breaks inside a word. */
+.ds-chip--icon { align-items: center; color: var(--rst-text); display: flex; justify-content: center; }
+.ds-icons .ds-tok__value { overflow-wrap: anywhere; }
+/* The Overview's opening paragraph and the routes under it. .ds-files is
+   the same row — a name, a sentence and a number — on the Getting
+   started page. It is a second class rather than a second use of
+   .ds-routes because TestTheOverviewRoutesIntoEveryOtherPage identifies
+   the Overview's route list BY that class and asserts no other page
+   carries one; sharing it would have made that gate stop meaning
+   anything. The
+   paragraph is the one piece of copy on this site somebody wrote by
+   hand rather than derived from the code, so it is set a step larger
+   than body text and given the same 62ch measure everything else here
+   reads at. */
+.ds-intro { font-size: 1.05rem; margin: 0 0 var(--rst-sp-5); max-width: 62ch; }
+.ds-routes, .ds-files { display: grid; gap: var(--rst-sp-4); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
+.ds-routes > li, .ds-files > li { border-inline-start: 2px solid var(--rst-line-strong); padding-inline-start: var(--rst-sp-3); }
+.ds-routes a, .ds-files a { font-weight: 600; }
+.ds-routes span, .ds-files span { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); max-width: 62ch; }
+/* Prev/next at the foot. Two grid columns rather than a flex row with
+   space-between, because the ends of the sequence are missing a link
+   and not missing a column: the Overview's Next has to stay on the
+   inline end rather than sliding across to where Previous would have
+   been. */
+.ds-updown { border-block-start: 1px solid var(--rst-line); display: grid; gap: var(--rst-sp-3); grid-template-columns: 1fr 1fr; margin-block-start: var(--rst-sp-6); padding-block-start: var(--rst-sp-4); }
+.ds-updown__prev { grid-column: 1; justify-self: start; }
+.ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
+.ds-shell { margin: var(--rst-sp-5) 0; }
+.ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
+.ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
+.ds-src code { white-space: pre; }
+
+/* The preview widget: [Desktop] [Mobile] [Code] over one frame.
+
+   No script anywhere in it. The tabs are three radio inputs sharing a
+   name, hidden but focusable inside their labels, and :has() reads
+   which one is checked from the wrapper — so the panels switch on the
+   browser's own form behaviour and a reader with JavaScript off has
+   the same three views as everyone else.
+
+   The scale is the other half. The frame is laid out at a virtual
+   1200px (or 390px, on Mobile) and scaled to fit whatever the reader's
+   column actually is, so the desktop rendering is the desktop
+   rendering on a phone too. CSS can divide two lengths into a plain
+   number exactly one way — tan(atan2(a, b)) — and 100cqw is the
+   container's own width, so --ds-k is that fraction and min() stops it
+   scaling anything UP. Where the trig functions are missing the
+   @supports block never applies, --ds-k stays 1, and the frame is a
+   1200px page clipped to the column: smaller, not broken.
+
+   --ds-h is the frame's virtual height, written per example by
+   previewStyle. It sizes the BOX; the frame takes its height back off
+   the box, 100% / --ds-k, which is the same number until a reader
+   drags the resize grip and then is whatever they dragged it to. Doing
+   it the other way round — a fixed height on the frame — gave the grip
+   nothing to move: the box grew and the document inside it stayed the
+   size it was, leaving 300px of empty box under a 255px rendering.
+
+   The box is a window on a document, not a fit to it: a taller sample
+   scrolls inside its frame, and the grip is there for the ones a
+   reader wants more of. */
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
+.ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
+.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
+.ds-view__tab + .ds-view__tab { border-inline-start: 0; }
+.ds-view__tab:first-of-type { border-end-start-radius: var(--rst-radius-sm); border-start-start-radius: var(--rst-radius-sm); }
+.ds-view__tab:last-of-type { border-end-end-radius: var(--rst-radius-sm); border-start-end-radius: var(--rst-radius-sm); }
+.ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
+.ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.ds-view__stage { container-type: inline-size; }
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+@supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
+  .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
+}
+.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+.ds-view__code { display: none; margin-block-start: 0; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
+.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
+
+/* The sidebar. The rail itself is the framework's own sidebar shell —
+   rst-shell-sidebar, rst-shell__rail, rst-shell__nav, and the details
+   chrome strip that collapses the rail below 800px — so the page that
+   documents the vocabulary is laid out in it. What is left here is the
+   two things a rail of links has no class for yet: a collapsible
+   section per group, and the filter over them. */
+.ds-rail { gap: var(--rst-sp-2); }
+.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav > details > summary::-webkit-details-marker { display: none; }
+/* The disclosure glyph is the framework's own chevron: the vendored
+   Lucide chevron-down inside a .rst-caret, which tokens.css already
+   flips 180 degrees on [open] and already stills under
+   prefers-reduced-motion. It replaces content: "\25b8"/"\25be", two
+   geometric-shape characters that were the only arrow in the whole
+   vocabulary not drawn by the icon set — and that render as an emoji
+   triangle on some platforms and as nothing at all where the font has
+   no glyph for them. It is aria-hidden because it sits beside the
+   section's own name. */
+.ds-nav > details > summary > .rst-caret { flex: none; }
+.ds-nav > details[aria-current] > summary { color: var(--rst-accent); }
+/* A section with nothing to list yet is a link to its page rather than
+   a disclosure over an empty box. It wears the summary's typography so
+   the rail still reads as one list. */
+.ds-nav__page { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; padding-block: 0.35rem; text-transform: uppercase; }
+.ds-nav__page[aria-current] { color: var(--rst-accent); }
+.ds-nav__page:hover { color: var(--rst-text); }
+.ds-nav > details > summary:hover { color: var(--rst-text); }
+.ds-nav > details > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* The filter hides a link by setting [hidden] on it, and the shell
+   paints every rail link display: block — which the browser's own
+   [hidden] rule loses to. This selector outranks it rather than
+   shouting !important at it. */
+.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+/* The same scriptless story as the scheme toggle above: no script, no
+   filter, and no box sitting there looking like one. The nav under it
+   is a complete list of every anchor on the page either way. */
+.ds-search { display: none; }
+:root[data-rst-js] .ds-search { display: block; }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+.ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
+.ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }

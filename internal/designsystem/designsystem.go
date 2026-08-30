@@ -56,6 +56,29 @@ var galleryJS []byte
 // tree somewhere else needs the asset as well as the pages.
 func GalleryJS() []byte { return append([]byte(nil), galleryJS...) }
 
+// galleryCSS is the gallery's own stylesheet, embedded beside the
+// script for the same two reasons: it is edited as CSS rather than as a
+// Go string constant, and it is not part of the framework — no scaffold
+// writes it and no app receives it.
+//
+// It was inlined into every page's <style> until v2.1, which cost most
+// of eight kilobytes on each of them and roughly two megabytes over the
+// tree. It is one asset at the tree root now, and its own header
+// comment is the rest of the story.
+//
+//go:embed gallery.css
+var galleryCSS []byte
+
+// GalleryCSS returns gallery.css's raw bytes, for GalleryJS's reason.
+//
+// The bytes a page links are these bytes. That is the change v2.1 made
+// and it is worth saying out loud: the inline version went through
+// html/template's CSS sanitiser, which stripped the comments explaining
+// the preview widget's scaling on the way to the page. A served file
+// keeps them, so the stylesheet a reader can open is the stylesheet
+// this package holds.
+func GalleryCSS() []byte { return append([]byte(nil), galleryCSS...) }
+
 // DefaultMount is where rastrillo.org serves this tree, and the mount
 // path Render uses when a caller does not name one.
 //
@@ -91,7 +114,8 @@ const DefaultMount = "/design-system"
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
 //	rastrillo.js select.js datetime.js    the framework's three scripts
-//	gallery.js                            the gallery's own script, once
+//	gallery.js gallery.css                the gallery's own furniture,
+//	                                      once each
 //
 // The assets are shared by every page rather than copied per theme, so
 // the tree's size is the documents plus one copy of the library.
@@ -111,6 +135,7 @@ func Render(mount string) (map[string][]byte, error) {
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
 		"gallery.js":   GalleryJS(),
+		"gallery.css":  GalleryCSS(),
 	}
 	for _, theme := range ui.ThemeNames() {
 		css, ok := ui.ThemeCSS(theme)
