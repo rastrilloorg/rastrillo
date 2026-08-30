@@ -76,8 +76,12 @@ const (
 	iconSearch template.HTML = iconOpen + `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`
 
 	// Overflow menus, row-level "more actions" (Lucide: kebab, three
-	// stacked dots -- Lucide's own slug for this glyph is "more-vertical",
-	// renamed here to the common UI term).
+	// stacked dots -- Lucide's own slug for this glyph is
+	// "ellipsis-vertical", renamed here to the common UI term. It was
+	// "more-vertical" in Lucide v0 and this comment said so until 2026-08-30;
+	// internal/iconsets and docs/site/icons.md both name the current one,
+	// and TestLucideNameAnswersEverySlug reads it off the vendored set
+	// rather than off any of the three sentences).
 	iconKebab template.HTML = iconOpen + `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>`
 
 	// Dismiss, close, remove (Lucide: x).
@@ -138,9 +142,15 @@ func Icon(slug string) template.HTML { return icons[slug] }
 
 // IconSlugs lists every slug Icon answers, sorted.
 //
-// These names are rastrillo's own vocabulary, not any vendor's: most
-// match Lucide, but "kebab" is Lucide's ellipsis-vertical and Lucide v1
-// renamed several others. An app scaffolded with a different set answers
+// These names are rastrillo's own vocabulary, not any vendor's: five of
+// the twelve differ from the names lucide.dev publishes. "kebab" is
+// Lucide's ellipsis-vertical, and v1 renamed the other four
+// (check-circle, alert-triangle, x-circle, help-circle). "menu" is NOT
+// one of them — that is Lucide's own slug, and it is Font Awesome that
+// calls the glyph "bars". internal/iconsets and docs/site/icons.md say
+// the same five, and internal/iconsets.LucideName is where the mapping
+// actually lives, read off the vendored glyph data so it cannot drift
+// from it. An app scaffolded with a different set answers
 // exactly this list too, which is what lets {{icon "search"}} mean the
 // same thing everywhere and keeps the shipped ui/ partials set-agnostic.
 //

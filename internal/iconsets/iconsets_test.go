@@ -172,6 +172,44 @@ func TestSlugsMatchTheFrameworkVocabulary(t *testing.T) {
 	}
 }
 
+// LucideName answers every slug the framework does, and it answers with
+// a name lucide.dev actually publishes — the class the vendored webfont
+// binds to, which is the same string in the same file as the glyph data.
+//
+// This is the provenance the design system's Icons page prints beside
+// each slug, so an unanswered slug there would be a blank line on a
+// published page. A thirteenth slug lands here first: this fails, and
+// TestSlugsMatchTheFrameworkVocabulary fails beside it, before anything
+// renders.
+//
+// The count of RENAMED slugs is asserted rather than described. Five of
+// the twelve differ from Lucide's own names, iconsets.go's comment and
+// docs/site/icons.md both say five, and this is the arithmetic those two
+// sentences are claims about.
+func TestLucideNameAnswersEverySlug(t *testing.T) {
+	renamed := map[string]string{}
+	for _, slug := range rastrillo.IconSlugs() {
+		name := LucideName(slug)
+		if name == "" {
+			t.Errorf("LucideName(%q) is empty: the vendored Lucide set has no glyph for a slug the framework answers", slug)
+			continue
+		}
+		if strings.ContainsAny(name, ` "<>`) {
+			t.Errorf("LucideName(%q) is %q, which is markup rather than a name — the element's class shape has changed", slug, name)
+		}
+		if name != slug {
+			renamed[slug] = name
+		}
+	}
+	if got := renamed["kebab"]; got != "ellipsis-vertical" {
+		t.Errorf("LucideName(\"kebab\") is %q, want \"ellipsis-vertical\" — icons.go and docs/site/icons.md both name that one specifically", got)
+	}
+	if len(renamed) != 5 {
+		t.Errorf("%d of the %d slugs differ from their Lucide name, want 5 — iconsets.go's comment and docs/site/icons.md both say five of the twelve: %v",
+			len(renamed), len(rastrillo.IconSlugs()), renamed)
+	}
+}
+
 // Font Awesome's licence asks that the attribution comments in its
 // distributed files not be removed. Transcribing path data into Go drops
 // them, so the generated source carries one back, next to the data.
