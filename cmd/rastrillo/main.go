@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -27,6 +28,8 @@ func main() {
 		err = runMigration(os.Args[2:])
 	case "vectors":
 		err = runVectors(os.Args[2:])
+	case "doctor":
+		err = runDoctor(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -36,6 +39,17 @@ func main() {
 		os.Exit(2)
 	}
 	if err != nil {
+		// A subcommand with findings rather than a failure — doctor —
+		// returns its own exit code, and has already printed its
+		// report. An empty message means exactly that: do not print a
+		// second summary on stderr, just carry the status out.
+		var ex exitError
+		if errors.As(err, &ex) {
+			if ex.msg != "" {
+				fmt.Fprintf(os.Stderr, "rastrillo: %v\n", ex.msg)
+			}
+			os.Exit(ex.code)
+		}
 		fmt.Fprintf(os.Stderr, "rastrillo: %v\n", err)
 		os.Exit(1)
 	}
@@ -55,6 +69,12 @@ Usage:
        new <name>                                write a numbered stub migration (for a hand-written change, e.g. a rename)
        status --db <path>                        what a real database's ledger has applied, plus pending drift
        baseline --db <path> [--through <id>]      stamp a ledger by hand after boot refuses to adopt (manual by design)
+  rastrillo doctor [flags] [dir]                compare the app's vendored static/ files with this binary's (default dir: .)
+       --fix [--force]                          re-copy what drifted (--force overrides its two refusals)
+       --theme <name>                           which theme static/theme.css should be, for an app with no pin
+                                                exits 0 clean, 3 drift, 4 the app is on a different rastrillo version.
+                                                A convenience and an upgrade tool: the vendored_test.go the scaffold
+                                                writes is what catches drift on every commit without being run.
   rastrillo vectors [flags] [dir]               Go↔JS parity vectors: run cmd/genvectors, write test/vectors.json (default dir: .)
        -init                                     scaffold cmd/genvectors, the test/ parity suite, and the go-test belt (once)
        -check                                    pre-ship gate: regenerate + byte-compare, then node --test test/parity.test.mjs
