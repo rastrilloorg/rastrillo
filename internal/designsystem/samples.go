@@ -789,5 +789,10 @@ func localeMenuData(current string) any {
 			Current: code == current,
 		})
 	}
-	return map[string]any{"Items": items, "Return": "/design-system/"}
+	// "/" rather than the gallery's own mount: the mount is an argument
+	// to Render now, and a fixture that spelled it would put a URL of
+	// whoever published the tree into a sample meant to show the partial.
+	// The other fake URLs in this file (/posts/1/edit, /orders/AB3PX)
+	// are site-neutral for the same reason.
+	return map[string]any{"Items": items, "Return": "/"}
 }

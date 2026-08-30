@@ -11,15 +11,16 @@
 // (select.js's filterable combobox, datetime.js's natural-language date
 // field) actually run.
 //
-// Render returns the whole tree in memory, keyed by path relative to
-// docs/design-system. `go generate ./...` writes it; the
-// TestDesignSystemIsCurrent gate holds the committed tree to what this
-// package renders, so a partial that changes shows up as a diff in every
-// page that renders it. That is the point of committing it rather than
-// building it on the website.
+// Render returns the whole tree in memory, keyed by path relative to the
+// tree root. Nothing in this repository holds a copy of it: cmd/dsgen
+// writes it, and the website that publishes it runs cmd/dsgen at build
+// time against a pinned version. `go generate ./...` writes a copy into
+// a git-ignored directory for looking at locally, and that copy is
+// disposable — the render is the artifact.
 //
-// Determinism is a contract, not a nicety: 180 pages regenerated on
-// every partial change are only reviewable if the diff is the change.
+// Determinism is a contract, not a nicety: every gate here compares two
+// renders, and a site that rebuilds the gallery on every deploy should
+// get the same bytes from the same version.
 // Every map in here — Styleguide's samples, BaseCatalogs, the parsed
 // token blocks — is sorted before anything reaches output.
 package designsystem
@@ -28,6 +29,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"path"
 	"regexp"
 	"sort"
 	"strings"
@@ -54,22 +56,26 @@ var galleryJS []byte
 // tree somewhere else needs the asset as well as the pages.
 func GalleryJS() []byte { return append([]byte(nil), galleryJS...) }
 
-// mountPath is where this tree is served: rastrillo.org/design-system.
+// DefaultMount is where rastrillo.org serves this tree, and the mount
+// path Render uses when a caller does not name one.
+//
 // Every URL the renderer emits — stylesheet, script, iframe, switcher,
-// shell demo, back-link — is an absolute path under it.
+// shell demo, back-link — is an absolute path under the mount it was
+// rendered at.
 //
 // Absolute rather than relative because the CARLOS static edge serves a
 // directory index at its slash-less URL as a 200 with no redirect:
 // /design-system and /design-system/ both return the same document, but
 // a relative href in it resolves against a different base on each, so
 // the slash-less visit loaded no stylesheet and every link pointed one
-// directory too high. That was the live bug. The cost is that the tree
-// only works at this one mount path, which is the path the site serves
-// it from; the constant is the whole of that binding.
-const mountPath = "/design-system"
+// directory too high. That was the live bug. The cost is that a rendered
+// tree only works at the mount path it was rendered for, which is why
+// the mount is an argument rather than a constant: the site that
+// publishes the tree says where it is publishing it.
+const DefaultMount = "/design-system"
 
 // Render builds the whole design-system tree in memory: path relative to
-// docs/design-system → file content.
+// the tree root → file content.
 //
 //	index.html                            day, en, assets at the tree root
 //	<theme>/<locale>/index.html           the Overview, 36 times
@@ -86,7 +92,16 @@ const mountPath = "/design-system"
 //
 // The assets are shared by every page rather than copied per theme, so
 // the tree's size is the documents plus one copy of the library.
-func Render() (map[string][]byte, error) {
+//
+// mount is the URL path the tree will be served from — DefaultMount for
+// rastrillo.org. Every link and asset URL in the output is an absolute
+// path under it, so a tree rendered for one mount cannot be served at
+// another.
+func Render(mount string) (map[string][]byte, error) {
+	mount, err := CleanMount(mount)
+	if err != nil {
+		return nil, err
+	}
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
@@ -105,25 +120,25 @@ func Render() (map[string][]byte, error) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			dir := theme + "/" + locale + "/"
-			pages, err := renderGallery(theme, locale)
+			pages, err := renderGallery(mount, theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir, err)
 			}
 			for file, page := range pages {
 				out[dir+file] = page
 			}
-			modal, err := renderModal(theme, locale)
+			modal, err := renderModal(mount, theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"modal.html", err)
 			}
 			out[dir+"modal.html"] = modal
-			demo, err := renderDemo(theme, locale)
+			demo, err := renderDemo(mount, theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"demo.html", err)
 			}
 			out[dir+"demo.html"] = demo
 			for _, shell := range ui.LayoutNames() {
-				demo, err := renderShell(theme, locale, shell)
+				demo, err := renderShell(mount, theme, locale, shell)
 				if err != nil {
 					return nil, fmt.Errorf("designsystem: %s: %w", dir+"shells/"+shell+".html", err)
 				}
@@ -147,6 +162,34 @@ func Render() (map[string][]byte, error) {
 	}
 	out["index.html"] = append([]byte(nil), nested...)
 	return out, nil
+}
+
+// CleanMount validates and normalises a mount path: a rooted, cleaned,
+// slash-less-at-the-end URL path. "/" is rejected rather than special-
+// cased — the tree writes its assets beside its directories, so a tree
+// mounted at the site root would put tokens.css at /tokens.css and
+// collide with whatever the site already keeps there.
+//
+// It exists because dsgen is published surface and the mount reaches it
+// from a command line: a caller who passes "design-system/" or
+// "/design-system/" gets the tree they meant rather than 189 pages of
+// broken links.
+func CleanMount(mount string) (string, error) {
+	if mount == "" {
+		return "", fmt.Errorf("designsystem: empty mount path (want something like %q)", DefaultMount)
+	}
+	if !strings.HasPrefix(mount, "/") {
+		mount = "/" + mount
+	}
+	// path.Clean on a rooted path never leaves a "..": a climb past the
+	// root collapses to "/", which the next line refuses. So there is no
+	// separate check for one, and a check that cannot fire would only
+	// suggest this function does more than it does.
+	clean := path.Clean(mount)
+	if clean == "/" {
+		return "", fmt.Errorf("designsystem: mount path %q is the site root; the tree needs a directory of its own", mount)
+	}
+	return clean, nil
 }
 
 // RootTheme is the theme the tree root serves: the first name

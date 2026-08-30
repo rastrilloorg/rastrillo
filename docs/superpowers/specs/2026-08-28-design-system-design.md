@@ -580,6 +580,12 @@ prose included, with the deliberate exception of the sample fixtures.
 
 ### 5.2 How it is built
 
+**Superseded on 2026-08-30 by §6-v2.5 in the one respect that matters:
+the tree is no longer committed, and `dsgen` is no longer internal.**
+Everything below about what is rendered and how it is gated still holds;
+`docs/design-system/` as a location, `TestDesignSystemIsCurrent`, the
+`guardRoot` output-root check and `TestTreeStaysUnderTheSizeGate` do not.
+
 `internal/designsystem` in the framework repo. `go generate ./...`
 renders the whole tree into `docs/design-system/` — static HTML, the
 three theme files, `tokens.css`, `select.js`, `datetime.js`,
@@ -2055,8 +2061,32 @@ As of 2026-08-30, with **17 commits on main since v0.19.0 was tagged on
 - `Pair`, the allocation entry point, `rastrillo doctor`, the semantic
   elements of §6-v2.4, the tinted header rule — **RULED**.
 
-**The gap between RELEASED and ON MAIN is the one that will bite**, and
-it is currently six days and seventeen commits wide. A downstream app
+### Two ways to check this and get a confident wrong answer
+
+Both were hit for real on 2026-08-30, and neither errors — they answer,
+and the answer disagrees with reality. That is the failure shape worth
+naming, because a tool that fails loudly teaches you something and a
+tool that lies does not.
+
+**Never cite your working tree.** A downstream app reported this
+package's state from a checkout sitting on a feature branch
+(`vault-client`, tip `ae9a1c0` — which is not an ancestor of `main` and
+never was), and quoted a real line number from it. Everything it said
+was true of the tree it was standing on. Cite `origin/main` after a
+fetch, or a tag, and say which.
+
+**`git branch -r --merged origin/main` is blind here.** This repo
+squash-merges, so a merged branch is not an ancestor of `main` and the
+command reports nothing for it. Reaching for `--merged` to check whether
+`design-system-v2` landed returns an empty list and reads as "it never
+merged", while `main` carries every line of it. Check for the content,
+not the ancestry.
+
+**The gap between RELEASED and ON MAIN is the one that will bite.**
+**18 commits ahead of v0.19.0, counted at `ac287b5` on 2026-08-30** —
+stamped rather than stated, because a bare number in a spec ages into a
+wrong fact, and this one aged within the hour of being written. The
+count moves; the gap is the point. A downstream app
 reading this document and running `go get` gets neither the themes nor
 the shells. That is an argument for releasing, not for footnotes.
 
@@ -2421,3 +2451,86 @@ for inspection — it just stops being a thing the repo carries.
 - The website's file-count guard changes shape: it can no longer compare
   a vendored count, so it verifies the generator ran and produced the
   page kinds it expects.
+
+#### AS BUILT (2026-08-30) — framework side
+
+Six commits on `dsgen-at-build-time` (five building it, one closing a
+review). The website change is not in them and is still to do.
+
+**`cmd/dsgen` is public, and the mount is a real argument.** The command
+moved out of `internal/designsystem/cmd/dsgen`. It takes `-out` and
+`-mount` and nothing else. The mount is threaded through
+`designsystem.Render(mount)` and the twenty-seven page-building
+functions under it rather than read from a constant, so it is a
+parameter that is actually honoured: rendering at `/ui/gallery/`
+produces the same 369-file set with no `href=` or `src=` under
+`/design-system` anywhere in it, and — since the locale-menu fixture in
+`samples.go` stopped spelling the gallery's own mount in its `Return`
+value — no occurrence of the string in any page at all. (It survives in
+one place, `gallery.js`'s header comment, where it is the project's name
+and not a URL.) `designsystem.CleanMount` normalises a trailing slash or a
+missing leading one and refuses the site root, because the tree writes
+`tokens.css` beside its theme directories.
+
+The command the website runs:
+
+```
+go run github.com/carlosframework/rastrillo/cmd/dsgen@<sha> \
+    -out src/design-system -mount /design-system
+```
+
+`guardRoot` is gone. It could only ever protect one hardcoded path, and
+the 152-file incident behind it needs a rule that generalises to a
+directory an outside caller names. **dsgen owns `-out`**: it empties the
+directory before writing, and it will only take ownership of one that is
+absent, empty, or already carries its own `.dsgen` stamp. Anything else
+is refused with no filesystem change.
+
+Both halves are load-bearing, and the first attempt had only one of them.
+Removing just the top-level paths the current render produces is safe and
+incomplete: a theme dropped or renamed between versions — this project
+renamed `ink` to `day` — keeps its whole directory and its stylesheet in
+a build directory that persists, published and linked, and the site's
+shape guard checks which files are present, never which are extra. That
+is the deleted freshness gate's failure mode one directory over, because
+an output directory that outlives a render IS a second copy. Emptying is
+what makes the output the render and nothing else;
+`TestWriteLeavesNoTraceOfAnEarlierRender` seeds exactly the rename's
+residue and `TestWriteRefusesADirectoryItDoesNotOwn` holds the other
+half.
+
+**The tree is deleted**: 369 files, 19,038,929 bytes. `docs/design-system/`
+and `.design-system/` are both git-ignored — the second is where
+`go generate ./...` now writes, for reading locally.
+
+**`TestDesignSystemIsCurrent`, its orphan walk, `treeCommitted` and
+`treeDir` are deleted**, and so is the disk half of
+`TestVendoredAxeStaysOutOfTheTree`. The a11y scan's `committedTree` is
+deleted with them: `a11y_test.go` now uses `browser_test.go`'s
+`treeHandler`, which serves `Render()`'s output from memory, so CI scans
+the bytes dsgen would publish rather than a copy of them. Nothing in the
+package reads the filesystem for the tree any more.
+
+**`maxTreeBytes` → `maxPageBytes`, 128 KiB per HTML page.** A little
+under twice the heaviest page that is not `components.html`
+(`primitives.html`, 67,507 bytes in its widest locale), so a new section
+can land without an argument.
+
+**`components.html` does not pass it, and this is the finding.** 332,827
+bytes in `day/en`, 387,029 in `signal/hi` — 3× the budget and 5.7× the
+next heaviest page. It is in a `pageBudgetDebt` table with its own
+ceiling, the shape `axeExempt` and `colorMixSkip` already use here. An
+entry counts as needed only while a page of that name is **actually over
+`maxPageBytes`** — not merely while a page of that name exists, which is
+what the first attempt checked and which would have let a fixed
+`components.html` keep a 3× permission slip for ever. So the table
+shrinks the moment the page is fixed, and
+`TestTheDebtTableCannotOutliveTheDebt` is the gate on that, because it is
+the only property that makes an exemption table worth having.
+The weight is the Code tabs: every sample is written into the
+page a second time, escaped, for a tab most readers never open. Fixing
+that is a change to what the page contains and has not been made.
+
+Repo size: 34 MB → 14 MB in the working tree. `.git` is unchanged at
+46 MB — deleting a file does not delete its history, and only a rewrite
+or a fresh clone with `--filter` would recover that.
