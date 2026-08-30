@@ -1780,6 +1780,319 @@ func TestTheSectionTabsNameEveryPage(t *testing.T) {
 	}
 }
 
+// ── The three navigation surfaces ────────────────────────────────────
+//
+// The Overview's routes, the prev/next pair at the foot of every page,
+// and the overview link at the head of every rail section. All three
+// are read off pageKinds(), and all three are gated here for the reason
+// the spec gives: the chrome switchers and the section tab strip were
+// both built the same way, both shipped ungated, and both were caught
+// by a reviewer mutating the renderer rather than by a test. Every gate
+// below walks pageKinds(), so a sixth page kind joins each surface with
+// no edit — and fails these three the moment it does not.
+
+// railSection is one group of the rail as the page actually renders it:
+// a <details> holding a title and a run of links, or the plain link a
+// section with nothing to list renders as instead.
+var railSection = regexp.MustCompile(`(?s)<details([^>]*)><summary>.*?</summary>(.*?)</details>|<a class="ds-nav__page" href="([^"]*)"[^>]*>(.*?)</a>`)
+
+// railTitle reads the section's own name out of either shape: past the
+// caret icon in a <summary>, or the whole text of the plain link.
+var railTitle = regexp.MustCompile(`(?s)<summary>(?:<span class="rst-caret" aria-hidden="true">.*?</span>)?(.*?)</summary>`)
+
+// railSections splits one rendered rail into its groups, in order.
+type railGroup struct {
+	Title string
+	Body  string // the links inside a disclosure; empty for a plain link
+	Href  string // set only for the plain-link shape
+	Open  bool   // true for the disclosure shape
+}
+
+func railSections(rail string) []railGroup {
+	var out []railGroup
+	for _, m := range railSection.FindAllString(rail, -1) {
+		if strings.HasPrefix(m, "<details") {
+			sub := railSection.FindStringSubmatch(m)
+			title := ""
+			if t := railTitle.FindStringSubmatch(m); t != nil {
+				title = t[1]
+			}
+			out = append(out, railGroup{Title: title, Body: sub[2], Open: true})
+			continue
+		}
+		sub := railSection.FindStringSubmatch(m)
+		out = append(out, railGroup{Title: sub[4], Href: sub[3]})
+	}
+	return out
+}
+
+// §12. Every section of the rail has a route to the top of its own
+// page, and it is the first thing under the section's name.
+//
+// The gap it closes: a section that lists anything draws its title as a
+// <summary>, which discloses rather than navigates, so expanding TOKENS
+// showed nine fragments of tokens.html and no way to tokens.html
+// itself. A section with nothing to list is already a plain link to its
+// page, and does not need a second one under it — so the gate accepts
+// either shape and demands exactly one route per page kind either way.
+//
+// The three things it proves, which are the three ways this can be
+// built wrong and still look right on the page a reviewer opens:
+//
+//   - derived from pageKinds(): the loop is over the table, so a sixth
+//     page kind is expected here the day its row lands;
+//   - correct on EVERY page, not on the first one: the rail is the same
+//     on all five, and a link pinned to a fixed page is invisible on
+//     the page it was pinned to;
+//   - exactly one per section, and none in Demos, which is a run of
+//     links out of the gallery rather than a page of it.
+//
+// The accessible name is the other half. The visible label is Paul's
+// word — Overview, the word the filter matches — and it is the same on
+// every section on purpose, so the name a screen reader reads has to
+// carry the section instead. WCAG 2.2 SC 2.5.3 Label in Name asks that
+// the accessible name CONTAIN the visible label, and the gate asserts
+// exactly that rather than trusting the prose table to keep the shape.
+func TestEverySectionOfTheRailRoutesToItsOwnPage(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			label := proseIn(locale, "Overview")
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				rail := railOf(t, name, string(files[name]))
+				if rail == "" {
+					continue
+				}
+				groups := railSections(rail)
+				// The page kinds, in table order, and Demos last.
+				if want := len(pageKinds()) + 1; len(groups) != want {
+					t.Errorf("%s: the rail has %d sections, want %d (one per page kind, plus Demos)", name, len(groups), want)
+					continue
+				}
+				overviews := 0
+				for i, pk2 := range pageKinds() {
+					g := groups[i]
+					want := pageHref(theme, locale, pk2.File)
+					title := template.HTMLEscapeString(proseIn(locale, pk2.Title))
+					if g.Title != title {
+						t.Errorf("%s: rail section %d is %q, want %q", name, i, g.Title, title)
+						continue
+					}
+					// One route per page kind, wherever it is: a bare
+					// page address, no fragment, once in the whole rail.
+					if n := strings.Count(rail, `href="`+want+`"`); n != 1 {
+						t.Errorf("%s: the rail carries %d links to %s, want exactly 1", name, n, want)
+					}
+					if !g.Open {
+						// The plain-link shape IS the route.
+						if g.Href != want {
+							t.Errorf("%s: the %s section links %q, want %q", name, pk2.Kind, g.Href, want)
+						}
+						continue
+					}
+					first := anchorHref.FindStringIndex(g.Body)
+					if first == nil {
+						t.Errorf("%s: the %s section of the rail has no links at all", name, pk2.Kind)
+						continue
+					}
+					item := g.Body[first[0]:]
+					if i := strings.Index(item, "</a>"); i >= 0 {
+						item = item[:i+len("</a>")]
+					}
+					aria := template.HTMLEscapeString(proseIn(locale, "{section} overview", "section", proseIn(locale, pk2.Title)))
+					wantItem := `<a href="` + want + `" aria-label="` + aria + `">` + template.HTMLEscapeString(label) + `</a>`
+					if item != wantItem {
+						t.Errorf("%s: the first item under %s is\n  %s\nwant\n  %s", name, pk2.Kind, item, wantItem)
+						continue
+					}
+					overviews++
+					// SC 2.5.3 Label in Name, asserted rather than
+					// assumed: the accessible name has to contain the
+					// visible label, or a reader who says "Overview" to
+					// a voice control cannot activate the link they can
+					// see.
+					visible, spoken := proseIn(locale, "Overview"), proseIn(locale, "{section} overview", "section", proseIn(locale, pk2.Title))
+					if !strings.Contains(strings.ToLower(spoken), strings.ToLower(visible)) {
+						t.Errorf("%s: the %s section's accessible name %q does not contain its visible label %q (WCAG 2.2 SC 2.5.3)", name, pk2.Kind, spoken, visible)
+					}
+				}
+				// Demos is the one section that is not a page of this
+				// gallery, so it gets no overview link — and the count
+				// says so out loud rather than leaving it to the
+				// per-section loop above, which never looks at Demos.
+				var bodies string
+				for _, g := range groups {
+					bodies += g.Body
+				}
+				if n := strings.Count(bodies, ` aria-label="`); n != overviews {
+					t.Errorf("%s: %d rail links carry an accessible name, want %d (one per section that discloses, and none in Demos)", name, n, overviews)
+				}
+				if demos := groups[len(groups)-1]; demos.Title != template.HTMLEscapeString(proseIn(locale, "Demos")) {
+					t.Errorf("%s: the last rail section is %q, want Demos", name, demos.Title)
+				} else if strings.Contains(demos.Body, ` aria-label="`) {
+					t.Errorf("%s: the Demos section carries an overview link; it is not a page of this gallery", name)
+				}
+			}
+		}
+	}
+}
+
+// §10. Every page ends with its place in the sequence: the page before
+// it on the inline start, the page after it on the inline end, each
+// naming where it goes.
+//
+// Walked over every page kind for the same reason the chrome gate is:
+// the ends of the sequence are the only two pages where a missing link
+// is correct, so a surface built by hand would pass on any single page
+// a reviewer happened to open. The gate reads the pair off pageKinds()
+// and asserts the exact link, so pinning either side to a fixed page
+// fails on four pages out of five, and dropping the pair fails on all
+// of them.
+func TestEveryPageEndsWithItsPlaceInTheSequence(t *testing.T) {
+	files := render(t)
+	pair := regexp.MustCompile(`(?s)<nav class="ds-updown"([^>]*)>(.*?)</nav>`)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for at, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				page := string(files[name])
+				found := pair.FindAllStringSubmatch(page, -1)
+				if len(found) != 1 {
+					t.Errorf("%s: %d prev/next strips, want exactly 1", name, len(found))
+					continue
+				}
+				attrs, body := found[0][1], found[0][2]
+				if want := ` aria-label="` + template.HTMLEscapeString(proseIn(locale, "Previous and next")) + `"`; attrs != want {
+					t.Errorf("%s: the prev/next strip is named %q, want %q", name, attrs, want)
+				}
+				// At the foot: nothing of the page's own content comes
+				// after it. The strip closes the content column.
+				_, rest, _ := strings.Cut(page, `</nav>`+"\n\n</div>\n</main>")
+				if rest == "" {
+					t.Errorf("%s: the prev/next strip is not the last thing in the content column", name)
+				}
+				kinds := pageKinds()
+				var want []string
+				if at > 0 {
+					prev := kinds[at-1]
+					want = append(want, `<a class="ds-updown__prev" href="`+pageHref(theme, locale, prev.File)+`">`+
+						template.HTMLEscapeString(proseIn(locale, "Previous: {page}", "page", proseIn(locale, prev.Title)))+`</a>`)
+				}
+				if at < len(kinds)-1 {
+					next := kinds[at+1]
+					want = append(want, `<a class="ds-updown__next" href="`+pageHref(theme, locale, next.File)+`">`+
+						template.HTMLEscapeString(proseIn(locale, "Next: {page}", "page", proseIn(locale, next.Title)))+`</a>`)
+				}
+				if got := strings.Join(want, ""); body != got {
+					t.Errorf("%s: the prev/next strip is\n  %s\nwant\n  %s", name, body, got)
+				}
+				// The ends of the sequence have one link and not two,
+				// and it is the right one. Asserted separately because
+				// a strip that always emitted both would still match a
+				// comparison built from the same wrong assumption.
+				links := anchorHref.FindAllString(body, -1)
+				if wantN := len(want); len(links) != wantN {
+					t.Errorf("%s: the prev/next strip has %d links, want %d", name, len(links), wantN)
+				}
+				if at == 0 && strings.Contains(body, "ds-updown__prev") {
+					t.Errorf("%s: the first page in the sequence has a previous link", name)
+				}
+				if at == len(kinds)-1 && strings.Contains(body, "ds-updown__next") {
+					t.Errorf("%s: the last page in the sequence has a next link", name)
+				}
+			}
+		}
+	}
+}
+
+// The Overview routes into every other page of the gallery, in table
+// order, each with the one sentence that row carries about itself.
+//
+// This is the surface that stops the landing page being a heading with
+// nothing under it, so the gate holds both halves: that the list is the
+// whole of pageKinds() minus the page it is on — never a literal list,
+// so a sixth page kind appears the day its row lands — and that every
+// entry actually says something, because a route with an empty sentence
+// under it is the blank page again in a smaller box.
+func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
+	files := render(t)
+	list := regexp.MustCompile(`(?s)<ul class="ds-routes">(.*?)</ul>`)
+	entry := regexp.MustCompile(`<li><a href="([^"]*)">([^<]*)</a><span>([^<]*)</span></li>`)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			name := theme + "/" + locale + "/" + fileOf("overview")
+			page := string(files[name])
+			found := list.FindAllStringSubmatch(page, -1)
+			if len(found) != 1 {
+				t.Errorf("%s: %d route lists, want exactly 1", name, len(found))
+				continue
+			}
+			got := entry.FindAllStringSubmatch(found[0][1], -1)
+			var want []pageKind
+			for _, pk := range pageKinds() {
+				if pk.Kind != "overview" {
+					want = append(want, pk)
+				}
+			}
+			if len(got) != len(want) {
+				t.Errorf("%s: the Overview routes into %d pages, want one per other page kind (%d)", name, len(got), len(want))
+				continue
+			}
+			for i, pk := range want {
+				if href := pageHref(theme, locale, pk.File); got[i][1] != href {
+					t.Errorf("%s: route %d links %q, want %q", name, i, got[i][1], href)
+				}
+				if title := template.HTMLEscapeString(proseIn(locale, pk.Title)); got[i][2] != title {
+					t.Errorf("%s: route %d is labelled %q, want %q", name, i, got[i][2], title)
+				}
+				if pk.Blurb == "" {
+					t.Errorf("%s: page kind %q has no Blurb — the Overview cannot say what is on it", name, pk.Kind)
+					continue
+				}
+				if blurb := template.HTMLEscapeString(proseIn(locale, pk.Blurb)); got[i][3] != blurb {
+					t.Errorf("%s: route %d says %q, want %q", name, i, got[i][3], blurb)
+				}
+			}
+			// The Overview does not route to itself, and no other page
+			// carries the list at all.
+			if strings.Contains(found[0][1], `href="`+pageHref(theme, locale, fileOf("overview"))+`"`) {
+				t.Errorf("%s: the Overview routes to itself", name)
+			}
+		}
+	}
+	for _, pk := range pageKinds() {
+		if pk.Kind == "overview" {
+			continue
+		}
+		name := RootTheme() + "/en/" + pk.File
+		if list.MatchString(string(files[name])) {
+			t.Errorf("%s: carries the Overview's route list", name)
+		}
+	}
+}
+
+// Paul's paragraph is on the Overview, word for word, in every theme
+// and in English — and translated, not left in English, everywhere
+// else. It is the one piece of copy on this site that was written by a
+// person rather than derived from the code, and the one that went
+// through his review, so it is asserted as a literal here rather than
+// left to the generic prose gates.
+func TestPaulsParagraphOpensTheOverview(t *testing.T) {
+	const paragraph = `The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable.`
+	files := render(t)
+	if _, ok := prose[paragraph]; !ok {
+		t.Fatalf("prose.go has no entry for Paul's paragraph — it has been reworded, and every translation of it is now of something else")
+	}
+	for _, theme := range ui.ThemeNames() {
+		name := theme + "/en/" + fileOf("overview")
+		want := `<p class="ds-intro">` + template.HTMLEscapeString(paragraph) + `</p>`
+		if !strings.Contains(string(files[name]), want) {
+			t.Errorf("%s does not open with Paul's paragraph, verbatim", name)
+		}
+	}
+}
+
 // An id is unique in the document that carries it. Every page in the
 // tree, not just the galleries: a duplicate id makes a fragment link
 // silently unreachable — both entries scroll to the first element —

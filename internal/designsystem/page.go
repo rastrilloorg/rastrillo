@@ -142,6 +142,17 @@ type pageView struct {
 	Idioms    []idiomView
 	Shells    []shellView
 
+	// Prev and Next are the pair of links at the foot of the page, in
+	// pageKinds() order. Either is nil at the ends of the sequence:
+	// the Overview has no previous and the last page has no next.
+	Prev *navLink
+	Next *navLink
+
+	// Routes is the Overview's way into the rest of the gallery: every
+	// other page kind, named, with one sentence saying what is on it.
+	// Built for every page, rendered by the Overview. See pageRoutes.
+	Routes []routeView
+
 	// Nav is the sidebar: derived from the five fields above it, once
 	// they are built, so it cannot list anything the page does not
 	// render and cannot miss anything it does. See galleryNav.
@@ -182,6 +193,16 @@ type navItem struct {
 	Code  bool
 	Group bool
 	Blank bool
+
+	// Aria is the accessible name, where it has to differ from the
+	// visible label. Exactly one entry uses it: the section overview
+	// link, whose visible word is "Overview" on every section and whose
+	// accessible name carries the section — "Tokens overview" — so a
+	// screen reader does not hear the same word four times in one
+	// navigation landmark. It CONTAINS the visible label, which is what
+	// WCAG 2.2 SC 2.5.3 Label in Name asks for; disambiguating by
+	// changing the visible word would fail a different reader instead.
+	Aria string
 }
 
 // navSection is one group in the rail: a page of this directory, or —
@@ -210,10 +231,10 @@ type navSection struct {
 // ADDING A PAGE KIND — the four things, and there are only four:
 //
 //  1. a row in pageKinds(), with the file it renders to, its English
-//     title (which is a prose key, so it needs its eleven translations
-//     in prose.go) and the function that reads its rail entries off the
-//     finished view — nil where the page anchors nothing yet, which
-//     draws the section as a plain link to it;
+//     title and its English blurb (both prose keys, so both need their
+//     eleven translations in prose.go) and the function that reads its
+//     rail entries off the finished view — nil where the page anchors
+//     nothing yet, which draws the section as a plain link to it;
 //  2. a `{{define "ds-body-<kind>"}}` constant beside the others in
 //     this file, named exactly "ds-body-" + the row's Kind, because
 //     renderBody looks it up by that name;
@@ -230,6 +251,11 @@ type pageKind struct {
 	Kind  string
 	File  string
 	Title string // English, and therefore a prose.go key
+	// Blurb is the one sentence the Overview says about this page when
+	// it routes a reader to it. English, and therefore a prose.go key
+	// too. Empty on the Overview itself, which is the one page that
+	// never appears in its own route list — see pageRoutes.
+	Blurb string
 	// Nav reads this page's rail entries off the finished view. nil is
 	// a page with nothing anchored on it yet.
 	Nav func(theme, locale string, view pageView) []navItem
@@ -238,10 +264,14 @@ type pageKind struct {
 func pageKinds() []pageKind {
 	return []pageKind{
 		{Kind: "overview", File: "index.html", Title: "Overview"},
-		{Kind: "tokens", File: "tokens.html", Title: "Tokens", Nav: tokenNav},
-		{Kind: "components", File: "components.html", Title: "Components", Nav: componentNav},
-		{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav},
-		{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav},
+		{Kind: "tokens", File: "tokens.html", Title: "Tokens", Nav: tokenNav,
+			Blurb: "Every custom property the system is built out of: the theme's colour and type, and the scales for size, spacing and radius."},
+		{Kind: "components", File: "components.html", Title: "Components", Nav: componentNav,
+			Blurb: "The framework's template partials, each one rendered in every state it ships with, with the markup beside it."},
+		{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
+			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
+		{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
+			Blurb: "The three page frames rastrillo new can scaffold, each of them openable as a whole page at full width."},
 	}
 }
 
@@ -327,7 +357,14 @@ func galleryNav(theme, locale, kind string, view pageView) []navSection {
 			Current: pk.Kind == kind,
 		}
 		if pk.Nav != nil {
-			section.Items = pk.Nav(theme, locale, view)
+			// The section overview link, first, before the anchors.
+			// A section that lists anything draws its title as a
+			// <summary>, which discloses rather than navigates — so
+			// without this, expanding TOKENS showed nine fragments of
+			// tokens.html and no way to tokens.html itself. A section
+			// with nothing to list is already a plain link to its own
+			// page, so it does not need a second one under it.
+			section.Items = append([]navItem{sectionOverview(locale, section)}, pk.Nav(theme, locale, view)...)
 		}
 		out = append(out, section)
 	}
@@ -340,6 +377,26 @@ func galleryNav(theme, locale, kind string, view pageView) []navSection {
 	return append(out, demos)
 }
 
+// sectionOverview is one section's route to the top of its own page:
+// the first item under it, labelled with Paul's word — Overview, which
+// is also the word the rail's filter matches on — and named for a
+// screen reader by the section it belongs to.
+//
+// The visible label is deliberately the same on every section and the
+// accessible name deliberately is not. Four links reading "Overview" in
+// one navigation landmark are unambiguous nested under their headings
+// and ambiguous read out in a list, so the accessible name carries the
+// section: "Tokens overview". It contains the visible label, so WCAG
+// 2.2 SC 2.5.3 Label in Name is satisfied without changing the word a
+// sighted reader sees or types into the filter.
+func sectionOverview(locale string, section navSection) navItem {
+	return navItem{
+		Label: proseIn(locale, "Overview"),
+		Href:  section.Href,
+		Aria:  proseIn(locale, "{section} overview", "section", section.Title),
+	}
+}
+
 // pageTabs is the strip of section tabs over the page: the same five
 // pages the rail names, in the same order, with the current one marked.
 func pageTabs(theme, locale, kind string) []navLink {
@@ -349,6 +406,76 @@ func pageTabs(theme, locale, kind string) []navLink {
 			Label:   proseIn(locale, pk.Title),
 			Href:    pageHref(theme, locale, pk.File),
 			Current: pk.Kind == kind,
+		})
+	}
+	return out
+}
+
+// pageSteps is the pair of links at the foot of one page: the page
+// before it and the page after it, in pageKinds() order. Either can be
+// nil — the first page has no previous and the last has no next — and
+// the template leaves the missing side's space rather than pulling the
+// other one across it.
+//
+// Derived from the table like everything else on this seam, so a sixth
+// page kind joins the sequence with no edit here: it becomes the last
+// page's next and the new last page.
+func pageSteps(theme, locale, kind string) (prev, next *navLink) {
+	kinds := pageKinds()
+	at := -1
+	for i, pk := range kinds {
+		if pk.Kind == kind {
+			at = i
+			break
+		}
+	}
+	if at < 0 {
+		panic("designsystem: no page kind " + kind)
+	}
+	step := func(i int, format string) *navLink {
+		if i < 0 || i >= len(kinds) {
+			return nil
+		}
+		pk := kinds[i]
+		title := proseIn(locale, pk.Title)
+		return &navLink{
+			// The name is the label, not an arrow beside one: "Next"
+			// alone makes a reader click to find out where they are
+			// going, which is the whole of what this pair is for.
+			Label: proseIn(locale, format, "page", title),
+			Href:  pageHref(theme, locale, pk.File),
+		}
+	}
+	return step(at-1, "Previous: {page}"), step(at+1, "Next: {page}")
+}
+
+// routeView is one entry in the Overview's route list: another page of
+// this gallery, its name, and the one sentence saying what is on it.
+type routeView struct {
+	Label string
+	Blurb string
+	Href  string
+}
+
+// pageRoutes is the Overview's routes into the rest of the gallery: one
+// per page kind that is not the page being rendered, in table order,
+// each carrying that row's own Blurb. Read off pageKinds() rather than
+// written out, so a sixth page kind appears here the day its row lands
+// — and its Blurb is the only new thing anybody has to write.
+//
+// It is built for every page and rendered only by the Overview, which
+// is why the Overview's own row carries no Blurb: a page never routes
+// to itself.
+func pageRoutes(theme, locale, kind string) []routeView {
+	out := make([]routeView, 0, len(pageKinds())-1)
+	for _, pk := range pageKinds() {
+		if pk.Kind == kind {
+			continue
+		}
+		out = append(out, routeView{
+			Label: proseIn(locale, pk.Title),
+			Blurb: proseIn(locale, pk.Blurb),
+			Href:  pageHref(theme, locale, pk.File),
 		})
 	}
 	return out
@@ -466,6 +593,8 @@ func renderGallery(theme, locale string) (map[string][]byte, error) {
 		view.Pages = pageTabs(theme, locale, pk.Kind)
 		view.Themes = themeLinks(theme, locale, pk.File)
 		view.Locales = localeLinks(theme, locale, pk.File)
+		view.Prev, view.Next = pageSteps(theme, locale, pk.Kind)
+		view.Routes = pageRoutes(theme, locale, pk.Kind)
 		// Last, and off the finished view: the rail is a reading of the
 		// whole gallery, so it is built once everything it reads exists.
 		view.Nav = galleryNav(theme, locale, pk.Kind, view)
@@ -1415,6 +1544,24 @@ const dsCSS = `
 .ds-bar { background: var(--rst-accent); block-size: 1.25rem; border-radius: 2px; flex: none; }
 .ds-type { display: block; flex: none; inline-size: 3.25rem; line-height: 1.15; text-align: center; }
 .ds-swatch-note { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
+/* The Overview's opening paragraph and the routes under it. The
+   paragraph is the one piece of copy on this site somebody wrote by
+   hand rather than derived from the code, so it is set a step larger
+   than body text and given the same 62ch measure everything else here
+   reads at. */
+.ds-intro { font-size: 1.05rem; margin: 0 0 var(--rst-sp-5); max-width: 62ch; }
+.ds-routes { display: grid; gap: var(--rst-sp-4); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
+.ds-routes > li { border-inline-start: 2px solid var(--rst-line-strong); padding-inline-start: var(--rst-sp-3); }
+.ds-routes a { font-weight: 600; }
+.ds-routes span { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-sm); max-width: 62ch; }
+/* Prev/next at the foot. Two grid columns rather than a flex row with
+   space-between, because the ends of the sequence are missing a link
+   and not missing a column: the Overview's Next has to stay on the
+   inline end rather than sliding across to where Previous would have
+   been. */
+.ds-updown { border-block-start: 1px solid var(--rst-line); display: grid; gap: var(--rst-sp-3); grid-template-columns: 1fr 1fr; margin-block-start: var(--rst-sp-6); padding-block-start: var(--rst-sp-4); }
+.ds-updown__prev { grid-column: 1; justify-self: start; }
+.ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
 .ds-shell { margin: var(--rst-sp-5) 0; }
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
@@ -1600,7 +1747,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
   <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
-{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
+{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Group}} class="ds-nav__group"{{else if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
 {{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a>
 {{end}}{{end}}  </nav>
 </aside>
@@ -1631,6 +1778,8 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 
 {{.Body}}
 
+<nav class="ds-updown" aria-label="{{P "Previous and next"}}">{{with .Prev}}<a class="ds-updown__prev" href="{{.Href}}">{{.Label}}</a>{{end}}{{with .Next}}<a class="ds-updown__next" href="{{.Href}}">{{.Label}}</a>{{end}}</nav>
+
 </div>
 </main>
 </div>
@@ -1645,13 +1794,28 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 // want it too.
 const deadLinkCallout = `{{template "callout" dict "Tone" "info" "Title" (P "Links here are inactive") "Body" (P "Links inactive, sample source provided.")}}`
 
-// overviewBody is the Overview page. It is a stub in this task by
-// design: the seam is what task 3 owed, and the words and the demo that
-// fill it are task 4's. A page kind with nothing anchored on it yet
-// renders no rail entries, which is why galleryNav draws a section with
-// no items as a plain link to its page.
+// overviewBody is the Overview page: the address every visitor lands on
+// first, and the reason this file's history has a note in the spec about
+// shipping a heading with nothing under it.
+//
+// Two things on it. Paul's paragraph, which is the whole of what this
+// system claims to be, applied word for word — it is his copy, and the
+// eleven translations in prose.go are of that sentence and not of an
+// improvement on it. Then a route into each of the other pages, read off
+// pageKinds() with each row's own Blurb, so a sixth page kind appears
+// here the day its row lands.
+//
+// A page kind with nothing anchored on it yet renders no rail entries,
+// which is why galleryNav draws a section with no items as a plain link
+// to its page — and why the Overview is the one section of the rail that
+// does not carry an overview link of its own: it already is one.
 const overviewBody = `{{define "ds-body-overview"}}
 <div class="ds-head"><h2 id="overview">{{P "Overview"}}</h2></div>
+<p class="ds-intro">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
+<h3 class="ds-sub">{{P "Where to go next"}}</h3>
+<ul class="ds-routes">{{range .Routes}}
+<li><a href="{{.Href}}">{{.Label}}</a><span>{{.Blurb}}</span></li>{{end}}
+</ul>
 {{end}}`
 
 const tokensBody = `{{define "ds-body-tokens"}}

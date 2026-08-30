@@ -1887,3 +1887,33 @@ summary against WCAG 2.2 SC 2.5.8's 24×24 — a target size axe's default
 tag set does not check. That gap, not the three bugs, was the finding:
 every scan in the tree ran at a width where neither collapse control
 exists.
+
+### §10–§12 as built (2026-08-30)
+
+Built as ruled. Overview opens with Paul's paragraph, word for word,
+translated into the other eleven; under it, a route into each of the
+other pages read off `pageKinds()`, each row carrying its own one-line
+`Blurb`. Adding a page kind is still one row — the row is one field
+longer.
+
+The prev/next pair is a two-column grid rather than a flex row with
+`space-between`, because the ends of the sequence are missing a link
+and not missing a column: Overview's Next has to stay on the inline end
+rather than sliding across to where Previous would have been.
+
+The section overview link is the first item of every rail section that
+*discloses*. A section with nothing anchored on it yet already renders
+as a plain link to its own page — the Overview is the only one — so it
+does not get a second route under itself, and Demos, which is not a
+page of this gallery, does not get one at all. The visible label is
+Paul's word on every section and the accessible name carries the
+section (`aria-label="Tokens overview"`); the gate asserts the
+containment SC 2.5.3 asks for rather than trusting the prose table to
+keep the shape.
+
+All three surfaces are gated, and all three gates were mutation-verified
+in both directions — the link pinned to a fixed page, and the surface
+removed outright — which is what §10 asked for after the first two
+navigation surfaces in the same file shipped ungated. The gates walk
+`pageKinds()`, so a sixth page kind is expected on all three the day its
+row lands.

@@ -498,8 +498,17 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if !showing(titled, on("en", "shells", "shell-column")) || !showing(titled, on("en", "shells", "shell-topbar")) || !showing(titled, on("en", "shells", "shell-sidebar")) {
 		t.Errorf(`typing a section's own name ("shells") did not reveal the section: %v`, titled.Shown)
 	}
-	if len(titled.Shown) != 3 {
-		t.Errorf(`typing "shells" left %d entries on screen, want the section's 3: %v`, len(titled.Shown), titled.Shown)
+	// The section's own entries and nothing else: one shell demo
+	// anchor per layout, plus the section overview link that §12 put at
+	// the head of every disclosing section. The overview link is an
+	// entry like any other here — it says "Overview", so it is hidden
+	// by a query that does not match it and revealed, like the rest of
+	// the run, by the section's own name.
+	if want := len(ui.LayoutNames()) + 1; len(titled.Shown) != want {
+		t.Errorf(`typing "shells" left %d entries on screen, want the section's %d: %v`, len(titled.Shown), want, titled.Shown)
+	}
+	if !showing(titled, pageHref("day", "en", fileOf("shells"))) {
+		t.Errorf(`typing "shells" hid the section's own overview link: %v`, titled.Shown)
 	}
 
 	if len(junk.Shown) != 0 {
