@@ -72,15 +72,19 @@ const mountPath = "/design-system"
 // docs/design-system → file content.
 //
 //	index.html                            day, en, assets at the tree root
-//	<theme>/<locale>/index.html           the same page, 36 times
-//	<theme>/<locale>/modal.html           36 modal demos, one per index
+//	<theme>/<locale>/index.html           the Overview, 36 times
+//	<theme>/<locale>/tokens.html          and one page per section beside
+//	<theme>/<locale>/components.html      it: see pageKinds() in page.go,
+//	<theme>/<locale>/primitives.html      which is the whole of that list
+//	<theme>/<locale>/shells.html
+//	<theme>/<locale>/modal.html           36 modal demos, one per gallery
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
 //	rastrillo.js select.js datetime.js    the framework's three scripts
 //	gallery.js                            the gallery's own script, once
 //
 // The assets are shared by every page rather than copied per theme, so
-// the tree's size is 180 documents plus one copy of the library.
+// the tree's size is the documents plus one copy of the library.
 func Render() (map[string][]byte, error) {
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
@@ -100,11 +104,13 @@ func Render() (map[string][]byte, error) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			dir := theme + "/" + locale + "/"
-			page, err := renderIndex(theme, locale)
+			pages, err := renderGallery(theme, locale)
 			if err != nil {
-				return nil, fmt.Errorf("designsystem: %s: %w", dir+"index.html", err)
+				return nil, fmt.Errorf("designsystem: %s: %w", dir, err)
 			}
-			out[dir+"index.html"] = page
+			for file, page := range pages {
+				out[dir+file] = page
+			}
 			modal, err := renderModal(theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"modal.html", err)
