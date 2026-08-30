@@ -69,11 +69,13 @@ body {
 }
 
 /* The content column every screen sits in. Your page markup emits this;
-   no partial does. */
+   no partial does. 64rem, widened from 52rem after the v2 page went
+   live: 52rem is a reading measure, and this column holds list grids
+   and side-by-side form fields, which a reading measure squeezes. */
 .rst-page {
   box-sizing: border-box;
   margin: 0 auto;
-  max-width: 52rem;
+  max-width: 64rem;
   padding: var(--rst-sp-5) var(--rst-sp-4) var(--rst-sp-6);
 }
 

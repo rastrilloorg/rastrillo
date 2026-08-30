@@ -1332,9 +1332,18 @@ and says plainly that new rastrillo apps get all of this by default.
 
 ### The column
 
-`--rst-page` is capped at 52rem (832px), not the 800 Paul estimated.
-Widen to 64rem. The desktop preview scale factor is measured in gates;
-they move with it.
+`.rst-page` was capped at 52rem, not the 800px Paul estimated — a
+reading measure on a column that holds list grids and side-by-side
+fields. Widened to 64rem.
+
+The desktop preview's scale factor moves with it, and is measured
+rather than written down: it is `min(1, 100cqw / 1200px)`, so nothing
+in the CSS needed editing, and `TestPreviewWidgetDrivesTheWholeJourney`
+now logs what the engine computed. Read on a 1280px window, the
+1200px virtual page went from painted 768px wide (scale 0.640) to
+960px (scale 0.800). `previewHeights` did NOT move, and was
+re-measured to confirm it: every frame lays out at the virtual 1200px
+whatever the column is, so the table is independent of this change.
 
 ### Sequenced after this section
 
