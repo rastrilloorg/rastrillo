@@ -32,16 +32,16 @@ const mountPath = DefaultMount
 // is left is the thing a reader actually experiences, which is one page
 // at a time.
 //
-// 128 KiB is a little under twice the heaviest page that is not
-// components.html (primitives.html at 67,507 bytes, in the widest
-// locale), so a new section has room to land without an argument, and it
-// is small enough that the page is on screen rather than arriving.
+// 128 KiB was set at a little under twice the heaviest page that was
+// not components.html, so a new section has room to land without an
+// argument, and small enough that the page is on screen rather than
+// arriving.
 //
-// components.html DOES NOT PASS IT: roughly three times the budget, and
-// several times the next heaviest page. It is the page the ruling was
-// about. It is recorded in pageBudgetDebt below rather than fixed here,
-// because fixing it is a change to what the page contains and this
-// commit is a change to what is gated.
+// components.html DID NOT PASS IT: roughly three times the budget, and
+// several times the next heaviest page. It was the page the ruling was
+// about, and it no longer exists — the ninety-seven preview frames on
+// it are five family pages now, one per family in samples.go, and every
+// one of them is inside the budget with the table below empty.
 //
 // The exact figure is deliberately not written here. It moved 2,759
 // bytes in the two days this comment first carried it, which is the
@@ -55,8 +55,13 @@ const mountPath = DefaultMount
 // its preview frame carries, and as the escaped source its Code tab
 // shows. Attribute-escaping a run of markup costs about 40% on top,
 // because every quote in it becomes six characters. Add ~360 bytes of
-// document preamble and ~450 of widget markup per example, and
-// components.html carries most of the 110 examples in the gallery.
+// document preamble and ~450 of widget markup per example, and the five
+// component pages carry most of the 110 examples in the gallery.
+//
+// The heaviest of them is the one to watch. The date and time fields
+// are the largest samples in the gallery — four fields whose enhanced
+// markup runs to several kilobytes each — and their page clears the
+// budget by rather less than a locale's worth of prose.
 //
 // ── The two dsCSS numbers, because there are two ─────────────────────
 //
@@ -89,12 +94,44 @@ const maxPageBytes = 128 << 10
 // the first attempt — the entry was marked used because a page of that
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
-var pageBudgetDebt = map[string]int{
-	// Its worst is in the widest locale, and the gate's own log says
-	// what it is today. The fix is not a bigger number: it is the Code
-	// tabs, which write every sample into the page a second time for a
-	// tab most readers never open.
-	"components.html": 400 << 10,
+var pageBudgetDebt = map[string]int{}
+
+// pageKinds() is built from two sources since the split — the sections
+// written out in the table, and one row per family read off samples.go —
+// so a name collision is now possible where it was not before. Two rows
+// sharing a Kind would give renderBody one body for two pages; two
+// sharing a File would have one page silently overwrite the other in the
+// map Render returns, and the tree would simply come out one page short
+// with every other gate still passing.
+//
+// A family key is the thing that would do it: samples.go is edited by
+// whoever adds a component, and "tokens" or "shells" is a perfectly
+// natural thing to call a family.
+func TestNoTwoPageKindsShareAName(t *testing.T) {
+	kinds, files := map[string]bool{}, map[string]bool{}
+	for _, pk := range pageKinds() {
+		if pk.Kind == "" || pk.File == "" {
+			t.Errorf("page kind %+v has an empty name or file", pk)
+		}
+		if kinds[pk.Kind] {
+			t.Errorf("two page kinds are called %q; renderBody would give them one body", pk.Kind)
+		}
+		if files[pk.File] {
+			t.Errorf("two page kinds render to %q; one would overwrite the other and the tree would come out a page short", pk.File)
+		}
+		kinds[pk.Kind], files[pk.File] = true, true
+	}
+	// The tree's other files, which a page kind must not collide with
+	// either: a family called "modal" or "demo" would land on top of a
+	// demo page.
+	for _, taken := range []string{"modal.html", "demo.html"} {
+		if files[taken] {
+			t.Errorf("a page kind renders to %q, which is a demo page of this tree", taken)
+		}
+	}
+	if len(kinds) < len(families()) {
+		t.Fatalf("only %d page kinds for %d families; this gate is looking at the wrong table", len(kinds), len(families()))
+	}
 }
 
 // TestEveryOutboundLinkIsAllowedAndUsed is the other half of
@@ -249,11 +286,13 @@ func galleryPage(t *testing.T, files map[string][]byte, theme, locale, kind stri
 // The union is the whole point since the split. Before it, every
 // partial and every idiom was on one page, and "is the marker on this
 // page" was the same question as "is this partial documented at all".
-// It is not any more: the partials are on components.html and the
-// idioms on primitives.html, and a per-page gate would pass on a page
-// that had never had them — a partial dropped from its section would
-// satisfy the tokens page, the shells page and the overview, and the
-// build would stay green with the component missing from the tree.
+// It is not any more: the partials are spread over the five component
+// pages and the idioms are on primitives.html, and a per-page gate would
+// pass on a page that had never had them — a partial dropped from its
+// family would satisfy the tokens page, the shells page and the
+// overview, and the build would stay green with the component missing
+// from the tree. That is exactly the risk this split ran, so this is
+// the gate the split had to keep.
 //
 // So the gates count over the whole directory, and they insist on
 // exactly one page rather than at least one: zero is a component that
@@ -395,7 +434,8 @@ func TestEveryPageStaysUnderItsBudget(t *testing.T) {
 // not: it marked an entry used because a page of that name existed, so
 // `"tokens.html": 400 << 10` — for a page of at most 32,930 bytes —
 // passed, and a fixed components.html would have kept its 3× permission
-// slip forever.
+// slip forever. It is empty now, and this holds the property that let it
+// empty itself.
 //
 // So this asserts the property rather than the wiring: at the budget an
 // entry is not consumed, above it the entry is what raises the ceiling,
@@ -784,19 +824,27 @@ func TestRootIndexIsTheDefaultThemeInEnglishAtTheTreeRoot(t *testing.T) {
 	}
 }
 
-// Both enhanced controls are on the page: the filterable select and the
-// natural-language date combobox both boot from the JavaScript the tree
-// ships, so the page has to give them something to boot on.
-func TestEnhancedControlsAreOnThePage(t *testing.T) {
-	page := galleryPage(t, render(t), RootTheme(), "en", "components")
+// Both enhanced controls are in the gallery: the filterable select and
+// the natural-language date combobox both boot from the JavaScript the
+// tree ships, so the pages have to give them something to boot on.
+//
+// Read over the union of the component pages rather than one of them.
+// The select lives on the form page and the three date hooks on the
+// date and time page, and which page a partial sits on is samples.go's
+// business, not this gate's.
+func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
+	files := render(t)
 	// Read out of the preview documents, which is where every sample
-	// on this page now lives. Booting is the point of the assertion, so
-	// it is not enough that the attribute is somewhere in the file: the
-	// document carrying it has to be the one that loads the script that
-	// looks for it.
-	frames := srcdocs(page)
+	// lives. Booting is the point of the assertion, so it is not enough
+	// that the attribute is somewhere in the file: the document
+	// carrying it has to be the one that loads the script that looks
+	// for it.
+	var frames []string
+	for _, pk := range componentPages() {
+		frames = append(frames, srcdocs(galleryPage(t, files, RootTheme(), "en", pk.Kind))...)
+	}
 	if len(frames) == 0 {
-		t.Fatal("no preview documents on the page at all")
+		t.Fatal("no preview documents on the component pages at all")
 	}
 	for _, c := range []struct{ hook, script string }{
 		{"data-rst-select", "select.js"},
@@ -815,7 +863,7 @@ func TestEnhancedControlsAreOnThePage(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Errorf("no %s on the page — the enhancement has nothing to boot on", c.hook)
+			t.Errorf("no %s anywhere on the component pages — the enhancement has nothing to boot on", c.hook)
 		}
 	}
 	var optgroup bool
@@ -823,7 +871,7 @@ func TestEnhancedControlsAreOnThePage(t *testing.T) {
 		optgroup = optgroup || strings.Contains(doc, "<optgroup")
 	}
 	if !optgroup {
-		t.Error("no hand-written optgroup'd select on the page")
+		t.Error("no hand-written optgroup'd select on the component pages")
 	}
 }
 
@@ -951,9 +999,9 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	files := render(t)
 	// Every preview document in the directory, not one page's: the
-	// samples are spread over components.html, primitives.html and
-	// shells.html since the split, and a sweep over one of them would
-	// leave the other two unchecked.
+	// samples are spread over the five component pages, primitives.html
+	// and shells.html since the split, and a sweep over one of them
+	// would leave the rest unchecked.
 	var docs []string
 	for _, name := range galleryFiles(RootTheme(), "en") {
 		docs = append(docs, srcdocs(string(files[name]))...)
@@ -1006,8 +1054,15 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	// The other half: the Code tab is NOT deadened. A gallery that had
 	// quietly rewritten the routes a reader copies would be teaching
 	// the wrong markup.
-	if !strings.Contains(galleryPage(t, files, RootTheme(), "en", "components"), `href=&#34;/posts/1/edit&#34;`) {
-		t.Error("no sample source on the components page keeps a real route — the Code tab has been deadened with the preview")
+	// list-row-action's edit link, on whichever component page its
+	// family is: the page is samples.go's business, the route is this
+	// gate's.
+	var kept bool
+	for _, pk := range componentPages() {
+		kept = kept || strings.Contains(galleryPage(t, files, RootTheme(), "en", pk.Kind), `href=&#34;/posts/1/edit&#34;`)
+	}
+	if !kept {
+		t.Error("no sample source on any component page keeps a real route — the Code tab has been deadened with the preview")
 	}
 }
 
@@ -1223,10 +1278,11 @@ const proseLeakFloor = 12
 var proseFixtureCollisions = map[string]string{
 	// The shell demos' sample screen says this as its own chrome and
 	// translates it (page.go's shellTemplate). samples.go passes the
-	// same words as page-header's ActionLabel, as fixture, on every
-	// components page — so there an English "Write a post" is the
-	// fixture doing its job, and on a shell demo it would be a leak.
-	"Write a post": "components.html",
+	// same words as page-header's ActionLabel, as fixture, and
+	// page-header is in the list screen family — so on that page an
+	// English "Write a post" is the fixture doing its job, and on a
+	// shell demo it would be a leak.
+	"Write a post": "list-screen.html",
 	// The modal idiom's sample and this package's own modal demo say
 	// the same two sentences, because the demo was written FROM the
 	// sample. The sample is a fixture — English markup a reader copies
@@ -1432,8 +1488,8 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 					}
 				}
 				// Both switchers keep the reader on the page they are
-				// reading: choosing another theme from components.html
-				// lands on that theme's components.html, not back at the
+				// reading: choosing another theme from form.html
+				// lands on that theme's form.html, not back at the
 				// Overview. Asserted per page kind, because index.html is
 				// the one page where doing this right and doing it wrong
 				// produce the same URL — every switcher href there ends in

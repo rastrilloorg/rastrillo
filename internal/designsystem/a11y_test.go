@@ -305,25 +305,36 @@ type a11yTarget struct {
 func a11yTargets() []a11yTarget {
 	page := func(theme, locale, kind string) string { return pageHref(mountPath, theme, locale, fileOf(kind)) }
 	return []a11yTarget{
-		// All five of the default theme's pages in English. They share
-		// a stylesheet and a rail, so four of them are cheap; each one
-		// carries a section of markup the other four do not, and a
-		// heading level or a landmark can only be wrong on the page it
+		// Every one of the default theme's pages in English. They share
+		// a stylesheet and a rail, so all but the first are cheap; each
+		// one carries markup the others do not, and a heading level, a
+		// landmark or a duplicate id can only be wrong on the page it
 		// is on.
 		{"day/en overview", page("day", "en", "overview"), "the root page: the chrome, the rail and the page header with nothing else in the way"},
 		{"day/en getting started", page("day", "en", "getting-started"), "a page of prose, a list of links out to the assets and two source blocks: the plainest document in the tree, and the one where a heading level or a list semantic has nothing else to hide behind"},
 		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
 		{"day/en icons", page("day", "en", "icons"), "one inline SVG per slug the framework answers, each aria-hidden beside its own name: the one page in the tree where an icon is the content rather than furniture, and where an accessible name accidentally coming off a decorative glyph would show"},
-		{"day/en components", page("day", "en", "components"), "the page with every component on it"},
+		// The five component pages. Since the split they are one
+		// template with a different family in it, so the furniture this
+		// scan can see — the tab fieldsets, the state headings, the
+		// escaped source under each frame — is the same shape on all
+		// five and what differs is how much of it there is and which
+		// ids it carries. Each is named for the thing it has that its
+		// neighbours do not.
+		{"day/en list screen", page("day", "en", "list-screen"), "sixteen preview widgets, with the escaped source of a toolbar, a search form and a pagination strip beside them"},
+		{"day/en display", page("day", "en", "display"), "thirty widgets over nine partials — five states each of the pill, the badge and the meter — which is a great many radio groups and generated ids in one document"},
+		{"day/en form", page("day", "en", "form"), "the field partials, whose source blocks carry the labels, hints and error messages a reader copies out"},
+		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
+		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the class idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
-		// palette itself and the components painted in it.
+		// palette itself and the display vocabulary painted in it.
 		{"plain/en tokens", page("plain", "en", "tokens"), "the theme with the least colour — where a contrast floor is closest to the line"},
-		{"plain/en components", page("plain", "en", "components"), "the same theme, in the components rather than in the chips"},
+		{"plain/en display", page("plain", "en", "display"), "the same theme in the page that carries the most tinted markup of its own"},
 		{"signal/en tokens", page("signal", "en", "tokens"), "the theme with the most colour — the other end of the same risk"},
-		{"signal/en components", page("signal", "en", "components"), "the same theme, in the components rather than in the chips"},
-		{"day/ar components", page("day", "ar", "components"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
+		{"signal/en display", page("signal", "en", "display"), "and the same page at the other end of the same risk"},
+		{"day/ar form", page("day", "ar", "form"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
 		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
@@ -499,80 +510,81 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 type previewFrame struct{ Sel, Of string }
 
 // pickPreviewFrames chooses the frames to scan on the page the browser
-// is on, and says what it chose. EVERY family section, plus the first
-// four idioms — not "the first eight of whatever the DOM hands back",
-// which is what this did until a reviewer pointed out that a fifth
-// family would silently push a preview off the end of the list.
+// is on, and says what it chose.
+//
+// It is a REPRESENTATIVE sample with a written reason: one frame per
+// component page — which is one per family, because a family is a page
+// — plus the first four idioms. Scanning all hundred and ten in six
+// theme-scheme combinations would say very little the sample does not
+// and cost hours.
 //
 // The family half is the part that must not rot: a family is the axis
 // the samples are grouped on, so one frame per family is the smallest
 // sample that touches every kind of component, and a family added
-// tomorrow is scanned tomorrow. The idiom half is capped, because the
-// idioms are a flat list of a dozen and scanning all of them in six
-// theme-scheme combinations buys less than it costs.
-// pickPreviewFrames marks the frames to scan on whichever page is
-// loaded, and holds that page to what it owes. Since the split the
-// families are on components.html and the idioms on primitives.html, so
-// the caller says which it is looking at and the assertions follow: a
-// page missing the sections it is named for is a rendering failure, not
-// a smaller scan.
+// tomorrow is a page added tomorrow and is scanned tomorrow — the
+// caller reads its list off componentPages().
+//
+// A component page also owes a frame for EVERY partial on it, not only
+// for the one that gets scanned: a partial documented with nothing to
+// look at reads exactly like a section that was never rendered, and
+// this is where the two are told apart.
 func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previewFrame {
 	t.Helper()
 	const pick = `(() => {
-	  const mark = (sec, out) => {
-	    const f = sec.querySelector("iframe.ds-view__frame");
+	  const out = [];
+	  const articles = document.querySelectorAll("article.ds-partial");
+	  articles.forEach(a => {
+	    const f = a.querySelector("iframe.ds-view__frame");
 	    if (!f) return;
-	    f.id = f.id || ("a11y-" + sec.id);
-	    out.push({Sel: "#" + f.id, Of: sec.id});
-	  };
-	  const families = [], idioms = [];
-	  const famSections = document.querySelectorAll("section.ds-family");
-	  famSections.forEach(sec => mark(sec, families));
-	  const idiomArticles = [];
-	  document.querySelectorAll("article.ds-partial").forEach(a => {
-	    if (!a.closest("section.ds-family")) idiomArticles.push(a);
+	    f.id = f.id || ("a11y-" + a.id);
+	    out.push({Sel: "#" + f.id, Of: a.id});
 	  });
-	  idiomArticles.slice(0, 4).forEach(a => mark(a, idioms));
-	  return JSON.stringify({families, idioms, familySections: famSections.length, idiomArticles: idiomArticles.length});
+	  return JSON.stringify({frames: out, articles: articles.length});
 	})()`
 	var raw string
 	if err := chromedp.Run(bctx, chromedp.Evaluate(pick, &raw)); err != nil {
 		t.Fatalf("picking preview frames: %v", err)
 	}
 	var got struct {
-		Families, Idioms              []previewFrame
-		FamilySections, IdiomArticles int
+		Frames   []previewFrame
+		Articles int
 	}
 	if err := json.Unmarshal([]byte(raw), &got); err != nil {
 		t.Fatalf("decoding the frame list: %v", err)
 	}
-	switch kind {
-	case "components":
-		// Every family on the page produced a frame. A family whose
-		// first example is not a framed preview would silently drop out
-		// of the scan otherwise, and that is a hole nobody would notice.
-		if len(got.Families) != got.FamilySections {
-			t.Fatalf("%d family sections on the page but only %d gave up a preview frame", got.FamilySections, len(got.Families))
+	if kind == "primitives" {
+		if len(got.Frames) < 4 {
+			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Frames), got.Articles)
 		}
-		if got.FamilySections < len(families()) {
-			t.Fatalf("samples.go declares %d families; the components page has %d sections", len(families()), got.FamilySections)
-		}
-		return got.Families
-	case "primitives":
-		if len(got.Idioms) < 4 {
-			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Idioms), got.IdiomArticles)
-		}
-		return got.Idioms
-	default:
-		t.Fatalf("pickPreviewFrames: no frames expected on a %s page", kind)
-		return nil
+		return got.Frames[:4]
 	}
+	// A component page. Every partial on it gave up a frame, and the
+	// first of them is the one that gets scanned.
+	if got.Articles == 0 {
+		t.Fatalf("no partial sections at all on the %s page", kind)
+	}
+	if len(got.Frames) != got.Articles {
+		t.Fatalf("%d partial sections on the %s page but only %d gave up a preview frame", got.Articles, kind, len(got.Frames))
+	}
+	return got.Frames[:1]
+}
+
+// previewPageKinds is every page kind that frames a sample worth
+// scanning: the component pages, read off componentPages() so a family
+// added to samples.go is scanned the day its row lands, and the
+// primitives page, which is where the class idioms are.
+func previewPageKinds() []string {
+	out := make([]string, 0, len(families())+1)
+	for _, pk := range componentPages() {
+		out = append(out, pk.Kind)
+	}
+	return append(out, "primitives")
 }
 
 // TestA11yScansThePreviewDocuments scans inside the frames.
 //
-// This is where the components actually live. Every example on an index
-// page is an <iframe srcdoc> holding a whole document — the partial,
+// This is where the components actually live. Every example on a
+// gallery page is an <iframe srcdoc> holding a whole document — the partial,
 // the tree's stylesheets, and nothing else — so a scan of the index
 // with iframes:false has not looked at a single component. It has
 // looked at the gallery's furniture.
@@ -601,7 +613,7 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 
 	total, scans := 0, 0
 	for _, pg := range pages {
-		for _, kind := range []string{"components", "primitives"} {
+		for _, kind := range previewPageKinds() {
 			if err := chromedp.Run(ctx,
 				chromedp.Navigate(rig.Origin+pageHref(mountPath, pg.theme, pg.locale, fileOf(kind))),
 				chromedp.WaitReady("body"),
@@ -743,7 +755,7 @@ func TestA11yReflowsAt320(t *testing.T) {
 		pages = append(pages, struct{ name, href string }{"day/en " + pk.Kind, pageHref(mountPath, "day", "en", pk.File)})
 	}
 	pages = append(pages,
-		struct{ name, href string }{"day/ar components", pageHref(mountPath, "day", "ar", fileOf("components"))},
+		struct{ name, href string }{"day/ar form", pageHref(mountPath, "day", "ar", fileOf("form"))},
 		struct{ name, href string }{"day/ar tokens", pageHref(mountPath, "day", "ar", fileOf("tokens"))},
 		struct{ name, href string }{"day/en modal", modalHref(mountPath, "day", "en")},
 		struct{ name, href string }{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar")},
@@ -803,7 +815,7 @@ const focusablesJS = `'a[href], button:not([disabled]), input:not([disabled]):no
 //
 // Two things it has to get right that a first attempt does not.
 //
-// Focus inside a frame: the components page is ninety-seven <iframe
+// Focus inside a frame: the form page is thirty <iframe
 // srcdoc> documents (the Overview it split off from carries none), and
 // once focus enters one, the top document's activeElement is the frame
 // and stays the frame for every element inside it. Read naively that looks like focus refusing to move —
@@ -940,13 +952,13 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 
 	var count int
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("components"))),
+		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
 		chromedp.WaitReady("body"),
 		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
 	); err != nil {
 		t.Fatalf("preparing the keyboard walk: %v", err)
 	}
-	t.Logf("components: %d focusable elements in its own document, before any frame", count)
+	t.Logf("form: %d focusable elements in its own document, before any frame", count)
 
 	// Tab past the rail. The stop this lands on is the first entry of
 	// the section tab strip, which is the first thing after the rail in
@@ -987,7 +999,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 			t.Fatalf("tab %d: decoding: %v", i+1, err)
 		}
 		if s.Tag == "body" {
-			t.Fatalf("tab %d: focus left the document — the components page has fewer than %d stops after its rail?", i+1, steps)
+			t.Fatalf("tab %d: focus left the document — the form page has fewer than %d stops after its rail?", i+1, steps)
 		}
 		if s.Same {
 			t.Errorf("tab %d: focus did not move off %s — keyboard trap (WCAG 2.1.2)", i+1, s.Tag)
@@ -1007,7 +1019,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 		}
 		rings++
 	}
-	t.Logf("components: %d of %d stops below the rail showed a focus indicator", rings, steps)
+	t.Logf("form: %d of %d stops below the rail showed a focus indicator", rings, steps)
 
 	// The full circuit, on the page small enough to walk all of.
 	var modalCount int

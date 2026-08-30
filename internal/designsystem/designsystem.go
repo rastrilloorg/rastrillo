@@ -80,9 +80,12 @@ const DefaultMount = "/design-system"
 //	index.html                            day, en, assets at the tree root
 //	<theme>/<locale>/index.html           the Overview, 36 times
 //	<theme>/<locale>/tokens.html          and one page per section beside
-//	<theme>/<locale>/components.html      it: see pageKinds() in page.go,
-//	<theme>/<locale>/primitives.html      which is the whole of that list
-//	<theme>/<locale>/shells.html
+//	<theme>/<locale>/form.html            it: see pageKinds() in page.go,
+//	<theme>/<locale>/primitives.html      which is the whole of that list.
+//	<theme>/<locale>/shells.html          One of those sections per family
+//	                                      of components, so form.html has
+//	                                      the form fields on it and
+//	                                      display.html the display ones.
 //	<theme>/<locale>/modal.html           36 modal demos, one per gallery
 //	<theme>/<locale>/demo.html            36 copies of the demo app
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos

@@ -326,10 +326,16 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
 
-	// The components page: the rail is the same on all five, and this
-	// is the one whose own section is the long one, so a filter that
-	// folded the current section away would show up here first.
-	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("components"))
+	// A component page: the rail is the same on every page of the
+	// gallery, and this is one whose own section is a long one, so a
+	// filter that folded the current section away would show up here.
+	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("form"))
+	// A section's own overview link: the page address with no fragment
+	// on it, which is what the rail draws at the head of every section
+	// that discloses anything.
+	section := func(locale, kind string) string {
+		return pageHref(mountPath, RootTheme(), locale, fileOf(kind))
+	}
 	// The rail's entries are absolute page addresses with a fragment on
 	// the end, the current page's included, so every expectation below
 	// names the page it links as well as the fragment.
@@ -402,8 +408,11 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		typing("badge"), at("typed-badge"),
 		chromedp.Evaluate(railProbe, &badge),
 
-		// A family's name stands for the run under it: matching "form"
-		// keeps the whole family, heading included.
+		// A section's name stands for the run under it, while the rest
+		// of the rail keeps only what matches on its own: "form" is
+		// the Form page's name AND part of form-error's, which is in
+		// Display. "shells" below cannot show that, because nothing
+		// outside the Shells section matches it.
 		typing("form"), at("typed-form"),
 		chromedp.Evaluate(railProbe, &family),
 
@@ -438,18 +447,18 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// A section the reader collapses by hand is opened by a query
 		// that finds something in it, and folded back when the query
 		// goes.
-		chromedp.Evaluate(fmt.Sprintf(`document.querySelectorAll("#ds-nav details")[%d].open = false`, discloseIndex("components")), nil),
+		chromedp.Evaluate(fmt.Sprintf(`document.querySelectorAll("#ds-nav details")[%d].open = false`, discloseIndex("display")), nil),
 		typing("badge"), at("typed-into-collapsed"),
 		chromedp.KeyEvent(kb.Escape), at("escaped-again"),
 		chromedp.Evaluate(railProbe, &restored),
 
 		// The Spanish page, for the half of the fold a monolingual
-		// journey can never reach. "Presentación" is a family heading
+		// journey can never reach. "Presentación" is a section heading
 		// there and "Superficies y líneas" a token group; a reader
 		// typing them off an English keyboard types neither accent, and
 		// with the fold replaced by a plain toLowerCase both queries
 		// find nothing at all.
-		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "es", fileOf("components"))), at("navigated-es"),
+		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "es", fileOf("display"))), at("navigated-es"),
 		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("es-filter-visible"),
 		typing("presentacion"), at("typed-unaccented-family"),
 		chromedp.Evaluate(railProbe, &accented),
@@ -486,8 +495,8 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if open != 1 {
 		t.Errorf("%d of %d sidebar sections arrive open, want exactly 1 (the page you are on)", open, len(fresh.Open))
 	}
-	if at := discloseIndex("components"); len(fresh.Open) > at && !fresh.Open[at] {
-		t.Errorf("the Components section (disclosure %d of %d) is not the one open on the components page", at, len(fresh.Open))
+	if at := discloseIndex("form"); len(fresh.Open) > at && !fresh.Open[at] {
+		t.Errorf("the Form section (disclosure %d of %d) is not the one open on the form page", at, len(fresh.Open))
 	}
 
 	if scriptless.BoxSeen {
@@ -497,10 +506,10 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		t.Errorf("with the marker off the rail shows %d of %d links; the nav is complete with or without a script", len(scriptless.Shown), fresh.Links)
 	}
 
-	if !showing(badge, on("en", "components", "partial-badge")) {
+	if !showing(badge, on("en", "display", "partial-badge")) {
 		t.Error(`typing "badge" hid the badge partial`)
 	}
-	if showing(badge, on("en", "components", "partial-meter")) {
+	if showing(badge, on("en", "display", "partial-meter")) {
 		t.Error(`typing "badge" left the meter partial on screen`)
 	}
 	if showing(badge, on("en", "tokens", "tokens-accent")) {
@@ -513,19 +522,19 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		t.Error(`typing "badge" said there were no matches`)
 	}
 
-	if !showing(family, on("en", "components", "family-form")) {
-		t.Error(`typing "form" hid the Form family's own heading`)
+	if !showing(family, section("en", "form")) {
+		t.Error(`typing "form" hid the Form section's own overview link`)
 	}
-	if !showing(family, on("en", "components", "partial-field-check")) {
-		t.Error(`typing "form" hid field-check, which is in the family that matched`)
+	if !showing(family, on("en", "form", "partial-field-check")) {
+		t.Error(`typing "form" hid field-check, which is in the section that matched`)
 	}
-	// Display is not the family to check here: form-error lives in it,
+	// Display is not the section to check here: form-error lives in it,
 	// so "form" legitimately keeps it. List screen has nothing in it
 	// that matches, which is the case worth asserting.
-	if showing(family, on("en", "components", "family-list-screen")) {
-		t.Error(`typing "form" left the List screen family's heading over an empty gap`)
+	if showing(family, section("en", "list-screen")) {
+		t.Error(`typing "form" left the List screen section on screen with nothing under it that matches`)
 	}
-	if !showing(family, on("en", "components", "partial-form-error")) {
+	if !showing(family, on("en", "display", "partial-form-error")) {
 		t.Error(`typing "form" hid form-error, which matches on its own name`)
 	}
 
@@ -583,20 +592,20 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	// Both accent checks are stated as "the accented label is on
 	// screen", so a fold that has stopped folding fails as an empty
 	// rail rather than as a count nobody can read.
-	if !showing(accented, on("es", "components", "family-display")) {
+	if !showing(accented, section("es", "display")) {
 		t.Errorf(`on the Spanish page, "presentacion" did not find "Presentación": %v`, accented.Shown)
 	}
-	if !showing(accented, on("es", "components", "partial-badge")) {
-		t.Error(`"presentacion" found the family and not the partials under it`)
+	if !showing(accented, on("es", "display", "partial-badge")) {
+		t.Error(`"presentacion" found the section and not the partials under it`)
 	}
-	if showing(accented, on("es", "components", "family-form")) {
-		t.Error(`"presentacion" left another family's heading on screen`)
+	if showing(accented, section("es", "form")) {
+		t.Error(`"presentacion" left another section on screen`)
 	}
 	if !showing(unaccented, on("es", "tokens", "tokens-surfaces-and-lines")) {
 		t.Errorf(`on the Spanish page, "lineas" did not find "Superficies y líneas": %v`, unaccented.Shown)
 	}
 
-	if at := discloseIndex("components"); len(restored.Open) <= at || restored.Open[at] {
+	if at := discloseIndex("display"); len(restored.Open) <= at || restored.Open[at] {
 		t.Error("a section the reader collapsed by hand was left open by a search that has been cleared")
 	}
 	if len(restored.Shown) != restored.Links {
@@ -657,9 +666,9 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
 
-	// The components page: since the split it is the one the callout
-	// sample lives on, and the one that frames most of the tree.
-	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("components"))
+	// The Display page: since the split by family it is the one the
+	// callout sample lives on.
+	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("display"))
 
 	// One example, named rather than picked by position: the callout
 	// is small, has no script and no menu, and is on the page in every
@@ -936,14 +945,16 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		})()`
 
 	// Every page that frames anything, because previewHeights is one
-	// table over the whole tree: the partial samples are on
-	// components.html, the class idioms on primitives.html and the
-	// three shells on shells.html, and a height measured on one of them
-	// says nothing about the other two.
-	// The floor per page is derived, not guessed: every partial ui
-	// defines has a section on the components page, every idiom
+	// table over the whole tree: the partial samples are spread over
+	// the five component pages, the class idioms are on primitives.html
+	// and the three shells on shells.html, and a height measured on one
+	// of them says nothing about the others.
+	// The floor per page is derived, not guessed: every partial in a
+	// family has a section on that family's page, every idiom
 	// ui.Styleguide ships has one on the primitives page, and every
-	// shell has one on the shells page.
+	// shell has one on the shells page. The component rows are read off
+	// componentPages(), so a family added to samples.go is measured the
+	// day its row lands.
 	//
 	// This is also the only place "documented" and "has an example to
 	// look at" are joined, so the message it fails with has to name
@@ -952,16 +963,23 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	// of those is a rendering bug in the tree while the second is a
 	// flake in this job; a message that only offers the second sends
 	// the reader looking in the wrong place.
-	for _, tc := range []struct {
+	rows := []struct {
 		kind  string
 		least int
 		owed  string
 	}{
 		{"overview", 1, "the demo application is framed here"},
-		{"components", len(definedPartials(t)), "every partial ui.Templates() defines has a section here"},
 		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
 		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
-	} {
+	}
+	for _, fam := range families() {
+		rows = append(rows, struct {
+			kind  string
+			least int
+			owed  string
+		}{fam.Key, len(fam.Partials), "every partial samples.go puts in this family has a section here"})
+	}
+	for _, tc := range rows {
 		kind := tc.kind
 		var desktop, mobile string
 		if err := chromedp.Run(ctx,
