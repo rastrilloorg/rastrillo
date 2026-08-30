@@ -73,10 +73,13 @@ type set struct {
 // call, matching the framework's own set in icons.go. Every set answers
 // all of them.
 //
-// These are rastrillo's names, not any vendor's. Most match Lucide, but
-// not all — "kebab" is Lucide's ellipsis-vertical, "menu" is Font
-// Awesome's bars, and Lucide v1 renamed four others (check-circle,
-// alert-triangle, x-circle, help-circle). Each
+// These are rastrillo's names, not any vendor's. Five of the twelve
+// differ from Lucide's canonical names — "kebab" is Lucide's
+// ellipsis-vertical, and v1 renamed four others (check-circle,
+// alert-triangle, x-circle, help-circle). "menu" is NOT one of them:
+// it is Lucide's own slug, and it is Font Awesome that calls that glyph
+// "bars", which is a fact about the Font Awesome set below rather than
+// a divergence from Lucide. docs/site/icons.md says the same five. Each
 // set therefore carries its own translation in its glyph data, Lucide
 // included, which is exactly why the shipped partials never change when
 // the set does.

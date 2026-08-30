@@ -34,6 +34,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
+	"github.com/carlosframework/rastrillo"
 	"github.com/carlosframework/rastrillo/harness"
 	"github.com/carlosframework/rastrillo/ui"
 )
@@ -1066,6 +1067,153 @@ func TestTheDemoApplicationSwitchesViewsWithNoScript(t *testing.T) {
 	} {
 		if step.got != step.want {
 			t.Errorf("%s: the visible views are %q, want exactly %q", step.where, step.got, step.want)
+		}
+	}
+}
+
+// ── §10's placement clause ───────────────────────────────────────────
+
+// "Previous at the inline start, next at the inline end", and "the
+// missing side leaves its space rather than shifting the other across".
+// Both sentences of the ruling are implemented by two CSS declarations
+// and by nothing else:
+//
+//	.ds-updown__prev { grid-column: 1; justify-self: start; }
+//	.ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
+//
+// TestEveryPageEndsWithItsPlaceInTheSequence reads the markup — the
+// classes, the hrefs, the labels, the order, exactly one strip, last in
+// the column — and markup is exactly what does not change when those
+// declarations go. A reviewer deleted them and swapped them; both
+// mutations passed the whole suite, browser tag included, because the
+// only gate that noticed was the tree's freshness check, and the answer
+// to that one is `go generate`.
+//
+// The deletion is the one worth having a drive for. With both links
+// present, auto-placement puts them in columns 1 and 2 anyway, so the
+// page looks right and the bug is invisible. It shows up on the ENDS of
+// the sequence, where there is one item and two columns: the Overview's
+// lone "Next: Tokens" auto-places into column 1 and lands exactly where
+// Previous would have been — the shift the ruling forbids, in the
+// sentence forbidding it.
+//
+// So the drive walks both ends and a middle page, and does it in both
+// writing directions, because "inline start" is the whole claim: a grid
+// column is logical, and column 1 is on the right in Arabic. Everything
+// is measured against the strip's own box rather than the viewport, so
+// the numbers do not move with the column width.
+func TestThePrevNextPairSitsAtTheEndsOfItsRow(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 240*time.Second)
+	defer cancel()
+
+	// startGap and endGap are the distances from the strip's own inline
+	// edges, so both directions are one set of numbers.
+	const measure = `(() => {
+	  const box = document.querySelector(".ds-updown");
+	  if (!box) return JSON.stringify({error: "no prev/next strip on this page"});
+	  const dir = getComputedStyle(document.documentElement).direction;
+	  const b = box.getBoundingClientRect();
+	  const read = (sel) => {
+	    const el = box.querySelector(sel);
+	    if (!el) return null;
+	    const r = el.getBoundingClientRect();
+	    return {
+	      startGap: Math.round(dir === "rtl" ? b.right - r.right : r.left - b.left),
+	      endGap:   Math.round(dir === "rtl" ? r.left - b.left   : b.right - r.right),
+	      size:     Math.round(r.width),
+	    };
+	  };
+	  return JSON.stringify({dir: dir, width: Math.round(b.width),
+	    prev: read(".ds-updown__prev"), next: read(".ds-updown__next")});
+	})()`
+
+	type edge struct {
+		StartGap int `json:"startGap"`
+		EndGap   int `json:"endGap"`
+		Size     int `json:"size"`
+	}
+	type strip struct {
+		Error string `json:"error"`
+		Dir   string `json:"dir"`
+		Width int    `json:"width"`
+		Prev  *edge  `json:"prev"`
+		Next  *edge  `json:"next"`
+	}
+
+	kinds := pageKinds()
+	// The two ends and one middle page, in both directions. The ends
+	// are where a missing grid-column shows; the middle is where a
+	// swapped one does.
+	for _, locale := range []string{"en", "ar"} {
+		wantDir := rastrillo.Dir(locale)
+		for _, pos := range []int{0, 1, len(kinds) - 1} {
+			// Positions rather than rows, so "has a previous" and "has
+			// a next" come off the table rather than off a guess about
+			// which three pages these are.
+			pk := kinds[pos]
+			name := RootTheme() + "/" + locale + "/" + pk.File
+			var raw string
+			if err := chromedp.Run(ctx,
+				chromedp.EmulateViewport(1280, 900),
+				chromedp.Navigate(rig.Origin+pageHref(RootTheme(), locale, pk.File)),
+				chromedp.WaitVisible(`.ds-updown`, chromedp.ByQuery),
+				chromedp.Evaluate(measure, &raw),
+			); err != nil {
+				t.Fatalf("%s: measuring the prev/next strip: %v", name, err)
+			}
+			var got strip
+			if err := json.Unmarshal([]byte(raw), &got); err != nil {
+				t.Fatalf("%s: reading the measurement: %v", name, err)
+			}
+			if got.Error != "" {
+				t.Errorf("%s: %s", name, got.Error)
+				continue
+			}
+			if got.Dir != wantDir {
+				t.Errorf("%s: the page renders dir=%q, want %q — this leg is not measuring the direction it thinks it is", name, got.Dir, wantDir)
+				continue
+			}
+			if got.Width < 200 {
+				t.Errorf("%s: the strip is %dpx wide; there is nothing to measure", name, got.Width)
+				continue
+			}
+			half := got.Width / 2
+			// Present or absent, off the table.
+			if (got.Prev != nil) != (pos > 0) {
+				t.Errorf("%s: previous link present=%v, want %v", name, got.Prev != nil, pos > 0)
+			}
+			if (got.Next != nil) != (pos < len(kinds)-1) {
+				t.Errorf("%s: next link present=%v, want %v", name, got.Next != nil, pos < len(kinds)-1)
+			}
+			// Previous is AT the inline start and does not cross the
+			// middle. Not "is somewhere in the first half": flush to the
+			// edge is what justify-self: start in column 1 means, and a
+			// gap there is a placement that has stopped working.
+			if p := got.Prev; p != nil {
+				if p.StartGap > 2 {
+					t.Errorf("%s: previous starts %dpx from the strip's inline start, want 0 (%s, strip %dpx)", name, p.StartGap, got.Dir, got.Width)
+				}
+				if p.StartGap+p.Size > half+2 {
+					t.Errorf("%s: previous runs %dpx into a %dpx strip, past its half (%d)", name, p.StartGap+p.Size, got.Width, half)
+				}
+			}
+			// Next is AT the inline end, and its own inline start is at
+			// or past the middle. On the Overview that second assertion
+			// IS "the missing side leaves its space": with no Previous
+			// to push it, a next that has lost its column auto-places
+			// into the first one and this fails.
+			if n := got.Next; n != nil {
+				if n.EndGap > 2 {
+					t.Errorf("%s: next ends %dpx from the strip's inline end, want 0 (%s, strip %dpx)", name, n.EndGap, got.Dir, got.Width)
+				}
+				if start := got.Width - n.EndGap - n.Size; start < half-2 {
+					t.Errorf("%s: next begins %dpx into a %dpx strip, before its half (%d) — the missing previous has not left its space", name, start, got.Width, half)
+				}
+			}
+			if got.Prev == nil && got.Next == nil {
+				t.Errorf("%s: the strip is empty", name)
+			}
 		}
 	}
 }

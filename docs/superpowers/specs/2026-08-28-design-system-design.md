@@ -1851,6 +1851,18 @@ claim is weaker and is stated as such: the rail must fit the window, and
 anything that does not fit inside the rail must be reachable by
 scrolling it.
 
+That third leg was reviewed and found vacuous, and is fixed (see the fix
+round below). It ran on a two-link fixture that fits 420px, so the
+overflow case never arose; and it read `scrollHeight - clientHeight`,
+which is overflow and not scrollability — `overflow: visible` reports it
+too. Removing `overflow-y: auto` from the rail passed all three legs
+green. It now runs on a twenty-link page of its own, treats the overflow
+reading as the PREMISE and fails if the fixture stops overflowing, and
+proves the claim by round trip: what the engine computed for
+`overflow-y`, where `scrollTop` actually landed when the box was asked
+to go to its own bottom, and whether the person came into view when it
+did.
+
 **§8.** Lucide `menu` as a twelfth slug in `icons.go`, `IconSlugs()` and
 both scaffoldable sets (`internal/iconsets`; Font Awesome's is `bars`).
 `kebab` untouched, and `TestMenuAndKebabAreDifferentGlyphs` fails if a
@@ -1956,3 +1968,55 @@ The app's own words are prose keys and translated; its records — the
 names, the subjects, the dates, the queue, the brand — stay English on
 every copy, which is the boundary `templateFixtures` and
 `proseFixtureCollisions` already draw for the shell and modal demos.
+
+### Fix round 1 (2026-08-30)
+
+Six findings from the review of both batches on this branch.
+
+**The topbar comment argued for the bug it exists to prevent.** It
+opened `name="rst-menus", and the rst-menus group is exactly what it
+must not be`, three lines above an element carrying
+`name="rst-shell-menu"`. The first four words asserted the value the
+rest of the paragraph forbids, in the one comment a maintainer editing
+that layout is standing in. Rewritten to state the attribute the element
+carries, why it is not `rst-menus`, and that the paragraph is the reason
+for the two gates rather than advice to change the element.
+
+**§10's placement clause was ungated.** Two `grid-column` declarations
+are the whole of "previous at the inline start, next at the inline end"
+and of "the missing side leaves its space", and nothing read geometry —
+deleting them and swapping them both passed the entire suite,
+`-tags browser` included, because the only gate that noticed was the
+tree's freshness check and the answer to that is `go generate`.
+`TestThePrevNextPairSitsAtTheEndsOfItsRow` now measures: the two ends of
+the sequence and a middle page, in both writing directions, against the
+strip's own box. Deletion is the shape worth having it for — with both
+links present, auto-placement puts them in columns 1 and 2 anyway, so
+the bug is invisible until the Overview's lone Next auto-places into the
+first column and lands exactly where Previous would have been.
+
+**The demo application's grid headers were untranslated.** `Subject`,
+`Status` and `Updated` were allowlisted as fixtures under a comment
+whose own rule — everything the application says is a prose key — put
+them on the other side of the line, so a Japanese or Arabic reader met
+an English table header inside the fully localised frame that is their
+first sight of the system. Three prose keys, eleven translations each.
+The line is now stated where it actually runs: a ROW is data and stays
+English, the HEADER over it is the application naming its own columns.
+`Status` remains a fixture as well, for the shell demos' sample screen,
+which writes its column headers literally.
+
+**Two sentences made true.** `demoCSS` claimed `:has()`-less
+degradation stacks "every view"; it is at most two, and with no fragment
+exactly one. `internal/iconsets` listed `menu` as Font Awesome's `bars`
+inside a run of Lucide divergences; `menu` is Lucide's own slug, and the
+five that differ are the five `docs/site/icons.md` names.
+
+**And one thing that was not a finding.** The topbar's `nav`, `account`
+and `locale` are a level deeper than they were: `display: contents`
+gives their boxes back above 800px but not their selectors, so an app
+whose CSS says `.rst-shell__bar > .rst-shell__nav` stops matching at
+every width. Nothing in this repo does, but apps upgrade — so it is
+written down in `docs/site/templates.md` under Shells, where an upgrader
+will meet it, and the layout's own comment no longer says the three
+blocks "are direct children of the bar again".

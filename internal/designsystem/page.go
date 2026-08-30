@@ -1621,9 +1621,11 @@ func demoView(theme, locale string) previewView {
 // The switching, in four rules. The list and the detail view are hidden
 // until they are the :target; the dashboard is shown until one of them
 // is, which is what makes the address with no fragment land somewhere.
-// Written that way round on purpose: where :has() is missing the last
-// rule drops and the page degrades to every view stacked and readable,
-// rather than to a blank screen.
+// Written that way round on purpose: where :has() is missing, the only
+// rule that drops is the one hiding the dashboard, so the address with
+// no fragment still shows the dashboard alone and a targeted view
+// stacks under it — two screens at worst, never three, and never a
+// blank one.
 //
 // The rail's current item is the same trick. A real rastrillo app
 // renders each view at its own route and puts aria-current on the link
@@ -1648,13 +1650,17 @@ body:has(#view-request:target) .rst-shell__nav a[href="#view-requests"] { backgr
 // demoTemplate fills every block demoShell leaves open, and then the
 // content hole with the three views.
 //
-// The record data — the names, the subjects, the dates, the app's own
-// name — stays English on every copy, the same rule the shell demos
-// follow: it is what an app's database holds, not what the framework
-// says, and translating a person's name would be a stranger thing to
-// do than leaving it. Everything the APPLICATION says — its screens,
-// its controls, its statuses — is a prose key like the rest of this
-// tree.
+// The line between what is translated and what is not runs through the
+// grid, not around it. A ROW is data — a person's name, a subject, a
+// date, a queue, the app's own brand — and stays English on every copy,
+// the same rule the shell demos follow: translating a person's name
+// would be a stranger thing to do than leaving it. The HEADER over that
+// row is not data; it is the application naming its own columns, so
+// Subject, Status and Updated are prose keys like every screen title,
+// control and status word on the page. They were fixtures for one
+// review round, which put an English table header in the middle of the
+// fully localised frame that is a Japanese reader's first sight of this
+// system.
 const demoTemplate = `
 {{define "head"}}<script src="{{.Mount}}/gallery.js"></script>
 <style>` + demoCSS + `</style>{{end}}
@@ -1677,7 +1683,7 @@ const demoTemplate = `
 <section class="rst-box">{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>
 <div class="rst-box-head"><h2>{{P "Latest activity"}}</h2><a class="rst-btn" href="#view-requests">{{P "Requests"}}</a></div>
 <div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px">
-<div class="rst-lrow rst-lrow--head"><span>Subject</span><span class="rst-m-hide">Status</span></div>
+<div class="rst-lrow rst-lrow--head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
 <div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
 <div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
 <div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
@@ -1689,7 +1695,7 @@ const demoTemplate = `
 {{template "seg-tabs" dict "Label" (P "Requests") "Items" (list (dict "Label" (P "All") "Href" "#view-requests" "Current" true) (dict "Label" (P "Open") "Href" "#view-requests") (dict "Label" (P "Resolved") "Href" "#view-requests"))}}
 <div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px 120px">
 {{template "list-bar" dict "SearchAction" "#view-requests" "Placeholder" (P "Search requests")}}
-<div class="rst-lrow rst-lrow--head"><span>Subject</span><span class="rst-m-hide">Status</span><span class="rst-m-hide">Updated</span></div>
+<div class="rst-lrow rst-lrow--head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span></div>
 <div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
 <div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
 <div class="rst-lrow"><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>

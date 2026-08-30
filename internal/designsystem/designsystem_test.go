@@ -2256,18 +2256,25 @@ var templateFixtures = map[string]bool{
 	"Profile":       true,
 	"Billing":       true,
 	"Notifications": true,
-	// The demo application's records. Everything the APPLICATION says
-	// — its screens, its controls, its statuses — is a prose key and is
-	// translated; this is what its database would hold. A person's
-	// name, a request's subject, a date, a queue name and the app's own
-	// brand are content, and translating them would suggest the
-	// framework ships those words.
+	// The demo application's records — the rows of its grids and the
+	// facts of its one open request. Everything the APPLICATION says —
+	// its screens, its controls, its statuses, and the HEADERS over
+	// these rows — is a prose key and is translated; what is below is
+	// what its database would hold. A person's name, a request's
+	// subject, a date, a queue name and the app's own brand are
+	// content, and translating them would suggest the framework ships
+	// those words.
+	//
+	// "Status" stays here for the SHELL demos, whose sample screen
+	// writes its column headers literally (shellTemplate, "Post" /
+	// "Status"). The demo application's copy of that word is
+	// {{P "Status"}} and is translated; both can be true, because the
+	// shell demo is a screen framing a shell and the demo application
+	// is an application.
 	"Harbour":                            true,
 	"Ada Lovelace":                       true,
 	"ada@example.com":                    true,
 	"A":                                  true,
-	"Subject":                            true,
-	"Updated":                            true,
 	"Invoice #4471 never arrived":        true,
 	"Card declined on renewal":           true,
 	"Export takes twenty minutes":        true,

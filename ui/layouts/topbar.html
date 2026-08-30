@@ -24,22 +24,38 @@
 {{/* The narrow layout. Below 800px the bar's tail — nav, account,
      locale — hides behind this disclosure; above it, tokens.css hides
      the summary and gives .rst-shell__tail display: contents, so the
-     three blocks are direct children of the bar again and lay out
-     exactly as they did before this element existed. The sidebar
-     collapses at the same width behind the same icon: two shells, one
-     idiom.
+     three blocks generate no box of their own and lay out as flex
+     items of the bar, exactly as they did before this element existed.
+     Laid out as direct children, not made into them: see the depth
+     note at the foot of this comment. The sidebar collapses at the
+     same width behind the same icon: two shells, one idiom.
 
-     name="rst-menus", and the rst-menus group is exactly what it
-     must not be. <details name> exclusivity is document-wide, so a
-     disclosure in the menus' group would be closed by the account menu
-     it just revealed. The tail is also a SIBLING rather than this
-     element's content, which is how .rst-shell__chrome does it: a
-     closed <details> hides its own content, and the wide layout cannot
-     be recovered from inside one.
+     name="rst-shell-menu" — a group of its own, and NOT rst-menus,
+     which is exactly the group this must not join. <details name>
+     exclusivity is document-wide, so a disclosure in the menus' group
+     would be closed by the account menu it just revealed: on a phone,
+     opening the account would take the navigation away with it. Two
+     gates hold the name (TestEveryMenuDefaultsToTheSharedExclusivityGroup
+     reads it off the layout, and the browser drive opens the account
+     menu inside the collapsed tail and asserts this is still open), so
+     read this paragraph as the reason for them rather than as advice
+     to change the attribute below.
+
+     The tail is also a SIBLING rather than this element's content,
+     which is how .rst-shell__chrome does it: a closed <details> hides
+     its own content, and the wide layout cannot be recovered from
+     inside one.
 
      The three block names below are unchanged — nav, account, locale.
-     Apps override them; a wrapper is a layout change, not a contract
-     change. */}}
+     Apps override them, and that contract is gated. What DID change is
+     depth: nav, account and locale are now grandchildren of
+     .rst-shell__bar through .rst-shell__tail. display: contents gives
+     their boxes back above 800px; it does not give the selector back,
+     so an app stylesheet or script written as
+     `.rst-shell__bar > .rst-shell__nav` stops matching at every width.
+     Use a descendant selector, or target .rst-shell__nav directly.
+     docs/site/templates.md says the same thing where an upgrader will
+     meet it. */}}
 <details class="rst-shell__menu" name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
 <div class="rst-shell__tail">
 <nav class="rst-shell__nav">{{block "nav" .}}{{end}}</nav>

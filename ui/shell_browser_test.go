@@ -201,12 +201,25 @@ type railReading struct {
 	Viewport       int
 	RailOverhang   int
 	PersonOverhang int
-	// How much of the rail is out of its own view. The 100dvh rail is
-	// overflow-y: auto, so at a short viewport the honest claim is not
-	// "the person is on screen" but "the rail fits the window AND
-	// scrolls to whatever does not fit inside it".
-	RailScroll   int
-	LocaleBefore bool
+	// Whether the rail overflows, and — a different question that was
+	// once measured as if it were the same one — whether it SCROLLS.
+	//
+	// RailScroll is scrollHeight - clientHeight: how much content does
+	// not fit. That is a fine reading and a useless assertion, because
+	// overflow: visible reports it too — with overflow-y removed and a
+	// twenty-link rail it still read 371px. So it is the PREMISE now:
+	// it says the fixture is big enough for this leg to mean anything.
+	//
+	// The claim is the three below it. RailOverflowY is what the engine
+	// computed. RailScrolled is where scrollTop actually landed after
+	// the box was asked to go to its own bottom, which a non-scrollable
+	// box clamps to 0. PersonOverhangScrolled is the promise itself:
+	// after that scroll, is the thing below the fold on screen.
+	RailScroll             int
+	RailOverflowY          string
+	RailScrolled           int
+	PersonOverhangScrolled int
+	LocaleBefore           bool
 }
 
 // railMeasure is the one reading every leg of the rail drive takes, so
@@ -218,18 +231,41 @@ const railMeasure = `(() => {
   const loc = document.querySelector("#rail-locale");
   const sum = loc.querySelector("summary");
   const menu = loc.querySelector(".rst-dropdown__menu");
+  // Both scrollers wound back to the top first. chromedp.Click scrolls
+  // its target into view, and the locale summary sits at the foot of
+  // the rail — so on a rail that overflows, opening the language menu
+  // has already scrolled something, and every "before" reading below
+  // would be a reading of an already-scrolled box. Which one it
+  // scrolled depends on the very property under test: the rail, if the
+  // rail is a scroll container, and otherwise the whole page. Winding
+  // both back is what makes the two cases comparable.
+  window.scrollTo(0, 0);
+  rail.scrollTop = 0;
   const r = rail.getBoundingClientRect();
   const p = person.getBoundingClientRect();
   const s = sum.getBoundingClientRect();
   const m = menu.getBoundingClientRect();
+  // Every rect above is taken BEFORE the scroll probe below, because
+  // scrolling the rail moves everything inside it and FootGap is a
+  // reading of where the person sits in an unscrolled rail.
+  const overflowY = getComputedStyle(rail).overflowY;
+  const railScroll = rail.scrollHeight - rail.clientHeight;
+  rail.scrollTop = rail.scrollHeight;
+  const scrolled = Math.round(rail.scrollTop);
+  const pAfter = person.getBoundingClientRect();
+  const personAfter = Math.round(pAfter.bottom - window.innerHeight);
+  rail.scrollTop = 0;
   return JSON.stringify({
     RailHeight: Math.round(r.height),
     FootGap: Math.round(r.bottom - p.bottom),
     MenuLift: Math.round(s.top - m.bottom),
     Viewport: window.innerHeight,
     RailOverhang: Math.round(r.bottom - window.innerHeight),
-    RailScroll: rail.scrollHeight - rail.clientHeight,
+    RailScroll: railScroll,
+    RailOverflowY: overflowY,
+    RailScrolled: scrolled,
     PersonOverhang: Math.round(p.bottom - window.innerHeight),
+    PersonOverhangScrolled: personAfter,
     LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING)
   });
 })()`
@@ -261,14 +297,41 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	template.Must(tmpl.Parse(`{{define "account"}}<div class="rst-shell__account" id="rail-person"><a class="rst-person" href="#"><span class="rst-person__av" aria-hidden="true">G</span><span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span><span class="rst-person__email">grace@example.com</span></span></a></div>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "locale"}}<details class="rst-dropdown rst-locale" id="rail-locale" name="rst-menus"><summary>Language</summary><div class="rst-dropdown__menu"><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 
+	// Cloned BEFORE anything executes: html/template refuses to Clone a
+	// tree that has already run.
+	tall := template.Must(tmpl.Clone())
+
 	var page strings.Builder
 	if err := tmpl.ExecuteTemplate(&page, "layout", nil); err != nil {
 		t.Fatalf("rendering the sidebar shell: %v", err)
 	}
 	html := page.String()
 
+	// The same shell with a rail that does not fit a short window, for
+	// the third leg below. A separate page rather than a taller nav on
+	// the one above, because the first two legs assert numbers that a
+	// twenty-link rail would move — "the person is at the foot" and
+	// "the collapsed rail is not stretched" are claims about a rail
+	// with room to spare, and they are the claims worth keeping.
+	//
+	// Twenty links is not decoration: the design system's own rail
+	// carries about thirty, and the leg below exists because a rail
+	// that overflows is the case a two-link fixture can never reach.
+	// railTallNav is what makes it overflow at 420px, and the leg
+	// FAILS if it stops doing so.
+	template.Must(tall.Parse(`{{define "nav"}}` + railTallNav + `{{end}}`))
+	var tallPage strings.Builder
+	if err := tall.ExecuteTemplate(&tallPage, "layout", nil); err != nil {
+		t.Fatalf("rendering the tall sidebar shell: %v", err)
+	}
+	tallHTML := tallPage.String()
+
 	mux := http.NewServeMux()
 	stylesheets(t, mux)
+	mux.HandleFunc("GET /tall", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, tallHTML)
+	})
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, html)
@@ -397,10 +460,24 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	// scrolling it. A person below the fold of a rail that scrolls is
 	// fine; a person below the fold of a rail that does not is the bug
 	// this test is named after, one viewport smaller.
+	//
+	// Two things this leg used to get wrong, and both made it a gate
+	// that gated nothing — removing overflow-y: auto from the rail
+	// passed it green:
+	//
+	//   - it ran on the two-link fixture, which fits 420px with room
+	//     to spare, so the overflow case it was written for never
+	//     arose. It now runs on /tall, and it FAILS if that page stops
+	//     overflowing: a leg whose premise has quietly become false is
+	//     worse than no leg, because it reads as coverage.
+	//   - it measured scrollHeight - clientHeight, which is overflow,
+	//     not scrollability: overflow: visible reports it too. It now
+	//     asks the engine what it computed, asks the box to scroll to
+	//     its own bottom, and asks whether the person came into view.
 	var shortRaw string
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(1280, 420),
-		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.Navigate(rig.Origin+"/tall"),
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
@@ -412,18 +489,50 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	if err := json.Unmarshal([]byte(shortRaw), &short); err != nil {
 		t.Fatalf("reading the short-window measurement (%q): %v", shortRaw, err)
 	}
-	t.Logf("short: rail %dpx in a %dpx viewport (overhang %dpx, %dpx of scroll), person overhang %dpx",
-		short.RailHeight, short.Viewport, short.RailOverhang, short.RailScroll, short.PersonOverhang)
+	t.Logf("short: rail %dpx in a %dpx viewport (overhang %dpx, %dpx of content over, overflow-y %s), person overhang %dpx before the scroll, %dpx after it, scrollTop %dpx",
+		short.RailHeight, short.Viewport, short.RailOverhang, short.RailScroll, short.RailOverflowY,
+		short.PersonOverhang, short.PersonOverhangScrolled, short.RailScrolled)
 	if short.RailHeight > short.Viewport {
 		t.Errorf("the rail's border box is %dpx in a %dpx viewport: a short window overflows for the same reason a tall one did", short.RailHeight, short.Viewport)
 	}
 	if short.RailOverhang > 0 {
 		t.Errorf("the sticky rail hangs %dpx below the foot of a %dpx window", short.RailOverhang, short.Viewport)
 	}
-	if short.PersonOverhang > 0 && short.RailScroll <= 0 {
-		t.Errorf("the person block ends %dpx below the window and the rail has no scroll (%dpx) to reach it: it is unreachable, not merely off-screen", short.PersonOverhang, short.RailScroll)
+	// The premise, asserted before anything that depends on it, and in
+	// terms of the FIXTURE rather than of the property under test: if
+	// the rail's content fits, every assertion below is vacuously true
+	// and this leg is decoration, which is exactly what it was.
+	if short.RailScroll <= 0 {
+		t.Fatalf("the tall rail's content fits inside a %dpx rail (%dpx over): this leg is measuring nothing. Give railTallNav more links.", short.RailHeight, short.RailScroll)
+	}
+	if short.PersonOverhang <= 0 {
+		t.Fatalf("the person is %dpx ABOVE the fold of a %dpx window before anything scrolls: the case this leg exists for has not arisen. Give railTallNav more links.", -short.PersonOverhang, short.Viewport)
+	}
+	// It overflows, so it has to scroll. Three readings, because the
+	// one that used to be here could not tell a scrollable box from a
+	// leaking one.
+	if short.RailOverflowY != "auto" && short.RailOverflowY != "scroll" {
+		t.Errorf("the rail computed overflow-y: %s. Its content is %dpx below the fold of a %dpx window with no way to bring it back", short.RailOverflowY, short.PersonOverhang, short.Viewport)
+	}
+	if short.RailScrolled <= 0 {
+		t.Errorf("the rail was asked to scroll to its own bottom and scrollTop stayed at %dpx: it does not scroll, it just overflows", short.RailScrolled)
+	}
+	if short.PersonOverhangScrolled > 0 {
+		t.Errorf("the person block is still %dpx below the window after the rail was scrolled to its bottom: it is unreachable, not merely off-screen", short.PersonOverhangScrolled)
 	}
 }
+
+// railTallNav is the short-window leg's rail content: twenty links, so
+// the rail cannot fit a 420px window. Written out rather than ranged
+// over so the fixture is the markup an app would write, and named so
+// the failure message above can tell whoever hits it what to edit.
+const railTallNav = `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>` +
+	`<a href="#">Comments</a><a href="#">Media</a><a href="#">Pages</a>` +
+	`<a href="#">Tags</a><a href="#">Categories</a><a href="#">Authors</a>` +
+	`<a href="#">Subscribers</a><a href="#">Invitations</a><a href="#">Roles</a>` +
+	`<a href="#">Webhooks</a><a href="#">Imports</a><a href="#">Exports</a>` +
+	`<a href="#">Redirects</a><a href="#">Domains</a><a href="#">Billing</a>` +
+	`<a href="#">Usage</a><a href="#">Audit log</a><a href="#">Settings</a>`
 
 // barReading is one measurement of the topbar shell's bar: what the
 // collapse control and the tail are doing, how the tail's three blocks
