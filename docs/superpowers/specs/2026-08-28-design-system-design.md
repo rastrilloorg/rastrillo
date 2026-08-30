@@ -2337,10 +2337,18 @@ scaffolded in that window a name its pin never mentioned means
 "predates", not "deleted on purpose". Reading it as a claim told the
 oldest apps — the ones most likely to be drifting — something false
 about their own history, and made `--fix` withhold a file they needed.
-Existence separates the two readings and is the only signal that can:
-you delete a pin line to *keep* a file you edited, so it is still there.
-Absent-and-unlisted reports as `absent`, which is true either way and is
-the one state `--fix` acts on without `--force`.
+The file itself separates the two readings, and it is the only evidence
+that can. You delete a pin line to protect an *edit*, so: absent →
+`absent` (true under either reading, and the one state `--fix` acts on
+without `--force`); present and identical to the library → compared
+normally, because there is no edit to protect; present and differing →
+`yours`, the reading that never overwrites a person's work.
+
+Existence alone — the obvious rule, and the one first written — has a
+trap one step on: `--fix` delivers `datetime.js` to a 2025 app, the file
+now exists, the old pin still does not name it, and the next run calls
+it a deliberate edit. Doctor would have permanently exempted a file it
+installed itself. Reading the content closes that.
 
 **A fourth reader of the one list**, added in the same round: the
 gallery's Getting started page. Its `AppBytes` total and its file rows

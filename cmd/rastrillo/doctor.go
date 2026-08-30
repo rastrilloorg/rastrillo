@@ -221,7 +221,7 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	}
 	r.staticDir = rel(dir, staticDir)
 
-	pinPath, pin := readPin(dir, pkg, staticDir)
+	pinPath, pin := readPin(dir, pkg)
 	r.pinFile, r.pinLegacy = rel(dir, pinPath), pin.legacy
 
 	themeCSS, _ := os.ReadFile(filepath.Join(staticDir, "theme.css"))
@@ -256,6 +256,13 @@ func diagnose(dir, themeFlag string) (*report, error) {
 				f.state = fileUnreadable
 			case bytes.Equal(f.app, f.lib):
 				f.state = fileOK
+			case pin.unlisted[name]:
+				// An older pin does not mention this file and the file
+				// differs. Deleting its line is what the scaffold of
+				// that era told people to do for a deliberate edit, and
+				// the file having an edit in it is the reading that
+				// fits. Honour it rather than overwrite it.
+				f.state = fileMine
 			default:
 				f.state = fileDiffers
 			}
@@ -306,9 +313,13 @@ func findStaticDir(dir, pkg string) (string, error) {
 // advice doctor prints has to name a thing the app's own file actually
 // has.
 type pinInfo struct {
-	theme  string
-	mine   map[string]bool
-	legacy bool // the pre-vendoredIsMine shape: a map literal you deleted a line from
+	theme string
+	mine  map[string]bool
+	// unlisted names the vendored files an OLDER pin does not mention.
+	// It is not a claim on its own — see the comment on that branch of
+	// readPin, and how diagnose resolves it.
+	unlisted map[string]bool
+	legacy   bool // the pre-vendoredIsMine shape: a map literal you deleted a line from
 }
 
 var (
@@ -321,10 +332,11 @@ var (
 // returns is optional: an app that never had the test, or deleted it,
 // is one of the cases doctor exists for.
 //
-// staticDir is needed for the older shape only — see the comment on
-// that branch. Nothing else here touches the app's files.
-func readPin(dir, pkg, staticDir string) (string, pinInfo) {
-	pin := pinInfo{mine: map[string]bool{}}
+// It reads the pin and nothing else: the older shape's unlisted names
+// are resolved against the app's files by diagnose, which is where the
+// library's own bytes are already in hand.
+func readPin(dir, pkg string) (string, pinInfo) {
+	pin := pinInfo{mine: map[string]bool{}, unlisted: map[string]bool{}}
 	path := ""
 	candidates := []string{filepath.Join(dir, "internal", pkg+"test", "vendored_test.go")}
 	if matches, err := filepath.Glob(filepath.Join(dir, "internal", "*", "*_test.go")); err == nil {
@@ -372,12 +384,22 @@ func readPin(dir, pkg, staticDir string) (string, pinInfo) {
 	// a claim tells that app something false about its own history, and
 	// makes --fix withhold a file it genuinely needs.
 	//
-	// Existence separates the two, and it is the only signal that can.
-	// Deleting a pin line is what you do to keep a file you edited, so
-	// the file is still there. A name the pin never had is a file the
-	// app never received, so it is not. Absent-and-unlisted therefore
-	// reports as `absent` — truthful under either reading, and the one
-	// state --fix can act on without --force.
+	// So an unlisted name here is a CANDIDATE, not a claim. diagnose
+	// resolves it against the file itself, which is the only evidence
+	// that can tell the two readings apart:
+	//
+	//	absent            → `absent`. True under either reading, and the
+	//	                    one state --fix acts on without --force.
+	//	present, matching → compared normally. A pin line is deleted to
+	//	                    protect an edit; a file identical to the
+	//	                    library has no edit to protect, so there is
+	//	                    nothing to honour and every reason to keep
+	//	                    checking it. (This is also what stops --fix
+	//	                    from writing a file and thereby exempting it
+	//	                    from every future check.)
+	//	present, differing → `yours`. Here the two readings genuinely
+	//	                    diverge, and the safe one is the one that
+	//	                    never overwrites a person's work.
 	listed := false
 	for _, name := range ui.VendoredNames() {
 		if strings.Contains(src, `"`+name+`"`) {
@@ -389,11 +411,8 @@ func readPin(dir, pkg, staticDir string) (string, pinInfo) {
 	}
 	pin.legacy = true
 	for _, name := range ui.VendoredNames() {
-		if strings.Contains(src, `"`+name+`"`) {
-			continue
-		}
-		if _, err := os.Stat(filepath.Join(staticDir, name)); err == nil {
-			pin.mine[name] = true
+		if !strings.Contains(src, `"`+name+`"`) {
+			pin.unlisted[name] = true
 		}
 	}
 	return path, pin

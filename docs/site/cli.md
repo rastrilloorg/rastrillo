@@ -232,12 +232,15 @@ A file you edited on purpose is the same: name it in `vendoredIsMine` in
 the scaffold's `vendored_test.go` and both that test and `doctor` leave
 it alone. Apps scaffolded before that map existed recorded the same
 thing by deleting the file's line from the pin, and `doctor` reads that
-too — but only for a file that is still in `static/`. The first version
+too — but it reads such a file rather than assuming. The first version
 of that pin listed three files, and `theme.css` and `datetime.js` joined
-the vendored set afterwards, so a name an old pin never mentioned means
-"this app predates it", not "I deleted that line". You delete a pin line
-to keep a file you edited; a file that is not there was never claimed,
-so it is reported as **absent** and `--fix` will deliver it.
+the vendored set afterwards, so a name an old pin never mentions may
+simply mean "this app predates it". You delete a pin line to protect an
+edit, so the edit is the evidence: a file that is missing is **absent**
+and `--fix` delivers it, a file identical to the library is checked
+normally, and only a file that is there *and* differs is left alone as
+yours. That last rule is also what stops `--fix` from installing a file
+and thereby exempting it from every check afterwards.
 
 A file you deleted is the same again. Dropping `select.js` from an app
 with no big selects is a supported choice, so an absent file is reported

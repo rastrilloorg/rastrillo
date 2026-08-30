@@ -606,11 +606,10 @@ func TestDoctorOldPinPredatingAFileIsNotAClaim(t *testing.T) {
 	if got := printed(rep, false); strings.Contains(got, "yours    datetime.js") {
 		t.Errorf("a file the pin never mentioned is reported as a deliberate edit:\n%s", got)
 	}
-	// The genuine claim still stands: theme.css exists and the pin
-	// stopped listing it, which is what deleting a pin line looks like.
-	if states["theme.css"] != fileMine {
-		t.Errorf("theme.css: state %v, want fileMine — a present, unlisted file is the old convention's claim",
-			states["theme.css"])
+	// The hand-written theme is still protected — by the theme rule
+	// here, since this pin has no vendoredTheme to identify it by.
+	if states["theme.css"] != fileUnknownTheme {
+		t.Errorf("theme.css: state %v, want fileUnknownTheme", states["theme.css"])
 	}
 
 	// And --fix must deliver the file without --force, without touching
@@ -692,5 +691,88 @@ func TestClipDoesNotSplitARune(t *testing.T) {
 	}
 	if got := clip("short", 68); got != "short" {
 		t.Errorf("clip(%q) = %q, want it untouched", "short", got)
+	}
+}
+
+// TestDoctorOldPinHonoursAnEditItCanSee: the other half of the same
+// rule. A file an older pin does not list, which is present and DOES
+// differ from the library, is the shape "delete its line" was invented
+// for — an edit somebody made and wanted kept. Honour it.
+func TestDoctorOldPinHonoursAnEditItCanSee(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	path := filepath.Join(dir, "internal", "demoapp", "static", "datetime.js")
+	mustWrite(t, path, "// our own date handling, since 2025\n")
+
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range rep.files {
+		if f.name == "datetime.js" && f.state != fileMine {
+			t.Errorf("datetime.js: state %v, want fileMine — present, unlisted and edited is the old convention's claim", f.state)
+		}
+	}
+	if rep.drifted() {
+		t.Errorf("an edit the old convention claims was reported as drift:\n%s", printed(rep, false))
+	}
+	var buf bytes.Buffer
+	if err := rep.applyFix(&buf, false); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile(path)
+	if string(body) != "// our own date handling, since 2025\n" {
+		t.Fatal("--fix overwrote an edit the older pin claimed")
+	}
+}
+
+// TestDoctorDoesNotExemptAFileItInstalled is why the rule resolves
+// against the file's CONTENT and not merely its existence.
+//
+// The obvious reading — "unlisted and present means the app claimed
+// it" — has a trap one step further on. --fix delivers datetime.js to a
+// 2025 app; the file now exists and the old pin still does not mention
+// it; so the very next run calls it a deliberate edit and doctor stops
+// checking, forever, a file it installed itself. A pin line is deleted
+// to protect an EDIT, so a file identical to the library has nothing to
+// protect and every reason to stay checked.
+func TestDoctorDoesNotExemptAFileItInstalled(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	path := filepath.Join(dir, "internal", "demoapp", "static", "datetime.js")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+
+	// --fix delivers it, exactly as the previous test's app would.
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	if err := rep.applyFix(&buf, false); err != nil {
+		t.Fatal(err)
+	}
+
+	// Run again: the file is present and unlisted, and must be checked.
+	again, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range again.files {
+		if f.name == "datetime.js" && f.state != fileOK {
+			t.Fatalf("datetime.js: state %v after --fix installed it, want fileOK — doctor exempted a file it wrote itself", f.state)
+		}
+	}
+	// And it is still checked once it drifts.
+	mustWrite(t, path, "// somebody edited this later\n")
+	third, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range third.files {
+		if f.name == "datetime.js" && f.state != fileMine {
+			t.Errorf("datetime.js: state %v once edited, want fileMine", f.state)
+		}
 	}
 }
