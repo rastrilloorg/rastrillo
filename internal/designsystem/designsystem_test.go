@@ -2423,20 +2423,17 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 //     includes two themes the app did not choose and gallery.js, which
 //     no app receives.
 //
-// The last assertion is about the page's PROSE rather than its numbers:
-// the lead says "two stylesheets and three scripts", which is a count
-// nothing derives. If a fourth script ever ships, this fails and names
-// the sentence, rather than leaving a page that says three beside a
-// list of four.
+// There used to be a third assertion here, on the page's PROSE: the
+// lead counted the files out loud — "two stylesheets and three
+// scripts" — so a fourth script had to fail somewhere. The reviewed
+// copy dropped the count, and a canary guarding a sentence nobody says
+// any more is a canary that can only mislead, so it went with it.
 func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 	files := render(t)
 	scripts := map[string][]byte{
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
-	}
-	if len(scripts) != 3 {
-		t.Errorf("the page's lead says \"two stylesheets and three scripts\"; a scaffolded app now gets %d scripts. Reword the lead (and its eleven translations) as well as this table.", len(scripts))
 	}
 	row := regexp.MustCompile(`<li id="asset-`)
 	for _, theme := range ui.ThemeNames() {
@@ -2499,7 +2496,7 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 			if got := len(row.FindAllString(page, -1)); got != len(want) {
 				t.Errorf("%s lists %d files, the framework ships %d", name, got, len(want))
 			}
-			total := proseIn(locale, "A scaffolded app is handed {bytes} bytes of that: tokens.css, one theme and the three scripts. gallery.js is not in the total, and neither are the themes an app did not choose.", "bytes", app)
+			total := proseIn(locale, "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts.", "bytes", app)
 			if !strings.Contains(page, template.HTMLEscapeString(total)) {
 				t.Errorf("%s: the page does not say %q — the app total is not the arithmetic over what rastrillo new writes", name, total)
 			}

@@ -288,11 +288,11 @@ func pageKinds() []pageKind {
 	kinds := []pageKind{
 		{Kind: "overview", File: "index.html", Title: "Overview"},
 		{Kind: "getting-started", File: "getting-started.html", Title: "Getting started", Nav: assetNav,
-			Blurb: "The two stylesheets and three scripts the framework ships, what each one is for, and what each one weighs."},
+			Blurb: "Details about the stylesheets and scripts that ship with the Rastrillo design system."},
 		{Kind: "tokens", File: "tokens.html", Title: "Tokens", Nav: tokenNav,
 			Blurb: "Every custom property the system is built out of: the theme's colour and type, and the scales for size, spacing and radius."},
 		{Kind: "icons", File: "icons.html", Title: "Icons", Nav: iconNav,
-			Blurb: "Every icon slug the framework answers, drawn at the size a component draws it, with the call to copy and the name lucide.dev publishes it under."},
+			Blurb: "Every icon slug, at the size components draw it, with the call to copy and its lucide.dev name."},
 	}
 	// The component families, where the one components page used to be.
 	kinds = append(kinds, componentPages()...)
@@ -300,7 +300,7 @@ func pageKinds() []pageKind {
 		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
 			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
 		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
-			Blurb: "The three page frames rastrillo new can scaffold, each of them openable as a whole page at full width."},
+			Blurb: "The page frames rastrillo new can scaffold. Each opens full width."},
 	)
 }
 
@@ -1841,7 +1841,7 @@ const demoTemplate = `
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
 {{template "form-foot" dict "Submit" (P "Send reply") "CancelHref" "#view-requests" "CancelLabel" (P "Cancel")}}
 </form></section>
-{{template "callout" dict "Tone" "info" "Title" (P "Three screens, three addresses") "Body" (P "Each view here has an address of its own, the way a rastrillo app gives every screen a URL. Turn JavaScript off and this page behaves exactly the same: the switching is CSS reading the address bar.")}}
+{{template "callout" dict "Tone" "info" "Title" (P "Three screens, three addresses") "Body" (P "Every view has its own address, like any rastrillo screen. Turn JavaScript off and it behaves the same. Switching uses CSS.")}}
 </section>
 {{end}}
 `
@@ -2333,7 +2333,7 @@ const overviewBody = `{{define "ds-body-overview"}}
 <p class="ds-intro">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
 <section class="ds-demo" id="demo-app">
 <h3 class="ds-sub">{{P "The demo application"}}</h3>
-<p class="ds-lead">{{P "A working application built out of nothing but this system: a dashboard, a list and one record open, each at an address of its own, and nothing on it that needs JavaScript to work."}}</p>
+<p class="ds-lead">{{P "A working app built only from this system: a dashboard, a list, one record open. Each has its own address. No JavaScript."}}</p>
 {{template "ds-view" .Demo}}
 <p class="ds-note"><a href="{{.DemoHref}}" target="_blank" rel="noopener">{{P "Open the demo application"}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>.</p>
 </section>
@@ -2353,33 +2353,33 @@ const overviewBody = `{{define "ds-body-overview"}}
 // after somebody edits one of the files.
 const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <div class="ds-head"><h2 id="getting-started">{{P "Getting started"}}</h2></div>
-<p class="ds-lead">{{P "Two stylesheets and three scripts. A new app is handed all of them at scaffold time and owns them from that moment; anything else can link them straight off this site. None of it is required for a page to work — turn JavaScript off and every component here still does what it says."}}</p>
+<p class="ds-lead">{{P "Rastrillo apps get all of this day one, but anyone can use the design system. Progressively enhanced with JS, but no JS required."}}</p>
 
 <h3 class="ds-sub">{{P "The stylesheets"}}</h3>
-<p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. It carries no colour literal and is the same file under every theme. themes/<name>.css is the other half — colour, type family and shape — as one :root block where every colour is declared once as a light-dark() pair, so a theme changes how an app feels and not only what colour it is."}}</p>
+<p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h3 class="ds-sub">{{P "The scripts"}}</h3>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are the two enhancements, each one inert until a control opts into it and each one deletable on its own. gallery.js is this gallery's own script and is not part of what an app receives."}}</p>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
 
 <h3 class="ds-sub">{{P "What each file weighs"}}</h3>
-<p class="ds-note">{{P "Every number below is the length of the bytes this page was rendered from, measured as it rendered. None of them is written down anywhere, so none of them can go stale."}}</p>
+<p class="ds-note">{{P "Filesizes for the various components."}}</p>
 <ul class="ds-files">{{range .Assets.List}}
 <li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{P "{bytes} bytes" "bytes" .Bytes}}</span></li>{{end}}
 </ul>
-<p class="ds-lead">{{P "A scaffolded app is handed {bytes} bytes of that: tokens.css, one theme and the three scripts. gallery.js is not in the total, and neither are the themes an app did not choose." "bytes" .Assets.AppBytes}}</p>
+<p class="ds-lead">{{P "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts." "bytes" .Assets.AppBytes}}</p>
 
 <h3 class="ds-sub">{{P "In a new rastrillo app"}}</h3>
-<p class="ds-lead">{{P "rastrillo new writes these files into the app's own static directory and links them from the layout, tokens.css first and the theme after it. They are app-owned from that moment: edit them, or delete a script the app has no use for."}}</p>
+<p class="ds-lead">{{P "rastrillo new writes these into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
 <pre class="ds-src rst-mono"><code>{{.Assets.Scaffold}}</code></pre>
-<p class="ds-lead">{{P "The theme is pinned twice, deliberately. --theme decides which of the shipped themes is copied to static/theme.css, and the generated suite records that choice, so a framework upgrade that changes the theme's bytes is a test failure rather than a surprise on a Friday."}}</p>
+<p class="ds-lead">{{P "The theme is pinned twice. --theme decides which shipped theme is copied to static/theme.css, and logged at app generation time."}}</p>
 <pre class="ds-src rst-mono"><code>{{.Assets.Pin}}</code></pre>
 
 <h3 class="ds-sub">{{P "Using it without the framework"}}</h3>
-<p class="ds-lead">{{P "Every file above is served from this site at its own address, and the names above are the links. Take tokens.css and one theme and you have the whole visual system: the classes are plain, the markup is ordinary HTML, and none of it needs a build step, a bundler or a Go program."}}</p>
+<p class="ds-lead">{{P "The names above are links. Take tokens.css and one theme and you have the whole visual system: plain classes, ordinary HTML, no build step."}}</p>
 
 <h3 class="ds-sub">{{P "Upgrading"}}</h3>
 <p class="ds-lead">{{P "The trap worth knowing before it costs you an afternoon: tokens.css is copied into the app's static directory at scaffold time and frozen there, while the partials it styles keep upgrading with the module. An app can quietly run new markup against old CSS. Re-copy tokens.css when you upgrade, and the theme and the scripts with it."}}</p>
-<p class="ds-note">{{P "rastrillo doctor will compare an app's frozen files against the module's and offer to re-copy them. It is approved and it does not exist yet. Until it does, the suite rastrillo new writes is what notices: it holds every vendored file byte-identical to the library copy it came from, and fails when one drifts."}}</p>
+<p class="ds-note">{{P "rastrillo doctor will compare an app's frozen files against the module's and offer to re-copy."}}</p>
 {{end}}`
 
 // iconsBody is every slug rastrillo.IconSlugs() answers, drawn at 1em —
@@ -2441,7 +2441,7 @@ const familyBody = `{{define "ds-family"}}{{with .Family}}
 <div class="ds-head"><h2>{{.Title}}</h2></div>
 <p class="ds-lead">{{.Blurb}}</p>
 {{end}}
-<p class="ds-lead">{{P "Components give you pre-built, consistent UI elements, rendered server-side."}}</p>
+<p class="ds-lead">{{P "Pre-built, consistent UI elements, rendered server-side."}}</p>
 <p class="ds-note">{{P "The framework's own vocabulary calls these partials: ui.Templates() returns partials, and docs/site/templates.md documents them under that name. The word on this page changed; the code's did not."}}</p>
 ` + deadLinkCallout + `
 <p class="ds-note">{{P "Each sample below in its own frame."}}</p>
