@@ -1249,3 +1249,103 @@ its regression — stated rather than quietly ignored. `color-contrast`
 comes back INCOMPLETE on the modal's translucent overlay in both
 schemes; `ui/contrast_test.go` holds every documented token pair, so the
 gap is one composited overlay nobody has measured by hand.
+
+---
+
+## 6-v2.1. Third iteration (2026-08-30, Paul's review of the v2 page)
+
+v2 shipped and Paul reviewed it live. This section records what he asked
+for, and the three slices it was split into. **v2.1 is this section.**
+The markup migration (§6-v3) and the palette generator (§6-v2.2) are
+sequenced after it, deliberately: the repo-wide markup change should not
+ride along with visible bug fixes.
+
+### The bugs, with the causes found before planning
+
+1. **A dropdown is clipped by the card it opens inside.** `.rst-list`
+   sets `overflow: hidden` (tokens.css:255) to clip its rows' corners,
+   which makes it a clipping context for the bulk bar's absolutely
+   positioned Actions menu. Fix by rounding the first and last rows
+   instead and dropping the `overflow`. Any card that holds a menu has
+   this shape, so the fix is the rule, not the one instance.
+2. **`<hr>` renders as a thick UA inset rule in the topbar account
+   menu.** The style exists but is scoped to `.rst-row-menu__panel hr`
+   (tokens.css:651); the account menu is `.rst-dropdown__menu`. Widen
+   the selector to every menu surface.
+3. **The sidebar nav discloses with text glyphs** (▸ ▾) where the rest
+   of the system uses Lucide. `chevron-down` is already vendored — the
+   set is eleven icons with `IconSlugs()` — so this is a swap.
+4. **The sidebar shell puts the person mid-rail.** The profile belongs
+   bottom-left, with the language switcher as a **dropup** above it.
+   Zero JavaScript: a `<details>` menu positioned `bottom: 100%`.
+
+### The page split
+
+One 371 KB document carrying 110 iframes is the reason the page feels
+slow; it is not the Eleventy build, which only passthrough-copies the
+Go-generated tree. Split the gallery into pages, each with its own URL
+and its own place in the nav:
+
+**Overview** (the new landing page) · **Tokens** · **Components**
+(renamed from Partials) · **UI primitives** (renamed from Class idioms)
+· **Shells** · **Icons** (new) · **Getting started** (new, under
+Overview).
+
+The rename is to the READER-FACING label only. `ui.Templates()` keeps
+returning partials and `docs/site/templates.md` keeps calling them
+partials, because that is what they are in Go and what an app author
+types. A page that calls them Components while the code calls them
+partials would be a worse lie than the one it fixes — so the Components
+page says, once, that these are the framework's template partials.
+
+### Overview's content
+
+Paul's paragraph, verbatim, is the page's opening:
+
+> The Rastrillo design system aims to be a starter framework for any app
+> to get a consistent, polished, accessible UI with no or minimal
+> JavaScript dependence, available in multiple languages, and using
+> clean, modern HTML and CSS. It's designed to be delightful to use with
+> or without LLM assistance, and easily remixable.
+
+Above or beside it, an **"everything" demo** in an iframe: one
+self-contained page with dashboard, list and detail as clickable
+sections, so a first-time reader sees what an app looks like before they
+see a single token. One page with internal sections rather than a
+multi-page app (Paul's choice), zero JavaScript, openable full-page.
+
+### Getting started
+
+A page showing how the CSS and JS are structured, what each file is for,
+and **what it weighs** — measured at render, never typed:
+
+| file | bytes today |
+|---|---|
+| `tokens.css` | 64,838 |
+| `themes/<theme>.css` | ~10,000 |
+| `rastrillo.js` | 16,378 |
+| `select.js` | 10,799 |
+| `datetime.js` | 59,077 |
+
+It offers an independent download for someone not using the framework,
+and says plainly that new rastrillo apps get all of this by default.
+
+### The column
+
+`--rst-page` is capped at 52rem (832px), not the 800 Paul estimated.
+Widen to 64rem. The desktop preview scale factor is measured in gates;
+they move with it.
+
+### Sequenced after this section
+
+- **§6-v2.2 — the palette generator.** Not a shuffle: a mood
+  (calm/warm/technical/editorial) produces a palette BY CONSTRUCTION
+  inside the AA contrast constraints, in OKLCH, rejecting what fails.
+  Every generated palette must pass the same 26-pair × 2-scheme gate the
+  three shipped themes pass, or the system's accessibility claim becomes
+  a claim about three files rather than about the system.
+- **§6-v3 — the markup migration.** Attributes for kind, classes for
+  modifiers (`<div rst-list>`, `<button rst-btn="primary">`). Fable was
+  asked for the design; its recommendation lands in
+  `.superpowers/sdd/2026-08-29-design-system-v2/fable-markup-recommendation.md`.
+  Not started until Paul has read it.
