@@ -31,7 +31,16 @@ var (
 //
 // It is idempotent. The output has no class attribute carrying a
 // migrating rst- name, so a second pass finds nothing to do.
-func Rewrite(src []byte) ([]byte, []Note) {
+func Rewrite(src []byte) ([]byte, []Note) { return rewrite(src, true) }
+
+// Respell is Rewrite without the migration's renames: the pure grammar,
+// for markup that is already written in today's class vocabulary and
+// only wants the other spelling of it. It is what the stage-1 browser
+// drive translates its fixture with, where the two spellings must mean
+// the same thing rather than one being an upgrade of the other.
+func Respell(src []byte) ([]byte, []Note) { return rewrite(src, false) }
+
+func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 	s := string(src)
 	var b strings.Builder
 	var notes []Note
@@ -53,7 +62,7 @@ func Rewrite(src []byte) ([]byte, []Note) {
 			i = end
 			continue
 		}
-		repl, err := rewriteClassValue(value, q)
+		repl, err := rewriteClassValue(value, q, migrate)
 		if err != nil {
 			notes = append(notes, Note{Line: 1 + strings.Count(s[:j], "\n"), Text: err.Error()})
 			b.WriteString(s[i:end])
@@ -143,25 +152,25 @@ type attr struct {
 	open, closes string
 }
 
-func rewriteClassValue(value, q string) (string, error) {
+func rewriteClassValue(value, q string, migrate bool) (string, error) {
 	if !strings.Contains(value, "{{") {
-		kept, attrs := splitClassTokens(strings.Fields(value))
+		kept, attrs := splitClassTokens(strings.Fields(value), migrate)
 		return render(kept, attrs, q), nil
 	}
-	return rewriteTemplatedClassValue(value, q)
+	return rewriteTemplatedClassValue(value, q, migrate)
 }
 
 // splitClassTokens sorts a literal class list into what stays in class
 // and what becomes an attribute, keeping first-appearance order so the
 // diff reads like the markup it replaces.
-func splitClassTokens(tokens []string) (kept []string, attrs []*attr) {
+func splitClassTokens(tokens []string, migrate bool) (kept []string, attrs []*attr) {
 	byName := map[string]*attr{}
 	for _, t := range tokens {
 		if !strings.HasPrefix(t, "rst-") {
 			kept = append(kept, t)
 			continue
 		}
-		name, variant, ok, drop := MigrateClass(t)
+		name, variant, ok, drop := classFor(t, migrate)
 		if drop {
 			continue
 		}
@@ -227,10 +236,10 @@ func render(kept []string, attrs []*attr, q string) string {
 // Anything else is left alone and reported. A class list whose
 // structure this cannot read is a handful of lines for a human, and a
 // wrong guess is a screen that renders unstyled.
-func rewriteTemplatedClassValue(value, q string) (string, error) {
+func rewriteTemplatedClassValue(value, q string, migrate bool) (string, error) {
 	head := value[:strings.Index(value, "{{")]
 	rest := value[len(head):]
-	kept, attrs := splitClassTokens(strings.Fields(head))
+	kept, attrs := splitClassTokens(strings.Fields(head), migrate)
 
 	tokens := rstClassToken.FindAllString(rest, -1)
 	if len(tokens) == 0 {
@@ -261,7 +270,7 @@ func rewriteTemplatedClassValue(value, q string) (string, error) {
 		}
 	}
 
-	name, _, ok, drop := MigrateClass(kind)
+	name, _, ok, drop := classFor(kind, migrate)
 	if drop || !ok {
 		return "", fmt.Errorf(`class=%q builds a modifier of %s, which does not migrate: left as it was`, value, kind)
 	}

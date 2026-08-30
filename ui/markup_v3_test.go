@@ -59,8 +59,13 @@ func attributeTwin(selector string) string { return markup.Selector(selector) }
 // attributeSpelling is the same translation for markup rather than
 // selectors — the stage-2 codemod itself — and what lets the browser
 // drive render one fixture in both spellings from a single source.
+//
+// Respell, not Rewrite: the codemod also carries the flip's renames,
+// which translate markup written BEFORE it. This fixture is written in
+// today's class vocabulary, where the two spellings must mean the same
+// thing rather than one being an upgrade of the other.
 func attributeSpelling(html string) string {
-	out, notes := markup.Rewrite([]byte(html))
+	out, notes := markup.Respell([]byte(html))
 	if len(notes) > 0 {
 		panic("the fixture holds a class list the codemod cannot read: " + notes[0].String())
 	}
@@ -69,6 +74,7 @@ func attributeSpelling(html string) string {
 
 var (
 	classInSelector = regexp.MustCompile(`\.(rst-[A-Za-z0-9_-]+)`)
+	classInMarkup   = regexp.MustCompile(`class="([^"]*)"`)
 )
 
 // ── A small CSS reader ───────────────────────────────────────────────

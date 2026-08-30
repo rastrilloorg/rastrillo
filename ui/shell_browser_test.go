@@ -890,11 +890,19 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 	    // first-child cases and the last for the last-child ones; the
 	    // loose copy is the page div's only child either way.
 	    const probe = loose.firstElementChild;
-	    const tag = probe.tagName + "." + probe.className;
+	    // The identity of the element under test. It used to be the class
+	    // list; the vocabulary is attributes now, so an empty state and a
+	    // row both read as "DIV." and the wrong child was measured. The
+	    // attribute NAMES are the signature — never their values, so a
+	    // variant cannot change what matches — with id left out, because
+	    // that is what tells the two copies apart.
+	    const sig = el => el.tagName + "|" +
+	      [...el.attributes].map(a => a.name).filter(n => n !== "id").sort().join(",");
+	    const tag = sig(probe);
 	    const card = inCard.firstElementChild;
 	    let mine = null;
 	    for (const kid of card.children) {
-	      if (mine === null && kid.tagName + "." + kid.className === tag) { mine = kid; }
+	      if (mine === null && sig(kid) === tag) { mine = kid; }
 	    }
 	    out.push({ In: mine ? read(mine) : null, Out: read(probe) });
 	    i++;

@@ -158,6 +158,31 @@ func TestSelectorTranslationIsTheSameGrammar(t *testing.T) {
 	}
 }
 
+// TestRespellIsTheGrammarWithoutTheMigration. Rewrite translates markup
+// written before the flip, where rst-form-foot meant the sticky save
+// bar. Respell translates markup written in today's class vocabulary,
+// where it means the action row the form-foot partial emits. Running
+// the wrong one over the wrong markup moves an element to a different
+// rule and changes what renders, so the difference is pinned here.
+func TestRespellIsTheGrammarWithoutTheMigration(t *testing.T) {
+	const in = `<div class="rst-form-foot"><span class="rst-form-foot__note">n</span></div>`
+	migrated, _ := Rewrite([]byte(in))
+	if want := `<div rst-form-bar><span rst-form-bar-note>n</span></div>`; string(migrated) != want {
+		t.Errorf("Rewrite(%q) = %q, want %q", in, migrated, want)
+	}
+	respelled, _ := Respell([]byte(in))
+	if want := `<div rst-form-foot><span rst-form-foot-note>n</span></div>`; string(respelled) != want {
+		t.Errorf("Respell(%q) = %q, want %q", in, respelled, want)
+	}
+	// Everything that is not a rename is the same translation in both.
+	const plain = `<a class="rst-btn rst-btn--primary">x</a>`
+	a, _ := Rewrite([]byte(plain))
+	b, _ := Respell([]byte(plain))
+	if string(a) != string(b) {
+		t.Errorf("Rewrite and Respell disagree on markup with no rename in it: %q vs %q", a, b)
+	}
+}
+
 // TestTheExemptionsAreDisjoint. A class cannot be both a utility that
 // keeps its spelling and a name the flip renames or deletes; the three
 // lists are the whole of what the grammar treats specially, so an

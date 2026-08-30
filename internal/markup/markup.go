@@ -103,14 +103,21 @@ func Attribute(class string) (name, variant string, ok bool) {
 	return "rst-" + strings.ReplaceAll(body, "__", "-"), variant, true
 }
 
-// MigrateClass is Attribute plus the two things only a markup rewrite
-// does: the renames, and the deletions. drop is true for a class that
-// leaves the markup entirely.
-func MigrateClass(class string) (name, variant string, ok, drop bool) {
+// classFor is Attribute plus the two things only a markup rewrite does:
+// the deletions, and — for a migration rather than a respelling — the
+// renames. drop is true for a class that leaves the markup entirely.
+//
+// The renames belong to the migration alone. They translate markup
+// written before the flip, where rst-form-foot meant the sticky save
+// bar; markup already written in today's class vocabulary means the
+// action row by that name, and running the rename over it would move it
+// to rst-form-bar and change what renders. That distinction is why
+// Respell exists beside Rewrite.
+func classFor(class string, migrate bool) (name, variant string, ok, drop bool) {
 	if _, gone := Dropped[class]; gone {
 		return "", "", false, true
 	}
-	if to, ok := Renamed[class]; ok {
+	if to, renamed := Renamed[class]; migrate && renamed {
 		class = to
 	}
 	name, variant, ok = Attribute(class)
