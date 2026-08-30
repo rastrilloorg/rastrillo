@@ -822,6 +822,150 @@ step that earns the right to archive GitHub.
 
 ---
 
+### Task 6A: Homebrew keeps working
+
+**Runs after Task 6** (it needs the `v0.20.0` tag) **and must complete
+before Task 9's archive step** — the formula's `head` currently tracks
+the repo Task 9 archives.
+
+**Files:**
+- Create: `hack/release-artifacts.sh` (mode 755)
+- Modify (in **`carlosframework/homebrew-tap`**, a different repo):
+  `Formula/rastrillo.rb`
+- Publish (in **`carlosframework/releases`**, a different repo): a
+  release tagged `rastrillo-v0.20.0` with four binaries
+
+**Interfaces:**
+- Consumes: Task 6's published `v0.20.0`.
+- Produces: a working `brew install carlosframework/tap/rastrillo`.
+
+- [ ] **Step 1: Write `hack/release-artifacts.sh`**
+
+Cross-compiles the CLI for the four platforms `carlos.rb` covers, named
+to match its convention.
+
+```sh
+#!/bin/sh
+# Build the release binaries Homebrew installs. CGO_ENABLED=0 is the
+# repo-wide criterion and matters doubly here: these are the artifacts
+# other people run, on machines whose C libraries we know nothing about.
+set -e
+
+version=${1:?usage: release-artifacts.sh vX.Y.Z}
+out=${2:-dist}
+mkdir -p "$out"
+
+for platform in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64; do
+	os=${platform%/*}
+	arch=${platform#*/}
+	echo "building $os/$arch"
+	CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" GOFLAGS=-mod=mod \
+		go build -trimpath -o "$out/rastrillo-$os-$arch" ./cmd/rastrillo
+done
+
+# Homebrew needs these verbatim in the formula; print them rather than
+# making someone re-derive them.
+( cd "$out" && shasum -a 256 rastrillo-* )
+```
+
+```bash
+chmod 755 hack/release-artifacts.sh
+```
+
+- [ ] **Step 2: Build the artifacts and capture the checksums**
+
+```bash
+./hack/release-artifacts.sh v0.20.0
+ls -l dist/
+```
+
+Expected: four binaries and four sha256 lines. Record the checksums —
+Step 4 needs them verbatim.
+
+- [ ] **Step 3: Verify a built binary actually runs and reports v0.20.0**
+
+Run the one matching this machine (linux/amd64 here):
+
+```bash
+./dist/rastrillo-linux-amd64 version
+```
+
+Expected: `v0.20.0`. A cross-compiled binary that reports the fallback
+constant instead means the build lost its version stamping — stop and
+report rather than publishing it.
+
+- [ ] **Step 4: Publish the release — STOP AND CONFIRM FIRST**
+
+This writes to a repository outside this worktree and is visible to
+anyone. Confirm with the user before running it.
+
+```bash
+gh release create rastrillo-v0.20.0 \
+  --repo carlosframework/releases \
+  --title "rastrillo v0.20.0" \
+  --notes "First release under amadan.net/rastrillo/rastrillo. Source: https://amadan.net/rastrillo/rastrillo" \
+  dist/rastrillo-darwin-arm64 dist/rastrillo-darwin-amd64 \
+  dist/rastrillo-linux-arm64 dist/rastrillo-linux-amd64
+```
+
+The `rastrillo-` tag prefix is deliberate: that repo already holds
+`v0.13.0`–`v0.17.0` for carlos, which will reach `v0.20.0` in time.
+
+- [ ] **Step 5: Rewrite the formula — STOP AND CONFIRM FIRST**
+
+Also a different repository. In a checkout of
+`carlosframework/homebrew-tap`, replace `Formula/rastrillo.rb`'s source
+build with the prebuilt shape `carlos.rb` already uses: `version
+"0.20.0"`, `homepage "https://amadan.net/rastrillo/rastrillo"`, an
+`on_macos`/`on_linux` × `on_arm`/`on_intel` block per binary with the
+Step 2 checksums, an `install` that puts the binary at `bin/"rastrillo"`
+and chmods it 0755, and no `depends_on "go"`.
+
+Delete the `head` line. It tracks the GitHub repo Task 9 archives, and
+a `--HEAD` install that silently builds a frozen archive is worse than
+no `--HEAD` at all.
+
+Keep the `test do` block meaningful: assert the binary reports its
+version, as `carlos.rb` does.
+
+- [ ] **Step 6: Prove the formula installs**
+
+```bash
+brew uninstall rastrillo 2>/dev/null || true
+brew install carlosframework/tap/rastrillo
+rastrillo version
+```
+
+Expected: `v0.20.0`. If `brew` is unavailable on this machine, say so
+plainly in the report rather than claiming an untested formula works.
+
+- [ ] **Step 7: Commit the build script**
+
+Only `hack/release-artifacts.sh` belongs to this repository; the other
+two changes live in their own repos and are committed there.
+
+```bash
+git add hack/release-artifacts.sh
+git commit -m "Build the release binaries Homebrew installs
+
+The formula fetched a GitHub source tarball, and amadan serves none -
+/archive/refs/tags/<tag>.tar.gz, /archive/<tag>.tar.gz and
+/tarball/<tag> all 404, because it is stock git over HTTPS and nothing
+more. Archiving the GitHub repo would have left that URL resolving
+forever while never gaining another version, which is the failure shape
+that looks like success.
+
+So rastrillo joins carlosframework/releases the way carlos already
+does: prebuilt per-platform binaries with checksums. The tap and the
+brew command are unchanged, which is the point - README.md needed no
+edit.
+
+Tags there carry a rastrillo- prefix. That repo already holds
+v0.13.0-v0.17.0 for carlos, and carlos will reach v0.20.0 eventually."
+```
+
+---
+
 ### Task 7: The workflow moves to amadan
 
 **Files:**
@@ -1021,8 +1165,10 @@ record it, and keep the window open.
   landings.
 - Produces: the finished move.
 
-**Do not start this task unless Task 6 Step 5 passed and Task 8
-produced two agreeing landings.** Archiving is the one step with no
+**Do not start this task unless Task 6 Step 5 passed, Task 6A
+republished the Homebrew formula, and Task 8 produced two agreeing
+landings.** Archiving before Task 6A leaves the formula's `head`
+tracking an archive. Archiving is the one step with no
 cheap undo.
 
 - [ ] **Step 1: Branch on amadan and delete the workflow**

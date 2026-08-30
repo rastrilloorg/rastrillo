@@ -324,6 +324,54 @@ everything. Three checks exist only because of this move:
 - **Migrating closed issues, discussions, or PR history.** The archive
   holds them.
 - **`carlosframework/skills` and `carlosframework/platform`**, which
-  `README.md` links. Other repositories, other decisions.
+  `README.md` links. Other repositories, other decisions. The Homebrew
+  tap and releases repo were in this list until 2026-08-30; §9 is why
+  they left it.
 - **The rastrillo.org docs deploy**, which ships from the local
   checkout via carlos and is indifferent to where the repo is hosted.
+
+## 9. Homebrew distribution (added 2026-08-30)
+
+`README.md` advertises `brew install carlosframework/tap/rastrillo`, and
+the move breaks it in a way that leaving it alone does not fix.
+
+**What breaks.** `Formula/rastrillo.rb` fetches
+`github.com/carlosframework/rastrillo/archive/refs/tags/v0.5.0.tar.gz`
+and its `head` tracks that repo's `main`. Archiving keeps both URLs
+resolving forever while guaranteeing they never gain another version —
+the worst failure shape available, because nothing appears broken. The
+formula is also already pinned at **v0.5.0** against a v0.19.0 repo, so
+it has been silently stale since well before this move.
+
+**Why amadan alone cannot host it.** amadan serves stock git over HTTPS
+and nothing else: `/archive/refs/tags/<tag>.tar.gz`, `/archive/<tag>.tar.gz`
+and `/tarball/<tag>` all 404. A tag clone *does* work
+(`git clone --depth 1 --branch v0.1.1 https://amadan.net/rastrillo/idear`
+resolves correctly), so Homebrew's git strategy — `using: :git, tag:,
+revision:` — is a genuine option. It is not the one taken: it would
+route every `brew install` at amadan.net rather than a CDN.
+
+**The shape, which is the house pattern.** `carlosframework/releases`
+already distributes carlos this way, and `carlos.rb` reads its prebuilt
+per-platform binaries with sha256s — "pre-built since
+`carlosframework/platform` is private." rastrillo joins that repo rather
+than opening a new one, and the tap stays `carlosframework/tap`, so
+**`brew install carlosframework/tap/rastrillo` keeps working unchanged**
+and `README.md`'s line needs no edit at all.
+
+Two details that are not free:
+
+- **Tags are prefixed.** `carlosframework/releases` already carries
+  `v0.13.0`–`v0.17.0` for carlos, which will reach `v0.20.0` in time.
+  rastrillo publishes `rastrillo-v0.20.0`; carlos's existing unprefixed
+  tags are not touched. Asset names disambiguate the files, the prefix
+  disambiguates the release.
+- **The formula stops building from source.** It gains prebuilt
+  darwin/linux × arm64/amd64 binaries and drops `depends_on "go" =>
+  :build`, matching `carlos.rb`. That is a real change in what the
+  formula promises, and the release process grows a cross-compile step
+  and four checksums.
+
+Still out of scope: bottling, `brew audit` compliance beyond what the
+existing formulae meet, and Windows artifacts (carlos ships them; nothing
+asks rastrillo to).
