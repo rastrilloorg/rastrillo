@@ -74,8 +74,15 @@ const maxPageBytes = 128 << 10
 // locale — the weight is the page's content, and the widest locale is
 // the honest number to hold.
 //
-// An entry that is no longer needed fails the gate, so this table
-// shrinks on its own once the page it names is fixed. Empty is the goal.
+// An entry is "needed" only while some page of that name is actually
+// over maxPageBytes. The gate fails on an entry that is not, so the
+// table shrinks the moment the page it names is fixed rather than
+// surviving as a permission slip nobody reads. Empty is the goal.
+//
+// That distinction is the whole value of the table and it was wrong on
+// the first attempt — the entry was marked used because a page of that
+// name existed — so it has a gate of its own:
+// TestTheDebtTableCannotOutliveTheDebt.
 var pageBudgetDebt = map[string]int{
 	// 387,029 bytes at its worst (signal/hi). The fix is not a bigger
 	// number: it is the Code tabs, which write every sample into the
@@ -100,8 +107,9 @@ func render(t *testing.T) map[string][]byte {
 // Two renders must be byte-identical: every map in the pipeline
 // (Styleguide's samples, BaseCatalogs, the parsed token blocks) is
 // sorted before it can reach output. Without this gate a Go map's
-// randomised iteration order would show up as a churning diff in a
-// committed tree of 180 pages.
+// randomised iteration order would show up as a different byte stream
+// on every build of the site, in all 361 of its pages, for no change at
+// all — and the site rebuilds the gallery on every deploy.
 func TestRenderIsDeterministic(t *testing.T) {
 	first, second := render(t), render(t)
 	if !reflect.DeepEqual(first, second) {
@@ -263,6 +271,26 @@ func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {
 	}
 }
 
+// budgetFor is the ceiling one page is held to, and whether reaching it
+// needed an entry from pageBudgetDebt.
+//
+// The order of the two clauses is the whole point, and getting it the
+// other way round is what made the first version of this table unable to
+// rot out: a page at or under maxPageBytes is under budget FULL STOP,
+// and a debt entry naming it is not doing any work. Consult the table
+// only for a page that is actually over, and an entry stops being
+// consumed the moment the page it names is fixed — which is what the
+// unused-entry check downstream turns into a failure.
+func budgetFor(base string, size int) (limit int, onDebt bool) {
+	if size <= maxPageBytes {
+		return maxPageBytes, false
+	}
+	if debt, ok := pageBudgetDebt[base]; ok {
+		return debt, true
+	}
+	return maxPageBytes, false
+}
+
 // A page's weight is what a reader waits for, so it is gated per page
 // rather than in total. The tree's total is logged because it is worth
 // knowing and worth nothing as a ceiling: it is the website's build
@@ -280,22 +308,57 @@ func TestEveryPageStaysUnderItsBudget(t *testing.T) {
 		if len(body) > heaviest {
 			heaviest, heaviestName = len(body), name
 		}
-		limit, what := maxPageBytes, "budget"
-		if debt, ok := pageBudgetDebt[path.Base(name)]; ok {
-			limit, what = debt, "recorded debt"
+		limit, onDebt := budgetFor(path.Base(name), len(body))
+		if onDebt {
 			used[path.Base(name)] = true
 		}
 		if len(body) > limit {
+			what := "budget"
+			if onDebt {
+				what = "recorded debt"
+			}
 			t.Errorf("%s is %d bytes, over its %d-byte %s", name, len(body), limit, what)
 		}
 	}
 	for name := range pageBudgetDebt {
 		if !used[name] {
-			t.Errorf("pageBudgetDebt names %q, and no page of that name is over %d bytes: delete the entry", name, maxPageBytes)
+			t.Errorf("pageBudgetDebt names %q, and no page of that name is over the %d-byte budget: delete the entry", name, maxPageBytes)
 		}
 	}
 	t.Logf("heaviest page: %s at %d bytes; whole tree: %d files, %d bytes (%.2f MiB)",
 		heaviestName, heaviest, len(files), total, float64(total)/(1<<20))
+}
+
+// TestTheDebtTableCannotOutliveTheDebt is the gate on the gate.
+//
+// pageBudgetDebt is a table of exemptions, and an exemption table is only
+// worth having if it empties itself. The first version of this one could
+// not: it marked an entry used because a page of that name existed, so
+// `"tokens.html": 400 << 10` — for a page of at most 32,930 bytes —
+// passed, and a fixed components.html would have kept its 3× permission
+// slip forever.
+//
+// So this asserts the property rather than the wiring: at the budget an
+// entry is not consumed, above it the entry is what raises the ceiling,
+// and no entry can lower one.
+func TestTheDebtTableCannotOutliveTheDebt(t *testing.T) {
+	if limit, onDebt := budgetFor("no-such-page.html", maxPageBytes+1); onDebt || limit != maxPageBytes {
+		t.Errorf("a page with no debt entry got %d bytes (onDebt=%v), want the plain %d-byte budget", limit, onDebt, maxPageBytes)
+	}
+	for name, debt := range pageBudgetDebt {
+		if debt <= maxPageBytes {
+			t.Errorf("pageBudgetDebt[%q] is %d, at or under the %d-byte budget: an entry that does not raise the ceiling is not a debt", name, debt, maxPageBytes)
+		}
+		// The fixed page. This is the case the table has to notice.
+		if limit, onDebt := budgetFor(name, maxPageBytes); onDebt || limit != maxPageBytes {
+			t.Errorf("%q at exactly the %d-byte budget consumed its debt entry (limit=%d onDebt=%v); a fixed page must leave its entry unused so the unused-entry check deletes it",
+				name, maxPageBytes, limit, onDebt)
+		}
+		// The page as it is today.
+		if limit, onDebt := budgetFor(name, maxPageBytes+1); !onDebt || limit != debt {
+			t.Errorf("%q one byte over the budget got %d bytes (onDebt=%v), want its recorded %d", name, limit, onDebt, debt)
+		}
+	}
 }
 
 var (

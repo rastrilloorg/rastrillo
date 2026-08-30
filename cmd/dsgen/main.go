@@ -30,15 +30,30 @@
 // site's layout, file naming or theme choice would be a promise made on
 // behalf of everyone else's.
 //
-// # What it deletes
+// # What it deletes, and what it refuses to
 //
-// dsgen removes the paths it is about to write, so a page that stops
-// being rendered stops existing, and it removes nothing else: the
-// top-level names in the render are the whole of what it will unlink
-// inside -out. The earlier version of this command deleted its output
-// root outright and, pointed at the wrong directory once, wiped 152
-// files that were not the gallery's. A command people run with a
-// directory on the command line does not get to do that.
+// dsgen owns -out. It empties the directory before it writes, so what is
+// there afterwards is the render and only the render: a page, an asset
+// or a whole theme that a previous version produced and this one does
+// not cannot survive into the output. That matters most where it is
+// least visible — a build directory that persists between runs, and a
+// framework version that renamed a theme.
+//
+// It will only take ownership of a directory that is empty, absent, or
+// already its own. dsgen leaves a stamp file (.dsgen) naming itself in
+// every directory it writes, and refuses, changing nothing, when -out
+// holds anything else. The earlier version of this command emptied its
+// output root with no such check and, pointed at the wrong directory
+// once, wiped 152 files that were not the gallery's; a version after
+// that removed only the paths it was about to write, which was safe and
+// left a renamed theme's files published for as long as the build
+// directory lived. The stamp is how it gets both.
+//
+// The stamp is written before the pages, so a run interrupted halfway —
+// a full disk — leaves a directory dsgen still owns and will clean out
+// on the next run. It is not atomic, though: a failed run leaves a
+// partial tree behind, and the only thing saying so is the non-zero
+// exit status. Treat it as fatal.
 package main
 
 import (
@@ -47,7 +62,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/carlosframework/rastrillo/internal/designsystem"
 )
@@ -94,7 +108,7 @@ func write(out, mount string) (root string, files, bytes int, err error) {
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("resolving -out: %w", err)
 	}
-	if err := clear(root, rendered); err != nil {
+	if err := claim(root); err != nil {
 		return "", 0, 0, err
 	}
 
@@ -117,28 +131,59 @@ func write(out, mount string) (root string, files, bytes int, err error) {
 	return root, len(rendered), bytes, nil
 }
 
-// clear removes the previous run's output and nothing else: for each
-// distinct first path segment the render produces — index.html, the
-// shared assets, one directory per theme — the matching entry under
-// root goes, and anything else in root is left where it is.
+// stampName is the file dsgen leaves in a directory to say the
+// directory is its own. Dotted so it stays out of the way of whatever
+// serves the tree.
+const stampName = ".dsgen"
+
+const stampBody = `This directory is written by rastrillo's dsgen command, which EMPTIES it
+on every run. Do not keep anything here. Delete this file and dsgen will
+refuse the directory instead.
+
+	https://pkg.go.dev/github.com/carlosframework/rastrillo/cmd/dsgen
+`
+
+// claim makes root a directory dsgen owns and empties it, or fails
+// without touching anything.
 //
-// So dsgen is safe to point at a directory that holds other things, and
-// a stale page from a render that no longer produces it still cannot
-// survive into the output.
-func clear(root string, files map[string][]byte) error {
-	tops := map[string]bool{}
-	for name := range files {
-		tops[strings.SplitN(name, "/", 2)[0]] = true
-	}
-	names := make([]string, 0, len(tops))
-	for name := range tops {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		if err := os.RemoveAll(filepath.Join(root, name)); err != nil {
-			return fmt.Errorf("removing the previous %s: %w", name, err)
+// Ownership is the whole of the safety story, and it is deliberately
+// conservative: an absent directory is created, an empty one is adopted,
+// one holding dsgen's own stamp is emptied and reused, and anything else
+// is refused with an explanation. So dsgen can be pointed at the wrong
+// directory — the thing that once cost 152 files — and the wrong
+// directory is almost never empty.
+//
+// Emptying rather than removing named paths is the other half. Removing
+// only what the current render produces looked safer and quietly wasn't:
+// a theme renamed between versions leaves its whole directory and its
+// stylesheet behind, published, linked, and invisible to a site guard
+// that checks which files are present rather than which are not. That is
+// the deleted freshness gate's failure mode reappearing one directory
+// over, and the answer is that there is never a second copy to drift:
+// the output IS the render, every time.
+func claim(root string) error {
+	entries, err := os.ReadDir(root)
+	switch {
+	case os.IsNotExist(err):
+		if err := os.MkdirAll(root, 0o755); err != nil {
+			return fmt.Errorf("creating %s: %w", root, err)
 		}
+	case err != nil:
+		return fmt.Errorf("reading %s: %w", root, err)
+	case len(entries) > 0:
+		if _, err := os.Stat(filepath.Join(root, stampName)); err != nil {
+			return fmt.Errorf("refusing to empty %s: it is not empty and holds no %s stamp, "+
+				"so dsgen has not written it before. Point -out at a new or empty directory, "+
+				"or delete that one yourself", root, stampName)
+		}
+		for _, e := range entries {
+			if err := os.RemoveAll(filepath.Join(root, e.Name())); err != nil {
+				return fmt.Errorf("emptying %s: %w", root, err)
+			}
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, stampName), []byte(stampBody), 0o644); err != nil {
+		return fmt.Errorf("writing %s: %w", filepath.Join(root, stampName), err)
 	}
 	return nil
 }

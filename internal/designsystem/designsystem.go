@@ -181,12 +181,13 @@ func CleanMount(mount string) (string, error) {
 	if !strings.HasPrefix(mount, "/") {
 		mount = "/" + mount
 	}
+	// path.Clean on a rooted path never leaves a "..": a climb past the
+	// root collapses to "/", which the next line refuses. So there is no
+	// separate check for one, and a check that cannot fire would only
+	// suggest this function does more than it does.
 	clean := path.Clean(mount)
-	if clean == "/" || clean == "." {
+	if clean == "/" {
 		return "", fmt.Errorf("designsystem: mount path %q is the site root; the tree needs a directory of its own", mount)
-	}
-	if strings.Contains(clean, "..") {
-		return "", fmt.Errorf("designsystem: mount path %q does not resolve to a path", mount)
 	}
 	return clean, nil
 }

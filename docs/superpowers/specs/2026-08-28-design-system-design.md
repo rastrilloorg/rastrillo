@@ -2454,8 +2454,8 @@ for inspection — it just stops being a thing the repo carries.
 
 #### AS BUILT (2026-08-30) — framework side
 
-Three commits on `dsgen-at-build-time`. The website change is not in
-them and is still to do.
+Six commits on `dsgen-at-build-time` (five building it, one closing a
+review). The website change is not in them and is still to do.
 
 **`cmd/dsgen` is public, and the mount is a real argument.** The command
 moved out of `internal/designsystem/cmd/dsgen`. It takes `-out` and
@@ -2463,8 +2463,12 @@ moved out of `internal/designsystem/cmd/dsgen`. It takes `-out` and
 `designsystem.Render(mount)` and the twenty-seven page-building
 functions under it rather than read from a constant, so it is a
 parameter that is actually honoured: rendering at `/ui/gallery/`
-produces the same 369-file set with no occurrence of `/design-system` in
-any href. `designsystem.CleanMount` normalises a trailing slash or a
+produces the same 369-file set with no `href=` or `src=` under
+`/design-system` anywhere in it, and — since the locale-menu fixture in
+`samples.go` stopped spelling the gallery's own mount in its `Return`
+value — no occurrence of the string in any page at all. (It survives in
+one place, `gallery.js`'s header comment, where it is the project's name
+and not a URL.) `designsystem.CleanMount` normalises a trailing slash or a
 missing leading one and refuses the site root, because the tree writes
 `tokens.css` beside its theme directories.
 
@@ -2475,9 +2479,25 @@ go run github.com/carlosframework/rastrillo/cmd/dsgen@<sha> \
     -out src/design-system -mount /design-system
 ```
 
-`guardRoot` is gone, and the incident it was added for is handled by a
-rule that generalises to a directory an outside caller names: dsgen
-removes the top-level paths it is about to write, and nothing else.
+`guardRoot` is gone. It could only ever protect one hardcoded path, and
+the 152-file incident behind it needs a rule that generalises to a
+directory an outside caller names. **dsgen owns `-out`**: it empties the
+directory before writing, and it will only take ownership of one that is
+absent, empty, or already carries its own `.dsgen` stamp. Anything else
+is refused with no filesystem change.
+
+Both halves are load-bearing, and the first attempt had only one of them.
+Removing just the top-level paths the current render produces is safe and
+incomplete: a theme dropped or renamed between versions — this project
+renamed `ink` to `day` — keeps its whole directory and its stylesheet in
+a build directory that persists, published and linked, and the site's
+shape guard checks which files are present, never which are extra. That
+is the deleted freshness gate's failure mode one directory over, because
+an output directory that outlives a render IS a second copy. Emptying is
+what makes the output the render and nothing else;
+`TestWriteLeavesNoTraceOfAnEarlierRender` seeds exactly the rename's
+residue and `TestWriteRefusesADirectoryItDoesNotOwn` holds the other
+half.
 
 **The tree is deleted**: 369 files, 19,038,929 bytes. `docs/design-system/`
 and `.design-system/` are both git-ignored — the second is where
@@ -2499,9 +2519,15 @@ can land without an argument.
 **`components.html` does not pass it, and this is the finding.** 332,827
 bytes in `day/en`, 387,029 in `signal/hi` — 3× the budget and 5.7× the
 next heaviest page. It is in a `pageBudgetDebt` table with its own
-ceiling, the shape `axeExempt` and `colorMixSkip` already use here; an
-entry that stops being needed fails the gate, so the table shrinks by
-itself. The weight is the Code tabs: every sample is written into the
+ceiling, the shape `axeExempt` and `colorMixSkip` already use here. An
+entry counts as needed only while a page of that name is **actually over
+`maxPageBytes`** — not merely while a page of that name exists, which is
+what the first attempt checked and which would have let a fixed
+`components.html` keep a 3× permission slip for ever. So the table
+shrinks the moment the page is fixed, and
+`TestTheDebtTableCannotOutliveTheDebt` is the gate on that, because it is
+the only property that makes an exemption table worth having.
+The weight is the Code tabs: every sample is written into the
 page a second time, escaped, for a tab most readers never open. Fixing
 that is a change to what the page contains and has not been made.
 

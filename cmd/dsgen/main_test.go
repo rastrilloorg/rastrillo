@@ -48,12 +48,18 @@ func TestWriteIsTheWholeRender(t *testing.T) {
 		t.Errorf("reported %d bytes, rendered %d", bytes, total)
 	}
 
+	// The stamp is the one file in the directory that is not the render.
+	// Everything else on disk has to be something Render produced, or
+	// dsgen has written something nobody asked for.
+	if _, err := os.Stat(filepath.Join(root, stampName)); err != nil {
+		t.Errorf("no %s stamp in the output: dsgen would refuse its own directory on the next run (%v)", stampName, err)
+	}
 	var onDisk int
-	if err := filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() {
+		if !info.IsDir() && p != filepath.Join(root, stampName) {
 			onDisk++
 		}
 		return nil
@@ -61,56 +67,119 @@ func TestWriteIsTheWholeRender(t *testing.T) {
 		t.Fatalf("walking %s: %v", root, err)
 	}
 	if onDisk != len(want) {
-		t.Errorf("%d files on disk, %d rendered — something was written that nothing renders", onDisk, len(want))
+		t.Errorf("%d files on disk beside the stamp, %d rendered — something was written that nothing renders", onDisk, len(want))
 	}
 }
 
-// dsgen is run with a directory named on a command line, by people and
-// by build scripts, and it deletes before it writes. The rule that makes
-// that safe is that it only ever removes the top-level paths it is about
-// to write: a stale page from a previous run goes, and anything else in
-// the directory stays.
+// A build directory that persists between runs is the case this has to
+// get right, and the case the first version of this command got wrong.
 //
-// The earlier, internal version of this command deleted its output root
-// outright and wiped 152 unrelated files the one time it was pointed at
-// the wrong directory. This is the gate on the replacement.
-func TestWriteRemovesItsOwnStaleOutputAndNothingElse(t *testing.T) {
+// It removed only the top-level paths the CURRENT render produces, so a
+// theme dropped or renamed between framework versions kept its whole
+// directory and its stylesheet in the published output — this project
+// renamed ink to day, so the shape is not hypothetical — and a site
+// guard that checks which files are present never sees an extra one.
+// That is the deleted freshness gate's failure mode one directory over:
+// an output directory that outlives a render is a second copy, and a
+// second copy can drift.
+//
+// So the rule is that the directory holds the render and nothing else,
+// and the seeded residue below is the exact shape of the rename.
+func TestWriteLeavesNoTraceOfAnEarlierRender(t *testing.T) {
 	dir := t.TempDir()
-
-	// A neighbour: something the site keeps in the same directory.
-	neighbour := filepath.Join(dir, "robots.txt")
-	if err := os.WriteFile(neighbour, []byte("User-agent: *\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	kept := filepath.Join(dir, "images")
-	if err := os.MkdirAll(kept, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(kept, "logo.svg"), []byte("<svg/>"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	// A leftover from a render that no longer produces it, inside a
-	// directory this run does write.
-	stale := filepath.Join(dir, designsystem.RootTheme(), "en", "gone.html")
-	if err := os.MkdirAll(filepath.Dir(stale), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(stale, []byte("<!doctype html>"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
 	if _, _, _, err := write(dir, designsystem.DefaultMount); err != nil {
-		t.Fatalf("write: %v", err)
+		t.Fatalf("first write: %v", err)
 	}
 
-	if _, err := os.Stat(stale); !os.IsNotExist(err) {
-		t.Errorf("%s survived: a page that stopped being rendered has to stop existing (err=%v)", stale, err)
+	residue := []string{
+		// A whole theme that no longer exists: ink was renamed to day.
+		filepath.Join("ink", "en", "index.html"),
+		filepath.Join("ink", "ar", "shells", "sidebar.html"),
+		// Its stylesheet, a top-level name the current render does not
+		// produce and so never used to be removed.
+		"theme-ink.css",
+		// And a page inside a directory this render does write, which is
+		// the only case the old rule covered.
+		filepath.Join(designsystem.RootTheme(), "en", "gone.html"),
 	}
-	for _, keep := range []string{neighbour, filepath.Join(kept, "logo.svg")} {
-		if _, err := os.Stat(keep); err != nil {
-			t.Errorf("%s was removed: dsgen must not touch what it did not write (%v)", keep, err)
+	for _, rel := range residue {
+		p := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
 		}
+		if err := os.WriteFile(p, []byte("<!doctype html>"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	want, err := designsystem.Render(designsystem.DefaultMount)
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	if _, _, _, err := write(dir, designsystem.DefaultMount); err != nil {
+		t.Fatalf("second write: %v", err)
+	}
+
+	for _, rel := range residue {
+		if _, err := os.Stat(filepath.Join(dir, rel)); !os.IsNotExist(err) {
+			t.Errorf("%s survived the second run: the output directory has to be the render and nothing else (err=%v)", rel, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, "ink")); !os.IsNotExist(err) {
+		t.Errorf("the ink/ directory survived the second run")
+	}
+	// And the run that cleaned up still produced the whole gallery.
+	for _, name := range []string{"index.html", "tokens.css", designsystem.RootTheme() + "/en/index.html"} {
+		got, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(name)))
+		if err != nil {
+			t.Fatalf("%s after the second run: %v", name, err)
+		}
+		if string(got) != string(want[name]) {
+			t.Errorf("%s after the second run differs from the render", name)
+		}
+	}
+}
+
+// The other half: dsgen empties a directory, so it must only ever empty
+// one it owns. A directory that is not empty and carries no stamp is one
+// dsgen has not written, and the answer is to refuse and change nothing.
+//
+// This is what stands in for the guardRoot that could only protect one
+// hardcoded path, and it is the check the 152-file incident asked for: a
+// directory somebody meant to keep is almost never empty.
+func TestWriteRefusesADirectoryItDoesNotOwn(t *testing.T) {
+	dir := t.TempDir()
+	theirs := filepath.Join(dir, "notes.txt")
+	if err := os.WriteFile(theirs, []byte("mine\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sub := filepath.Join(dir, "photos")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, _, _, err := write(dir, designsystem.DefaultMount); err == nil {
+		t.Fatal("dsgen emptied a directory it had never written: -out is not a directory it may take on faith")
+	}
+	for _, keep := range []string{theirs, sub} {
+		if _, err := os.Stat(keep); err != nil {
+			t.Errorf("%s was removed by a run that refused: a refusal must change nothing (%v)", keep, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, "index.html")); !os.IsNotExist(err) {
+		t.Error("a refused run wrote pages anyway")
+	}
+
+	// With the stamp there — which is what a directory dsgen wrote looks
+	// like — the same directory is fair game.
+	if err := os.WriteFile(filepath.Join(dir, stampName), []byte(stampBody), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := write(dir, designsystem.DefaultMount); err != nil {
+		t.Fatalf("write into a stamped directory: %v", err)
+	}
+	if _, err := os.Stat(theirs); !os.IsNotExist(err) {
+		t.Error("the stamped directory kept a file that is not part of the render")
 	}
 }
 

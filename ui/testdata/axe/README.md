@@ -14,13 +14,15 @@ and not from the network.
 ## This is test data
 
 It is read by `internal/designsystem/a11y_test.go` (build tag `browser`), which
-injects it into a headless Chromium and scans the committed gallery. It is not
-embedded, not served, not part of `ui.ShimJS()`, and never reaches
-`docs/design-system/`. Two untagged tests assert all of that, so they run on
-every `go test ./...` and not only when a browser is around:
-`TestVendoredAxeIsNotAShippedAsset` in `ui/axe_test.go` holds the library's
-assets and the embedded template tree, and `TestVendoredAxeStaysOutOfTheTree`
-in `internal/designsystem` holds the 189 published files.
+injects it into a headless Chromium and scans the design-system gallery —
+served straight out of `designsystem.Render()`, in memory, since the gallery is
+generated at the publishing site's build rather than kept in this repository.
+The engine is not embedded, not served, not part of `ui.ShimJS()`, and reaches
+none of the 369 files the gallery renders. Two untagged tests assert all of
+that, so they run on every `go test ./...` and not only when a browser is
+around: `TestVendoredAxeIsNotAShippedAsset` in `ui/axe_test.go` holds the
+library's assets and the embedded template tree, and
+`TestVendoredAxeStaysOutOfTheTree` in `internal/designsystem` holds the render.
 
 ## Upgrading
 
