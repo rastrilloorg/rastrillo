@@ -580,6 +580,12 @@ prose included, with the deliberate exception of the sample fixtures.
 
 ### 5.2 How it is built
 
+**Superseded on 2026-08-30 by §6-v2.5 in the one respect that matters:
+the tree is no longer committed, and `dsgen` is no longer internal.**
+Everything below about what is rendered and how it is gated still holds;
+`docs/design-system/` as a location, `TestDesignSystemIsCurrent`, the
+`guardRoot` output-root check and `TestTreeStaysUnderTheSizeGate` do not.
+
 `internal/designsystem` in the framework repo. `go generate ./...`
 renders the whole tree into `docs/design-system/` — static HTML, the
 three theme files, `tokens.css`, `select.js`, `datetime.js`,
@@ -2445,3 +2451,60 @@ for inspection — it just stops being a thing the repo carries.
 - The website's file-count guard changes shape: it can no longer compare
   a vendored count, so it verifies the generator ran and produced the
   page kinds it expects.
+
+#### AS BUILT (2026-08-30) — framework side
+
+Three commits on `dsgen-at-build-time`. The website change is not in
+them and is still to do.
+
+**`cmd/dsgen` is public, and the mount is a real argument.** The command
+moved out of `internal/designsystem/cmd/dsgen`. It takes `-out` and
+`-mount` and nothing else. The mount is threaded through
+`designsystem.Render(mount)` and the twenty-seven page-building
+functions under it rather than read from a constant, so it is a
+parameter that is actually honoured: rendering at `/ui/gallery/`
+produces the same 369-file set with no occurrence of `/design-system` in
+any href. `designsystem.CleanMount` normalises a trailing slash or a
+missing leading one and refuses the site root, because the tree writes
+`tokens.css` beside its theme directories.
+
+The command the website runs:
+
+```
+go run github.com/carlosframework/rastrillo/cmd/dsgen@<sha> \
+    -out src/design-system -mount /design-system
+```
+
+`guardRoot` is gone, and the incident it was added for is handled by a
+rule that generalises to a directory an outside caller names: dsgen
+removes the top-level paths it is about to write, and nothing else.
+
+**The tree is deleted**: 369 files, 19,038,929 bytes. `docs/design-system/`
+and `.design-system/` are both git-ignored — the second is where
+`go generate ./...` now writes, for reading locally.
+
+**`TestDesignSystemIsCurrent`, its orphan walk, `treeCommitted` and
+`treeDir` are deleted**, and so is the disk half of
+`TestVendoredAxeStaysOutOfTheTree`. The a11y scan's `committedTree` is
+deleted with them: `a11y_test.go` now uses `browser_test.go`'s
+`treeHandler`, which serves `Render()`'s output from memory, so CI scans
+the bytes dsgen would publish rather than a copy of them. Nothing in the
+package reads the filesystem for the tree any more.
+
+**`maxTreeBytes` → `maxPageBytes`, 128 KiB per HTML page.** A little
+under twice the heaviest page that is not `components.html`
+(`primitives.html`, 67,507 bytes in its widest locale), so a new section
+can land without an argument.
+
+**`components.html` does not pass it, and this is the finding.** 332,827
+bytes in `day/en`, 387,029 in `signal/hi` — 3× the budget and 5.7× the
+next heaviest page. It is in a `pageBudgetDebt` table with its own
+ceiling, the shape `axeExempt` and `colorMixSkip` already use here; an
+entry that stops being needed fails the gate, so the table shrinks by
+itself. The weight is the Code tabs: every sample is written into the
+page a second time, escaped, for a tab most readers never open. Fixing
+that is a change to what the page contains and has not been made.
+
+Repo size: 34 MB → 14 MB in the working tree. `.git` is unchanged at
+46 MB — deleting a file does not delete its history, and only a rewrite
+or a fresh clone with `--filter` would recover that.
