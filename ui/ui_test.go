@@ -2942,7 +2942,11 @@ func TestDaterangeFieldsetIsStyled(t *testing.T) {
 	if !strings.Contains(got, `<fieldset class="rst-field-range">`) {
 		t.Errorf("daterange fieldset lost its class:\n%s", got)
 	}
-	if !strings.Contains(string(TokensCSS()), ".rst-field-range {") {
+	// Read as a selector rather than as the literal ".rst-field-range {":
+	// since stage 1 of the markup migration every rule carries its
+	// attribute twin too, so the class is no longer the last thing before
+	// the brace.
+	if !tokensStyleSelector(".rst-field-range") {
 		t.Error("tokens.css does not style .rst-field-range")
 	}
 }
