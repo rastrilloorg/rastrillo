@@ -1,0 +1,9 @@
+# Agent scratch. The subagent-driven-development skill expects its
+# workspace to be ignored — it never was here, and twice in one session
+# a `git add -A` swept its reports and an in-flight regenerated tree
+# into unrelated commits.
+.superpowers/
+
+# The copy-review gate's string index and result, written at the repo
+# root by the skill that serves them.
+copy-review/
