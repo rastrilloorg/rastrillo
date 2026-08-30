@@ -3,6 +3,7 @@
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "分頁"
 rastrillo.ui.search_submit = "搜尋"
+rastrillo.ui.search_clear = "清除搜尋"
 rastrillo.ui.cancel = "取消"
 rastrillo.ui.done = "揀完喇"
 rastrillo.ui.select_filter = "輸入嚟篩選"

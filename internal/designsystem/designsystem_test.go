@@ -67,12 +67,15 @@ const treeDir = "../../docs/design-system"
 //
 // ── The budget for the next page kind ────────────────────────────────
 //
-// Headroom is 3,079,675 bytes (2.94 MiB). Two more page kinds are
-// planned — icons and getting started — and 72 more pages at the
-// Overview stub's 19,281 bytes, which is furniture and nothing else,
-// costs 1.32 MiB. That leaves 1.62 MiB for what those pages actually
-// say, and the icons page is not the threat it looks: rastrillo.Icon
-// answers 11 slugs and 2,487 bytes of SVG in total. They fit.
+// Headroom is 1,933,158 bytes (1.84 MiB) — it was 2.94 MiB when this
+// paragraph was written, and the §6-v2.1b work spent the difference.
+// Two more page kinds are planned — icons and getting started — and 72
+// more pages at the Overview stub's 19,281 bytes, which is furniture
+// and nothing else, costs 1.32 MiB. That leaves about 0.5 MiB for what
+// those pages actually say, where it used to be 1.62. The icons page is
+// still not the threat it looks — rastrillo.Icon answers 11 slugs and
+// 2,487 bytes of SVG in total — but the room for a getting-started page
+// with real prose in it is now the thing to watch.
 //
 // If a later page does not, the lever is the stylesheet before the
 // ceiling. dsCSS reaches all 181 gallery pages (180 plus the root

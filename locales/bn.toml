@@ -3,6 +3,7 @@
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "পৃষ্ঠা বিন্যাস"
 rastrillo.ui.search_submit = "খুঁজুন"
+rastrillo.ui.search_clear = "অনুসন্ধান মুছুন"
 rastrillo.ui.cancel = "বাতিল"
 rastrillo.ui.done = "নির্বাচন সম্পন্ন"
 rastrillo.ui.select_filter = "ফিল্টার করতে টাইপ করুন"

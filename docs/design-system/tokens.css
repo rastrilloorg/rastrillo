@@ -54,11 +54,48 @@
   --rst-sp-4: 1rem;
   --rst-sp-5: 1.5rem;
   --rst-sp-6: 2.5rem;
+
+  /* The scrollbar's gutter, reserved whether or not there is a
+     scrollbar in it, so a short page and a long one are the same width
+     and clicking between them does not slide the layout sideways.
+
+     A token rather than a class for three reasons: the opt-out is one
+     line in your own stylesheet (--rst-scrollbar-gutter: auto), it
+     layers like every other token, and custom properties are untouched
+     by the markup migration, so this survives it without an edit.
+
+     What it costs, chosen knowingly: a page too short to scroll now
+     reserves the strip as well, so there is a thin empty band at the
+     trailing edge where there was none. That is the price of never
+     shifting. both-edges would double the band to keep centred content
+     exactly centred, and was not taken: this system's pages are already
+     a max-width column inside a wider ground, so the asymmetry does not
+     land where it would be seen.
+
+     Do not over-claim what it fixes. macOS overlay scrollbars take no
+     layout space at all, so on a default Mac there was never anything
+     to shift. This is real on Windows and Linux, on a Mac set to
+     "always show scrollbars", and inside the design gallery's own
+     preview iframes. Chrome 94+, Firefox 97+, Safari 18.2+; an older
+     engine ignores the declaration and lands on the behaviour it has
+     today. */
+  --rst-scrollbar-gutter: stable;
 }
 
 /* ── Base. Three rules, so a freshly scaffolded app looks finished
       before it has any CSS of its own. Delete them if your app owns
       its own base styles. ──────────────────────────────────────────── */
+/* The gutter is declared on the root element, which is where the
+   viewport's scrollbar lives. It also fixes a second instance of the
+   same bug that nobody had attributed to the scrollbar: the modal's
+   scroll lock below (body:has(.rst-backdrop) { overflow: hidden })
+   takes the scrollbar away the instant a modal opens, and without a
+   reserved gutter the whole page slides sideways while the reader
+   watches. One declaration, both cases. */
+html {
+  scrollbar-gutter: var(--rst-scrollbar-gutter);
+}
+
 body {
   margin: 0;
   background: var(--rst-bg);
@@ -382,6 +419,38 @@ body {
   border-color: var(--rst-accent);
   outline: 2px solid var(--rst-accent);
   outline-offset: 1px;
+}
+/* The browser's own ✕ goes (design spec §6-v2.1b.6). It is
+   ::-webkit-search-cancel-button and it does exactly what it is
+   specified to do — it clears the input's VALUE — but a GET form
+   submits on submit, so the results stand and the address bar still
+   says ?q=. list-bar-search renders a real link in its place, and
+   leaving both would be two affordances, one of which lies.
+   -webkit-appearance is not redundant beside display: none: without it
+   WebKit reserves the button's box before the display ever applies. */
+.rst-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+/* The link that replaces it. 24px on BOTH axes is WCAG 2.2 SC 2.5.8
+   Target Size (AA), which this library gates in CI — an ✕ tucked inside
+   a field is exactly the shape that fails it, and a 17px chip on this
+   branch already did. Do not shrink it without re-measuring. */
+.rst-search__clear {
+  align-items: center;
+  border-radius: var(--rst-radius-sm);
+  color: var(--rst-text-faint);
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  min-block-size: 24px;
+  min-inline-size: 24px;
+  text-decoration: none;
+}
+.rst-search__clear:hover {
+  background: var(--rst-accent-soft);
+  color: var(--rst-text);
 }
 
 /* ── list-row-action ──────────────────────────────────────────────── */
@@ -753,6 +822,105 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-dropdown__menu .rst-menu-group > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
 .rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker { display: none; }
 .rst-dropdown__menu .rst-menu-group > div { padding-inline-start: 0.6rem; }
+/* Menus that fit the viewport (design spec §6-v2.1b, 1 and 2). Two
+   bugs, one surface — and one rule for all four panels, because
+   .rst-combo__list and .rst-dtp__list have carried the cap and the
+   scroll since they were written and these two never did.
+
+   THE CAP AND THE SCROLL come first because they work in every engine.
+   The twelve-locale language menu measures 388px; on a short viewport
+   its last entries were simply unreachable — no cap, no scroll, nothing
+   to drag. The cap is the space a menu may take: 20rem where the window
+   is tall, and the window itself less the room the anchor and the
+   page's own chrome need where it is not. overscroll-behavior keeps a
+   flick that bottoms the menu out from carrying on into the page behind
+   it.
+
+   THE 8rem FLOOR IS NOT DECORATION, and it went in after the first
+   version of this rule shipped without one. dvh is the viewport, and
+   inside an iframe the viewport is THE FRAME — so in the design
+   gallery's own 100px preview frames `100dvh - 6rem` computed to 4px
+   and a three-item menu rendered as a 12px sliver; below a 96px frame
+   it computed to zero and the menu was invisible. A fix aimed at menu
+   entries nobody could reach had shipped a menu with no entries at all.
+   The floor is the honest trade: in a frame too short for the menu it
+   overflows, and an overflowing menu can be scrolled to, where an
+   invisible one cannot be anything. Any app embedding a screen in a
+   short iframe had the same bug, so this is not a gallery fix.
+
+   THE FLIP is CSS anchor positioning. A menu with no room below opens
+   upward; one against the trailing edge opens the other way inline.
+   Zero script.
+
+   It is Chromium-only today. That is accepted, and the reason is
+   recorded here rather than left looking like an oversight: an engine
+   without it lands on the fixed position above, which is exactly what
+   every engine does today, so nothing regresses — and Firefox and
+   Safari gain the behaviour with no release from us. The alternative
+   was script, which would put positioning behind JavaScript and make
+   the scriptless path worse than the one we already ship. That trade is
+   the wrong way round for this library.
+
+   anchor-scope is load-bearing, not decoration. anchor-name is a
+   document-wide name, so without a scope every menu on the page would
+   resolve --rst-menu to the LAST element carrying it and all of them
+   would pile onto one anchor. Scoping the name to each disclosure's own
+   subtree is what lets one name serve every menu in the library.
+
+   Inside the @supports the fixed insets have to go. position-area
+   supplies the containing block, so a leftover top: 100% would then be
+   measured against THAT box and push the panel a whole anchor-height
+   further down again. The margin stays: position-try-fallbacks flips
+   margins along with insets, so one margin-block-start is the 4px gap
+   in both directions.
+
+   The cap is deliberately NOT a percentage of the position-area. A
+   percentage would be the exact space available, which sounds better
+   and is worse: an element clamped to fit never overflows, and overflow
+   is precisely what triggers position-try-fallbacks, so the menu would
+   scroll in place at the foot of the window instead of flipping up into
+   the room above it.
+
+   position-visibility covers the fixed positioning above. A fixed panel
+   is deliberately outside every scrolling ancestor's clip — that is how
+   a menu opened inside a card escapes it — but the anchor is NOT, so a
+   rail's nav scrolled until the menu's own button is gone could leave
+   the menu painted over unrelated content with nothing under it.
+   anchors-visible ties the panel's visibility to its anchor's: when the
+   button goes, the menu goes.
+
+   It is a no-op in Chromium today, and that is written down rather than
+   left to be rediscovered: Chromium's INITIAL value for the property is
+   already anchors-visible, on every element. The CSS spec's initial
+   value is `always`. So this declaration is not what produces today's
+   behaviour — it is what keeps it if an engine ever aligns with the
+   spec, which would otherwise orphan every menu here with no warning at
+   all. ui's TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt
+   watches for exactly that, and says the same at more length. */
+.rst-dropdown__menu,
+.rst-row-menu__panel {
+  max-block-size: min(20rem, max(calc(100dvh - 6rem), 8rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@supports (position-area: block-end) and (position-try-fallbacks: flip-block) {
+  .rst-dropdown,
+  .rst-row-menu {
+    anchor-name: --rst-menu;
+    anchor-scope: --rst-menu;
+  }
+  .rst-dropdown__menu,
+  .rst-row-menu__panel {
+    inset: auto;
+    margin-block-start: 4px;
+    position: fixed;
+    position-anchor: --rst-menu;
+    position-area: block-end span-inline-start;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+    position-visibility: anchors-visible;
+  }
+}
+
 .rst-caret { align-items: center; color: var(--rst-text-faint); display: inline-flex; font-size: 0.8em; transition: transform 0.15s; }
 .rst-caret svg, .rst-caret .icon { display: block; height: 1em; width: 1em; }
 details[open] > summary > .rst-caret { transform: rotate(180deg); }
@@ -965,6 +1133,10 @@ small.rst-field__hint { display: block; font-size: var(--rst-fs-xs); margin: 0.4
    return to inside an inert backdrop, then the overlay. Closing is a
    plain link to that page. */
 .rst-backdrop { display: contents; }
+/* The scroll lock. It used to shift the whole page sideways as it
+   landed, because taking the scrollbar away takes its width away too;
+   --rst-scrollbar-gutter at the top of this file reserves that width
+   whether or not a scrollbar is in it, so the page now stays put. */
 body:has(.rst-backdrop) { overflow: hidden; }
 .rst-modal-overlay { align-items: center; background: var(--rst-overlay); display: flex; inset: 0; justify-content: center; padding: 2rem 1rem; position: fixed; z-index: 10; }
 .rst-modal-panel { background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 14px; box-shadow: var(--rst-shadow-pop); display: flex; max-height: min(85vh, 640px); max-width: 860px; overflow: hidden; width: 100%; }
@@ -1239,6 +1411,21 @@ dialog.rst-modal-panel { block-size: auto; color: inherit; inset: auto; margin: 
      so the same menu opens downward there like every other menu in the
      system. */
   .rst-shell__rail-foot .rst-dropdown__menu { inset-block-end: calc(100% + 4px); inset-block-start: auto; margin-block-start: 0; }
+  /* Where anchor positioning is available the hand-written inset pair
+     has to be handed back, and not because it stopped being right: the
+     insets above are measured against .rst-dropdown's own box, and
+     position-area replaces that box with the region beside the anchor,
+     so calc(100% + 4px) would be 100% of the free space under the foot
+     — the panel launched up the rail. The flip does this case anyway
+     and does it by measuring: there is no room below the rail's foot,
+     so flip-block turns the menu upward on its own, and it turns back
+     down again in a layout where there IS room, which a fixed pair of
+     insets cannot. Specificity is why this is written here rather than
+     left to the generic rule: .rst-shell__rail-foot .rst-dropdown__menu
+     is (0,2,0) and would otherwise outrank it. */
+  @supports (position-area: block-end) and (position-try-fallbacks: flip-block) {
+    .rst-shell__rail-foot .rst-dropdown__menu { inset: auto; margin-block-start: 4px; }
+  }
 }
 
 /* error page — one centred column, whatever shell it lands in: the

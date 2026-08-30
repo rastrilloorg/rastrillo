@@ -42,14 +42,19 @@ belong to your page markup: `<div class="rst-page">`,
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-Registers `dict`, `list`, `menuGroup`, `icon`, `iconAssets`, `T`, `Tf`
-and `dateWords`.
+Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
+`iconAssets`, `T`, `Tf` and `dateWords`.
 
 `dict` builds a partial's single data value at the call site:
 
 ```html
 {{template "badge" dict "Label" "Draft" "Tone" "muted"}}
 ```
+
+`searchClear` is where `list-bar-search`'s clear ✕ points: the app's own
+`ClearHref` if it passed one, otherwise the same screen with `q` dropped
+and every other `Hidden` pair kept. See
+[Templates](/docs/templates#clearing-a-search).
 
 ## MenuGroupDefault
 

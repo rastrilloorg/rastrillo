@@ -584,6 +584,12 @@ type framing struct {
 	// laid out to, and whether its body really has the sample in it.
 	Inner float64
 	Body  string
+	// The scrollbar gutter the framed document reserved. tokens.css
+	// sets scrollbar-gutter: stable on html, so Inner is the frame's
+	// own width LESS this — which is the fix working, not the frame
+	// laying out short, and the assertions below add the two back
+	// together rather than settling for a tolerance.
+	Gutter float64
 	// Which panel is on screen.
 	FrameShown bool
 	CodeShown  bool
@@ -642,6 +648,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		    Virtual: parseFloat(getComputedStyle(f).width),
 		    Painted: box.getBoundingClientRect().width,
 		    Inner: d ? d.documentElement.getBoundingClientRect().width : -1,
+		    Gutter: d ? d.defaultView.innerWidth - d.documentElement.getBoundingClientRect().width : 0,
 		    Body: d ? d.body.innerHTML.trim().slice(0, 120) : "",
 		    FrameShown: getComputedStyle(stage).display !== "none",
 		    CodeShown: code ? getComputedStyle(code).display !== "none" : false,
@@ -754,7 +761,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		  return JSON.stringify({
 		    FrameShown: getComputedStyle(stage).display !== "none",
 		    CodeShown: getComputedStyle(code).display !== "none",
-		    Body: "", Virtual: 0, Painted: 0, Inner: 0, Scheme: ""
+		    Body: "", Virtual: 0, Painted: 0, Inner: 0, Gutter: 0, Scheme: ""
 		  });
 		})()`, &scriptless),
 	); err != nil {
@@ -787,8 +794,15 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	if d.Virtual != 1200 {
 		t.Errorf("the desktop frame lays out at %gpx, want 1200 — a preview that is only the reader's own width is not a desktop preview", d.Virtual)
 	}
-	if d.Inner != 1200 {
-		t.Errorf("the framed document reports a %gpx viewport, want 1200", d.Inner)
+	// Inner plus the gutter, not Inner alone: tokens.css reserves the
+	// scrollbar's width inside every framed document too (§6-v2.1b.4),
+	// so a 1200px frame lays its document out at 1185 on a platform
+	// with classic scrollbars and at 1200 on one with overlay
+	// scrollbars. Adding the two back together is exact on both, where
+	// a tolerance would have quietly accepted a frame laying out short
+	// for some other reason.
+	if d.Inner+d.Gutter != 1200 {
+		t.Errorf("the framed document laid out at %gpx with a %gpx scrollbar gutter, %gpx in all, want 1200", d.Inner, d.Gutter, d.Inner+d.Gutter)
 	}
 	if d.Painted >= 1200 || d.Painted < 200 {
 		t.Errorf("the desktop frame is painted %gpx wide in a 1280px window; it is not being scaled into its column", d.Painted)
@@ -809,8 +823,8 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	if m.Virtual != 390 {
 		t.Errorf("the mobile frame lays out at %gpx, want 390", m.Virtual)
 	}
-	if m.Inner != 390 {
-		t.Errorf("the framed document reports a %gpx viewport on the mobile tab, want 390", m.Inner)
+	if m.Inner+m.Gutter != 390 {
+		t.Errorf("the framed document laid out at %gpx with a %gpx scrollbar gutter on the mobile tab, %gpx in all, want 390", m.Inner, m.Gutter, m.Inner+m.Gutter)
 	}
 	if m.Body != d.Body {
 		t.Error("Desktop and Mobile are not the same document")

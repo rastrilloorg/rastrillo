@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -89,10 +90,12 @@ func WithT(t func(key string, args ...any) string) Option {
 // its own doc comment below. menuGroup resolves the optional MenuGroup
 // key every menu partial takes, defaulting to MenuGroupDefault; it reads
 // the key reflectively so it stays optional whether the caller passed a
-// dict or a Go struct.
+// dict or a Go struct. searchClear computes where a search's clear link
+// goes: the app's own ClearHref if it passed one, otherwise the same
+// screen with q dropped and every other carried pair kept.
 //
 // An app is free to add its own entries on top; it must not drop these
-// eight, or the shipped partials stop parsing.
+// nine, or the shipped partials stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -104,7 +107,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		opt(&c)
 	}
 	return template.FuncMap{
-		"dict": dict, "list": list, "menuGroup": menuGroup,
+		"dict": dict, "list": list, "menuGroup": menuGroup, "searchClear": searchClear,
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 		"dateWords": dateWords(c.t),
 	}
@@ -279,32 +282,167 @@ const MenuGroupDefault = "rst-menus"
 // to prevent. A caller who genuinely wants that writes the <details>
 // themselves; the class idioms are hand-written markup anyway.
 func menuGroup(data any) string {
-	v := reflect.ValueOf(data)
+	if name := optString(data, "MenuGroup"); name != "" {
+		return name
+	}
+	return MenuGroupDefault
+}
+
+// deref walks pointers and interfaces down to the value inside, and
+// reports whether it found one. A nil anywhere on the way is "no
+// value" rather than a panic, because every caller here is reading a
+// key that was allowed to be absent.
+func deref(v reflect.Value) (reflect.Value, bool) {
 	for v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface {
 		if v.IsNil() {
-			return MenuGroupDefault
+			return reflect.Value{}, false
 		}
 		v = v.Elem()
+	}
+	return v, v.IsValid()
+}
+
+// optKey reads one optional key off a partial's data value, whichever
+// of the two shapes it is: a dict-built map[string]any, or a Go struct
+// (the shape the package doc offers so a caller gets missing-field
+// detection instead of a silent empty). An absent key, an absent field,
+// a nil, or a data value that is neither shape all come back invalid.
+//
+// It is reflective for the reason menuGroup's doc gives at length: a
+// template action reading .Key off a struct that has no such field is
+// an Execute error, so writing a new optional key inline would turn
+// every existing struct caller's screen into a 500.
+func optKey(data any, key string) reflect.Value {
+	v, ok := deref(reflect.ValueOf(data))
+	if !ok {
+		return reflect.Value{}
 	}
 	var got reflect.Value
 	switch v.Kind() {
 	case reflect.Map:
 		if v.Type().Key().Kind() == reflect.String {
-			got = v.MapIndex(reflect.ValueOf("MenuGroup").Convert(v.Type().Key()))
+			got = v.MapIndex(reflect.ValueOf(key).Convert(v.Type().Key()))
 		}
 	case reflect.Struct:
-		got = v.FieldByName("MenuGroup")
+		got = v.FieldByName(key)
 	}
-	for got.IsValid() && (got.Kind() == reflect.Interface || got.Kind() == reflect.Pointer) {
-		if got.IsNil() {
-			return MenuGroupDefault
-		}
-		got = got.Elem()
+	if !got.IsValid() {
+		return reflect.Value{}
 	}
-	if !got.IsValid() || got.Kind() != reflect.String || got.String() == "" {
-		return MenuGroupDefault
+	got, _ = deref(got)
+	return got
+}
+
+// optString is optKey narrowed to a string: anything that is not a
+// string — key absent, nil, a number — reads as "".
+func optString(data any, key string) string {
+	got := optKey(data, key)
+	if !got.IsValid() || got.Kind() != reflect.String {
+		return ""
 	}
 	return got.String()
+}
+
+// optPairs reads a Hidden-shaped value — [][2]string as every caller in
+// the library writes it, and anything else indexable two-deep, so a
+// []any of []string from a dict works too. A pair that is not two
+// strings is skipped rather than failing the render: a search box that
+// drops one carried parameter is a bug you can see and fix; a 500 on a
+// list screen is not.
+func optPairs(data any, key string) [][2]string {
+	v := optKey(data, key)
+	if !v.IsValid() || (v.Kind() != reflect.Slice && v.Kind() != reflect.Array) {
+		return nil
+	}
+	pairs := make([][2]string, 0, v.Len())
+	for i := 0; i < v.Len(); i++ {
+		p, ok := deref(v.Index(i))
+		if !ok || (p.Kind() != reflect.Slice && p.Kind() != reflect.Array) || p.Len() < 2 {
+			continue
+		}
+		name, okName := deref(p.Index(0))
+		value, okValue := deref(p.Index(1))
+		if !okName || !okValue || name.Kind() != reflect.String || value.Kind() != reflect.String {
+			continue
+		}
+		pairs = append(pairs, [2]string{name.String(), value.String()})
+	}
+	return pairs
+}
+
+// searchQueryName is the name list-bar-search gives its input, and
+// therefore the one parameter "clear the search" is defined to drop.
+// It is a constant rather than a literal because searchClear and the
+// partial have to agree about it, and nothing else would notice if they
+// stopped.
+const searchQueryName = "q"
+
+// searchClear is where list-bar-search's clear link goes.
+//
+// The ✕ a browser draws inside <input type="search"> is
+// ::-webkit-search-cancel-button, and it does exactly what it is
+// specified to do: it clears the input's VALUE. A GET form submits on
+// submit, so nothing else happens — the results stand and the address
+// bar still carries ?q=. The affordance looks like it worked and did
+// not. tokens.css suppresses that button and the partial renders this
+// link in its place: a real navigation, so it works with JavaScript
+// off, it is bookmarkable, and Back behaves.
+//
+// The default is the same screen with q dropped and everything else
+// kept. Filters and sort ride in Hidden, and "clear the search" is not
+// "reset the screen", so they survive.
+//
+// PAGINATION IS THE CASE THIS FUNCTION CANNOT DECIDE, and an app will
+// meet it. Hidden is opaque name/value pairs; nothing in it says which
+// one is the page. A page number from a searched result set is usually
+// meaningless once the search is gone, but the partial cannot know
+// which pair to drop, so it carries everything — and ClearHref is how
+// an app says "and go back to page 1".
+//
+// An explicit ClearHref always wins. Action is read under both its
+// names so list-bar can hand the computed default down to
+// list-bar-search (it calls the search form's Action SearchAction), and
+// so calling this twice on the way is the same answer, not a different
+// one.
+func searchClear(data any) string {
+	if href := optString(data, "ClearHref"); href != "" {
+		return href
+	}
+	action := optString(data, "Action")
+	if action == "" {
+		action = optString(data, "SearchAction")
+	}
+	var query []string
+	for _, pair := range optPairs(data, "Hidden") {
+		// A Hidden pair named q is the search itself, and an app that
+		// carries its whole query string across the GET wholesale will
+		// have one. Carrying it here would reinstate the exact bug this
+		// link exists to fix: a ✕ that puts the query back.
+		// list-bar-search's input is name="q", so that is the one name
+		// this can be sure about.
+		if pair[0] == searchQueryName {
+			continue
+		}
+		query = append(query, url.QueryEscape(pair[0])+"="+url.QueryEscape(pair[1]))
+	}
+	if len(query) == 0 {
+		// "?" and not "" on purpose: an empty href resolves to the
+		// current URL, ?q= and all, so the link would do nothing at
+		// all. A bare "?" is the current path with no query, which is
+		// what clearing a search with nothing else to carry means.
+		if action == "" {
+			return "?"
+		}
+		return action
+	}
+	sep := "?"
+	switch {
+	case strings.HasSuffix(action, "?"), strings.HasSuffix(action, "&"):
+		sep = ""
+	case strings.Contains(action, "?"):
+		sep = "&"
+	}
+	return action + sep + strings.Join(query, "&")
 }
 
 // list builds a slice from its arguments — pagination's Items, mostly:

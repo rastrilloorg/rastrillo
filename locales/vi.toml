@@ -3,6 +3,7 @@
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "Phân trang"
 rastrillo.ui.search_submit = "Tìm kiếm"
+rastrillo.ui.search_clear = "Xóa tìm kiếm"
 rastrillo.ui.cancel = "Hủy"
 rastrillo.ui.done = "Chọn xong"
 rastrillo.ui.select_filter = "Nhập để lọc"

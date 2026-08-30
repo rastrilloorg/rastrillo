@@ -277,6 +277,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;search&gt;&lt;form target=&#34;ds-void&#34; class=&#34;rst-search&#34; method=&#34;get&#34; action=&#34;/posts&#34;&gt;
   &lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;11&#34; cy=&#34;11&#34; r=&#34;8&#34;/&gt;&lt;path d=&#34;m21 21-4.3-4.3&#34;/&gt;&lt;/svg&gt;
   &lt;input type=&#34;search&#34; name=&#34;q&#34; value=&#34;release&#34; placeholder=&#34;Search posts&#34; aria-label=&#34;Search posts&#34;&gt;
+  &lt;a class=&#34;rst-search__clear&#34; href=&#34;#&#34; aria-label=&#34;清除搜索&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;M18 6 6 18&#34;/&gt;&lt;path d=&#34;m6 6 12 12&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
   &lt;input type=&#34;hidden&#34; name=&#34;sort&#34; value=&#34;newest&#34;&gt;
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;
@@ -297,6 +298,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
   &lt;search&gt;&lt;form class=&#34;rst-search&#34; method=&#34;get&#34; action=&#34;/posts&#34;&gt;
   &lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;11&#34; cy=&#34;11&#34; r=&#34;8&#34;/&gt;&lt;path d=&#34;m21 21-4.3-4.3&#34;/&gt;&lt;/svg&gt;
   &lt;input type=&#34;search&#34; name=&#34;q&#34; value=&#34;release&#34; placeholder=&#34;Search posts&#34; aria-label=&#34;Search posts&#34;&gt;
+  &lt;a class=&#34;rst-search__clear&#34; href=&#34;/posts?sort=newest&#34; aria-label=&#34;清除搜索&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;M18 6 6 18&#34;/&gt;&lt;path d=&#34;m6 6 12 12&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
   &lt;input type=&#34;hidden&#34; name=&#34;sort&#34; value=&#34;newest&#34;&gt;
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;
@@ -343,7 +345,8 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 &lt;div class=&#34;rst-list&#34;&gt;&lt;search&gt;&lt;form target=&#34;ds-void&#34; class=&#34;rst-search&#34; method=&#34;get&#34; action=&#34;/comments&#34;&gt;
   &lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;11&#34; cy=&#34;11&#34; r=&#34;8&#34;/&gt;&lt;path d=&#34;m21 21-4.3-4.3&#34;/&gt;&lt;/svg&gt;
   &lt;input type=&#34;search&#34; name=&#34;q&#34; value=&#34;spam&#34; placeholder=&#34;Search comments&#34; aria-label=&#34;Search comments&#34;&gt;
-  &lt;input type=&#34;hidden&#34; name=&#34;page&#34; value=&#34;1&#34;&gt;
+  &lt;a class=&#34;rst-search__clear&#34; href=&#34;#&#34; aria-label=&#34;清除搜索&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;M18 6 6 18&#34;/&gt;&lt;path d=&#34;m6 6 12 12&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
+  &lt;input type=&#34;hidden&#34; name=&#34;status&#34; value=&#34;held&#34;&gt;
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;
 &lt;iframe name=&#34;ds-void&#34; hidden&gt;&lt;/iframe&gt;
@@ -353,20 +356,63 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 <pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-list&#34;&gt;&lt;search&gt;&lt;form class=&#34;rst-search&#34; method=&#34;get&#34; action=&#34;/comments&#34;&gt;
   &lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;11&#34; cy=&#34;11&#34; r=&#34;8&#34;/&gt;&lt;path d=&#34;m21 21-4.3-4.3&#34;/&gt;&lt;/svg&gt;
   &lt;input type=&#34;search&#34; name=&#34;q&#34; value=&#34;spam&#34; placeholder=&#34;Search comments&#34; aria-label=&#34;Search comments&#34;&gt;
-  &lt;input type=&#34;hidden&#34; name=&#34;page&#34; value=&#34;1&#34;&gt;
+  &lt;a class=&#34;rst-search__clear&#34; href=&#34;/comments?status=held&#34; aria-label=&#34;清除搜索&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;M18 6 6 18&#34;/&gt;&lt;path d=&#34;m6 6 12 12&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
+  &lt;input type=&#34;hidden&#34; name=&#34;status&#34; value=&#34;held&#34;&gt;
   &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
 &lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
 </div>
+<p class="ds-note">这个 ✕ 是一个链接，指向去掉查询后的同一屏幕。状态筛选放在 Hidden 里，因此会保留下来。</p>
+</div>
 
+<div class="ds-sample">
+<p class="ds-state">已有查询，第 4 页</p>
+<div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
+<fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
+<label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-1" checked>桌面</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">手机</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">代码</label>
+</fieldset>
+<div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 示例的独立预览 — 已有查询，第 4 页" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
+&lt;head&gt;
+&lt;meta charset=&#34;utf-8&#34;&gt;
+&lt;meta name=&#34;viewport&#34; content=&#34;width=device-width, initial-scale=1&#34;&gt;
+&lt;title&gt;list-bar-search 示例的独立预览 — 已有查询，第 4 页&lt;/title&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/tokens.css&#34;&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;/design-system/theme-signal.css&#34;&gt;
+&lt;style&gt;body { padding: 1rem; }
+body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { padding: 0; }&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&#34;rst-list&#34;&gt;&lt;search&gt;&lt;form target=&#34;ds-void&#34; class=&#34;rst-search&#34; method=&#34;get&#34; action=&#34;/comments&#34;&gt;
+  &lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;11&#34; cy=&#34;11&#34; r=&#34;8&#34;/&gt;&lt;path d=&#34;m21 21-4.3-4.3&#34;/&gt;&lt;/svg&gt;
+  &lt;input type=&#34;search&#34; name=&#34;q&#34; value=&#34;spam&#34; placeholder=&#34;Search comments&#34; aria-label=&#34;Search comments&#34;&gt;
+  &lt;a class=&#34;rst-search__clear&#34; href=&#34;#&#34; aria-label=&#34;清除搜索&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;M18 6 6 18&#34;/&gt;&lt;path d=&#34;m6 6 12 12&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
+  &lt;input type=&#34;hidden&#34; name=&#34;page&#34; value=&#34;4&#34;&gt;
+  &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
+&lt;/form&gt;&lt;/search&gt;&lt;/div&gt;
+&lt;iframe name=&#34;ds-void&#34; hidden&gt;&lt;/iframe&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></div></div>
+<pre class="ds-src ds-view__code rst-mono"><code>&lt;div class=&#34;rst-list&#34;&gt;&lt;search&gt;&lt;form class=&#34;rst-search&#34; method=&#34;get&#34; action=&#34;/comments&#34;&gt;
+  &lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;circle cx=&#34;11&#34; cy=&#34;11&#34; r=&#34;8&#34;/&gt;&lt;path d=&#34;m21 21-4.3-4.3&#34;/&gt;&lt;/svg&gt;
+  &lt;input type=&#34;search&#34; name=&#34;q&#34; value=&#34;spam&#34; placeholder=&#34;Search comments&#34; aria-label=&#34;Search comments&#34;&gt;
+  &lt;a class=&#34;rst-search__clear&#34; href=&#34;/comments&#34; aria-label=&#34;清除搜索&#34;&gt;&lt;svg class=&#34;icon&#34; viewBox=&#34;0 0 24 24&#34; fill=&#34;none&#34; stroke=&#34;currentColor&#34; stroke-width=&#34;2&#34; stroke-linecap=&#34;round&#34; stroke-linejoin=&#34;round&#34; aria-hidden=&#34;true&#34;&gt;&lt;path d=&#34;M18 6 6 18&#34;/&gt;&lt;path d=&#34;m6 6 12 12&#34;/&gt;&lt;/svg&gt;&lt;/a&gt;
+  &lt;input type=&#34;hidden&#34; name=&#34;page&#34; value=&#34;4&#34;&gt;
+  &lt;button class=&#34;rst-sr-only&#34; type=&#34;submit&#34;&gt;搜索&lt;/button&gt;
+&lt;/form&gt;&lt;/search&gt;&lt;/div&gt;</code></pre>
+</div>
+<p class="ds-note">Hidden 里没有任何东西说明哪一对是页码，所以默认会把 page=4 带进一个已经不足四页的结果集。应用用 ClearHref 来重置它。</p>
 </div>
 
 <div class="ds-sample">
 <p class="ds-state">空，可访问名称取自目录</p>
 <div class="ds-view" style="--ds-h: 110px; --ds-hm: 137px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
-<label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-1" checked>桌面</label>
-<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-1">手机</label>
-<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-1">代码</label>
+<label class="ds-view__tab"><input type="radio" name="partial-list-bar-search-2" checked>桌面</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-list-bar-search-2">手机</label>
+<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="partial-list-bar-search-2">代码</label>
 </fieldset>
 <div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="list-bar-search 示例的独立预览 — 空，可访问名称取自目录" loading="lazy" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#34;zh-Hans&#34; dir=&#34;ltr&#34;&gt;
@@ -609,7 +655,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <div class="ds-sample">
 <p class="ds-state">选中了三行</p>
-<div class="ds-view" style="--ds-h: 100px; --ds-hm: 125px">
+<div class="ds-view" style="--ds-h: 190px; --ds-hm: 237px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-bulk-bar-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-bulk-bar-0">手机</label>
@@ -3763,7 +3809,7 @@ body:has(&gt; .rst-shell-topbar, &gt; .rst-shell-sidebar, &gt; .rst-backdrop) { 
 
 <div class="ds-sample">
 <p class="ds-state">十二种语言，当前的一种被标出。</p>
-<div class="ds-view" style="--ds-h: 260px; --ds-hm: 325px">
+<div class="ds-view" style="--ds-h: 420px; --ds-hm: 525px">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">预览</legend>
 <label class="ds-view__tab"><input type="radio" name="partial-locale-menu-0" checked>桌面</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="partial-locale-menu-0">手机</label>

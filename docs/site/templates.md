@@ -21,8 +21,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 
 ## Template functions
 
-`ui.Funcs()` registers `dict`, `list`, `icon`, `iconAssets`, `T`, `Tf`
-and `dateWords`.
+`ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
+`icon`, `iconAssets`, `T`, `Tf` and `dateWords`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -87,6 +87,42 @@ element rather than a div wearing a role:
 longer sets `role="search"` — two nested search landmarks for one search
 box helps nobody. The strip sizes the landmark (`.rst-lbar > search`) as
 well as a bare form, so hand-written markup keeps the layout it had.
+
+### Clearing a search
+
+When `list-bar-search` has a `Query`, it also renders a ✕ beside the
+field, and that ✕ is a **link**: the same `Action`, carrying every
+`Hidden` pair, with `q` dropped. A real navigation, so it works with
+JavaScript off, it is bookmarkable, and Back behaves.
+
+The browser's own ✕ is suppressed in `tokens.css`, on purpose. It is
+`::-webkit-search-cancel-button` and it does exactly what it is
+specified to do — it clears the input's *value*. A `method="get"` form
+submits on submit, so nothing else happens: the results stand and the
+address bar still says `?q=`. Leaving it beside a link that really does
+clear the search would be two affordances, one of which lies.
+
+Filters and sort survive a clear. They ride in `Hidden`, and clearing
+the search is not resetting the screen.
+
+One pair it *can* decide about is `q` itself. An app that carries its
+whole query string across the GET hands `q` back in `Hidden`, and
+carrying that into the clear link would hand the reader a ✕ that puts
+the search back — the exact lie this replaced. It is dropped.
+
+**Pagination is the one the framework cannot decide.** `Hidden` is
+opaque name/value pairs — nothing in it says which pair is the page — so
+the default carries all of them, page number included, and a page number
+from a searched result set is usually meaningless once the search is
+gone. `ClearHref` is the hook, on both `list-bar-search` and `list-bar`:
+
+```html
+{{template "list-bar" dict
+    "SearchAction" "/posts" "Query" .Query "Hidden" .Carry
+    "ClearHref" "/posts"}}
+```
+
+Anything you pass wins over the computed default.
 
 The modal panel is a `<dialog open>`, which is not a change of idiom: a
 rendered-open, non-modal dialog is exactly what a modal-as-a-URL already
@@ -512,6 +548,56 @@ beside it as `static/theme.css`, is the colour, the type family and the
 shape those classes paint themselves with. The split is what makes a
 restyle cheap: swapping one file changes how everything looks, and
 nothing about how anything is laid out.
+
+### Menus that fit the window
+
+Every menu surface — `.rst-dropdown__menu` and `.rst-row-menu__panel` —
+is capped at `min(20rem, 100dvh - 6rem)` and scrolls past that, so a
+long menu on a short window can still be reached. A twelve-locale
+language menu is 388px, which is where this came from.
+
+They also flip. `position-area` with `position-try-fallbacks` opens a
+menu upward when there is no room below it, and the other way inline
+when it is against the trailing edge. No script: this is CSS anchor
+positioning, which is **Chromium-only today**, and that is a choice
+rather than an oversight. An engine without it lands on the fixed
+position every engine has today, so nothing regresses, and Firefox and
+Safari gain the behaviour with no release from us. The alternative was
+script, which would put positioning behind JavaScript and leave the
+scriptless path worse than it is now.
+
+### The scrollbar gutter
+
+`tokens.css` sets `scrollbar-gutter: stable` on `html`, through a token:
+
+```css
+:root { --rst-scrollbar-gutter: stable; }
+html  { scrollbar-gutter: var(--rst-scrollbar-gutter); }
+```
+
+The width a scrollbar takes is reserved whether or not a scrollbar is in
+it, so moving between a short screen and a long one no longer slides the
+whole page sideways — and neither does opening a modal, whose scroll
+lock (`body:has(.rst-backdrop) { overflow: hidden }`) takes the
+scrollbar away the instant it lands.
+
+The opt-out is one line in your own stylesheet:
+
+```css
+:root { --rst-scrollbar-gutter: auto; }
+```
+
+What it costs: a page too short to scroll now reserves the strip too, so
+there is a thin empty band at the trailing edge where there was none.
+`both-edges` would double that band to keep centred content exactly
+centred, and was not taken — these pages are already a max-width column
+inside a wider ground.
+
+Do not over-claim what this fixes. macOS overlay scrollbars take no
+layout space at all, so on a default Mac there was never anything to
+shift. It is real on Windows and Linux, on a Mac set to always show
+scrollbars, and inside an iframe. Chrome 94+, Firefox 97+, Safari 18.2+;
+an older engine ignores the declaration and behaves as it does today.
 
 ## Themes
 

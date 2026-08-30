@@ -2020,3 +2020,404 @@ every width. Nothing in this repo does, but apps upgrade — so it is
 written down in `docs/site/templates.md` under Shells, where an upgrader
 will meet it, and the layout's own comment no longer says the three
 blocks "are direct children of the bar again".
+
+---
+
+## 0. What is shipped, what is merged, what is only ruled
+
+**Read this before building on anything below.** Two CARLOS apps have
+now written specs against this document, and one of them built on a
+section that is a ruling rather than an API — because nothing here said
+which was which. That is this document's fault, not theirs.
+
+Three states, and the difference between the first two matters more than
+it looks:
+
+| State | Means | How to check |
+|---|---|---|
+| **RELEASED** | in the latest tag; `go get` gives it to you | `git show v0.19.0:ui/ui.go` |
+| **ON MAIN** | merged, unreleased — you get it only by tracking `main` | `git show origin/main:ui/ui.go` |
+| **RULED** | decided and written down. **No code exists.** | it is only in this file |
+
+As of 2026-08-30, with **17 commits on main since v0.19.0 was tagged on
+2026-08-24**:
+
+- `ui.TokensCSS()` — **RELEASED** (v0.19.0, `ui/ui.go:192`).
+- `ui.ThemeCSS(name)`, `ui.ThemeNames()`, `ui.Layout(name)`,
+  `ui.LayoutNames()`, the three themes, the twelve locales, the busy
+  rule, the gallery — **ON MAIN, not released**. An app that runs
+  `go get` today gets a framework with none of the themes this document
+  describes.
+- The bare-attribute grammar of §6-v3 — **RULED**. It exists in no Go
+  source and on no branch. The shipped and merged `ui` package styles
+  `class="rst-*"` and nothing else. An app writing `<div rst-list>`
+  today renders unstyled.
+- `Pair`, the allocation entry point, `rastrillo doctor`, the semantic
+  elements of §6-v2.4, the tinted header rule — **RULED**.
+
+**The gap between RELEASED and ON MAIN is the one that will bite**, and
+it is currently six days and seventeen commits wide. A downstream app
+reading this document and running `go get` gets neither the themes nor
+the shells. That is an argument for releasing, not for footnotes.
+
+---
+
+## 6-v2.2b. The colour engine (2026-08-30) — designed with two downstream callers
+
+§6-v2.2 ruled a mood-driven palette generator constrained by the contrast
+gate. Two CARLOS apps then arrived needing the same machinery for a
+different purpose, and their requirements changed the design before any
+of it was written. Both are recorded here with attribution, because the
+reasoning is what has to survive: someone will later try to simplify
+each of these back, and every one of them is load-bearing.
+
+The apps: **Sheets** (`amadan.net/carlos/sheets`) — cell fills,
+conditional formatting, presence cursors, XLSX round-trip. **Docs** —
+text highlights, comment-thread author colours, presence cursors,
+collaborator avatars.
+
+### Two entry points, not one
+
+```
+Pair(hue, chroma, background) -> {fill, on-fill}   // contrast-correct by construction
+Allocate(keys, avoid)         -> ([]intent, separated bool)
+```
+
+Contrast-correctness and mutual distinguishability are **different
+guarantees**. Merging them gives a function that means different things
+depending on its arguments, which is the shape of API nobody can gate.
+An allocated intent still resolves through `Pair` against whatever
+background it lands on.
+
+### The background is a literal colour, never a scheme
+
+The first draft took `(hue, chroma, scheme)`. Docs killed it: their
+canvas is a white page on a neutral ground **in every theme, including
+dark**, so a highlight must be contrast-correct against paper white, not
+against the theme's surface token. A scheme enum cannot express that —
+it can only mean "the theme surface for this scheme".
+
+Sheets then showed it was worse than a missing case. Their fills
+frequently do not sit on the sheet surface at all: conditional
+formatting paints *under* a user fill, a selected cell sits on the
+selection tint, a frozen header sits on something else again. Under a
+scheme parameter their own contrast gate would have asserted the wrong
+pair **while passing**. Passing the literal background is therefore a
+bug removed from a downstream app, not a generalisation of ours.
+
+The sequence is recorded exactly, at Sheets' own request, because it is
+the argument for review rather than for anyone's discipline: the
+correction came first, from a second caller's unrelated requirement, and
+the consequence was found second, when Sheets sat down to write what
+their contrast gate would actually assert. Nobody caught it before
+writing. A second pair of eyes moved a bug from shipped to unwritten,
+which is a different and more repeatable thing than someone being
+careful.
+
+Scheme becomes the caller's business: resolved from the theme token in
+the ordinary case, from paper white in Docs', from whatever a cell
+actually sits on in Sheets'.
+
+### Allocation: separation is hard, stability is best-effort
+
+You cannot guarantee both. Two people in one document can hash adjacent,
+so a hash that gives cross-document stability cannot also give
+in-document separation. **Separation is the guarantee**, because it is
+the one carrying meaning; stability is documented as best-effort. Hash
+for the preferred allocation, displace the later arrival on collision.
+
+**Determinism is a correctness requirement, not a nicety.** Allocation
+must be a pure function of a canonically ordered key set, never of
+arrival order — otherwise two clients rendering the same document
+disagree about who is which colour, which is worse than no colour at
+all. "Displace the later arrival" means later in the canonical order,
+not later in wall-clock time at one client.
+
+`Allocate` takes an `avoid` set (Sheets' requirement) so a caller can
+keep already-allocated hues out of a new allocation; collisions then
+only happen past the set's capacity, which is the honest limit rather
+than an accident.
+
+**The whole algorithm, because naming the loser is not enough.** Docs
+proposed the total order — displace whichever opaque key sorts later
+lexicographically over its bytes — which is client-independent and
+correct as far as it goes. It stops one level short: it says who moves
+and not where they move to, and two implementations that agree on the
+loser and disagree on its destination produce exactly the bug the order
+was introduced to prevent, one level down.
+
+So the displacement target is specified too, and the allocation is
+deterministic open addressing over the sorted set:
+
+1. Sort the key set lexicographically over the keys' bytes.
+2. For each key in that order, probe `(hash(key) + i) mod N` for
+   increasing `i`, taking the first hue that is neither already taken in
+   this pass nor in `avoid`.
+
+The first key to want a hue keeps it, which preserves the globally
+stable allocation for the lexicographically earliest holder; every
+displacement afterwards is a pure function of the sorted set. Chains
+resolve because the probe is deterministic — with A, B and C colliding
+in sequence, C's destination cannot depend on the order it happened to
+be observed in.
+
+`avoid` is applied inside the probe rather than before it, so an avoided
+hue displaces exactly like a taken one and the two cannot disagree.
+
+### The key is opaque and the framework knows nothing about users
+
+Callers pass a stable opaque key and own what it means. Docs has
+commenters with no account — a guest becomes a member at the moment they
+write, so their key is the membership row; Sheets uses a member id. `ui`
+has no business knowing what an identity is, and this keeps it out.
+
+### Past capacity, say so rather than lie
+
+`Allocate` returns the allocation **plus a flag that separation is no
+longer guaranteed**. Silently reusing hues would be the lie. This needs
+no other mechanism because the framework's existing rule already does
+the work: colour never carries meaning alone, so every author carries a
+name or initials regardless — past capacity, colour degrades to
+decoration and the label carries identity by itself. The flag exists so
+a caller leaning on colour can stop.
+
+### Why a bounded offered set
+
+A free colour wheel cannot be proven; a fixed set of offered hues can be
+proven at build time exactly the way the 26 documented pairs already
+are. That is the distinction between a generator that is gated and one
+that is hoped for — the same distinction that ruled out a palette
+randomiser in §6-v2.2.
+
+**The set must be proven against every background it can be rendered
+on, not one.** Paul ruled Docs' canvas as light by default with a dark
+canvas as a *per-person* preference, which means the same stored
+highlight is read against paper white by one person and dark paper by
+another, in the same document, at the same time. So an offered intent
+is only sound if `Pair` clears the floor for it against **each** of the
+backgrounds the suite can render: paper white, dark paper, and the theme
+surfaces. An intent that works on white and fails on dark paper is not
+an offered intent; it is a trap with a build gate that agreed with it.
+
+That multiplies the build-time proof by the number of backgrounds, which
+is the correct cost — and it is another thing a `scheme` parameter could
+not have expressed, because two of those backgrounds exist inside the
+same scheme.
+
+**Export resolves against the print background, structurally.** Paul
+also ruled that print and export always render true colours regardless
+of the reading preference. That is a caller decision, and Docs is making
+it structural rather than disciplinary — their export renderer will have
+no access to the preference at all, so it cannot pick up the dark
+resolution. Worth copying: a rule enforced by what a component can
+reach beats a rule enforced by remembering.
+
+### The resolved hex is part of the API
+
+XLSX round-trips fills as hex in both directions, so a caller needs the
+concrete colour per background, not only the intent. Storing intent and
+never a colour is insufficient for a real caller. Import mapping hex to
+the nearest offered intent stays the app's problem.
+
+### Declared consumers
+
+Recorded because an API with named consumers changes differently from
+one without: these are who breaks if a signature moves, and the list is
+the reason several of the decisions above are not negotiable.
+
+**CARLOS Docs** (`carlos/docs`) — `Pair` for text highlight and comment
+author colours, against **four** backgrounds (paper white, dark paper,
+and the theme surfaces; the first two are Docs-defined literals it will
+supply with its intent set). The allocation entry point for comment
+threads, presence cursors and collaborator avatars, with a membership
+row as the opaque key for guests who have no account. `rastrillo doctor`,
+replacing a manual re-copy step it carries in its upgrade runbook today.
+
+**CARLOS Sheets** (`carlos/sheets`) — `Pair` for cell fills and
+conditional formatting, against backgrounds that are frequently not the
+sheet surface (a conditional format under a user fill, the selection
+tint, a frozen header). The allocation entry point for presence cursors.
+The resolved hex for XLSX round-trip. `rastrillo doctor`, same reason.
+
+### Sequencing
+
+Sheets needs this before v2.2 can land, and is building a deliberately
+crippled shim: a hand-computed table of six to eight intents behind this
+exact signature, gated by a contrast test using **the same floors and
+the same arithmetic** as `ui/contrast_test.go`, with a deletion trigger
+linking this section. There is no algorithm in it to diverge from. Their
+chosen intents and hand-computed pairs come back here as input to the
+generator's offered set.
+
+---
+
+## 6-v2.3. `rastrillo doctor` (2026-08-30) — APPROVED by Paul
+
+Compares an app's frozen `static/*` — `tokens.css` above all — against
+the module's embedded copies, reports drift, and offers to re-copy.
+
+**Two reasons, and it needs both to be worth building.** First:
+`tokens.css` is written into `static/` at scaffold time and frozen
+there, while partials upgrade with the module, so an app silently runs
+new markup against old CSS. That is currently a manual step in a
+runbook, which means a step people skip. Second: §6-v3's markup
+migration is staged *because* of this trap, and its middle stage needs
+exactly this comparison to tell an app whether it is safe to flip
+spellings.
+
+Named downstream consumer: the Sheets app, which asked for it and said
+it would adopt it the day it ships. That is what moved it from an idea
+to work.
+
+---
+
+## 6-v2.4. Semantic elements and common data formats (2026-08-30)
+
+**RULED by Paul:** native semantic elements now; schema.org microdata
+later **only if a real machine consumer appears**; and both the partial
+changes and a new "Common data formats" gallery page.
+
+**Microformats were considered and not taken.** h-card/p-name/u-url are
+classes, and §6-v3 reserves `class` for utilities and the app's own CSS
+— adopting them would reintroduce class-as-semantics in the same release
+that removes it, and every doc sentence explaining the rule would gain
+an exception. If a machine-readable vocabulary is ever needed, microdata
+is attribute-based and agrees with the grammar instead of fighting it.
+
+**Nothing in this list is used anywhere in the framework today.**
+Verified: no `<time>`, `<data>`, `<meter>`, `<progress>`, `<address>`,
+`<abbr>`, `<bdi>`, `<figure>` in any partial or layout. The `meter`
+partial is spans and an `<i>`; `job-status` is a div.
+
+| Element | Where | Why |
+|---|---|---|
+| `<bdi>` | any user-supplied name in running text | Twelve locales including Arabic. A Hebrew or Arabic name inside an English sentence reorders the line without it. Non-obvious, and currently wrong |
+| `<time>` | list rows, detail lists, job status | Machine-readable dates the framework already parses with `Intl` |
+| `<progress>` | `job-status` while running | The native element for exactly this |
+| `<meter>` | the `meter` partial | Named after an element it does not use |
+| `<data>` | stat headlines, identifiers, quantities | See below |
+| `<abbr>` | WCAG, AA, RTL in the gallery's prose | Free, and the gallery is where a reader meets them |
+| `<figure>`/`<figcaption>` | the preview frames | A frame with a caption is literally this |
+| `<output>` | computed form values | Where a form shows a derived result |
+| `<address>` | shell footer and article byline ONLY | See the correction below |
+
+**`<address>` is the one most likely to be got wrong**, and it was named
+in the request. It marks contact information *for its nearest `<article>`
+or `<body>` ancestor* — the author of that content. It is **not** for
+postal addresses generally and **not** for a list of people. The
+`person` partial must not become `<address>`: a user row is data about a
+person, not the document's authorship.
+
+**`<data>` buys machine-readability, not accessibility.**
+`<data value="4120">4.1k</data>` gives the exact figure to a machine
+while a person reads the abbreviation. But `value` is **not exposed to
+assistive technology** — a screen reader announces the text. If an
+abbreviation loses something a person needs, the fix is visible text or
+an accessible name, never `value`. And time and duration take `<time>`,
+not `<data>`; that is the distinction that gets got wrong.
+
+**Dashboard stats.** Paul: "headline dashboard stats, secondary stats,
+then maybe some widget variants, possibly inspired by titogo". The
+titogo precedent, quoted from `internal/instance/styles/admin/dashboard_page.css`:
+
+> stat-band — the joined instrument strip that opens a dashboard or a
+> report: the lead reading (usually money) oversized, companion counts
+> divided by hairlines in the same card. Labels ride above their number,
+> one eyebrow grammar for every cell. Flex so any cell count works.
+
+That is the headline/secondary split already solved once by a real
+dashboard: **one component with a lead cell, not two components**. Under
+§6-v3's grammar, `<div rst-stat="lead">` beside `<div rst-stat>`.
+
+The framework's existing rules already decide the hard part: a delta
+(+12%, −4%) may never be green-or-red alone, and the number is always
+visible text — the same rule `meter` follows today.
+
+**The Common data formats page** collects dates, durations, numbers,
+currency, percentages, file sizes, identifiers, people and addresses,
+each with the element that carries it and how it renders across the
+twelve catalogs. It connects to work already done: `datetime.js` derives
+its whole vocabulary from `Intl`.
+
+---
+
+## 6-v2.5. The tree stops being committed (2026-08-30) — RULED by Paul
+
+The generated gallery is committed at `docs/design-system/`, vendored
+into the website by `sync-docs.mjs`, and served as static files. Paul
+ruled it should be generated **during the website build** instead.
+
+### Why, with the numbers that made the case
+
+The tree is **20 MB against 14 MB for the entire rest of the
+repository** — the framework, three example apps and all the prose. It
+is rewritten whole on every change that touches `ui`: eight commits in
+three days. `.git` is 43 MB, and most of that is this artifact's
+history rather than the artifact.
+
+So the largest thing in the repo is machine output, and it is also the
+noisiest thing in every diff. `maxTreeBytes` was a brake on that ratio,
+and the question it was really standing in for is this one.
+
+### What this buys, and it is more than the megabytes
+
+**Freshness stops being a gate and becomes structural.**
+`TestDesignSystemIsCurrent` exists only because a committed copy can
+drift from its generator. Delete the copy and the drift is
+unrepresentable — there is no second thing to disagree. A gate deleted
+because its failure mode cannot occur is the best kind of deletion; it
+is not the same as a gate deleted because nobody wanted to fix it.
+
+The orphan walk goes with it, for the same reason.
+
+### The mechanism: a public `cmd/dsgen`
+
+Go's `internal/` rule means the website cannot run
+`go run …/internal/designsystem/cmd/dsgen@<sha>` — internal packages are
+unreachable from outside the module. So the command moves to
+**`cmd/dsgen`** at the repo root and becomes part of rastrillo's
+published surface; `internal/designsystem` stays internal and the
+public command calls it.
+
+**That is a real commitment and is recorded as one.** The generator
+gains version compatibility expectations it did not have while it was
+internal. It takes an output directory and a mount path; it must not
+grow flags that encode the website's opinions.
+
+The website runs it at build time against a pinned sha. The pin already
+exists: `src/_data/docsversion.json` records the rastrillo sha the docs
+were vendored from, and that same sha generates the gallery.
+
+**Cost:** the website build gains a Go toolchain and a module fetch,
+taking its `build` check from ~13s to roughly a minute. Accepted.
+
+### The size gate changes meaning, so it changes shape
+
+A whole-tree ceiling was a proxy for *repo* reviewability. Once the tree
+is not in the repo, the thing that matters is what a reader waits for —
+which is **per-page weight**, and is what Paul actually complained
+about. Replace `maxTreeBytes` with a per-page budget. That is a better
+gate on its own merits: it fails on the page that got heavy rather than
+on the total, and `components.html` at 325 KB would have tripped it long
+before the total came near any ceiling.
+
+### What is honestly lost
+
+The rendered output stops being diffable. That has had real value today:
+seeing 37 files change in a commit is what surfaced a controller mistake
+that swept an implementer's in-flight tree into an unrelated commit.
+`dsgen` writing to a local, git-ignored directory keeps that available
+for inspection — it just stops being a thing the repo carries.
+
+### Consequential changes
+
+- The a11y scan serves the tree from disk today
+  (`a11y_test.go:139`, `http.FileServer(http.Dir(treeDir))`). It serves
+  `Render()`'s output from an in-memory FS instead — strictly more
+  direct, because it then scans exactly what would be published rather
+  than what was committed.
+- `sync-docs.mjs` keeps vendoring the 49 markdown pages byte-for-byte;
+  only the gallery moves.
+- The website's file-count guard changes shape: it can no longer compare
+  a vendored count, so it verifies the generator ran and produced the
+  page kinds it expects.
