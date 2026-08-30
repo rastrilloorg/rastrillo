@@ -699,10 +699,10 @@ const focusablesJS = `'a[href], button:not([disabled]), input:not([disabled]):no
 //
 // Two things it has to get right that a first attempt does not.
 //
-// Focus inside a frame: the index is a hundred and ten <iframe srcdoc>
-// documents, and once focus enters one, the top document's
-// activeElement is the frame and stays the frame for every element
-// inside it. Read naively that looks like focus refusing to move —
+// Focus inside a frame: the components page is ninety-seven <iframe
+// srcdoc> documents (the Overview it split off from carries none), and
+// once focus enters one, the top document's activeElement is the frame
+// and stays the frame for every element inside it. Read naively that looks like focus refusing to move —
 // which is exactly what a keyboard trap looks like, and it is not one.
 // So the probe descends: through the frame, into the document, to the
 // element a person is actually on.
@@ -806,20 +806,29 @@ const walkJS = `(() => {
 // style that only exists while an element is focused, and a trap is a
 // property of a sequence rather than of a node.
 //
-// The walk: thirty Tabs through the index with real key events — real,
-// because :focus-visible is a heuristic about how the focus arrived,
-// and a script calling .focus() out of nowhere does not always earn the
-// ring. Every stop must show something (2.4.7) and must be a different
+// The walk: thirty Tabs with real key events — real, because
+// :focus-visible is a heuristic about how the focus arrived, and a
+// script calling .focus() out of nowhere does not always earn the ring.
+// Every stop must show something (2.4.7) and must be a different
 // element from the last (2.1.2, locally). Then the modal demo is walked
 // all the way round, which is the trap question answered globally: a
 // reader can always Tab their way back out.
 //
-// Thirty stops from the top of the components page walks the skip link,
-// the mobile chrome disclosure, the filter box and the first two dozen
-// entries of the rail — the gallery's own furniture, which is what the
-// tab order starts with on every page of this tree. The components'
-// own focus rings are the preview scan's business, where each sample
-// is a document of its own.
+// WHERE the thirty start is the whole design of this test, and it took
+// a review to get right. From the top of the page they land on the skip
+// link, the mobile chrome disclosure, the filter box and then
+// sixty-odd rail links — one control repeated until the budget runs
+// out, and nothing below the rail covered at all. Everything the split
+// added lives below it: the section tab strip, which is the only
+// visible way between the five pages once the shell folds the rail away
+// below 800px, and then the page's own content.
+//
+// So the walk Tabs past the rail first, unasserted, and spends its
+// thirty stops from the tab strip onwards. The seek is Tab presses too,
+// not a .focus() call, so the thirty are still a keyboard journey and
+// :focus-visible still means what it means. Where the rail's own stops
+// are covered: they are the same anchors on every page, and the axe
+// scan reads the rail on all twelve of its targets.
 func TestA11yWalksTheKeyboard(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return committedTree(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
@@ -835,11 +844,35 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	}
 	t.Logf("components: %d focusable elements in its own document, before any frame", count)
 
+	// Tab past the rail. The stop this lands on is the first entry of
+	// the section tab strip, which is the first thing after the rail in
+	// the reading order — and the first stop the thirty below assert.
+	// Bounded rather than counted: the rail's length is a property of
+	// how many partials ui ships, and a seek that had to be updated
+	// every time one landed would be a second list to maintain.
+	const seekLimit = 250
+	inStrip := `!!(document.activeElement && document.activeElement.closest(".ds-switch"))`
+	var reached bool
+	for i := 0; i < seekLimit && !reached; i++ {
+		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(inStrip, &reached)); err != nil {
+			t.Fatalf("seeking to the section tabs, tab %d: %v", i+1, err)
+		}
+	}
+	if !reached {
+		t.Fatalf("%d Tabs never reached the section tab strip; the walk would have covered the rail and nothing else", seekLimit)
+	}
+
 	const steps = 30
 	rings := 0
 	for i := 0; i < steps; i++ {
+		// The first stop is where the seek left focus — the tab strip
+		// itself — so the Tab comes after the reading, not before it.
 		var raw string
-		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw)); err != nil {
+		actions := []chromedp.Action{chromedp.Evaluate(walkJS, &raw)}
+		if i > 0 {
+			actions = []chromedp.Action{chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw)}
+		}
+		if err := chromedp.Run(ctx, actions...); err != nil {
 			t.Fatalf("tab %d: %v", i+1, err)
 		}
 		var s struct {
@@ -850,7 +883,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 			t.Fatalf("tab %d: decoding: %v", i+1, err)
 		}
 		if s.Tag == "body" {
-			t.Fatalf("tab %d: focus left the document — the components page has fewer than %d stops?", i+1, steps)
+			t.Fatalf("tab %d: focus left the document — the components page has fewer than %d stops after its rail?", i+1, steps)
 		}
 		if s.Same {
 			t.Errorf("tab %d: focus did not move off %s — keyboard trap (WCAG 2.1.2)", i+1, s.Tag)
@@ -870,7 +903,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 		}
 		rings++
 	}
-	t.Logf("components: %d of %d stops showed a focus indicator", rings, steps)
+	t.Logf("components: %d of %d stops below the rail showed a focus indicator", rings, steps)
 
 	// The full circuit, on the page small enough to walk all of.
 	var modalCount int

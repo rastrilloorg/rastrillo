@@ -1699,7 +1699,7 @@ const componentsBody = `{{define "ds-body-components"}}
 
 const primitivesBody = `{{define "ds-body-primitives"}}
 <div class="ds-head"><h2 id="primitives">{{P "UI primitives"}}</h2></div>
-<p class="ds-lead">{{P "The shapes a partial cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css."}}</p>
+<p class="ds-lead">{{P "The shapes a component cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css."}}</p>
 ` + deadLinkCallout + `
 {{range .Idioms}}
 {{.Marker}}

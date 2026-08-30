@@ -886,15 +886,23 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	// The floor per page is derived, not guessed: every partial ui
 	// defines has a section on the components page, every idiom
 	// ui.Styleguide ships has one on the primitives page, and every
-	// shell has one on the shells page. A page whose frames did not
-	// load measures fewer, which is the failure this catches.
+	// shell has one on the shells page.
+	//
+	// This is also the only place "documented" and "has an example to
+	// look at" are joined, so the message it fails with has to name
+	// that first. A component documented with an empty section reads
+	// exactly like a frame that did not load from here, and the first
+	// of those is a rendering bug in the tree while the second is a
+	// flake in this job; a message that only offers the second sends
+	// the reader looking in the wrong place.
 	for _, tc := range []struct {
 		kind  string
 		least int
+		owed  string
 	}{
-		{"components", len(definedPartials(t))},
-		{"primitives", len(ui.Styleguide())},
-		{"shells", len(ui.LayoutNames())},
+		{"components", len(definedPartials(t)), "every partial ui.Templates() defines has a section here"},
+		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
+		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
 	} {
 		kind := tc.kind
 		var desktop, mobile string
@@ -919,7 +927,10 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		}
 		for _, tab := range []struct{ name, raw string }{{"Desktop", desktop}, {"Mobile", mobile}} {
 			if n := measured(t, kind+" "+tab.name, tab.raw); n < tc.least {
-				t.Errorf("%s %s: measured %d sections, want at least %d — the frames did not all load", kind, tab.name, n, tc.least)
+				t.Errorf("%s %s: %d sections have a rendered example, want at least %d — %s. "+
+					"Either something ui ships is documented with nothing to look at (a partial with no sample "+
+					"state, an idiom with no styleguide entry, a shell with no demo), or the frames on this "+
+					"page did not all load", kind, tab.name, n, tc.least, tc.owed)
 			}
 		}
 	}
@@ -936,7 +947,7 @@ func measured(t *testing.T, tab, raw string) int {
 		t.Fatalf("%s: reading the measurements: %v", tab, err)
 	}
 	if len(got) == 0 {
-		t.Fatalf("%s: measured no sections at all — the frames did not load", tab)
+		t.Fatalf("%s: no section on this page has a rendered example at all — either the page rendered none, or no frame on it loaded", tab)
 	}
 	names := make([]string, 0, len(got))
 	for name := range got {

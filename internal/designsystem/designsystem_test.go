@@ -50,18 +50,36 @@ const treeDir = "../../docs/design-system"
 // split.
 //
 // The split added 2.6 MiB and no content. The samples did not move
-// twice; what is repeated is the FRAME — the head with 7.5 KiB of
-// inlined dsCSS, the chrome, and the 7.6 KiB rail that is now the same
-// on every page — four more times per directory: 144 extra pages at
-// ~18 KiB of furniture each. 17.1 MiB, which is 85% of this ceiling.
+// twice; what is repeated is the FRAME — the head with its inlined
+// dsCSS, the chrome, and the 7.6 KiB rail that is now the same on every
+// page — four more times per directory: 144 extra pages at ~19 KiB of
+// furniture each. 17,891,845 bytes, which is 85% of this ceiling.
 //
-// That is the number the next page kind has to be weighed against, and
-// two of them are planned (icons, getting started): 72 more pages of
-// furniture plus their content. If they do not fit, the lever is the
-// stylesheet — dsCSS is inlined into all 180 pages and is the same
-// bytes every time, so serving it as one more shared asset beside
-// tokens.css gives back about 1.3 MiB without touching a page's
-// content. Raising the ceiling is the last resort, not the first.
+// ── The two dsCSS numbers, because there are two ─────────────────────
+//
+// len(dsCSS) is 11,380 bytes and what reaches a page is 7,765. Neither
+// is a typo for the other: html/template's CSS sanitiser strips the
+// comments out of <style> text, and better than a third of that
+// constant is the comments explaining the preview widget's scaling and
+// the scriptless story. Measure the constant and you get the first
+// number; measure a rendered page and you get the second. The one that
+// costs disk is 7,765.
+//
+// ── The budget for the next page kind ────────────────────────────────
+//
+// Headroom is 3,079,675 bytes (2.94 MiB). Two more page kinds are
+// planned — icons and getting started — and 72 more pages at the
+// Overview stub's 19,281 bytes, which is furniture and nothing else,
+// costs 1.32 MiB. That leaves 1.62 MiB for what those pages actually
+// say, and the icons page is not the threat it looks: rastrillo.Icon
+// answers 11 slugs and 2,487 bytes of SVG in total. They fit.
+//
+// If a later page does not, the lever is the stylesheet before the
+// ceiling. dsCSS reaches all 181 gallery pages (180 plus the root
+// index, which is a copy of one of them) as the same 7,765 bytes every
+// time: 1.34 MiB gross, ~1.32 MiB net once a shared asset and a <link>
+// per page are paid for. Raising maxTreeBytes is the last resort, not
+// the first.
 const maxTreeBytes = 20 << 20
 
 // render is Render() with the error already fatal — every test here
@@ -1201,69 +1219,91 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 // and each says which of its options is the current one. The scheme
 // toggle's server-rendered answer is System, because System is the only
 // state a page with no JavaScript can be in.
+//
+// Walked over every page kind, not just the Overview. That is not
+// thoroughness for its own sake: the switchers point at THIS page in
+// another theme or another language, and on index.html a switcher that
+// had forgotten which page it was on would emit the same URL as one
+// that had not. Reading only the Overview is reading the one page where
+// the bug is invisible.
 func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			name := theme + "/" + locale + "/index.html"
-			page := string(files[name])
-			// The chrome is read out of the page by its own element,
-			// not by cutting at main: the <style> block in the head
-			// mentions aria-pressed in a selector, and a looser slice
-			// counted the stylesheet as a fourth button.
-			_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
-			if !ok {
-				t.Errorf("%s: no gallery header", name)
-				continue
-			}
-			chrome, rest, ok := strings.Cut(after, "</header>")
-			if !ok {
-				t.Errorf("%s: the gallery header never closes", name)
-				continue
-			}
-			// The chrome moved inside the shell's main column when the
-			// sidebar landed, so what follows it is the content
-			// column rather than main itself. It is still the first
-			// thing in the reading order of the page's own content.
-			if !strings.HasPrefix(strings.TrimSpace(rest), `<div class="rst-page">`) {
-				t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
-			}
-			if _, chromeStart, _ := strings.Cut(page, `<main class="rst-shell__main" id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
-				t.Errorf("%s: the gallery header is not the first thing inside main", name)
-			}
-			// The theme switcher: one link per theme, exactly one current.
-			if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
-				t.Errorf("%s: %d themes marked current, want 1", name, n)
-			}
-			// The language switcher: one link per locale, exactly one current.
-			if n := strings.Count(chrome, `aria-current="true"`); n != 1 {
-				t.Errorf("%s: %d locales marked current, want 1", name, n)
-			}
-			if n := strings.Count(chrome, `<a href="`+mountPrefix); n != len(ui.ThemeNames())+len(rastrillo.BaseLocales()) {
-				t.Errorf("%s: the chrome has %d in-tree links, want one per theme and one per locale", name, n)
-			}
-			// The scheme toggle: three buttons, System pressed.
-			for _, value := range []string{"system", "light", "dark"} {
-				if !strings.Contains(chrome, `data-ds-scheme="`+value+`"`) {
-					t.Errorf("%s: the scheme toggle has no %s button", name, value)
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				page := string(files[name])
+				// The chrome is read out of the page by its own element,
+				// not by cutting at main: the <style> block in the head
+				// mentions aria-pressed in a selector, and a looser slice
+				// counted the stylesheet as a fourth button.
+				_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
+				if !ok {
+					t.Errorf("%s: no gallery header", name)
+					continue
 				}
-			}
-			if n := strings.Count(chrome, `aria-pressed="true"`); n != 1 {
-				t.Errorf("%s: %d scheme buttons pressed, want exactly 1 (System)", name, n)
-			}
-			if n := strings.Count(chrome, `aria-pressed="false"`); n != 2 {
-				t.Errorf("%s: %d scheme buttons unpressed, want 2", name, n)
-			}
-			if !strings.Contains(chrome, `data-ds-scheme="system" aria-pressed="true"`) {
-				t.Errorf("%s: System is not the pressed scheme with no JavaScript", name)
-			}
-			// Every one of the three is named, in this page's language.
-			for _, label := range []string{
-				proseIn(locale, "Theme"),
-				proseIn(locale, "Colour scheme"),
-			} {
-				if !strings.Contains(chrome, `aria-label="`+template.HTMLEscapeString(label)+`"`) {
-					t.Errorf("%s: the chrome has no group labelled %q", name, label)
+				chrome, rest, ok := strings.Cut(after, "</header>")
+				if !ok {
+					t.Errorf("%s: the gallery header never closes", name)
+					continue
+				}
+				// The chrome moved inside the shell's main column when the
+				// sidebar landed, so what follows it is the content
+				// column rather than main itself. It is still the first
+				// thing in the reading order of the page's own content.
+				if !strings.HasPrefix(strings.TrimSpace(rest), `<div class="rst-page">`) {
+					t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
+				}
+				if _, chromeStart, _ := strings.Cut(page, `<main class="rst-shell__main" id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
+					t.Errorf("%s: the gallery header is not the first thing inside main", name)
+				}
+				// The theme switcher: one link per theme, exactly one current.
+				if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
+					t.Errorf("%s: %d themes marked current, want 1", name, n)
+				}
+				// The language switcher: one link per locale, exactly one current.
+				if n := strings.Count(chrome, `aria-current="true"`); n != 1 {
+					t.Errorf("%s: %d locales marked current, want 1", name, n)
+				}
+				if n := strings.Count(chrome, `<a href="`+mountPrefix); n != len(ui.ThemeNames())+len(rastrillo.BaseLocales()) {
+					t.Errorf("%s: the chrome has %d in-tree links, want one per theme and one per locale", name, n)
+				}
+				// The scheme toggle: three buttons, System pressed.
+				for _, value := range []string{"system", "light", "dark"} {
+					if !strings.Contains(chrome, `data-ds-scheme="`+value+`"`) {
+						t.Errorf("%s: the scheme toggle has no %s button", name, value)
+					}
+				}
+				if n := strings.Count(chrome, `aria-pressed="true"`); n != 1 {
+					t.Errorf("%s: %d scheme buttons pressed, want exactly 1 (System)", name, n)
+				}
+				if n := strings.Count(chrome, `aria-pressed="false"`); n != 2 {
+					t.Errorf("%s: %d scheme buttons unpressed, want 2", name, n)
+				}
+				if !strings.Contains(chrome, `data-ds-scheme="system" aria-pressed="true"`) {
+					t.Errorf("%s: System is not the pressed scheme with no JavaScript", name)
+				}
+				// Every one of the three is named, in this page's language.
+				for _, label := range []string{
+					proseIn(locale, "Theme"),
+					proseIn(locale, "Colour scheme"),
+				} {
+					if !strings.Contains(chrome, `aria-label="`+template.HTMLEscapeString(label)+`"`) {
+						t.Errorf("%s: the chrome has no group labelled %q", name, label)
+					}
+				}
+				// Both switchers keep the reader on the page they are
+				// reading: choosing another theme from components.html
+				// lands on that theme's components.html, not back at the
+				// Overview. Asserted per page kind, because index.html is
+				// the one page where doing this right and doing it wrong
+				// produce the same URL — every switcher href there ends in
+				// index.html either way, so a gate that only read the
+				// Overview could not see the difference at all.
+				for _, m := range anchorHref.FindAllStringSubmatch(chrome, -1) {
+					if !strings.HasSuffix(m[1], "/"+pk.File) {
+						t.Errorf("%s: the chrome links %q, which is not this page in another theme or language", name, m[1])
+					}
 				}
 			}
 		}
@@ -1676,6 +1716,64 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 				}
 				if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections and demos")) + `"`; !strings.Contains(page, want) {
 					t.Errorf("%s: the sidebar nav is not named in this page's language", name)
+				}
+			}
+		}
+	}
+}
+
+// The section tab strip over the page names every page of this
+// directory, exactly one of them current, and the current one is the
+// page you are on.
+//
+// It is the rail's job done again in a row, and it is not decoration:
+// below 800px the sidebar shell folds the rail away behind a
+// disclosure, so this strip is the only VISIBLE way between the five
+// pages on a phone. It shipped with no gate at all — dropping the
+// aria-current from it, and cutting it down to a single link, both left
+// the suite green — which is why the two assertions below are stated
+// separately rather than as one count.
+func TestTheSectionTabsNameEveryPage(t *testing.T) {
+	files := render(t)
+	strip := regexp.MustCompile(`(?s)<div class="ds-switch">.*?</div>`)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				found := strip.FindString(string(files[name]))
+				if found == "" {
+					t.Errorf("%s: no section tab strip", name)
+					continue
+				}
+				var links [][]string
+				for _, m := range regexp.MustCompile(`<a href="([^"]*)"([^>]*)>([^<]*)</a>`).FindAllStringSubmatch(found, -1) {
+					links = append(links, m)
+				}
+				if len(links) != len(pageKinds()) {
+					t.Errorf("%s: the section tabs have %d entries, want one per page kind (%d)", name, len(links), len(pageKinds()))
+					continue
+				}
+				var current int
+				for i, pk2 := range pageKinds() {
+					if want := pageHref(theme, locale, pk2.File); links[i][1] != want {
+						t.Errorf("%s: section tab %d links %q, want %q", name, i, links[i][1], want)
+					}
+					if want := template.HTMLEscapeString(proseIn(locale, pk2.Title)); links[i][3] != want {
+						t.Errorf("%s: section tab %d is labelled %q, want %q", name, i, links[i][3], want)
+					}
+					marked := strings.Contains(links[i][2], `aria-current="page"`)
+					if marked {
+						current++
+					}
+					if marked != (pk2.Kind == pk.Kind) {
+						t.Errorf("%s: the %s tab is marked current=%v; the page you are on is %s", name, pk2.Kind, marked, pk.Kind)
+					}
+				}
+				if current != 1 {
+					t.Errorf("%s: %d section tabs marked current, want exactly 1", name, current)
+				}
+				if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections")) + `"`; !strings.Contains(found, want) {
+					t.Errorf("%s: the section tabs are not named in this page's language", name)
 				}
 			}
 		}
