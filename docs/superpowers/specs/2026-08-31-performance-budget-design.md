@@ -22,11 +22,7 @@ attractive again later.
 
 ## 1. The rule
 
-A **page-shaped** response — written `Content-Type: text/html`, or any
-3xx — must arrive in **150ms warm, 500ms cold**.
-
-Every other response — JSON, plain text — gets **300ms warm, 500ms
-cold**.
+Every response must arrive in **150ms warm, 500ms cold**.
 
 Streams (`text/event-stream`) and downloads (`Content-Disposition:
 attachment`) fall outside the budget. They are classified by what the
@@ -36,13 +32,35 @@ none can rot.
 **Cold is the first request the process serves**, timed from process
 start. That is the only request whose latency contains the SQLite open,
 the migration check, and the template parse. Every later request is
-warm. Cold is one number across both classes because boot dominates it;
-splitting it into a page number and a JSON number would invent a
-distinction that does not exist.
+warm.
 
-The one-line version, for `SKILL.md` and the docs: if the response a
-person will see is a page — HTML or a redirect — it must arrive in 150ms
-warm, 500ms cold, and anything slower becomes a job.
+The one-line version, for `SKILL.md` and the docs: if a response is not
+a stream or a download, it arrives in 150ms warm, 500ms cold, or the
+work becomes a job.
+
+### Why JSON is not looser
+
+An earlier draft gave JSON and plain text 300ms, on the reasoning that
+the concern was slow *pages*. That was wrong three ways, and the number
+protected nothing.
+
+A JSON fetch is normally issued *behind* a page rather than instead of
+one, so a 150ms page followed by a 300ms fetch is 450ms before the thing
+is usable — worse than the page that did the work server-side and would
+have been fenced at 150. A looser budget for the request that happens in
+addition to the page has it backwards.
+
+JSON also does strictly less work: no template render. Nothing explains
+it being slower than the HTML equivalent.
+
+And there is no slow-JSON case the design does not already handle. Agent
+tool dispatch synthesizes a request through the app's real mux
+(`tools/tools.go:111`), so a tool call is the same handler at the same
+cost as the HTTP POST. Form POSTs are 3xx and in budget. Streams and
+downloads are classified out. Carlos wake work is either a job or the
+exempt wake path.
+
+One number is also the whole rule, with no sub-clause to teach.
 
 ### Why redirects are in
 
@@ -56,9 +74,9 @@ exists for, and exempting 3xx would hide it.
 the request: "The instance stays awake while it is open, and the idle
 clock starts when you return." A budget that fenced those endpoints
 would make every app need a waiver to follow the documentation, and
-waivers that common stop meaning anything within a month. Wake handlers
-that answer with plain text or JSON fall under the 300ms number; one
-that renders HTML needs `Slow` (§4).
+waivers that common stop meaning anything within a month. A wake handler
+that genuinely cannot answer inside the budget needs `Slow` (§4) and a
+reason, like any other route.
 
 ## 2. One middleware, three consumers
 
@@ -95,10 +113,9 @@ handler.
 // Budget is the app's performance budget. The zero value means the
 // framework defaults.
 type Budget struct {
-	Page   time.Duration // default 150ms
-	Other  time.Duration // default 300ms
+	Warm   time.Duration // default 150ms
 	Cold   time.Duration // default 500ms
-	Reason string        // required when any value differs from the default
+	Reason string        // required when either differs from the default
 }
 ```
 
@@ -126,10 +143,9 @@ Panics at wiring time on an empty reason. Records the pattern and reason
 in a list **the gate prints in full on every run**, so a growing waiver
 list appears in every CI log rather than only to whoever greps for it.
 
-Only page routes can ever need it, because everything else is either
-under the looser number or classified out, so it should stay rare. The
-one case visible in the framework today is a wake endpoint that answers
-with HTML.
+Streams and downloads are classified out and never need it, so it should
+stay rare — the one case visible in the framework today is a wake
+endpoint that must hold the request open past the budget.
 
 ## 5. Runtime
 
@@ -139,7 +155,9 @@ One structured WARN per breach, in every environment:
 
 `budget_breach`, `pattern` (from `http.Request.Pattern` — route-keyed,
 so it aggregates and carries no ids or personal data), `method`,
-`status`, `class` (page/other/exempt), `phase` (warm/cold), `dur_ms`,
+`status`, `class` (page/other/exempt — diagnostic only, since all three
+are measured and the first two share one budget), `phase` (warm/cold),
+`dur_ms`,
 `write_ms`, `budget_ms`.
 
 Throttled per pattern: the first breach logs immediately, then at most
@@ -252,13 +270,14 @@ Test suites for `blog`, `helloworld` and `tickets` are out of scope.
 
 ## 7. Rulings, and what each closed off
 
-**Pages are gated, everything else is measured and gated at a looser
-number.** Two alternatives were rejected. Gating everything at one
-number taxes the documented carlos pattern (see §1) into a waiver farm.
-Gating only pages and merely logging the rest leaves a slow JSON
-endpoint degrading every page that fetches it with no gate ever firing —
-that hole was closed by giving non-page responses their own 300ms number
-now, rather than promising to add one later.
+**One number for everything that is not a stream or a download.** Two
+alternatives were rejected. Gating only pages and merely logging the rest
+leaves a slow JSON endpoint degrading every page that fetches it with no
+gate ever firing. Gating non-pages at a looser 300ms — the draft this
+spec was first written against — closed that hole with a number that
+protected nothing, for the reasons in §1. The carlos pattern that a
+blanket budget would otherwise tax is handled by classification and by
+`Slow`, not by a second tier.
 
 **Classification comes from what the handler wrote, not from where it
 flushed.** Stopping the clock on first flush was considered and
