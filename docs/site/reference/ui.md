@@ -143,6 +143,59 @@ whole surface a theme has to satisfy is the token set `day` declares —
 which now includes the radii and the four depth tokens — and
 `TestThemesDeclareIdenticalTokenSets` holds every theme to it.
 
+## Colour
+
+```go
+func Pair(hue, chroma float64, background string) (Swatch, error)
+func Allocate(keys []string, avoid []float64) ([]Intent, bool)
+func Offered() []Intent
+func CheckIntents(intents []Intent, backgrounds []string) error
+func ContrastRatio(a, b string) (float64, error)
+```
+
+Two entry points for apps that have to colour things the framework has
+never seen — a cell fill, a text highlight, a presence cursor, an author
+dot.
+
+`Pair` resolves one colour intent against one background into an
+`Intent` made concrete: a `Swatch` carrying `Fill`, the colour you
+paint, and `On`, the colour you draw on it. The fill clears
+`ContrastFloorBoundary` (3:1) against the background and the on-fill
+clears `ContrastFloorText` (4.5:1) against the fill, by construction —
+lightness is chosen to make that true, so the same intent comes back
+dark on paper white and light on dark paper.
+
+`background` is a literal `#rgb` or `#rrggbb` colour and never a theme
+or a scheme, because the colour a fill sits on is often not the theme's
+surface: a document canvas can be paper white in a dark theme, and a
+conditional format paints under a user fill. Pass a scheme instead and
+your own contrast test asserts the pair against the same wrong
+assumption it was built from, and passes.
+
+`Allocate` gives each of a set of opaque keys a hue from `Offered()`,
+chosen so no two share one for as long as the set has room. It returns
+the intents aligned with `keys` plus a flag: false once the keys, plus
+anything in `avoid`, outrun the twelve offered hues. Separation is the
+guarantee; cross-document stability is best-effort, because two keys in
+one document can hash to the same hue and one of them has to move. The
+allocation is a pure function of the key *set* — sorted, then open
+addressing from an FNV-1a probe — so two clients rendering one document
+agree about who is which colour.
+
+A key is a stable string you own the meaning of. The framework has no
+idea what an identity is.
+
+`CheckIntents` is the build-time proof, exported so you can run it
+against backgrounds the framework does not know: it resolves every
+intent against every background and reports each one that fails a floor
+or comes back a grey. `ui`'s own gate runs it over `Offered()` against
+paper white and every surface every shipped theme declares, in both
+schemes. `ContrastRatio` is the WCAG arithmetic all of it is built on,
+exported so an app gating its own colours measures with the same one.
+
+Colour still never carries meaning alone. Clearing a floor makes a label
+legible; the name or initials beside it are what say whose it is.
+
 ## Shells
 
 ```go
