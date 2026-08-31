@@ -147,11 +147,11 @@ which now includes the radii and the four depth tokens — and
 
 ```go
 func Pair(hue, chroma float64, background string) (Swatch, error)
-func Wash(hue, chroma float64, ink, background string) (Swatch, error)
+func Wash(hue, chroma, separation float64, ink, background string) (Swatch, error)
 func Allocate(keys []string, avoid []float64) ([]Intent, bool)
 func Offered() []Intent
 func CheckIntents(intents []Intent, backgrounds []string) error
-func CheckWashes(intents []Intent, canvases []Canvas) error
+func CheckWashes(intents []Intent, separation float64, canvases []Canvas) error
 func WorstSeparation(intents []Intent, backgrounds []string) (deltaE float64, background, a, b string)
 func ContrastRatio(a, b string) (float64, error)
 func DeltaEOK(a, b string) (float64, error)
@@ -186,18 +186,69 @@ on export is a font colour written into the file that nobody set. Import
 a workbook, highlight one cell, export, and it comes back with font
 colours throughout.
 
-So `Wash` takes the ink the author already has and returns the palest
-fill of that hue their ink still reads on. Its two floors: the ink clears
-4.5:1 against the fill, and the fill is at least `MinSeparation` from the
+So `Wash` takes the ink the author already has and returns a fill of that
+hue their ink still reads on. Its two floors: the ink clears 4.5:1
+against the fill, and the fill is at least `MinSeparation` from the
 background — perceptibly different, or the user clicks yellow and nothing
 appears to happen. That second one is a perceptual distance and not a
 contrast ratio on purpose: a pale yellow wash is about 1.2:1 against
 white, a number that would condemn every wash anyone has ever shipped.
 
-`Wash` returns an error when no fill of that hue can carry that ink, and
-that is the feature. Excel will give you a dark navy fill and leave your
-text black on it, unreadable, with no warning. The hue is simply not
-offered instead — nobody's font colour is changed behind their back.
+`separation` is how heavy you want the wash, and the contract is *as
+close to it as the ink and background allow, never below the floor*. A
+fill exists to be found — someone scans a thousand rows for the cell they
+flagged — so it is a flag and not a texture, and one sitting at the
+threshold of perceptibility inverts its own job. The scale, measured
+against a white canvas on the same scale `Swatch.Separation` reports:
+
+| weight | colour |
+| --- | --- |
+| 0.03 | `MinSeparation`, the floor — the palest fill Google Sheets ships |
+| 0.11 | Excel's "light green" preset, `#C6EFCE` |
+| 0.12 | Excel's "light yellow" preset, `#FFEB9C` |
+| 0.14 | Excel's "light red" preset, `#FFC7CE` |
+| 0.21 | flat yellow `#FFFF00`, the most-clicked fill there is |
+| 0.38 | a solid green `#00B050` |
+| 0.45 | flat red `#FF0000` |
+| 0.63 | flat blue `#0000FF` |
+
+Around 0.12 is a spreadsheet fill in the sense Excel means one.
+
+When the ink cannot carry the weight you asked for, you get the closest
+it can and `SeparationMet` comes back false — not an error, because the
+constrained answer is correct and is the one to paint. Flat blue is the
+worked case: black ink on `#0000FF` is 2.44:1, so asking for blue at its
+own 0.63 under black ink returns a much lighter blue with the flag down.
+`SeparationRequested` sits beside `Separation` if you want the numbers,
+but read the boolean rather than comparing them — the achievable weights
+are not evenly spaced, so the comparison needs a tolerance.
+
+`Wash` returns an error when no fill of that hue can carry that ink at
+all, and that is the feature. Excel ships a conditional-formatting preset
+that fails WCAG AA: "Yellow Fill with Dark Yellow Text" pairs `#9C6500`
+on `#FFEB9C` at 4.12:1. The product's own default does it.
+
+What is claimed is precise: **a wash this function produces cannot be
+unreadable.** Not "no cell in your app can be unreadable" — if you retain
+an imported file's fill and font colour verbatim, which is what makes
+import and export lossless, then a document using that preset displays at
+4.12:1 and it should. Faithfully showing a document somebody else
+authored is a different act from generating a colour, and only the second
+is `Wash`'s to guarantee.
+
+`Wash` also never invents a font colour: `On` is the ink you passed,
+normalised to lower-case `#rrggbb` so a `Swatch` spells all three of its
+colours one way. Compare against `sw.On` rather than against the string
+you stored.
+
+It does need to know that ink, though, and that is a real limit: `Wash`
+is the wrong function if you do not control the text colour. Passing a
+guessed ink buys a guarantee about a colour that is not on the screen,
+and applying the guess restyles an author's text — the same harm the
+function exists to prevent. A highlight behind text the app did not
+choose needs a different guarantee ("any ink that was legible on the
+background stays legible on the wash"), and that is a separate function
+being designed rather than this one with the argument left out.
 
 `background` is a literal colour here for the same reason it is on
 `Pair`, and export is the clearest case. A stored intent resolves per
@@ -210,15 +261,19 @@ hex untouched; a fill picked in-app exports resolved against a canonical
 light background, because Excel's canvas is white and that is where the
 file will be opened. The export surface is not the reader's surface.
 
-`CheckWashes` is the wash half of the proof. A `Canvas` is a background
-together with every ink that can appear on it, because the two are not
-independent — a light canvas carries near-black theme ink — and because
-an author can *pin* their font colour and keep it when a reader switches
-theme. "Pinned black on dark paper" is a real canvas and the hardest one:
-black ink needs a light fill whatever surrounds the cell, so the wash
-stops being pale. It still resolves. Across the twelve offered hues, 26
-shipped canvases and three inks each — 912 combinations — there are no
-gaps.
+`CheckWashes` is the wash half of the proof, and it inspects the resolved
+colours rather than only asking whether an error came back. A `Canvas` is
+a background together with every ink that can appear on it, because the
+two are not independent — a light canvas carries near-black theme ink —
+and because an author can *pin* their font colour and keep it when a
+reader switches theme. "Pinned black on dark paper" is a real canvas and
+the hardest one: black ink needs a light fill whatever surrounds the
+cell, so the wash stops being pale. It still resolves.
+
+Across the twelve offered hues and the shipped surfaces there are no
+gaps: 26 canvases carrying 76 background/ink pairs between them — the two
+document canvases have no theme ink of their own and carry two each, the
+24 theme canvases carry three — which is 912 combinations.
 
 `Allocate` gives each of a set of opaque keys a hue from `Offered()`,
 chosen so no two share one for as long as the set has room. It returns
