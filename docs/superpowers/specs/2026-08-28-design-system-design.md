@@ -3383,3 +3383,75 @@ correction made its own argument *stronger* — the real gaps are larger, by an 
 magnitude at the extreme, so "no tolerance can work" became more true. A retraction that
 weakens nothing is easy to under-report, and under-reporting it invites someone to
 re-litigate a settled decision on the grounds that its evidence moved.
+
+---
+
+## 6-v2.10. Sign-in screens (2026-08-31) — requested by Paul
+
+> "Another thing to add to the design system: sign in screens, including
+> magic-link, username/password, and social signin ... `~/github.com/elevenmessenger/messenger`
+> does this pretty well, and these are screens that pretty much every app will need."
+
+He is right that every app needs them, and the gap is real: **`rastrillo/auth` renders no
+HTML at all.** It is pure mechanism — `Begin`, `Callback`, `Verify`, `Signout`,
+`RequireSession` — so today every app hand-writes its own sign-in screen against it, and
+the framework has opinions about magic links, passkeys and passwords in `docs/site/` with
+nothing to render them.
+
+### What the reference actually does well, read from the source
+
+Six things, and most of them are doctrine rather than markup.
+
+1. **One primary door, not a wall of buttons.** The card composes to a single primary
+   action — the last-used method where the browser remembers one, otherwise the platform
+   default — with a second door beneath it and a quiet "Other ways to sign in" leading to
+   the rest. Demoted doors do not render on the main card at all.
+2. **Find-or-create, one button each. No sign-in versus sign-up split.** "Continue with
+   Apple" is one door whether or not you have an account.
+3. **Provider buttons built to each provider's own spec, by hand.** Apple's black,
+   Google's white with the hairline and the official four-colour G, Microsoft's four
+   squares, GitHub's dark. All inline SVG and no vendor JavaScript — their rendered
+   buttons need their SDKs, and the CSP rightly blocks them. That constraint is
+   rastrillo's too, and arriving at the same answer from a different rule.
+4. **Steps swap in place.** The email door is a screen of its own: address → code →
+   session, as forms, so Enter submits and native validation gates.
+5. **A working button wears a face.** "The wait needs a face even when the server is
+   instant", with a static ring under `prefers-reduced-motion`.
+6. **Failure copy that serves both readings of an ambiguous failure.** A cancelled passkey
+   ceremony and having no passkey are indistinguishable — `NotAllowedError` either way —
+   so one explainer addresses a returning member who picked the wrong key *and* someone
+   genuinely new. That is the sharpest thing on the page and it is entirely copy.
+
+### The tension, and where it resolves
+
+The reference composes the card **in JavaScript**, from a per-browser memory of the
+last-used method. Rastrillo's doctrine is that the scriptless path is the real one. These
+are compatible if the split is drawn correctly:
+
+- **Server-rendered:** the card, the doors, the order, the step-through, every form, every
+  error state. The app declares its default primary door; that renders with no script.
+- **Enhancement:** remembering the last-used method for this browser, and promoting it.
+  Per-viewer, non-essential, degrades to the app's configured default. This is exactly the
+  shape `select.js` and `datetime.js` already have.
+
+### The honesty constraint, which is Paul's own rule
+
+`rastrillo/auth` implements magic links and the keymail OAuth ceremony. **It does not
+implement Google, Apple, Microsoft or GitHub sign-in.** So the design system ships the
+*buttons* — correctly branded, accessible, scriptless, pointing at whatever route the app
+provides — and must not imply the framework implements the flows behind them.
+
+That is §6-v2.3's rule applied before the fact rather than after: *published documentation
+describes what exists.* A "Continue with Google" button in the gallery with no Google
+support in `auth` is fine; a Getting-started sentence implying the framework signs you in
+with Google is not.
+
+### Open, for Paul
+
+- **Do the screens live in `ui` as partials, or in `auth` as renderable pages?** Partials
+  keep `auth` free of HTML and let an app compose its own screen; renderable pages are
+  turnkey and match how `auth` already owns its routes. The tension is the same one
+  `magic-links.md` calls "the framework's turnkey option".
+- **Password sign-in is the one where shipping a screen is a position.** The framework
+  documents passwords, and a design system with a polished username/password card
+  encourages it. Worth being deliberate rather than complete.

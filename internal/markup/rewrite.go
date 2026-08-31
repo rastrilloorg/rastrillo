@@ -126,7 +126,26 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 	// as source. Rewriting it would mean deciding what the escaping is
 	// for; naming it is the honest half, and it is a shape that exists
 	// in any repository with migration notes of its own.
+	//
+	// The fence applies here as much as it does to the rewrite, and for
+	// longer: a rewrite you decline is over, but a note is a line in a
+	// report that stays until somebody deals with it, and the exit code
+	// stays at 3 while it does. A fenced region is somebody having
+	// already dealt with it. Without this, every file that fences off a
+	// paragraph about the old spelling reports work forever, and this
+	// repository was the proof — four permanent notes against two files
+	// fenced from line 1, so `rastrillo markup .` could never exit 0 on
+	// a clean tree. A report mode that always says there is work is what
+	// teaches people to skip it and run --fix.
+	//
+	// The regions are recomputed rather than reusing inFence: the tone
+	// pass above shortened the text at every replacement, so offsets
+	// after the first one no longer mean what they did.
+	noteFence := fencedRegions(out)
 	for _, m := range escapedClassAttr.FindAllStringSubmatchIndex(out, -1) {
+		if noteFence(m[0]) {
+			continue
+		}
 		if strings.Contains(out[m[2]:m[3]], "rst-") {
 			notes = append(notes, Note{
 				Line: 1 + strings.Count(out[:m[0]], "\n"),

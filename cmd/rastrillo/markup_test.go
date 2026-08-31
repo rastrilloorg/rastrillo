@@ -198,6 +198,51 @@ func TestMarkupSweepNamesTheAppsOwnClassSelectors(t *testing.T) {
 	}
 }
 
+// The report's second half — "your own stylesheet keys off the class
+// spelling" — had the Markdown defect in miniature, in Go.
+//
+// styleBlock is a regexp. It is line-blind and it does not know a
+// comment from a quote, so a file that MENTIONS <style> in a comment
+// and writes </style> inside a pattern further down handed it
+// everything in between as the app's own stylesheet. markup.go was
+// that file: about a hundred lines of it read as CSS, and the
+// .rst-lrow in its own help text came back to the reader as a selector
+// to go and change. Prose about markup, read as markup.
+//
+// Both halves are asserted here, because the cheap way to make the
+// first one pass is to stop looking at Go files at all.
+func TestMarkupSweepReadsAStyleBlockInGoOnlyWhereOneCanBe(t *testing.T) {
+	dir := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, rel), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Discussion: the opening tag is in a comment, the closing tag is
+	// in an unrelated literal, and the selector between them is a
+	// sentence about what the reader should type.
+	write("report.go", "package app\n\n"+
+		"// Every <style> block in a template is read too, because the\n"+
+		"// app's own rules are the trap wherever they are written.\n\n"+
+		"const help = \"change .rst-lrow to [rst-lrow]\"\n\n"+
+		"const closingTag = \"</style>\"\n")
+	// Markup: one string literal holding a whole <style> block, which
+	// is what a Go file with a stylesheet in it actually looks like.
+	write("page.go", "package app\n\n"+
+		"const page = \"<style>.rst-lgrid { display: grid }</style>\"\n")
+
+	var out bytes.Buffer
+	_ = markupSweep(&out, dir, false)
+
+	if strings.Contains(out.String(), "report.go") {
+		t.Errorf("a <style> in a Go comment made the file's prose read as the app's stylesheet:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "page.go: rst-lgrid") {
+		t.Errorf("a real <style> block in a Go string literal is no longer reported:\n%s", out.String())
+	}
+}
+
 // A dry run that finds only class lists it cannot take apart must not
 // exit 0. A CI gate reading that code would wave through the one app
 // that most needs stopping: the one whose remaining class markup is
