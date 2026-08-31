@@ -78,7 +78,7 @@ func TestTheFlipDidNotMoveAPixel(t *testing.T) {
 		var keep []string
 		for _, p := range pages {
 			for _, prefix := range strings.Split(only, ",") {
-				if strings.HasPrefix(p, prefix+"/") {
+				if p == prefix || strings.HasPrefix(p, prefix+"/") {
 					keep = append(keep, p)
 				}
 			}
