@@ -94,6 +94,7 @@ func markupSweep(w io.Writer, dir string, fix bool) error {
 	}
 	var changed []change
 	var notesOnly []change
+	noted := 0
 	ownCSS := map[string][]string{}
 
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -119,13 +120,17 @@ func markupSweep(w io.Writer, dir string, fix bool) error {
 			return err
 		}
 		out, notes := markup.Rewrite(src)
-		if strings.EqualFold(filepath.Ext(path), ".css") && !bytes.Equal(src, ui.TokensCSS()) {
-			for _, m := range appOwnClassSelector.FindAllStringSubmatch(string(src), -1) {
+		// The app's own rules, wherever they are written: a .css file,
+		// or a <style> block in the layout template, which is the same
+		// trap wearing a different extension.
+		for _, css := range ownStylesheets(string(src), filepath.Ext(path), src) {
+			for _, m := range appOwnClassSelector.FindAllStringSubmatch(css, -1) {
 				if _, util := markup.Utilities[m[1]]; !util {
 					ownCSS[rel] = appendOnce(ownCSS[rel], m[1])
 				}
 			}
 		}
+		noted += len(notes)
 		switch {
 		case string(out) != string(src):
 			changed = append(changed, change{rel, notes})
@@ -183,12 +188,44 @@ func markupSweep(w io.Writer, dir string, fix bool) error {
 	}
 	if !fix && len(changed) > 0 {
 		fmt.Fprintf(w, "\nrun again with --fix to write it.\n")
+	}
+	// Work left is work left, whether it is a rewrite waiting for --fix
+	// or a class list only a human can take apart. A CI gate that got 0
+	// here would wave through an app whose remaining markup is entirely
+	// in shapes this tool reports rather than rewrites — which is
+	// exactly the app that most needs to be stopped.
+	if noted > 0 {
+		fmt.Fprintf(w, "\n%d class attribute(s) above need a human. This exits %d until they are gone.\n",
+			noted, exitMarkupPending)
+	}
+	if noted > 0 || (!fix && len(changed) > 0) {
 		return exitError{code: exitMarkupPending}
 	}
 	return nil
 }
 
-// exitMarkupPending: a dry run found work. It is drift's code, and for
+// ownStylesheets returns the CSS in a file: the whole of it for a
+// stylesheet the app owns, and every <style> block for anything else.
+// A vendored copy of the library's tokens.css is not the app's, and
+// naming its rules would be a page of noise that teaches people to
+// ignore the report.
+func ownStylesheets(src, ext string, raw []byte) []string {
+	if strings.EqualFold(ext, ".css") {
+		if bytes.Equal(raw, ui.TokensCSS()) {
+			return nil
+		}
+		return []string{src}
+	}
+	var out []string
+	for _, m := range styleBlock.FindAllStringSubmatch(src, -1) {
+		out = append(out, m[1])
+	}
+	return out
+}
+
+var styleBlock = regexp.MustCompile(`(?is)<style[^>]*>(.*?)</style>`)
+
+// exitMarkupPending: there is work here. It is drift's code, and for
 // the same reason — a CI branching on it wants "there is something to
 // do here", not "the command failed".
 const exitMarkupPending = 3

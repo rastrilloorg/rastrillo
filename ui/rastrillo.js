@@ -44,10 +44,10 @@
    direct navigation. Reserved: the framework's own handlers do not
    read it today.
 
-   Menus (no attribute — see above): an open <details rst-dropdown>,
-   <details rst-row-menu> or nested <details rst-menu-group> closes on a
-   click outside it and on Escape. Which of them is open at once is still
-   the native <details name> group, with no script involved at all.
+   Menus: an open <details rst-dropdown>, <details rst-row-menu> or a
+   nested <details rst-menu-group> closes on an outside click and on
+   Escape, in EITHER spelling, so upgrading this file before running
+   `rastrillo markup` leaves no dead menus. Exclusivity stays native.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -279,8 +279,8 @@
   // MENUS. A sidebar's disclosure strip and a settings switch are not
   // menus; closing them because a click landed elsewhere would fight the
   // user rather than help.
-  var MENUS = "details[rst-dropdown][open], details[rst-menu-group][open], " +
-    "details[rst-row-menu][open]";
+  var MENUS = "[rst-dropdown][open],[rst-menu-group][open],[rst-row-menu][open]";
+  MENUS += "," + MENUS.replace(/\[(rst[-\w]+)\]/g, ".$1");
 
   // except is the clicked node: the menu containing it stays open, which
   // is what keeps a click on a menu item — or on the summary of a menu

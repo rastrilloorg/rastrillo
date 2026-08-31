@@ -111,6 +111,53 @@ func TestMarkupSweepNamesTheAppsOwnClassSelectors(t *testing.T) {
 	}
 }
 
+// A dry run that finds only class lists it cannot take apart must not
+// exit 0. A CI gate reading that code would wave through the one app
+// that most needs stopping: the one whose remaining class markup is
+// entirely in shapes this reports rather than rewrites.
+func TestMarkupSweepDoesNotWaveThroughWhatItCannotRewrite(t *testing.T) {
+	dir := t.TempDir()
+	// Markup built by concatenation: reported, never rewritten.
+	if err := os.WriteFile(filepath.Join(dir, "render.go"),
+		[]byte("package app\n\nfunc row(kind string) string { return \"<div class=\\\"rst-\" + kind + \"\\\">x</div>\" }\n"),
+		0o644); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := os.ReadFile(filepath.Join(dir, "render.go"))
+
+	for _, fix := range []bool{false, true} {
+		var out bytes.Buffer
+		err := markupSweep(&out, dir, fix)
+		var ex exitError
+		if !asExit(err, &ex) || ex.code != exitMarkupPending {
+			t.Errorf("--fix=%v: exit %v, want %d — a note is work left", fix, err, exitMarkupPending)
+		}
+		if !strings.Contains(out.String(), "need a human") {
+			t.Errorf("--fix=%v: the report does not say what is left:\n%s", fix, out.String())
+		}
+		after, _ := os.ReadFile(filepath.Join(dir, "render.go"))
+		if !bytes.Equal(before, after) {
+			t.Fatalf("--fix=%v rewrote source it cannot read:\n%s", fix, after)
+		}
+	}
+}
+
+// The app's own rules are a trap wherever they are written, and a
+// <style> block in the layout template is the same trap with a
+// different file extension.
+func TestMarkupSweepReadsAStyleBlockToo(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "layout.html"),
+		[]byte("<style>.rst-lrow > a { color: red }</style>\n<div class=\"rst-box\">x</div>\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	_ = markupSweep(&out, dir, false)
+	if !strings.Contains(out.String(), "layout.html: rst-lrow") {
+		t.Errorf("a .rst- rule inside a <style> block is not reported:\n%s", out.String())
+	}
+}
+
 func asExit(err error, out *exitError) bool {
 	for err != nil {
 		if e, ok := err.(exitError); ok {

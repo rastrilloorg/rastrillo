@@ -158,6 +158,96 @@ func TestSelectorTranslationIsTheSameGrammar(t *testing.T) {
 	}
 }
 
+// TestEveryQuotingHTMLAllows. The framework writes one shape; an app
+// may write any of them. A tool that reads only the shape its own
+// repository happens to use tells everyone else "nothing to do", and
+// they find out at stage 3, when the class selectors are gone and
+// nothing says why the page is unstyled.
+func TestEveryQuotingHTMLAllows(t *testing.T) {
+	for _, c := range []struct{ in, want string }{
+		{`<div class='rst-box'>`, `<div rst-box>`},
+		{`<div class=rst-box>`, `<div rst-box>`},
+		{`<div class = "rst-box">`, `<div rst-box>`},
+		{`<div CLASS="rst-box">`, `<div rst-box>`},
+		{`<div Class='rst-btn rst-btn--primary'>`, `<div rst-btn='primary'>`},
+		{`<div class=rst-lrow--head>`, `<div rst-lrow="head">`},
+		// A utility keeps class, and keeps the quoting it was written in.
+		{`<td class='rst-m-hide rst-cell-mut'>`, `<td class='rst-m-hide rst-cell-mut'>`},
+		{`<td class=rst-mono>`, `<td class="rst-mono">`},
+		// A JavaScript literal escapes its single quotes the way a Go
+		// one escapes its double quotes.
+		{`el.outerHTML = '<div class=\'rst-box\'>'`, `el.outerHTML = '<div rst-box>'`},
+	} {
+		got, notes := Rewrite([]byte(c.in))
+		if string(got) != c.want {
+			t.Errorf("Rewrite(%q)\n got %q\nwant %q", c.in, got, c.want)
+		}
+		if len(notes) > 0 {
+			t.Errorf("Rewrite(%q) reported %v, but the shape is one it handles", c.in, notes)
+		}
+	}
+}
+
+// TestThingsThatWearTheShapeOfAClassAttributeAndAreNot. Each of these
+// must come out byte-identical and unreported: rewriting them would be
+// the corruption, and reporting them would be noise a reader learns to
+// ignore.
+func TestThingsThatWearTheShapeOfAClassAttributeAndAreNot(t *testing.T) {
+	for _, in := range []string{
+		`<div data-class="rst-box">`,
+		`if class == "rst-box" { }`,
+		`<a href="/x?class=rst-box&sort=new">link</a>`,
+		`<a href="/x?class=rst-box">link</a>`,
+	} {
+		got, notes := Rewrite([]byte(in))
+		if string(got) != in {
+			t.Errorf("Rewrite(%q) = %q: it is not a class attribute and must not move", in, got)
+		}
+		if len(notes) > 0 {
+			t.Errorf("Rewrite(%q) reported %v: it is not markup, so there is nothing to tell anyone", in, notes)
+		}
+	}
+}
+
+// TestMarkupBuiltByConcatenationIsReportedNotCorrupted is the shape
+// that used to come out as source that does not compile. The reader
+// runs from class=\" to the next \" and lands in the middle of a Go
+// expression; a value holding a quote or a backtick is not a class
+// list, and saying so is the whole of the contract.
+func TestMarkupBuiltByConcatenationIsReportedNotCorrupted(t *testing.T) {
+	for _, in := range []string{
+		"return \"<div class=\\\"rst-\" + kind + \"\\\">x</div>\"",
+		"return `<a class=\"rst-btn rst-btn--` + tone + `\">go</a>`",
+		"var s = '<span class=\\'rst-badge rst-badge--' + tone + '\\'>'",
+	} {
+		got, notes := Rewrite([]byte(in))
+		if string(got) != in {
+			t.Errorf("Rewrite(%q) = %q: markup built by concatenation must come back untouched", in, got)
+		}
+		if len(notes) != 1 {
+			t.Errorf("Rewrite(%q) reported %d notes, want 1 — silence here writes source that does not compile", in, len(notes))
+			continue
+		}
+		if !strings.Contains(notes[0].Text, "not a class list") {
+			t.Errorf("the note does not say what is wrong: %s", notes[0])
+		}
+	}
+}
+
+// TestEscapedMarkupIsReported: a documentation page showing
+// class=&quot;rst-box&quot; as source. Rewriting it would mean deciding
+// what the escaping is for; naming it is the honest half.
+func TestEscapedMarkupIsReported(t *testing.T) {
+	const in = `<p>Write <code>class=&quot;rst-box&quot;</code> no longer.</p>`
+	got, notes := Rewrite([]byte(in))
+	if string(got) != in {
+		t.Errorf("Rewrite(%q) = %q: escaped markup must not be rewritten", in, got)
+	}
+	if len(notes) != 1 || !strings.Contains(notes[0].Text, "escaped markup") {
+		t.Errorf("escaped markup carrying an rst- name was not reported: %v", notes)
+	}
+}
+
 // TestRespellIsTheGrammarWithoutTheMigration. Rewrite translates markup
 // written before the flip, where rst-form-foot meant the sticky save
 // bar. Respell translates markup written in today's class vocabulary,

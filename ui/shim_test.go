@@ -31,6 +31,11 @@ func TestShimContract(t *testing.T) {
 		// renders.
 		"rst-dropdown", "rst-menu-group", "rst-row-menu",
 		"closeMenus", "contains", "Escape", "summary.focus()",
+		// Both spellings. tokens.css pairs them for the window between
+		// upgrading the module and running `rastrillo markup`, and the
+		// shim has to pair them for the same window or an app's menus
+		// stop dismissing halfway through the upgrade we hand it.
+		`MENUS.replace(`,
 		// The busy rule: the spinner it builds, the submitter it reads
 		// (only the clicked button goes busy), and the cancelled-submit
 		// hand-back.

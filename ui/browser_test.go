@@ -898,6 +898,27 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(css)
 	})
+	// The mid-upgrade window, in the one spelling this repository no
+	// longer writes anywhere: an app that has taken the new module and
+	// the new rastrillo.js and has not run `rastrillo markup` yet. Its
+	// markup is still classes; its shim is this one. If MENUS only
+	// matched attributes, this page's menu would stop light-dismissing
+	// and nothing in this repository would ever have noticed.
+	mux.HandleFunc("GET /old-spelling", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
+			`<title>menus, class spelling</title>`+
+			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<details class="rst-dropdown" name="`+MenuGroupDefault+`" id="account">`+
+			`<summary id="account-summary">Account</summary>`+
+			`<div class="rst-dropdown__menu"><a id="account-item" href="#settings">Settings</a></div>`+
+			`</details>`+
+			`<details class="rst-row-menu" name="`+MenuGroupDefault+`" id="rowmenu">`+
+			`<summary id="rowmenu-summary">Actions</summary>`+
+			`<div class="rst-row-menu__panel"><a href="#view">View</a></div></details>`+
+			`<main id="main"><p id="elsewhere">Nothing here.</p></main>`+
+			`</body></html>`)
+	})
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
@@ -948,6 +969,49 @@ func menuPage(t *testing.T) http.Handler {
 			`</body></html>`)
 	})
 	return mux
+}
+
+// TestLightDismissWorksInBothSpellings is the mid-upgrade window, made
+// a test. The runbook is `rastrillo doctor --fix` and then
+// `rastrillo markup --fix`; between them an app runs this shim against
+// markup that is still classes. tokens.css pairs both spellings for
+// exactly that window, and the shim has to as well, or the upgrade path
+// we hand people breaks under them: menus that open and never close on
+// an outside click or Escape.
+//
+// The page is deliberately written in the spelling this repository no
+// longer emits anywhere, so nothing else in the suite covers it.
+func TestLightDismissWorksInBothSpellings(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return menuPage(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	const openState = `["account","rowmenu"].` +
+		`filter(function (id) { return document.getElementById(id).open }).join(",")`
+	var opened, afterOutside, afterEsc string
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/old-spelling"),
+		chromedp.WaitVisible(`#account-summary`, chromedp.ByQuery),
+		chromedp.Click(`#account-summary`, chromedp.ByQuery),
+		chromedp.Evaluate(openState, &opened),
+		chromedp.Click(`#elsewhere`, chromedp.ByQuery),
+		chromedp.Evaluate(openState, &afterOutside),
+		chromedp.Click(`#rowmenu-summary`, chromedp.ByQuery),
+		chromedp.KeyEvent(kb.Escape),
+		chromedp.Evaluate(openState, &afterEsc),
+	); err != nil {
+		t.Fatalf("driving the class-spelled menus: %v", err)
+	}
+	if opened != "account" {
+		t.Fatalf("the class-spelled dropdown did not open at all (open = %q); the rest of this test proves nothing", opened)
+	}
+	if afterOutside != "" {
+		t.Errorf("after a click outside, open = %q, want none — a class-spelled menu does not light-dismiss, "+
+			"so an app between `doctor --fix` and `markup --fix` has menus that never close", afterOutside)
+	}
+	if afterEsc != "" {
+		t.Errorf("after Escape, open = %q, want none — same window, same break, by keyboard", afterEsc)
+	}
 }
 
 // openState reads which of the page's <details> are open, as one string,

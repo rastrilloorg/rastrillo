@@ -44,35 +44,47 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 	s := string(src)
 	var b strings.Builder
 	var notes []Note
+	note := func(at int, format string, args ...any) {
+		notes = append(notes, Note{
+			Line: 1 + strings.Count(s[:at], "\n"),
+			Text: fmt.Sprintf(format, args...),
+		})
+	}
 	i := 0
 	for {
-		j := findClassAttr(s, i)
-		if j < 0 {
+		a, ok := nextClassAttr(s, i)
+		if !ok {
 			break
 		}
-		q, valStart, valEnd, end, ok := readAttrValue(s, j+len("class="))
-		if !ok {
-			b.WriteString(s[i : j+len("class=")])
-			i = j + len("class=")
-			continue
-		}
-		value := s[valStart:valEnd]
+		value := s[a.valStart:a.valEnd]
 		if !strings.Contains(value, "rst-") {
-			b.WriteString(s[i:end])
-			i = end
+			b.WriteString(s[i:a.end])
+			i = a.end
 			continue
 		}
-		repl, err := rewriteClassValue(value, q, migrate)
+		if c, bad := notAClassList(value); bad {
+			// Almost always source that builds its markup by
+			// concatenation: the reader ran past the end of a string
+			// literal and what it is holding is an expression rather
+			// than a class list. Rewriting it would produce something
+			// that does not compile, so say where it is and move on.
+			note(a.start, "class=%q is not a class list — it holds %q, so this markup is probably built by "+
+				"concatenation and the reader ran past the end of a literal: left as it was", value, string(c))
+			b.WriteString(s[i:a.end])
+			i = a.end
+			continue
+		}
+		repl, err := rewriteClassValue(value, a.q, migrate)
 		if err != nil {
-			notes = append(notes, Note{Line: 1 + strings.Count(s[:j], "\n"), Text: err.Error()})
-			b.WriteString(s[i:end])
-			i = end
+			note(a.start, "%s", err.Error())
+			b.WriteString(s[i:a.end])
+			i = a.end
 			continue
 		}
 		// An attribute that translated to nothing at all takes its own
 		// leading space with it, or the tag keeps a gap where a class
 		// used to be.
-		start := j
+		start := a.start
 		if repl == "" {
 			for start > i && (s[start-1] == ' ' || s[start-1] == '\t') {
 				start--
@@ -80,60 +92,182 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 		}
 		b.WriteString(s[i:start])
 		b.WriteString(repl)
-		i = end
+		i = a.end
 	}
 	b.WriteString(s[i:])
 	out := toneInMarkup.ReplaceAllString(b.String(), "${1}rst-tone=${2}")
+
+	// Escaped markup — a documentation page showing class=&quot;rst-box&quot;
+	// as source. Rewriting it would mean deciding what the escaping is
+	// for; naming it is the honest half, and it is a shape that exists
+	// in any repository with migration notes of its own.
+	for _, m := range escapedClassAttr.FindAllStringSubmatchIndex(out, -1) {
+		if strings.Contains(out[m[2]:m[3]], "rst-") {
+			notes = append(notes, Note{
+				Line: 1 + strings.Count(out[:m[0]], "\n"),
+				Text: "escaped markup (" + out[m[0]:m[1]] + ") is documentation rather than markup: rewrite it by hand if it should teach the attribute spelling",
+			})
+		}
+	}
 	return []byte(out), notes
 }
 
-// findClassAttr returns the index of the next class= that is a real
-// attribute rather than the tail of some longer word. An attribute
-// usually follows whitespace, but a test's Go literal opens on one
-// (`class="rst-field"`), so the rule is the general one: the byte
-// before it is not part of an identifier. That keeps data-class= and
-// superclass= out.
-func findClassAttr(s string, from int) int {
-	for i := from; ; {
-		k := strings.Index(s[i:], "class=")
+// escapedClassAttr matches a class attribute written as escaped text —
+// what a page showing markup as source carries.
+var escapedClassAttr = regexp.MustCompile(`class=(?:&quot;|&#34;|&#x22;)([^&]*)(?:&quot;|&#34;|&#x22;)`)
+
+// classAttr is one class attribute found in the source: the span it
+// occupies, the span of its value, and the quoting a replacement's own
+// values must be written in.
+type classAttr struct {
+	start, end       int
+	valStart, valEnd int
+	q                string
+}
+
+// nextClassAttr finds the next class attribute at or after from, in
+// every shape HTML allows: any case, whitespace around the =, and a
+// value that is double-quoted, single-quoted, escaped for a Go or
+// JavaScript string literal, or not quoted at all.
+//
+// It reads all of them rather than the one shape this framework happens
+// to write, because the alternative is the one thing this tool must
+// never do: tell an app whose templates use single quotes that there is
+// nothing to do, and let it find out at stage 3, when the class
+// selectors are gone and nothing says why the page is unstyled.
+func nextClassAttr(s string, from int) (classAttr, bool) {
+	for i := from; i < len(s); {
+		k := indexFold(s, "class", i)
 		if k < 0 {
-			return -1
+			return classAttr{}, false
 		}
-		k += i
-		if k == 0 || !isIdentByte(s[k-1]) {
-			return k
+		i = k + len("class")
+		// Not the tail of a longer word: data-class, superclass.
+		if k > 0 && isIdentByte(s[k-1]) {
+			continue
 		}
-		i = k + len("class=")
+		j := skipSpace(s, i)
+		// An =, and not the head of ==, so a Go comparison is not markup.
+		if j >= len(s) || s[j] != '=' || (j+1 < len(s) && s[j+1] == '=') {
+			continue
+		}
+		lead := byte(' ')
+		if k > 0 {
+			lead = s[k-1]
+		}
+		a, ok := readAttrValue(s, skipSpace(s, j+1), lead)
+		if !ok {
+			continue
+		}
+		a.start = k
+		return a, true
 	}
+	return classAttr{}, false
+}
+
+// indexFold is strings.Index for an ASCII-lowercase needle, ignoring
+// case in the haystack.
+func indexFold(s, needle string, from int) int {
+	for i := from; i+len(needle) <= len(s); i++ {
+		if strings.EqualFold(s[i:i+len(needle)], needle) {
+			return i
+		}
+	}
+	return -1
+}
+
+func skipSpace(s string, i int) int {
+	for i < len(s) && (s[i] == ' ' || s[i] == '\t') {
+		i++
+	}
+	return i
 }
 
 func isIdentByte(c byte) bool {
 	return c == '-' || c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
 }
 
-// readAttrValue reads an attribute value that starts at k, in either of
-// the two quotings this repository writes markup in: a plain "…", and
-// the \"…\" of a Go interpreted string literal. It returns the quote it
-// found (so the replacement is written in the same one), the value's
-// bounds, and the index just past the closing quote.
-func readAttrValue(s string, k int) (q string, valStart, valEnd, end int, ok bool) {
-	switch {
-	case k < len(s) && s[k] == '"':
-		valStart = k + 1
-		e := strings.IndexByte(s[valStart:], '"')
+// readAttrValue reads an attribute value that starts at k. The quote it
+// reports is the one a replacement writes its own values in; an
+// unquoted value becomes a double-quoted one, because a variant list
+// has a space in it and an unquoted attribute cannot hold one.
+func readAttrValue(s string, k int, lead byte) (classAttr, bool) {
+	closed := func(open, quote string) (classAttr, bool) {
+		valStart := k + len(open)
+		e := strings.Index(s[valStart:], quote)
 		if e < 0 {
-			return "", 0, 0, 0, false
+			return classAttr{}, false
 		}
-		return `"`, valStart, valStart + e, valStart + e + 1, true
-	case k+1 < len(s) && s[k] == '\\' && s[k+1] == '"':
-		valStart = k + 2
-		e := strings.Index(s[valStart:], `\"`)
-		if e < 0 {
-			return "", 0, 0, 0, false
-		}
-		return `\"`, valStart, valStart + e, valStart + e + 2, true
+		return classAttr{
+			valStart: valStart,
+			valEnd:   valStart + e,
+			end:      valStart + e + len(quote),
+			q:        quote,
+		}, true
 	}
-	return "", 0, 0, 0, false
+	switch {
+	case strings.HasPrefix(s[k:], `\"`):
+		return closed(`\"`, `\"`)
+	case strings.HasPrefix(s[k:], `\'`):
+		return closed(`\'`, `\'`)
+	case k < len(s) && s[k] == '"':
+		return closed(`"`, `"`)
+	case k < len(s) && s[k] == '\'':
+		return closed(`'`, `'`)
+	case unquotedAttrOK(lead) && k < len(s) && s[k] != '>' && s[k] != ' ' && s[k] != '\t' && s[k] != '\n':
+		e := k
+		for e < len(s) && s[e] != ' ' && s[e] != '\t' && s[e] != '\n' && s[e] != '>' && s[e] != '/' {
+			e++
+		}
+		if !looksLikeAClassList(s[k:e]) {
+			return classAttr{}, false
+		}
+		return classAttr{valStart: k, valEnd: e, end: e, q: `"`}, true
+	}
+	return classAttr{}, false
+}
+
+// unquotedAttrOK: an unquoted value is only read where an attribute can
+// actually begin. Without this, the "class=" of a URL query string
+// (?class=x&y=1) reads as markup and gets rewritten into nonsense.
+func unquotedAttrOK(lead byte) bool {
+	switch lead {
+	case ' ', '\t', '\n', '\r', '<', '`', '"', '\'', '(':
+		return true
+	}
+	return false
+}
+
+// looksLikeAClassList keeps the unquoted reader off the two things that
+// wear the same shape and are not markup: a URL query, and a class
+// attribute written as escaped text (class=&quot;rst-box&quot;), which
+// the escaped-markup pass reports instead.
+func looksLikeAClassList(value string) bool {
+	if value == "" {
+		return false
+	}
+	for i := 0; i < len(value); i++ {
+		switch value[i] {
+		case '&', '?', '%', '#', '=', ';', '{', '}':
+			return false
+		}
+	}
+	return true
+}
+
+// notAClassList reports the character that says a value is not an HTML
+// class list at all. None of them can appear in a class attribute — a
+// quote would have ended it — so finding one means the reader is
+// holding source rather than markup, which is what happens when the
+// markup is built by concatenating string literals.
+func notAClassList(value string) (byte, bool) {
+	for i := 0; i < len(value); i++ {
+		switch value[i] {
+		case '"', '\'', '`', '<', '>', '\\':
+			return value[i], true
+		}
+	}
+	return 0, false
 }
 
 // attr is one attribute being built: its name, the variant tokens the
