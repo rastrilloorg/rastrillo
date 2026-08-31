@@ -35,7 +35,7 @@ CLAUDE.md               an @AGENTS.md import, nothing more
 
 Five flags shape what gets written: `--icons`, `--icon-delivery`,
 `--ux`, `--theme` (`day`, `plain`, `signal`) and `--shell` (`column`,
-`topbar`, `sidebar`). The theme lands as `static/theme.css` and the
+`topbar`, `sidebar`, `console`). The theme lands as `static/theme.css` and the
 shell as `templates/layout.html`, both yours to edit from that moment.
 Take the defaults your first time through. [Icons](/docs/icons) and
 [Templates](/docs/templates) explain what each one costs when you care.

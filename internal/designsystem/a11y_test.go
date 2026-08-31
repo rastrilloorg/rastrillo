@@ -327,7 +327,7 @@ func a11yTargets() []a11yTarget {
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
-		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
+		{"day/en shells", page("day", "en", "shells"), "the four page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
 		// palette itself and the display vocabulary painted in it.
 		{"plain/en tokens", page("plain", "en", "tokens"), "the theme with the least colour — where a contrast floor is closest to the line"},
@@ -337,6 +337,7 @@ func a11yTargets() []a11yTarget {
 		{"day/ar form", page("day", "ar", "form"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
+		{"day/en console shell", shellHref(mountPath, "day", "en", "console"), "the only page in the tree with two chromes at once — a banner bar and a complementary rail, both landmarks, in one document with one <main> and one contentinfo. A shell that is two other shells is exactly where a duplicated landmark, a second control with the same name, or a nav with nothing to tell it from the bar would come from, and none of the three shows on a shell that has only one of them"},
 		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
 		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
 	}
@@ -433,8 +434,27 @@ func TestA11yScansTheGallery(t *testing.T) {
 	}
 }
 
-// TestA11yScansTheShellsCollapsed is the scan the other three did not
-// cover: both chrome shells below their 800px breakpoint, with the
+// shownIn reports whether the first element matching sel has a box on
+// screen. It is the one reading the patency check and its control both
+// use, so the two are the same instrument pointed at two moments rather
+// than two instruments that agree until one of them is edited.
+func shownIn(t *testing.T, bctx context.Context, where, sel string) bool {
+	t.Helper()
+	var shown bool
+	js := `(() => {
+	  const el = document.querySelector(` + "`" + sel + "`" + `);
+	  if (!el) return false;
+	  const r = el.getBoundingClientRect();
+	  return r.width > 0 && r.height > 0;
+	})()`
+	if err := chromedp.Run(bctx, chromedp.Evaluate(js, &shown)); err != nil {
+		t.Fatalf("%s: reading whether %q is on screen: %v", where, sel, err)
+	}
+	return shown
+}
+
+// TestA11yScansTheShellsCollapsed is the scan the others did not
+// cover: every chrome shell below its 800px breakpoint, with the
 // disclosure open.
 //
 // Every scan above runs at the browser's default width, where the
@@ -456,9 +476,31 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 
 	axeJS := axeSource(t)
 	total := 0
-	for _, sh := range []struct{ shell, open string }{
-		{"topbar", "[rst-shell-menu] > summary"},
-		{"sidebar", "[rst-shell-chrome] > summary"},
+	for _, sh := range []struct {
+		shell string
+		open  string
+		// revealed is what the click has to bring on screen. Nothing
+		// here asserted it before: Click, then axe, and a summary that
+		// had stopped opening — a gallery-side regression, a stray
+		// pointer-events, an overlay — would have been scanned CLOSED
+		// and reported clean, which is the shape of every gate this
+		// project has shipped that gated nothing. The scan is of the
+		// disclosed document or it is not the scan this test claims.
+		revealed []string
+	}{
+		{"topbar", "[rst-shell-menu] > summary", []string{"[rst-shell-tail] [rst-shell-nav] a"}},
+		{"sidebar", "[rst-shell-chrome] > summary", []string{"[rst-shell-rail] [rst-shell-nav] a"}},
+		// console discloses TWO chromes from this one summary — the
+		// bar's tail and the rail — so the collapsed document it
+		// produces is the largest of the three and the only one where
+		// a landmark revealed by a disclosure sits beside another
+		// landmark revealed by the same one. Both are named here: half
+		// a reveal is exactly the regression the ui drives gate on
+		// their own fixture, and this is the gallery's own page.
+		{"console", "[rst-shell-menu] > summary", []string{
+			"[rst-shell-tail] [rst-shell-account] > summary",
+			"[rst-shell-rail] [rst-shell-nav] a",
+		}},
 	} {
 		for _, scheme := range a11ySchemes {
 			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"
@@ -466,10 +508,33 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 				chromedp.EmulateViewport(390, 780),
 				chromedp.Navigate(rig.Origin+shellHref(mountPath, "day", "en", sh.shell)),
 				chromedp.WaitVisible(sh.open, chromedp.ByQuery),
-				chromedp.Click(sh.open, chromedp.ByQuery),
-				chromedp.Evaluate(axeJS, nil),
 			); err != nil {
+				t.Fatalf("%s: loading: %v", where, err)
+			}
+			// The CONTROL, and it costs one evaluate: the same reading,
+			// on the same page, one click earlier, where the answer is
+			// already known. A patency check hard-wired true — a
+			// selector that matches something the disclosure does not
+			// gate, a shown() that cannot return false — passes the
+			// assertion below and fails here.
+			for _, sel := range sh.revealed {
+				if shownIn(t, ctx, where, sel) {
+					t.Errorf("%s: %q is on screen with the disclosure still CLOSED, so it is not gated by the disclosure and its visibility proves nothing about the click", where, sel)
+				}
+			}
+			if err := chromedp.Run(ctx, chromedp.Click(sh.open, chromedp.ByQuery)); err != nil {
 				t.Fatalf("%s: opening: %v", where, err)
+			}
+			// Patency. Before axe, because a scan of the closed
+			// document reported as a scan of the open one is worse than
+			// no scan: it is a gate saying it looked.
+			for _, sel := range sh.revealed {
+				if !shownIn(t, ctx, where, sel) {
+					t.Fatalf("%s: clicking the disclosure did not bring %q on screen. axe would have scanned the COLLAPSED document and reported it as the disclosed one", where, sel)
+				}
+			}
+			if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
+				t.Fatalf("%s: loading axe: %v", where, err)
 			}
 			paint(t, ctx, scheme)
 			total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
@@ -501,7 +566,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		}
 	}
 	if total == 0 {
-		t.Logf("clean: 2 shells × %d schemes at 390px, disclosed, %v", len(a11ySchemes), axeTags)
+		t.Logf("clean: 3 shells × %d schemes at 390px, disclosed, %v", len(a11ySchemes), axeTags)
 	}
 }
 

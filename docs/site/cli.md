@@ -27,7 +27,7 @@ own tests, and serves, before you have written anything. It runs
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
-| `--shell` | `column`, `topbar`, `sidebar` | `column` |
+| `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
 
 All six set × delivery combinations scaffold, compile and pass
 `generate --check`. The icon set becomes an ordinary app-owned package
