@@ -1690,14 +1690,16 @@ func TestWashMeetsRequestsItCanReach(t *testing.T) {
 		t.Errorf("the constrained answer is invisible at %.4f — degrading must never break floor 2", blue.Separation)
 	}
 
-	// Not honoured, case 2: a request under the floor is raised to it and
-	// reported, rather than silently granted or refused.
+	// A request under the floor is raised to it, and is MET — the caller
+	// asked for at least 0.001 of weight and got 0.03, which is at least
+	// that. It is not the outcome a user needs warning about, and the
+	// flag exists to be acted on.
 	tiny, err := Wash(115, 0.14, 0.001, "#000000", "#ffffff")
 	if err != nil {
 		t.Fatalf("a request under the floor: %v", err)
 	}
-	if tiny.SeparationMet {
-		t.Error("a request of 0.001 was reported as met; it was raised to the floor")
+	if !tiny.SeparationMet {
+		t.Error("a request of 0.001 answered with the floor was reported as unmet; it got more weight than it asked for, which is not something to warn about")
 	}
 	if tiny.Separation < MinSeparation {
 		t.Errorf("a request under the floor produced %.4f, under the floor", tiny.Separation)
@@ -1706,12 +1708,26 @@ func TestWashMeetsRequestsItCanReach(t *testing.T) {
 		t.Errorf("SeparationRequested = %v, want the 0.001 that was asked for", tiny.SeparationRequested)
 	}
 
+	// A Pair swatch requests no weight and must not read as unmet, or
+	// the `if !sw.SeparationMet { warn }` line the docs suggest warns on
+	// every Pair result a caller runs it against.
+	p, err := Pair(265, 0.14, "#ffffff")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !p.SeparationMet {
+		t.Error("a Pair swatch came back with SeparationMet false; it asked for no weight and cannot have failed to carry one")
+	}
+	if p.SeparationRequested != 0 {
+		t.Errorf("a Pair swatch reports SeparationRequested %v, want 0", p.SeparationRequested)
+	}
+
 	// The flag against the numbers, over a wide sweep: every swatch that
 	// claims the request was met must carry at least the weight asked
 	// for, and every swatch that says it was not must fall short or have
 	// been asked for less than the floor. The flag is a claim about the
 	// two floats beside it and this is that claim checked.
-	sweep, met, unmet := 0, 0, 0
+	sweep, met, unmet, heavier := 0, 0, 0, 0
 	for _, bg := range []string{"#ffffff", "#f4f5f8", "#111418", "#0b0d10", "#808080"} {
 		for _, ink := range []string{"#000000", "#ffffff", "#1a1d21", "#e8eaed"} {
 			for _, in := range Offered() {
@@ -1721,18 +1737,18 @@ func TestWashMeetsRequestsItCanReach(t *testing.T) {
 						continue
 					}
 					sweep++
+					if sw.Separation > want+washTolerance {
+						heavier++
+					}
 					switch {
 					case sw.SeparationMet:
 						met++
-						if want < MinSeparation {
-							t.Errorf("bg %s ink %s hue %g: a request of %v is under the floor and cannot be met", bg, ink, in.Hue, want)
-						}
 						if sw.Separation < want-washTolerance {
 							t.Errorf("bg %s ink %s hue %g: met=true but %.4f is lighter than the %v requested", bg, ink, in.Hue, sw.Separation, want)
 						}
 					default:
 						unmet++
-						if want >= MinSeparation && sw.Separation >= want-washTolerance {
+						if sw.Separation >= want-washTolerance {
 							t.Errorf("bg %s ink %s hue %g: met=false but %.4f carries the %v requested", bg, ink, in.Hue, sw.Separation, want)
 						}
 					}
@@ -1740,9 +1756,19 @@ func TestWashMeetsRequestsItCanReach(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("flag sweep: %d resolutions, %d met, %d not met", sweep, met, unmet)
+	t.Logf("flag sweep: %d resolutions, %d met, %d not met, %d heavier than asked", sweep, met, unmet, heavier)
 	if met == 0 || unmet == 0 {
 		t.Errorf("the sweep saw met=%d and unmet=%d; a flag observed in only one state is not evidence it can take the other", met, unmet)
+	}
+
+	// The narrowing, checked rather than described. Most of what the
+	// earlier definition called "not met" was a wash HEAVIER than asked
+	// — an outcome nobody needs warning about — and a flag that fired on
+	// it would have been wallpaper by the time it mattered. If heavier
+	// results ever stopped outnumbering lighter ones, the narrowing
+	// would have stopped being worth its complexity, and this says so.
+	if heavier <= unmet {
+		t.Errorf("the sweep saw %d heavier and %d lighter; the flag was narrowed to the lighter case because heavier dominates, and it no longer does", heavier, unmet)
 	}
 }
 
@@ -1880,5 +1906,210 @@ func TestCheckWashesMeasuresTheSwatch(t *testing.T) {
 	onTheLine.OnRatio, onTheLine.Separation = ContrastFloorText, MinSeparation
 	if errs := checkWash(in, ink, onTheLine); len(errs) != 0 {
 		t.Errorf("a wash exactly on both floors was rejected: %v", errs)
+	}
+}
+
+// achievableWeights returns every separation Wash could deliver for one
+// (hue, chroma, ink, background), sorted.
+//
+// Sorted, and not in lightness order, because those are different things
+// and the difference matters: separation is V-shaped about the
+// background, so two lightnesses either side of it deliver the same
+// weight. A caller's request lands in the SET of achievable values, so
+// the set is what has to be examined for gaps. Reading gaps off the
+// lightness walk instead reports boundaries that are not gaps at all.
+func achievableWeights(hue, chroma float64, ink, bg string) []float64 {
+	r, g, b, err := parseHex(bg)
+	if err != nil {
+		return nil
+	}
+	bgLab := oklabOf(r, g, b)
+	ir, ig, ib, err := parseHex(ink)
+	if err != nil {
+		return nil
+	}
+	inkLum := relLuminance(ir, ig, ib)
+	var out []float64
+	for step := 0; step <= lightnessSteps; step++ {
+		rgb, _ := oklchRGB(stepLightness(step), chroma, hue)
+		sep := labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
+		if sep < MinSeparation {
+			continue
+		}
+		if ratioOf(inkLum, relLuminance(rgb[0], rgb[1], rgb[2])) < ContrastFloorText+contrastMargin {
+			continue
+		}
+		out = append(out, sep)
+	}
+	sort.Float64s(out)
+	return out
+}
+
+// TestAchievableWeightsHaveWideGaps gates the claim washTolerance's
+// comment rests on: that the weights a caller can actually be given are
+// not evenly spaced, and the gaps are far too wide for any tolerance to
+// swallow honestly.
+//
+// It exists because that claim shipped as a number in a comment with no
+// test behind it — the same defect as the error path's arithmetic one
+// round earlier, in the same file. So this asserts the CONCLUSION and
+// logs the measurement, rather than pinning a figure that would be
+// re-quoted into prose the next time somebody needed it.
+//
+// The conclusion is the one washTolerance depends on: a tolerance wide
+// enough to swallow the gaps would report every constrained answer as
+// honoured, which is precisely what SeparationMet exists to prevent.
+func TestAchievableWeightsHaveWideGaps(t *testing.T) {
+	backgrounds := []string{"#ffffff", "#f4f5f8", "#eef3fe", "#111418", "#1a1f26", "#0b0d10", "#171717", "#242424"}
+	inks := []string{"#000000", "#ffffff", "#1a1d21", "#e8eaed", "#111111", "#f2f2f2"}
+
+	worst, at := 0.0, ""
+	for _, bg := range backgrounds {
+		for _, ink := range inks {
+			for hue := 0.0; hue < 360; hue += 5 {
+				for _, c := range []float64{0.05, 0.14, 0.3} {
+					w := achievableWeights(hue, c, ink, bg)
+					for i := 1; i < len(w); i++ {
+						if d := w[i] - w[i-1]; d > worst {
+							worst, at = d, fmt.Sprintf("ink %s on %s, hue %g chroma %g, between %.4f and %.4f", ink, bg, hue, c, w[i-1], w[i])
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("largest gap in the achievable weights: %.4f (%s)", worst, at)
+
+	if worst <= 10*washTolerance {
+		t.Errorf("the largest gap in the achievable weights is %.4f, no more than ten times washTolerance (%v) — the argument for keeping the tolerance small has gone, and SeparationMet's definition should be revisited rather than this bound relaxed", worst, washTolerance)
+	}
+}
+
+// TestInkUnknownIsUnsatisfiable gates the arithmetic §6-v2.2d rests on,
+// which until now lived only in a doc comment.
+//
+// The claim is that an ink-unknown wash cannot simply be Wash with the
+// argument left out — that retaining the FULL 4.5:1 for every ink still
+// legible on the page is not merely hard on paper white but impossible.
+// It is a load-bearing number in a spec, so it is checked here rather
+// than believed.
+//
+// The conclusions are literals; only the arithmetic is computed.
+func TestInkUnknownIsUnsatisfiable(t *testing.T) {
+	const paper = "#ffffff"
+	pr, pg, pb, err := parseHex(paper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	paperLum := relLuminance(pr, pg, pb)
+	if paperLum != 1.0 {
+		t.Fatalf("paper white measures luminance %v, want 1.0", paperLum)
+	}
+
+	// The worst ink still legible on the page: exactly at the floor.
+	worstInk := (paperLum+0.05)/ContrastFloorText - 0.05
+	if math.Abs(worstInk-0.183333) > 1e-5 {
+		t.Errorf("the worst still-legible ink on paper white is at luminance %.6f, but the doc comment says 0.1833", worstInk)
+	}
+
+	// What a wash would have to be for that ink to keep the whole floor.
+	needed := ContrastFloorText*(worstInk+0.05) - 0.05
+	if math.Abs(needed-1.0) > 1e-9 {
+		t.Errorf("a wash retaining the full floor for that ink needs luminance %.9f, but the doc comment says exactly 1.0", needed)
+	}
+	if needed < paperLum {
+		t.Errorf("the required luminance %.9f is below the page's own %.9f, so the case is merely hard rather than impossible and the comment overstates it", needed, paperLum)
+	}
+
+	// And the only colour at that luminance is the page itself, which
+	// fails the other floor — so there is no wash there at all, which is
+	// what makes it unsatisfiable rather than a narrow squeeze.
+	sep, err := DeltaEOK(paper, paper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sep >= MinSeparation {
+		t.Errorf("the page against itself measures %.4f, which clears the perceptibility floor — the argument that the only candidate is invisible has gone", sep)
+	}
+}
+
+// TestReachableCeilingUnderTheDefaultCase measures what a caller building
+// a weight picker most needs, and what the published scale is arranged
+// around.
+//
+// Near-black ink on a white canvas is not an edge case in a spreadsheet:
+// it is what a cell looks like before anybody touches it. Excel's default
+// font is black, imported files overwhelmingly carry black or near-black,
+// and a user picking a fill has almost always left their text alone. So
+// the weights reachable under THAT case are the ones a picker can offer,
+// and any published weight above them is a colour to paint rather than a
+// weight to ask for.
+//
+// The numbers are logged, and the two things the scale's presentation
+// depends on are asserted: that the whole rule-driven band is reachable
+// for every offered hue, and that the ceiling sits well above the
+// hand-picked band's floor. If either stopped holding, the guidance would
+// be partly fiction and would have to be rewritten rather than the test
+// relaxed.
+func TestReachableCeilingUnderTheDefaultCase(t *testing.T) {
+	inks := []string{"#000000", "#111111", "#1a1d21", "#0c0e12", "#0f0f0f", "#171717"}
+
+	guaranteed, at := math.Inf(1), ""
+	for _, ink := range inks {
+		for _, in := range Offered() {
+			w := achievableWeights(in.Hue, in.Chroma, ink, "#ffffff")
+			if len(w) == 0 {
+				t.Errorf("ink %s, hue %g: no weight at all is reachable on paper white", ink, in.Hue)
+				continue
+			}
+			if ceiling := w[len(w)-1]; ceiling < guaranteed {
+				guaranteed, at = ceiling, fmt.Sprintf("ink %s, hue %g", ink, in.Hue)
+			}
+		}
+	}
+	t.Logf("guaranteed ceiling across near-black inks on paper white: %.4f (%s)", guaranteed, at)
+
+	blackOnly, blackBest := math.Inf(1), 0.0
+	for _, in := range Offered() {
+		w := achievableWeights(in.Hue, in.Chroma, "#000000", "#ffffff")
+		blackOnly = math.Min(blackOnly, w[len(w)-1])
+		blackBest = math.Max(blackBest, w[len(w)-1])
+	}
+	t.Logf("under pure black ink specifically: every hue reaches %.4f, the best hue %.4f", blackOnly, blackBest)
+
+	// The three figures Wash's doc comment and reference/ui.md publish.
+	// They are prose in two places, so they are held here — a figure
+	// quoted in a comment that no test holds is the defect this file has
+	// now paid for twice.
+	for _, tt := range []struct {
+		name  string
+		got   float64
+		want  float64
+		claim string
+	}{
+		{"guaranteed ceiling across near-black inks", guaranteed, 0.39, "every offered hue reaches 0.39"},
+		{"guaranteed ceiling under pure black", blackOnly, 0.43, "under pure black specifically, 0.43"},
+		{"the most any hue reaches under black", blackBest, 0.47, "past about 0.47 nothing is reachable at all"},
+	} {
+		// Published rounded down, so the measurement must be at or above
+		// the figure but not so far above that the figure misleads.
+		if tt.got < tt.want || tt.got > tt.want+0.01 {
+			t.Errorf("%s measures %.4f, but the docs publish %.2f (%q)", tt.name, tt.got, tt.want, tt.claim)
+		}
+	}
+
+	// The rule-driven band, which is where a default lives.
+	for _, w := range []float64{0.10, 0.11, 0.12, 0.13, 0.14} {
+		if w > guaranteed {
+			t.Errorf("weight %v is above the guaranteed ceiling %.4f, but it is inside the rule-driven band the docs recommend defaulting into", w, guaranteed)
+		}
+	}
+	// And the hand-picked band's floor, which is what makes two bands
+	// honest rather than one band and a disclaimer.
+	if guaranteed < 0.21 {
+		t.Errorf("the guaranteed ceiling is %.4f, below the 0.21 the docs name as the hand-picked band's floor — the second band is then mostly unreachable under the default case and the guidance is fiction", guaranteed)
+	}
+	if guaranteed < 0.30 {
+		t.Errorf("the guaranteed ceiling is %.4f, which leaves the hand-picked band too narrow to be worth naming as a band", guaranteed)
 	}
 }

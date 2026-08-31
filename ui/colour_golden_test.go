@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 )
@@ -277,5 +278,123 @@ func TestPairMatchesTheGoldenSwatches(t *testing.T) {
 			t.Errorf("Pair(%v, 0.14, %s) = fill %s / on %s, want fill %s / on %s",
 				tc.hue, tc.background, sw.Fill, sw.On, tc.fill, tc.on)
 		}
+	}
+}
+
+// ─── Resolved washes ─────────────────────────────────────────────────
+
+// washGolden is the same instrument as swatchGolden, pointed at the
+// function that needs it more.
+//
+// swatchGolden's own comment justifies itself as protecting "a caller's
+// stored XLSX fill", and Wash is the XLSX function: it is what a
+// spreadsheet calls when somebody clicks yellow, and its output is what
+// gets written into a workbook and read back. It went a whole round
+// without one, and the cost showed. washSlack — a constant the search's
+// soundness rests on, which turned out to have been set below the bound
+// its own premise required — moved from 0.02 to 0.08 and not one test
+// noticed, because no property changed: every wash still cleared both
+// floors, still sat nearest its target, still carried the caller's ink.
+// A photograph is what catches a constant moving when no property does.
+//
+// Like swatchGolden this is a photograph and not a proof: it was produced
+// by this implementation, so it is evidence that these colours have not
+// MOVED, never that they are right. Correctness lives in the floors, the
+// scan control, and the premise gates.
+//
+// The rows are chosen to span the contract rather than to sample it:
+// both SeparationMet states, a request under the floor, a request past
+// the ceiling, the cross case where a pinned ink forces a wash heavier
+// than asked, and three rows that are known to be sensitive to washSlack
+// — those return a different colour at slack 0, which is the mutation
+// that survived the last round.
+var washGolden = []struct {
+	hue, chroma, separation float64
+	ink, background         string
+	fill, on                string
+	sep                     float64
+	met                     bool
+}{
+	// The default case: near-black ink on a white canvas, at a weight in
+	// the rule-driven band. This is what a spreadsheet cell is before
+	// anybody touches it, so these three rows are the ones a regression
+	// would be felt through first.
+	{115, 0.14, 0.12, "#000000", "#ffffff", "#f2ffa2", "#000000", 0.120600, true},
+	{25, 0.14, 0.12, "#000000", "#ffffff", "#ffcfca", "#000000", 0.118805, true},
+	{205, 0.14, 0.12, "#000000", "#ffffff", "#9cf5ff", "#000000", 0.119447, true},
+
+	// The hand-picked band, still comfortably reachable under black ink.
+	{115, 0.14, 0.21, "#000000", "#ffffff", "#c9d663", "#000000", 0.210616, true},
+	{145, 0.14, 0.38, "#000000", "#ffffff", "#50a456", "#000000", 0.379577, true},
+
+	// A request under the floor: raised to MinSeparation, and MET, since
+	// it came back heavier than what was asked for.
+	{115, 0.14, 0.001, "#000000", "#ffffff", "#fbffe6", "#000000", 0.034244, true},
+
+	// Constrained, both from the doc comment's worked example and from
+	// just past a hue's own ceiling. These are the SeparationMet == false
+	// rows, and without them the flag would be pinned in one state.
+	{265, 0.14, 0.63, "#000000", "#ffffff", "#4d72c8", "#000000", 0.454940, false},
+	{355, 0.14, 0.45, "#000000", "#ffffff", "#b9537f", "#000000", 0.439618, false},
+
+	// A dark canvas with the theme's own ink.
+	{115, 0.14, 0.12, "#e8eaed", "#111418", "#2a2e00", "#e8eaed", 0.121540, true},
+	{265, 0.14, 0.30, "#e8eaed", "#111418", "#3152a5", "#e8eaed", 0.300475, true},
+
+	// The cross case: an author pinned black and the reader chose the
+	// dark theme. Black ink needs a light fill whatever surrounds it, so
+	// asking for 0.12 returns 0.39 — heavier than requested, and met,
+	// because being given more weight than you asked for is not
+	// something to warn a user about.
+	{115, 0.14, 0.12, "#000000", "#111418", "#727c00", "#000000", 0.392508, true},
+	{25, 0.14, 0.12, "#000000", "#111418", "#bf534e", "#000000", 0.415987, true},
+	{115, 0.14, 0.12, "#ffffff", "#ffffff", "#737c00", "#ffffff", 0.458287, true},
+
+	// Known to be sensitive to washSlack: at slack 0 the walk stops
+	// before the true answer and the first of these comes back #090200
+	// instead. They are in the table for exactly that reason.
+	{50, 0.05, 0.90, "#ffffff", "#ffffff", "#080200", "#ffffff", 0.900097, true},
+	{50, 0.14, 0.90, "#e8eaed", "#f4f5f8", "#030100", "#e8eaed", 0.895126, true},
+	{262, 0.05, 0.12, "#ffffff", "#111418", "#000106", "#ffffff", 0.119736, true},
+}
+
+// TestWashMatchesTheGoldenTable is the refactor pin for Wash. If it fails
+// alongside a change that was meant to be behaviour-preserving, the
+// change was not behaviour-preserving.
+func TestWashMatchesTheGoldenTable(t *testing.T) {
+	var met, unmet int
+	for _, tc := range washGolden {
+		sw, err := Wash(tc.hue, tc.chroma, tc.separation, tc.ink, tc.background)
+		if err != nil {
+			t.Errorf("Wash(%v, %v, %v, %s, %s): %v", tc.hue, tc.chroma, tc.separation, tc.ink, tc.background, err)
+			continue
+		}
+		if sw.Fill != tc.fill || sw.On != tc.on {
+			t.Errorf("Wash(%v, %v, %v, %s, %s) = fill %s / on %s, want fill %s / on %s",
+				tc.hue, tc.chroma, tc.separation, tc.ink, tc.background, sw.Fill, sw.On, tc.fill, tc.on)
+		}
+		if math.Abs(sw.Separation-tc.sep) > 1e-6 {
+			t.Errorf("Wash(%v, %v, %v, %s, %s) separation = %.6f, want %.6f",
+				tc.hue, tc.chroma, tc.separation, tc.ink, tc.background, sw.Separation, tc.sep)
+		}
+		if sw.SeparationMet != tc.met {
+			t.Errorf("Wash(%v, %v, %v, %s, %s) SeparationMet = %v, want %v",
+				tc.hue, tc.chroma, tc.separation, tc.ink, tc.background, sw.SeparationMet, tc.met)
+		}
+		if sw.SeparationRequested != tc.separation {
+			t.Errorf("Wash(%v, %v, %v, %s, %s) SeparationRequested = %v, want %v",
+				tc.hue, tc.chroma, tc.separation, tc.ink, tc.background, sw.SeparationRequested, tc.separation)
+		}
+		if tc.met {
+			met++
+		} else {
+			unmet++
+		}
+	}
+
+	// A table that only ever recorded one state of the flag would pin the
+	// colours and leave the flag free to be anything.
+	if met == 0 || unmet == 0 {
+		t.Errorf("the table holds %d met and %d unmet rows; it has to pin both states or it is not pinning the flag at all", met, unmet)
 	}
 }

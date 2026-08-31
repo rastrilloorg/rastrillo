@@ -146,26 +146,33 @@ type Swatch struct {
 	// asked for a weight. See Wash for the scale.
 	SeparationRequested float64
 
-	// SeparationMet reports whether the wash carries at least the weight
-	// that was asked for. It is false in exactly two cases: the request
-	// was under MinSeparation and was raised to it, or the ink and
-	// background between them would not allow that much weight and the
-	// wash came back lighter.
+	// SeparationMet reports whether the wash carries AT LEAST the weight
+	// that was asked for. It is false in one case only: the ink and the
+	// background between them would not allow that much weight, so the
+	// wash came back lighter than requested.
 	//
-	// Neither is an error and neither is a wash to refuse — the
-	// resolution is correct and is the one to paint. The flag is there so
-	// an interface can say "paler than you asked for" rather than
-	// pretending otherwise.
+	// One case, deliberately, because the flag exists to be acted on. The
+	// harm a caller warns about is a highlight quieter than the one their
+	// user asked for — a flag that also fired when the wash came back
+	// HEAVIER would fire on an outcome nobody needs to be warned about,
+	// and a warning that fires when nothing is wrong stops being read.
+	// So a heavier wash is met: you asked for at least that much weight
+	// and you got at least that much. It happens when the constraints
+	// exclude the requested weight from below, and Separation is there to
+	// be read if you care which way it went.
 	//
-	// It does not flag a wash that came back HEAVIER than requested,
-	// which happens when the constraints exclude the requested weight
-	// from below: a heavier wash still does a wash's job, and Separation
-	// is there to be read if you care.
+	// A request under MinSeparation is likewise met, since it is raised
+	// to the floor and the floor is heavier than what was asked. Compare
+	// SeparationRequested against MinSeparation if you want to know.
+	//
+	// True for a swatch from Pair, which requests no weight and therefore
+	// cannot fail to carry it — so `if !sw.SeparationMet { warn }` is
+	// safe to write against any swatch, from either function.
 	//
 	// Read this rather than comparing the two floats yourself. The
 	// comparison needs a tolerance for the grid's own resolution, and the
 	// achievable weights are not evenly spaced — the ink floor can cut a
-	// band out of the middle — so it is exactly the arithmetic every
+	// wide band out of the middle — so it is exactly the arithmetic every
 	// caller would get slightly differently.
 	SeparationMet bool
 }
@@ -300,6 +307,11 @@ func Pair(hue, chroma float64, background string) (Swatch, error) {
 			FillRatio:  fillRatio,
 			OnRatio:    onRatio,
 			Separation: labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab),
+			// Pair asks for no weight, so it cannot have failed to carry
+			// one. Set explicitly rather than left as the zero value, so
+			// that `if !sw.SeparationMet` does not warn on every Pair
+			// result a caller happens to run it against.
+			SeparationMet: true,
 		}, nil
 	}
 	return Swatch{}, fmt.Errorf("ui.Pair: no lightness resolves hue %g chroma %g against background %s at %.1f:1 fill and %.1f:1 on-fill",
@@ -448,9 +460,42 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 // BACKGROUND ALLOW, NEVER BELOW MinSeparation. When the constraints bind
 // it degrades toward paler rather than starting there.
 //
-// The scale, so the number means something. These are real colours
-// measured against a white canvas on the same scale Swatch.Separation
-// reports, so pick by pointing at one you know:
+// # What to pass
+//
+// PASS 0.12 IF YOU HAVE NO PARTICULAR OPINION. It is the middle of the
+// weight Excel's own conditional-formatting presets carry, which is what
+// a spreadsheet fill weighs in the software people compare you against.
+//
+// Two bands are worth naming. 0.10 to 0.14 is the rule-driven register —
+// a conditional format, a status tint, anything a rule applied rather
+// than a person chose — and 0.12 is its middle. 0.21 and above is the
+// hand-picked register, where somebody deliberately reached for a
+// colour and wants it seen. Below 0.05 you are asking for a tint a
+// scanning eye will miss.
+//
+// # What can actually be delivered
+//
+// The band that matters is the one reachable under the DEFAULT case, and
+// near-black ink on a white canvas is the default case: it is what a
+// cell looks like before anybody touches it, it is what imported files
+// overwhelmingly carry, and a user picking a fill has almost always left
+// their text alone.
+//
+//	Under any near-black ink on white, every offered hue reaches
+//	0.39. Under pure black specifically, 0.43.
+//
+// So both named bands are comfortably deliverable, and a picker built on
+// them will not offer weights it cannot honour. Above roughly 0.39 the
+// answer starts to depend on the hue, and past about 0.47 nothing is
+// reachable at all — black text has to stay readable on the result, and
+// that caps how dark the fill can go.
+//
+// # The scale underneath, as provenance
+//
+// Real colours measured against a white canvas on the same scale
+// Swatch.Separation reports, so a number can be chosen by pointing at
+// one you know. The rule is where these stop being weights you can ask
+// for and become colours you can only paint:
 //
 //	0.03  MinSeparation, the floor — the palest fill Google Sheets ships
 //	0.11  Excel's "light green" conditional-formatting preset (#C6EFCE)
@@ -458,18 +503,25 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 //	0.14  Excel's "light red" preset (#FFC7CE)
 //	0.21  flat yellow (#FFFF00), the most-clicked fill there is
 //	0.38  a solid green (#00B050)
-//	0.45  flat red (#FF0000)
-//	0.63  flat blue (#0000FF)
+//	----- the ceiling under near-black ink on white is about here -----
+//	0.45  flat red (#FF0000)      — reachable at some hues, not others
+//	0.63  flat blue (#0000FF)     — not reachable under black ink at all
 //
-// Around 0.12 is a spreadsheet fill in the sense Excel means one. Below
-// 0.05 you are asking for a tint a scanning eye will miss.
+// The last two rows are why the line is drawn rather than left implied.
+// Flat red and flat blue are perfectly good colours and a caller may
+// well store them; they are not weights to ask a wash for under black
+// text, because no fill that heavy can carry black text at 4.5:1. Ask
+// for one anyway and you get the closest that can be delivered, with
+// SeparationMet false — which is correct, but if your picker offers them
+// as choices, that flag becomes wallpaper.
 //
 // A request under MinSeparation is raised to it, and a request the ink
-// cannot carry is met as closely as it can be. Both are reported the same
-// way and neither is an error: SeparationRequested keeps what you asked
-// for beside Separation, which is what you got, and SeparationMet says
-// whether you got at least what you asked for. Read the boolean rather
-// than comparing the floats — the achievable weights are not evenly
+// cannot carry is met as closely as it can be. Neither is an error.
+// SeparationRequested keeps what you asked for beside Separation, which
+// is what you got, and SeparationMet says whether you got at least that
+// much — false only when the wash came back LIGHTER than asked, which is
+// the one outcome worth warning a user about. Read the boolean rather
+// than comparing the floats: the achievable weights are not evenly
 // spaced, so the comparison needs a tolerance the caller would have to
 // know, and the library does it once.
 //
@@ -604,7 +656,7 @@ func Wash(hue, chroma, separation float64, ink, background string) (Swatch, erro
 				OnRatio:             onRatio,
 				Separation:          sep,
 				SeparationRequested: separation,
-				SeparationMet:       separation >= MinSeparation && sep >= separation-washTolerance,
+				SeparationMet:       sep >= separation-washTolerance,
 			}, e, true
 		}
 	}
@@ -634,11 +686,13 @@ const washSlack = 0.08
 // miss of four thousandths as a failure to honour.
 //
 // It is deliberately far too small to paper over a real shortfall. The
-// achievable weights are not evenly spaced — the ink floor can cut a
-// whole band out of the middle, leaving gaps of 0.067 between one
-// achievable weight and the next — and a tolerance wide enough to swallow
-// those would be a tolerance that reported every constrained answer as
-// honoured. Those are exactly the cases SeparationMet exists to flag.
+// achievable weights are not evenly spaced: the ink floor removes a band
+// of lightnesses outright, so the set of weights a caller can actually
+// be given has gaps in it more than ten times this tolerance wide, and a
+// tolerance able to swallow those would report every constrained answer
+// as honoured. Those are exactly the cases SeparationMet exists to flag.
+// TestAchievableWeightsHaveWideGaps measures the gaps and asserts that
+// relation rather than quoting a figure.
 const washTolerance = 0.005
 
 // nearestFirst starts a walk of the lightness grid in order of distance
