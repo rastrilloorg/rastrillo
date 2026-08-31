@@ -198,27 +198,72 @@ white, a number that would condemn every wash anyone has ever shipped.
 close to it as the ink and background allow, never below the floor*. A
 fill exists to be found — someone scans a thousand rows for the cell they
 flagged — so it is a flag and not a texture, and one sitting at the
-threshold of perceptibility inverts its own job. The scale, measured
-against a white canvas on the same scale `Swatch.Separation` reports:
+threshold of perceptibility inverts its own job.
 
-| weight | colour |
-| --- | --- |
-| 0.03 | `MinSeparation`, the floor — the palest fill Google Sheets ships |
-| 0.11 | Excel's "light green" preset, `#C6EFCE` |
-| 0.12 | Excel's "light yellow" preset, `#FFEB9C` |
-| 0.14 | Excel's "light red" preset, `#FFC7CE` |
-| 0.21 | flat yellow `#FFFF00`, the most-clicked fill there is |
-| 0.38 | a solid green `#00B050` |
-| 0.45 | flat red `#FF0000` |
-| 0.63 | flat blue `#0000FF` |
+**Pass 0.12 if you have no particular opinion.** That is the middle of the
+weight Excel's own conditional-formatting presets carry. Two bands are
+worth naming: **0.10–0.14** is the rule-driven register — a conditional
+format, a status tint, anything a rule applied rather than a person chose
+— and **0.21 and above** is the hand-picked register, where somebody
+deliberately reached for a colour and wants it seen. Below 0.05 you are
+asking for a tint a scanning eye will miss.
 
-Around 0.12 is a spreadsheet fill in the sense Excel means one.
+### What can actually be delivered
+
+Near-black ink on a white canvas is not an edge case, it is the default
+one: it is what a cell looks like before anybody touches it, what
+imported files overwhelmingly carry, and what a user picking a fill has
+almost always left alone. So that is the case a weight picker has to be
+built against.
+
+> Under any near-black ink on white, **every offered hue reaches 0.39**.
+> Under pure black specifically, **0.43**.
+
+Both named bands sit comfortably inside that, so a picker built on them
+will not offer weights it cannot honour. Above roughly 0.39 the answer
+starts to depend on the hue; past about 0.47 nothing is reachable at all,
+because black text still has to be readable on the result and that caps
+how dark the fill can go.
+
+### The scale underneath
+
+Provenance for those numbers — real colours measured against a white
+canvas on the same scale `Swatch.Separation` reports, so you can choose
+by pointing at one you know. The rule marks where these stop being
+weights you can ask for and become colours you can only paint:
+
+| weight | colour | |
+| --- | --- | --- |
+| 0.03 | `MinSeparation`, the floor — the palest fill Google Sheets ships | |
+| 0.11 | Excel's "light green" preset, `#C6EFCE` | |
+| 0.12 | Excel's "light yellow" preset, `#FFEB9C` | |
+| 0.14 | Excel's "light red" preset, `#FFC7CE` | |
+| 0.21 | flat yellow `#FFFF00`, the most-clicked fill there is | |
+| 0.38 | a solid green `#00B050` | |
+| — | *ceiling under near-black ink on white* | |
+| 0.45 | flat red `#FF0000` | reachable at some hues, not others |
+| 0.63 | flat blue `#0000FF` | not reachable under black ink at all |
+
+The last two rows are why the line is drawn rather than left implied.
+Flat red and flat blue are perfectly good colours and you may well store
+them; they are not weights to ask a wash for under black text, because no
+fill that heavy can carry black text at 4.5:1.
 
 When the ink cannot carry the weight you asked for, you get the closest
 it can and `SeparationMet` comes back false — not an error, because the
 constrained answer is correct and is the one to paint. Flat blue is the
 worked case: black ink on `#0000FF` is 2.44:1, so asking for blue at its
 own 0.63 under black ink returns a much lighter blue with the flag down.
+If your picker offers weights past the ceiling, though, that flag becomes
+wallpaper — which is the argument for keeping the offered weights inside
+the reachable band rather than spanning the published one.
+
+`SeparationMet` is false in one case only: the wash came back **lighter**
+than you asked for. A wash that comes back heavier is met — you asked for
+at least that much weight and got at least that much — because a warning
+that fires when nothing is wrong stops being read. It is also true for a
+swatch from `Pair`, which requests no weight, so `if !sw.SeparationMet`
+is safe to write against any swatch from either function.
 `SeparationRequested` sits beside `Separation` if you want the numbers,
 but read the boolean rather than comparing them — the achievable weights
 are not evenly spaced, so the comparison needs a tolerance.
