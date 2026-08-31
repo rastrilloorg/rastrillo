@@ -8,7 +8,7 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.23.0
 
 ### Fixed — read this one if you ran `rastrillo markup --fix` on v0.22.0
 
@@ -28,7 +28,7 @@ The files most likely to be hit are the ones that *teach* the class-versus-attri
 distinction, so the damage lands where the explanation lives. In this repository the
 tool would have rewritten the documentation of the codemod itself, the table
 recording the `rst-form-foot` rename, a correct use of `class` for a utility, and
-every design document under `docs/superpowers/`.
+eleven of the fifty-one design documents under `docs/superpowers/`.
 
 `.md` is no longer scanned. A Markdown file has no markup to migrate; it has
 discussion of markup, and the costs are asymmetric — an example left unmigrated is
