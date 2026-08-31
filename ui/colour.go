@@ -114,7 +114,9 @@ type Intent struct {
 //
 //	              FillRatio          OnRatio            Separation
 //	Pair          >= 3:1 (floored)   >= 4.5:1 (floored) measured
-//	Wash          measured, and LOW  >= 4.5:1 (floored) >= MinSeparation
+//	Wash          measured, and LOW  >= 4.5:1 (floored) >= MinSeparation,
+//	                                                    and as near the
+//	                                                    request as it can be
 //
 // A Wash's FillRatio is low by design — a wash that stood 3:1 off the
 // page would not be a wash — so do not gate on it and do not carry a
@@ -138,6 +140,34 @@ type Swatch struct {
 	// ratio answers badly: a pale yellow wash is about 1.2:1 off white,
 	// a number that says nothing useful, while being plainly visible.
 	Separation float64
+
+	// SeparationRequested is the weight the caller asked Wash for, kept
+	// beside the one they got. Zero for a swatch from Pair, which is not
+	// asked for a weight. See Wash for the scale.
+	SeparationRequested float64
+
+	// SeparationMet reports whether the wash carries at least the weight
+	// that was asked for. It is false in exactly two cases: the request
+	// was under MinSeparation and was raised to it, or the ink and
+	// background between them would not allow that much weight and the
+	// wash came back lighter.
+	//
+	// Neither is an error and neither is a wash to refuse — the
+	// resolution is correct and is the one to paint. The flag is there so
+	// an interface can say "paler than you asked for" rather than
+	// pretending otherwise.
+	//
+	// It does not flag a wash that came back HEAVIER than requested,
+	// which happens when the constraints exclude the requested weight
+	// from below: a heavier wash still does a wash's job, and Separation
+	// is there to be read if you care.
+	//
+	// Read this rather than comparing the two floats yourself. The
+	// comparison needs a tolerance for the grid's own resolution, and the
+	// achievable weights are not evenly spaced — the ink floor can cut a
+	// band out of the middle — so it is exactly the arithmetic every
+	// caller would get slightly differently.
+	SeparationMet bool
 }
 
 // Pair resolves an intent against one background into a fill and an
@@ -356,8 +386,9 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 // Wash resolves an intent into a background wash that leaves the
 // caller's own text colour alone.
 //
-//	sw, err := ui.Wash(115, 0.14, authorInk, canvas)
-//	// sw.Fill is what you paint. sw.On is authorInk, unchanged.
+//	sw, err := ui.Wash(115, 0.14, 0.12, authorInk, canvas)
+//	// sw.Fill is what you paint. sw.On is authorInk.
+//	if !sw.SeparationMet { /* warn: this is paler than you asked for */ }
 //
 // It is Pair's sibling, not Pair with the arguments swapped, and the
 // difference is about who owns the ink.
@@ -377,8 +408,70 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 // workbook, highlight one cell, export, and it comes back with font
 // colours throughout. That is round-trip corruption, and it is why the
 // constraint runs the other way here: not "given this fill, what ink
-// survives on it" but "given the ink this author already has, what is
-// the palest fill of this hue their ink still reads on".
+// survives on it" but "given the ink this author already has, what fill
+// of this hue does their ink still read on".
+//
+// Wash never invents a font colour. On is the ink you passed, normalised
+// to lower-case #rrggbb so that all three colours in a Swatch are spelled
+// one way — compare it case-insensitively, or against sw.On rather than
+// against the string you stored.
+//
+// # It requires a known ink, and that is a real limit
+//
+// Wash is the wrong function if you do not control the text colour. It
+// guarantees legibility for the ink you hand it and says nothing about
+// any other, so passing a guessed ink buys a guarantee about a colour
+// that is not on the screen — and if you then apply the guess, you have
+// restyled an author's text, which is the same harm as the font colour
+// leaking into an export that this function exists to prevent.
+//
+// A highlight behind text the app did not choose and must not change is
+// the case that needs a different guarantee: not "this ink is legible"
+// but "any ink that was legible on the background is still legible on
+// the wash". That is a second function, not this one with the argument
+// omitted, and the arithmetic says why. On paper white the worst ink
+// still legible against the page sits at luminance 0.1833, and for it to
+// keep the full 4.5:1 on a wash the wash would need luminance 1.0 —
+// exactly white, which is no wash at all. Retaining the whole floor is
+// not merely hard there, it is unsatisfiable, so an ink-unknown variant
+// has to retain a lower floor than it admits, and choosing that number
+// is a design decision rather than a defaulted parameter. It is being
+// designed separately; do not approximate it by guessing an ink here.
+//
+// # separation: how heavy the wash should be
+//
+// A fill exists to be found. Someone scans a thousand rows for the cell
+// they flagged, so a wash is a flag and not a texture, and one sitting at
+// the threshold of perceptibility inverts its own job. separation is the
+// weight you are asking for, in OKLab distance from the background, and
+// the contract is: AS CLOSE TO THE REQUESTED WEIGHT AS THE INK AND
+// BACKGROUND ALLOW, NEVER BELOW MinSeparation. When the constraints bind
+// it degrades toward paler rather than starting there.
+//
+// The scale, so the number means something. These are real colours
+// measured against a white canvas on the same scale Swatch.Separation
+// reports, so pick by pointing at one you know:
+//
+//	0.03  MinSeparation, the floor — the palest fill Google Sheets ships
+//	0.11  Excel's "light green" conditional-formatting preset (#C6EFCE)
+//	0.12  Excel's "light yellow" preset (#FFEB9C)
+//	0.14  Excel's "light red" preset (#FFC7CE)
+//	0.21  flat yellow (#FFFF00), the most-clicked fill there is
+//	0.38  a solid green (#00B050)
+//	0.45  flat red (#FF0000)
+//	0.63  flat blue (#0000FF)
+//
+// Around 0.12 is a spreadsheet fill in the sense Excel means one. Below
+// 0.05 you are asking for a tint a scanning eye will miss.
+//
+// A request under MinSeparation is raised to it, and a request the ink
+// cannot carry is met as closely as it can be. Both are reported the same
+// way and neither is an error: SeparationRequested keeps what you asked
+// for beside Separation, which is what you got, and SeparationMet says
+// whether you got at least what you asked for. Read the boolean rather
+// than comparing the floats — the achievable weights are not evenly
+// spaced, so the comparison needs a tolerance the caller would have to
+// know, and the library does it once.
 //
 // # The two floors
 //
@@ -390,27 +483,27 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 //
 // The second floor is measured as a perceptual distance and not as a
 // contrast ratio, because contrast ratio is the wrong instrument for
-// "can you tell this cell is filled": a pale yellow wash is about 1.2:1
-// against white, a number that would condemn every wash anyone has ever
-// shipped, while being perfectly visible. MinSeparation is calibrated
-// against real ones — the palest fill in Google Sheets' own standard
-// palette measures 0.036, and a tint at 0.014 is not there.
-//
-// The two floors pull against each other, which is what makes the second
-// one load-bearing rather than decorative: floor 1 pushes the fill away
-// from the ink, floor 2 pushes it away from the background, and "palest"
-// resolves as the fill nearest the background that clears both.
+// "can you tell this cell is filled": every colour in the scale above is
+// between 1.0:1 and 1.3:1 against white, so a contrast floor would either
+// admit all of them or reject all of them.
 //
 // # When there is no answer, you get an error
 //
 // Wash fails rather than returning a wash the author's text cannot be
-// read on. That failure is the feature. The incumbent behaviour — Excel
-// will happily give you a dark navy fill and leave your text black on
-// it, unreadable, with no warning — is what this replaces, and it
-// replaces it by constraining what can be OFFERED rather than by
-// overriding what the author chose. Nobody's font colour is changed
-// behind their back; a hue that cannot carry their ink is simply not
-// available, and the app can say so.
+// read on. That failure is the feature, and the case for it is not
+// hypothetical or about careless users: Excel ships a
+// conditional-formatting preset, "Yellow Fill with Dark Yellow Text",
+// that pairs #9C6500 on #FFEB9C at 4.12:1 and fails WCAG AA. The
+// product's own default does it.
+//
+// What is claimed here is precise and worth reading twice: A WASH THIS
+// FUNCTION PRODUCES CANNOT BE UNREADABLE. Not "no cell in your app can
+// be unreadable" — if you retain an imported file's fill and font colour
+// verbatim, which is exactly what makes import and export lossless, then
+// a document using that Excel preset will display at 4.12:1 and it
+// should. Faithfully showing a document somebody else authored is a
+// different act from generating a colour, and only the second is this
+// function's to guarantee.
 //
 // # background is a literal colour, for the same reason as Pair's
 //
@@ -431,13 +524,25 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 // commonly theme-derived — near-black on a light canvas, near-white on a
 // dark one — but an author who pinned their font colour pins it here
 // too, and "the author pinned black and the viewer chose the dark theme"
-// is a real case that sometimes has no answer. See CheckWashes.
-func Wash(hue, chroma float64, ink, background string) (Swatch, error) {
+// is a real case. See CheckWashes.
+//
+// # A worked example where the constraint binds
+//
+// Flat blue, #0000FF, is a real fill out of a real workbook. Black ink on
+// it is 2.44:1, so it cannot carry black text at all — asking for blue at
+// its own weight (0.63) under black ink returns a much lighter blue,
+// somewhere near the weight black ink can actually hold, with
+// SeparationMet false. Nothing failed; the answer is the honest one, and
+// the boolean is how a caller knows to say so in its own interface.
+func Wash(hue, chroma, separation float64, ink, background string) (Swatch, error) {
 	if math.IsNaN(hue) || math.IsInf(hue, 0) {
 		return Swatch{}, fmt.Errorf("ui.Wash: hue must be a finite number, got %v", hue)
 	}
 	if math.IsNaN(chroma) || math.IsInf(chroma, 0) || chroma < 0 {
 		return Swatch{}, fmt.Errorf("ui.Wash: chroma must be finite and >= 0, got %v", chroma)
+	}
+	if math.IsNaN(separation) || math.IsInf(separation, 0) || separation < 0 {
+		return Swatch{}, fmt.Errorf("ui.Wash: separation must be finite and >= 0, got %v", separation)
 	}
 	bg, err := normalHex(background)
 	if err != nil {
@@ -451,6 +556,7 @@ func Wash(hue, chroma float64, ink, background string) (Swatch, error) {
 	if h < 0 {
 		h += 360
 	}
+	target := math.Max(separation, MinSeparation)
 
 	bgR, bgG, bgB, _ := parseHex(bg)
 	bgLab := oklabOf(bgR, bgG, bgB)
@@ -458,22 +564,23 @@ func Wash(hue, chroma float64, ink, background string) (Swatch, error) {
 	inkR, inkG, inkB, _ := parseHex(pen)
 	inkLum := relLuminance(inkR, inkG, inkB)
 
-	// Nearest first, and "nearest" is the perceptual distance the second
-	// floor is written in, so the floor and the objective are the same
-	// measurement: reject below MinSeparation, then take the smallest
-	// value above it.
+	// Nearest first, and "nearest" is now nearest to the REQUESTED
+	// weight rather than to the background — so the floor and the
+	// objective are still the same measurement, but the objective moved.
 	//
-	// The walk can stop early. A perceptual distance is at least the
-	// lightness difference alone — the other two axes only add — so once
-	// a wash at distance d has been found, no lightness further than d
-	// from the background can beat it. The slack absorbs the difference
-	// between the lightness asked for and the lightness that survives
-	// rounding to eight bits.
-	const slack = 0.02
-	best, bestD, found := Swatch{}, math.Inf(1), false
+	// The walk can still stop early, on the premise that a perceptual
+	// distance is at least the lightness difference alone: the other two
+	// axes only add to it. So a candidate at lightness distance d has
+	// separation of at least d - washSlack, and once a wash missing the
+	// target by e has been found, any d with d - washSlack >= target + e
+	// is separated by at least target + e and cannot get closer.
+	// washSlack absorbs the gap between the lightness asked for and the
+	// lightness that survives rounding to eight bits;
+	// TestSeparationIsAtLeastTheLightnessDifference measures it.
+	best, bestErr, found := Swatch{}, math.Inf(1), false
 	for w, ok := nearestFirst(bgLab[0]); ok; w, ok = w.next() {
 		l := w.lightness()
-		if found && math.Abs(l-bgLab[0])-slack >= bestD {
+		if found && math.Abs(l-bgLab[0])-washSlack >= target+bestErr {
 			break
 		}
 		rgb, c := oklchRGB(l, chroma, h)
@@ -486,19 +593,20 @@ func Wash(hue, chroma float64, ink, background string) (Swatch, error) {
 		if onRatio < ContrastFloorText+contrastMargin {
 			continue // the author's own text would not be readable on it
 		}
-		if found && sep >= bestD {
-			continue
+		if e := math.Abs(sep - target); !found || e < bestErr {
+			best, bestErr, found = Swatch{
+				Fill:                hexOf(rgb),
+				On:                  pen,
+				Background:          bg,
+				Hue:                 h,
+				Chroma:              c,
+				FillRatio:           ratioOf(fillLum, bgLum),
+				OnRatio:             onRatio,
+				Separation:          sep,
+				SeparationRequested: separation,
+				SeparationMet:       separation >= MinSeparation && sep >= separation-washTolerance,
+			}, e, true
 		}
-		best, bestD, found = Swatch{
-			Fill:       hexOf(rgb),
-			On:         pen,
-			Background: bg,
-			Hue:        h,
-			Chroma:     c,
-			FillRatio:  ratioOf(fillLum, bgLum),
-			OnRatio:    onRatio,
-			Separation: sep,
-		}, sep, true
 	}
 	if !found {
 		return Swatch{}, fmt.Errorf("ui.Wash: no wash of hue %g chroma %g works on background %s under ink %s — nothing this hue can be is both %.2f away from the background and readable at %.1f:1 under that ink",
@@ -506,6 +614,32 @@ func Wash(hue, chroma float64, ink, background string) (Swatch, error) {
 	}
 	return best, nil
 }
+
+// washSlack is how much the early exit allows for the difference between
+// the lightness Wash asks for and the lightness that survives rounding to
+// eight bits. The break reasons about the requested lightness while the
+// separation is measured on the delivered colour, and this is the whole
+// of the gap between them.
+//
+// It is not a comfort margin: at 0 the walk stops early and misses the
+// true answer on real inputs. TestSeparationIsAtLeastTheLightnessDifference
+// measures the largest shortfall over a wide sample and pins this above
+// it, so the number is a measurement with headroom rather than a guess.
+const washSlack = 0.08
+
+// washTolerance is float and grid dust, and nothing more. The lightness
+// grid is discrete, so a request that is comfortably achievable still
+// lands a hair either side of the number asked for, and comparing a
+// delivered weight against a requested one on the nose would report a
+// miss of four thousandths as a failure to honour.
+//
+// It is deliberately far too small to paper over a real shortfall. The
+// achievable weights are not evenly spaced — the ink floor can cut a
+// whole band out of the middle, leaving gaps of 0.067 between one
+// achievable weight and the next — and a tolerance wide enough to swallow
+// those would be a tolerance that reported every constrained answer as
+// honoured. Those are exactly the cases SeparationMet exists to flag.
+const washTolerance = 0.005
 
 // nearestFirst starts a walk of the lightness grid in order of distance
 // from a target, nearest first: a two-cursor merge, one running down from
@@ -903,14 +1037,22 @@ type Canvas struct {
 // combination would be reporting decisions rather than defects. A canvas
 // in this list is a claim that its cells must resolve.
 //
-//	err := ui.CheckWashes(ui.Offered(), []ui.Canvas{
+//	err := ui.CheckWashes(ui.Offered(), 0.12, []ui.Canvas{
 //	        {Background: paperWhite, Inks: []string{themeInkLight, "#000000"}},
 //	        {Background: darkPaper,  Inks: []string{themeInkDark, "#ffffff"}},
 //	})
 //
+// separation is the weight you would ask Wash for; the answer can depend
+// on it, so pass the one your app actually uses. It checks the RESOLVED
+// COLOURS and not merely that no error came back: the ink clears its
+// floor on the fill, the fill clears the perceptibility floor, and On is
+// the ink you passed. A wash the constraints forced paler than the
+// request is NOT reported — that resolution is correct and is the one to
+// paint, and Swatch.SeparationMet is how a caller learns about it.
+//
 // Every failure is reported rather than the first, because a set is
 // adopted as a set.
-func CheckWashes(intents []Intent, canvases []Canvas) error {
+func CheckWashes(intents []Intent, separation float64, canvases []Canvas) error {
 	var errs []error
 	if len(intents) == 0 {
 		errs = append(errs, errors.New("ui.CheckWashes: no intents to check — an empty set proves nothing"))
@@ -925,13 +1067,48 @@ func CheckWashes(intents []Intent, canvases []Canvas) error {
 		}
 		for _, ink := range canvas.Inks {
 			for _, in := range intents {
-				if _, err := Wash(in.Hue, in.Chroma, ink, canvas.Background); err != nil {
+				sw, err := Wash(in.Hue, in.Chroma, separation, ink, canvas.Background)
+				if err != nil {
 					errs = append(errs, err)
+					continue
 				}
+				errs = append(errs, checkWash(in, ink, sw)...)
 			}
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// checkWash judges a resolved wash, and exists for the reason checkSwatch
+// does: a gate that only asks whether an error came back proves that no
+// error came back. Remove Wash's perceptibility floor and it will happily
+// return a fill four thousandths from the background, with no error, and
+// a checker that never looks at the swatch calls that fine.
+//
+// So the three things a wash promises are asserted on the returned
+// colours rather than inferred from the absence of an error. Wash is not
+// supposed to be able to break any of them; these are what would catch it
+// if it regressed, and an assertion nothing has been seen to fail is not
+// evidence of anything.
+//
+// SeparationMet is deliberately NOT among them. A wash the constraints
+// forced paler than the request is correct and is the one to paint; only
+// an unreadable or an invisible one is a defect.
+func checkWash(in Intent, ink string, sw Swatch) []error {
+	var errs []error
+	if sw.OnRatio < ContrastFloorText {
+		errs = append(errs, fmt.Errorf("hue %g chroma %g on %s under ink %s: the ink is %.2f:1 on fill %s, want >= %.1f:1",
+			in.Hue, in.Chroma, sw.Background, ink, sw.OnRatio, sw.Fill, ContrastFloorText))
+	}
+	if sw.Separation < MinSeparation {
+		errs = append(errs, fmt.Errorf("hue %g chroma %g on %s under ink %s: fill %s is ΔE_OK %.4f from the background, under the %.3f floor — nobody could see it had been applied",
+			in.Hue, in.Chroma, sw.Background, ink, sw.Fill, sw.Separation, MinSeparation))
+	}
+	if want, err := normalHex(ink); err == nil && sw.On != want {
+		errs = append(errs, fmt.Errorf("hue %g chroma %g on %s: On came back %s but the ink passed in was %s — Wash must never invent a font colour",
+			in.Hue, in.Chroma, sw.Background, sw.On, want))
+	}
+	return errs
 }
 
 // ─── OKLCH → sRGB ────────────────────────────────────────────────────

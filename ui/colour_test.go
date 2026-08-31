@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"slices"
@@ -994,7 +995,7 @@ func BenchmarkColourPairOnDark(b *testing.B) {
 
 func BenchmarkColourWash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Wash(115, 0.14, "#000000", "#ffffff")
+		Wash(115, 0.14, testWeight, "#000000", "#ffffff")
 	}
 }
 
@@ -1062,6 +1063,14 @@ func TestPublishedCapacityCeiling(t *testing.T) {
 
 // ─── Wash ────────────────────────────────────────────────────────────
 
+// testWeight is the weight most of these gates ask for: Excel's
+// conditional-formatting preset band, measured in
+// TestWashScaleReferencePoints, which is what a spreadsheet fill weighs
+// in the shipping software people compare us against. Gates that are
+// about the FLOOR rather than about a request ask for MinSeparation
+// explicitly, and say so where they do.
+const testWeight = 0.12
+
 // TestWashAgainstCasesWithAnObviousAnswer is the control for the wash
 // resolver, on two cases whose answers need no computation.
 //
@@ -1074,7 +1083,7 @@ func TestPublishedCapacityCeiling(t *testing.T) {
 // lightness, ignored the ink, confused ink with background — this is what
 // notices, because the two answers are opposites.
 func TestWashAgainstCasesWithAnObviousAnswer(t *testing.T) {
-	pale, err := Wash(115, 0.14, "#000000", "#ffffff")
+	pale, err := Wash(115, 0.14, testWeight, "#000000", "#ffffff")
 	if err != nil {
 		t.Fatalf("a yellow wash under black ink on white paper failed: %v", err)
 	}
@@ -1082,10 +1091,21 @@ func TestWashAgainstCasesWithAnObviousAnswer(t *testing.T) {
 		t.Errorf("black ink on paper white gave fill %s at luminance %.3f — a wash must be pale, not saturated", pale.Fill, l)
 	}
 	if pale.On != "#000000" {
-		t.Errorf("On = %s, want the ink that was passed in unchanged (#000000)", pale.On)
+		t.Errorf("On = %s, want the ink that was passed in (#000000)", pale.On)
+	}
+	// On is NORMALISED, not echoed: a Swatch spells all three of its
+	// colours one way. A caller doing string equality against the value
+	// they stored needs to know that, so it is pinned here rather than
+	// left to be discovered by an XLSX round-trip that compares strings.
+	shouty, err := Wash(115, 0.14, testWeight, "#FFF", "#111418")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shouty.On != "#ffffff" {
+		t.Errorf("Wash(ink=\"#FFF\") returned On = %s, want the normalised #ffffff", shouty.On)
 	}
 
-	deep, err := Wash(115, 0.14, "#ffffff", "#111418")
+	deep, err := Wash(115, 0.14, testWeight, "#ffffff", "#111418")
 	if err != nil {
 		t.Fatalf("a yellow wash under white ink on dark paper failed: %v", err)
 	}
@@ -1149,7 +1169,7 @@ func TestWashSecondFloorBinds(t *testing.T) {
 	inkLum := relLuminance(inkR, inkG, inkB)
 
 	for _, in := range Offered() {
-		got, err := Wash(in.Hue, in.Chroma, ink, bg)
+		got, err := Wash(in.Hue, in.Chroma, MinSeparation, ink, bg)
 		if err != nil {
 			t.Errorf("hue %g: %v", in.Hue, err)
 			continue
@@ -1185,36 +1205,78 @@ func TestWashSecondFloorBinds(t *testing.T) {
 // seen returned is not evidence that it can be.
 //
 // The case is a mid-grey font colour, and it is not contrived — it is
-// forced arithmetic. #737373 sits at relative luminance 0.171. To clear
-// 4.5:1 a fill must be at luminance ≤ 0.0021 or ≥ 0.955, and no colour
-// carrying any chroma reaches either from that hue. So there is nothing
-// this ink can be read on, and Wash says so instead of returning a fill
-// the author's own text disappears into.
+// forced arithmetic. #737373 sits at relative luminance 0.1714, and the
+// engine holds 4.55:1 (the floor plus its margin), so a fill must be at
+// luminance ≤ −0.0013 or ≥ 0.9576.
 //
-// That is the accessibility argument for the error existing, stated as a
-// test: the incumbent behaviour is to hand back the fill and let the text
-// vanish.
+// The dark side is unreachable by ANY colour: the bound is negative, so
+// not even black clears it — ContrastRatio("#737373", "#000000") is
+// 4.43:1. Chroma is not the obstacle there; nothing is dark enough,
+// because nothing is darker than black.
+//
+// The light side IS reachable, but only just, and only by the hues that
+// are palest at their own chroma while still clearing the perceptibility
+// floor against white. Two of the twelve manage it — hues 115 and 145,
+// which at the floor resolve to #fbffe6 and #eeffed — which is why the
+// count below is 10 and not 12. That number is a consequence of this
+// paragraph, so the paragraph is asserted too: if the survivors were
+// ever a different pair, the arithmetic above would no longer explain
+// the count.
+//
+// The accessibility argument for the error existing, stated as a test:
+// the incumbent behaviour is to hand back the fill and let the text
+// vanish. Excel ships a conditional-formatting preset that does exactly
+// that — #9C6500 on #FFEB9C, 4.12:1 — so this is the product default
+// being improved on, not a careless user being second-guessed.
 func TestWashFailsWhenNoFillCanCarryTheInk(t *testing.T) {
 	const badInk = "#737373"
+
+	// The arithmetic the comment above rests on, checked rather than
+	// asserted in prose. Both bounds are computed the way Wash computes
+	// them, but the CONCLUSIONS are literals.
+	r, g, b, err := parseHex(badInk)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inkLum := relLuminance(r, g, b)
+	const engineFloor = ContrastFloorText + contrastMargin
+	darkBound := (inkLum+0.05)/engineFloor - 0.05
+	lightBound := engineFloor*(inkLum+0.05) - 0.05
+	if darkBound >= 0 {
+		t.Errorf("the dark bound is %.6f, not negative — the claim that no colour whatever is dark enough no longer holds", darkBound)
+	}
+	if black, err := ContrastRatio(badInk, "#000000"); err != nil || black >= ContrastFloorText {
+		t.Errorf("this ink is %.4f:1 on black, which clears %.1f — the dark side is reachable after all", black, ContrastFloorText)
+	}
+	if math.Abs(lightBound-0.9576) > 0.0005 {
+		t.Errorf("the light bound is %.6f, but the comment above says 0.9576", lightBound)
+	}
+
+	var survivors []float64
 	failed := 0
 	for _, in := range Offered() {
-		if _, err := Wash(in.Hue, in.Chroma, badInk, "#ffffff"); err != nil {
+		if _, err := Wash(in.Hue, in.Chroma, testWeight, badInk, "#ffffff"); err != nil {
 			failed++
 			if !strings.Contains(err.Error(), "no wash") {
 				t.Errorf("hue %g failed for an unexpected reason: %v", in.Hue, err)
 			}
+			continue
 		}
+		survivors = append(survivors, in.Hue)
 	}
 	if failed == 0 {
 		t.Fatalf("every hue found a wash under ink %s; that ink cannot be read on anything and the error path has never been observed", badInk)
 	}
-	t.Logf("ink %s: %d of %d offered hues have no wash", badInk, failed, len(Offered()))
+	if !slices.Equal(survivors, []float64{115, 145}) {
+		t.Errorf("the hues that survive ink %s are %v, but the explanation above names 115 and 145 — the count is no longer explained by the arithmetic", badInk, survivors)
+	}
+	t.Logf("ink %s: %d of %d offered hues have no wash; the survivors are %v", badInk, failed, len(Offered()), survivors)
 
 	// The control. The same hues under an ink that CAN be carried must
 	// all succeed, or this test is only proving that Wash sometimes
 	// errors — which a function that always errored would also satisfy.
 	for _, in := range Offered() {
-		if _, err := Wash(in.Hue, in.Chroma, "#000000", "#ffffff"); err != nil {
+		if _, err := Wash(in.Hue, in.Chroma, testWeight, "#000000", "#ffffff"); err != nil {
 			t.Errorf("hue %g has no wash under plain black ink on white: %v", in.Hue, err)
 		}
 	}
@@ -1225,19 +1287,19 @@ func TestWashFailsWhenNoFillCanCarryTheInk(t *testing.T) {
 // colour belongs must be an error, not a wash resolved against nothing.
 func TestWashRejectsWhatItCannotRead(t *testing.T) {
 	for _, bad := range []string{"var(--rst-text)", "black", "rgba(0,0,0,1)", "", "#gg0000"} {
-		if _, err := Wash(115, 0.14, bad, "#ffffff"); err == nil {
+		if _, err := Wash(115, 0.14, testWeight, bad, "#ffffff"); err == nil {
 			t.Errorf("Wash(ink=%q) returned a swatch; an ink this engine cannot read must be an error", bad)
 		}
-		if _, err := Wash(115, 0.14, "#000000", bad); err == nil {
+		if _, err := Wash(115, 0.14, testWeight, "#000000", bad); err == nil {
 			t.Errorf("Wash(background=%q) returned a swatch", bad)
 		}
 	}
 	for _, chroma := range []float64{-0.1, math.NaN(), math.Inf(1)} {
-		if _, err := Wash(115, chroma, "#000000", "#ffffff"); err == nil {
+		if _, err := Wash(115, chroma, testWeight, "#000000", "#ffffff"); err == nil {
 			t.Errorf("Wash(chroma=%v) returned a swatch", chroma)
 		}
 	}
-	if _, err := Wash(math.NaN(), 0.14, "#000000", "#ffffff"); err == nil {
+	if _, err := Wash(math.NaN(), 0.14, testWeight, "#000000", "#ffffff"); err == nil {
 		t.Error("Wash(hue=NaN) returned a swatch")
 	}
 }
@@ -1250,7 +1312,11 @@ func TestWashRejectsWhatItCannotRead(t *testing.T) {
 // 391 steps, written out independently, agreeing on every colour.
 func TestWashWalkFindsTheSameFillAsAScan(t *testing.T) {
 	inks := []string{"#000000", "#ffffff", "#1a1d21", "#e8eaed", "#404040"}
-	backgrounds := []string{"#ffffff", "#f4f5f8", "#111418", "#0b0d10", "#ffff00", "#808080"}
+	// #000000 and #ffffff are in here because of the quantisation
+	// plateaus at the two ends of the ramp, which is where the early
+	// exit's premise is weakest — see
+	// TestSeparationIsAtLeastTheLightnessDifference.
+	backgrounds := []string{"#ffffff", "#f4f5f8", "#111418", "#ffff00", "#808080", "#000000"}
 	for _, bg := range backgrounds {
 		bgR, bgG, bgB, err := parseHex(bg)
 		if err != nil {
@@ -1260,36 +1326,39 @@ func TestWashWalkFindsTheSameFillAsAScan(t *testing.T) {
 		for _, ink := range inks {
 			inkR, inkG, inkB, _ := parseHex(ink)
 			inkLum := relLuminance(inkR, inkG, inkB)
-			for hue := 0.0; hue < 360; hue += 17 {
+			for hue := 0.0; hue < 360; hue += 13 {
 				for _, chroma := range []float64{0.05, 0.14} {
-					var wantFill string
-					best := math.Inf(1)
-					for step := 0; step <= lightnessSteps; step++ {
-						rgb, _ := oklchRGB(stepLightness(step), chroma, hue)
-						sep := labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
-						if sep < MinSeparation {
+					for _, want := range []float64{0.0, MinSeparation, 0.08, testWeight, 0.30, 0.63, 0.9} {
+						target := math.Max(want, MinSeparation)
+						var wantFill string
+						best := math.Inf(1)
+						for step := 0; step <= lightnessSteps; step++ {
+							rgb, _ := oklchRGB(stepLightness(step), chroma, hue)
+							sep := labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
+							if sep < MinSeparation {
+								continue
+							}
+							if ratioOf(inkLum, relLuminance(rgb[0], rgb[1], rgb[2])) < ContrastFloorText+contrastMargin {
+								continue
+							}
+							if e := math.Abs(sep - target); e < best {
+								best, wantFill = e, hexOf(rgb)
+							}
+						}
+						sw, err := Wash(hue, chroma, want, ink, bg)
+						if wantFill == "" {
+							if err == nil {
+								t.Errorf("hue %g chroma %g want %g ink %s on %s: the scan found nothing, Wash returned %s", hue, chroma, want, ink, bg, sw.Fill)
+							}
 							continue
 						}
-						if ratioOf(inkLum, relLuminance(rgb[0], rgb[1], rgb[2])) < ContrastFloorText+contrastMargin {
+						if err != nil {
+							t.Errorf("hue %g chroma %g want %g ink %s on %s: the scan found %s, Wash failed: %v", hue, chroma, want, ink, bg, wantFill, err)
 							continue
 						}
-						if sep < best {
-							best, wantFill = sep, hexOf(rgb)
+						if sw.Fill != wantFill {
+							t.Errorf("hue %g chroma %g want %g ink %s on %s: Wash gave %s, the scan gives %s", hue, chroma, want, ink, bg, sw.Fill, wantFill)
 						}
-					}
-					sw, err := Wash(hue, chroma, ink, bg)
-					if wantFill == "" {
-						if err == nil {
-							t.Errorf("hue %g chroma %g ink %s on %s: the scan found nothing, Wash returned %s", hue, chroma, ink, bg, sw.Fill)
-						}
-						continue
-					}
-					if err != nil {
-						t.Errorf("hue %g chroma %g ink %s on %s: the scan found %s, Wash failed: %v", hue, chroma, ink, bg, wantFill, err)
-						continue
-					}
-					if sw.Fill != wantFill {
-						t.Errorf("hue %g chroma %g ink %s on %s: Wash gave %s, the scan gives %s", hue, chroma, ink, bg, sw.Fill, wantFill)
 					}
 				}
 			}
@@ -1355,14 +1424,37 @@ func TestOfferedSetServesEveryWashCanvas(t *testing.T) {
 		t.Fatalf("only %d canvases derived; the derivation has broken and this gate would prove almost nothing", len(canvases))
 	}
 
-	cells := 0
+	// Counted rather than asserted from a formula, because the canvases
+	// do not all carry the same number of inks: the two literal ones
+	// carry two each (a document canvas has no theme ink of its own) and
+	// the 24 theme ones carry three. 2×2 + 24×3 = 76 background/ink
+	// pairs, × 12 intents = 912. Some backgrounds repeat across themes,
+	// so those 26 canvases hold 21 distinct backgrounds and 64 distinct
+	// background/ink pairs — nothing is under-covered, but the honest
+	// count of independent cells is the smaller one.
+	cells, pairs := 0, 0
+	distinctBG, distinctPairs := map[string]bool{}, map[string]bool{}
 	for _, c := range canvases {
+		pairs += len(c.Inks)
 		cells += len(c.Inks) * len(Offered())
+		distinctBG[c.Background] = true
+		for _, ink := range c.Inks {
+			distinctPairs[c.Background+"/"+ink] = true
+		}
 	}
-	t.Logf("proving %d intents over %d canvases = %d cells", len(Offered()), len(canvases), cells)
+	t.Logf("%d intents over %d canvases = %d background/ink pairs = %d cells (%d distinct backgrounds, %d distinct pairs)",
+		len(Offered()), len(canvases), pairs, cells, len(distinctBG), len(distinctPairs))
 
-	if err := CheckWashes(Offered(), canvases); err != nil {
-		t.Errorf("the offered set cannot wash every canvas it can be rendered on:\n%v", err)
+	// At the weight an app actually asks for, AND at the floor. The two
+	// are different questions: at testWeight the perceptibility floor
+	// never binds, because the target is four times it, so a run at
+	// testWeight alone would leave floor 2 unexercised in the gate that
+	// exists to prove it. At MinSeparation the floor is the target, and
+	// checkWash is looking straight at it.
+	for _, weight := range []float64{testWeight, MinSeparation} {
+		if err := CheckWashes(Offered(), weight, canvases); err != nil {
+			t.Errorf("at weight %v the offered set cannot wash every canvas it can be rendered on:\n%v", weight, err)
+		}
 	}
 
 	// The map, logged rather than only asserted: how pale the washes
@@ -1371,36 +1463,66 @@ func TestOfferedSetServesEveryWashCanvas(t *testing.T) {
 	// black ink on a dark canvas forces a fill so light it is no longer
 	// pale, and a caller should be able to see that in a log rather than
 	// discover it on a screen.
-	worstSep, bestSep := math.Inf(1), 0.0
+	worstSep, bestSep, worstInk := math.Inf(1), 0.0, math.Inf(1)
+	cellsSeen := 0
 	for _, c := range canvases {
 		for _, ink := range c.Inks {
+			want, err := normalHex(ink)
+			if err != nil {
+				t.Fatal(err)
+			}
 			for _, in := range Offered() {
-				sw, err := Wash(in.Hue, in.Chroma, ink, c.Background)
+				sw, err := Wash(in.Hue, in.Chroma, testWeight, ink, c.Background)
 				if err != nil {
 					continue
 				}
+				cellsSeen++
+
+				// Asserted on every cell, not logged. An earlier version
+				// of this loop measured these and printed them, which is
+				// a gate that gates nothing: with the perceptibility
+				// floor removed it printed "quietest 0.0018" and passed.
+				if sw.Separation < MinSeparation {
+					t.Errorf("%s under ink %s, hue %g: fill %s is ΔE_OK %.4f from the background, under the %.3f floor",
+						c.Background, ink, in.Hue, sw.Fill, sw.Separation, MinSeparation)
+				}
+				if sw.OnRatio < 4.5 { // a literal, per TestFloorConstantsAreTheStandard
+					t.Errorf("%s under ink %s, hue %g: the ink is %.2f:1 on fill %s, want >= 4.5:1",
+						c.Background, ink, in.Hue, sw.OnRatio, sw.Fill)
+				}
+				// The headline guarantee of the whole function, on all
+				// 912 cells rather than on one.
+				if sw.On != want {
+					t.Errorf("%s under ink %s, hue %g: On came back %s — Wash must never invent a font colour",
+						c.Background, ink, in.Hue, sw.On)
+				}
+
 				worstSep = math.Min(worstSep, sw.Separation)
 				bestSep = math.Max(bestSep, sw.Separation)
+				worstInk = math.Min(worstInk, sw.OnRatio)
 			}
 		}
 	}
-	t.Logf("wash separation across the matrix: quietest ΔE_OK %.4f, loudest %.4f (floor %.3f)", worstSep, bestSep, MinSeparation)
+	if cellsSeen != cells {
+		t.Errorf("only %d of %d cells resolved; the rest are gaps this gate is not reporting", cellsSeen, cells)
+	}
+	t.Logf("wash separation across the matrix: quietest ΔE_OK %.4f, loudest %.4f (floor %.3f); tightest ink %.2f:1", worstSep, bestSep, MinSeparation, worstInk)
 
 	// The control for the gate: an ink that cannot be carried must make
 	// it fail. Without this, a CheckWashes that returned nil
 	// unconditionally would look identical to a green run.
 	planted := append(slices.Clone(canvases), Canvas{Background: "#ffffff", Inks: []string{"#737373"}})
-	if err := CheckWashes(Offered(), planted); err == nil {
+	if err := CheckWashes(Offered(), testWeight, planted); err == nil {
 		t.Error("a canvas with an uncarriable mid-grey ink passed; the gate is not measuring")
 	}
 	// And the empty sets fail rather than pass, per §7-v2.
-	if err := CheckWashes(nil, canvases); err == nil {
+	if err := CheckWashes(nil, testWeight, canvases); err == nil {
 		t.Error("an empty intent set passed CheckWashes")
 	}
-	if err := CheckWashes(Offered(), nil); err == nil {
+	if err := CheckWashes(Offered(), testWeight, nil); err == nil {
 		t.Error("an empty canvas set passed CheckWashes")
 	}
-	if err := CheckWashes(Offered(), []Canvas{{Background: "#ffffff"}}); err == nil {
+	if err := CheckWashes(Offered(), testWeight, []Canvas{{Background: "#ffffff"}}); err == nil {
 		t.Error("a canvas listing no inks passed; a background with nothing drawn on it proves nothing")
 	}
 }
@@ -1455,5 +1577,308 @@ func TestClassicFillsAreNearAnOfferedHue(t *testing.T) {
 			t.Errorf("%s (%s) is %.2f° from the nearest offered hue, past the %.1f° half-step even spacing guarantees — the offered set is no longer evenly spaced",
 				f.name, f.hex, gap, 15.0)
 		}
+	}
+}
+
+// TestSeparationIsAtLeastTheLightnessDifference is the premise Wash's
+// early exit rests on, measured rather than assumed — the same treatment
+// TestLuminanceRisesWithLightness gives Pair's bisection.
+//
+// The walk breaks on the argument that a perceptual distance is at least
+// the lightness difference alone, since the other two OKLab axes only add
+// to it. That is true of the requested lightness and the delivered
+// colour's lightness, but Wash compares the REQUESTED lightness against a
+// distance measured on the DELIVERED colour, and those two part company
+// where eight-bit rounding flattens a stretch of the ramp onto one hex.
+//
+// The plateau at the bottom is the worst of it: every lightness from 0.02
+// up to about 0.0525 renders #000000, so against a black background the
+// separation stays 0 while the lightness difference climbs to 0.0525.
+// washSlack is what covers that, so washSlack has to be larger than the
+// worst shortfall anyone can construct, and this measures it.
+//
+// It is pinned as a literal for the same reason the contrast floors are:
+// asserting washSlack against a shortfall computed with washSlack in it
+// would move the bar with the mutation.
+func TestSeparationIsAtLeastTheLightnessDifference(t *testing.T) {
+	var backgrounds []string
+	for v := 0; v <= 20; v++ { // the dark plateau, one eight-bit step at a time
+		backgrounds = append(backgrounds, greyHex(v))
+	}
+	for v := 235; v <= 255; v++ { // and the light one
+		backgrounds = append(backgrounds, greyHex(v))
+	}
+	backgrounds = append(backgrounds, "#808080", "#111418", "#f4f5f8", "#ffff00", "#0000ff", "#00b050")
+
+	worst, at := 0.0, ""
+	for _, bg := range backgrounds {
+		r, g, b, err := parseHex(bg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bgLab := oklabOf(r, g, b)
+		for hue := 0.0; hue < 360; hue += 9 {
+			for _, c := range []float64{0, 0.01, 0.05, 0.14, 0.3} {
+				for step := 0; step <= lightnessSteps; step++ {
+					l := stepLightness(step)
+					rgb, _ := oklchRGB(l, c, hue)
+					short := math.Abs(l-bgLab[0]) - labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
+					if short > worst {
+						worst, at = short, fmt.Sprintf("background %s, hue %g chroma %g at lightness %.4f", bg, hue, c, l)
+					}
+				}
+			}
+		}
+	}
+	t.Logf("worst shortfall of separation below the lightness difference: %.6f (%s)", worst, at)
+
+	if washSlack != 0.08 {
+		t.Errorf("washSlack = %v, want 0.08 — it is the bound the early exit is sound under, not a comfort margin", washSlack)
+	}
+	if worst >= 0.08 {
+		t.Errorf("the worst shortfall is %.6f, at or above washSlack — the early exit can now stop before the true answer, and the constant has to rise above the measurement rather than the measurement being explained away (%s)", worst, at)
+	}
+	if worst < 0.03 {
+		t.Errorf("the worst shortfall is only %.6f; washSlack is set at 0.08 on the strength of a plateau that has apparently gone, so the number no longer means what its comment says", worst)
+	}
+}
+
+// TestWashMeetsRequestsItCanReach is the control for the target-separation
+// contract, in the two directions that matter. A flag that has only ever
+// been observed true is not evidence that it can be false.
+//
+// Both cases have answers known before running them. Black ink on paper
+// white can carry a great deal of weight — flat yellow is 19.6:1 under
+// black — so a request in Excel's preset band must be met exactly. Flat
+// blue cannot: black ink on #0000FF is 2.44:1, so asking for blue at its
+// own weight of 0.63 under black ink CANNOT be honoured, and the answer
+// must come back lighter, still readable, still visible, and flagged.
+func TestWashMeetsRequestsItCanReach(t *testing.T) {
+	// Honoured: a weight the constraints allow.
+	for _, want := range []float64{0.05, 0.08, testWeight, 0.16, 0.21} {
+		sw, err := Wash(115, 0.14, want, "#000000", "#ffffff")
+		if err != nil {
+			t.Fatalf("yellow at %v under black ink on white: %v", want, err)
+		}
+		if !sw.SeparationMet {
+			t.Errorf("asked for %v, got %.4f, and SeparationMet is false — black ink on white can carry this weight", want, sw.Separation)
+		}
+		if sw.SeparationRequested != want {
+			t.Errorf("SeparationRequested = %v, want %v — it must echo the request, not the effective target", sw.SeparationRequested, want)
+		}
+		if sw.Separation < want-washTolerance {
+			t.Errorf("asked for %v and got %.4f, which is less — SeparationMet must not be true for a wash lighter than the request", want, sw.Separation)
+		}
+	}
+
+	// Not honoured, case 1: blue at its own weight under black ink. The
+	// worked example in Wash's doc comment.
+	blue, err := Wash(265, 0.14, 0.63, "#000000", "#ffffff")
+	if err != nil {
+		t.Fatalf("blue at its own weight under black ink: %v", err)
+	}
+	if blue.SeparationMet {
+		t.Errorf("asked for 0.63 and got %.4f, but SeparationMet is true", blue.Separation)
+	}
+	if blue.Separation >= 0.63 {
+		t.Errorf("got separation %.4f for a request black ink cannot carry; it should have degraded toward paler", blue.Separation)
+	}
+	if blue.OnRatio < 4.5 {
+		t.Errorf("the constrained answer is unreadable at %.2f:1 — degrading must never break floor 1", blue.OnRatio)
+	}
+	if blue.Separation < MinSeparation {
+		t.Errorf("the constrained answer is invisible at %.4f — degrading must never break floor 2", blue.Separation)
+	}
+
+	// Not honoured, case 2: a request under the floor is raised to it and
+	// reported, rather than silently granted or refused.
+	tiny, err := Wash(115, 0.14, 0.001, "#000000", "#ffffff")
+	if err != nil {
+		t.Fatalf("a request under the floor: %v", err)
+	}
+	if tiny.SeparationMet {
+		t.Error("a request of 0.001 was reported as met; it was raised to the floor")
+	}
+	if tiny.Separation < MinSeparation {
+		t.Errorf("a request under the floor produced %.4f, under the floor", tiny.Separation)
+	}
+	if tiny.SeparationRequested != 0.001 {
+		t.Errorf("SeparationRequested = %v, want the 0.001 that was asked for", tiny.SeparationRequested)
+	}
+
+	// The flag against the numbers, over a wide sweep: every swatch that
+	// claims the request was met must carry at least the weight asked
+	// for, and every swatch that says it was not must fall short or have
+	// been asked for less than the floor. The flag is a claim about the
+	// two floats beside it and this is that claim checked.
+	sweep, met, unmet := 0, 0, 0
+	for _, bg := range []string{"#ffffff", "#f4f5f8", "#111418", "#0b0d10", "#808080"} {
+		for _, ink := range []string{"#000000", "#ffffff", "#1a1d21", "#e8eaed"} {
+			for _, in := range Offered() {
+				for _, want := range []float64{0.001, 0.03, 0.08, 0.12, 0.21, 0.45, 0.63} {
+					sw, err := Wash(in.Hue, in.Chroma, want, ink, bg)
+					if err != nil {
+						continue
+					}
+					sweep++
+					switch {
+					case sw.SeparationMet:
+						met++
+						if want < MinSeparation {
+							t.Errorf("bg %s ink %s hue %g: a request of %v is under the floor and cannot be met", bg, ink, in.Hue, want)
+						}
+						if sw.Separation < want-washTolerance {
+							t.Errorf("bg %s ink %s hue %g: met=true but %.4f is lighter than the %v requested", bg, ink, in.Hue, sw.Separation, want)
+						}
+					default:
+						unmet++
+						if want >= MinSeparation && sw.Separation >= want-washTolerance {
+							t.Errorf("bg %s ink %s hue %g: met=false but %.4f carries the %v requested", bg, ink, in.Hue, sw.Separation, want)
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("flag sweep: %d resolutions, %d met, %d not met", sweep, met, unmet)
+	if met == 0 || unmet == 0 {
+		t.Errorf("the sweep saw met=%d and unmet=%d; a flag observed in only one state is not evidence it can take the other", met, unmet)
+	}
+}
+
+// TestWashScaleReferencePoints publishes the scale Wash's doc comment
+// quotes, computed here rather than transcribed.
+//
+// Callers have to choose a number, and "0.12" means nothing on its own —
+// so the doc comment anchors it to colours people know. Those anchors are
+// only worth anything if they are measured on the same scale
+// Swatch.Separation reports, so this measures them through the shipped
+// path: DeltaEOK, which is the same labDistance kernel Swatch.Separation
+// is computed from, and then confirms the chain by asking Wash for each
+// weight and reading Swatch.Separation back.
+//
+// The four saturated fills are from Sheets' own round-trip fixtures. The
+// three tints are Excel's conditional-formatting presets.
+func TestWashScaleReferencePoints(t *testing.T) {
+	const canvas = "#ffffff"
+	type ref struct {
+		name, hex string
+		want      float64 // what the doc comment publishes, to 2dp
+	}
+	presets := []ref{
+		{"Excel light green preset", "#C6EFCE", 0.11},
+		{"Excel light yellow preset", "#FFEB9C", 0.12},
+		{"Excel light red preset", "#FFC7CE", 0.14},
+	}
+	saturated := []ref{
+		{"flat yellow", "#FFFF00", 0.21},
+		{"solid green", "#00B050", 0.38},
+		{"flat red", "#FF0000", 0.45},
+		{"flat blue", "#0000FF", 0.63},
+	}
+
+	measure := func(r ref) float64 {
+		t.Helper()
+		got, err := DeltaEOK(r.hex, canvas)
+		if err != nil {
+			t.Fatalf("%s: %v", r.name, err)
+		}
+		ink, err := ContrastRatio("#000000", r.hex)
+		if err != nil {
+			t.Fatalf("%s: %v", r.name, err)
+		}
+		t.Logf("%-26s %s  Separation %.4f   black ink on it %5.2f:1", r.name, r.hex, got, ink)
+		if math.Abs(got-r.want) > 0.005 {
+			t.Errorf("%s measures %.4f but Wash's doc comment publishes %.2f", r.name, got, r.want)
+		}
+		return got
+	}
+
+	var palest, loudestPreset, quietestSaturated = math.Inf(1), 0.0, math.Inf(1)
+	for _, r := range presets {
+		d := measure(r)
+		loudestPreset = math.Max(loudestPreset, d)
+	}
+	for _, r := range saturated {
+		d := measure(r)
+		quietestSaturated = math.Min(quietestSaturated, d)
+	}
+	for _, in := range Offered() {
+		sw, err := Wash(in.Hue, in.Chroma, MinSeparation, "#000000", canvas)
+		if err != nil {
+			t.Fatalf("hue %g at the floor: %v", in.Hue, err)
+		}
+		palest = math.Min(palest, sw.Separation)
+	}
+
+	// The ordering the scale depends on. If Excel's own rule-driven fills
+	// were LIGHTER than our floor, the floor would be the thing that was
+	// wrong, and the doc comment would be teaching a scale upside down.
+	if !(palest < loudestPreset && loudestPreset < quietestSaturated) {
+		t.Errorf("the scale is not ordered as published: our palest %.4f, loudest preset %.4f, quietest saturated fill %.4f", palest, loudestPreset, quietestSaturated)
+	}
+	t.Logf("scale: our palest %.4f < presets %.4f..%.4f < saturated %.4f..", palest, 0.1056, loudestPreset, quietestSaturated)
+
+	// The round trip that makes these numbers Swatch.Separation's and not
+	// a second implementation's: ask Wash for each preset's weight and
+	// read back what it reports.
+	for _, r := range presets {
+		want, _ := DeltaEOK(r.hex, canvas)
+		sw, err := Wash(85, 0.14, want, "#000000", canvas)
+		if err != nil {
+			t.Fatalf("%s weight: %v", r.name, err)
+		}
+		if !sw.SeparationMet || math.Abs(sw.Separation-want) > washTolerance {
+			t.Errorf("asked Wash for %s's weight (%.4f) and Swatch.Separation came back %.4f, met=%v", r.name, want, sw.Separation, sw.SeparationMet)
+		}
+	}
+}
+
+// TestCheckWashesMeasuresTheSwatch is the control for checkWash, whose
+// three assertions a working Wash can never trip — so, as with
+// checkSwatch, they are handed the swatch a regressed Wash would produce
+// and required to reject it.
+//
+// The middle one is the finding this round exists for: CheckWashes used
+// to ask only whether an error came back, so with the perceptibility
+// floor removed it returned nil over fills a thousandth from the
+// background.
+func TestCheckWashesMeasuresTheSwatch(t *testing.T) {
+	in := Intent{Hue: 115, Chroma: 0.14}
+	const ink = "#000000"
+	sound := Swatch{Fill: "#fbffe6", On: ink, Background: "#ffffff", OnRatio: 20.55, Separation: 0.12}
+	if errs := checkWash(in, ink, sound); len(errs) != 0 {
+		t.Fatalf("a sound wash was rejected: %v", errs)
+	}
+
+	unreadable := sound
+	unreadable.OnRatio = 4.49
+	if errs := checkWash(in, ink, unreadable); len(errs) != 1 {
+		t.Errorf("ink at 4.49:1 produced %d complaints, want 1", len(errs))
+	}
+
+	invisible := sound
+	invisible.Separation = 0.0049 // the exact value the review found slipping through
+	if errs := checkWash(in, ink, invisible); len(errs) != 1 {
+		t.Errorf("a fill 0.0049 from the background produced %d complaints, want 1", len(errs))
+	}
+
+	invented := sound
+	invented.On = "#556b2f" // Wash inventing a font colour: the thing it exists not to do
+	if errs := checkWash(in, ink, invented); len(errs) != 1 {
+		t.Errorf("an invented font colour produced %d complaints, want 1", len(errs))
+	}
+
+	allThree := sound
+	allThree.OnRatio, allThree.Separation, allThree.On = 1.0, 0.001, "#556b2f"
+	if errs := checkWash(in, ink, allThree); len(errs) != 3 {
+		t.Errorf("a swatch failing all three produced %d complaints, want 3", len(errs))
+	}
+
+	// Exactly on the floors passes: they are >=, not >.
+	onTheLine := sound
+	onTheLine.OnRatio, onTheLine.Separation = ContrastFloorText, MinSeparation
+	if errs := checkWash(in, ink, onTheLine); len(errs) != 0 {
+		t.Errorf("a wash exactly on both floors was rejected: %v", errs)
 	}
 }
