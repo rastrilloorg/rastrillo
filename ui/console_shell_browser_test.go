@@ -745,7 +745,7 @@ func TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas(t *testing.T) {
 	// where the answer is known and is the opposite one.
 	rn := at(t, 390, 780, "/")
 	if rn.RailShown {
-		t.Errorf("CONTROL FAILED: on the real stylesheet the rail must be hidden at 390px with the disclosure closed, and this drive reports it shown. "+
+		t.Errorf("CONTROL FAILED: on the real stylesheet the rail must be hidden at 390px with the disclosure closed, and this drive reports it shown. " +
 			"The visible rail on the legacy page is then the fixture's doing and not the degradation's, and leg 1 measures nothing")
 	}
 }
