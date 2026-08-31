@@ -279,10 +279,38 @@ rst-btn--primary"` becomes `rst-btn="primary"`, and `data-tone` becomes
 `class` is for: `rst-sr-only`, `rst-mono`, `rst-m-hide`, `rst-grow`,
 `rst-nm`, `rst-danger` and `rst-cell-mut`.
 
-It reads templates, Go source (markup in a string literal or a doc
-comment), Markdown, JavaScript and CSS, and it is the same tool the
-framework flipped itself with. It skips `.git`, `node_modules`,
-`vendor`, `.design-system` and `.superpowers`.
+It reads templates (`.html`, `.htm`, `.gohtml`, `.tmpl`), Go source
+(`.go` — markup in a string literal or a doc comment), JavaScript
+(`.js`) and CSS (`.css`), and it is the same tool the framework flipped
+itself with. It skips `.git`, `node_modules`, `vendor`,
+`.design-system` and `.superpowers`.
+
+### It does not read Markdown
+
+`.md` files are not scanned, deliberately. A Markdown file has no
+markup to migrate; it has *discussion* of markup — an example in a code
+span, a migration table, a sentence naming both spellings so a reader
+can tell them apart. Rewriting that destroys it, and the damage does
+not look like damage: "`class="rst-box"` and `<div rst-box>` are
+identical" becomes a sentence claiming two identical-looking things are
+identical, and the diff reads fine.
+
+The costs point one way. An example left in the old spelling is stale,
+visible and harmless — you fix it when you next read the page. A
+rewritten explanation is gone, and the pages most likely to contain the
+string are the ones teaching the difference between the two spellings,
+so the tool would erase its own rationale first.
+
+So the documentation is yours to update. Grep for `class="rst-` in your
+`.md` files after a migration and decide, page by page, which examples
+should now teach the attribute spelling and which are describing the
+history on purpose.
+
+**v0.22.0 did scan `.md`, and this is a change from it.** On that
+release, `rastrillo markup` over a repository of pure documentation
+could report files to rewrite and exit 3 with no template anywhere in
+it. The count is a count of files with markup in them again — which is
+what makes it the number to size the migration by.
 
 | Flag | Purpose |
 |---|---|
@@ -347,10 +375,11 @@ good.
 
 A line carrying `markup-spelling: old-spelling begin` starts a region
 the tool will not rewrite; `markup-spelling: old-spelling end` closes
-it, and an unclosed one runs to the end of the file. Use it for the
-paragraph of your own documentation whose subject is the spelling you
-are migrating away from — which is what this page is, and why this page
-survives its own tool.
+it, and an unclosed one runs to the end of the file. Use it in a file
+that *is* scanned but whose subject is the spelling you are migrating
+away from: the Go doc comment holding a before/after table, the HTML
+page of your own docs that shows both spellings side by side. Markdown
+needs no fence, because Markdown is not read at all.
 
 ### What it reports instead of guessing
 

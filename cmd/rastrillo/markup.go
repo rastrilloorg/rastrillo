@@ -26,16 +26,18 @@ import (
 // <div rst-box> where an app wrote <div class="rst-box">. tokens.css
 // styles both spellings for one release so nothing breaks in the gap,
 // and this is the tool that closes it: it rewrites an app's templates,
-// its Go string literals and its documentation in one pass, and it is
-// the same code the framework flipped itself with.
+// its Go string literals, its scripts and its stylesheets in one pass,
+// and it is the same code the framework flipped itself with.
 //
 // It reports by default and writes with --fix, because a codemod that
 // edits a tree on sight is one nobody runs on a repository they care
 // about. Rewriting is idempotent, so running it twice, or over a tree
 // half of which is already done, changes nothing the second time.
 //
-// Two things it deliberately will not do:
+// Three things it deliberately will not do:
 //
+//   - Markdown. See migratable: a .md file holds discussion of markup,
+//     not markup, and rewriting the discussion destroys it.
 //   - The vendored static files. static/tokens.css, static/rastrillo.js
 //     and their siblings are copies of this library's, refreshed with
 //     `rastrillo doctor --fix`, never hand-migrated. Rewriting one here
@@ -66,12 +68,25 @@ func runMarkup(args []string) error {
 }
 
 // migratable is the set of files that can carry markup: templates, Go
-// source with markup in its string literals or its doc comments,
-// documentation, and the scripts and stylesheets that name the
-// vocabulary.
+// source with markup in its string literals or its doc comments, and
+// the scripts and stylesheets that name the vocabulary.
+//
+// Markdown is deliberately not in it. A Markdown file has no markup to
+// migrate; it has discussion of markup — an example inside a code span,
+// a migration table, a sentence naming both spellings so a reader can
+// tell them apart. The costs are asymmetric: a doc example left
+// unmigrated is stale, visible and harmless, while a rewritten
+// explanation is destroyed, invisible and plausible. "`class="rst-box"`
+// and `<div rst-box>` are identical" becomes a sentence claiming that
+// two identical-looking things are identical, and the diff reads fine.
+// Worse, the files most likely to contain the string are exactly the
+// ones that teach the class-versus-attribute distinction, so the tool
+// would erase its own rationale. Skipping code spans or fences is not
+// the fix either: prose outside them names the spellings too, and a
+// half-rule is a rule nobody can predict.
 var migratable = map[string]bool{
 	".html": true, ".htm": true, ".gohtml": true, ".tmpl": true,
-	".go": true, ".md": true, ".js": true, ".css": true,
+	".go": true, ".js": true, ".css": true,
 }
 
 // vendored names a file the app does not own: it is this library's,

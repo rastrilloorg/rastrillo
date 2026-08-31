@@ -10,12 +10,31 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/carlosframework/rastrillo/internal/markup"
 	"github.com/carlosframework/rastrillo/ui"
 )
 
+// markdownAboutTheMigration is the fixture's README: prose whose
+// subject is the two spellings, of the kind every repository upgrading
+// through this release writes. Every line of it would be rewritten if
+// .md were scanned, which is what makes it a control rather than a
+// decoration — see TestMarkupSweepLeavesMarkdownAlone.
+const markdownAboutTheMigration = `# Upgrading
+
+- **Write ` + "`class=\"rst-box\"`" + ` today.** The old spelling still styles.
+
+Once the dual-grammar release ships, ` + "`class=\"rst-box\"`" + ` and ` + "`<div rst-box>`" + `
+are identical, which is what makes the gap safe to sit in.
+
+| Was | Is |
+|---|---|
+| ` + "`class=\"rst-form-foot\"`" + ` | ` + "`rst-form-bar`" + ` |
+`
+
 // A small app tree with one of everything the sweep has an opinion
 // about: a template, a Go file with markup in a string literal, the
-// app's own stylesheet, and a vendored file it must not touch.
+// app's own stylesheet, a vendored file it must not touch, and a
+// Markdown file that talks about markup rather than containing any.
 func markupFixture(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -36,7 +55,7 @@ func markupFixture(t *testing.T) string {
 	write("internal/app/render.go", "package app\n\nconst row = \"<a class=\\\"rst-btn rst-btn--primary\\\">Go</a>\"\n")
 	write("static/app.css", ".rst-lrow > a { color: red }\n.mine { color: blue }\n")
 	write("static/tokens.css", string(ui.TokensCSS()))
-	write("README.md", "no markup here\n")
+	write("README.md", markdownAboutTheMigration)
 	return dir
 }
 
@@ -95,6 +114,71 @@ func TestMarkupSweepFixesAndIsIdempotent(t *testing.T) {
 	}
 	if !strings.Contains(second.String(), "0 file(s)") {
 		t.Errorf("the second pass had work to do, so the rewrite is not idempotent:\n%s", second.String())
+	}
+}
+
+// Markdown is not scanned, and this is the test that says so — with a
+// fixture that would be rewritten if it were.
+//
+// The shipped v0.22.0 had .md in the migratable set and this fixture
+// read "no markup here": a control that could not fail, which is the
+// failure class of design spec §7-v2. What it cost is in the second
+// assertion below. A repository documenting the migration says
+// "class=\"rst-box\" and <div rst-box> are identical" to teach the
+// distinction, and the tool rewrote that into a sentence claiming two
+// identical-looking things are identical — destroyed, invisible, and
+// the diff looked plausible.
+func TestMarkupSweepLeavesMarkdownAlone(t *testing.T) {
+	// First: the fixture is live wire. If a later edit makes this
+	// Markdown something the codemod would not touch, the rest of this
+	// test proves nothing and this line is what says so.
+	if out, _ := markup.Rewrite([]byte(markdownAboutTheMigration)); string(out) == markdownAboutTheMigration {
+		t.Fatal("the Markdown fixture is inert: the codemod would not rewrite it even if .md were scanned, " +
+			"so it cannot show that .md is skipped")
+	}
+
+	dir := markupFixture(t)
+	var out bytes.Buffer
+	if err := markupSweep(&out, dir, true); err != nil {
+		t.Fatalf("--fix: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != markdownAboutTheMigration {
+		t.Errorf("--fix rewrote a Markdown file:\n got %s\nwant %s", got, markdownAboutTheMigration)
+	}
+	if strings.Contains(out.String(), "README.md") {
+		t.Errorf("Markdown is counted as a file with markup to migrate:\n%s", out.String())
+	}
+}
+
+// "N file(s) would be rewritten" is the number people size the
+// migration by, so it has to be a count of files with markup in them.
+// With .md scanned it counted documentation about markup too — the
+// Sheets team got exit 3 and "2 file(s) would be rewritten" against
+// repositories holding no templates at all.
+func TestMarkupSweepCountsOnlyFilesWithMarkup(t *testing.T) {
+	dir := markupFixture(t)
+	var out bytes.Buffer
+	_ = markupSweep(&out, dir, false)
+	if !strings.Contains(out.String(), "2 file(s) would be rewritten") {
+		t.Errorf("the fixture holds markup in exactly two files, the template and the Go source:\n%s", out.String())
+	}
+
+	// And a tree that is nothing but prose about the migration is a
+	// tree with no work in it: exit 0, not exit 3.
+	docs := t.TempDir()
+	if err := os.WriteFile(filepath.Join(docs, "UPGRADING.md"), []byte(markdownAboutTheMigration), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var prose bytes.Buffer
+	if err := markupSweep(&prose, docs, false); err != nil {
+		t.Errorf("a repository of documentation has no markup to migrate, so it exits 0: %v\n%s", err, prose.String())
+	}
+	if !strings.Contains(prose.String(), "0 file(s)") {
+		t.Errorf("documentation about markup is counted as markup:\n%s", prose.String())
 	}
 }
 
