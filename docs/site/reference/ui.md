@@ -150,7 +150,9 @@ func Pair(hue, chroma float64, background string) (Swatch, error)
 func Allocate(keys []string, avoid []float64) ([]Intent, bool)
 func Offered() []Intent
 func CheckIntents(intents []Intent, backgrounds []string) error
+func WorstSeparation(intents []Intent, backgrounds []string) (deltaE float64, background, a, b string)
 func ContrastRatio(a, b string) (float64, error)
+func DeltaEOK(a, b string) (float64, error)
 ```
 
 Two entry points for apps that have to colour things the framework has
@@ -187,11 +189,23 @@ idea what an identity is.
 
 `CheckIntents` is the build-time proof, exported so you can run it
 against backgrounds the framework does not know: it resolves every
-intent against every background and reports each one that fails a floor
-or comes back a grey. `ui`'s own gate runs it over `Offered()` against
-paper white and every surface every shipped theme declares, in both
-schemes. `ContrastRatio` is the WCAG arithmetic all of it is built on,
-exported so an app gating its own colours measures with the same one.
+intent against every background and reports each one that fails a floor,
+comes back a grey, or lands within `MinSeparation` of another one. `ui`'s
+own gate runs it over `Offered()` against paper white and every surface
+every shipped theme declares, in both schemes.
+
+That last check is the one worth knowing about. Hues thirty degrees apart
+are far apart as angles and can still resolve to nearly the same colour
+once a dark background has squeezed the lightness out of them — the
+shipped set's closest pair is two teals ΔE_OK 0.045 apart on a dark page.
+`WorstSeparation` returns that measurement, and it is what says how much
+room a bigger set would have: past sixteen hues the twelve-hue spacing
+stops clearing the floor.
+
+`ContrastRatio` is the WCAG arithmetic all of it is built on, and
+`DeltaEOK` is plain euclidean distance in OKLab. Both are exported so an
+app gating its own colours — or mapping an imported fill onto the nearest
+offered intent — measures with the same ones the framework does.
 
 Colour still never carries meaning alone. Clearing a floor makes a label
 legible; the name or initials beside it are what say whose it is.
