@@ -1,5 +1,8 @@
 package main
 
+// markup-spelling: old-spelling begin — this file explains what it
+// converts, so it has to be able to show it.
+
 import (
 	"bytes"
 	"flag"

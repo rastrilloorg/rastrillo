@@ -1,3 +1,5 @@
+// markup-spelling: old-spelling begin — the before/after table.
+
 package markup
 
 import (

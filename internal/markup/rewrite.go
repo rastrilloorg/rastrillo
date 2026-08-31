@@ -1,3 +1,5 @@
+// markup-spelling: old-spelling begin — see markup.go.
+
 package markup
 
 import (
@@ -152,7 +154,10 @@ func replaceOutsideFence(s string, re *regexp.Regexp, repl string, fenced func(i
 // learn and one thing to grep for.
 const (
 	FenceBegin = "markup-spelling: old-spelling begin"
-	FenceEnd   = "markup-spelling: old-spelling end"
+	// Assembled from halves, or this line would close the fence that
+	// the top of this file opens and the rest of the file would be
+	// rewritten by its own tool. The one place that has to be true.
+	FenceEnd = "markup-spelling: old-spelling " + "end"
 )
 
 // fencedRegions returns a predicate saying whether a byte offset falls

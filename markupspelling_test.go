@@ -1,5 +1,9 @@
 package rastrillo
 
+// markup-spelling: old-spelling begin — this gate's own prose names
+// the spelling it forbids. It is exempt from itself by name as well,
+// because its constants are what the fence IS.
+
 import (
 	"io/fs"
 	"os"

@@ -1,3 +1,6 @@
+// markup-spelling: old-spelling begin — this package IS the translation,
+// so its doc comments and its table hold both spellings by definition.
+
 // Package markup is the class→attribute codemod for the ratified markup
 // grammar (design spec §6-v3), and the one place that grammar is
 // written down as code.

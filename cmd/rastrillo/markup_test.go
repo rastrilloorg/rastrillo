@@ -1,5 +1,8 @@
 package main
 
+// markup-spelling: old-spelling begin — the fixture app is written in
+// the spelling the tool converts.
+
 import (
 	"bytes"
 	"os"
