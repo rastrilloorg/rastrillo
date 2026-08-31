@@ -58,7 +58,7 @@ was never recycled onto the new release verifies green. It did: a real deploy pr
 `VERSION` line and the `version-check` target into your Makefile. `make build` is
 unchanged and still does not stamp: the compile check is not a build.
 
-Found by a peer session hitting it in production.
+Found by the Sheets team, in production.
 
 **`rastrillo markup` exited 3 on a clean tree.** The escaped-markup note ignored
 fenced `old-spelling` regions, so a repository that had correctly fenced its
