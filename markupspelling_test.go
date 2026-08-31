@@ -115,13 +115,13 @@ var (
 // and why. It is short on purpose: each entry is a place whose subject
 // IS the old spelling.
 var spellingExempt = map[string]bool{
-	// The grammar itself, and its table of before/after pairs.
-	"internal/markup": true,
-	// Stage 1's two files and the page that documents the migration
-	// carry the fence instead — one mechanism, shared with the codemod,
-	// so a repository has one thing to learn and one thing to grep for.
-	// The codemod's own fixture app, written in the spelling it converts.
-	"cmd/rastrillo/markup_test.go": true,
+	// Most of what used to be listed here carries the fence at the top
+	// of the file instead — internal/markup, cmd/rastrillo/markup_test.go,
+	// stage 1's two files, and the page of docs that explains the
+	// migration. One mechanism, shared with the codemod, so a repository
+	// has one thing to learn and one thing to grep for. What is left is
+	// what a fence cannot say.
+	//
 	// tokens.css still carries a class selector beside every attribute
 	// one until stage 3, and the examples vendor a copy of it. Neither
 	// is markup.
@@ -131,7 +131,8 @@ var spellingExempt = map[string]bool{
 	// The historical record: plans and specs written before the flip,
 	// which describe what was true when they were written.
 	"docs/superpowers": true,
-	// The codemod's own explanation of what it converts, and this file.
+	// The codemod's own explanation of what it converts, and this file:
+	// both of them define the fence, so neither can use it.
 	"cmd/rastrillo/markup.go": true,
 	"markupspelling_test.go":  true,
 }
