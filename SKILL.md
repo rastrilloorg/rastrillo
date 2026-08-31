@@ -35,14 +35,9 @@ from `manifest/` — commit it, never hand-edit; add `generate --check`
 to `make ci`. `rastrillo dev` watches, regenerates, rebuilds and
 restarts. docs/site/getting-started.md
 
-`rastrillo doctor [--fix] [dir]` compares `static/`'s vendored files
-(`tokens.css`, `theme.css`, the three scripts) with the CLI's own
-copies. Exit 3 = drift, 4 = the app requires a different rastrillo
-version, which is NOT drift — `--fix` refuses across it without
-`--force`. A theme matching none of the shipped three is "custom or
-drifted" and is never diffed against a guess; a file named in the
-scaffolded `vendoredIsMine` is left alone by both doctor and the pin
-test. The pin test, not doctor, is the standing gate. docs/site/cli.md
+`rastrillo doctor [--fix]` compares `static/`'s vendored files with the
+CLI's own copies. The scaffolded pin test, not doctor, is the standing
+gate. docs/site/cli.md
 
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens — field kinds text, textarea, money; no
@@ -94,11 +89,9 @@ CRUD (§3/§4) inside
 define `"content"`.
 
 Locales: `Options.Locales`/`DefaultLocale`/`LocaleFS`, flat TOML per
-code. Shipped `rastrillo.ui.*`: en ga zh-Hans es hi pt bn ru ja yue vi
-ar; any other locale must translate those keys or `generate --check`
-fails. Switcher: `rastrillo.LocaleItems(r)` in page data +
-`{{template "locale-menu" dict "Items" .Locales "Return" .Path}}`;
-POSTs `/_locale` (mounted by Serve). `rastrillo.Dir` gives `<html dir>`.
+code; twelve ship translated. **Any locale you add must translate the
+`rastrillo.ui.*` keys or `generate --check` fails.**
+docs/site/localization.md
 
 ## 2. Data
 
@@ -179,20 +172,13 @@ writes none. Money is `int64` cents: `form.Money`, read `p.Cents`,
 parse `form.ParseCents` (no `$`, two decimals max, `""` = zero), seed
 `form.FormatCentsPlain`, display `form.FormatCents`.
 
-`form.Date`/`Time`/`DateTime` parse `2006-01-02`, `15:04` and
-`2006-01-02T15:04` — nothing looser — in `Field.Location` (nil
-= UTC; `Time` ignores it); read `p.Date`/`p.Time`/`p.DateTime`;
-`form.Range(p, "starts", "ends")` checks end-before-start. Empty
-optional dates, unparseable ones and undeclared names all read back as
-the zero time: ask `p.OK()`, never `IsZero`. Their error values are
-`rastrillo.ui.*` **keys**, not sentences: render
-`"Error" (T (index .Errors "Starts"))`, safe on every field — `T`
-returns an unrecognised string verbatim, so the older kinds' plain
-English passes through. Partials: `field-date`, `field-time`,
-`field-datetime`, `field-daterange` (its two halves need distinct
-`Name`s); `datetime.js` enhances them into a combobox reading
-"next fri 9am" in the page's own language — vocabulary from the catalog
-on one JSON attribute, month names from `Intl`, no English in the file.
+`form.Date`/`Time`/`DateTime` parse fixed layouts only, in
+`Field.Location`; `form.Range(p, "starts", "ends")` checks
+end-before-start. Three traps: empty, unparseable and undeclared names
+all read back as the zero time — ask `p.OK()`, never `IsZero`; their
+error values are `rastrillo.ui.*` **keys**, not sentences, so render
+`"Error" (T (index .Errors "Starts"))`; and `field-daterange`'s two
+halves need distinct `Name`s. docs/site/forms.md
 
 After a mutation: `flash.Set(w, "notice", "...")`, then 303; the render
 helper calls `flash.Take(w, r)` once per page and the layout renders it.
@@ -221,20 +207,13 @@ verifies a credential and calls `SignIn` — the whole contract.
   raw `return_to`. `s.Sweep(time.Now())` deletes expired rows.
 
 **Password plugin.** `password.New` needs `Sessions`, `Lookup`,
-`RenderSignin`; nil `Create` disables signup (its pages 404);
-`RenderSignup` is required whenever `Create` is set. `Lookup(ctx, email)
-(id, hash, error)`: unknown email = `sql.ErrNoRows`, treated as a wrong
-password over a decoy hash. Any `Create` error reads as a duplicate
-email unless it wraps `password.ErrRefused` (via
-`password.Refuse(msg)`), rendered at 403. `Signin`/`Signup`/`Signout`
-POST-only; Page variants GET; 405 otherwise. Render callbacks take
-`(w, r, password.PageData)` = `{Error, Email, ReturnTo}`; the plugin
-writes the status (422/403/429), the callback must not.
-
-**Rate limiting.** Signin and Signup share a per-email budget: 10
-failures in 15 minutes answers 429 until one ages out; success resets;
-in-memory (IP throttling belongs to deployment). `Refuse` refusals
-meter on a second budget Signin never reads.
+`RenderSignin`; nil `Create` disables signup, and `RenderSignup` is
+required whenever `Create` is set. Two traps: any `Create` error reads
+as a duplicate email unless it wraps `password.ErrRefused` (via
+`password.Refuse(msg)`); and the plugin writes the status (422/403/429),
+so a render callback must not. Signin and Signup share a per-email
+failure budget answering 429 (IP throttling belongs to deployment).
+docs/site/passwords.md
 
 **Magic links** (`rastrillo/auth`: sign-in by emailed link, upgrading
 to the keymail ceremony where the address has one): `auth.New` with
@@ -257,14 +236,12 @@ caller to `/jobs/`+job.ID. Owner is the session **Subject**, not
 the owner. `j.Get(id, owner)` 404s a foreign or unknown id.
 
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage`/`Fragment`/`Events` (SSE), erroring unless all three are
-set. Mount in the `sess.Require` group at `/jobs/{id}`, `.../fragment`,
-`.../events`; each takes `jobs.PageData{Job, FragmentPath, EventsPath,
-PollSeconds}`. Render draws the whole page, RenderFragment the partial
-alone (else the layout nests on the next poll). Done+Location 303s from
-StatusPage; Fragment answers 204 + `Rastrillo-Location`. Must work with
-scripts off: a `<noscript>` meta refresh of `PollSeconds`, only while
-Running, or a failed page refreshes forever.
+`StatusPage`/`Fragment`/`Events` (SSE); mount all three in the
+`sess.Require` group under `/jobs/{id}`. Two traps: `Render` draws the
+whole page and `RenderFragment` the partial alone, or the layout nests
+on the next poll; and it must work with scripts off — a `<noscript>`
+meta refresh only while Running, or a failed page refreshes forever.
+docs/site/jobs.md
 
 The only JavaScript is app-owned `static/rastrillo.js`, inert until
 markup opts in. `data-poll="URL"` + `data-poll-every="2"` swap the
