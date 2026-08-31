@@ -3152,3 +3152,110 @@ never *"a cell in this app cannot be unreadable"*. Someone will otherwise find a
 cell and conclude the guarantee is broken while it is working exactly as specified. The
 product's obligation is to **surface** the failing pairing, not to hide it and not to
 override it — and that obligation lives in the app, not in this library.
+
+---
+
+## 6-v2.2d. The ink-unknown wash (2026-08-31) — Docs' requirement, specified not built
+
+Docs confirmed `Pair` is wrong for text highlights, for the same reason Sheets did. But
+their requirement is **not** Sheets' with a different weight, and the difference is the
+whole of this section: **the caller does not control the ink.**
+
+A highlight sits behind whatever colour the author already chose. The app cannot see it
+and must not change it. So the guarantee is not "give me contrast-correct ink for this
+fill" but *"give me a fill that does not break contrast for ink I did not choose."* That
+is a bound on how far the wash may move from the background's luminance, computable from
+the background and two floors alone — and it takes **no ink argument**.
+
+### The stated requirement was impossible, and the arithmetic is why
+
+Docs first specified "any ink that met 4.5:1 against the background still meets 4.5:1
+against the wash". On paper white that has exactly one solution and it is white.
+
+The worst case is the *lightest* legible ink, sitting exactly at threshold: luminance
+0.1833 on white. For it to keep 4.5:1 on the wash, the wash needs luminance ≥ 1.0000.
+
+    retained 4.5:1  ->  wash luminance >= 1.0000   impossible
+    retained 4.0:1  ->  wash luminance >= 0.8833
+    retained 3.5:1  ->  wash luminance >= 0.7667
+    retained 3.0:1  ->  wash luminance >= 0.6500
+
+So the retained floor must be **lower than the admission floor**. That is not a
+compromise smuggled in; it is forced.
+
+### RULED by Docs: 3:1 retained
+
+The knob decides which real highlights are legal, which is what made the choice easy once
+it was visible:
+
+    #FFFF00  classic highlighter yellow   L=0.9278
+    #FFEB9C  Excel light yellow           L=0.8308
+    #C6EFCE  Excel light green            L=0.7820
+    #FFC7CE  Excel light red              L=0.6656
+
+At 3:1 all four are legal. At 3.5:1 Excel's light red drops out. At 4:1 Excel's light
+yellow is already illegal. Docs' reasoning: **a highlight function that outlaws yellow
+highlighter has failed at the only job it has.** Shipping a feature that cannot produce
+the thing it is named after is worse than a slightly weaker guarantee.
+
+### Two guarantees that compose, and neither is sufficient alone
+
+Docs' second observation is the more reusable one. The impossibility bites hardest for
+ink sitting exactly at the admission threshold — and **that ink only exists in a document
+if the product offers it.**
+
+So the retained floor is one knob and the offered ink palette is the other, and they
+belong to different owners: the library guarantees 3:1 retained; **Docs constrains its own
+offered text colours well clear of threshold**, so the theoretical worst case is not
+reachable through the product's own controls. Docs is writing that into their spec
+explicitly, so nobody later widens the ink palette without noticing it silently weakens
+every highlight in every document.
+
+**The residual, stated rather than hidden:** DOCX import brings arbitrary inline colours
+from Word, and a pasted near-threshold grey under a light wash can land below AA with
+neither knob preventing it. Docs leans toward reporting it in the import report rather
+than silently restyling the document — the degrade-loudly rule — and will decide when
+import is built.
+
+### Not built
+
+The known-ink `Wash` lands first, for Sheets. Docs has no highlight UI and asked for it
+right rather than fast. `Wash`'s doc comment must say plainly that **it requires a known
+ink and is the wrong function if you do not control the text colour** — otherwise someone
+passes a guessed ink and quietly restyles an author's text, which is the same class of
+harm as the XLSX font-colour leak that created `Wash` in the first place.
+
+### One shape, reached twice, independently
+
+Both apps arrived at storing an `Intent` and resolving per viewer, for unrelated reasons —
+Sheets from export, Docs from a per-person dark canvas. Which also settles the check's
+shape: **"for every hue there exists a wash on white and one on dark"**, never a
+conjunction over a single hex. The controller had that wrong and was corrected.
+
+---
+
+### §7-v2 addendum (2026-08-31, second): calibration is necessary, not sufficient
+
+The rule says: run the check against a case whose answer you already know. A gate on this
+branch obeyed it fully and still gated nothing, and that gap is worth naming.
+
+The preview-widget gate asserted that every preview box clears a 64px floor at a phone
+viewport. It was calibrated — its control held on the pre-fix build, where it failed
+naming the 20px boxes; three mutations of the finished CSS were caught; a fourth was
+caught only after the gate was strengthened. By every test in §7-v2 it was a good gate.
+
+**It was measuring the wrong quantity.** The bug was that a 1200px page rendered at 26%
+made the *sample* an 18px sliver. The gate measured the *box*. A build where every box is
+400px tall and every sample a 14px sliver passes it cleanly — and that was approximately
+the state it certified, because the floor it verified added blank space rather than
+legibility. A reviewer found it by reading **inside** the srcdoc frame, which neither
+earlier instrument had done.
+
+**So the rule needs a second half. Before calibrating a gate, check that the quantity it
+measures is the quantity that can break.** A proxy that correlates with the fault in the
+cases you tried will pass every calibration you can devise, because calibration tests the
+instrument against the quantity you chose — it cannot tell you the choice was wrong.
+
+Passing a well-run gate on the wrong quantity is worse than having no gate: a red gate
+starts an investigation, and a green one ends it. The tell here was available in advance —
+the gate asserted a *container* while the defect was in the *content*.
