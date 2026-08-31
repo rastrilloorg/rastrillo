@@ -39,6 +39,27 @@ Reported by the Sheets team after upgrading.
 
 ### Fixed
 
+**Every scaffolded app reported `dev` from `GET /api/version`, forever.** The
+scaffolded `make release` built with `-ldflags="-s -w"` and no `-X`, so
+`rastrillo.BuildVersion` kept its default in every binary the framework has ever
+produced — while `serve.go` said the version was stamped at build time, "see
+`cmd/rastrillo`". It now stamps from `git describe --tags --always --dirty`, and
+refuses to build rather than shipping an empty or `-dirty` version.
+
+This is worse than a missing version string. `carlos deploy` verifies against the
+router's `x-carlos-version` header — the release the platform believes it *adopted* —
+while `/api/version` is what the process actually *running* on the instance says it
+is. They are two different facts, and the deploy is only verified when they agree. An
+app answering `dev` to the second can never disagree with the first, so a process that
+was never recycled onto the new release verifies green. It did: a real deploy printed
+`live` against a process that had never been recycled.
+
+**Apps scaffolded before this release keep the old target.** Re-scaffold, or copy the
+`VERSION` line and the `version-check` target into your Makefile. `make build` is
+unchanged and still does not stamp: the compile check is not a build.
+
+Found by a peer session hitting it in production.
+
 **`rastrillo markup` exited 3 on a clean tree.** The escaped-markup note ignored
 fenced `old-spelling` regions, so a repository that had correctly fenced its
 discussion of the old spelling could never get a green run. A report mode that

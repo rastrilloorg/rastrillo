@@ -37,11 +37,29 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// BuildVersion is set via -ldflags at build time (see cmd/rastrillo).
+// BuildVersion is what GET /api/version reports. The scaffolded
+// Makefile's release target stamps it with -X from git describe, and
+// refuses to build rather than stamping an empty string or a dirty
+// tree — see makefileTemplate in cmd/rastrillo/new.go.
+//
 // The platform's deploy verification polls GET /api/version on every
-// instance socket expecting exactly this — see blueprint.md, "The carlos
-// core": "every instance must also serve GET /api/version reporting its
-// build sha."
+// instance socket — see blueprint.md, "The carlos core": "every
+// instance must also serve GET /api/version reporting its build sha."
+//
+// Why the stamp is the point rather than a nicety: carlos deploy checks
+// the router's x-carlos-version header, which is the release the
+// platform believes it ADOPTED. /api/version is what the process
+// RUNNING on the instance says it is. They are two different facts, and
+// the deploy is only verified when they agree. A binary that answers
+// "dev" from every build ever made cannot disagree with anything, so a
+// process that was never recycled onto the new release verifies green —
+// which happened, to a real app, with deploy printing "live". Every app
+// scaffolded before v0.23.0 has that hole in it; a re-scaffolded
+// Makefile, or the two lines from it, closes it.
+//
+// "dev" stays the default on purpose. rastrillo dev and a plain go
+// build do not stamp, and a binary that says "dev" is saying something
+// true about itself.
 var BuildVersion = "dev"
 
 // Options configures Serve.

@@ -649,8 +649,21 @@ func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
 	}
 	got := string(mk)
 
-	if !strings.Contains(got, `go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)`) {
-		t.Errorf("no stripped release build:\n%s", got)
+	if !strings.Contains(got, `go build -ldflags="-s -w -X 'github.com/carlosframework/rastrillo.BuildVersion=$(VERSION)'"`) {
+		t.Errorf("the release build does not strip and stamp:\n%s", got)
+	}
+	if !strings.Contains(got, `-o $(RELEASE_BIN) ./cmd/$(APP)`) {
+		t.Errorf("the release build does not name its artifact:\n%s", got)
+	}
+	// The stamp is only worth anything if it cannot come out empty or
+	// name two different binaries — see version-check, and
+	// TestScaffoldedReleaseStampsAVersionTheBinaryReports for what the
+	// built binary then says.
+	if !strings.Contains(got, "VERSION ?= $(shell git describe --tags --always --dirty") {
+		t.Errorf("the version is not derived from the repository:\n%s", got)
+	}
+	if !strings.Contains(got, "release: version-check") {
+		t.Errorf("release does not gate on version-check:\n%s", got)
 	}
 	// The deployment target, not the host. carlos ship defaults to
 	// -target linux-arm64; a release built for the developer's own
@@ -675,14 +688,14 @@ func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
 	// build stays the plain compile check — it must not quietly become a
 	// release build, or a local binary someone wants to debug is stripped.
 	buildAt := strings.Index(got, "\nbuild:\n")
-	releaseAt := strings.Index(got, "\nrelease:\n")
+	releaseAt := strings.Index(got, "\nrelease: version-check\n")
 	if buildAt < 0 || releaseAt < 0 {
 		t.Fatalf("expected separate build and release targets:\n%s", got)
 	}
 	if strings.Contains(got[buildAt:releaseAt], "ldflags") {
 		t.Error("the compile-check target strips; that belongs to release only")
 	}
-	if !strings.Contains(got, ".PHONY: build release") {
+	if !strings.Contains(got, ".PHONY: build release version-check") {
 		t.Error("release is not declared .PHONY")
 	}
 }

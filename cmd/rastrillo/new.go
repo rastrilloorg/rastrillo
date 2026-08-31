@@ -992,7 +992,20 @@ RELEASE_GOOS   ?= linux
 RELEASE_GOARCH ?= arm64
 RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
 
-.PHONY: build release test vet fmt-check migration-check ci
+# What the running binary reports from GET /api/version. The platform's
+# deploy verification polls that endpoint on every instance socket and
+# compares what it finds against the release it believes it adopted; an
+# unstamped binary answers "dev" from every build you have ever made, so
+# those two facts can never disagree and a process that was never
+# recycled onto the new release verifies green. Stamping this is what
+# gives that check the ability to fail.
+#
+# git describe, because the tag is what you ship against. Outside a
+# repository, or before the first commit, name it yourself:
+#   make release VERSION=v0.1.0
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
+
+.PHONY: build release version-check test vet fmt-check migration-check ci
 
 # build is the compile check: with more than one package matched, go
 # build discards the output, so this catches a broken package without
@@ -1010,14 +1023,43 @@ build:
 # and go version -m still reports module metadata. What you lose is
 # source-level debugging with delve or gdb — build without the flags for
 # that. rastrillo dev never strips, for the same reason.
-release:
+release: version-check
 	@mkdir -p releases
 	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
-		go build -ldflags="-s -w" -o $(RELEASE_BIN) ./cmd/$(APP)
+		go build -ldflags="-s -w -X 'github.com/carlosframework/rastrillo.BuildVersion=$(VERSION)'" \
+		-o $(RELEASE_BIN) ./cmd/$(APP)
 	@echo
-	@echo "built $(RELEASE_BIN)"
+	@echo "built $(RELEASE_BIN) reporting version $(VERSION)"
 	@echo "ship it with:"
 	@echo "  carlos ship -app $(APP) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
+
+# version-check refuses rather than letting release ship a binary whose
+# version is untrue. Both refusals are about the same thing: /api/version
+# is only evidence if the answer identifies one artifact.
+#
+# An empty stamp is worse than the "dev" default, because "dev" is
+# saying something true about itself and "" looks like a value that
+# arrived from somewhere.
+#
+# A dirty tree is refused rather than suffixed. A -dirty stamp names a
+# commit plus changes nobody can name, so two different binaries can
+# carry the identical string — which does not fix the check, it makes
+# it look reliable while it is not, and that is the more expensive
+# failure. Refusing costs one ` + "`git stash`" + `; a wrong stamp ships. If you
+# mean to ship uncommitted work, say so out loud:
+#   make release VERSION=v0.1.0-wip
+version-check:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "make release: no version to stamp."; \
+		echo "  git describe found nothing here: no repository, or no commit yet."; \
+		echo "  Commit, or name it:  make release VERSION=v0.1.0"; \
+		exit 1; \
+	fi
+	@case "$(VERSION)" in *-dirty) \
+		echo "make release: the tree is dirty, so $(VERSION) does not name what you are about to ship."; \
+		echo "  Commit or stash first, or name it:  make release VERSION=v0.1.0-wip"; \
+		exit 1;; \
+	esac
 
 test:
 	go test ./...

@@ -1,12 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carlosframework/rastrillo/migrate"
 )
@@ -317,5 +323,179 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 	mk.Env = append(os.Environ(), "PATH="+filepath.Dir(goBin)+":/usr/bin:/bin")
 	if out, err := mk.CombinedOutput(); err != nil {
 		t.Fatalf("make migration-check must pass with only the Go toolchain on PATH:\n%s", out)
+	}
+}
+
+// TestScaffoldedReleaseStampsAVersionTheBinaryReports is the control for
+// the version stamp, and it is deliberately not a test that the Makefile
+// contains a string.
+//
+// Every app the framework has ever scaffolded answered "dev" from
+// GET /api/version, forever: serve.go said the version was stamped "see
+// cmd/rastrillo", and the scaffolded release target built with
+// -ldflags="-s -w" and no -X. A test asserting the Makefile holds the
+// right flags would have been green the moment the flags were typed and
+// would not have told anyone whether the binary reports anything, which
+// is the substitution this branch has now found six times: a string
+// assertion standing in for a behavioural one.
+//
+// So this scaffolds an app, builds it twice from identical source, and
+// asks each binary over HTTP what it is.
+//
+//   - built with `make release` off a tagged, clean tree, it reports the tag
+//   - built with a plain `go build`, it reports "dev"
+//
+// The second half is the calibration. One binary reporting a version
+// proves nothing on its own — it could be reading a default that happens
+// to match. Two builds of the same source giving different answers is
+// what shows the stamp is doing the work.
+//
+// Then the two refusals, because a stamp is only evidence if it can
+// name exactly one artifact: a tree with uncommitted changes, and a
+// version that cannot be determined at all.
+func TestScaffoldedReleaseStampsAVersionTheBinaryReports(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds and runs a scaffolded app")
+	}
+	setSandboxGoEnv(t)
+	root := repoRoot(t)
+	t.Chdir(t.TempDir())
+
+	if err := runNew([]string{"verapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	app := "verapp"
+
+	f, err := os.OpenFile(filepath.Join(app, "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("\nreplace github.com/carlosframework/rastrillo => " + root + "\n"); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	run := func(name string, args ...string) (string, error) {
+		cmd := exec.Command(name, args...)
+		cmd.Dir = app
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	mustRun := func(name string, args ...string) string {
+		t.Helper()
+		out, err := run(name, args...)
+		if err != nil {
+			t.Fatalf("%s %v: %v\n%s", name, args, err, out)
+		}
+		return out
+	}
+
+	mustRun("go", "mod", "tidy")
+
+	// A repository with one commit and one tag, which is what git
+	// describe reads. The identity is passed per-command so this does
+	// not depend on whatever the machine has configured.
+	const tag = "v9.9.9-control"
+	mustRun("git", "init", "-q", "-b", "main")
+	mustRun("git", "add", "-A")
+	mustRun("git", "-c", "user.email=control@example.invalid", "-c", "user.name=control",
+		"commit", "-q", "-m", "scaffold")
+	mustRun("git", "tag", tag)
+
+	// The release target defaults to the deployment architecture, which
+	// is the right default and not runnable here, so this asks for the
+	// host's.
+	mustRun("make", "release", "RELEASE_GOOS="+runtime.GOOS, "RELEASE_GOARCH="+runtime.GOARCH)
+	released := filepath.Join(app, "releases", app+"-"+runtime.GOOS+"-"+runtime.GOARCH)
+	if _, err := os.Stat(released); err != nil {
+		t.Fatalf("make release produced no binary: %v", err)
+	}
+	if got := apiVersion(t, released, app); got != tag {
+		t.Errorf("GET /api/version on the released binary = %q, want %q — the stamp is not reaching the process", got, tag)
+	}
+
+	// The calibration: same source, no -X, and the answer must change.
+	// Without this, "it reported the tag" could mean the harness is
+	// reading something other than the binary under test.
+	mustRun("go", "build", "-o", "unstamped", "./cmd/"+app)
+	if got := apiVersion(t, filepath.Join(app, "unstamped"), app); got != "dev" {
+		t.Errorf("GET /api/version on an unstamped build = %q, want \"dev\" — "+
+			"if this is not dev the released binary's answer proves nothing", got)
+	}
+
+	// A dirty tree is refused. git describe would spell it v9.9.9-control-dirty,
+	// a string two different binaries can carry, which is worse than no
+	// stamp because it looks like evidence.
+	if err := os.WriteFile(filepath.Join(app, "README.md"), []byte("edited, uncommitted\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := run("make", "release", "RELEASE_GOOS="+runtime.GOOS, "RELEASE_GOARCH="+runtime.GOARCH)
+	if err == nil {
+		t.Errorf("make release built from a dirty tree:\n%s", out)
+	}
+	if !strings.Contains(out, "dirty") {
+		t.Errorf("the refusal does not say what is wrong:\n%s", out)
+	}
+	mustRun("git", "checkout", "--", "README.md")
+
+	// And a version that cannot be determined at all refuses rather than
+	// stamping an empty string, which would look like a value.
+	out, err = run("make", "release", "VERSION=")
+	if err == nil {
+		t.Errorf("make release stamped an empty version:\n%s", out)
+	}
+	if !strings.Contains(out, "no version to stamp") {
+		t.Errorf("the refusal does not say what is wrong:\n%s", out)
+	}
+}
+
+// apiVersion starts a built app on a listener handed to it as fd 3 —
+// the platform's own socket activation, and the only way to reach a
+// scaffolded binary without guessing a port — and returns what it says
+// at GET /api/version.
+func apiVersion(t *testing.T, bin, dir string) string {
+	t.Helper()
+	abs, err := filepath.Abs(bin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	lf, err := l.(*net.TCPListener).File()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lf.Close()
+
+	cmd := exec.Command(abs)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "LISTEN_FDS=1")
+	cmd.ExtraFiles = []*os.File{lf}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start %s: %v", abs, err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+	}()
+
+	url := "http://" + l.Addr().String() + "/api/version"
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		resp, err := http.Get(url)
+		if err == nil {
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			return strings.TrimSpace(string(body))
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%s never answered %s: %v\napp stderr:\n%s", abs, url, err, stderr.String())
+		}
+		time.Sleep(50 * time.Millisecond)
 	}
 }
