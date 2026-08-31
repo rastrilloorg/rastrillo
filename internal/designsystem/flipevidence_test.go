@@ -99,25 +99,25 @@ func TestTheFlipDidNotMoveAPixel(t *testing.T) {
 	ctx, cancel = context.WithTimeout(ctx, 30*time.Minute)
 	defer cancel()
 
-	elements, differing, pagesWithDiffs := 0, 0, 0
+	elements, differing, pagesWithDiffs, skipped := 0, 0, 0, 0
 	for _, page := range pages {
 		var da, db []string
+		unstable := false
 		for _, c := range []struct {
 			origin string
 			into   *[]string
 		}{{a.URL, &da}, {b.URL, &db}} {
-			var raw string
-			if err := chromedp.Run(ctx,
-				chromedp.EmulateViewport(1280, 900),
-				chromedp.Navigate(c.origin+"/design-system/"+page),
-				chromedp.Evaluate(digest, &raw,
-					func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
-			); err != nil {
-				t.Fatalf("%s on %s: %v", page, c.origin, err)
+			got, ok := readTwiceUntilStable(ctx, t, c.origin+"/design-system/"+page)
+			if !ok {
+				t.Errorf("%s on %s: the page never gave the same reading twice, so it was not compared", page, c.origin)
+				unstable = true
+				break
 			}
-			if err := json.Unmarshal([]byte(raw), c.into); err != nil {
-				t.Fatalf("%s: %v", page, err)
-			}
+			*c.into = got
+		}
+		if unstable {
+			skipped++
+			continue
 		}
 		if len(da) != len(db) {
 			t.Errorf("%s: %d elements before, %d after — the flip changed the DOM's shape", page, len(da), len(db))
@@ -142,6 +142,61 @@ func TestTheFlipDidNotMoveAPixel(t *testing.T) {
 	t.Logf("%d pages, %d elements, %d computed properties per element over the element and its ::before and ::after",
 		len(pages), elements, len(props))
 	t.Logf("%d elements differ, on %d pages", differing, pagesWithDiffs)
+	if skipped > 0 {
+		t.Errorf("%d page(s) never settled, so they were never compared", skipped)
+	}
+}
+
+// readTwiceUntilStable navigates and reads the page twice, and accepts
+// the reading only when the two agree.
+//
+// A shells page holds whole documents inside <iframe srcdoc>, each with
+// its own deferred scripts, and waiting for readyState and fonts is not
+// enough: the same tree gave the same page 271 elements one pass and
+// 465 the next. Waiting longer is a guess about how long is long
+// enough. Reading until the page stops changing is not — it is the
+// question the drive actually wants answered, and an unstable page is
+// reported as unstable rather than as a difference.
+func readTwiceUntilStable(ctx context.Context, t *testing.T, url string) ([]string, bool) {
+	t.Helper()
+	var last []string
+	for attempt := 0; attempt < 4; attempt++ {
+		var raw string
+		actions := []chromedp.Action{
+			chromedp.EmulateViewport(1280, 900),
+		}
+		if attempt == 0 {
+			actions = append(actions, chromedp.Navigate(url))
+		} else {
+			actions = append(actions, chromedp.Sleep(250*time.Millisecond))
+		}
+		actions = append(actions, chromedp.Evaluate(digest, &raw,
+			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }))
+		if err := chromedp.Run(ctx, actions...); err != nil {
+			t.Fatalf("%s: %v", url, err)
+		}
+		var got []string
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("%s: %v", url, err)
+		}
+		if last != nil && sameReading(last, got) {
+			return got, true
+		}
+		last = got
+	}
+	return nil, false
+}
+
+func sameReading(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 var props = func() []string {
