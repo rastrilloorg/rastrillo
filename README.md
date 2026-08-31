@@ -560,7 +560,8 @@ A scaffolded app's `Makefile` has two build targets, doing different jobs:
   one package matched discards its output, so this catches a broken
   package without producing an artifact.
 - **`make release`** — what ships: `-ldflags="-s -w"`, dropping the
-  symbol table and DWARF, into `releases/<app>-<goos>-<goarch>`.
+  symbol table and DWARF, into `releases/<app>-<goos>-<goarch>`, stamped
+  with the version the built binary will report.
 
 `release` cross-compiles for **linux/arm64 by default**, not for your own
 machine, because that is what `carlos ship -target` defaults to. Building
@@ -572,6 +573,41 @@ matching `carlos ship` command.
 
 `releases/` is in the scaffolded `.gitignore`, along with the local
 SQLite database the app creates when you run it and its write-ahead log.
+
+### The version stamp
+
+`make release` sets `rastrillo.BuildVersion` from `git describe --tags
+--always --dirty`, and that string is what `GET /api/version` reports
+from the running process.
+
+It carries more weight than a version string usually does. `carlos
+deploy` verifies against the router's `x-carlos-version` header — the
+release the platform believes it **adopted** — while `/api/version` is
+what the process actually **running** on the instance says it is. Those
+are two different facts, and the deploy is only verified when they
+agree. An app that answers `dev` from every binary it has ever built
+cannot disagree with anything, so a process that was never recycled onto
+the new release verifies green. That happened, with `carlos deploy`
+printing `live`.
+
+`make release` refuses rather than stamping something untrue. A version
+it cannot determine — no repository, no commit yet — and a dirty tree
+are both build failures. An empty stamp is worse than `dev`, which at
+least says something true about itself, and a `-dirty` stamp names a
+commit plus changes nobody can name, so two different binaries can carry
+the same one. If you mean to ship uncommitted work, say so out loud:
+
+```sh
+make release VERSION=v0.1.0-wip
+```
+
+`make build` is untouched: the compile check is not a build, and
+`rastrillo dev` neither stamps nor strips, because the dev loop exists
+to give you a binary you can debug.
+
+Apps scaffolded before v0.23.0 have the old target and report `dev`
+forever. Re-scaffold, or copy the `VERSION` line and the `version-check`
+target across.
 
 Stripping is worth having because the compressed artifact is what gets
 transferred. Measured across this family's own apps (titogo, amadan,

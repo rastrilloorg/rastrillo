@@ -295,6 +295,48 @@ func TestTheFenceIsTheOnlyOptOut(t *testing.T) {
 	}
 }
 
+// TestAFencedRegionProducesNoNote is the other half of
+// TestTheFenceIsTheOnlyOptOut, and it was the half missing. The fence
+// stopped the rewrite and did not stop the report, so a file that
+// fences off a paragraph about the old spelling reported work forever
+// and held the exit code at 3 while it did.
+//
+// This repository was the proof: internal/markup/rewrite.go and
+// internal/markup/markup_test.go are fenced from line 1 and reported
+// notes anyway, on every run, so `rastrillo markup .` could never exit
+// 0 here on a clean tree. How many notes is not worth writing down —
+// adding this very test added another one, which is how the count an
+// earlier draft of this comment carried went stale before anyone read
+// it. A report mode that always says there is work is what teaches a
+// person to skip reading it and run --fix, which is the habit that
+// made the Markdown defect expensive.
+func TestAFencedRegionProducesNoNote(t *testing.T) {
+	// The same text TestEscapedMarkupIsReported asserts IS a note when
+	// it stands on its own — shared deliberately, so the two cannot
+	// drift into testing different things and agreeing.
+	const escaped = "<p>Write <code>class=&quot;rst-box&quot;</code> no longer.</p>\n"
+
+	// The data-tone attribute ahead of the fence is not decoration: the
+	// tone pass rewrites outside fences and shortens the text where it
+	// does, which is why the note pass computes the regions again
+	// rather than reusing the ones the tone pass was given.
+	in := "<span class=\"rst-status\" data-tone=\"ok\">live</span>\n" +
+		"<!-- " + FenceBegin + " -->\n" + escaped + "<!-- " + FenceEnd + " -->\n"
+
+	got, notes := Rewrite([]byte(in))
+	if len(notes) != 0 {
+		t.Errorf("a fenced paragraph about the old spelling is a decision already taken, not a finding: %v", notes)
+	}
+	if !strings.Contains(string(got), escaped) {
+		t.Errorf("the fenced paragraph was rewritten:\n%s", got)
+	}
+	// And the fence still ends where it says: markup outside it is
+	// migrated as usual, or "no notes" would just mean "did nothing".
+	if !strings.Contains(string(got), "<span rst-status rst-tone=\"ok\">") {
+		t.Errorf("the fence swallowed the markup outside it:\n%s", got)
+	}
+}
+
 // TestRespellIsTheGrammarWithoutTheMigration. Rewrite translates markup
 // written before the flip, where rst-form-foot meant the sticky save
 // bar. Respell translates markup written in today's class vocabulary,

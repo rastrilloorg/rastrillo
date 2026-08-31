@@ -66,7 +66,11 @@ rastrillo doctor --fix    # re-copy it
 
 ## Which spelling to write
 
-From v0.21.0, `tokens.css` matches both spellings, so an app mid-migration renders identically either way. Write attributes — that is what the framework itself writes now, and the class spelling is kept so existing apps can migrate rather than because it is the one to learn.
+From v0.21.0, `tokens.css` matches both spellings **for components**, so an app mid-migration renders identically either way. Write attributes — that is what the framework itself writes now, and the class spelling is kept so existing apps can migrate rather than because it is the one to learn.
+
+**Utilities stay classes, and there are seven of them:** `rst-sr-only`, `rst-mono`, `rst-m-hide`, `rst-grow`, `rst-nm`, `rst-danger`, `rst-cell-mut`. They are not kinds — they are cross-cutting styling, which is what `class` is for — so they keep the class spelling permanently rather than being migrated and un-migrated.
+
+This matters more than it sounds, because the failure is silent. `<span rst-sr-only>` has no attribute selector behind it, so the label you meant to hide is simply visible — and that reads as a content mistake rather than a spelling one. `rastrillo markup` knows the seven and leaves them alone; it is your hand-written markup that can get this wrong.
 
 `rastrillo markup` converts an app. Run `rastrillo doctor --fix` first, or the new markup meets an old stylesheet.
 

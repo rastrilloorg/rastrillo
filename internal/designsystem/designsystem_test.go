@@ -889,13 +889,23 @@ func widgetsOf(page string) []string {
 }
 
 // Every example is shown three ways behind one control, and the control
-// is the browser's own: three radios sharing a name, Desktop checked,
-// and :has() switching the panels. Nothing here runs.
+// is the browser's own: three radios sharing a name, NONE of them
+// checked, and :has() switching the panels. Nothing here runs.
 //
-// The gate is worth more than it looks. A widget with two checked
-// radios, or with a name shared across two examples, renders perfectly
-// and behaves wrongly — picking Mobile in one example would silently
-// deselect the tab in another — and neither shows up in a screenshot.
+// The unchecked start is the load-bearing part and it is asserted, not
+// assumed. A radio that ships checked is indistinguishable in CSS from
+// one the reader chose, so a widget that opens on a checked Desktop can
+// never let a phone open on the Mobile rendering without taking the
+// Desktop rendering away from the reader for good. gallery.css picks
+// the opening view from the width instead, and lights the tab that
+// matches — TestThePreviewWidgetIsUsableOnAPhone drives both halves in
+// a real engine, at 390px, with scripts off.
+//
+// The rest of the gate is worth more than it looks. A widget with two
+// checked radios, or with a name shared across two examples, renders
+// perfectly and behaves wrongly — picking Mobile in one example would
+// silently deselect the tab in another — and neither shows up in a
+// screenshot.
 func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 	files := render(t)
 	var total int
@@ -934,8 +944,11 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 					checked++
 				}
 			}
-			if checked != 1 || radios[0][2] == "" {
-				t.Errorf("%s widget %d: %d tabs start checked and the first is %q; Desktop is the view a page with no interaction has to open on", name, i, checked, radios[0][2])
+			if checked != 0 {
+				t.Errorf("%s widget %d: %d tabs start checked; none may, or the stylesheet cannot tell a reader's choice from the markup's default and the opening view can no longer follow the reader's width", name, i, checked)
+			}
+			if !strings.Contains(w, `class="ds-view__tab ds-view__tab--d"`) {
+				t.Errorf("%s widget %d: the Desktop label carries no ds-view__tab--d, so no rule can say the reader chose Desktop", name, i)
 			}
 			if groups[radios[0][1]] {
 				t.Errorf("%s widget %d: the radio name %q is already used by another widget on this page; choosing a tab in one would clear the other", name, i, radios[0][1])
@@ -967,7 +980,36 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
 		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
 		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
-		`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
+		`.ds-view__box { --ds-k: clamp(var(--ds-kmin), tan(atan2(100cqw, var(--ds-w))), 1); }`,
+		// The opening view follows the STAGE's width, and the
+		// highlight follows it by the same two queries. Without these
+		// four the widget opens on nothing chosen and nothing lit.
+		// A container query and not a media query, because the rail
+		// makes the viewport non-monotone in the stage's width — see
+		// TestThePreviewDefaultIsMonotoneInStageWidth, which fails on
+		// a media rule and passes on this one.
+		`container-name: ds-view; container-type: inline-size;`,
+		`@container ds-view (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
+		`@container ds-view not (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m {`,
+		`.ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		// The scale floor, which is what buys legibility, and the
+		// panning that makes a clamped scale usable rather than
+		// cropped. On the box itself, not on the state that made it
+		// necessary: the mobile rendering clamps too, and scoping the
+		// scroller to the chosen-Desktop rule cropped 42px of the
+		// OPENING view at a 320px window.
+		`overflow: hidden; overflow-x: auto; overscroll-behavior-x: contain;`,
+		// A classic scrollbar comes out of the box's content, and a
+		// 52px box cannot spare 15px of it. Measured: thin is 10px,
+		// which the slack in previewHeights covers.
+		`scrollbar-width: thin;`,
+		// The collapse guard, and the reason it is a declaration of
+		// its own: block-size carries --ds-k and dies with it. It
+		// buys no legibility and is not claimed to.
+		`min-block-size: calc(var(--ds-h) * var(--ds-kmin));`,
+		// The engine with :has() and no container queries gets a lit
+		// tab that matches the rendering it will be showing.
+		`@supports not (container-type: inline-size) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
 	} {
 		if !strings.Contains(css, rule) {
 			t.Errorf("gallery.css carries no rule %q — the tabs would switch nothing", rule)

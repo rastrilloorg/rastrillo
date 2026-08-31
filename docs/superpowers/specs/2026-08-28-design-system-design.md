@@ -2628,12 +2628,32 @@ own components, its own themes, its own gallery. It is not a fork and it
 is not a theme; a theme changes colour, type and shape, and a variant
 can add a component a theme cannot.
 
-**`cmd/dsgen` going public is the first brick and was not built for
-this.** A variant needs to document itself, and the generator that
-documents rastrillo's vocabulary is now a public command any module can
-run. That was done to get 20 MB out of the repo. It happens to be the
-mechanism a variant's gallery needs, which is worth noticing before
-anyone designs a second one.
+**`cmd/dsgen` going public is NOT the mechanism a variant's gallery
+needs. Corrected 2026-08-31.** This section originally said it "happens
+to be the mechanism a variant's gallery needs". That is false, and I
+repeated it to sheets-03, who wrote it into estilo's `AGENTS.md` and
+`README` as settled fact before their implementer opened the source and
+found otherwise.
+
+What is true: `dsgen` is public, and any module can run it. What is
+false: that running it against another module documents *that module's*
+vocabulary. Its entire public surface is `-out` and `-mount`;
+`internal/designsystem` imports `github.com/carlosframework/rastrillo/ui`
+directly, and its page kinds, samples and prose are rastrillo's. Pointed
+at estilo it reproduces rastrillo.org's gallery. The tool's own usage
+string was honest throughout — "dsgen writes **rastrillo's**
+design-system gallery" — so the error was mine and never the code's.
+
+**The underlying want is real and remains open.** A variant with its own
+components needs to document them, and the two available paths are both
+refused by estilo's own rules: fork the tool, or hand-write a gallery.
+So the question is whether `dsgen` grows a seam — a way to point `Render`
+at another module's vocabulary — or whether variants are expected to
+solve it themselves. Not decided, and not urgent: estilo has no
+components yet and will not until an app needs one.
+
+Recorded rather than quietly edited, because the claim is in circulation
+and the next person will hear it from the same place sheets-03 did.
 
 ### Why this is the same problem as the rake line
 
@@ -2897,3 +2917,556 @@ The calibrated drive reports **80 elements on two pages**, traceable to
 a Vietnamese copy redraft in the same branch, with the markup flip
 itself at zero. That is a result someone can act on. "Zero differences"
 was not, because it could not be told apart from a broken harness.
+
+---
+
+## 6-v2.8. What a data attribute is for (2026-08-31) — RULED by Paul
+
+Paul, looking at a date input carrying thirteen of them:
+
+> "do all of the data attributes on the date input need to be inline? Since they're for
+> the JS enhancement, shouldn't they be in JS? ... The goal is to keep the HTML clean.
+> **data attributes should allow for changing the behaviour of the JS, less for
+> containing initial config that it requires.**"
+
+That last sentence is the rule, and it generalises past the instance that produced it.
+An attribute earns its place in the markup when it says something *about this element*
+that the script could not otherwise know — armed or not, this variant rather than that
+one, this override. It does not earn its place by carrying data the script needs on
+every instance, identically.
+
+### What it was costing
+
+`ui/partials/field-date.html` put thirteen attributes on one `<input>`: the arming flag,
+the whole parser vocabulary as a JSON object, and eleven UI strings. field-select,
+field-time, field-datetime and field-daterange had the same shape. Measured on the live
+`date-and-time.html`: **340 `data-rst-*` attributes, 15,146 bytes, 15% of the page.**
+One field's run is 579 bytes; the entire 34-string vocabulary for one locale is 476
+bytes gzipped. The markup was carrying, per element, more than the whole catalog weighs
+once.
+
+### The constraint that produced it, which is real
+
+Translation happens server-side in Go against TOML catalogs, and `datetime.js`
+deliberately matches on no English word of its own — that is what makes twelve locales
+work. The JS cannot look a string up; it has no catalog. So the strings must reach it
+from the server somehow. Choosing "on every element" as the somehow is the defect; the
+requirement behind it is not.
+
+### Ruled: a loader and a served catalog, not vendored files
+
+`ui/i18n.js` loads one catalog per locale from a framework-owned route rendered from the
+same TOML through the same translator the HTML uses.
+
+**Twelve vendored `en.js` / `ga.js` files were considered and refused.** They would
+recreate, twelve times over, the exact trap `rastrillo doctor` was built for in §6-v2.3:
+a file copied into `static/` at scaffold time that drifts from the module that reads it.
+And they cannot work at all for an app that adds its own locale, because the framework
+cannot vendor a catalog it has never seen. Serving keeps one source of truth, covers
+app-added locales for free, and adds nothing to the vendored surface.
+
+A controller counter-proposal — one inline JSON payload per document — was measured and
+**refused on its own numbers**: at 1,482 raw bytes it is *worse than the status quo*
+until a page carries about three enhanced fields. It is recorded here because it looked
+obviously right and was obviously wrong, and the thing that settled it was arithmetic
+rather than argument.
+
+### The cost, stated rather than buried
+
+A failure mode that does not exist today: the enhancement arms, the catalog fetch fails,
+and the reader gets the English fallbacks that `datetime.js` and `select.js` already
+carry. It degrades rather than breaks, and Paul accepted it explicitly — *"we can add
+even more resilience later if we need to"* — but it is new, and **the gate for it is a
+drive with the catalog request blocked**, with a control that runs the same drive with
+the catalog allowed. A drive that passes both ways is measuring nothing.
+
+The scriptless path is untouched: these strings are only ever used by the enhancement,
+and the native `<input type="date">` remains the value carrier that posts `2006-01-02`
+with scripts off.
+
+---
+
+## 6-v2.9. What the weights table should say (2026-08-31) — RULED by Paul
+
+The Getting started page reports each vendored file's weight, computed from the embedded
+bytes at render time so it cannot rot. It reported raw bytes, and Paul read it as
+overstated:
+
+> "The file-sizes ... include lots and lots of comments, and not gzipped ... should we
+> offer versions without the comments and show folks the gzipped cost?"
+
+then
+
+> "let's show kb rather than bytes, so instead of saying 107279bytes, do 107kb"
+
+### Measured against what the edge actually serves
+
+`content-encoding: gzip` and `vary: Accept-Encoding` are present on rastrillo.org —
+verified, not assumed.
+
+| file | raw | gzipped | comments stripped, gzipped |
+|---|---|---|---|
+| `tokens.css` | 107,279 | 28,998 | 8,832 |
+| `theme-day.css` | 10,828 | 3,293 | 634 |
+| `rastrillo.js` | 16,364 | 6,165 | — |
+| `select.js` | 11,919 | 4,347 | — |
+| `datetime.js` | 59,438 | 18,997 | — |
+
+Two findings, and the second is the surprising one.
+
+**The page overstated by 3.3×.** 205,828 raw against 61,800 over the wire. A reader
+deciding whether to adopt this was reading a number no visitor ever pays.
+
+**Gzip does not make comments free.** Comments are 47% of `tokens.css` raw and **70% of
+it compressed** — 20,166 gzipped bytes, four times the weight of the shim. `theme-day.css`
+is 85% comments. Every app vendoring these ships ~20 KB gzipped of design-doc commentary
+to every visitor on every cold load. This is worth writing down because the intuition
+that "gzip handles comments" is wrong at exactly the magnitude that matters.
+
+### Ruled: show both figures, in KiB
+
+- Raw **and** compressed, both computed at render time from the embedded bytes. Never
+  typed into prose — the rule already governing this page still governs it.
+- **KiB, 1024 bytes**, matching `maxPageBytes = 128 KiB` and the budget comments.
+  Lowercase "kb" is kilobits, eight times wrong on a page whose point is exact sizes.
+  `docs/site/compare.md` says "KB" once and comes into line.
+- **One decimal below 10 KiB, whole numbers above.** Rounding everything to whole KiB
+  turns a 634-byte file into "1" or "0", both lies.
+- **Do not pin the compressed figure in an expected-value test.** Compressor output can
+  shift between Go versions. The determinism gate is two `Render()` calls in one
+  process and is unaffected; a golden file holding "28,998" would churn on a toolchain
+  bump for no reason. Assert the relationship, not the literal.
+
+### Not ruled: shipping comment-stripped assets
+
+Left open deliberately. It collides with a doctrine already set — the comments in
+`tokens.css` are *why* an app can own the file, and a stripped copy is one an app can
+serve but not read. Vendoring both doubles what `doctor` reasons about and gives every
+app a "which one did I edit?" question. The numbers above say the prize is real (20 KB
+gzipped per cold load); the design is not decided.
+
+Related, and noted because it is the larger number: **`datetime.js` is 59,438 raw /
+18,997 gzipped — a third of the total wire cost on its own** — and it is an optional
+enhancement. §6-v2.8 moves its strings out of the markup; it does not make the file
+smaller.
+
+---
+
+## 6-v2.2c. `Wash`: the third entry point (2026-08-31) — from Sheets, on round-trip grounds
+
+§6-v2.2b records that two downstream callers changed the colour engine's design before a
+line was written. This is the third time it happened, and it happened *after* the engine
+shipped — which is the case that section was written to make cheap.
+
+### The controller's ruling, and why it was wrong
+
+`Pair` returns a fill and an on-fill. Asked whether it should instead return a **pale
+wash leaving the caller's own ink alone**, I ruled on the API's shape: a pair only means
+something if we choose the ink, and a wash that the author's own text sits on needs no
+contrast function at all. That reasoning is sound and the conclusion was still wrong,
+because it reasoned about the return value and not about what a caller must then do with
+it.
+
+### Sheets' correction: applying an on-fill means persisting it
+
+When someone highlights a cell yellow, they are choosing a **background wash and keeping
+their own ink**. They did not ask for their font colour to change. If `Pair` hands back
+an on-fill and the app applies it, the app must store it — and on export that becomes **a
+font colour written into the XLSX that the author never set**. Import a file, highlight
+one cell, export, and it returns with font colours throughout.
+
+That is round-trip corruption. The same observation as the controller's — the on-fill is
+surplus when the caller keeps their ink — with the consequence attached: it is not
+surplus, it is destructive.
+
+`Pair` remains correct for callers that own both halves: presence cursors, comment author
+colours, and conditional formatting, where a *rule* picks the colour and the app writes
+both fill and text.
+
+### The wash constraint runs the other way
+
+Not *"given a fill, what ink survives on it"* but **"given the ink the author already
+has, what is the palest fill of this hue that their ink still clears 4.5:1 on — and that
+they can still see they applied"**.
+
+    Wash(hue, chroma, ink, background) -> Swatch
+
+Two floors, and the second is the load-bearing one:
+
+1. The caller's existing `ink` clears 4.5:1 against the returned fill.
+2. The fill stays **perceptibly different from `background`**, or the user clicks yellow
+   and nothing appears to happen.
+
+**Floor 2 uses ΔE_OK, not a contrast ratio.** Sheets' point, and it is right: contrast
+ratio is the wrong instrument for "can you tell this cell is filled". That is a
+perceptual-distance question, and the engine already computes ΔE_OK for separation, so
+it reuses that machinery rather than growing a second notion of perceptual distance. The
+two floors pull against each other, which is what makes floor 2 real rather than
+decorative — remove it and `Wash` returns something invisible.
+
+**Failing is the right answer past the floors.** "This hue cannot be a readable wash
+under your text colour" is a true statement, not an edge case to paper over. The
+precedent is worth recording because it is an accessibility improvement rather than a
+copy of the incumbent: Excel permits a dark navy fill under black text, unreadable, with
+no warning. A wash function whose offered set **cannot** produce an unreadable pairing is
+strictly better — and better *because* it constrains what is offered rather than
+overriding what the author chose.
+
+### Even coverage beats any particular hue
+
+Sheets never delivered the hand-computed hue table they promised, and supplied something
+more useful instead: **XLSX import maps arbitrary incoming hex to the nearest offered
+intent.** So even coverage of the circle is the property that matters, and a gap means
+every imported fill in that region snaps visibly sideways on a file the user never
+edited. Twelve at 30° is even coverage.
+
+The check that follows, and it is a measurement rather than an assumption: the
+nearest-offered-hue distance for the five fills people actually use — **yellow, green,
+red, orange, light blue**. Even spacing does not guarantee any of them lands well.
+
+### The open question this raises for Docs
+
+A text highlight is the same wash shape. But Paul ruled Docs' canvas light by default
+with dark as a *per-person* preference, so one stored highlight is read against paper
+white by one reader and dark paper by another, in the same document, at the same time. A
+wash perceptible on white can be imperceptible on dark. Docs therefore stores an intent
+and resolves per canvas — and if the offered set cannot satisfy floor 2 on both, that
+constrains the set for every caller, not only theirs.
+
+### §7-v2 addendum (2026-08-31): measure freely, publish only from the shipped path
+
+sheets-03's sharpening of the calibration rule, and better than the version it refines.
+
+The rule already said that two parties agreeing about an uncalibrated instrument is one
+piece of evidence twice. The question it left open is what to do when you *want* a
+second implementation — and the answer turns on what the number is for.
+
+**Measuring to discover is free. Publishing is not.** A second implementation is the
+right tool for finding a defect: this branch used one to establish that Excel's own
+"Yellow Fill with Dark Yellow Text" preset measures 4.12:1 and fails AA, and that
+`#0000FF` cannot carry black ink at 2.44:1. Neither finding needed the shipped code, and
+waiting for it would have cost a round.
+
+But a number that reaches documentation as *the scale for a shipped function* must come
+from the code that ships. Otherwise the two can drift — a different white point, a
+different ΔE variant, a rounding difference — and the published guidance quietly stops
+describing the instrument the caller actually holds, with nothing to catch it.
+
+Sheets applied this to themselves before anyone asked: invited to send measured
+separations for the classic spreadsheet fills, they sent **hexes instead**, on the
+grounds that numbers from their OKLCH implementation, published as the scale for
+rastrillo's `Wash`, would be two instruments agreeing by assumption.
+
+### And the corollary about what a guarantee covers
+
+A generator's guarantee is about what it generates, not about what the product displays.
+
+`Wash` cannot produce an unreadable pairing. A spreadsheet built on it **can still show
+one**, because an imported file's original fill and font colour are retained verbatim —
+which is what makes import→export lossless, and which is right: faithfully displaying a
+document someone else authored is a different act from generating a colour, and silently
+"correcting" imported formatting would lie about the file.
+
+So the doc comment must claim *"a wash this function produces cannot be unreadable"* and
+never *"a cell in this app cannot be unreadable"*. Someone will otherwise find a failing
+cell and conclude the guarantee is broken while it is working exactly as specified. The
+product's obligation is to **surface** the failing pairing, not to hide it and not to
+override it — and that obligation lives in the app, not in this library.
+
+---
+
+## 6-v2.2d. The ink-unknown wash (2026-08-31) — Docs' requirement, specified not built
+
+Docs confirmed `Pair` is wrong for text highlights, for the same reason Sheets did. But
+their requirement is **not** Sheets' with a different weight, and the difference is the
+whole of this section: **the caller does not control the ink.**
+
+A highlight sits behind whatever colour the author already chose. The app cannot see it
+and must not change it. So the guarantee is not "give me contrast-correct ink for this
+fill" but *"give me a fill that does not break contrast for ink I did not choose."* That
+is a bound on how far the wash may move from the background's luminance, computable from
+the background and two floors alone — and it takes **no ink argument**.
+
+### The stated requirement was impossible, and the arithmetic is why
+
+Docs first specified "any ink that met 4.5:1 against the background still meets 4.5:1
+against the wash". On paper white that has exactly one solution and it is white.
+
+The worst case is the *lightest* legible ink, sitting exactly at threshold: luminance
+0.1833 on white. For it to keep 4.5:1 on the wash, the wash needs luminance ≥ 1.0000.
+
+    retained 4.5:1  ->  wash luminance >= 1.0000   impossible
+    retained 4.0:1  ->  wash luminance >= 0.8833
+    retained 3.5:1  ->  wash luminance >= 0.7667
+    retained 3.0:1  ->  wash luminance >= 0.6500
+
+So the retained floor must be **lower than the admission floor**. That is not a
+compromise smuggled in; it is forced.
+
+### RULED by Docs: 3:1 retained
+
+The knob decides which real highlights are legal, which is what made the choice easy once
+it was visible:
+
+    #FFFF00  classic highlighter yellow   L=0.9278
+    #FFEB9C  Excel light yellow           L=0.8308
+    #C6EFCE  Excel light green            L=0.7820
+    #FFC7CE  Excel light red              L=0.6656
+
+At 3:1 all four are legal. At 3.5:1 Excel's light red drops out. At 4:1 Excel's light
+yellow is already illegal. Docs' reasoning: **a highlight function that outlaws yellow
+highlighter has failed at the only job it has.** Shipping a feature that cannot produce
+the thing it is named after is worse than a slightly weaker guarantee.
+
+### Two guarantees that compose, and neither is sufficient alone
+
+Docs' second observation is the more reusable one. The impossibility bites hardest for
+ink sitting exactly at the admission threshold — and **that ink only exists in a document
+if the product offers it.**
+
+So the retained floor is one knob and the offered ink palette is the other, and they
+belong to different owners: the library guarantees 3:1 retained; **Docs constrains its own
+offered text colours well clear of threshold**, so the theoretical worst case is not
+reachable through the product's own controls. Docs is writing that into their spec
+explicitly, so nobody later widens the ink palette without noticing it silently weakens
+every highlight in every document.
+
+**The residual, stated rather than hidden:** DOCX import brings arbitrary inline colours
+from Word, and a pasted near-threshold grey under a light wash can land below AA with
+neither knob preventing it. Docs leans toward reporting it in the import report rather
+than silently restyling the document — the degrade-loudly rule — and will decide when
+import is built.
+
+### Not built
+
+The known-ink `Wash` lands first, for Sheets. Docs has no highlight UI and asked for it
+right rather than fast. `Wash`'s doc comment must say plainly that **it requires a known
+ink and is the wrong function if you do not control the text colour** — otherwise someone
+passes a guessed ink and quietly restyles an author's text, which is the same class of
+harm as the XLSX font-colour leak that created `Wash` in the first place.
+
+### One shape, reached twice, independently
+
+Both apps arrived at storing an `Intent` and resolving per viewer, for unrelated reasons —
+Sheets from export, Docs from a per-person dark canvas. Which also settles the check's
+shape: **"for every hue there exists a wash on white and one on dark"**, never a
+conjunction over a single hex. The controller had that wrong and was corrected.
+
+---
+
+### §7-v2 addendum (2026-08-31, second): calibration is necessary, not sufficient
+
+The rule says: run the check against a case whose answer you already know. A gate on this
+branch obeyed it fully and still gated nothing, and that gap is worth naming.
+
+The preview-widget gate asserted that every preview box clears a 64px floor at a phone
+viewport. It was calibrated — its control held on the pre-fix build, where it failed
+naming the 20px boxes; three mutations of the finished CSS were caught; a fourth was
+caught only after the gate was strengthened. By every test in §7-v2 it was a good gate.
+
+**It was measuring the wrong quantity.** The bug was that a 1200px page rendered at 26%
+made the *sample* an 18px sliver. The gate measured the *box*. A build where every box is
+400px tall and every sample a 14px sliver passes it cleanly — and that was approximately
+the state it certified, because the floor it verified added blank space rather than
+legibility. A reviewer found it by reading **inside** the srcdoc frame, which neither
+earlier instrument had done.
+
+**So the rule needs a second half. Before calibrating a gate, check that the quantity it
+measures is the quantity that can break.** A proxy that correlates with the fault in the
+cases you tried will pass every calibration you can devise, because calibration tests the
+instrument against the quantity you chose — it cannot tell you the choice was wrong.
+
+Passing a well-run gate on the wrong quantity is worse than having no gate: a red gate
+starts an investigation, and a green one ends it. The tell here was available in advance —
+the gate asserted a *container* while the defect was in the *content*.
+
+### §6-v2.2c addendum (2026-08-31): the weight scale, and the argument for a parameter
+
+Measured through the shipped `Swatch.Separation`, against a white canvas:
+
+    Excel light green  #C6EFCE  0.1056     flat yellow  #FFFF00  0.2134
+    Excel light yellow #FFEB9C  0.1179     solid green  #00B050  0.3846
+    Excel light red    #FFC7CE  0.1352     flat red     #FF0000  0.4526
+                                           flat blue    #0000FF  0.6312
+
+The four saturated hexes are verified in Sheets' repository and exercised by their tests;
+the three presets were verified here against XlsxWriter's documentation, independently of
+both teams. The floor sits around 0.030 — about a third below even the lightest preset.
+
+**Sheets' perceptual check on the ordering, which is the cheapest calibration available
+and worth imitating:** blue is furthest from white, then red, then green, with bright
+yellow lowest of the saturated four — because yellow *is* nearly as light as paper. "If
+yellow had come out above red I would have distrusted the instrument." A result that
+matches a physical intuition you held before you measured is weak evidence; one that
+contradicts it is strong evidence something is wrong.
+
+### Two bands, and why weight is a parameter rather than a floor
+
+The strongest argument for the target-separation parameter is not that two apps differ.
+It is that **two callers inside one app differ**:
+
+- **Rule-driven fills** — conditional formatting, where the app owns both halves and users
+  expect Excel's register. The **0.10–0.14** band; Sheets defaults near **0.12**.
+- **Hand-picked fills** — a person choosing from an offered set, who expects what they
+  chose to *look* chosen. The **0.21+** register, where flat yellow sits.
+
+One product, one API, two bands, decided by who is doing the choosing. A global floor
+could serve neither without failing the other, which is the general form of "a floor is
+the wrong instrument for a preference".
+
+Document the two bands as the guidance rather than publishing a bare table. A table tells
+a caller what colours measure; the bands tell them which number to pass.
+
+### `SeparationMet` is a one-directional signal, deliberately
+
+`requested >= floor && delivered >= requested - dust`: it reports **paler than you asked
+for, never darker**. That is the direction that needs surfacing — a fill weaker than
+intended is invisible in a scan of a thousand rows, which is the failure a user actually
+suffers, while a fill heavier than requested is merely emphatic.
+
+Proximity was tried first and abandoned on a real case (asked 0.08, got 0.0856). No
+tolerance can work: **the achievable weights are not evenly spaced**, because the ink
+floor cuts gaps out of the middle of the range, and any tolerance wide enough to swallow
+those would report every constrained answer as honoured — turning the one signal the
+caller needs into noise.
+
+**Corrected twice, 2026-08-31, and the sequence is more instructive than the answer.**
+
+The section first said "gaps of up to 0.067", relayed from a report; I published it and
+passed it to Sheets. A review then measured **0.0580** on the shipped canvases, **0.0608**
+over a sweep, and **0.9588** at an extreme, so I corrected the section to say the original
+figure did not reproduce. A third measurement corrected *that*: the largest gap is
+**0.0649** on the shipped canvases and **0.0666** over the wide sweep, and the 0.9588
+extreme does not exist — ink `#757573` has a *negative* dark bound (−0.000017), so only
+light fills are feasible and there is at most one achievable weight per hue, hence no
+second island.
+
+So the original 0.067 was approximately right, and my confident retraction of it was
+wrong in the opposite direction.
+
+**What resolved it was a method correction, not more sampling.** Gaps must be read off the
+**sorted set of achievable weights**, not off the lightness walk, because separation is
+V-shaped about the background — a walk crosses the background and reads a spurious span.
+Two of the three measurements made that mistake, which is almost certainly where 0.9588
+came from.
+
+The lesson survives all three passes intact, and is the reason the disagreement was cheap
+rather than expensive: **a number supporting a design decision belongs in an assertion,
+not in prose.** The conclusion is now gated as `maxGap > 10 × washTolerance` and no figure
+is quoted anywhere a test does not hold it. Had that been true at the start, none of these
+three numbers would have needed publishing, correcting, or correcting again.
+
+### The slack constant: the pattern in one number
+
+`washSlack` shipped at 0.02. The bound its own premise required is **0.0525** — a
+quantisation plateau where every lightness from 0.02 to 0.0525 renders `#000000`. So the
+constant sat below the bound it existed to enforce. No test caught it. **No output
+differed anywhere**, because the cases that would have exposed it never arose: raising it
+to 0.08 changed no colour across 58,968 resolutions, while setting it to zero changes 30.
+
+Honest code, an unexamined premise, and no wrong answer to point at. It was findable only
+by asking what the number is *supposed* to bound and measuring that — which is the same
+move as running a check against a case whose answer you already know, applied to a
+constant instead of to a test.
+
+### §7-v2 addendum (2026-08-31, third): mark provenance at the moment of sending
+
+Two figures went out of this session in one message, presented identically: `0.0525`,
+which had been independently derived twice and held exactly, and `0.067`, which had been
+relayed from a report and held nothing. The reader could not tell them apart **because
+the sender had not marked them apart.**
+
+The obvious rule — verify before relaying — is the wrong one. Verification is expensive,
+sometimes impossible, and the pressure to skip it is highest exactly when a result is
+interesting. sheets-03's formulation is the one that works:
+
+> **Mark provenance at the moment of sending, because that is the only moment you still
+> remember which is which.**
+
+They avoided the same error by accident rather than by discipline: sending seven hexes,
+they split four verified-in-their-repo from three recalled from memory, because they
+happened to know which was which as they typed. Gathered a day earlier and sent from
+notes, all seven would have gone out looking equally solid.
+
+Marking is free and takes a second. It also converts a private uncertainty into a public
+one, which is the only form anybody else can act on — the three recalled hexes were then
+verified against an independent source *because they were flagged*, and turned out to
+carry the font colours that produced two findings neither team had.
+
+**The corollary for retractions:** report the direction, not only the fact. The `0.067`
+correction made its own argument *stronger* — the real gaps are larger, by an order of
+magnitude at the extreme, so "no tolerance can work" became more true. A retraction that
+weakens nothing is easy to under-report, and under-reporting it invites someone to
+re-litigate a settled decision on the grounds that its evidence moved.
+
+---
+
+## 6-v2.10. Sign-in screens (2026-08-31) — requested by Paul
+
+> "Another thing to add to the design system: sign in screens, including
+> magic-link, username/password, and social signin ... `~/github.com/elevenmessenger/messenger`
+> does this pretty well, and these are screens that pretty much every app will need."
+
+He is right that every app needs them, and the gap is real: **`rastrillo/auth` renders no
+HTML at all.** It is pure mechanism — `Begin`, `Callback`, `Verify`, `Signout`,
+`RequireSession` — so today every app hand-writes its own sign-in screen against it, and
+the framework has opinions about magic links, passkeys and passwords in `docs/site/` with
+nothing to render them.
+
+### What the reference actually does well, read from the source
+
+Six things, and most of them are doctrine rather than markup.
+
+1. **One primary door, not a wall of buttons.** The card composes to a single primary
+   action — the last-used method where the browser remembers one, otherwise the platform
+   default — with a second door beneath it and a quiet "Other ways to sign in" leading to
+   the rest. Demoted doors do not render on the main card at all.
+2. **Find-or-create, one button each. No sign-in versus sign-up split.** "Continue with
+   Apple" is one door whether or not you have an account.
+3. **Provider buttons built to each provider's own spec, by hand.** Apple's black,
+   Google's white with the hairline and the official four-colour G, Microsoft's four
+   squares, GitHub's dark. All inline SVG and no vendor JavaScript — their rendered
+   buttons need their SDKs, and the CSP rightly blocks them. That constraint is
+   rastrillo's too, and arriving at the same answer from a different rule.
+4. **Steps swap in place.** The email door is a screen of its own: address → code →
+   session, as forms, so Enter submits and native validation gates.
+5. **A working button wears a face.** "The wait needs a face even when the server is
+   instant", with a static ring under `prefers-reduced-motion`.
+6. **Failure copy that serves both readings of an ambiguous failure.** A cancelled passkey
+   ceremony and having no passkey are indistinguishable — `NotAllowedError` either way —
+   so one explainer addresses a returning member who picked the wrong key *and* someone
+   genuinely new. That is the sharpest thing on the page and it is entirely copy.
+
+### The tension, and where it resolves
+
+The reference composes the card **in JavaScript**, from a per-browser memory of the
+last-used method. Rastrillo's doctrine is that the scriptless path is the real one. These
+are compatible if the split is drawn correctly:
+
+- **Server-rendered:** the card, the doors, the order, the step-through, every form, every
+  error state. The app declares its default primary door; that renders with no script.
+- **Enhancement:** remembering the last-used method for this browser, and promoting it.
+  Per-viewer, non-essential, degrades to the app's configured default. This is exactly the
+  shape `select.js` and `datetime.js` already have.
+
+### The honesty constraint, which is Paul's own rule
+
+`rastrillo/auth` implements magic links and the keymail OAuth ceremony. **It does not
+implement Google, Apple, Microsoft or GitHub sign-in.** So the design system ships the
+*buttons* — correctly branded, accessible, scriptless, pointing at whatever route the app
+provides — and must not imply the framework implements the flows behind them.
+
+That is §6-v2.3's rule applied before the fact rather than after: *published documentation
+describes what exists.* A "Continue with Google" button in the gallery with no Google
+support in `auth` is fine; a Getting-started sentence implying the framework signs you in
+with Google is not.
+
+### Open, for Paul
+
+- **Do the screens live in `ui` as partials, or in `auth` as renderable pages?** Partials
+  keep `auth` free of HTML and let an app compose its own screen; renderable pages are
+  turnkey and match how `auth` already owns its routes. The tension is the same one
+  `magic-links.md` calls "the framework's turnkey option".
+- **Password sign-in is the one where shipping a screen is a position.** The framework
+  documents passwords, and a design system with a polished username/password card
+  encourages it. Worth being deliberate rather than complete.

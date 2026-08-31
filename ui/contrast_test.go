@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"fmt"
-	"math"
 	"regexp"
 	"strings"
 	"testing"
@@ -20,6 +18,10 @@ import (
 // in dark from a single set of declarations. A token whose value is not
 // a light-dark() call (the font stack, the radii, a shadow whose two
 // schemes are identical) is carried into both tables unchanged.
+//
+// The WCAG arithmetic itself is not here: contrast ratios come from
+// ui.ContrastRatio in colour.go, which the colour engine is built on
+// too, so this gate and the engine cannot drift apart.
 //
 // LIMITATION, stated explicitly because it is easy to forget: this checks
 // token pairs, not the resolved cascade. It parses each theme's :root
@@ -57,11 +59,6 @@ var colorMixSkip = map[string]bool{
 	// this parser cannot read — and it is never asked to, because no
 	// pair below names it. See the note above the pair table.
 }
-
-// hexPattern matches a bare #rgb or #rrggbb custom-property value, the
-// only colour syntax a gated token uses today (the shadow and overlay
-// tokens carry rgba(), and none of them are in the pair table).
-var hexPattern = regexp.MustCompile(`^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
 
 // declPattern matches one custom-property declaration: "--rst-name:
 // value;". Values never contain a semicolon in this file (no font stacks
@@ -180,74 +177,6 @@ func themeTokens(t *testing.T, theme string) map[string]map[string]string {
 	return map[string]map[string]string{"light": light, "dark": dark}
 }
 
-// srgbToLinear converts one sRGB channel (0..1) to its linearized form —
-// the standard WCAG 2.x formula (also used by the WCAG 2.2 spec this
-// project targets).
-func srgbToLinear(c float64) float64 {
-	if c <= 0.03928 {
-		return c / 12.92
-	}
-	return math.Pow((c+0.055)/1.055, 2.4)
-}
-
-// relLuminance is the WCAG relative luminance of an sRGB colour.
-func relLuminance(r, g, b uint8) float64 {
-	rl := srgbToLinear(float64(r) / 255)
-	gl := srgbToLinear(float64(g) / 255)
-	bl := srgbToLinear(float64(b) / 255)
-	return 0.2126*rl + 0.7152*gl + 0.0722*bl
-}
-
-// parseHex reads a #rgb or #rrggbb literal. Anything else (var(),
-// color-mix(), rgba(), a bare name) is reported so a caller can route it
-// through colorMixSkip instead of guessing.
-func parseHex(s string) (r, g, b uint8, err error) {
-	if !hexPattern.MatchString(s) {
-		return 0, 0, 0, fmt.Errorf("not a #rgb/#rrggbb literal: %q", s)
-	}
-	h := s[1:]
-	if len(h) == 3 {
-		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
-	}
-	var v [3]uint8
-	for i := 0; i < 3; i++ {
-		n, err := parseHexByte(h[i*2 : i*2+2])
-		if err != nil {
-			return 0, 0, 0, err
-		}
-		v[i] = n
-	}
-	return v[0], v[1], v[2], nil
-}
-
-func parseHexByte(s string) (uint8, error) {
-	var n int
-	if _, err := fmt.Sscanf(s, "%02x", &n); err != nil {
-		return 0, err
-	}
-	return uint8(n), nil
-}
-
-// contrastRatio is the WCAG contrast ratio between two hex colours:
-// (lighter + 0.05) / (darker + 0.05) over relative luminance.
-func contrastRatio(fgHex, bgHex string) (float64, error) {
-	fr, fg, fb, err := parseHex(fgHex)
-	if err != nil {
-		return 0, fmt.Errorf("fg: %w", err)
-	}
-	br, bgc, bb, err := parseHex(bgHex)
-	if err != nil {
-		return 0, fmt.Errorf("bg: %w", err)
-	}
-	lf := relLuminance(fr, fg, fb)
-	lb := relLuminance(br, bgc, bb)
-	lighter, darker := lf, lb
-	if lb > lf {
-		lighter, darker = lb, lf
-	}
-	return (lighter + 0.05) / (darker + 0.05), nil
-}
-
 // TestSplitLightDarkReadsTheV2Format pins the one piece of parsing the
 // whole gate rests on. A splitter that quietly stopped recognising
 // light-dark() would not fail anything — it would hand both schemes the
@@ -278,13 +207,18 @@ func TestSplitLightDarkReadsTheV2Format(t *testing.T) {
 	}
 }
 
-// TestContrastMathMatchesDocumentedDangerFillRatios sanity-checks this
-// file's WCAG arithmetic against numbers tokens.css's own comment already
-// published and hand-verified (the [rst-btn~="danger"] comment — the one
-// colour commentary that stayed with the component rule):
-// --rst-on-accent on --rst-tone-negative-fg, both schemes of the default
-// theme. If this test ever fails, suspect the formula in this file before
-// suspecting the published ratios.
+// TestContrastMathMatchesDocumentedDangerFillRatios calibrates the WCAG
+// arithmetic against numbers tokens.css's own comment already published
+// and hand-verified (the [rst-btn~="danger"] comment — the one colour
+// commentary that stayed with the component rule): --rst-on-accent on
+// --rst-tone-negative-fg, both schemes of the default theme. If this test
+// ever fails, suspect the formula before suspecting the published ratios.
+//
+// The arithmetic it calibrates is ui.ContrastRatio in colour.go — shipped
+// code, not a test helper. There is one implementation of the WCAG
+// formula in this package: this gate, the colour engine and any app
+// gating its own colours all measure with the same one, so these two
+// hand-verified ratios calibrate all three.
 func TestContrastMathMatchesDocumentedDangerFillRatios(t *testing.T) {
 	for _, tt := range []struct {
 		name     string
@@ -295,12 +229,12 @@ func TestContrastMathMatchesDocumentedDangerFillRatios(t *testing.T) {
 		{"light: on-accent on tone-negative-fg", "#ffffff", "#b91c1c", 6.45, 6.49},
 		{"dark: on-accent on tone-negative-fg", "#0b1220", "#f79aa0", 8.97, 9.01},
 	} {
-		got, err := contrastRatio(tt.fg, tt.bg)
+		got, err := ContrastRatio(tt.fg, tt.bg)
 		if err != nil {
 			t.Fatalf("%s: %v", tt.name, err)
 		}
 		if got < tt.wantLow || got > tt.wantHigh {
-			t.Errorf("%s: contrastRatio(%s, %s) = %.2f, want in [%.2f, %.2f] (tokens.css's published ratio)", tt.name, tt.fg, tt.bg, got, tt.wantLow, tt.wantHigh)
+			t.Errorf("%s: ContrastRatio(%s, %s) = %.2f, want in [%.2f, %.2f] (tokens.css's published ratio)", tt.name, tt.fg, tt.bg, got, tt.wantLow, tt.wantHigh)
 		}
 	}
 }
@@ -393,7 +327,7 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 						t.Errorf("token %s is not declared in this theme", p.bg)
 						continue
 					}
-					ratio, err := contrastRatio(fgVal, bgVal)
+					ratio, err := ContrastRatio(fgVal, bgVal)
 					if err != nil {
 						t.Errorf("%s (%s) on %s (%s): %v — add to colorMixSkip if this is a value the parser cannot evaluate", p.fg, fgVal, p.bg, bgVal, err)
 						continue
