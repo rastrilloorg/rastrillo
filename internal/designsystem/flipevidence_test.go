@@ -31,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"github.com/carlosframework/rastrillo/harness"
@@ -102,8 +103,8 @@ func TestTheFlipDidNotMoveAPixel(t *testing.T) {
 			if err := chromedp.Run(ctx,
 				chromedp.EmulateViewport(1280, 900),
 				chromedp.Navigate(c.origin+"/design-system/"+page),
-				chromedp.Sleep(150*time.Millisecond),
-				chromedp.Evaluate(digest, &raw),
+				chromedp.Evaluate(digest, &raw,
+					func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
 			); err != nil {
 				t.Fatalf("%s on %s: %v", page, c.origin, err)
 			}
@@ -168,7 +169,25 @@ var props = func() []string {
 
 var digest = func() string {
 	j, _ := json.Marshal(props)
-	return fmt.Sprintf(`(() => {
+	return fmt.Sprintf(`(async () => {
+  // Measure a settled page or measure noise. A gallery page holds thirty
+  // <iframe srcdoc> documents; reading before their fonts have resolved
+  // gives a layout that is a few pixels different from the one a person
+  // sees, and — worse for a comparison — different from the one the same
+  // page gives on the next run. A fixed sleep was doing that: a Bengali
+  // page came out different between two runs of the SAME tree.
+  await document.fonts.ready;
+  for (const f of document.querySelectorAll("iframe")) {
+    let d = null;
+    try { d = f.contentDocument; } catch (e) { d = null; }
+    if (d && d.readyState !== "complete") {
+      await new Promise(function (r) { f.addEventListener("load", r, {once: true}); });
+      try { d = f.contentDocument; } catch (e) { d = null; }
+    }
+    if (d && d.fonts) { try { await d.fonts.ready; } catch (e) {} }
+  }
+  // One more frame, so anything the load handlers moved has been laid out.
+  await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
   // .rst-spin really is turning, so its transform is a different matrix
   // every millisecond. Freeze every animation at frame 0 first.
   for (const el of document.querySelectorAll("*")) {

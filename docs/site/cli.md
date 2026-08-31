@@ -307,7 +307,10 @@ have started emitting attributes renders unstyled. That is the one
 failure this staged migration exists to avoid.
 
 Rewriting is idempotent, so running it twice, or over a tree half of
-which is already done, changes nothing the second time.
+which is already done, changes nothing the second time. Nothing breaks
+if you stop between steps 1 and 3, either: `tokens.css` styles both
+spellings until stage 3, and `rastrillo.js` dismisses menus written in
+either one. Step 3 is what you owe stage 3, not what you owe today.
 
 ### One name changed meaning
 
