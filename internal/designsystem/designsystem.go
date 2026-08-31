@@ -1,5 +1,5 @@
 // Package designsystem renders rastrillo.org/design-system: one static
-// page per theme × locale showing every partial, every class idiom and
+// page per theme × locale showing every partial, every markup idiom and
 // every design token the framework ships, plus a full-page demo of each
 // of the three shells and one of the modal route.
 //

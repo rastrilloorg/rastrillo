@@ -51,7 +51,7 @@
 //
 // Styling comes from two stylesheets rastrillo new writes once into a
 // new app's static/ directory: tokens.css, which is structure — layout,
-// spacing, the type scale and the component classes — and a theme (see
+// spacing, the type scale and the components themselves — and a theme (see
 // ThemeCSS), which is the colour, the type family and the shape (radii,
 // shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
@@ -292,7 +292,7 @@ var themeNames = []string{"day", "plain", "signal"}
 func ThemeNames() []string { return append([]string(nil), themeNames...) }
 
 // ThemeCSS returns one theme's raw bytes — the colour, type-family and
-// shape tokens tokens.css paints its component classes with — reporting
+// shape tokens tokens.css paints its components with — reporting
 // false for a name that is not shipped. rastrillo new writes the chosen
 // theme once as static/theme.css, beside tokens.css and on exactly the
 // same terms: app-owned from then on, and swappable for a hand-written

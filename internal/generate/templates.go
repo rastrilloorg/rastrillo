@@ -186,7 +186,7 @@ func fieldMono(k rastrillo.Kind) bool {
 //     inside a {{range .Filter.Items}} sidesteps that, calling
 //     (T .LabelKey) per item exactly where a real range can reach it.
 //     The inlined block mirrors dropdown.html's own template TEXT
-//     byte-for-byte (same classes, same {{if .Current}} aria-current
+//     byte-for-byte (same attributes, same {{if .Current}} aria-current
 //     and check-icon guards, same {{- range}}/{{- end}} whitespace
 //     trims) with exactly two substitutions — .Label becomes
 //     (T .LabelKey), and .Aria/.Label on the summary become inline
@@ -242,7 +242,7 @@ func listBarWithDropdownHTML(r rastrillo.Resource) string {
 	b.WriteString("     per-item (T .LabelKey) resolution inside this range cannot be\n")
 	b.WriteString("     expressed as a single dict/list argument to one {{template}} call\n")
 	b.WriteString("     (see listHTML's doc comment). Keep this block structurally\n")
-	b.WriteString("     identical to ui/partials/dropdown.html — same classes, same\n")
+	b.WriteString("     identical to ui/partials/dropdown.html — same attributes, same\n")
 	b.WriteString("     aria-current/check-icon guards, same whitespace trims — so the\n")
 	b.WriteString("     existing CSS and a11y contract hold unchanged. name=\"rst-menus\"\n")
 	b.WriteString("     is the library's shared dropdown exclusivity group, written\n")

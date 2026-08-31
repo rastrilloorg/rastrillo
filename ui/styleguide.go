@@ -47,7 +47,7 @@ var styleguideSamples = map[string]string{
   </div>
 </details>
 <span rst-ftok><span rst-ftok-k>Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span>`,
-	// form-layout demonstrates the classes tokens.css ships for form
+	// form-layout demonstrates the attributes tokens.css ships for form
 	// rhythm and the save bar (rst-form-flow, rst-field-row, rst-grow,
 	// rst-form-foot, rst-form-actions) — no partial emits these, since
 	// they wrap a caller-composed run of "field" partials rather than a
@@ -167,7 +167,7 @@ var styleguideSamples = map[string]string{
 	// would close by opening. Its name is rst-shell-menu for exactly
 	// that reason: <details name> exclusivity is document-wide. No partial emits
 	// any of this — an app's layout template owns its own shell — so
-	// this sample is the only exercise these classes get. The nav's
+	// this sample is the only exercise these attributes get. The nav's
 	// current item is aria-current, the same signal the dropdown and
 	// seg-tabs idioms already use.
 	"shell-topbar": `<div rst-shell-topbar>
@@ -200,7 +200,7 @@ var styleguideSamples = map[string]string{
 </div>`,
 }
 
-// Styleguide returns the canonical markup for every class idiom —
+// Styleguide returns the canonical markup for every markup idiom —
 // structural components with arbitrary bodies that a template partial
 // cannot wrap, such as the section box, the list-grid card and the page
 // shells. It is the source the design-system page renders and the

@@ -250,7 +250,7 @@ They belong to your page markup, so the library does not emit them:
 <form rst-form>  <!-- the column a run of fields and a form-foot sit in -->
 ```
 
-There is also a class idiom vocabulary — section box, list grid,
+There is also a markup idiom vocabulary — section box, list grid,
 dropdown, filter tokens, help tooltip, selection checkbox — that is CSS
 rather than a Go partial. The `ui` package's doc comment has the full
 list.
@@ -408,7 +408,7 @@ This partial never emits it — `Plain` simply emits nothing — but
 
 ## The design system
 
-Every partial, every state, every class idiom and all three shells,
+Every partial, every state, every markup idiom and all three shells,
 rendered live for all three themes and all twelve base locales — five
 pages per theme × locale, one per section, plus a full-page demo for
 each shell and one for the modal route. It is live at
@@ -439,7 +439,7 @@ freshness gate to run.
 Every page is laid out in the `sidebar` shell, because that shell is one
 of the things the gallery exists to show. The rail is the same on all
 five: a search box over a nav that links every section, every partial
-and every class idiom in the whole gallery, with the section you are
+and every markup idiom in the whole gallery, with the section you are
 reading expanded and the rest folded away —
 `TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives that list
 from the same markers the coverage gates read, so a new partial shows up

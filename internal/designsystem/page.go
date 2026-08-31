@@ -1141,7 +1141,7 @@ func previewStyle(h int) template.CSS {
 // for the state a reader opens, not for the closed one.
 //
 // The key is the anchor id, not the name, because "dropdown" is both a
-// partial and a class idiom and they are not the same height. Being
+// partial and a markup idiom and they are not the same height. Being
 // wrong here costs a scrollbar or some white space, never a broken
 // page.
 var previewHeights = map[string]int{
@@ -1184,7 +1184,7 @@ var previewHeights = map[string]int{
 	"partial-error-page":  390,
 	"partial-back-nav":    80,
 	"partial-locale-menu": 420, // the open menu at its full 20rem cap; twelve languages scroll inside it
-	// The class idioms.
+	// The markup idioms.
 	"idiom-box":           220,
 	"idiom-list-grid":     280,
 	"idiom-dropdown":      220,
@@ -1394,7 +1394,7 @@ func wrap(w wrapper, html string) string {
 
 // ── Class idioms ─────────────────────────────────────────────────────
 
-// idiomBlurbs is one English sentence per class idiom, in the page's own
+// idiomBlurbs is one English sentence per markup idiom, in the page's own
 // voice. A missing entry renders no blurb rather than an empty one.
 //
 // English here is the source AND the prose.go key, exactly as in
