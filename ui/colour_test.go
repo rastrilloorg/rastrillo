@@ -3,6 +3,7 @@ package ui
 import (
 	"math"
 	"math/rand"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -16,6 +17,38 @@ import (
 // here comes in two halves — the real assertion, and a planted case with
 // a known answer — and the halves are named so a reader can see when one
 // goes missing.
+
+// ─── The floors themselves ───────────────────────────────────────────
+
+// TestFloorConstantsAreTheStandard pins the two floors to the numbers
+// WCAG 2.2 AA publishes, as literals.
+//
+// This is not pedantry, it is the gap that made every other contrast
+// assertion in this file self-referential. A test that asserts
+// "sw.FillRatio >= ContrastFloorBoundary" measures the engine against
+// whatever the constant currently says: lower the constant and the
+// assertion lowers with it, and the gate reports green on a palette that
+// fails WCAG. The bar has to be written down somewhere that a mutation of
+// the bar cannot move. Here it is.
+//
+// minDeliveredChroma and MinSeparation are pinned for a different reason:
+// they are this project's own policy rather than anybody's standard, so
+// the literal is there to make a change to them a visible edit with a
+// number in the diff.
+func TestFloorConstantsAreTheStandard(t *testing.T) {
+	if ContrastFloorText != 4.5 {
+		t.Errorf("ContrastFloorText = %v, want 4.5 (WCAG 2.2 AA, 1.4.3 normal text)", ContrastFloorText)
+	}
+	if ContrastFloorBoundary != 3.0 {
+		t.Errorf("ContrastFloorBoundary = %v, want 3.0 (WCAG 2.2 AA, 1.4.11 non-text contrast)", ContrastFloorBoundary)
+	}
+	if minDeliveredChroma != 0.035 {
+		t.Errorf("minDeliveredChroma = %v, want 0.035 — changing it changes which intents are admissible", minDeliveredChroma)
+	}
+	if MinSeparation != 0.03 {
+		t.Errorf("MinSeparation = %v, want 0.03 — changing it changes what \"distinguishable\" means", MinSeparation)
+	}
+}
 
 // ─── ContrastRatio ───────────────────────────────────────────────────
 
@@ -203,11 +236,11 @@ func TestPairAgainstBackgroundsWithAnObviousAnswer(t *testing.T) {
 		if math.Abs(fr-sw.FillRatio) > 1e-9 || math.Abs(or-sw.OnRatio) > 1e-9 {
 			t.Errorf("%+v reports ratios (%.4f, %.4f) but its own colours measure (%.4f, %.4f)", sw, sw.FillRatio, sw.OnRatio, fr, or)
 		}
-		if fr < ContrastFloorBoundary {
-			t.Errorf("fill %s on %s = %.2f:1, want >= %.1f:1", sw.Fill, sw.Background, fr, ContrastFloorBoundary)
+		if fr < 3.0 { // a literal, for the reason given in TestFloorConstantsAreTheStandard
+			t.Errorf("fill %s on %s = %.2f:1, want >= 3.0:1", sw.Fill, sw.Background, fr)
 		}
-		if or < ContrastFloorText {
-			t.Errorf("on-fill %s on fill %s = %.2f:1, want >= %.1f:1", sw.On, sw.Fill, or, ContrastFloorText)
+		if or < 4.5 {
+			t.Errorf("on-fill %s on fill %s = %.2f:1, want >= 4.5:1", sw.On, sw.Fill, or)
 		}
 	}
 }
@@ -242,11 +275,16 @@ func TestPairHoldsItsFloorsEverywhere(t *testing.T) {
 					t.Errorf("Pair(%v, %v, %s): %v", hue, chroma, bg, err)
 					continue
 				}
-				if sw.FillRatio < ContrastFloorBoundary {
-					t.Errorf("Pair(%v, %v, %s): fill %s = %.3f:1, want >= %.1f:1", hue, chroma, bg, sw.Fill, sw.FillRatio, ContrastFloorBoundary)
+				// The floors here are LITERALS, deliberately, not
+				// ContrastFloorBoundary and ContrastFloorText. Against
+				// the constants this sweep would only prove the engine
+				// agrees with itself, and would pass unchanged if the
+				// constants were lowered to 1.05.
+				if sw.FillRatio < 3.0 {
+					t.Errorf("Pair(%v, %v, %s): fill %s = %.3f:1, want >= 3.0:1 (WCAG 1.4.11)", hue, chroma, bg, sw.Fill, sw.FillRatio)
 				}
-				if sw.OnRatio < ContrastFloorText {
-					t.Errorf("Pair(%v, %v, %s): on-fill %s on fill %s = %.3f:1, want >= %.1f:1", hue, chroma, bg, sw.On, sw.Fill, sw.OnRatio, ContrastFloorText)
+				if sw.OnRatio < 4.5 {
+					t.Errorf("Pair(%v, %v, %s): on-fill %s on fill %s = %.3f:1, want >= 4.5:1 (WCAG 1.4.3)", hue, chroma, bg, sw.On, sw.Fill, sw.OnRatio)
 				}
 				if sw.Chroma > chroma {
 					t.Errorf("Pair(%v, %v, %s): delivered chroma %v, more than was asked for", hue, chroma, bg, sw.Chroma)
@@ -323,7 +361,7 @@ func TestAllocateSeparatesUpToCapacity(t *testing.T) {
 		t.Errorf("Allocate gave %d distinct hues to %d keys; every one should be its own", got, n)
 	}
 
-	over := append(slicesClone(keys), "one-too-many")
+	over := append(slices.Clone(keys), "one-too-many")
 	intents, separated = Allocate(over, nil)
 	if separated {
 		t.Errorf("Allocate reported separated=true for %d keys with a capacity of %d — past capacity it must say separation is gone", len(over), n)
@@ -355,12 +393,6 @@ func distinctHues(intents []Intent) int {
 	return len(seen)
 }
 
-func slicesClone(s []string) []string {
-	out := make([]string, len(s))
-	copy(out, s)
-	return out
-}
-
 // TestAllocateIsDeterministicUnderShuffle is the determinism gate, and
 // it is deliberately not "call it twice with the same slice" — that is
 // one measurement taken twice, which is exactly the mistake §7-v2 was
@@ -379,7 +411,7 @@ func TestAllocateIsDeterministicUnderShuffle(t *testing.T) {
 
 	rng := rand.New(rand.NewSource(20260831))
 	for trial := 0; trial < 200; trial++ {
-		shuffled := slicesClone(base)
+		shuffled := slices.Clone(base)
 		rng.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
 		got := allocationMap(t, shuffled, nil)
 		for k, v := range want {
@@ -390,24 +422,32 @@ func TestAllocateIsDeterministicUnderShuffle(t *testing.T) {
 		}
 	}
 
-	// The control for the control: the same shuffle harness must be able
-	// to see a difference. A DIFFERENT key set has to produce a
-	// different map, or this test would pass against an allocator that
-	// returned one constant.
-	other := allocationMap(t, []string{"member-7", "different-key-entirely"}, nil)
-	if other["member-7"] == want["member-7"] && len(want) > 1 {
-		// Not a failure on its own — the two may legitimately agree,
-		// since member-7 keeps its preferred hue when nothing displaces
-		// it. What must differ is the map as a whole.
-		same := true
-		for k := range other {
-			if _, ok := want[k]; !ok {
-				same = false
-			}
-		}
-		if same {
-			t.Error("two different key sets produced the same allocation map; the harness is not measuring the keys")
-		}
+	// The control, and it has to be one that must fire. Order-invariance
+	// on its own is a weak property: a constant allocator, handing every
+	// key the same hue, is perfectly order-invariant and would sail
+	// through the 200 shuffles above. So the harness is shown detecting a
+	// difference it is supposed to detect.
+	//
+	// The case is chosen because its answer is known without running
+	// anything. "Member-7" and "member-3" both prefer slot 11, and
+	// "Member-7" sorts first ('M' is 0x4D, 'm' is 0x6D). Alone,
+	// "member-3" keeps slot 11, at 355°. With "Member-7" beside it,
+	// "Member-7" keeps 355° and "member-3" is displaced — it probes past
+	// the end of the set and wraps to slot 0, at 25°. A harness that
+	// cannot see that is not reading the keys.
+	alone := allocationMap(t, []string{"member-3"}, nil)
+	if alone["member-3"] != 355 {
+		t.Errorf("\"member-3\" alone got hue %v, want 355 (its preferred slot)", alone["member-3"])
+	}
+	displaced := allocationMap(t, []string{"member-3", "Member-7"}, nil)
+	if displaced["member-3"] != 25 {
+		t.Errorf("\"member-3\" beside \"Member-7\" got hue %v, want 25 — it must be displaced, and it must wrap", displaced["member-3"])
+	}
+	if displaced["Member-7"] != 355 {
+		t.Errorf("\"Member-7\" got hue %v, want 355 — the key that sorts EARLIER keeps its preferred hue", displaced["Member-7"])
+	}
+	if alone["member-3"] == displaced["member-3"] {
+		t.Error("adding a colliding key changed nothing; this harness cannot see a difference and its 200 shuffles prove nothing")
 	}
 }
 
@@ -434,7 +474,6 @@ func allocationMap(t *testing.T, keys []string, avoid []float64) map[string]floa
 // different — and therefore incompatible — answer for the same inputs.
 func TestAllocateHonoursAvoid(t *testing.T) {
 	all := Offered()
-	n := len(all)
 	keys := []string{"a", "b", "c", "d"}
 
 	// Avoid every hue but three. Four keys into three hues cannot
@@ -482,7 +521,6 @@ func TestAllocateHonoursAvoid(t *testing.T) {
 	if _, ok := offeredIndexOf(all[0].Hue - 360); !ok {
 		t.Errorf("offeredIndexOf did not match %v as %v", all[0].Hue-360, all[0].Hue)
 	}
-	_ = n
 }
 
 func sameMap(a, b map[string]float64) bool {
@@ -498,43 +536,46 @@ func sameMap(a, b map[string]float64) bool {
 }
 
 // TestAllocateStabilityIsBestEffort pins the documented shape of the
-// stability promise: a key that nothing displaces keeps the same hue in
-// a different document, and a key that something does displace moves.
-// Both halves are documented behaviour, so both are asserted — the
-// second so nobody reads the first as a guarantee it is not.
+// stability promise, in both directions, with no branch that can skip an
+// assertion. A key that nothing displaces keeps its hue in a different
+// document; a key that something does displace moves. Both halves are
+// documented behaviour, so both are asserted — the second so nobody reads
+// the first as a guarantee it is not.
+//
+// The keys are chosen rather than mined, so the expected answer is known
+// in advance rather than read off the run: "Member-7" and "member-3" both
+// prefer slot 11 and "Member-7" sorts first. See the golden table in
+// colour_golden_test.go, which pins the same two rows as data.
 func TestAllocateStabilityIsBestEffort(t *testing.T) {
-	n := len(Offered())
-
-	// Find two keys that prefer the same hue. They exist: twelve hues
-	// and an unbounded key space.
-	var a, b string
-	for i := 0; i < 5000 && b == ""; i++ {
-		k := "collide-" + string(rune('a'+i%26)) + strings.Repeat("x", i/26)
-		if a == "" {
-			a = k
-			continue
-		}
-		if fnv1a64(k)%uint64(n) == fnv1a64(a)%uint64(n) {
-			b = k
-		}
+	const early, late = "Member-7", "member-3"
+	n := uint64(len(Offered()))
+	if fnv1a64(early)%n != fnv1a64(late)%n {
+		t.Fatalf("%q and %q no longer prefer the same slot (%d vs %d) — this test needs a colliding pair and its premise has gone",
+			early, late, fnv1a64(early)%n, fnv1a64(late)%n)
 	}
-	if b == "" {
-		t.Skip("no colliding pair found in the sampled key space")
+	if !(early < late) {
+		t.Fatalf("%q no longer sorts before %q; the test has the roles the wrong way round", early, late)
 	}
 
-	alone, _ := Allocate([]string{a}, nil)
-	together, _ := Allocate([]string{a, b}, nil)
-	first, second := a, b
-	if second < first {
-		first, second = second, first
+	// Stability: the earlier key keeps its preferred hue whether it is
+	// alone or in company. This is the "recognisable across documents"
+	// half, and it is best-effort exactly because the OTHER key cannot
+	// have it.
+	soloEarly, _ := Allocate([]string{early}, nil)
+	soloLate, _ := Allocate([]string{late}, nil)
+	together, sep := Allocate([]string{early, late}, nil)
+	if !sep {
+		t.Error("two keys into twelve hues reported separated=false")
 	}
-	// The lexicographically earlier key keeps its preferred hue; the
-	// later one is the one that moves. That is what "displace the later
-	// arrival" means once arrival order has been replaced by the sorted
-	// order.
-	idx := map[string]int{a: 0, b: 1}
-	if together[idx[first]].Hue != alone[0].Hue && first == a {
-		t.Errorf("%q lost its preferred hue to %q, which sorts after it", first, second)
+	if together[0].Hue != soloEarly[0].Hue {
+		t.Errorf("%q got %v alone and %v in company; the key that sorts earlier must keep its preferred hue",
+			early, soloEarly[0].Hue, together[0].Hue)
+	}
+
+	// And the other half, asserted unconditionally: the later key moves.
+	if together[1].Hue == soloLate[0].Hue {
+		t.Errorf("%q got %v both alone and beside %q, but they prefer the same slot — one of them has to move, and it is this one",
+			late, soloLate[0].Hue, early)
 	}
 	if together[0].Hue == together[1].Hue {
 		t.Errorf("two colliding keys got the same hue %v; separation is the guarantee", together[0].Hue)
@@ -564,22 +605,39 @@ func TestOfferedSetClearsEveryBackgroundWeShip(t *testing.T) {
 		t.Errorf("the offered set does not clear every background it can be rendered on:\n%v", err)
 	}
 
-	// Report the tightest margin the set actually has, so a change that
-	// leaves it green while eating all the headroom is visible.
-	worstFill, worstOn, worstChroma := math.Inf(1), math.Inf(1), math.Inf(1)
+	// Report the margins the set actually has, so a change that leaves
+	// the gate green while eating all the headroom is visible.
+	//
+	// There is deliberately NO "worst fill ratio" here, and its absence
+	// is the point. The search takes the first lightness clearing
+	// floor + contrastMargin and then the one nearest the background,
+	// which is always that same first step — so a worst fill ratio reads
+	// 3.05 for a palette one step from failing and 3.05 for a palette
+	// with the whole grid to spare. It is a measurement of
+	// contrastMargin, not of the set, and a number that cannot move is
+	// worse than no number: it looks like headroom and reports nothing.
+	// The floor itself is still enforced, above, by CheckIntents.
+	worstOn, worstChroma := math.Inf(1), math.Inf(1)
 	for _, in := range Offered() {
 		for _, bg := range backgrounds {
 			sw, err := Pair(in.Hue, in.Chroma, bg)
 			if err != nil {
 				t.Fatalf("Pair(%v, %v, %s): %v", in.Hue, in.Chroma, bg, err)
 			}
-			worstFill = math.Min(worstFill, sw.FillRatio)
 			worstOn = math.Min(worstOn, sw.OnRatio)
 			worstChroma = math.Min(worstChroma, sw.Chroma)
 		}
 	}
-	t.Logf("tightest margins: fill %.2f:1 (floor %.1f), on-fill %.2f:1 (floor %.1f), chroma %.3f (floor %.3f)",
-		worstFill, ContrastFloorBoundary, worstOn, ContrastFloorText, worstChroma, minDeliveredChroma)
+	sep, sepBG, sepA, sepB := WorstSeparation(Offered(), backgrounds)
+	t.Logf("margins: on-fill %.2f:1 (floor 4.5), chroma %.3f (floor %.3f), separation ΔE_OK %.4f (floor %.3f) between %s and %s on %s",
+		worstOn, worstChroma, minDeliveredChroma, sep, MinSeparation, sepA, sepB, sepBG)
+
+	// The separation number is the one that decides whether twelve hues
+	// is the right capacity, so it gets an assertion of its own rather
+	// than only a log line.
+	if sep < MinSeparation {
+		t.Errorf("the two closest offered fills are ΔE_OK %.4f apart on %s (%s vs %s), under the %.3f floor", sep, sepBG, sepA, sepB, MinSeparation)
+	}
 }
 
 // shippedBackgrounds is every surface colour the suite can render an
@@ -632,7 +690,7 @@ func TestCheckIntentsRejectsWhatItShould(t *testing.T) {
 		t.Fatalf("a known-good intent was rejected: %v", err)
 	}
 
-	planted := append(slicesCloneIntents(good), Intent{Hue: 265, Chroma: 0})
+	planted := append(slices.Clone(good), Intent{Hue: 265, Chroma: 0})
 	err := CheckIntents(planted, bgs)
 	if err == nil {
 		t.Error("a grey intent (chroma 0) passed; it resolves to a colour no other hue can be told apart from")
@@ -661,12 +719,6 @@ func TestCheckIntentsRejectsWhatItShould(t *testing.T) {
 	if got := strings.Count(err.Error(), "grey"); got != 4 {
 		t.Errorf("CheckIntents reported %d failures for 2 bad intents on 2 backgrounds, want 4 — it should not stop at the first", got)
 	}
-}
-
-func slicesCloneIntents(s []Intent) []Intent {
-	out := make([]Intent, len(s))
-	copy(out, s)
-	return out
 }
 
 // TestCheckSwatchMeasuresTheFloors is the other control the proof needs.
@@ -722,5 +774,215 @@ func TestOfferedIsACopy(t *testing.T) {
 	intents, _ := Allocate([]string{"a"}, nil)
 	if intents[0].Hue == 999 {
 		t.Error("editing the slice from Offered changed what Allocate hands out")
+	}
+}
+
+// ─── The bisection's premise ─────────────────────────────────────────
+
+// TestLuminanceRisesWithLightness is the assumption Pair's search rests
+// on, checked rather than assumed.
+//
+// Pair does not scan the lightness grid any more; it bisects for the two
+// steps where the fill stops being dark enough and starts being light
+// enough. Bisection is only sound if luminance never turns back on itself
+// as lightness rises — and it is not obvious that it does not, because
+// gamut reduction changes the colour at every step and eight-bit rounding
+// quantises the result. So: 120 hues × 8 chromas × 391 steps, and not one
+// step may be darker than the step below it.
+//
+// If this ever fails, Pair's search is unsound before it is slow, and the
+// fix is to go back to a scan rather than to widen a tolerance here.
+func TestLuminanceRisesWithLightness(t *testing.T) {
+	for hue := 0.0; hue < 360; hue += 3 {
+		for _, c := range []float64{0, 0.02, 0.05, 0.08, 0.14, 0.2, 0.3, 0.4} {
+			prev := -1.0
+			for step := 0; step <= lightnessSteps; step++ {
+				rgb, _ := oklchRGB(stepLightness(step), c, hue)
+				lum := relLuminance(rgb[0], rgb[1], rgb[2])
+				if lum < prev {
+					t.Fatalf("hue %g chroma %g: luminance falls from %.9f to %.9f between steps %d and %d — the search bisects and may not",
+						hue, c, prev, lum, step-1, step)
+				}
+				prev = lum
+			}
+		}
+	}
+}
+
+// TestBisectionFindsTheSameStepsAsAScan is the control for the search
+// rewrite: the slow, obviously-correct thing, run beside the fast one.
+//
+// A scan of all 391 steps keeping the nearest feasible is what Pair used
+// to do, and it is a paragraph of code anyone can check by eye. It is
+// written out again here, independently of the shipped implementation,
+// and the two have to agree on every colour. That is what makes the
+// bisection a speed-up rather than a change.
+func TestBisectionFindsTheSameStepsAsAScan(t *testing.T) {
+	backgrounds := []string{"#ffffff", "#f4f5f8", "#eef3fe", "#808080", "#4b5563", "#111418", "#0b0d10", "#b91c1c"}
+	for _, bg := range backgrounds {
+		bgR, bgG, bgB, err := parseHex(bg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bgL, bgLum := oklabOf(bgR, bgG, bgB)[0], relLuminance(bgR, bgG, bgB)
+		for hue := 0.0; hue < 360; hue += 11 {
+			for _, chroma := range []float64{0.02, 0.14, 0.3} {
+				// The scan, written out in full.
+				var wantFill, wantOn string
+				var found bool
+				var bestDist float64
+				for step := 0; step <= lightnessSteps; step++ {
+					rgb, c := oklchRGB(stepLightness(step), chroma, hue)
+					if ratioOf(relLuminance(rgb[0], rgb[1], rgb[2]), bgLum) < ContrastFloorBoundary+contrastMargin {
+						continue
+					}
+					on, _, ok := ink(rgb, hue, c)
+					if !ok {
+						continue
+					}
+					dist := math.Abs(stepLightness(step) - bgL)
+					if found && dist >= bestDist {
+						continue
+					}
+					found, bestDist = true, dist
+					wantFill, wantOn = hexOf(rgb), on
+				}
+
+				sw, err := Pair(hue, chroma, bg)
+				if !found {
+					if err == nil {
+						t.Errorf("hue %g chroma %g on %s: the scan found nothing but Pair returned %s", hue, chroma, bg, sw.Fill)
+					}
+					continue
+				}
+				if err != nil {
+					t.Errorf("hue %g chroma %g on %s: the scan found %s but Pair failed: %v", hue, chroma, bg, wantFill, err)
+					continue
+				}
+				if sw.Fill != wantFill || sw.On != wantOn {
+					t.Errorf("hue %g chroma %g on %s: Pair gave %s/%s, the scan gives %s/%s",
+						hue, chroma, bg, sw.Fill, sw.On, wantFill, wantOn)
+				}
+			}
+		}
+	}
+}
+
+// ─── Separation ──────────────────────────────────────────────────────
+
+// TestDeltaEOKControls checks the perceptual metric against distances
+// whose answers are known before it runs: a colour against itself is
+// exactly 0, the metric is symmetric, and black against white is exactly
+// the OKLab lightness range, which is 1.
+func TestDeltaEOKControls(t *testing.T) {
+	for _, hex := range []string{"#000000", "#ffffff", "#00705d", "#b91c1c"} {
+		got, err := DeltaEOK(hex, hex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != 0 {
+			t.Errorf("DeltaEOK(%s, %s) = %v, want exactly 0 — a colour compared with itself", hex, hex, got)
+		}
+	}
+	black, err := DeltaEOK("#000000", "#ffffff")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if math.Abs(black-1) > 1e-6 {
+		t.Errorf("DeltaEOK(black, white) = %v, want 1 (OKLab lightness runs 0 to 1 and both are neutral)", black)
+	}
+	fwd, _ := DeltaEOK("#00705d", "#006d76")
+	rev, _ := DeltaEOK("#006d76", "#00705d")
+	if fwd != rev {
+		t.Errorf("DeltaEOK is not symmetric: %v vs %v", fwd, rev)
+	}
+	// The pair the shipped set is tightest on, pinned so the number in
+	// the design record and the number the code computes stay the same
+	// thing. Two teals on day's dark page.
+	if math.Abs(fwd-0.0449) > 0.0005 {
+		t.Errorf("DeltaEOK(#00705d, #006d76) = %.4f, want 0.0449 — the shipped set's closest pair", fwd)
+	}
+	for _, bad := range []string{"teal", "var(--x)", "#12"} {
+		if _, err := DeltaEOK(bad, "#ffffff"); err == nil {
+			t.Errorf("DeltaEOK(%q, …) returned no error", bad)
+		}
+	}
+}
+
+// TestCheckIntentsMeasuresSeparation is the control for the pairwise
+// half of the proof, which is new and therefore has never been seen
+// failing. Two intents 3° apart resolve to two colours nobody can tell
+// apart; the gate has to say so, and it has to name both.
+//
+// The known-good half runs beside it: the same two intents 30° apart —
+// the shipped spacing — pass.
+func TestCheckIntentsMeasuresSeparation(t *testing.T) {
+	bgs := []string{"#ffffff", "#101318"}
+
+	tooClose := []Intent{{Hue: 175, Chroma: 0.14}, {Hue: 178, Chroma: 0.14}}
+	err := CheckIntents(tooClose, bgs)
+	if err == nil {
+		t.Fatal("two intents 3° apart passed; they resolve to the same colour to a reader")
+	}
+	if !strings.Contains(err.Error(), "OKLab") {
+		t.Errorf("rejected for the wrong reason: %v", err)
+	}
+
+	farEnough := []Intent{{Hue: 175, Chroma: 0.14}, {Hue: 205, Chroma: 0.14}}
+	if err := CheckIntents(farEnough, bgs); err != nil {
+		t.Errorf("two intents at the shipped 30° spacing were rejected: %v", err)
+	}
+
+	// A single intent has no pair, and must not be reported as failing
+	// one — an easy off-by-one in a pairwise loop.
+	if err := CheckIntents([]Intent{{Hue: 175, Chroma: 0.14}}, bgs); err != nil {
+		t.Errorf("one intent on its own was rejected: %v", err)
+	}
+
+	// WorstSeparation agrees with the gate about which pair is tightest.
+	d, bg, _, _ := WorstSeparation(tooClose, bgs)
+	if d >= MinSeparation {
+		t.Errorf("WorstSeparation says %.4f on %s, but CheckIntents rejected the same set", d, bg)
+	}
+	// And it says +Inf when there is nothing to measure, rather than 0,
+	// which would read as "these are identical".
+	if d, _, _, _ := WorstSeparation(nil, bgs); !math.IsInf(d, 1) {
+		t.Errorf("WorstSeparation over no intents = %v, want +Inf", d)
+	}
+}
+
+// ─── Cost ────────────────────────────────────────────────────────────
+//
+// Both declared consumers call Pair per cell or per highlight, so its
+// cost is part of its contract. Run with:
+//
+//	go test ./ui/ -run XXX -bench Colour
+//
+// For the record, on the machine this was written on: Pair went from
+// 2,762,408 ns/op to about 12,000 ns/op when the scan became a bisection,
+// ContrastRatio from 2,558 to 17, and parseHex from 845 to 7.
+
+func BenchmarkColourPair(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Pair(265, 0.14, "#ffffff")
+	}
+}
+
+func BenchmarkColourPairOnDark(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Pair(175, 0.14, "#101318")
+	}
+}
+
+func BenchmarkColourContrastRatio(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ContrastRatio("#b91c1c", "#ffffff")
+	}
+}
+
+func BenchmarkColourAllocate(b *testing.B) {
+	keys := []string{"member-7", "member-3", "member-11", "guest-row-902", "member-1", "aaa", "zzz", "Member-7"}
+	for i := 0; i < b.N; i++ {
+		Allocate(keys, nil)
 	}
 }

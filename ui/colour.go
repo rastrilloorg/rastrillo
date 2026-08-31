@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math"
-	"regexp"
 	"slices"
-	"sort"
 )
 
 // This file is rastrillo's colour engine (design doc §6-v2.2b): the two
@@ -186,52 +184,118 @@ func Pair(hue, chroma float64, background string) (Swatch, error) {
 		h += 360
 	}
 
-	bgL := oklabLightness(bg)
-	var best Swatch
-	var found bool
-	var bestDist float64
+	bgR, bgG, bgB, err := parseHex(bg)
+	if err != nil {
+		return Swatch{}, err
+	}
+	bgL := oklabOf(bgR, bgG, bgB)[0]
+	bgLum := relLuminance(bgR, bgG, bgB)
 
-	for step := 0; step <= lightnessSteps; step++ {
-		l := lightnessLow + (lightnessHigh-lightnessLow)*float64(step)/float64(lightnessSteps)
-		fill, c := oklchHex(l, chroma, h)
-		fillRatio, err := ContrastRatio(fill, bg)
-		if err != nil {
-			return Swatch{}, err
+	// Where the fill is allowed to be. A fill clears the boundary floor
+	// by being far enough from the background in luminance, and it can
+	// be on either side, so the two thresholds are the two sides:
+	// anything at or below darkMax is dark enough, anything at or above
+	// lightMin is light enough, and the band between them is barred.
+	const target = ContrastFloorBoundary + contrastMargin
+	darkMax := (bgLum+0.05)/target - 0.05
+	lightMin := target*(bgLum+0.05) - 0.05
+
+	// A fill's luminance rises with its lightness, monotonically, over
+	// the whole grid at every hue and chroma — gamut reduction narrows
+	// the colour but never turns the ramp back on itself, which
+	// TestLuminanceRisesWithLightness holds it to. So the two boundaries
+	// are found by bisection rather than by walking into them: the
+	// highest step still dark enough, and the lowest step already light
+	// enough. Everything below the first and above the second is
+	// feasible; the band between them is not.
+	lum := func(step int) float64 {
+		rgb, _ := oklchRGB(stepLightness(step), chroma, h)
+		return relLuminance(rgb[0], rgb[1], rgb[2])
+	}
+	down := lastStepAtMost(lum, darkMax)  // -1 when even black is too light
+	up := firstStepAtLeast(lum, lightMin) // lightnessSteps+1 when even white is too dark
+
+	// Then take the nearest of the two, and on failure keep walking
+	// outward from whichever we took. Visiting in order of distance from
+	// the background means the first swatch that also satisfies the ink
+	// is the nearest one that does — the quietest fill that works, which
+	// is what "least loud" means here. Ties go to the lower lightness.
+	for down >= 0 || up <= lightnessSteps {
+		var step int
+		switch {
+		case down < 0:
+			step, up = up, up+1
+		case up > lightnessSteps:
+			step, down = down, down-1
+		case math.Abs(stepLightness(down)-bgL) <= math.Abs(stepLightness(up)-bgL):
+			step, down = down, down-1
+		default:
+			step, up = up, up+1
 		}
-		if fillRatio < ContrastFloorBoundary+contrastMargin {
-			continue
+
+		rgb, c := oklchRGB(stepLightness(step), chroma, h)
+		fillRatio := ratioOf(relLuminance(rgb[0], rgb[1], rgb[2]), bgLum)
+		if fillRatio < target {
+			continue // only reachable if the bisection's premise ever broke
 		}
-		on, onRatio, ok := ink(fill, h, chroma)
+		on, onRatio, ok := ink(rgb, h, c)
 		if !ok {
 			continue
 		}
-		dist := math.Abs(l - bgL)
-		if found && dist >= bestDist {
-			continue
-		}
-		found, bestDist = true, dist
-		best = Swatch{
-			Fill:       fill,
+		return Swatch{
+			Fill:       hexOf(rgb),
 			On:         on,
 			Background: bg,
 			Hue:        h,
 			Chroma:     c,
 			FillRatio:  fillRatio,
 			OnRatio:    onRatio,
-		}
+		}, nil
 	}
-	if !found {
-		return Swatch{}, fmt.Errorf("ui.Pair: no lightness resolves hue %g chroma %g against background %s at %.1f:1 fill and %.1f:1 on-fill",
-			h, chroma, bg, ContrastFloorBoundary, ContrastFloorText)
-	}
-	return best, nil
+	return Swatch{}, fmt.Errorf("ui.Pair: no lightness resolves hue %g chroma %g against background %s at %.1f:1 fill and %.1f:1 on-fill",
+		h, chroma, bg, ContrastFloorBoundary, ContrastFloorText)
 }
 
-// The lightness search. A fixed grid rather than a solve, because the
-// feasible band is not always contiguous once gamut reduction and
-// eight-bit rounding are in it, and because a grid is a thing a reader
-// can check by hand. The step is fine enough that the chosen fill sits
-// within about a quarter of a per cent of the quietest one available.
+// stepLightness is the lightness one step of the grid stands for.
+func stepLightness(step int) float64 {
+	return lightnessLow + (lightnessHigh-lightnessLow)*float64(step)/float64(lightnessSteps)
+}
+
+// lastStepAtMost returns the highest step whose value is <= bound, or -1
+// if none is. lum must be non-decreasing.
+func lastStepAtMost(lum func(int) float64, bound float64) int {
+	lo, hi := -1, lightnessSteps+1 // lo is known good, hi known bad
+	for hi-lo > 1 {
+		mid := (lo + hi) / 2
+		if lum(mid) <= bound {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return lo
+}
+
+// firstStepAtLeast returns the lowest step whose value is >= bound, or
+// lightnessSteps+1 if none is. lum must be non-decreasing.
+func firstStepAtLeast(lum func(int) float64, bound float64) int {
+	lo, hi := -1, lightnessSteps+1 // lo is known bad, hi known good
+	for hi-lo > 1 {
+		mid := (lo + hi) / 2
+		if lum(mid) >= bound {
+			hi = mid
+		} else {
+			lo = mid
+		}
+	}
+	return hi
+}
+
+// The lightness grid Pair chooses from. A grid rather than a closed-form
+// solve, because gamut reduction and eight-bit rounding both sit between
+// a lightness and its contrast, and a grid is a thing a reader can check
+// by hand. The step is fine enough that the chosen fill sits within about
+// a quarter of a per cent of the quietest one available.
 const (
 	lightnessLow   = 0.02
 	lightnessHigh  = 0.995
@@ -246,20 +310,24 @@ const (
 // The ink is tinted rather than pure so a label on a coloured fill looks
 // like it belongs to it; the tint is capped hard because chroma in an ink
 // costs contrast, and contrast is what the ink is for.
-func ink(fill string, hue, chroma float64) (string, float64, bool) {
+//
+// chroma is the chroma the FILL was actually delivered, not the one that
+// was requested. A fill that lost most of its chroma to the gamut is a
+// muted colour, and an ink tinted for the saturation it was asked for
+// rather than the one it got would be tinted for a colour that is not on
+// the screen.
+func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 	type candidate struct{ l, maxC float64 }
+	fillLum := relLuminance(fill[0], fill[1], fill[2])
 	best, bestRatio, ok := "", 0.0, false
 	for _, c := range []candidate{{0.99, 0.03}, {0.20, 0.05}} {
-		hex, _ := oklchHex(c.l, math.Min(chroma, c.maxC), hue)
-		ratio, err := ContrastRatio(hex, fill)
-		if err != nil {
-			continue
-		}
+		rgb, _ := oklchRGB(c.l, math.Min(chroma, c.maxC), hue)
+		ratio := ratioOf(relLuminance(rgb[0], rgb[1], rgb[2]), fillLum)
 		if ratio < ContrastFloorText+contrastMargin {
 			continue
 		}
 		if !ok || ratio > bestRatio {
-			best, bestRatio, ok = hex, ratio, true
+			best, bestRatio, ok = hexOf(rgb), ratio, true
 		}
 	}
 	return best, bestRatio, ok
@@ -384,7 +452,7 @@ func Allocate(keys []string, avoid []float64) ([]Intent, bool) {
 	}
 
 	canonical := slices.Clone(keys)
-	sort.Strings(canonical)
+	slices.Sort(canonical)
 	canonical = slices.Compact(canonical)
 
 	taken := make([]bool, n)
@@ -489,6 +557,14 @@ func fnv1a64(s string) uint64 {
 // its neighbours there — which would leave a separation guarantee true on
 // paper and false on the screen.
 //
+// A SET also has to pass as a set: every pair of resolved fills must be
+// at least MinSeparation apart in OKLab on every background. Twelve hues
+// thirty degrees apart are far apart as angles and can still land on top
+// of each other once a dark background has squeezed the lightness out of
+// them, and a separation guarantee that is true about slots and false
+// about pixels is the failure this whole file is arranged to prevent.
+// WorstSeparation returns that measurement rather than judging it.
+//
 // Every failure is reported, not just the first, because a set is fixed
 // as a set. The error is nil when there is nothing to say.
 func CheckIntents(intents []Intent, backgrounds []string) error {
@@ -499,17 +575,70 @@ func CheckIntents(intents []Intent, backgrounds []string) error {
 	if len(backgrounds) == 0 {
 		errs = append(errs, errors.New("ui.CheckIntents: no backgrounds to check against — an empty set proves nothing"))
 	}
-	for _, in := range intents {
-		for _, bg := range backgrounds {
+	for _, bg := range backgrounds {
+		resolved := make([]Swatch, 0, len(intents))
+		asked := make([]Intent, 0, len(intents))
+		for _, in := range intents {
 			sw, err := Pair(in.Hue, in.Chroma, bg)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("hue %g chroma %g on %s: %w", in.Hue, in.Chroma, bg, err))
 				continue
 			}
 			errs = append(errs, checkSwatch(in, sw)...)
+			resolved = append(resolved, sw)
+			asked = append(asked, in)
+		}
+		// The pairwise half. Everything above judges an intent on its
+		// own; separation is a property of the set, and a set of
+		// individually sound colours can still be a set nobody can tell
+		// apart. This is the only place it is measured.
+		for i := 0; i < len(resolved); i++ {
+			for j := i + 1; j < len(resolved); j++ {
+				d, err := DeltaEOK(resolved[i].Fill, resolved[j].Fill)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
+				if d < MinSeparation {
+					errs = append(errs, fmt.Errorf("on %s: hue %g resolves to %s and hue %g to %s, which are %.3f apart in OKLab — closer than %.3f, so they are one colour to a reader",
+						bg, asked[i].Hue, resolved[i].Fill, asked[j].Hue, resolved[j].Fill, d, MinSeparation))
+				}
+			}
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// WorstSeparation reports the closest pair of fills the intents resolve
+// to on any of the backgrounds, and where. It is the number behind the
+// question "is twelve hues the right capacity" — CheckIntents enforces a
+// floor, this returns the measurement, so a caller weighing a bigger set
+// can see how much room is left rather than only whether the floor held.
+//
+// It returns +Inf and empty strings for fewer than two resolvable
+// intents, since there is no pair to measure.
+func WorstSeparation(intents []Intent, backgrounds []string) (deltaE float64, background, a, b string) {
+	deltaE = math.Inf(1)
+	for _, bg := range backgrounds {
+		var fills []string
+		for _, in := range intents {
+			sw, err := Pair(in.Hue, in.Chroma, bg)
+			if err != nil {
+				continue
+			}
+			fills = append(fills, sw.Fill)
+		}
+		for i := 0; i < len(fills); i++ {
+			for j := i + 1; j < len(fills); j++ {
+				d, err := DeltaEOK(fills[i], fills[j])
+				if err != nil || d >= deltaE {
+					continue
+				}
+				deltaE, background, a, b = d, bg, fills[i], fills[j]
+			}
+		}
+	}
+	return deltaE, background, a, b
 }
 
 // checkSwatch is the half of CheckIntents that judges a resolved swatch,
@@ -547,8 +676,15 @@ func checkSwatch(in Intent, sw Swatch) []error {
 // out of gamut looks like, and the caller decides what to do about it.
 func oklchToLinear(l, c, hue float64) [3]float64 {
 	rad := hue * math.Pi / 180
-	a, b := c*math.Cos(rad), c*math.Sin(rad)
+	return oklabToLinear(l, c*math.Cos(rad), c*math.Sin(rad))
+}
 
+// oklabToLinear is the same conversion with the hue already resolved into
+// its two rectangular components. It is the one the gamut bisection calls,
+// which is why it is separate: the bisection varies only the chroma, so
+// the hue's sine and cosine are computed once per colour instead of once
+// per iteration.
+func oklabToLinear(l, a, b float64) [3]float64 {
 	lc := l + 0.3963377774*a + 0.2158037573*b
 	mc := l - 0.1055613458*a - 0.0638541728*b
 	sc := l - 0.0894841775*a - 1.2914855480*b
@@ -586,11 +722,21 @@ func inGamut(lin [3]float64) bool {
 // touched: lightness is what the contrast floor is riding on, and hue is
 // what the caller meant.
 func oklchHex(l, c, hue float64) (string, float64) {
-	if !inGamut(oklchToLinear(l, c, hue)) {
+	rgb, delivered := oklchRGB(l, c, hue)
+	return hexOf(rgb), delivered
+}
+
+// oklchRGB is oklchHex without the string: the search runs it hundreds of
+// times per call and throws most of the results away, so the eight-bit
+// triple is the currency and a hex is minted only for the one that wins.
+func oklchRGB(l, c, hue float64) ([3]uint8, float64) {
+	rad := hue * math.Pi / 180
+	ca, sa := math.Cos(rad), math.Sin(rad)
+	if !inGamut(oklabToLinear(l, c*ca, c*sa)) {
 		lo, hi := 0.0, c
 		for i := 0; i < 40; i++ {
 			mid := (lo + hi) / 2
-			if inGamut(oklchToLinear(l, mid, hue)) {
+			if inGamut(oklabToLinear(l, mid*ca, mid*sa)) {
 				lo = mid
 			} else {
 				hi = mid
@@ -598,7 +744,7 @@ func oklchHex(l, c, hue float64) (string, float64) {
 		}
 		c = lo
 	}
-	lin := oklchToLinear(l, c, hue)
+	lin := oklabToLinear(l, c*ca, c*sa)
 	var v [3]uint8
 	for i, ch := range lin {
 		// Rounding to eight bits is the last step and the only clamp:
@@ -607,24 +753,76 @@ func oklchHex(l, c, hue float64) (string, float64) {
 		n := math.Round(linearToSRGB(ch) * 255)
 		v[i] = uint8(math.Min(255, math.Max(0, n)))
 	}
-	return fmt.Sprintf("#%02x%02x%02x", v[0], v[1], v[2]), c
+	return v, c
 }
 
-// oklabLightness is the oklab L of a hex colour — used only to ask which
-// candidate fill is nearest the background, which wants a perceptual
-// scale rather than a luminance one.
-func oklabLightness(hex string) float64 {
-	r, g, b, err := parseHex(hex)
-	if err != nil {
-		return 0
+const hexDigits = "0123456789abcdef"
+
+// hexOf renders an eight-bit triple as lower-case #rrggbb.
+func hexOf(v [3]uint8) string {
+	b := [7]byte{'#'}
+	for i, c := range v {
+		b[1+i*2] = hexDigits[c>>4]
+		b[2+i*2] = hexDigits[c&15]
 	}
+	return string(b[:])
+}
+
+// oklabOf converts eight-bit sRGB to OKLab — the way in, where
+// oklchToLinear is the way out. Two uses: asking which candidate fill is
+// nearest the background (which wants a perceptual scale rather than a
+// luminance one), and measuring how far apart two resolved fills are.
+func oklabOf(r, g, b uint8) [3]float64 {
 	rl := linearFromSRGB(float64(r) / 255)
 	gl := linearFromSRGB(float64(g) / 255)
 	bl := linearFromSRGB(float64(b) / 255)
 	lc := math.Cbrt(0.4122214708*rl + 0.5363325363*gl + 0.0514459929*bl)
 	mc := math.Cbrt(0.2119034982*rl + 0.6806995451*gl + 0.1073969566*bl)
 	sc := math.Cbrt(0.0883024619*rl + 0.2817188376*gl + 0.6299787005*bl)
-	return 0.2104542553*lc + 0.7936177850*mc - 0.0040720468*sc
+	return [3]float64{
+		0.2104542553*lc + 0.7936177850*mc - 0.0040720468*sc,
+		1.9779984951*lc - 2.4285922050*mc + 0.4505937099*sc,
+		0.0259040371*lc + 0.7827717662*mc - 0.8086757660*sc,
+	}
+}
+
+// MinSeparation is the least perceptual distance two fills may sit at and
+// still be told apart: 0.03 in OKLab, which is a little over one
+// just-noticeable difference (about 0.02 for a large flat patch).
+//
+// It exists because "twelve hues thirty degrees apart" is a statement
+// about intents and not about colours. Two intents that are far apart as
+// angles can resolve within a hair of each other once a background has
+// forced them both to a low lightness, where there is no room left to be
+// saturated in — and at that point Allocate's separation guarantee is
+// true about slots and false about the screen. The shipped set's worst
+// pair is 0.045, on day's dark page, so the floor is not fitted to pass.
+//
+// Exported for the same reason the contrast floors are: an app checking
+// its own intents against its own canvas should hold the same bar.
+const MinSeparation = 0.03
+
+// DeltaEOK is the perceptual distance between two colours: plain
+// euclidean distance in OKLab, which is what OKLab is for. Roughly, 0.02
+// is the point two large flat patches stop being reliably tellable
+// apart, and 0.1 is comfortably different.
+//
+// Exported because a caller mapping an arbitrary colour onto the offered
+// set — an imported XLSX fill, a pasted highlight — needs a perceptual
+// nearest-match, and re-deriving one from a hue angle gets it wrong at
+// exactly the low lightnesses where it matters.
+func DeltaEOK(a, b string) (float64, error) {
+	ar, ag, ab, err := parseHex(a)
+	if err != nil {
+		return 0, fmt.Errorf("first colour: %w", err)
+	}
+	br, bg, bb, err := parseHex(b)
+	if err != nil {
+		return 0, fmt.Errorf("second colour: %w", err)
+	}
+	la, lb := oklabOf(ar, ag, ab), oklabOf(br, bg, bb)
+	dl, da, db := la[0]-lb[0], la[1]-lb[1], la[2]-lb[2]
+	return math.Sqrt(dl*dl + da*da + db*db), nil
 }
 
 // linearFromSRGB is the inverse gamma transfer, at the sRGB spec's own
@@ -649,38 +847,62 @@ func linearFromSRGB(c float64) float64 {
 // TestContrastMathMatchesDocumentedDangerFillRatios calibrates the
 // shipped one.
 
-// hexPattern matches a bare #rgb or #rrggbb value, the only colour
-// syntax this file reads.
-var hexPattern = regexp.MustCompile(`^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
-
-// parseHex reads a #rgb or #rrggbb literal. Anything else (var(),
-// color-mix(), rgba(), a bare name) is reported so a caller can route it
-// through colorMixSkip instead of guessing.
+// parseHex reads a #rgb or #rrggbb literal into eight-bit channels.
+// Anything else — var(), color-mix(), rgba(), a bare colour name, a
+// value with whitespace around it — is an error rather than a guess,
+// because a colour this package cannot read is a colour it must not
+// silently substitute something for.
 func parseHex(s string) (r, g, b uint8, err error) {
-	if !hexPattern.MatchString(s) {
-		return 0, 0, 0, fmt.Errorf("not a #rgb/#rrggbb literal: %q", s)
-	}
-	h := s[1:]
-	if len(h) == 3 {
-		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
-	}
+	// Hand-decoded rather than matched against a regexp: ContrastRatio
+	// is exported API that two apps will call in loops, and a regexp
+	// plus three Sscanf calls cost thirty times the arithmetic they
+	// feed. The accepted grammar is unchanged — #rgb or #rrggbb, no
+	// whitespace, nothing else.
 	var v [3]uint8
-	for i := 0; i < 3; i++ {
-		n, err := parseHexByte(h[i*2 : i*2+2])
-		if err != nil {
-			return 0, 0, 0, err
+	switch len(s) {
+	case 4:
+		if s[0] != '#' {
+			return 0, 0, 0, notHex(s)
 		}
-		v[i] = n
+		for i := 0; i < 3; i++ {
+			n, ok := nibble(s[1+i])
+			if !ok {
+				return 0, 0, 0, notHex(s)
+			}
+			v[i] = n<<4 | n
+		}
+	case 7:
+		if s[0] != '#' {
+			return 0, 0, 0, notHex(s)
+		}
+		for i := 0; i < 3; i++ {
+			hi, okHi := nibble(s[1+i*2])
+			lo, okLo := nibble(s[2+i*2])
+			if !okHi || !okLo {
+				return 0, 0, 0, notHex(s)
+			}
+			v[i] = hi<<4 | lo
+		}
+	default:
+		return 0, 0, 0, notHex(s)
 	}
 	return v[0], v[1], v[2], nil
 }
 
-func parseHexByte(s string) (uint8, error) {
-	var n int
-	if _, err := fmt.Sscanf(s, "%02x", &n); err != nil {
-		return 0, err
+func notHex(s string) error {
+	return fmt.Errorf("not a #rgb/#rrggbb literal: %q", s)
+}
+
+func nibble(c byte) (uint8, bool) {
+	switch {
+	case c >= '0' && c <= '9':
+		return c - '0', true
+	case c >= 'a' && c <= 'f':
+		return c - 'a' + 10, true
+	case c >= 'A' && c <= 'F':
+		return c - 'A' + 10, true
 	}
-	return uint8(n), nil
+	return 0, false
 }
 
 // normalHex parses and re-renders a hex colour as lower-case #rrggbb, so
@@ -690,7 +912,7 @@ func normalHex(s string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("#%02x%02x%02x", r, g, b), nil
+	return hexOf([3]uint8{r, g, b}), nil
 }
 
 // srgbToLinear converts one sRGB channel (0..1) to its linearized form —
@@ -703,12 +925,32 @@ func srgbToLinear(c float64) float64 {
 	return math.Pow((c+0.055)/1.055, 2.4)
 }
 
+// srgbLinearTable is srgbToLinear for all 256 eight-bit values. Every
+// colour this package measures has already been rounded to eight bits, so
+// there are only 256 answers and a table is the whole domain rather than
+// a cache of part of it. Built from srgbToLinear itself, so the two
+// cannot say different things.
+var srgbLinearTable = func() (t [256]float64) {
+	for i := range t {
+		t[i] = srgbToLinear(float64(i) / 255)
+	}
+	return t
+}()
+
 // relLuminance is the WCAG relative luminance of an sRGB colour.
 func relLuminance(r, g, b uint8) float64 {
-	rl := srgbToLinear(float64(r) / 255)
-	gl := srgbToLinear(float64(g) / 255)
-	bl := srgbToLinear(float64(b) / 255)
-	return 0.2126*rl + 0.7152*gl + 0.0722*bl
+	return 0.2126*srgbLinearTable[r] + 0.7152*srgbLinearTable[g] + 0.0722*srgbLinearTable[b]
+}
+
+// ratioOf is the WCAG ratio between two relative luminances. Split out so
+// the search can compare luminances it already has instead of re-parsing
+// two hex strings, and so there is still exactly one place the formula is
+// written down.
+func ratioOf(a, b float64) float64 {
+	if b > a {
+		a, b = b, a
+	}
+	return (a + 0.05) / (b + 0.05)
 }
 
 // ContrastRatio is the WCAG contrast ratio between two hex colours:
@@ -728,11 +970,5 @@ func ContrastRatio(a, b string) (float64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("second colour: %w", err)
 	}
-	la := relLuminance(ar, ag, ab)
-	lb := relLuminance(br, bg, bb)
-	lighter, darker := la, lb
-	if lb > la {
-		lighter, darker = lb, la
-	}
-	return (lighter + 0.05) / (darker + 0.05), nil
+	return ratioOf(relLuminance(ar, ag, ab), relLuminance(br, bg, bb)), nil
 }
