@@ -1,5 +1,9 @@
 package ui
 
+// markup-spelling: old-spelling begin — this whole file is about the
+// two spellings and has to be able to write both. It ends at the file's
+// end; there is no closing marker.
+
 // The stage-1 gate for the markup migration (design spec §6-v3).
 //
 // tokens.css is moving from a class vocabulary to an attribute one:

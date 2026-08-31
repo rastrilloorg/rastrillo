@@ -2,6 +2,10 @@
 
 package ui
 
+// markup-spelling: old-spelling begin — the fixture in this file is
+// authored in the class spelling on purpose: it is what the attribute
+// spelling is compared against. It ends at the file's end.
+
 // The evidence for stage 1 of the markup migration (design spec §6-v3).
 //
 // markup_v3_test.go proves the two spellings are paired in the text of

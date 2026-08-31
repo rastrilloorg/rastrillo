@@ -98,11 +98,13 @@ func TestNoClassSpellingSurvives(t *testing.T) {
 	}
 }
 
-// The markers a block whose subject is the old spelling is fenced
-// with. Split so this file's own gate does not read them as a fence.
-const (
-	oldSpellingBegin = "markup-spelling:" + " old-spelling begin"
-	oldSpellingEnd   = "markup-spelling:" + " old-spelling end"
+// The fence is markup.FenceBegin/FenceEnd — one mechanism shared with
+// `rastrillo markup`, so a repository has one thing to learn and one
+// thing to grep for. Assembled from halves here so this file's own
+// prose about them is not read as a fence.
+var (
+	oldSpellingBegin = markup.FenceBegin
+	oldSpellingEnd   = markup.FenceEnd
 )
 
 // spellingExempt names the files that must keep class="rst-…" in them,
@@ -111,10 +113,9 @@ const (
 var spellingExempt = map[string]bool{
 	// The grammar itself, and its table of before/after pairs.
 	"internal/markup": true,
-	// Stage 1's proof that tokens.css styles both spellings identically
-	// renders one fixture in each. It needs the class one to compare.
-	"ui/markup_v3_test.go":         true,
-	"ui/markup_v3_browser_test.go": true,
+	// Stage 1's two files and the page that documents the migration
+	// carry the fence instead — one mechanism, shared with the codemod,
+	// so a repository has one thing to learn and one thing to grep for.
 	// The codemod's own fixture app, written in the spelling it converts.
 	"cmd/rastrillo/markup_test.go": true,
 	// tokens.css still carries a class selector beside every attribute
@@ -126,11 +127,8 @@ var spellingExempt = map[string]bool{
 	// The historical record: plans and specs written before the flip,
 	// which describe what was true when they were written.
 	"docs/superpowers": true,
-	// The three places whose subject IS the old spelling: the codemod's
-	// own explanation of what it converts, the page of docs that
-	// documents it, and this file.
+	// The codemod's own explanation of what it converts, and this file.
 	"cmd/rastrillo/markup.go": true,
-	"docs/site/cli.md":        true,
 	"markupspelling_test.go":  true,
 }
 

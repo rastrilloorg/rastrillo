@@ -50,11 +50,22 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 			Text: fmt.Sprintf(format, args...),
 		})
 	}
+	fenced := fencedRegions(s)
 	i := 0
 	for {
 		a, ok := nextClassAttr(s, i)
 		if !ok {
 			break
+		}
+		// A region a human has fenced off: a page whose subject IS the
+		// old spelling, a fixture that has to be written in it. Without
+		// this the only opt-out is "do not run the tool on that file",
+		// which is not one — every repository migrating its own docs
+		// has a paragraph that must keep the spelling it is about.
+		if fenced(a.start) {
+			b.WriteString(s[i:a.end])
+			i = a.end
+			continue
 		}
 		value := s[a.valStart:a.valEnd]
 		if !strings.Contains(value, "rst-") {
@@ -95,7 +106,12 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 		i = a.end
 	}
 	b.WriteString(s[i:])
-	out := toneInMarkup.ReplaceAllString(b.String(), "${1}rst-tone=${2}")
+	// The fence is recomputed here rather than reused: the class pass
+	// moved every offset after its first rewrite, and the markers
+	// themselves are never rewritten, so they are still where they say.
+	body := b.String()
+	inFence := fencedRegions(body)
+	out := replaceOutsideFence(body, toneInMarkup, "${1}rst-tone=${2}", inFence)
 
 	// Escaped markup — a documentation page showing class=&quot;rst-box&quot;
 	// as source. Rewriting it would mean deciding what the escaping is
@@ -110,6 +126,63 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 		}
 	}
 	return []byte(out), notes
+}
+
+// replaceOutsideFence is regexp.ReplaceAllString that leaves fenced
+// regions alone.
+func replaceOutsideFence(s string, re *regexp.Regexp, repl string, fenced func(int) bool) string {
+	var b strings.Builder
+	last := 0
+	for _, m := range re.FindAllStringSubmatchIndex(s, -1) {
+		if fenced(m[0]) {
+			continue
+		}
+		b.WriteString(s[last:m[0]])
+		b.Write(re.ExpandString(nil, repl, s, m))
+		last = m[1]
+	}
+	b.WriteString(s[last:])
+	return b.String()
+}
+
+// The fence, and the only opt-out this tool has. A line carrying the
+// begin marker starts a region it will not rewrite; a line carrying the
+// end marker closes it. Deliberately one mechanism shared with the
+// framework's own spelling gate, so a repository has one thing to
+// learn and one thing to grep for.
+const (
+	FenceBegin = "markup-spelling: old-spelling begin"
+	FenceEnd   = "markup-spelling: old-spelling end"
+)
+
+// fencedRegions returns a predicate saying whether a byte offset falls
+// inside a fenced region.
+func fencedRegions(s string) func(int) bool {
+	type span struct{ from, to int }
+	var spans []span
+	open := -1
+	at := 0
+	for _, line := range strings.SplitAfter(s, "\n") {
+		switch {
+		case open < 0 && strings.Contains(line, FenceBegin):
+			open = at
+		case open >= 0 && strings.Contains(line, FenceEnd):
+			spans = append(spans, span{open, at + len(line)})
+			open = -1
+		}
+		at += len(line)
+	}
+	if open >= 0 {
+		spans = append(spans, span{open, len(s)})
+	}
+	return func(i int) bool {
+		for _, sp := range spans {
+			if i >= sp.from && i < sp.to {
+				return true
+			}
+		}
+		return false
+	}
 }
 
 // escapedClassAttr matches a class attribute written as escaped text —

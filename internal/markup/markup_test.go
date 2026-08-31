@@ -248,6 +248,36 @@ func TestEscapedMarkupIsReported(t *testing.T) {
 	}
 }
 
+// TestTheFenceIsTheOnlyOptOut. Every repository migrating its own
+// documentation has a paragraph whose subject IS the old spelling, and
+// without a way to say so the only opt-out is "do not run the tool on
+// that file" — which is not one.
+func TestTheFenceIsTheOnlyOptOut(t *testing.T) {
+	const in = "<div class=\"rst-box\">before</div>\n" +
+		"<!-- " + FenceBegin + " -->\n" +
+		"<div class=\"rst-box\" data-tone=\"positive\">inside</div>\n" +
+		"<!-- " + FenceEnd + " -->\n" +
+		"<div class=\"rst-box\">after</div>\n"
+	got, notes := Rewrite([]byte(in))
+	want := "<div rst-box>before</div>\n" +
+		"<!-- " + FenceBegin + " -->\n" +
+		"<div class=\"rst-box\" data-tone=\"positive\">inside</div>\n" +
+		"<!-- " + FenceEnd + " -->\n" +
+		"<div rst-box>after</div>\n"
+	if string(got) != want {
+		t.Errorf("Rewrite\n got %q\nwant %q", got, want)
+	}
+	if len(notes) > 0 {
+		t.Errorf("a fenced region is a deliberate choice, not a finding: %v", notes)
+	}
+	// An unclosed fence runs to the end of the file, which is what a
+	// whole-file opt-out looks like written once at the top.
+	open := "<!-- " + FenceBegin + " -->\n<div class=\"rst-box\">x</div>\n"
+	if got, _ := Rewrite([]byte(open)); string(got) != open {
+		t.Errorf("an unclosed fence must reach the end of the file: %q", got)
+	}
+}
+
 // TestRespellIsTheGrammarWithoutTheMigration. Rewrite translates markup
 // written before the flip, where rst-form-foot meant the sticky save
 // bar. Respell translates markup written in today's class vocabulary,
