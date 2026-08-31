@@ -3333,3 +3333,33 @@ Honest code, an unexamined premise, and no wrong answer to point at. It was find
 by asking what the number is *supposed* to bound and measuring that — which is the same
 move as running a check against a case whose answer you already know, applied to a
 constant instead of to a test.
+
+### §7-v2 addendum (2026-08-31, third): mark provenance at the moment of sending
+
+Two figures went out of this session in one message, presented identically: `0.0525`,
+which had been independently derived twice and held exactly, and `0.067`, which had been
+relayed from a report and held nothing. The reader could not tell them apart **because
+the sender had not marked them apart.**
+
+The obvious rule — verify before relaying — is the wrong one. Verification is expensive,
+sometimes impossible, and the pressure to skip it is highest exactly when a result is
+interesting. sheets-03's formulation is the one that works:
+
+> **Mark provenance at the moment of sending, because that is the only moment you still
+> remember which is which.**
+
+They avoided the same error by accident rather than by discipline: sending seven hexes,
+they split four verified-in-their-repo from three recalled from memory, because they
+happened to know which was which as they typed. Gathered a day earlier and sent from
+notes, all seven would have gone out looking equally solid.
+
+Marking is free and takes a second. It also converts a private uncertainty into a public
+one, which is the only form anybody else can act on — the three recalled hexes were then
+verified against an independent source *because they were flagged*, and turned out to
+carry the font colours that produced two findings neither team had.
+
+**The corollary for retractions:** report the direction, not only the fact. The `0.067`
+correction made its own argument *stronger* — the real gaps are larger, by an order of
+magnitude at the extreme, so "no tolerance can work" became more true. A retraction that
+weakens nothing is easy to under-report, and under-reporting it invites someone to
+re-litigate a settled decision on the grounds that its evidence moved.
