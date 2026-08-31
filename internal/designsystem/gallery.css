@@ -101,6 +101,22 @@
    browser's own form behaviour and a reader with JavaScript off has
    the same three views as everyone else.
 
+   None of the three starts checked, and that is the whole of how the
+   opening view follows the reader. CSS cannot tell "the reader chose
+   Desktop" from "Desktop is what the markup shipped checked", so a
+   widget that opens on a checked radio can never let the width pick
+   the opening view AND still take an explicit choice. With nothing
+   checked the width picks — Mobile under 800px, Desktop at or over it,
+   the same line tokens.css collapses the shell on — and either tab,
+   once clicked, overrides the width at any size. The two queries are
+   written as (min-width: 800px) and its exact negation rather than as
+   a min/max pair, because a max-width one pixel under leaves a gap a
+   fractional viewport can land in, and in that gap neither rule
+   applies and no tab is lit at all. The highlight below is driven by
+   those same two queries, so the tab a reader sees lit is
+   always the rendering in front of them. A 390px rendering under a lit
+   "Desktop" would be a worse bug than the one this fixed.
+
    The scale is the other half. The frame is laid out at a virtual
    1200px (or 390px, on Mobile) and scaled to fit whatever the reader's
    column actually is, so the desktop rendering is the desktop
@@ -121,8 +137,25 @@
 
    The box is a window on a document, not a fit to it: a taller sample
    scrolls inside its frame, and the grip is there for the ones a
-   reader wants more of. */
-.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; margin: var(--rst-sp-3) 0; }
+   reader wants more of.
+
+   The floor is the last of it, and it does two jobs. --ds-k scales
+   BOTH axes, so a 1200px virtual page in a 309px phone column comes
+   out at 26% and a 70px component is an 18px sliver: present, and
+   invisible. min-block-size holds the box open at the sample's own
+   virtual height, or --ds-floor, whichever is smaller — so nothing
+   tall is made taller and nothing short disappears — and the frame
+   scrolls inside it. The second job is why it is a SEPARATE
+   declaration rather than a max() inside block-size: block-size
+   carries --ds-k, and a --ds-k an engine parses but cannot resolve
+   makes that declaration invalid at computed-value time, which drops
+   it to auto, which for a box whose only child is absolutely
+   positioned is zero. min-block-size names nothing that can go bad, so
+   the box still opens and the frame is cropped rather than gone. The
+   @supports guard tests the same shape the declaration uses, 100cqw
+   and all, rather than the trig alone — a guard that does not exercise
+   the thing that can fail is a guard that gates nothing. */
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; --ds-floor: 9rem; margin: var(--rst-sp-3) 0; }
 .ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
 .ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
 .ds-view__tab + .ds-view__tab { border-inline-start: 0; }
@@ -131,14 +164,20 @@
 .ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
 .ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+@media (min-width: 800px) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@media not all and (min-width: 800px) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .ds-view__stage { container-type: inline-size; }
-.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; overflow: hidden; position: relative; resize: vertical; }
-.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
-@supports (inline-size: calc(1px * tan(atan2(1px, 2px)))) {
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: min(var(--ds-h), var(--ds-floor)); overflow: hidden; position: relative; resize: vertical; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; min-block-size: 100%; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+@supports (block-size: calc(1px * min(1, tan(atan2(100cqw, 1200px))))) {
   .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
 }
 .ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+@media not all and (min-width: 800px) {
+  .ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+  .ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { min-block-size: var(--ds-floor); }
+}
 .ds-view__code { display: none; margin-block-start: 0; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }

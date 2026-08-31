@@ -24,6 +24,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"path"
 	"sort"
@@ -1281,4 +1282,394 @@ func TestThePrevNextPairSitsAtTheEndsOfItsRow(t *testing.T) {
 			}
 		}
 	}
+}
+
+// ── The preview widget on a phone ────────────────────────────────────
+
+// minPhoneBox is the shortest a preview box may be, in CSS pixels, on
+// a phone-sized viewport. Sixty-four is about four lines of body text:
+// under that a preview has stopped being a window on a sample and has
+// become a strip between two tab rows, which is what a reader on a
+// 390px screen was actually being shown.
+const minPhoneBox = 64.0
+
+// minChosenDesktopBox is the floor for the one case minPhoneBox is too
+// weak for: a reader on a phone who has deliberately asked to see the
+// desktop rendering. That rendering arrives at 26% — a 1200px page in
+// a 309px column — so the box is not a fit to it and never can be, it
+// is a window on it, and how much of the page a reader gets to see
+// through that window is the whole of the difference between useful
+// and decorative. 128px of window is about 500 virtual pixels of the
+// page; the box the stylesheet actually gives them is 9rem.
+const minChosenDesktopBox = 128.0
+
+// previewBox is one widget's geometry as the engine has it. Tabs are
+// identified by POSITION — 0 Desktop, 1 Mobile, 2 Code — and not by
+// the modifier classes, so this reading says the same thing about the
+// markup before the fix and after it.
+type previewBox struct {
+	ID      string
+	Hidden  bool    // the Code tab is showing, so there is no frame to measure
+	Box     float64 // the painted height of .ds-view__box
+	Width   string  // --ds-w as the box computes it: which rendering is on screen
+	Scale   string  // the frame's computed transform
+	Lit     []int   // the tabs the reader sees highlighted
+	Checked []int   // the radios that are actually checked
+}
+
+const readBoxes = `(() => {
+  const out = [];
+  document.querySelectorAll(".ds-view").forEach(v => {
+    const stage = v.querySelector(".ds-view__stage");
+    const box   = v.querySelector(".ds-view__box");
+    const frame = v.querySelector(".ds-view__frame");
+    const tabs  = [...v.querySelectorAll(".ds-view__tab")];
+    const lit = [], checked = [];
+    tabs.forEach((l, n) => {
+      if (getComputedStyle(l).fontWeight === "600") lit.push(n);
+      const i = l.querySelector("input");
+      if (i && i.checked) checked.push(n);
+    });
+    const section = v.closest("article, section");
+    out.push({
+      ID: section && section.id ? section.id : "widget-" + out.length,
+      Hidden: getComputedStyle(stage).display === "none",
+      Box: Math.round(box.getBoundingClientRect().height * 10) / 10,
+      Width: getComputedStyle(box).getPropertyValue("--ds-w").trim(),
+      Scale: getComputedStyle(frame).transform,
+      Lit: lit,
+      Checked: checked
+    });
+  });
+  return JSON.stringify(out);
+})()`
+
+// clickedMobile clicks every Mobile radio on the page and reports
+// whether the clicks moved anything. It is the instrument's own
+// control: a reading taken after a click that did not land is a
+// reading of the state before it.
+const clickedMobile = `(() => {
+  let clicked = 0, moved = 0;
+  document.querySelectorAll(".ds-view__tab--m input").forEach(i => {
+    const before = i.checked;
+    i.click();
+    clicked++;
+    if (i.checked && !before) moved++;
+  });
+  return JSON.stringify({clicked: clicked, moved: moved});
+})()`
+
+func boxes(t *testing.T, ctx context.Context, where string) []previewBox {
+	t.Helper()
+	var raw string
+	if err := chromedp.Run(ctx, chromedp.Evaluate(readBoxes, &raw)); err != nil {
+		t.Fatalf("%s: reading the preview boxes: %v", where, err)
+	}
+	var got []previewBox
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatalf("%s: decoding the preview boxes (%q): %v", where, raw, err)
+	}
+	if len(got) == 0 {
+		t.Fatalf("%s: the page has no preview widget on it at all — this reading measures nothing", where)
+	}
+	return got
+}
+
+// tabNames indexes the tabs the way the reading does.
+var tabNames = [...]string{"Desktop", "Mobile", "Code"}
+
+func tabName(n int) string {
+	if n < 0 || n >= len(tabNames) {
+		return fmt.Sprintf("tab %d", n)
+	}
+	return tabNames[n]
+}
+
+// clearsTheFloor holds every visible box on the page to minPhoneBox and
+// reports the shortest one either way, so a run that passes still says
+// what the margin was.
+func clearsTheFloor(t *testing.T, where string, rows []previewBox) {
+	t.Helper()
+	worst, worstID, short := math.Inf(1), "", 0
+	for _, r := range rows {
+		if r.Hidden {
+			continue
+		}
+		if r.Box < worst {
+			worst, worstID = r.Box, r.ID
+		}
+		if r.Box < minPhoneBox {
+			short++
+			if short <= 4 {
+				t.Errorf("%s: %s is %.1fpx tall, under the %.0fpx floor — its sample is a sliver, not a preview", where, r.ID, r.Box, minPhoneBox)
+			}
+		}
+	}
+	if short > 4 {
+		t.Errorf("%s: %d of %d preview boxes are under the %.0fpx floor (shortest %.1fpx, %s)", where, short, len(rows), minPhoneBox, worst, worstID)
+	}
+	t.Logf("%s: %d widgets, shortest visible box %.1fpx (%s), %d under the floor", where, len(rows), worst, worstID, short)
+}
+
+// agree is the assertion a CSS-only default has to earn. The rendering
+// is chosen by a media query and the highlight by the same one, and if
+// the two ever drift a reader is looking at a 390px rendering with
+// "Desktop" lit, which is a worse bug than the one that made this
+// widget unreadable in the first place.
+func agree(t *testing.T, where string, rows []previewBox) {
+	t.Helper()
+	want := map[int]string{0: "1200px", 1: "390px"}
+	say := loudly(t, where, len(rows))
+	for _, r := range rows {
+		if len(r.Lit) != 1 {
+			say("%s: %s has %d tabs lit at once (%v); a reader cannot tell which rendering they are looking at", where, r.ID, len(r.Lit), r.Lit)
+			continue
+		}
+		if len(r.Checked) > 1 {
+			say("%s: %s has %d radios checked (%v) — they are not one group", where, r.ID, len(r.Checked), r.Checked)
+		}
+		if r.Hidden {
+			if r.Lit[0] != 2 {
+				say("%s: %s shows the source with %s lit", where, r.ID, tabName(r.Lit[0]))
+			}
+			continue
+		}
+		w, ok := want[r.Lit[0]]
+		if !ok {
+			say("%s: %s lights %s and still shows a frame", where, r.ID, tabName(r.Lit[0]))
+			continue
+		}
+		if r.Width != w {
+			say("%s: %s lights %s and renders at --ds-w: %s (want %s) — the lit tab and the rendering disagree", where, r.ID, tabName(r.Lit[0]), r.Width, w)
+		}
+		if r.Scale == "none" || r.Scale == "" {
+			say("%s: %s has no transform on its frame (%q) — --ds-k did not resolve, and a box whose only child is absolutely positioned collapses to nothing when it does not", where, r.ID, r.Scale)
+		}
+	}
+}
+
+// opensOn asserts what the widget shows a reader who has clicked
+// nothing: the rendering, and the tab lit over it.
+func opensOn(t *testing.T, where string, rows []previewBox, tab int, width string) {
+	t.Helper()
+	say := loudly(t, where, len(rows))
+	for _, r := range rows {
+		if len(r.Checked) != 0 {
+			say("%s: %s opens with %v already checked; CSS cannot tell that from a choice the reader made, so the width can never pick the opening view", where, r.ID, r.Checked)
+		}
+		if r.Width != width {
+			say("%s: %s opens rendering at --ds-w: %s, want %s — the opening view does not follow the reader's width", where, r.ID, r.Width, width)
+		}
+		if len(r.Lit) != 1 || r.Lit[0] != tab {
+			say("%s: %s opens with %v lit, want %s", where, r.ID, r.Lit, tabName(tab))
+		}
+	}
+}
+
+// loudly caps a per-widget assertion at a handful of named failures
+// and then counts the rest. A page carries thirty widgets and they
+// fail together; ninety identical lines bury the one number a reader
+// of the log needs, which is how many.
+func loudly(t *testing.T, where string, of int) func(string, ...any) {
+	t.Helper()
+	var n int
+	t.Cleanup(func() {
+		if n > 4 {
+			t.Errorf("%s: %d assertions failed over %d widgets (%d named above)", where, n, of, 4)
+		}
+	})
+	return func(format string, args ...any) {
+		n++
+		if n <= 4 {
+			t.Errorf(format, args...)
+		}
+	}
+}
+
+// scaleOf reads the x scale out of a computed transform.
+func scaleOf(t *testing.T, where string, r previewBox) float64 {
+	t.Helper()
+	var a, b, c, d, e, f float64
+	if n, err := fmt.Sscanf(r.Scale, "matrix(%g, %g, %g, %g, %g, %g)", &a, &b, &c, &d, &e, &f); err != nil || n != 6 {
+		t.Errorf("%s: %s has transform %q, which is not a matrix — the frame is not being scaled at all", where, r.ID, r.Scale)
+		return 0
+	}
+	return a
+}
+
+// TestThePreviewWidgetIsUsableOnAPhone is the drive Paul's report
+// earned: on 2026-08-31, from his own phone, every preview on every
+// component page of rastrillo.org was a 20px strip between two tab
+// rows.
+//
+// Three claims, and each one is a separate bug class that leaves a page
+// rendering perfectly:
+//
+//   - the box scales with --ds-k on BOTH axes, so a 1200px virtual page
+//     in a 309px column is a 70px component drawn 18px tall. Nothing
+//     about that is visible to a Go test or to a screenshot diff of the
+//     desktop rendering;
+//   - the widget opens on Desktop whatever the reader's width is, so
+//     the first thing a phone gets is the one rendering that cannot be
+//     legible at that size;
+//   - the tab the reader sees lit and the rendering on screen are now
+//     chosen by two different rules, and a CSS-only default goes wrong
+//     by letting them drift apart.
+//
+// The controls come first and are not optional. A wide viewport whose
+// answer is already known, a click that is checked for having landed,
+// and a frame whose transform proves the trig branch is live in this
+// engine: without them a green run here is a reading of an instrument
+// nobody calibrated.
+func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
+	defer cancel()
+
+	for _, kind := range []string{"display", "overview"} {
+		url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf(kind))
+
+		// CONTROL 1. A wide viewport, where the answer has been known
+		// since the widget shipped: the desktop rendering, the Desktop
+		// tab lit over it, every box clear of the floor, and a frame
+		// scaled DOWN — which is the reading that proves the
+		// @supports guard still admits this engine. If any of that is
+		// wrong, the narrow numbers below are measuring something else.
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(1280, 900),
+			chromedp.Navigate(url),
+			chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+			chromedp.Sleep(600*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s at 1280px: loading: %v", kind, err)
+		}
+		wide := boxes(t, ctx, kind+" at 1280px")
+		// The control proper: two readings whose answers this widget
+		// has had since it shipped, so they hold on the build before
+		// the fix as well as on the one after it.
+		for _, r := range wide {
+			if r.Width != "1200px" || len(r.Lit) != 1 || r.Lit[0] != 0 {
+				t.Fatalf("%s at 1280px: %s renders at --ds-w: %s with %v lit, want the desktop rendering under a lit Desktop. That has been this widget's answer at a laptop width since it shipped, so the narrow readings below are of something other than this widget", kind, r.ID, r.Width, r.Lit)
+			}
+		}
+		if k := scaleOf(t, kind+" at 1280px", wide[0]); k <= 0 || k >= 1 {
+			t.Fatalf("%s at 1280px: the first frame is scaled by %v; a 1200px page in a column narrower than that has to be scaled DOWN, so the @supports guard is not admitting this engine and every scale reading below is of the fallback branch", kind, k)
+		}
+		// And then the claims, at a width where they were never in
+		// doubt.
+		agree(t, kind+" at 1280px", wide)
+		clearsTheFloor(t, kind+" at 1280px", wide)
+
+		// The phone, opening on nothing clicked.
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(390, 844),
+			chromedp.Navigate(url),
+			chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+			chromedp.Sleep(600*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s at 390px: loading: %v", kind, err)
+		}
+		phone := boxes(t, ctx, kind+" at 390px")
+		opensOn(t, kind+" at 390px, opened", phone, 1, "390px")
+		agree(t, kind+" at 390px, opened", phone)
+		clearsTheFloor(t, kind+" at 390px, opened", phone)
+
+		// An explicit Desktop on a phone still works, and is still a
+		// window rather than a strip.
+		if err := chromedp.Run(ctx,
+			chromedp.Click(`.ds-view__tab:first-of-type`, chromedp.ByQuery),
+			chromedp.Sleep(400*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s at 390px: choosing Desktop: %v", kind, err)
+		}
+		chosen := boxes(t, ctx, kind+" at 390px, Desktop chosen")
+		if len(chosen[0].Checked) != 1 || chosen[0].Checked[0] != 0 {
+			t.Fatalf("%s at 390px: clicking the first tab left %v checked — the click did not land, so the reading after it is the reading before it", kind, chosen[0].Checked)
+		}
+		if chosen[0].Width != "1200px" {
+			t.Errorf("%s at 390px: Desktop was chosen and the frame renders at --ds-w: %s — an explicit choice has to beat the width", kind, chosen[0].Width)
+		}
+		if chosen[0].Box < minChosenDesktopBox {
+			t.Errorf("%s at 390px: the Desktop rendering a reader asked for is %.1fpx tall, under the %.0fpx floor a chosen desktop rendering gets on a phone — at this scale that is a couple of hundred virtual pixels of a 1200px page", kind, chosen[0].Box, minChosenDesktopBox)
+		}
+		if k := scaleOf(t, kind+" at 390px, Desktop chosen", chosen[0]); k <= 0 || k >= 1 {
+			t.Errorf("%s at 390px: the Desktop frame is scaled by %v, so a 1200px page is not being fitted to a 309px column", kind, k)
+		}
+		agree(t, kind+" at 390px, Desktop chosen", chosen)
+
+		// CONTROL 2. Mobile, clicked, and checked for having moved.
+		var moved string
+		if err := chromedp.Run(ctx,
+			chromedp.Evaluate(clickedMobile, &moved),
+			chromedp.Sleep(400*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s at 390px: choosing Mobile: %v", kind, err)
+		}
+		var click struct{ Clicked, Moved int }
+		if err := json.Unmarshal([]byte(moved), &click); err != nil {
+			t.Fatalf("%s: reading the Mobile click (%q): %v", kind, moved, err)
+		}
+		if click.Clicked == 0 || click.Moved != click.Clicked {
+			t.Fatalf("%s at 390px: %d Mobile radios clicked and %d moved — the readings after this click are readings of the state before it", kind, click.Clicked, click.Moved)
+		}
+		back := boxes(t, ctx, kind+" at 390px, Mobile chosen")
+		agree(t, kind+" at 390px, Mobile chosen", back)
+		clearsTheFloor(t, kind+" at 390px, Mobile chosen", back)
+	}
+
+	// CONTROL 3, and the one that matters most: the whole of the above
+	// with script execution switched off at the engine. The tabs are
+	// radios and :has(), the default is a media query, and none of it
+	// is allowed to need JavaScript — a widget gate that only ever runs
+	// with script on is not testing this widget's real path.
+	noJS, cancelNoJS := chromedp.NewContext(rig.Context())
+	defer cancelNoJS()
+	offCtx, cancelOff := context.WithTimeout(noJS, 120*time.Second)
+	defer cancelOff()
+	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("display"))
+	if err := chromedp.Run(offCtx,
+		chromedp.EmulateViewport(390, 844),
+		emulation.SetScriptExecutionDisabled(true),
+		chromedp.Navigate(url),
+		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+		chromedp.Sleep(1500*time.Millisecond),
+	); err != nil {
+		t.Fatalf("display at 390px with scripts off: loading: %v", err)
+	}
+	// Evaluate is itself script execution, so the reading below is
+	// taken through the debugger with the PAGE's scripts disabled.
+	// Assert that, or the leg proves nothing.
+	var ran bool
+	if err := chromedp.Run(offCtx, chromedp.Evaluate(
+		`document.documentElement.hasAttribute("data-rst-js")`, &ran)); err != nil {
+		t.Fatalf("checking the scriptless page: %v", err)
+	}
+	if ran {
+		t.Fatal("gallery.js ran on the scriptless page — the scriptless leg proves nothing")
+	}
+	off := boxes(t, offCtx, "display at 390px, scripts off")
+	opensOn(t, "display at 390px, scripts off", off, 1, "390px")
+	agree(t, "display at 390px, scripts off", off)
+	clearsTheFloor(t, "display at 390px, scripts off", off)
+
+	// And the tabs still switch, with the click the browser makes out
+	// of a label and a radio rather than one a script dispatches.
+	if err := chromedp.Run(offCtx,
+		chromedp.Click(`.ds-view__tab:first-of-type`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+	); err != nil {
+		t.Fatalf("display at 390px with scripts off: choosing Desktop: %v", err)
+	}
+	offChosen := boxes(t, offCtx, "display at 390px, scripts off, Desktop chosen")
+	if len(offChosen[0].Checked) != 1 || offChosen[0].Checked[0] != 0 {
+		t.Fatalf("with scripts off, clicking the Desktop label left %v checked — the tabs need JavaScript", offChosen[0].Checked)
+	}
+	if offChosen[0].Width != "1200px" || len(offChosen[0].Lit) != 1 || offChosen[0].Lit[0] != 0 {
+		t.Errorf("with scripts off, choosing Desktop left the widget rendering at --ds-w: %s with %v lit", offChosen[0].Width, offChosen[0].Lit)
+	}
+	if offChosen[0].Box < minChosenDesktopBox {
+		t.Errorf("with scripts off, the Desktop rendering a reader asked for is %.1fpx tall, under the %.0fpx floor", offChosen[0].Box, minChosenDesktopBox)
+	}
+	agree(t, "display at 390px, scripts off, Desktop chosen", offChosen)
+	clearsTheFloor(t, "display at 390px, scripts off, Desktop chosen", offChosen)
 }

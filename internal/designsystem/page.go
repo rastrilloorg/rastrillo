@@ -2076,13 +2076,25 @@ func buildAssets(mount, theme, locale string) assetsView {
 // things this page documents, and a gallery built out of something else
 // while recommending this would be advertising.
 // viewTemplate is the preview widget, once, used by every example on
-// the page. Desktop is the checked radio, so a page with no JavaScript
-// and no interaction at all still opens on the rendering a reader most
-// wants — and the Code tab only exists where there is source worth
+// the page. The Code tab only exists where there is source worth
 // copying, which is everywhere but the shell demos.
+//
+// No radio starts checked, and that is not an oversight. It used to be
+// Desktop, so that a page with no JavaScript and no interaction at all
+// opened on the rendering a reader most wants — true on a laptop, and
+// exactly wrong on a phone, where a 1200px page scaled into a 309px
+// column is an 18px sliver nobody can read. CSS cannot tell an
+// explicit choice from a shipped default, so as long as one radio
+// arrives checked the opening view can never follow the reader's width
+// without taking the other view away from them. With none of the three
+// checked, gallery.css picks the opening rendering from the width and
+// lights the tab that matches it, and a click on either tab still
+// overrides the width at any size. The Desktop label carries a
+// modifier class for the same reason the Mobile one does: the
+// stylesheet has to be able to say which of the two a reader chose.
 const viewTemplate = `{{define "ds-view"}}<div class="ds-view" style="{{.Style}}">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">{{P "Preview"}}</legend>
-<label class="ds-view__tab"><input type="radio" name="{{.Group}}" checked>{{P "Desktop"}}</label>
+<label class="ds-view__tab ds-view__tab--d"><input type="radio" name="{{.Group}}">{{P "Desktop"}}</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label>
 {{if .Source}}<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="{{.Group}}">{{P "Code"}}</label>{{end}}
 </fieldset>
