@@ -2897,3 +2897,135 @@ The calibrated drive reports **80 elements on two pages**, traceable to
 a Vietnamese copy redraft in the same branch, with the markup flip
 itself at zero. That is a result someone can act on. "Zero differences"
 was not, because it could not be told apart from a broken harness.
+
+---
+
+## 6-v2.8. What a data attribute is for (2026-08-31) — RULED by Paul
+
+Paul, looking at a date input carrying thirteen of them:
+
+> "do all of the data attributes on the date input need to be inline? Since they're for
+> the JS enhancement, shouldn't they be in JS? ... The goal is to keep the HTML clean.
+> **data attributes should allow for changing the behaviour of the JS, less for
+> containing initial config that it requires.**"
+
+That last sentence is the rule, and it generalises past the instance that produced it.
+An attribute earns its place in the markup when it says something *about this element*
+that the script could not otherwise know — armed or not, this variant rather than that
+one, this override. It does not earn its place by carrying data the script needs on
+every instance, identically.
+
+### What it was costing
+
+`ui/partials/field-date.html` put thirteen attributes on one `<input>`: the arming flag,
+the whole parser vocabulary as a JSON object, and eleven UI strings. field-select,
+field-time, field-datetime and field-daterange had the same shape. Measured on the live
+`date-and-time.html`: **340 `data-rst-*` attributes, 15,146 bytes, 15% of the page.**
+One field's run is 579 bytes; the entire 34-string vocabulary for one locale is 476
+bytes gzipped. The markup was carrying, per element, more than the whole catalog weighs
+once.
+
+### The constraint that produced it, which is real
+
+Translation happens server-side in Go against TOML catalogs, and `datetime.js`
+deliberately matches on no English word of its own — that is what makes twelve locales
+work. The JS cannot look a string up; it has no catalog. So the strings must reach it
+from the server somehow. Choosing "on every element" as the somehow is the defect; the
+requirement behind it is not.
+
+### Ruled: a loader and a served catalog, not vendored files
+
+`ui/i18n.js` loads one catalog per locale from a framework-owned route rendered from the
+same TOML through the same translator the HTML uses.
+
+**Twelve vendored `en.js` / `ga.js` files were considered and refused.** They would
+recreate, twelve times over, the exact trap `rastrillo doctor` was built for in §6-v2.3:
+a file copied into `static/` at scaffold time that drifts from the module that reads it.
+And they cannot work at all for an app that adds its own locale, because the framework
+cannot vendor a catalog it has never seen. Serving keeps one source of truth, covers
+app-added locales for free, and adds nothing to the vendored surface.
+
+A controller counter-proposal — one inline JSON payload per document — was measured and
+**refused on its own numbers**: at 1,482 raw bytes it is *worse than the status quo*
+until a page carries about three enhanced fields. It is recorded here because it looked
+obviously right and was obviously wrong, and the thing that settled it was arithmetic
+rather than argument.
+
+### The cost, stated rather than buried
+
+A failure mode that does not exist today: the enhancement arms, the catalog fetch fails,
+and the reader gets the English fallbacks that `datetime.js` and `select.js` already
+carry. It degrades rather than breaks, and Paul accepted it explicitly — *"we can add
+even more resilience later if we need to"* — but it is new, and **the gate for it is a
+drive with the catalog request blocked**, with a control that runs the same drive with
+the catalog allowed. A drive that passes both ways is measuring nothing.
+
+The scriptless path is untouched: these strings are only ever used by the enhancement,
+and the native `<input type="date">` remains the value carrier that posts `2006-01-02`
+with scripts off.
+
+---
+
+## 6-v2.9. What the weights table should say (2026-08-31) — RULED by Paul
+
+The Getting started page reports each vendored file's weight, computed from the embedded
+bytes at render time so it cannot rot. It reported raw bytes, and Paul read it as
+overstated:
+
+> "The file-sizes ... include lots and lots of comments, and not gzipped ... should we
+> offer versions without the comments and show folks the gzipped cost?"
+
+then
+
+> "let's show kb rather than bytes, so instead of saying 107279bytes, do 107kb"
+
+### Measured against what the edge actually serves
+
+`content-encoding: gzip` and `vary: Accept-Encoding` are present on rastrillo.org —
+verified, not assumed.
+
+| file | raw | gzipped | comments stripped, gzipped |
+|---|---|---|---|
+| `tokens.css` | 107,279 | 28,998 | 8,832 |
+| `theme-day.css` | 10,828 | 3,293 | 634 |
+| `rastrillo.js` | 16,364 | 6,165 | — |
+| `select.js` | 11,919 | 4,347 | — |
+| `datetime.js` | 59,438 | 18,997 | — |
+
+Two findings, and the second is the surprising one.
+
+**The page overstated by 3.3×.** 205,828 raw against 61,800 over the wire. A reader
+deciding whether to adopt this was reading a number no visitor ever pays.
+
+**Gzip does not make comments free.** Comments are 47% of `tokens.css` raw and **70% of
+it compressed** — 20,166 gzipped bytes, four times the weight of the shim. `theme-day.css`
+is 85% comments. Every app vendoring these ships ~20 KB gzipped of design-doc commentary
+to every visitor on every cold load. This is worth writing down because the intuition
+that "gzip handles comments" is wrong at exactly the magnitude that matters.
+
+### Ruled: show both figures, in KiB
+
+- Raw **and** compressed, both computed at render time from the embedded bytes. Never
+  typed into prose — the rule already governing this page still governs it.
+- **KiB, 1024 bytes**, matching `maxPageBytes = 128 KiB` and the budget comments.
+  Lowercase "kb" is kilobits, eight times wrong on a page whose point is exact sizes.
+  `docs/site/compare.md` says "KB" once and comes into line.
+- **One decimal below 10 KiB, whole numbers above.** Rounding everything to whole KiB
+  turns a 634-byte file into "1" or "0", both lies.
+- **Do not pin the compressed figure in an expected-value test.** Compressor output can
+  shift between Go versions. The determinism gate is two `Render()` calls in one
+  process and is unaffected; a golden file holding "28,998" would churn on a toolchain
+  bump for no reason. Assert the relationship, not the literal.
+
+### Not ruled: shipping comment-stripped assets
+
+Left open deliberately. It collides with a doctrine already set — the comments in
+`tokens.css` are *why* an app can own the file, and a stripped copy is one an app can
+serve but not read. Vendoring both doubles what `doctor` reasons about and gives every
+app a "which one did I edit?" question. The numbers above say the prize is real (20 KB
+gzipped per cold load); the design is not decided.
+
+Related, and noted because it is the larger number: **`datetime.js` is 59,438 raw /
+18,997 gzipped — a third of the total wire cost on its own** — and it is an optional
+enhancement. §6-v2.8 moves its strings out of the markup; it does not make the file
+smaller.
