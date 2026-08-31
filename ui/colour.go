@@ -107,6 +107,18 @@ type Intent struct {
 // chroma you asked for, and is lower whenever the requested one lay
 // outside sRGB at the lightness the background forced. Read it if you
 // care whether you got the colour you asked for.
+//
+// The three measurements are always computed and always mean the same
+// thing; which of them carries a FLOOR depends on which function made the
+// swatch, because Pair and Wash guarantee different things:
+//
+//	              FillRatio          OnRatio            Separation
+//	Pair          >= 3:1 (floored)   >= 4.5:1 (floored) measured
+//	Wash          measured, and LOW  >= 4.5:1 (floored) >= MinSeparation
+//
+// A Wash's FillRatio is low by design — a wash that stood 3:1 off the
+// page would not be a wash — so do not gate on it and do not carry a
+// Wash swatch into a check written for a Pair one.
 type Swatch struct {
 	Fill       string
 	On         string
@@ -115,11 +127,17 @@ type Swatch struct {
 	Hue    float64
 	Chroma float64
 
-	// FillRatio is Fill against Background, held at
-	// ContrastFloorBoundary. OnRatio is On against Fill, held at
-	// ContrastFloorText.
+	// FillRatio is Fill against Background as a WCAG contrast ratio.
+	// OnRatio is On against Fill.
 	FillRatio float64
 	OnRatio   float64
+
+	// Separation is Fill against Background as a perceptual distance
+	// (DeltaEOK) rather than a contrast ratio. It is the measurement
+	// behind "can you see that this cell is filled", which contrast
+	// ratio answers badly: a pale yellow wash is about 1.2:1 off white,
+	// a number that says nothing useful, while being plainly visible.
+	Separation float64
 }
 
 // Pair resolves an intent against one background into a fill and an
@@ -188,7 +206,8 @@ func Pair(hue, chroma float64, background string) (Swatch, error) {
 	if err != nil {
 		return Swatch{}, err
 	}
-	bgL := oklabOf(bgR, bgG, bgB)[0]
+	bgLab := oklabOf(bgR, bgG, bgB)
+	bgL := bgLab[0]
 	bgLum := relLuminance(bgR, bgG, bgB)
 
 	// Where the fill is allowed to be. A fill clears the boundary floor
@@ -250,6 +269,7 @@ func Pair(hue, chroma float64, background string) (Swatch, error) {
 			Chroma:     c,
 			FillRatio:  fillRatio,
 			OnRatio:    onRatio,
+			Separation: labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab),
 		}, nil
 	}
 	return Swatch{}, fmt.Errorf("ui.Pair: no lightness resolves hue %g chroma %g against background %s at %.1f:1 fill and %.1f:1 on-fill",
@@ -331,6 +351,199 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 		}
 	}
 	return best, bestRatio, ok
+}
+
+// Wash resolves an intent into a background wash that leaves the
+// caller's own text colour alone.
+//
+//	sw, err := ui.Wash(115, 0.14, authorInk, canvas)
+//	// sw.Fill is what you paint. sw.On is authorInk, unchanged.
+//
+// It is Pair's sibling, not Pair with the arguments swapped, and the
+// difference is about who owns the ink.
+//
+// # Why this exists: a font colour nobody set
+//
+// Pair is right when the caller owns both halves — a presence cursor, a
+// comment author's dot, a conditional format, anywhere a RULE picks the
+// colour and the app writes the fill and the text together. It is wrong
+// for the commonest case in a spreadsheet or a document: someone selects
+// a cell, or a run of words, and clicks yellow.
+//
+// That person asked for a background and did not ask for their font
+// colour to change. If the engine hands back an on-fill and the app
+// applies it, the app has to persist it — and on export that is a font
+// colour written into the file that the author never set. Import a
+// workbook, highlight one cell, export, and it comes back with font
+// colours throughout. That is round-trip corruption, and it is why the
+// constraint runs the other way here: not "given this fill, what ink
+// survives on it" but "given the ink this author already has, what is
+// the palest fill of this hue their ink still reads on".
+//
+// # The two floors
+//
+//  1. ink clears ContrastFloorText (4.5:1) against the returned fill.
+//     The author's text stays theirs and stays legible.
+//  2. The fill is at least MinSeparation from background in OKLab —
+//     perceptibly different, or the user clicks yellow and nothing
+//     appears to have happened.
+//
+// The second floor is measured as a perceptual distance and not as a
+// contrast ratio, because contrast ratio is the wrong instrument for
+// "can you tell this cell is filled": a pale yellow wash is about 1.2:1
+// against white, a number that would condemn every wash anyone has ever
+// shipped, while being perfectly visible. MinSeparation is calibrated
+// against real ones — the palest fill in Google Sheets' own standard
+// palette measures 0.036, and a tint at 0.014 is not there.
+//
+// The two floors pull against each other, which is what makes the second
+// one load-bearing rather than decorative: floor 1 pushes the fill away
+// from the ink, floor 2 pushes it away from the background, and "palest"
+// resolves as the fill nearest the background that clears both.
+//
+// # When there is no answer, you get an error
+//
+// Wash fails rather than returning a wash the author's text cannot be
+// read on. That failure is the feature. The incumbent behaviour — Excel
+// will happily give you a dark navy fill and leave your text black on
+// it, unreadable, with no warning — is what this replaces, and it
+// replaces it by constraining what can be OFFERED rather than by
+// overriding what the author chose. Nobody's font colour is changed
+// behind their back; a hue that cannot carry their ink is simply not
+// available, and the app can say so.
+//
+// # background is a literal colour, for the same reason as Pair's
+//
+// and the export case makes it concrete. A stored intent resolves per
+// viewer, so a light reader and a dark reader see two different washes
+// of one highlight. XLSX carries one hex per cell, so on export that
+// per-viewer resolution collapses and a background has to be picked. The
+// theme someone happened to be using when they clicked yellow must not
+// leak into the file: a fill imported from a workbook exports as its
+// retained original hex, untouched, so a file the caller did not author
+// leaves exactly as it arrived, and a fill the user picked in-app
+// exports resolved against a canonical LIGHT background, because Excel's
+// canvas is white and that is where the file will be opened. The export
+// surface is not the viewer's surface. A scheme enum cannot say any of
+// that; a colour can.
+//
+// ink and background are literal #rgb or #rrggbb colours. ink is
+// commonly theme-derived — near-black on a light canvas, near-white on a
+// dark one — but an author who pinned their font colour pins it here
+// too, and "the author pinned black and the viewer chose the dark theme"
+// is a real case that sometimes has no answer. See CheckWashes.
+func Wash(hue, chroma float64, ink, background string) (Swatch, error) {
+	if math.IsNaN(hue) || math.IsInf(hue, 0) {
+		return Swatch{}, fmt.Errorf("ui.Wash: hue must be a finite number, got %v", hue)
+	}
+	if math.IsNaN(chroma) || math.IsInf(chroma, 0) || chroma < 0 {
+		return Swatch{}, fmt.Errorf("ui.Wash: chroma must be finite and >= 0, got %v", chroma)
+	}
+	bg, err := normalHex(background)
+	if err != nil {
+		return Swatch{}, fmt.Errorf("ui.Wash: background: %w", err)
+	}
+	pen, err := normalHex(ink)
+	if err != nil {
+		return Swatch{}, fmt.Errorf("ui.Wash: ink: %w", err)
+	}
+	h := math.Mod(hue, 360)
+	if h < 0 {
+		h += 360
+	}
+
+	bgR, bgG, bgB, _ := parseHex(bg)
+	bgLab := oklabOf(bgR, bgG, bgB)
+	bgLum := relLuminance(bgR, bgG, bgB)
+	inkR, inkG, inkB, _ := parseHex(pen)
+	inkLum := relLuminance(inkR, inkG, inkB)
+
+	// Nearest first, and "nearest" is the perceptual distance the second
+	// floor is written in, so the floor and the objective are the same
+	// measurement: reject below MinSeparation, then take the smallest
+	// value above it.
+	//
+	// The walk can stop early. A perceptual distance is at least the
+	// lightness difference alone — the other two axes only add — so once
+	// a wash at distance d has been found, no lightness further than d
+	// from the background can beat it. The slack absorbs the difference
+	// between the lightness asked for and the lightness that survives
+	// rounding to eight bits.
+	const slack = 0.02
+	best, bestD, found := Swatch{}, math.Inf(1), false
+	for w, ok := nearestFirst(bgLab[0]); ok; w, ok = w.next() {
+		l := w.lightness()
+		if found && math.Abs(l-bgLab[0])-slack >= bestD {
+			break
+		}
+		rgb, c := oklchRGB(l, chroma, h)
+		sep := labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
+		if sep < MinSeparation {
+			continue // you could not tell the cell had been filled
+		}
+		fillLum := relLuminance(rgb[0], rgb[1], rgb[2])
+		onRatio := ratioOf(inkLum, fillLum)
+		if onRatio < ContrastFloorText+contrastMargin {
+			continue // the author's own text would not be readable on it
+		}
+		if found && sep >= bestD {
+			continue
+		}
+		best, bestD, found = Swatch{
+			Fill:       hexOf(rgb),
+			On:         pen,
+			Background: bg,
+			Hue:        h,
+			Chroma:     c,
+			FillRatio:  ratioOf(fillLum, bgLum),
+			OnRatio:    onRatio,
+			Separation: sep,
+		}, sep, true
+	}
+	if !found {
+		return Swatch{}, fmt.Errorf("ui.Wash: no wash of hue %g chroma %g works on background %s under ink %s — nothing this hue can be is both %.2f away from the background and readable at %.1f:1 under that ink",
+			h, chroma, bg, pen, MinSeparation, ContrastFloorText)
+	}
+	return best, nil
+}
+
+// nearestFirst starts a walk of the lightness grid in order of distance
+// from a target, nearest first: a two-cursor merge, one running down from
+// the step nearest the target and one up from just above it, taking
+// whichever is closer and preferring the lower one on a tie.
+//
+// Pair does not use it — its floor is monotone in lightness, so it
+// bisects for the two boundaries instead. Wash's second floor is a
+// distance and turns back on itself either side of the background, so it
+// walks.
+func nearestFirst(target float64) (walk, bool) {
+	k := int(math.Round((target - lightnessLow) / (lightnessHigh - lightnessLow) * float64(lightnessSteps)))
+	k = min(max(k, 0), lightnessSteps)
+	return walk{target: target, down: k, up: k + 1}.next()
+}
+
+type walk struct {
+	target   float64
+	down, up int
+	step     int
+}
+
+func (w walk) lightness() float64 { return stepLightness(w.step) }
+
+func (w walk) next() (walk, bool) {
+	switch {
+	case w.down < 0 && w.up > lightnessSteps:
+		return w, false
+	case w.down < 0:
+		w.step, w.up = w.up, w.up+1
+	case w.up > lightnessSteps:
+		w.step, w.down = w.down, w.down-1
+	case math.Abs(stepLightness(w.down)-w.target) <= math.Abs(stepLightness(w.up)-w.target):
+		w.step, w.down = w.down, w.down-1
+	default:
+		w.step, w.up = w.up, w.up+1
+	}
+	return w, true
 }
 
 // offered is the bounded set of hues this engine allocates from: twelve,
@@ -664,6 +877,63 @@ func checkSwatch(in Intent, sw Swatch) []error {
 	return errs
 }
 
+// A Canvas is a background together with every ink that can be drawn on
+// it. It is a pair rather than two lists because the two are not
+// independent: a light canvas carries near-black theme ink, a dark one
+// carries near-white, and crossing them produces combinations that
+// cannot occur.
+//
+// Inks should hold the theme-derived ink for this background AND any ink
+// an author can pin. That second half is the one that catches things: an
+// author who sets their font colour to black keeps it when a reader
+// switches to the dark theme, so "pinned black on dark paper" is a real
+// canvas, and it is the one most likely to have no wash.
+type Canvas struct {
+	Background string
+	Inks       []string
+}
+
+// CheckWashes is the wash half of the build-time proof, and the sibling
+// of CheckIntents: it reports every (intent, background, ink) for which
+// Wash has no answer.
+//
+// Pass the canvases you REQUIRE to work. That is the whole design of it —
+// some combinations legitimately have no wash and failing loudly is the
+// intended behaviour, so a checker that judged every conceivable
+// combination would be reporting decisions rather than defects. A canvas
+// in this list is a claim that its cells must resolve.
+//
+//	err := ui.CheckWashes(ui.Offered(), []ui.Canvas{
+//	        {Background: paperWhite, Inks: []string{themeInkLight, "#000000"}},
+//	        {Background: darkPaper,  Inks: []string{themeInkDark, "#ffffff"}},
+//	})
+//
+// Every failure is reported rather than the first, because a set is
+// adopted as a set.
+func CheckWashes(intents []Intent, canvases []Canvas) error {
+	var errs []error
+	if len(intents) == 0 {
+		errs = append(errs, errors.New("ui.CheckWashes: no intents to check — an empty set proves nothing"))
+	}
+	if len(canvases) == 0 {
+		errs = append(errs, errors.New("ui.CheckWashes: no canvases to check against — an empty set proves nothing"))
+	}
+	for _, canvas := range canvases {
+		if len(canvas.Inks) == 0 {
+			errs = append(errs, fmt.Errorf("ui.CheckWashes: canvas %s lists no inks — a background with no ink on it proves nothing", canvas.Background))
+			continue
+		}
+		for _, ink := range canvas.Inks {
+			for _, in := range intents {
+				if _, err := Wash(in.Hue, in.Chroma, ink, canvas.Background); err != nil {
+					errs = append(errs, err)
+				}
+			}
+		}
+	}
+	return errors.Join(errs...)
+}
+
 // ─── OKLCH → sRGB ────────────────────────────────────────────────────
 //
 // Björn Ottosson's oklab, the space CSS names in "in oklab" and the one
@@ -820,9 +1090,16 @@ func DeltaEOK(a, b string) (float64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("second colour: %w", err)
 	}
-	la, lb := oklabOf(ar, ag, ab), oklabOf(br, bg, bb)
-	dl, da, db := la[0]-lb[0], la[1]-lb[1], la[2]-lb[2]
-	return math.Sqrt(dl*dl + da*da + db*db), nil
+	return labDistance(oklabOf(ar, ag, ab), oklabOf(br, bg, bb)), nil
+}
+
+// labDistance is DeltaEOK's kernel, for callers inside this package that
+// already hold the OKLab triples. One notion of perceptual distance, one
+// place it is written down: the separation check over an offered set, a
+// swatch's Separation, and the wash floor are all this function.
+func labDistance(a, b [3]float64) float64 {
+	dl, da, db := a[0]-b[0], a[1]-b[1], a[2]-b[2]
+	return math.Sqrt(dl*dl + da*da + db*db)
 }
 
 // linearFromSRGB is the inverse gamma transfer, at the sRGB spec's own

@@ -975,7 +975,10 @@ func TestCheckIntentsMeasuresSeparation(t *testing.T) {
 //
 // For the record, on the machine this was written on: Pair went from
 // 2,762,408 ns/op to about 12,000 ns/op when the scan became a bisection,
-// ContrastRatio from 2,558 to 17, and parseHex from 845 to 7.
+// ContrastRatio from 2,558 to 17, and parseHex from 845 to 7. Wash costs
+// about 17,000 — it walks rather than bisects, because its second floor
+// is a distance and turns back on itself either side of the background,
+// but the early exit keeps it in the same order as Pair.
 
 func BenchmarkColourPair(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -986,6 +989,12 @@ func BenchmarkColourPair(b *testing.B) {
 func BenchmarkColourPairOnDark(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Pair(175, 0.14, "#101318")
+	}
+}
+
+func BenchmarkColourWash(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Wash(115, 0.14, "#000000", "#ffffff")
 	}
 }
 
@@ -1047,6 +1056,404 @@ func TestPublishedCapacityCeiling(t *testing.T) {
 	}{{16, 7.3}, {17, 1.9}} {
 		if got := margin(tt.n); math.Abs(got-tt.want) > 0.15 {
 			t.Errorf("%d hues clear the floor by %.1f%%, but reference/ui.md publishes %.1f%%", tt.n, got, tt.want)
+		}
+	}
+}
+
+// ─── Wash ────────────────────────────────────────────────────────────
+
+// TestWashAgainstCasesWithAnObviousAnswer is the control for the wash
+// resolver, on two cases whose answers need no computation.
+//
+// Black ink on paper white must give a PALE fill. Black text needs a
+// light background, so the only fills it reads on are light ones, and
+// "palest that is still visible" puts the answer just off white. Light
+// ink on dark paper must give the mirror: a deep fill just off the page.
+//
+// If the resolver ever stopped reading its arguments — hard-coded a
+// lightness, ignored the ink, confused ink with background — this is what
+// notices, because the two answers are opposites.
+func TestWashAgainstCasesWithAnObviousAnswer(t *testing.T) {
+	pale, err := Wash(115, 0.14, "#000000", "#ffffff")
+	if err != nil {
+		t.Fatalf("a yellow wash under black ink on white paper failed: %v", err)
+	}
+	if l := lum(t, pale.Fill); l < 0.8 {
+		t.Errorf("black ink on paper white gave fill %s at luminance %.3f — a wash must be pale, not saturated", pale.Fill, l)
+	}
+	if pale.On != "#000000" {
+		t.Errorf("On = %s, want the ink that was passed in unchanged (#000000)", pale.On)
+	}
+
+	deep, err := Wash(115, 0.14, "#ffffff", "#111418")
+	if err != nil {
+		t.Fatalf("a yellow wash under white ink on dark paper failed: %v", err)
+	}
+	if l := lum(t, deep.Fill); l > 0.1 {
+		t.Errorf("white ink on dark paper gave fill %s at luminance %.3f — the mirror of the case above", deep.Fill, l)
+	}
+	if lum(t, pale.Fill) <= lum(t, deep.Fill) {
+		t.Errorf("the same intent gave %s on white and %s on dark; those are the wrong way round", pale.Fill, deep.Fill)
+	}
+
+	// Both hold both floors, recomputed from the hexes they returned
+	// rather than read off the struct.
+	for _, sw := range []Swatch{pale, deep} {
+		onRatio, err := ContrastRatio(sw.On, sw.Fill)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if onRatio < 4.5 { // a literal, per TestFloorConstantsAreTheStandard
+			t.Errorf("ink %s on fill %s = %.2f:1, want >= 4.5:1", sw.On, sw.Fill, onRatio)
+		}
+		sep, err := DeltaEOK(sw.Fill, sw.Background)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if sep < MinSeparation {
+			t.Errorf("fill %s against %s is ΔE_OK %.4f, under the %.3f floor — you could not see it had been applied", sw.Fill, sw.Background, sep, MinSeparation)
+		}
+		if math.Abs(sep-sw.Separation) > 1e-9 {
+			t.Errorf("%+v reports separation %.6f but its own colours measure %.6f", sw, sw.Separation, sep)
+		}
+	}
+
+	// And the wash is a wash: it does NOT stand 3:1 off the page. This is
+	// the line between Wash and Pair, and it is worth an assertion so
+	// nobody "fixes" Wash into Pair.
+	if pale.FillRatio >= ContrastFloorBoundary {
+		t.Errorf("the wash %s stands %.2f:1 off the page — that is a fill, not a wash", pale.Fill, pale.FillRatio)
+	}
+}
+
+// TestWashSecondFloorBinds is the gate the brief asked for by name: if
+// removing the perceptibility floor changed no output, that floor would
+// be decorative and we should be told.
+//
+// It removes it, here, by finding what Wash WOULD return under the ink
+// floor alone — the fill nearest the background that the ink still reads
+// on — and requires two things: that it differs from what Wash actually
+// returns, and that the reason it was rejected is the one claimed, namely
+// that it is under MinSeparation from the background.
+//
+// That is the mutation kept as a permanent gate rather than run once by
+// hand. The floor is binding on every offered hue or this fails.
+func TestWashSecondFloorBinds(t *testing.T) {
+	const ink, bg = "#000000", "#ffffff"
+	bgR, bgG, bgB, err := parseHex(bg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bgLab := oklabOf(bgR, bgG, bgB)
+	inkR, inkG, inkB, _ := parseHex(ink)
+	inkLum := relLuminance(inkR, inkG, inkB)
+
+	for _, in := range Offered() {
+		got, err := Wash(in.Hue, in.Chroma, ink, bg)
+		if err != nil {
+			t.Errorf("hue %g: %v", in.Hue, err)
+			continue
+		}
+
+		// The ink floor alone, nearest the background.
+		var paler string
+		var palerSep float64
+		best := math.Inf(1)
+		for step := 0; step <= lightnessSteps; step++ {
+			rgb, _ := oklchRGB(stepLightness(step), in.Chroma, in.Hue)
+			if ratioOf(inkLum, relLuminance(rgb[0], rgb[1], rgb[2])) < ContrastFloorText+contrastMargin {
+				continue
+			}
+			sep := labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
+			if sep < best {
+				best, paler, palerSep = sep, hexOf(rgb), sep
+			}
+		}
+		if paler == got.Fill {
+			t.Errorf("hue %g: dropping the perceptibility floor changes nothing — it returns %s either way, so the floor is not doing any work here", in.Hue, paler)
+			continue
+		}
+		if palerSep >= MinSeparation {
+			t.Errorf("hue %g: the fill the ink floor alone would pick (%s) is ΔE_OK %.4f from the background, which clears %.3f — so it was rejected for some other reason than the one this test claims",
+				in.Hue, paler, palerSep, MinSeparation)
+		}
+	}
+}
+
+// TestWashFailsWhenNoFillCanCarryTheInk shows the error path, which
+// otherwise would never have been observed. An error return nobody has
+// seen returned is not evidence that it can be.
+//
+// The case is a mid-grey font colour, and it is not contrived — it is
+// forced arithmetic. #737373 sits at relative luminance 0.171. To clear
+// 4.5:1 a fill must be at luminance ≤ 0.0021 or ≥ 0.955, and no colour
+// carrying any chroma reaches either from that hue. So there is nothing
+// this ink can be read on, and Wash says so instead of returning a fill
+// the author's own text disappears into.
+//
+// That is the accessibility argument for the error existing, stated as a
+// test: the incumbent behaviour is to hand back the fill and let the text
+// vanish.
+func TestWashFailsWhenNoFillCanCarryTheInk(t *testing.T) {
+	const badInk = "#737373"
+	failed := 0
+	for _, in := range Offered() {
+		if _, err := Wash(in.Hue, in.Chroma, badInk, "#ffffff"); err != nil {
+			failed++
+			if !strings.Contains(err.Error(), "no wash") {
+				t.Errorf("hue %g failed for an unexpected reason: %v", in.Hue, err)
+			}
+		}
+	}
+	if failed == 0 {
+		t.Fatalf("every hue found a wash under ink %s; that ink cannot be read on anything and the error path has never been observed", badInk)
+	}
+	t.Logf("ink %s: %d of %d offered hues have no wash", badInk, failed, len(Offered()))
+
+	// The control. The same hues under an ink that CAN be carried must
+	// all succeed, or this test is only proving that Wash sometimes
+	// errors — which a function that always errored would also satisfy.
+	for _, in := range Offered() {
+		if _, err := Wash(in.Hue, in.Chroma, "#000000", "#ffffff"); err != nil {
+			t.Errorf("hue %g has no wash under plain black ink on white: %v", in.Hue, err)
+		}
+	}
+}
+
+// TestWashRejectsWhatItCannotRead: the inputs that must not come back as
+// a swatch. The ink is the new one — passing a theme token name where a
+// colour belongs must be an error, not a wash resolved against nothing.
+func TestWashRejectsWhatItCannotRead(t *testing.T) {
+	for _, bad := range []string{"var(--rst-text)", "black", "rgba(0,0,0,1)", "", "#gg0000"} {
+		if _, err := Wash(115, 0.14, bad, "#ffffff"); err == nil {
+			t.Errorf("Wash(ink=%q) returned a swatch; an ink this engine cannot read must be an error", bad)
+		}
+		if _, err := Wash(115, 0.14, "#000000", bad); err == nil {
+			t.Errorf("Wash(background=%q) returned a swatch", bad)
+		}
+	}
+	for _, chroma := range []float64{-0.1, math.NaN(), math.Inf(1)} {
+		if _, err := Wash(115, chroma, "#000000", "#ffffff"); err == nil {
+			t.Errorf("Wash(chroma=%v) returned a swatch", chroma)
+		}
+	}
+	if _, err := Wash(math.NaN(), 0.14, "#000000", "#ffffff"); err == nil {
+		t.Error("Wash(hue=NaN) returned a swatch")
+	}
+}
+
+// TestWashWalkFindsTheSameFillAsAScan is the control for Wash's early
+// exit. The walk stops as soon as the remaining lightnesses are further
+// from the background than the best wash found so far, on the argument
+// that a perceptual distance is at least the lightness difference alone.
+// That is an argument, so here is the measurement: the plain scan of all
+// 391 steps, written out independently, agreeing on every colour.
+func TestWashWalkFindsTheSameFillAsAScan(t *testing.T) {
+	inks := []string{"#000000", "#ffffff", "#1a1d21", "#e8eaed", "#404040"}
+	backgrounds := []string{"#ffffff", "#f4f5f8", "#111418", "#0b0d10", "#ffff00", "#808080"}
+	for _, bg := range backgrounds {
+		bgR, bgG, bgB, err := parseHex(bg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bgLab := oklabOf(bgR, bgG, bgB)
+		for _, ink := range inks {
+			inkR, inkG, inkB, _ := parseHex(ink)
+			inkLum := relLuminance(inkR, inkG, inkB)
+			for hue := 0.0; hue < 360; hue += 17 {
+				for _, chroma := range []float64{0.05, 0.14} {
+					var wantFill string
+					best := math.Inf(1)
+					for step := 0; step <= lightnessSteps; step++ {
+						rgb, _ := oklchRGB(stepLightness(step), chroma, hue)
+						sep := labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), bgLab)
+						if sep < MinSeparation {
+							continue
+						}
+						if ratioOf(inkLum, relLuminance(rgb[0], rgb[1], rgb[2])) < ContrastFloorText+contrastMargin {
+							continue
+						}
+						if sep < best {
+							best, wantFill = sep, hexOf(rgb)
+						}
+					}
+					sw, err := Wash(hue, chroma, ink, bg)
+					if wantFill == "" {
+						if err == nil {
+							t.Errorf("hue %g chroma %g ink %s on %s: the scan found nothing, Wash returned %s", hue, chroma, ink, bg, sw.Fill)
+						}
+						continue
+					}
+					if err != nil {
+						t.Errorf("hue %g chroma %g ink %s on %s: the scan found %s, Wash failed: %v", hue, chroma, ink, bg, wantFill, err)
+						continue
+					}
+					if sw.Fill != wantFill {
+						t.Errorf("hue %g chroma %g ink %s on %s: Wash gave %s, the scan gives %s", hue, chroma, ink, bg, sw.Fill, wantFill)
+					}
+				}
+			}
+		}
+	}
+}
+
+// washCanvases is every surface the suite can render a wash on, paired
+// with every ink that can appear on it: the theme's own --rst-text for
+// that scheme, plus the two an author can PIN.
+//
+// The pinned pair is the half that matters and the half a conjunction
+// would have missed. An author who sets their font colour to black keeps
+// it when a reader switches to the dark theme, so "pinned black on dark
+// paper" is a canvas that really occurs, and it is the hardest one: black
+// ink needs a light fill no matter what surrounds the cell.
+//
+// Paper white and dark paper are literals rather than tokens on purpose.
+// A document canvas is not a theme surface — it is paper, in every theme
+// — which is the case that made background a colour rather than a scheme
+// in the first place.
+func washCanvases(t *testing.T) []Canvas {
+	t.Helper()
+	out := []Canvas{
+		{Background: "#ffffff", Inks: []string{"#000000", "#ffffff"}},
+		{Background: "#1a1a1a", Inks: []string{"#ffffff", "#000000"}},
+	}
+	for _, theme := range ThemeNames() {
+		tokens := themeTokens(t, theme)
+		for _, scheme := range []string{"light", "dark"} {
+			ink, ok := tokens[scheme]["--rst-text"]
+			if !ok {
+				t.Fatalf("theme %s (%s) declares no --rst-text", theme, scheme)
+			}
+			for _, name := range []string{"--rst-bg", "--rst-surface", "--rst-surface-2", "--rst-accent-soft"} {
+				bg, ok := tokens[scheme][name]
+				if !ok {
+					t.Fatalf("theme %s (%s) does not declare %s", theme, scheme, name)
+				}
+				out = append(out, Canvas{Background: bg, Inks: []string{ink, "#000000", "#ffffff"}})
+			}
+		}
+	}
+	return out
+}
+
+// TestOfferedSetServesEveryWashCanvas is the wash half of the offered-set
+// proof, and it answers the question the two callers asked.
+//
+// Docs stores an intent and resolves it per reader, because Paul ruled
+// their canvas light by default with dark as a PER-PERSON preference. So
+// the requirement is not that one hex works on both papers — it is that
+// every hue has a wash on white AND has a wash on dark, two separate
+// resolutions of one stored intent. That distinction is why this is a
+// matrix and not a conjunction: reading it as a conjunction would reject
+// a set that serves both readers perfectly well.
+//
+// The ink flips with the theme too, and an author can pin it, so each
+// background carries three inks. 26 canvases × their inks × 12 intents.
+func TestOfferedSetServesEveryWashCanvas(t *testing.T) {
+	canvases := washCanvases(t)
+	if len(canvases) < 20 {
+		t.Fatalf("only %d canvases derived; the derivation has broken and this gate would prove almost nothing", len(canvases))
+	}
+
+	cells := 0
+	for _, c := range canvases {
+		cells += len(c.Inks) * len(Offered())
+	}
+	t.Logf("proving %d intents over %d canvases = %d cells", len(Offered()), len(canvases), cells)
+
+	if err := CheckWashes(Offered(), canvases); err != nil {
+		t.Errorf("the offered set cannot wash every canvas it can be rendered on:\n%v", err)
+	}
+
+	// The map, logged rather than only asserted: how pale the washes
+	// actually come out, and how far the hardest cross case is pushed.
+	// A cell with a wash is not the same as a cell with a WASH — pinned
+	// black ink on a dark canvas forces a fill so light it is no longer
+	// pale, and a caller should be able to see that in a log rather than
+	// discover it on a screen.
+	worstSep, bestSep := math.Inf(1), 0.0
+	for _, c := range canvases {
+		for _, ink := range c.Inks {
+			for _, in := range Offered() {
+				sw, err := Wash(in.Hue, in.Chroma, ink, c.Background)
+				if err != nil {
+					continue
+				}
+				worstSep = math.Min(worstSep, sw.Separation)
+				bestSep = math.Max(bestSep, sw.Separation)
+			}
+		}
+	}
+	t.Logf("wash separation across the matrix: quietest ΔE_OK %.4f, loudest %.4f (floor %.3f)", worstSep, bestSep, MinSeparation)
+
+	// The control for the gate: an ink that cannot be carried must make
+	// it fail. Without this, a CheckWashes that returned nil
+	// unconditionally would look identical to a green run.
+	planted := append(slices.Clone(canvases), Canvas{Background: "#ffffff", Inks: []string{"#737373"}})
+	if err := CheckWashes(Offered(), planted); err == nil {
+		t.Error("a canvas with an uncarriable mid-grey ink passed; the gate is not measuring")
+	}
+	// And the empty sets fail rather than pass, per §7-v2.
+	if err := CheckWashes(nil, canvases); err == nil {
+		t.Error("an empty intent set passed CheckWashes")
+	}
+	if err := CheckWashes(Offered(), nil); err == nil {
+		t.Error("an empty canvas set passed CheckWashes")
+	}
+	if err := CheckWashes(Offered(), []Canvas{{Background: "#ffffff"}}); err == nil {
+		t.Error("a canvas listing no inks passed; a background with nothing drawn on it proves nothing")
+	}
+}
+
+// TestClassicFillsAreNearAnOfferedHue measures what XLSX import fidelity
+// depends on.
+//
+// Sheets maps an arbitrary incoming fill onto the nearest offered intent,
+// so a gap in the circle is not a cosmetic matter: every imported fill in
+// that region snaps visibly sideways, on a file the user never edited.
+// Even spacing bounds the worst case at half the step — 15° for twelve
+// hues — but the bound says nothing about whether the colours people
+// ACTUALLY use fall near an offered hue or in the gaps, and that is the
+// question worth measuring.
+//
+// The five are Excel's own standard palette entries, since XLSX
+// round-trip is what motivates this.
+func TestClassicFillsAreNearAnOfferedHue(t *testing.T) {
+	for _, f := range []struct{ name, hex string }{
+		{"Yellow", "#ffff00"},
+		{"Green", "#00b050"},
+		{"Red", "#ff0000"},
+		{"Orange", "#ffc000"},
+		{"Light Blue", "#00b0f0"},
+	} {
+		r, g, b, err := parseHex(f.hex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lab := oklabOf(r, g, b)
+		hue := math.Atan2(lab[2], lab[1]) * 180 / math.Pi
+		if hue < 0 {
+			hue += 360
+		}
+		nearest, gap := 0.0, math.Inf(1)
+		for _, in := range Offered() {
+			d := math.Abs(hue - in.Hue)
+			if d > 180 {
+				d = 360 - d
+			}
+			if d < gap {
+				nearest, gap = in.Hue, d
+			}
+		}
+		t.Logf("%-11s %s  OKLCh hue %6.2f°  nearest offered %5.1f°  gap %5.2f°", f.name, f.hex, hue, nearest, gap)
+
+		// The bound even spacing guarantees. Asserted so that a change to
+		// the offered set which happened to straddle one of these five
+		// shows up here, where the reason is written down, rather than as
+		// a support ticket about imported spreadsheets changing colour.
+		if gap > 15.0 {
+			t.Errorf("%s (%s) is %.2f° from the nearest offered hue, past the %.1f° half-step even spacing guarantees — the offered set is no longer evenly spaced",
+				f.name, f.hex, gap, 15.0)
 		}
 	}
 }
