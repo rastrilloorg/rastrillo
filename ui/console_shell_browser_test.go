@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -71,6 +72,16 @@ type consoleReading struct {
 
 	Overflow int
 	Dir      string
+
+	// The legacy-engine readings. RailBottom against MainBottom is the
+	// discriminator between "the rail is in its declared grid area"
+	// (which spans the page row AND the footer row) and "the rail was
+	// auto-placed into row 2" (which stops where main stops). They look
+	// identical in a screenshot.
+	RailBottom    int
+	MainBottom    int
+	RailBorderEnd string
+	NavLinksShown int
 }
 
 // consoleMeasure is the one instrument. Both drives use it, and so does
@@ -125,7 +136,11 @@ const consoleMeasure = `(() => {
     NavOverhang: Math.round(nr.bottom - window.innerHeight),
     NavScrolls: nav.scrollHeight - nav.clientHeight,
     Overflow: de.scrollWidth - de.clientWidth,
-    Dir: getComputedStyle(de).direction
+    Dir: getComputedStyle(de).direction,
+    RailBottom: Math.round(rr.bottom),
+    MainBottom: Math.round(mr.bottom),
+    RailBorderEnd: getComputedStyle(rail).borderInlineEndWidth,
+    NavLinksShown: [...nav.querySelectorAll("a")].filter(shown).length
   });
 })()`
 
@@ -552,5 +567,185 @@ func TestTheConsoleRailFitsTheViewport(t *testing.T) {
 	if want := ctop.Viewport + 32; ctop.NavHeight != want {
 		t.Errorf("CONTROL FAILED: the control's nav should measure exactly %dpx (a %dpx content box plus 2×1rem of padding) and this drive read %dpx. The height reading is not the border box of the element the rule names",
 			want, ctop.Viewport, ctop.NavHeight)
+	}
+}
+
+// hasRulePattern matches one CSS rule whose selector list mentions
+// :has(). Crude on purpose: it is a simulation of an engine, and the
+// engine's rule is coarser than a parser's — see stripHas.
+var hasRulePattern = regexp.MustCompile(`(?s)[^{}]*\{[^{}]*\}`)
+
+// stripHas returns tokens.css as an engine that does not implement
+// :has() would see it.
+//
+// The important part is what it drops, which is more than the selector.
+// A selector list is invalid AS A WHOLE if any selector in it is
+// invalid, so such an engine drops the entire rule — every declaration
+// in it, including the ones that have nothing to do with :has(), and
+// including the ones the OTHER selectors in the list were carrying.
+// That is the finding this drive was written for: the console's wide
+// rail rule used to co-list two plain selectors with two :has() ones,
+// so a legacy engine lost `grid-area: rail` along with the fight it was
+// having about `display`, and the rail landed in the right cell only
+// because grid auto-placement happened to agree with the declared area.
+// It looked correct. It was luck.
+func stripHas(css string) (string, int) {
+	dropped := 0
+	// Comments come out FIRST, using ui_test.go's own cssComment. A
+	// browser tokenises them away before it ever looks at a selector,
+	// and the first version of this function did not: the wide
+	// layout's comment explains why the :has() spelling is repeated
+	// there, so the characters ":has(" sat in the text immediately
+	// before a rule that does not use it and the stripper took the
+	// rule. The wide legs of the drive below caught it, which is the
+	// useful thing to say about them — they are not only a gate on the
+	// stylesheet, they are the control on this function.
+	css = cssComment.ReplaceAllString(css, "")
+	out := hasRulePattern.ReplaceAllStringFunc(css, func(rule string) string {
+		prelude, _, ok := strings.Cut(rule, "{")
+		if !ok || !strings.Contains(prelude, ":has(") {
+			return rule
+		}
+		dropped++
+		return "\n"
+	})
+	return out, dropped
+}
+
+// TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas is the gate on the
+// sentence the shell, tokens.css and docs/site/templates.md all make:
+// that this shell's dependence on :has() has a CHOSEN failure
+// direction.
+//
+// The claim has two halves, and only one of them was ever true by
+// accident:
+//
+//  1. Narrow, the rail stays VISIBLE. The rules are written as
+//     hide-when-closed, so the rule an old engine drops is the one that
+//     would have hidden the navigation. The page gets longer; nothing
+//     becomes unreachable. Spelled the other way round, the same
+//     missing selector would be a phone that cannot navigate.
+//  2. Wide, the frame is UNTOUCHED. Nothing about the console's grid
+//     depends on :has() — and that has to be true of the rules as
+//     written, not merely of the intent, which is what a co-listed
+//     selector quietly took away.
+//
+// Half 2 is measured on the discriminator rather than on appearance:
+// the rail's declared area spans the page row AND the footer row, so
+// its bottom edge is below main's. An auto-placed rail stops where main
+// stops. The two are indistinguishable in a screenshot and this is the
+// only reading that tells them apart.
+//
+// THE CONTROL, twice over. The strip itself is checked to have dropped
+// rules that matter (a strip that silently did nothing would make every
+// reading below a reading of the ordinary page), and the same narrow
+// reading is taken on the REAL stylesheet, where the rail must be
+// hidden. If the rail reads visible on both, the visibility is the
+// fixture's and not the degradation's.
+func TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas(t *testing.T) {
+	real := string(TokensCSS())
+	legacy, dropped := stripHas(real)
+
+	// Control on the instrument before anything is measured with it.
+	if dropped == 0 {
+		t.Fatal("the :has()-less simulation dropped no rules at all: it is serving the ordinary stylesheet under another name, and every reading below is a reading of the page as it already is")
+	}
+	if strings.Contains(legacy, ":has(") {
+		t.Fatal("the :has()-less simulation left a :has() selector in the stylesheet; it is not the engine it claims to simulate")
+	}
+	consoleRules := strings.Count(legacy, "rst-shell-console")
+	if consoleRules == 0 {
+		t.Fatal("the simulation dropped every console rule in the file; the shell has no stylesheet left and the legs below would be measuring an unstyled document")
+	}
+	t.Logf(":has()-less simulation: %d rules dropped, %d console selectors survive", dropped, consoleRules)
+
+	page, _ := consolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr")
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		fmt.Fprint(w, real)
+	})
+	mux.HandleFunc("GET /legacy-tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		fmt.Fprint(w, legacy)
+	})
+	mux.HandleFunc("GET /theme.css", func(w http.ResponseWriter, r *http.Request) {
+		css, ok := ThemeCSS(ThemeNames()[0])
+		if !ok {
+			http.Error(w, "no theme", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(css)
+	})
+	mux.HandleFunc("GET /legacy", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, strings.Replace(page, `href="/tokens.css"`, `href="/legacy-tokens.css"`, 1))
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, page)
+	})
+
+	rig := harness.New(t, func(string) http.Handler { return mux })
+	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+	defer cancel()
+
+	at := func(t *testing.T, w, h int, path string) consoleReading {
+		t.Helper()
+		var raw string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(int64(w), int64(h)),
+			chromedp.Navigate(rig.Origin+path),
+			chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
+			chromedp.Evaluate(consoleMeasure, &raw),
+		); err != nil {
+			t.Fatalf("driving %s at %dx%d: %v", path, w, h, err)
+		}
+		return readConsole(t, raw)
+	}
+
+	// 2. Wide, on the legacy stylesheet: the frame is the declared one.
+	lw := at(t, 1280, 900, "/legacy")
+	t.Logf("legacy engine, 1280x900: rail shown=%v barAbove=%v beforeMain=%v borderInlineEnd=%s rail bottom %dpx vs main bottom %dpx",
+		lw.RailShown, lw.BarAboveRail, lw.RailBeforeMain, lw.RailBorderEnd, lw.RailBottom, lw.MainBottom)
+	if !lw.RailShown || !lw.TailShown {
+		t.Fatalf("without :has() the wide console loses its chrome: rail=%v tail=%v", lw.RailShown, lw.TailShown)
+	}
+	if !lw.BarAboveRail || !lw.RailBeforeMain {
+		t.Errorf("without :has() the wide frame is not bar-over-rail-beside-page: barAbove=%v beforeMain=%v", lw.BarAboveRail, lw.RailBeforeMain)
+	}
+	if lw.RailBorderEnd == "0px" {
+		t.Error("without :has() the rail has no inline-end border: the wide rail rule is being dropped whole, which means it is co-listing plain selectors with :has() ones again")
+	}
+	// THE DISCRIMINATOR.
+	if lw.RailBottom <= lw.MainBottom {
+		t.Errorf("without :has() the rail ends at %dpx and main ends at %dpx: the rail is sitting in the page's row rather than in the area declared for it, which spans the footer row too. "+
+			"That is grid auto-placement agreeing with the declared area by coincidence — the wide rail rule is being dropped whole. Keep the :has() selectors in a rule of their own",
+			lw.RailBottom, lw.MainBottom)
+	}
+
+	// 1. Narrow, on the legacy stylesheet: the rail is visible, whole,
+	//    and the page still fits.
+	ln := at(t, 390, 780, "/legacy")
+	t.Logf("legacy engine, 390x780 closed: rail shown=%v with %d/3 links visible, control shown=%v, overflow=%dpx",
+		ln.RailShown, ln.NavLinksShown, ln.MenuShown, ln.Overflow)
+	if !ln.RailShown {
+		t.Error("without :has() the rail is HIDDEN at 390px: the hide rule is the one that survived, so the chosen failure direction is inverted and a reader on an old phone has no navigation at all")
+	}
+	if ln.NavLinksShown != 3 {
+		t.Errorf("without :has() the disclosed-by-default rail shows %d of 3 navigation links at 390px", ln.NavLinksShown)
+	}
+	if ln.Overflow > 1 {
+		t.Errorf("without :has() the console spills %dpx sideways at 390px", ln.Overflow)
+	}
+
+	// THE CONTROL for leg 1: the same reading on the REAL stylesheet,
+	// where the answer is known and is the opposite one.
+	rn := at(t, 390, 780, "/")
+	if rn.RailShown {
+		t.Errorf("CONTROL FAILED: on the real stylesheet the rail must be hidden at 390px with the disclosure closed, and this drive reports it shown. "+
+			"The visible rail on the legacy page is then the fixture's doing and not the degradation's, and leg 1 measures nothing")
 	}
 }
