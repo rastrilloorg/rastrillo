@@ -16,6 +16,13 @@ package designsystem
 //	go run ./cmd/dsgen -out $AFTER
 //	RST_BEFORE=$BEFORE RST_AFTER=$AFTER \
 //	  go test -tags "browser flipevidence" ./internal/designsystem/ -run TestTheFlipDidNotMoveAPixel -v
+//
+// Run it against ONE tree first — RST_BEFORE and RST_AFTER the same
+// directory — and require zero. That is the control this drive needs
+// more than any other: a page holds up to thirty <iframe srcdoc>
+// documents, and a drive that reads one before it has settled reports a
+// difference between a tree and itself. RST_PAGES=day/en,signal/ar
+// narrows it to a theme and locale while iterating.
 
 import (
 	"context"
@@ -170,6 +177,7 @@ var props = func() []string {
 var digest = func() string {
 	j, _ := json.Marshal(props)
 	return fmt.Sprintf(`(async () => {
+  const out = [];
   // Measure a settled page or measure noise. A gallery page holds thirty
   // <iframe srcdoc> documents; reading before their fonts have resolved
   // gives a layout that is a few pixels different from the one a person
@@ -177,14 +185,28 @@ var digest = func() string {
   // page gives on the next run. A fixed sleep was doing that: a Bengali
   // page came out different between two runs of the SAME tree.
   await document.fonts.ready;
-  for (const f of document.querySelectorAll("iframe")) {
+  // A fresh <iframe srcdoc> is about:blank with readyState "complete"
+  // for a tick before its own document replaces it, so "complete" is
+  // not the question — WHICH document is. Poll until the frame is
+  // showing its srcdoc, then wait for that document's fonts. Without
+  // this a frame is sometimes walked while empty, which shows up as a
+  // page whose element COUNT differs between two runs of one tree.
+  const settled = f => {
     let d = null;
-    try { d = f.contentDocument; } catch (e) { d = null; }
-    if (d && d.readyState !== "complete") {
-      await new Promise(function (r) { f.addEventListener("load", r, {once: true}); });
-      try { d = f.contentDocument; } catch (e) { d = null; }
+    try { d = f.contentDocument; } catch (e) { return null; }
+    if (!d || d.readyState !== "complete") return null;
+    if (f.hasAttribute("srcdoc") && d.URL === "about:blank") return null;
+    return d;
+  };
+  for (const f of document.querySelectorAll("iframe")) {
+    let d = settled(f), waited = 0;
+    while (d === null && waited < 5000) {
+      await new Promise(function (r) { setTimeout(r, 20); });
+      waited += 20;
+      d = settled(f);
     }
-    if (d && d.fonts) { try { await d.fonts.ready; } catch (e) {} }
+    if (d === null) { out.push("IFRAME-NEVER-SETTLED"); continue; }
+    if (d.fonts) { try { await d.fonts.ready; } catch (e) {} }
   }
   // One more frame, so anything the load handlers moved has been laid out.
   await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
@@ -195,7 +217,7 @@ var digest = func() string {
   }
   const props = %s;
   const origins = [null, "::before", "::after"];
-  const out = [];
+
   // Every sample on a gallery page renders inside its own <iframe
   // srcdoc> document, so a walk of the top document alone would compare
   // the chrome and none of the components. srcdoc frames are
