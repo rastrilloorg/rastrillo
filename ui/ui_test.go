@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -14,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // parseAll builds the template tree exactly the way an app is documented
@@ -3060,8 +3061,34 @@ var browserJobPattern = regexp.MustCompile(`go test -tags browser -p 1 ([^\n]*?)
 // fixed and how it would quietly be narrowed again.
 var uiFilterPattern = regexp.MustCompile(`go test -tags browser [^\n]*\./ui/[^\n]*-run`)
 
-// The CI browser job runs ./harness/, ./webauthn/, ./ui/ and
-// ./internal/designsystem/ as whole packages.
+// checkBrowserGate applies the ./ui/ package-list and -run-filter
+// checks to one file's content, naming that file in every failure so a
+// red run says which gate broke.
+func checkBrowserGate(t *testing.T, path string, content []byte) {
+	t.Helper()
+
+	m := browserJobPattern.FindSubmatch(content)
+	if m == nil {
+		t.Fatalf("%s has no anchored `go test -tags browser -p 1 … -count=1` step; every browser drive in this repo now runs in no CI job", path)
+	}
+	var found bool
+	for _, pkg := range strings.Fields(string(m[1])) {
+		if pkg == "./ui/" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("%s's browser job package list is %q, which does not include ./ui/; every drive in ui/browser_test.go and ui/shell_browser_test.go would run in no CI job", path, string(m[1]))
+	}
+
+	if loc := uiFilterPattern.FindIndex(content); loc != nil {
+		t.Errorf("%s runs ./ui/ under a -run filter (%q): a filter matching nothing exits 0, so that step passes while testing less than it claims. Fix the drive instead", path, content[loc[0]:loc[1]])
+	}
+}
+
+// The browser drives — ./harness/, ./webauthn/, ./ui/ and
+// ./internal/designsystem/ — must run as whole packages wherever they
+// are actually invoked.
 //
 // ./ui/ was excluded for a while, then run through a -run filter
 // naming three scriptless drives, because the script-driven ones were
@@ -3076,31 +3103,32 @@ var uiFilterPattern = regexp.MustCompile(`go test -tags browser [^\n]*\./ui/[^\n
 // job at all — the exact failure this branch has already shipped once.
 // So the package list is gated rather than trusted.
 //
+// The Makefile's browser: target — run by .amadan/ci.d/99-browser — is
+// what actually executes on every runner now, so it is checked
+// unconditionally: a missing or non-matching Makefile is a hard
+// failure. ci.yml is checked too, as long as it still exists, so it
+// cannot silently drift from the Makefile while both are read; once
+// plan Task 9 deletes it (`git rm .github/workflows/ci.yml`), its
+// absence is not a failure — the Makefile alone is the gate by then.
+//
 // Deliberately NOT build-tagged: it must run in the plain suite, where
 // everyone sees it, even though the drives it protects only compile
 // under -tags browser.
 func TestTheUIDrivesRunWholeInTheBrowserJob(t *testing.T) {
+	const makefile = "../Makefile"
+	mk, err := os.ReadFile(makefile)
+	if err != nil {
+		t.Fatalf("reading %s: %v — the Makefile's browser: target, run by .amadan/ci.d/99-browser, is where these drives actually run", makefile, err)
+	}
+	checkBrowserGate(t, makefile, mk)
+
 	const workflow = "../.github/workflows/ci.yml"
 	yml, err := os.ReadFile(workflow)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return
+		}
 		t.Fatalf("reading %s: %v — the browser job is where these drives run", workflow, err)
 	}
-
-	m := browserJobPattern.FindSubmatch(yml)
-	if m == nil {
-		t.Fatalf("%s has no anchored `go test -tags browser -p 1 … -count=1` step; every browser drive in this repo now runs in no CI job", workflow)
-	}
-	var found bool
-	for _, pkg := range strings.Fields(string(m[1])) {
-		if pkg == "./ui/" {
-			found = true
-		}
-	}
-	if !found {
-		t.Errorf("the browser job's package list is %q, which does not include ./ui/; every drive in ui/browser_test.go and ui/shell_browser_test.go would run in no CI job", string(m[1]))
-	}
-
-	if loc := uiFilterPattern.FindIndex(yml); loc != nil {
-		t.Errorf("%s runs ./ui/ under a -run filter (%q): a filter matching nothing exits 0, so that step passes while testing less than it claims. Fix the drive instead", workflow, yml[loc[0]:loc[1]])
-	}
+	checkBrowserGate(t, workflow, yml)
 }

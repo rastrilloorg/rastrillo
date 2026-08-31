@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // fixtureHeader/fixtureBody split the plan's fixture manifest so tests

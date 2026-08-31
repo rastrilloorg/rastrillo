@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/internal/iconsets"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/iconsets"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // mountPath is the mount every gate in this package renders at: the one

@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
+	"amadan.net/rastrillo/rastrillo"
 	"github.com/BurntSushi/toml"
-	"github.com/carlosframework/rastrillo"
 )
 
 // decodeTOML strictly decodes one manifest file into a Resource. Any

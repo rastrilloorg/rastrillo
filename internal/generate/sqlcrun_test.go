@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -30,7 +30,7 @@ func repoRoot(t *testing.T) string {
 }
 
 // newScratchModule builds a standalone module in t.TempDir() that
-// requires and replaces github.com/carlosframework/rastrillo with this
+// requires and replaces amadan.net/rastrillo/rastrillo with this
 // repo, so RunSqlc and the compiled store it produces have a real
 // module to work in. withTool controls whether the go.mod carries the
 // sqlc tool directive from the start.
@@ -41,8 +41,8 @@ func newScratchModule(t *testing.T, withTool bool) string {
 	if withTool {
 		goMod += "tool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"
 	}
-	goMod += "require github.com/carlosframework/rastrillo v0.0.0\n\n" +
-		"replace github.com/carlosframework/rastrillo => " + repoRoot(t) + "\n"
+	goMod += "require amadan.net/rastrillo/rastrillo v0.0.0\n\n" +
+		"replace amadan.net/rastrillo/rastrillo => " + repoRoot(t) + "\n"
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatal(err)
 	}

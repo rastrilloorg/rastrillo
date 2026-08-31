@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"tickets/gen"
 	announcementsstore "tickets/gen/store/announcements"

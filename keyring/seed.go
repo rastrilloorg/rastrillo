@@ -1,6 +1,6 @@
 package keyring
 
-import "github.com/carlosframework/rastrillo/crypto"
+import "amadan.net/rastrillo/rastrillo/crypto"
 
 // WrapSeed seals seed under the key derived from a credential's PRF
 // output: crypto.SealSym(r.WrapKey(prf), seed) → iv(12) ‖ AES-256-GCM

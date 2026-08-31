@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // Session is a signed-in identity as resolved from a session cookie.

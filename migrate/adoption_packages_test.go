@@ -6,13 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/auth"
-	"github.com/carlosframework/rastrillo/blobs"
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/eventlog"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/passkey"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/auth"
+	"amadan.net/rastrillo/rastrillo/blobs"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/eventlog"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // legacySQL is each package's schema exactly as it shipped before the

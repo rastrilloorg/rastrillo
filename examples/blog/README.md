@@ -166,14 +166,14 @@ particular ejected file happens to be missing.
 Regenerate after adding, renaming or removing an action:
 
 ```
-go run github.com/carlosframework/rastrillo/cmd/rastrillo generate .
+go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate .
 ```
 
 Check a committed `gen/` is fresh (for CI, or before review):
 
 ```
 tmp=$(mktemp -d) && cp -R actions go.mod "$tmp"/
-go run github.com/carlosframework/rastrillo/cmd/rastrillo generate "$tmp"
+go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate "$tmp"
 diff -r gen "$tmp/gen"
 ```
 

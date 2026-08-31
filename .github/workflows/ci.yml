@@ -121,7 +121,7 @@ jobs:
           cd "$appdir"
           /tmp/rastrillo new smokeapp
           cd smokeapp
-          go mod edit -replace github.com/carlosframework/rastrillo="$GITHUB_WORKSPACE"
+          go mod edit -replace amadan.net/rastrillo/rastrillo="$GITHUB_WORKSPACE"
           go mod tidy
           go build ./...
           go vet ./...

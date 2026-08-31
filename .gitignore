@@ -8,6 +8,10 @@
 # root by the skill that serves them.
 copy-review/
 
+# `make` builds the rastrillo binary here for the gate to exercise —
+# scaffold-smoke.sh runs it against a throwaway app. Disposable output.
+.build/
+
 # `go generate ./...` renders the design-system gallery here so it can be
 # looked at locally. The gallery is not committed — the website builds it
 # with cmd/dsgen at a pinned version — and this copy is disposable.

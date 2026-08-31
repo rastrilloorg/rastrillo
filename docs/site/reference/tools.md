@@ -1,6 +1,6 @@
 # 🤖 tools
 
-`github.com/carlosframework/rastrillo/tools`
+`amadan.net/rastrillo/rastrillo/tools`
 
 Renders agent tool schemas and dispatches model-proposed calls back
 through the app's own mux. A tool call and an HTTP POST reach the

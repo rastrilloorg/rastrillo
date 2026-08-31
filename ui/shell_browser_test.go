@@ -36,8 +36,8 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // stylesheets wires the two routes every page in this file needs: the

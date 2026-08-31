@@ -345,7 +345,7 @@ Funcs(template.FuncMap{"asset": assets.Path}).
 ParseFS(ui.Templates(), "*.html")  // partials available to every page
 ```
 
-then `ParseFS(appFS, "templates/layout.html", "templates/"+name+".html")` as today. Check `ui.Funcs` already provides `icon`/`iconAssets` via WithIcons (it does — funcs.go) so the old two entries drop. The generated file imports `github.com/carlosframework/rastrillo/ui`.
+then `ParseFS(appFS, "templates/layout.html", "templates/"+name+".html")` as today. Check `ui.Funcs` already provides `icon`/`iconAssets` via WithIcons (it does — funcs.go) so the old two entries drop. The generated file imports `amadan.net/rastrillo/rastrillo/ui`.
 
 - [ ] **Step 3:** `go test ./cmd/...` green (the scaffold-compile test proves the generated app builds with ui wired). **Commit** `rastrillo new --shell; scaffolded templates get ui.Funcs and the partials`.
 

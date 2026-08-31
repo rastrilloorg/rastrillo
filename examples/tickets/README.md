@@ -100,11 +100,11 @@ even applies — there is no generator input to trip over.
 Regenerate after editing the manifest:
 
 ```
-GOFLAGS=-mod=mod go run github.com/carlosframework/rastrillo/cmd/rastrillo generate .
+GOFLAGS=-mod=mod go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate .
 ```
 
 Check the committed `gen/` is fresh:
 
 ```
-GOFLAGS=-mod=mod go run github.com/carlosframework/rastrillo/cmd/rastrillo generate --check .
+GOFLAGS=-mod=mod go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate --check .
 ```

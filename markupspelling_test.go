@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/internal/markup"
+	"amadan.net/rastrillo/rastrillo/internal/markup"
 )
 
 // The markup vocabulary is attributes (design doc §6-v3), and the whole

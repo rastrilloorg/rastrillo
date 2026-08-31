@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/csrf"
 )
 
 // LocaleCookie is the stored-preference cookie the resolution chain

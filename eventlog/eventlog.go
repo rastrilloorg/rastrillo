@@ -41,7 +41,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 //go:embed migrations/*.sql

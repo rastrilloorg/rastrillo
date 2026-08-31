@@ -3,7 +3,7 @@
 One binary, seven commands. Install it with:
 
 ```sh
-go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
+go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 ```
 
 Every command takes an optional directory as its last argument and

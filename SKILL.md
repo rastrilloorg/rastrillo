@@ -8,14 +8,14 @@ description: Build a multi-user CARLOS app: GORM models, chi routes, sessions, o
 CARLOS middle layer, not full-stack: you write GORM models, `net/http`
 handlers on a chi router and `html/template` pages; it supplies the
 database opener, session store, identity plugins, CSRF, owner scoping,
-form helpers. Module `github.com/carlosframework/rastrillo`; worked
+form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes`. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
 ## 0. Start here
 
 ```sh
-go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
+go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
@@ -54,7 +54,7 @@ migrate.Apply, sessions, identity plugin, router), `handlers.go`
 flash/session-aware page data), `cmd/<app>/main.go` (Resolve ->
 db.Open -> App -> Serve).
 
-Imports: `github.com/carlosframework/rastrillo` and subpackages `db`,
+Imports: `amadan.net/rastrillo/rastrillo` and subpackages `db`,
 `migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
 `jobs`; `github.com/go-chi/chi/v5`; `gorm.io/gorm`.
 
@@ -132,8 +132,8 @@ Scoping separates users, never tenants: a CARLOS app serves one team; a
 multi-team product runs an instance per team (idle instances hibernate
 free). Roles/membership are the
 `amadan.net/rastrillo/idear` addon (Owner/Admin/Member, invitations, a
-membership gate that mints no session) — never core, never
-`github.com/carlosframework/idear`. docs/site/addons.md
+membership gate that mints no session) — never core, never a subpath of
+this repository. docs/site/addons.md
 
 One seam, every read and write:
 `func (a *app) owned(r *http.Request) *gorm.DB { uid, _ :=

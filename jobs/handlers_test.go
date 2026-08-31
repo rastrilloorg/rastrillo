@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 func testHandlers(t *testing.T, j *Jobs) *Handlers {

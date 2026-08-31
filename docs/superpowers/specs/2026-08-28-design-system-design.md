@@ -643,7 +643,7 @@ a diff in every page that renders it, which is the point.
 generate` invokes. Before it deletes anything it refuses to run unless
 its output root is an absolute path ending `docs/design-system` whose
 repo root two levels up holds a `go.mod` declaring
-`github.com/carlosframework/rastrillo` — a guard added after a
+`amadan.net/rastrillo/rastrillo` — a guard added after a
 throwaway debug run once wrote the whole tree into
 `internal/designsystem/` itself (as built, 2026-08-29).
 
@@ -2537,7 +2537,7 @@ missing leading one and refuses the site root, because the tree writes
 The command the website runs:
 
 ```
-go run github.com/carlosframework/rastrillo/cmd/dsgen@<sha> \
+go run amadan.net/rastrillo/rastrillo/cmd/dsgen@<sha> \
     -out src/design-system -mount /design-system
 ```
 
@@ -2638,7 +2638,7 @@ found otherwise.
 What is true: `dsgen` is public, and any module can run it. What is
 false: that running it against another module documents *that module's*
 vocabulary. Its entire public surface is `-out` and `-mount`;
-`internal/designsystem` imports `github.com/carlosframework/rastrillo/ui`
+`internal/designsystem` imports `amadan.net/rastrillo/rastrillo/ui`
 directly, and its page kinds, samples and prose are rastrillo's. Pointed
 at estilo it reproduces rastrillo.org's gallery. The tool's own usage
 string was honest throughout — "dsgen writes **rastrillo's**

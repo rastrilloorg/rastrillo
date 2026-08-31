@@ -1,6 +1,6 @@
 # 🤖 vectors
 
-`github.com/carlosframework/rastrillo/vectors`
+`amadan.net/rastrillo/rastrillo/vectors`
 
 The golden vectors that pin your app's JS derivation engine to its Go
 one.

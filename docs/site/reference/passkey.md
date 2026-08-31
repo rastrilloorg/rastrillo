@@ -1,6 +1,6 @@
 # 🤖 passkey
 
-`github.com/carlosframework/rastrillo/passkey`
+`amadan.net/rastrillo/rastrillo/passkey`
 
 A WebAuthn second factor on two seams: **step-up**, where an assertion
 refreshes a stale session instead of a full re-sign-in, and

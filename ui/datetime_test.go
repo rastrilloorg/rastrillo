@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // fixturesComplete flipped true the day every shipped locale got a

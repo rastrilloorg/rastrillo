@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/passkey"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/webauthn/authtest"
+	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/webauthn/authtest"
 )
 
 // gate invokes Gate as an identity plugin would: at the moment sess

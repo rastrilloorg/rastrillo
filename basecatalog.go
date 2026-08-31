@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // baseFS carries the framework's own strings, one flat TOML catalog per

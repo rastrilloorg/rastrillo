@@ -559,7 +559,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	app "%[1]s"
 	"%[1]s/gen"
@@ -614,7 +614,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
@@ -732,7 +732,7 @@ func TestScaffoldedAppTestsPass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.WriteString("\nreplace github.com/carlosframework/rastrillo => " + root + "\n"); err != nil {
+	if _, err := f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n"); err != nil {
 		t.Fatal(err)
 	}
 	f.Close()
@@ -797,7 +797,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	app "%[1]s"
 	"%[1]s/gen"
@@ -987,7 +987,7 @@ Expected: FAIL — layout links bare `/static/tokens.css`.
    var Assets = rastrillo.NewAssets(blogassets.StaticFS)
    ```
 
-   with imports `"github.com/carlosframework/rastrillo"` and `blogassets "blog"` added, and the FuncMap line extended:
+   with imports `"amadan.net/rastrillo/rastrillo"` and `blogassets "blog"` added, and the FuncMap line extended:
 
    ```go
    base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT, "asset": Assets.Path})
@@ -1037,7 +1037,7 @@ Scaffold an app into a temp dir with the locally-built CLI, add the `replace`, r
 REPO="$(pwd)"
 go build -o "$TMPDIR/rastrillo" ./cmd/rastrillo
 cd "$TMPDIR" && rm -rf smokeapp && ./rastrillo new smokeapp
-printf '\nreplace github.com/carlosframework/rastrillo => %s\n' "$REPO" >> smokeapp/go.mod
+printf '\nreplace amadan.net/rastrillo/rastrillo => %s\n' "$REPO" >> smokeapp/go.mod
 cd smokeapp && go test ./...
 ```
 

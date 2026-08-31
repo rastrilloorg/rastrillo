@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // rastrillo new writes the design-token stylesheet into the new app's
@@ -181,7 +181,7 @@ func TestNewPinsCLIsOwnVersions(t *testing.T) {
 	// rastrilloVersion falls back to rastrilloFallbackVersion here —
 	// see version_test.go for the fallback logic itself.
 	for _, want := range []string{
-		"github.com/carlosframework/rastrillo " + rastrilloFallbackVersion,
+		"amadan.net/rastrillo/rastrillo " + rastrilloFallbackVersion,
 		"github.com/go-chi/chi/v5 " + chiPinnedVersion,
 		"gorm.io/gorm " + gormPinnedVersion,
 	} {
@@ -416,7 +416,7 @@ func TestScaffoldedAppTestsPass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.WriteString("\nreplace github.com/carlosframework/rastrillo => " + root + "\n"); err != nil {
+	if _, err := f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n"); err != nil {
 		t.Fatal(err)
 	}
 	f.Close()
@@ -649,7 +649,7 @@ func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
 	}
 	got := string(mk)
 
-	if !strings.Contains(got, `go build -ldflags="-s -w -X 'github.com/carlosframework/rastrillo.BuildVersion=$(VERSION)'"`) {
+	if !strings.Contains(got, `go build -ldflags="-s -w -X 'amadan.net/rastrillo/rastrillo.BuildVersion=$(VERSION)'"`) {
 		t.Errorf("the release build does not strip and stamp:\n%s", got)
 	}
 	if !strings.Contains(got, `-o $(RELEASE_BIN) ./cmd/$(APP)`) {
@@ -725,7 +725,7 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	}
 	appGo := readScaffold(t, "blogapp", "internal", "blogapp", "app.go")
 	for _, want := range []string{
-		"github.com/carlosframework/rastrillo/csrf",
+		"amadan.net/rastrillo/rastrillo/csrf",
 		"r.Use(csrf.Protect(origin))",
 		"origin string",
 	} {
@@ -778,7 +778,7 @@ func TestNewScaffoldsBrowserDrive(t *testing.T) {
 	for _, want := range []string{
 		"//go:build browser",
 		"package myblogtest",
-		"github.com/carlosframework/rastrillo/harness",
+		"amadan.net/rastrillo/rastrillo/harness",
 		"harness.New(t, func(origin string) http.Handler {",
 		"myblog.App(d, origin, logger)",
 		`rig.Screen("body", "home")`,

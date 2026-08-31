@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // eventsServer mounts h.Events behind a session-injecting wrapper on a

@@ -5,6 +5,7 @@ package gen
 import (
 	"net/http"
 
+	"amadan.net/rastrillo/rastrillo"
 	act_admin_posts_id_delete_get "blog/gen/actions/admin/posts/id/delete_get"
 	act_admin_posts_id_delete_post "blog/gen/actions/admin/posts/id/delete_post"
 	act_admin_posts_id_edit_basics_post "blog/gen/actions/admin/posts/id/edit_basics_post"
@@ -17,7 +18,6 @@ import (
 	act_admin_posts_new_get "blog/gen/actions/admin/posts/new_get"
 	act_index_get "blog/gen/actions/index_get"
 	act_posts_id_index_get "blog/gen/actions/posts/id/index_get"
-	"github.com/carlosframework/rastrillo"
 )
 
 // Router builds the app's mux. ctxFactory constructs a fresh

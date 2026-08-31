@@ -24,7 +24,7 @@ import (
 	"sort"
 	"strings"
 
-	rastrillo "github.com/carlosframework/rastrillo"
+	rastrillo "amadan.net/rastrillo/rastrillo"
 )
 
 // Schema is one tool's schema, in the common tool-use shape.

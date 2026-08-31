@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/vault"
+	"amadan.net/rastrillo/rastrillo/vault"
 )
 
 // fakeMethods serves the /v1/methods half of the wire: wrapped seeds

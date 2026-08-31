@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // pollSeconds is the status page's cadence, written by templates into

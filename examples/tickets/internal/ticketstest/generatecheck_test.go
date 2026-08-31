@@ -26,7 +26,7 @@ import (
 )
 
 func TestGenerateCheckIsGreen(t *testing.T) {
-	cmd := exec.Command("go", "run", "github.com/carlosframework/rastrillo/cmd/rastrillo", "generate", "--check", ".")
+	cmd := exec.Command("go", "run", "amadan.net/rastrillo/rastrillo/cmd/rastrillo", "generate", "--check", ".")
 	cmd.Dir = appRoot(t)
 	cmd.Env = withModMode(os.Environ())
 

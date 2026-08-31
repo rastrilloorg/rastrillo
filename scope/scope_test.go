@@ -3,7 +3,7 @@ package scope
 import (
 	"testing"
 
-	"github.com/carlosframework/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/gormlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

@@ -1017,7 +1017,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // page builds the handler serving one form carrying an enhanced
@@ -1260,8 +1260,8 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo/harness"
-	"github.com/carlosframework/rastrillo/webauthn"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/webauthn"
 )
 
 // fixture is the app under drive: one enrolled credential, one pending
@@ -1721,7 +1721,7 @@ func TestNewScaffoldsBrowserDrive(t *testing.T) {
 	for _, want := range []string{
 		"//go:build browser",
 		"package myblogtest",
-		"github.com/carlosframework/rastrillo/harness",
+		"amadan.net/rastrillo/rastrillo/harness",
 		"harness.New(t, func(origin string) http.Handler {",
 		"myblog.App(d, origin, logger)",
 		`rig.Screen("body", "home")`,
@@ -1782,8 +1782,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
 	"github.com/chromedp/chromedp"
 
 	%[2]s "%[1]s/internal/%[2]s"

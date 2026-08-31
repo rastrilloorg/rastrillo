@@ -1,6 +1,6 @@
 # 🤖 eventlog
 
-`github.com/carlosframework/rastrillo/eventlog`
+`amadan.net/rastrillo/rastrillo/eventlog`
 
 The mergeable store shape: a command never `UPDATE`s. It appends an
 immutable event to a resource's stream, and a pure `Derive` fold

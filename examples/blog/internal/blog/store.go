@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	postsstore "blog/gen/store/posts"
 )

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // MissingKeys reports, per non-default locale, the keys present in the

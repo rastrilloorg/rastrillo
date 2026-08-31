@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -30,13 +30,13 @@ func repoRoot(t *testing.T) string {
 }
 
 // newScratchModule builds a tiny standalone module in t.TempDir() that
-// requires and replaces github.com/carlosframework/rastrillo with this
+// requires and replaces amadan.net/rastrillo/rastrillo with this
 // repo, so evalGo's `go run` driver has a real module context to build
 // in. Returns the module's root directory.
 func newScratchModule(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	goMod := "module scratch\n\ngo 1.25.0\n\nrequire github.com/carlosframework/rastrillo v0.0.0\n\nreplace github.com/carlosframework/rastrillo => " + repoRoot(t) + "\n"
+	goMod := "module scratch\n\ngo 1.25.0\n\nrequire amadan.net/rastrillo/rastrillo v0.0.0\n\nreplace amadan.net/rastrillo/rastrillo => " + repoRoot(t) + "\n"
 	writeFile(t, root, "go.mod", goMod)
 	return root
 }
@@ -49,7 +49,7 @@ func TestEvalGoFindsExportedResources(t *testing.T) {
 	}
 	writeFile(t, dir, "notes.go", `package manifest
 
-import "github.com/carlosframework/rastrillo"
+import "amadan.net/rastrillo/rastrillo"
 
 var Notes = rastrillo.Resource{
 	Name:  "notes",
@@ -99,7 +99,7 @@ func TestEvalGoCompileErrorSurfaces(t *testing.T) {
 	}
 	writeFile(t, dir, "broken.go", `package manifest
 
-import "github.com/carlosframework/rastrillo"
+import "amadan.net/rastrillo/rastrillo"
 
 var Broken = rastrillo.Resource{
 	Name:  "broken",
@@ -128,7 +128,7 @@ func TestEvalGoIgnoresUnexportedAndOtherTypes(t *testing.T) {
 	}
 	writeFile(t, dir, "other.go", `package manifest
 
-import "github.com/carlosframework/rastrillo"
+import "amadan.net/rastrillo/rastrillo"
 
 var notExported = rastrillo.Resource{
 	Name:  "not_exported",
@@ -168,7 +168,7 @@ func TestGoAndTOMLSameManifestSameArtifact(t *testing.T) {
 	}
 	writeFile(t, goDir, "notes.go", `package manifest
 
-import "github.com/carlosframework/rastrillo"
+import "amadan.net/rastrillo/rastrillo"
 
 var Notes = rastrillo.Resource{
 	Name:  "notes",

@@ -2,7 +2,7 @@
 
 package gen
 
-import rastrillo "github.com/carlosframework/rastrillo"
+import rastrillo "amadan.net/rastrillo/rastrillo"
 
 // Tools is the app's agent-tool registry (design doc §8): every
 // action that declared a rastrillo.Tool marker, keyed to its route.

@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/eventlog"
+	"amadan.net/rastrillo/rastrillo/eventlog"
 
 	announcementsstore "tickets/gen/store/announcements"
 )

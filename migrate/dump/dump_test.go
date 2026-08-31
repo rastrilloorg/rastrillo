@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 type dumpNote struct {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/internal/markup"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/internal/markup"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // markdownAboutTheMigration is the fixture's README: prose whose

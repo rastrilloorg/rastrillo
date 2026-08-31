@@ -1,6 +1,6 @@
 # 🤖 mail
 
-`github.com/carlosframework/rastrillo/mail`
+`amadan.net/rastrillo/rastrillo/mail`
 
 The one outbound-email surface.
 

@@ -34,8 +34,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // galleryJS is the gallery's own script, embedded from the file beside

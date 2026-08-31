@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func TestRenderNilRenderLogsAnd500(t *testing.T) {

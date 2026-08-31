@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // IconRef is one {{icon "slug"}} call whose slug no icon answers.

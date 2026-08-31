@@ -44,7 +44,7 @@ import (
 
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // ── The fixture ──────────────────────────────────────────────────────

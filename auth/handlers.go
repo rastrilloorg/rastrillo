@@ -9,7 +9,7 @@ import (
 
 	"github.com/keymaildev/signin"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // Begin is POST /signin: classify the submitted address and start

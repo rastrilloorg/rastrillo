@@ -96,7 +96,7 @@ should not arise.
 
 ## 5. The `migrate` package
 
-A new package, `github.com/carlosframework/rastrillo/migrate`. The CLI
+A new package, `amadan.net/rastrillo/rastrillo/migrate`. The CLI
 group is named `migration` (§6); the Go package keeps the short name,
 because `migrate.Apply` reads better at the call site than
 `migration.Apply` and short package names are idiomatic Go.

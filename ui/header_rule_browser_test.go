@@ -73,7 +73,7 @@ import (
 	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // headerRuleMix is the ruling, transcribed: how much of the accent each

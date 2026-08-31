@@ -298,7 +298,7 @@ func Router(module string, actions []Action) ([]byte, error) {
 	b.WriteString("package gen\n\n")
 	b.WriteString("import (\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"amadan.net/rastrillo/rastrillo\"\n")
 	for _, a := range actions {
 		b.WriteString(fmt.Sprintf("\t%s \"%s/gen/actions/%s\"\n", a.PackageName, module, a.GenDir))
 	}

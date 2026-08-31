@@ -9,7 +9,7 @@ import "runtime/debug"
 // find a way to derive it so this constant needs no maintenance at all.
 const rastrilloFallbackVersion = "v0.24.0"
 
-// rastrilloVersion reports the version of github.com/carlosframework/rastrillo
+// rastrilloVersion reports the version of amadan.net/rastrillo/rastrillo
 // that built this CLI binary, so `rastrillo new` can pin the scaffolded
 // go.mod to the framework version the CLI actually ships with, rather
 // than a hardcoded constant that goes stale every release. That drift
@@ -17,10 +17,10 @@ const rastrilloFallbackVersion = "v0.24.0"
 // rastrillo.Run entirely, so a fresh scaffold against a v0.5.0-or-later
 // CLI failed `go build` with "undefined: rastrillo.Run".
 //
-// `go install github.com/carlosframework/rastrillo/cmd/rastrillo@vX.Y.Z`
+// `go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@vX.Y.Z`
 // embeds that tag in the resulting binary's build info. Since
 // cmd/rastrillo lives in the same module as the framework it
-// scaffolds (github.com/carlosframework/rastrillo), that tag *is* the
+// scaffolds (amadan.net/rastrillo/rastrillo), that tag *is* the
 // module's own version — the exact one to require.
 func rastrilloVersion() string {
 	v, _ := rastrilloVersionTagged()

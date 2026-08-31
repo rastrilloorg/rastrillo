@@ -173,7 +173,7 @@ func TestBookmarksRequireSignin(t *testing.T) {
 // module's generatecheck_test.go for what --check does and doesn't
 // diff).
 func TestGenerateCheckIsGreen(t *testing.T) {
-	cmd := exec.Command("go", "run", "github.com/carlosframework/rastrillo/cmd/rastrillo", "generate", "--check", ".")
+	cmd := exec.Command("go", "run", "amadan.net/rastrillo/rastrillo/cmd/rastrillo", "generate", "--check", ".")
 	cmd.Dir = notesAppRoot(t)
 	cmd.Env = withModMode(os.Environ())
 

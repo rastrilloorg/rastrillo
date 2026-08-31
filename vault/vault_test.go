@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/keyring"
-	"github.com/carlosframework/rastrillo/vault"
+	"amadan.net/rastrillo/rastrillo/keyring"
+	"amadan.net/rastrillo/rastrillo/vault"
 )
 
 func testConfig() vault.Config {

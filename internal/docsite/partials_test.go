@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 var definePartial = regexp.MustCompile(`{{-?\s*define\s+"([^"]+)"`)

@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/internal/manifest"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
 
 // GenerateManifests is the one entry cmd/rastrillo calls: load,

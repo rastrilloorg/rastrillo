@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/internal/generate"
-	"github.com/carlosframework/rastrillo/internal/manifest"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate"
+	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
 
 // runGenerate implements `rastrillo generate [flags] [dir]`: the

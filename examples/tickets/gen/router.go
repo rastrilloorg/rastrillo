@@ -5,7 +5,7 @@ package gen
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 	act_admin_announcements_id_delete_get "tickets/gen/actions/admin/announcements/id/delete_get"
 	act_admin_announcements_id_delete_post "tickets/gen/actions/admin/announcements/id/delete_post"
 	act_admin_announcements_id_edit_basics_post "tickets/gen/actions/admin/announcements/id/edit_basics_post"

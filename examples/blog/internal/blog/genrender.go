@@ -29,7 +29,7 @@ import (
 
 	"blog/gen/locales"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // genT resolves a manifest catalog key against gen/locales.BaseCatalog

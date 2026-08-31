@@ -1,6 +1,6 @@
 # 🤖 auth
 
-`github.com/carlosframework/rastrillo/auth`
+`amadan.net/rastrillo/rastrillo/auth`
 
 Passwordless sign-in by emailed link. It wraps
 `github.com/keymaildev/signin`, filling the holes that package

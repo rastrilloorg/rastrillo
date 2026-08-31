@@ -61,7 +61,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // EmitTemplates writes gen/templates/<name>/{list,show,form}.html for

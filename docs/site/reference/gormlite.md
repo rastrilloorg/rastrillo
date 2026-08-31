@@ -1,6 +1,6 @@
 # 🤖 gormlite
 
-`github.com/carlosframework/rastrillo/gormlite`
+`amadan.net/rastrillo/rastrillo/gormlite`
 
 A GORM SQLite dialector over `modernc.org/sqlite`. A minimal fork of
 `glebarez/sqlite` that keeps Rastrillo on current modernc without a

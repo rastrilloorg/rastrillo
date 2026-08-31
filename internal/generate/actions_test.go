@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // newActionsAppRoot builds an app root with just enough of a go.mod for
@@ -41,9 +41,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	notesstore "scratch/gen/store/notes"
 )
 
@@ -187,9 +187,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	notesstore "scratch/gen/store/notes"
 )
 
@@ -252,9 +252,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	notesstore "scratch/gen/store/notes"
 )
 
@@ -318,9 +318,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	notesstore "scratch/gen/store/notes"
 )
 
@@ -416,8 +416,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/view"
 	eventsstore "scratch/gen/store/events"
 )
 
@@ -648,9 +648,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	eventsstore "scratch/gen/store/events"
 )
 
@@ -744,9 +744,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	eventsstore "scratch/gen/store/events"
 )
 
@@ -863,9 +863,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "scratch/gen/store/bookmarks"
 )
 
@@ -1001,10 +1001,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "scratch/gen/store/bookmarks"
 )
 
@@ -1069,9 +1069,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "scratch/gen/store/bookmarks"
 )
 
@@ -1939,7 +1939,7 @@ func TestEmitActionsCompile(t *testing.T) {
 func TestMoneyHelpersRoundTrip(t *testing.T) {
 	// newScratchModule (not newActionsAppRoot): this test actually
 	// invokes `go test` against the generated package, which needs
-	// github.com/carlosframework/rastrillo (for rastrillo.Ctx et al.)
+	// amadan.net/rastrillo/rastrillo (for rastrillo.Ctx et al.)
 	// to resolve to THIS working tree via a replace directive — plain
 	// newActionsAppRoot's go.mod has no such directive, so `go test`
 	// would instead fetch whatever version is published, which may not
@@ -1978,7 +1978,7 @@ func TestMoneyHelpersRoundTrip(t *testing.T) {
 import (
 	"testing"
 
-	"github.com/carlosframework/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/form"
 )
 
 // TestParseCentsAndFormatCentsPlainRoundTrip pins the money patch: an
@@ -2197,7 +2197,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func doCreate(t *testing.T, form url.Values) (*httptest.ResponseRecorder, formView) {
@@ -2269,7 +2269,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func doEditBasics(t *testing.T, form url.Values) (*httptest.ResponseRecorder, formView) {

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // TestNewScaffoldsCIAndManifest covers the host-awareness half of the
@@ -200,7 +200,7 @@ func TestNewScaffoldsMakefileMigrationCheck(t *testing.T) {
 	// bare `rastrillo migration check` broke that on the first CI run
 	// of a fresh clone — "make: rastrillo: Command not found", with
 	// nothing in the scaffold naming what to install.
-	if !strings.Contains(string(mk), "go run github.com/carlosframework/rastrillo/cmd/rastrillo migration check") {
+	if !strings.Contains(string(mk), "go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check") {
 		t.Errorf("migration-check must go through `go run` so the gate stays toolchain-only:\n%s", mk)
 	}
 }
@@ -221,7 +221,7 @@ func TestNewScaffoldsCLIToolDirective(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(gomod), "\ntool github.com/carlosframework/rastrillo/cmd/rastrillo\n") {
+	if !strings.Contains(string(gomod), "\ntool amadan.net/rastrillo/rastrillo/cmd/rastrillo\n") {
 		t.Errorf("scaffolded go.mod must declare the CLI as a tool, or `make migration-check` "+
 			"fails on a clean scaffold with a missing go.sum entry:\n%s", gomod)
 	}
@@ -313,7 +313,7 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.WriteString("\nreplace github.com/carlosframework/rastrillo => " + root + "\n"); err != nil {
+	if _, err := f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n"); err != nil {
 		t.Fatal(err)
 	}
 	f.Close()
@@ -403,7 +403,7 @@ func TestScaffoldedReleaseStampsAVersionTheBinaryReports(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.WriteString("\nreplace github.com/carlosframework/rastrillo => " + root + "\n"); err != nil {
+	if _, err := f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n"); err != nil {
 		t.Fatal(err)
 	}
 	f.Close()

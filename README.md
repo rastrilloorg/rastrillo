@@ -732,10 +732,14 @@ author would just update.
 ## Try it
 
 ```
-go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
+go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new myapp
 cd myapp && go mod tidy && rastrillo dev
 ```
+
+Tags predating the move to amadan.net are history, not installable
+versions here: their own `go.mod` still names the old module path, so
+the proxy serves only tags cut after the move.
 
 Then edit an action, save, refresh — `rastrillo dev` regenerates,
 rebuilds, and restarts for you. For a one-off build without the watch

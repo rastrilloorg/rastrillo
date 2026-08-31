@@ -14,8 +14,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/db"
 
 	"notes/internal/notes"
 )

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"helloworld/gen"
 )

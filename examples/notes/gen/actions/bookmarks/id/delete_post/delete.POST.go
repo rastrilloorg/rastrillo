@@ -7,9 +7,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "notes/gen/store/bookmarks"
 )
 

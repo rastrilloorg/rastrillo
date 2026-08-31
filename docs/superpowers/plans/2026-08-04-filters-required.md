@@ -19,7 +19,7 @@
 - **Idempotency and DO-NOT-EDIT discipline** exactly as slice 1 (write-on-change helper, `generate --check` gates).
 - Comments state constraints the code can't show, never narration; match each file's voice.
 - Sweep before every commit, all clean, in every module the task touched (root / examples/blog / examples/helloworld / examples/tickets once it exists): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go build ./...`, same env `go vet ./...`, `go test ./... -count=1`, `gofmt -l .` empty. Sandbox off only for network (`go get -tool`) / nested-go / read-only-fs needs.
-- Regen command (run in the app module): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run github.com/carlosframework/rastrillo/cmd/rastrillo generate .`
+- Regen command (run in the app module): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate .`
 - Commit style: short imperative subject; body says why; trailer `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 - Branch: `worktree-filters-required` (current worktree). Never switch branches.
 

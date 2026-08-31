@@ -24,7 +24,7 @@
 - Comments state constraints the code can't show, never narration; match each file's voice.
 - Sweep before every commit, all clean, in every module the task touched (root and/or `examples/blog` and/or `examples/helloworld`):
   `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go build ./...`, same env `go vet ./...`, same env `go test ./... -count=1`, and `gofmt -l .` (empty). On "read-only file system" errors, rerun with the sandbox disabled. Network fetches (new deps) may also need the sandbox disabled; `GOFLAGS=-mod=mod` stays, drop `GOPROXY=off` if any task set it.
-- Blog regen command (in `examples/blog`): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run github.com/carlosframework/rastrillo/cmd/rastrillo generate .`
+- Blog regen command (in `examples/blog`): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate .`
 - Commit style: short imperative subject; body says why; trailer `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 - Branch: `worktree-manifest-system` (current worktree). Never switch branches.
 
@@ -266,7 +266,7 @@ sites; behavior otherwise unchanged.)
 ```go
 func TestEvalGoFindsExportedResources(t *testing.T)
 // t.TempDir() gets a full tiny module: go.mod (module scratch; go 1.25;
-// require github.com/carlosframework/rastrillo v0.0.0 + replace → the
+// require amadan.net/rastrillo/rastrillo v0.0.0 + replace → the
 // repo root, computed absolute), manifest/notes.go declaring
 // `var Notes = rastrillo.Resource{...fixture...}`. evalGo returns it.
 
@@ -329,7 +329,7 @@ import (
 	"os"
 
 	m "<modulePath>/manifest"
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func main() {

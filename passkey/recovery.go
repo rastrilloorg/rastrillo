@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // recoveryCodesPerSet is a set's size: enough that losing a few pieces

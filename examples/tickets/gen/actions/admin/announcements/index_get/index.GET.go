@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/view"
 	announcementsstore "tickets/gen/store/announcements"
 )
 

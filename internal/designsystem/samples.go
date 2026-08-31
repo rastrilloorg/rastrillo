@@ -1,6 +1,6 @@
 package designsystem
 
-import "github.com/carlosframework/rastrillo"
+import "amadan.net/rastrillo/rastrillo"
 
 // This file is the page's content: which partial goes in which family,
 // which states of it are worth showing, and the one data value each of

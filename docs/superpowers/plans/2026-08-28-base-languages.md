@@ -194,7 +194,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // baseFS carries the framework's own strings, one flat TOML catalog per
@@ -721,7 +721,7 @@ func (l *Locales) SwitchHandler() http.Handler {
 }
 ```
 
-Add `"github.com/carlosframework/rastrillo/csrf"` to the imports. Check `csrf` does not import the root package (`grep -n rastrillo csrf/csrf.go` must show only the package's own path); it does not today.
+Add `"amadan.net/rastrillo/rastrillo/csrf"` to the imports. Check `csrf` does not import the root package (`grep -n rastrillo csrf/csrf.go` must show only the package's own path); it does not today.
 
 In `serve.go`'s `buildHandler`, after `loc, err := NewLocales(...)` succeeds and before the return:
 
@@ -874,7 +874,7 @@ func TestLocaleMenuRenders(t *testing.T) {
 }
 ```
 
-`ui_test.go` already imports the root package as `rastrillo` for other tests; if not, add `"github.com/carlosframework/rastrillo"`.
+`ui_test.go` already imports the root package as `rastrillo` for other tests; if not, add `"amadan.net/rastrillo/rastrillo"`.
 
 - [ ] **Step 2: Run to verify failure**
 
@@ -1100,7 +1100,7 @@ In `cmd/rastrillo/generate.go`, immediately after the existing `MissingKeys` blo
 		}
 ```
 
-Ensure `"github.com/carlosframework/rastrillo"` and `"strings"` are imported in that file (check existing imports first).
+Ensure `"amadan.net/rastrillo/rastrillo"` and `"strings"` are imported in that file (check existing imports first).
 
 - [ ] **Step 5: Run**
 

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/internal/designsystem"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem"
 )
 
 // The output on disk has to be the render and the whole render. This is

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // Every set answers every Lucide slug. This is what makes --icons a flag

@@ -60,7 +60,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // page builds the handler serving one form carrying an enhanced

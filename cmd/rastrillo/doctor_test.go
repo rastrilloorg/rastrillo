@@ -11,7 +11,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // doctorApp writes the smallest tree doctor recognises as an app: a
@@ -543,7 +543,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // The scaffold delivered these files once; they are app-owned from

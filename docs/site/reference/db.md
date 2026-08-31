@@ -1,6 +1,6 @@
 # 🤖 db
 
-`github.com/carlosframework/rastrillo/db`
+`amadan.net/rastrillo/rastrillo/db`
 
 Opens your SQLite database the way a CARLOS app needs it, as one
 `*gorm.DB`. It is a small package, and almost all its value is in what

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // goldenListHTML is the brief's pinned golden for the fixture (which

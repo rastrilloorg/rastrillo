@@ -6,7 +6,7 @@
 // of machine output that changes whole on every change to ui, and the
 // site that publishes it builds it instead:
 //
-//	go run github.com/carlosframework/rastrillo/cmd/dsgen@<version> \
+//	go run amadan.net/rastrillo/rastrillo/cmd/dsgen@<version> \
 //	    -out ./src/design-system -mount /design-system
 //
 // Pin a version. The gallery documents the framework at that version,
@@ -63,7 +63,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/carlosframework/rastrillo/internal/designsystem"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem"
 )
 
 func main() {
@@ -140,7 +140,7 @@ const stampBody = `This directory is written by rastrillo's dsgen command, which
 on every run. Do not keep anything here. Delete this file and dsgen will
 refuse the directory instead.
 
-	https://pkg.go.dev/github.com/carlosframework/rastrillo/cmd/dsgen
+	https://pkg.go.dev/amadan.net/rastrillo/rastrillo/cmd/dsgen
 `
 
 // claim makes root a directory dsgen owns and empties it, or fails

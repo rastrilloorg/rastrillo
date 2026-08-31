@@ -10,8 +10,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/carlosframework/rastrillo/internal/iconsets"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/internal/iconsets"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // runNew implements `rastrillo new <name>`: the middle-layer app shape
@@ -284,7 +284,7 @@ const goModTemplate = `module %s
 go 1.24
 
 require (
-	github.com/carlosframework/rastrillo %s
+	amadan.net/rastrillo/rastrillo %s
 	github.com/go-chi/chi/v5 %s
 	gorm.io/gorm %s
 )
@@ -298,7 +298,7 @@ require (
 // dies with "missing go.sum entry for github.com/BurntSushi/toml" —
 // a dependency that is real at go run time and invisible at tidy
 // time. Deleting this line breaks the gate, not the app.
-tool github.com/carlosframework/rastrillo/cmd/rastrillo
+tool amadan.net/rastrillo/rastrillo/cmd/rastrillo
 `
 
 const mainTemplate = `// Command %[1]s wires the app: resolve the platform's activation
@@ -309,8 +309,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/db"
 
 	%[2]s "%[1]s/internal/%[2]s"
 )
@@ -374,9 +374,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/carlosframework/rastrillo/csrf"
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // App wires the whole app: schema, router, static files. It returns a
@@ -462,7 +462,7 @@ const migrationsTemplate = `package %[1]s
 import (
 	"embed"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 //go:embed migrations/*.sql
@@ -528,7 +528,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 )
 
 // app holds what every handler needs. When the app grows accounts,
@@ -551,8 +551,8 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 
 	"%[1]s/internal/%[2]s/icons"
 )
@@ -662,7 +662,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 
 	%[2]s "%[1]s/internal/%[2]s"
 )
@@ -726,7 +726,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // vendoredTheme is the theme this app was scaffolded with. Change it
@@ -875,8 +875,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
 	"github.com/chromedp/chromedp"
 
 	%[2]s "%[1]s/internal/%[2]s"
@@ -914,7 +914,7 @@ func TestBrowserWalk(t *testing.T) {
 // app's own call.
 const readmeTemplate = `# %[1]s
 
-A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. ` + "`make ci`" + `
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + `
 is the gate — vet, gofmt, tests, migration check, one definition for
 CI and for you. AGENTS.md carries the working conventions.
 
@@ -1037,7 +1037,7 @@ build:
 release: version-check
 	@mkdir -p releases
 	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
-		go build -ldflags="-s -w -X 'github.com/carlosframework/rastrillo.BuildVersion=$(VERSION)'" \
+		go build -ldflags="-s -w -X 'amadan.net/rastrillo/rastrillo.BuildVersion=$(VERSION)'" \
 		-o $(RELEASE_BIN) ./cmd/$(APP)
 	@echo
 	@echo "built $(RELEASE_BIN) reporting version $(VERSION)"
@@ -1095,7 +1095,7 @@ fmt-check:
 # go.mod — it is what keeps the CLI's own dependencies in go.sum. See
 # the comment there before removing it.
 migration-check:
-	go run github.com/carlosframework/rastrillo/cmd/rastrillo migration check
+	go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check
 
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
@@ -1133,7 +1133,7 @@ func amadanStep(target string) string {
 
 const agentsMDTemplate = `# %s
 
-A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. Read the
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Read the
 framework's own SKILL.md (repo root, or in the module cache) before
 writing app code — it is the whole app story in ~15KB. The conventions
 below are load-bearing; the framework enforces most of them

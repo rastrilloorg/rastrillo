@@ -1,6 +1,6 @@
 # 🤖 rastrillo
 
-`github.com/carlosframework/rastrillo`
+`amadan.net/rastrillo/rastrillo`
 
 The root package: the process entrypoints, the platform contract,
 localization, fingerprinted assets, the agent vocabulary, and the

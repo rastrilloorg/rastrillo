@@ -4,8 +4,8 @@ import (
 	"embed"
 	"fmt"
 
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/sessions"
 
 	bookmarksstore "notes/gen/store/bookmarks"
 )

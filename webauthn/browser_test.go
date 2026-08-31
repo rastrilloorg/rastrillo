@@ -23,8 +23,8 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo/harness"
-	"github.com/carlosframework/rastrillo/webauthn"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/webauthn"
 )
 
 // fixture is the app under drive: one enrolled credential, one pending

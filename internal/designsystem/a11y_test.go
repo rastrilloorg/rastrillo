@@ -50,7 +50,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // axeTags is the ruleset, and it is not negotiable downwards. WCAG 2.2

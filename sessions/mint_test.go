@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // TestMintReturnsTokenWithoutCookie: Mint creates a live row and hands

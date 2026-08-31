@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/vault"
+	"amadan.net/rastrillo/rastrillo/vault"
 )
 
 // fakeHome is an in-memory Pegamento vault: the v1 blob wire, opaque

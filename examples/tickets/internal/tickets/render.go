@@ -21,8 +21,8 @@ import (
 	ticketsassets "tickets"
 	"tickets/gen/locales"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 //go:embed templates/layout.html

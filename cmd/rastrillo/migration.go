@@ -21,9 +21,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/migrate/dump"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate/dump"
 )
 
 func runMigration(args []string) error {
@@ -85,7 +85,7 @@ package main
 import (
 	app %q
 
-	"github.com/carlosframework/rastrillo/migrate/dump"
+	"amadan.net/rastrillo/rastrillo/migrate/dump"
 )
 
 func main() { dump.Main(app.Schema.All(), app.BootSchema.All(), app.Models) }

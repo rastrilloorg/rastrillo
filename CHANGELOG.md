@@ -17,7 +17,7 @@ a line of app code existed:
 
 ```
 missing go.sum entry for module providing package github.com/BurntSushi/toml
-  (imported by github.com/carlosframework/rastrillo/internal/manifest)
+  (imported by amadan.net/rastrillo/rastrillo/internal/manifest)
 ```
 
 The `migration-check` target runs the CLI as `go run` from inside the app
@@ -32,7 +32,7 @@ invisible at tidy time. The scaffolded `go.mod` now declares the CLI as a
 `make ci` fails the same way. Add the line to yours:
 
 ```
-tool github.com/carlosframework/rastrillo/cmd/rastrillo
+tool amadan.net/rastrillo/rastrillo/cmd/rastrillo
 ```
 
 then `go mod tidy`. (`go get github.com/BurntSushi/toml` also clears it, but
