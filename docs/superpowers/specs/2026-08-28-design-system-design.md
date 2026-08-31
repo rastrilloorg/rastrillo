@@ -3112,3 +3112,43 @@ white by one reader and dark paper by another, in the same document, at the same
 wash perceptible on white can be imperceptible on dark. Docs therefore stores an intent
 and resolves per canvas — and if the offered set cannot satisfy floor 2 on both, that
 constrains the set for every caller, not only theirs.
+
+### §7-v2 addendum (2026-08-31): measure freely, publish only from the shipped path
+
+sheets-03's sharpening of the calibration rule, and better than the version it refines.
+
+The rule already said that two parties agreeing about an uncalibrated instrument is one
+piece of evidence twice. The question it left open is what to do when you *want* a
+second implementation — and the answer turns on what the number is for.
+
+**Measuring to discover is free. Publishing is not.** A second implementation is the
+right tool for finding a defect: this branch used one to establish that Excel's own
+"Yellow Fill with Dark Yellow Text" preset measures 4.12:1 and fails AA, and that
+`#0000FF` cannot carry black ink at 2.44:1. Neither finding needed the shipped code, and
+waiting for it would have cost a round.
+
+But a number that reaches documentation as *the scale for a shipped function* must come
+from the code that ships. Otherwise the two can drift — a different white point, a
+different ΔE variant, a rounding difference — and the published guidance quietly stops
+describing the instrument the caller actually holds, with nothing to catch it.
+
+Sheets applied this to themselves before anyone asked: invited to send measured
+separations for the classic spreadsheet fills, they sent **hexes instead**, on the
+grounds that numbers from their OKLCH implementation, published as the scale for
+rastrillo's `Wash`, would be two instruments agreeing by assumption.
+
+### And the corollary about what a guarantee covers
+
+A generator's guarantee is about what it generates, not about what the product displays.
+
+`Wash` cannot produce an unreadable pairing. A spreadsheet built on it **can still show
+one**, because an imported file's original fill and font colour are retained verbatim —
+which is what makes import→export lossless, and which is right: faithfully displaying a
+document someone else authored is a different act from generating a colour, and silently
+"correcting" imported formatting would lie about the file.
+
+So the doc comment must claim *"a wash this function produces cannot be unreadable"* and
+never *"a cell in this app cannot be unreadable"*. Someone will otherwise find a failing
+cell and conclude the guarantee is broken while it is working exactly as specified. The
+product's obligation is to **surface** the failing pairing, not to hide it and not to
+override it — and that obligation lives in the app, not in this library.
