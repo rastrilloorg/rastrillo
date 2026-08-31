@@ -898,10 +898,11 @@ func shellViews(mount, theme, locale string) []shellView {
 			// {{block}} in it, not markup to copy, and the two shell
 			// chrome idioms above show the markup it produces.
 			Preview: previewView{
-				Group: id + "-0",
-				Style: previewStyle(heightOf(id)),
-				Src:   href,
-				Title: proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
+				Group:  id + "-0",
+				Style:  previewStyle(heightOf(id)),
+				Src:    href,
+				Title:  proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
+				Scaled: true,
 			},
 		})
 	}
@@ -1087,6 +1088,21 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 // demos, which are already documents). Source empty means no Code tab —
 // only the shell demos, whose source is a Go template and not markup to
 // copy.
+//
+// Scaled says whether the frame is laid out at a virtual 1200px and
+// scaled down to the column, or simply given the column's own width.
+// Only a whole page wants the first: a shell is a page frame, and the
+// question it answers — where does the rail sit next to the content —
+// is a question about a window, so showing a window shrunk is showing
+// the right thing. A component is not a window. Scaling an input down
+// to 0.72 renders its 12.5px label at 9px and answers no question at
+// all; it just makes the sample harder to read than the same control
+// in a real app, which is the one thing a gallery must not do
+// (discussion #7). So this is off for everything but the page frames,
+// and it is a field rather than "Src != ”" because the two happen to
+// coincide today and are not the same claim: the two shell-chrome
+// idioms on the primitives page are srcdoc documents that are still
+// page frames.
 type previewView struct {
 	Group  string       // the radio group's name, unique on the page
 	Style  template.CSS // --ds-h and --ds-hm: the frame's virtual height
@@ -1094,6 +1110,7 @@ type previewView struct {
 	Src    string
 	Source string
 	Title  string
+	Scaled bool
 }
 
 // previewStyle writes one example's two virtual heights. The frame is a
@@ -1462,6 +1479,20 @@ var demoIdioms = map[string]demoIdiom{
 	},
 }
 
+// pageFrameIdioms are the idioms on the primitives page that are whole
+// page frames rather than components, and so the only ones there that
+// keep the scaled rendering — the same judgement demoIdioms above makes
+// in prose ("the two shells are whole page frames"), stated once more
+// where the preview is built because that is where it changes what a
+// reader sees. The modal is deliberately not here: its overlay fills
+// whatever viewport it is in, so it fills the column just as honestly
+// as it fills a scaled 1200px window, and at the column's own width
+// its text is legible.
+var pageFrameIdioms = map[string]bool{
+	"shell-topbar":  true,
+	"shell-sidebar": true,
+}
+
 // buildIdioms renders ui.Styleguide in sorted order. The samples are
 // complete HTML with no template actions, so they go onto the page as
 // they are — the point is that the page shows the same bytes the ui
@@ -1492,6 +1523,7 @@ func buildIdioms(mount string, tmpl *template.Template, theme, locale string) ([
 		view.Preview = newPreview(mount, theme, locale, view.ID+"-0",
 			previewTitle(locale, name, "UI primitives"),
 			samples[name], heightOf(view.ID))
+		view.Preview.Scaled = pageFrameIdioms[name]
 		if demo, ok := demoIdioms[name]; ok {
 			view.DemoLabel = proseIn(locale, demo.Label)
 			view.DemoHref = demo.Href(mount, theme, locale)
@@ -1736,10 +1768,11 @@ func renderDemo(mount, theme, locale string) ([]byte, error) {
 // application is not a snippet to paste.
 func demoView(mount, theme, locale string) previewView {
 	return previewView{
-		Group: "demo-app-0",
-		Style: previewStyle(heightOf("demo-app")),
-		Src:   demoHref(mount, theme, locale),
-		Title: proseIn(locale, "The demo application"),
+		Group:  "demo-app-0",
+		Style:  previewStyle(heightOf("demo-app")),
+		Src:    demoHref(mount, theme, locale),
+		Title:  proseIn(locale, "The demo application"),
+		Scaled: true,
 	}
 }
 
@@ -2092,7 +2125,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 // overrides the width at any size. The Desktop label carries a
 // modifier class for the same reason the Mobile one does: the
 // stylesheet has to be able to say which of the two a reader chose.
-const viewTemplate = `{{define "ds-view"}}<div class="ds-view" style="{{.Style}}">
+const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{if not .Scaled}} ds-view--fluid{{end}}" style="{{.Style}}">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">{{P "Preview"}}</legend>
 <label class="ds-view__tab ds-view__tab--d"><input type="radio" name="{{.Group}}">{{P "Desktop"}}</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label>

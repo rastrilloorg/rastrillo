@@ -252,7 +252,8 @@
 .ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
 @container ds-view (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
-@container ds-view not (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@container ds-view not (min-width: 54rem) { .ds-view:not(.ds-view--fluid):not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+.ds-view--fluid:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
 @supports not (container-type: inline-size) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: calc(var(--ds-h) * var(--ds-kmin)); overflow: hidden; overflow-x: auto; overscroll-behavior-x: contain; position: relative; resize: vertical; scrollbar-width: thin; }
@@ -262,8 +263,52 @@
 }
 .ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
 @container ds-view not (min-width: 54rem) {
-  .ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+  .ds-view:not(.ds-view--fluid):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
 }
+/* A component's preview is not scaled: the frame is given the column's
+   own width and left at 1:1, so a label in the gallery is the same
+   14px it is in an app. Everything above this line is about a page
+   frame — a shell, the demo, the two shell-chrome idioms — where a
+   virtual 1200px shrunk into the column is the honest rendering
+   because the thing being shown IS a window. For a component it was
+   never honest, only inherited: at the 700-900px stage a laptop
+   actually gets, --ds-k lands at 0.72-0.75 and the 12.5px type in an
+   input sample renders at 9px, which is the texture the floor was
+   chosen to keep type out of. That is discussion #7.
+
+   The auto-switch above is excluded rather than re-tuned, and the
+   Desktop tab is lit by default at every width instead. 54rem is the
+   stage width at which the DESKTOP RENDERING reaches --ds-kmin, so it
+   is a fact about the 1200px virtual width and nothing else; with no
+   virtual width there is no such threshold, and a component that
+   silently became a 390px phone rendering as a reader narrowed their
+   window was answering a question they had not asked. Mobile stays
+   one click away and is unchanged when they do ask: --ds-w: 390px,
+   scaled by --ds-k exactly as before, which is why the rules below
+   step aside for it rather than overriding it.
+
+   The box takes --ds-hm — the taller, mobile number — and not --ds-h.
+   --ds-h is measured at 1200px, and a narrower frame reflows some
+   samples taller; --ds-hm is the same measurement at 390px, the
+   narrowest the frame can be, so it fits at every width in between.
+   That is one number doing two jobs rather than a third table to keep
+   in step, and TestPreviewFrameHeightsFitTheirContent measures the
+   result on a real engine either way.
+
+   Three custom properties and no new geometry: every declaration
+   above already reads --ds-w, --ds-h and --ds-k, so a virtual width of
+   100% and a scale of 1 make the existing arithmetic produce the
+   fluid rendering on its own. The box becomes calc(100% * 1), the
+   frame becomes var(--ds-w) at scale(1), and the height still comes
+   off the box so the resize grip keeps working. Overriding the
+   lengths directly would have said the same thing twice and left two
+   places to keep in step.
+
+   --ds-w: 100% is also what keeps the drives honest. They ask which
+   rendering is on screen by reading --ds-w off the box, and a fluid
+   preview that still reported 1200px would be a frame claiming a
+   virtual width it does not have. */
+.ds-view--fluid:not(:has(.ds-view__tab--m input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-k: 1; --ds-w: 100%; }
 .ds-view__code { display: none; margin-block-start: 0; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }

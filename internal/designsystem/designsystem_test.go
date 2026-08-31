@@ -880,8 +880,16 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 
 // widgetsOf cuts a page into its preview widgets: everything from one
 // `<div class="ds-view"` up to the next one (or to the end).
+// widgetRoot matches a preview widget's opening tag in both its
+// renderings: a page frame is a bare .ds-view, a component carries the
+// --fluid modifier that turns the scaling off (previewView.Scaled).
+// Matched as an alternation rather than by prefix because
+// .ds-view__stage and .ds-view__box are divs on the same page, and a
+// prefix match would count three widgets for every one.
+var widgetRoot = regexp.MustCompile(`<div class="ds-view(?: ds-view--fluid)?" style=`)
+
 func widgetsOf(page string) []string {
-	parts := strings.Split(page, `<div class="ds-view" style=`)
+	parts := widgetRoot.Split(page, -1)
 	if len(parts) < 2 {
 		return nil
 	}
@@ -990,8 +998,20 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		// a media rule and passes on this one.
 		`container-name: ds-view; container-type: inline-size;`,
 		`@container ds-view (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
-		`@container ds-view not (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m {`,
-		`.ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		`@container ds-view not (min-width: 54rem) { .ds-view:not(.ds-view--fluid):not(:has(input:checked)) .ds-view__tab--m {`,
+		`.ds-view:not(.ds-view--fluid):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		// The component rendering, which is the three properties every
+		// rule above already reads rather than a second geometry: a
+		// virtual width of 100% and a scale of 1 turn the existing
+		// arithmetic into the column's own pixels at 1:1. The :not()
+		// is what hands the Mobile tab back to the rules above, so a
+		// reader who asks for 390px still gets 390px scaled.
+		`.ds-view--fluid:not(:has(.ds-view__tab--m input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-k: 1; --ds-w: 100%; }`,
+		// And the lit tab that goes with it. A component has no width
+		// at which the desktop rendering stops being legible, so it
+		// opens on Desktop at every width — the excluded auto-switch
+		// above, stated as the rule that replaces it.
+		`.ds-view--fluid:not(:has(input:checked)) .ds-view__tab--d {`,
 		// The scale floor, which is what buys legibility, and the
 		// panning that makes a clamped scale usable rather than
 		// cropped. On the box itself, not on the state that made it
