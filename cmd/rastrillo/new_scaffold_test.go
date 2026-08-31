@@ -199,6 +199,28 @@ func TestNewScaffoldsMakefileMigrationCheck(t *testing.T) {
 	}
 }
 
+// The other half of that gate: the go run above only resolves because
+// go.mod declares the CLI as a tool, which is what makes go mod tidy
+// record the CLI's own build dependencies in the app's go.sum. The app
+// imports nothing that reaches them — internal/manifest's TOML parser
+// is the one that bites — so tidy prunes them without this line and a
+// clean scaffold fails its very first make ci with "missing go.sum
+// entry", before a line of app code exists.
+func TestNewScaffoldsCLIToolDirective(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	gomod, err := os.ReadFile(filepath.Join("blogapp", "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(gomod), "\ntool github.com/carlosframework/rastrillo/cmd/rastrillo\n") {
+		t.Errorf("scaffolded go.mod must declare the CLI as a tool, or `make migration-check` "+
+			"fails on a clean scaffold with a missing go.sum entry:\n%s", gomod)
+	}
+}
+
 // The scaffold's agent instructions must teach the schema-change rules
 // an app author needs: edit models.go, regenerate, never touch a
 // shipped migration, and hand-write renames since a rename is
@@ -314,7 +336,18 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mk.Env = append(os.Environ(), "PATH="+filepath.Dir(goBin)+":/usr/bin:/bin")
+	// -mod=readonly, overriding the -mod=mod this test's sandbox env
+	// sets: readonly is what an app's CI actually runs under, and the
+	// difference is the whole bug this guards. Under -mod=mod a
+	// missing go.sum entry is not an error — go run just writes the
+	// requirement into go.mod and carries on — so this step passed
+	// here for as long as it failed for everyone else, who saw
+	// "missing go.sum entry for github.com/BurntSushi/toml" on the
+	// very first make ci of a clean scaffold. Keep it readonly.
+	mk.Env = append(os.Environ(),
+		"PATH="+filepath.Dir(goBin)+":/usr/bin:/bin",
+		"GOFLAGS=-mod=readonly",
+	)
 	if out, err := mk.CombinedOutput(); err != nil {
 		t.Fatalf("make migration-check must pass with only the Go toolchain on PATH:\n%s", out)
 	}
