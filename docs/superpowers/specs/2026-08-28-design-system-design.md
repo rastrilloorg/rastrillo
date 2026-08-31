@@ -3259,3 +3259,66 @@ instrument against the quantity you chose — it cannot tell you the choice was 
 Passing a well-run gate on the wrong quantity is worse than having no gate: a red gate
 starts an investigation, and a green one ends it. The tell here was available in advance —
 the gate asserted a *container* while the defect was in the *content*.
+
+### §6-v2.2c addendum (2026-08-31): the weight scale, and the argument for a parameter
+
+Measured through the shipped `Swatch.Separation`, against a white canvas:
+
+    Excel light green  #C6EFCE  0.1056     flat yellow  #FFFF00  0.2134
+    Excel light yellow #FFEB9C  0.1179     solid green  #00B050  0.3846
+    Excel light red    #FFC7CE  0.1352     flat red     #FF0000  0.4526
+                                           flat blue    #0000FF  0.6312
+
+The four saturated hexes are verified in Sheets' repository and exercised by their tests;
+the three presets were verified here against XlsxWriter's documentation, independently of
+both teams. The floor sits around 0.030 — about a third below even the lightest preset.
+
+**Sheets' perceptual check on the ordering, which is the cheapest calibration available
+and worth imitating:** blue is furthest from white, then red, then green, with bright
+yellow lowest of the saturated four — because yellow *is* nearly as light as paper. "If
+yellow had come out above red I would have distrusted the instrument." A result that
+matches a physical intuition you held before you measured is weak evidence; one that
+contradicts it is strong evidence something is wrong.
+
+### Two bands, and why weight is a parameter rather than a floor
+
+The strongest argument for the target-separation parameter is not that two apps differ.
+It is that **two callers inside one app differ**:
+
+- **Rule-driven fills** — conditional formatting, where the app owns both halves and users
+  expect Excel's register. The **0.10–0.14** band; Sheets defaults near **0.12**.
+- **Hand-picked fills** — a person choosing from an offered set, who expects what they
+  chose to *look* chosen. The **0.21+** register, where flat yellow sits.
+
+One product, one API, two bands, decided by who is doing the choosing. A global floor
+could serve neither without failing the other, which is the general form of "a floor is
+the wrong instrument for a preference".
+
+Document the two bands as the guidance rather than publishing a bare table. A table tells
+a caller what colours measure; the bands tell them which number to pass.
+
+### `SeparationMet` is a one-directional signal, deliberately
+
+`requested >= floor && delivered >= requested - dust`: it reports **paler than you asked
+for, never darker**. That is the direction that needs surfacing — a fill weaker than
+intended is invisible in a scan of a thousand rows, which is the failure a user actually
+suffers, while a fill heavier than requested is merely emphatic.
+
+Proximity was tried first and abandoned on a real case (asked 0.08, got 0.0856). No
+tolerance can work: **the achievable weights are not evenly spaced**, because the ink
+floor cuts gaps of up to 0.067 out of the middle of the range, and any tolerance wide
+enough to swallow those would report every constrained answer as honoured — turning the
+one signal the caller needs into noise.
+
+### The slack constant: the pattern in one number
+
+`washSlack` shipped at 0.02. The bound its own premise required is **0.0525** — a
+quantisation plateau where every lightness from 0.02 to 0.0525 renders `#000000`. So the
+constant sat below the bound it existed to enforce. No test caught it. **No output
+differed anywhere**, because the cases that would have exposed it never arose: raising it
+to 0.08 changed no colour across 58,968 resolutions, while setting it to zero changes 30.
+
+Honest code, an unexamined premise, and no wrong answer to point at. It was findable only
+by asking what the number is *supposed* to bound and measuring that — which is the same
+move as running a check against a case whose answer you already know, applied to a
+constant instead of to a test.
