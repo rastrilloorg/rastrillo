@@ -3470,3 +3470,92 @@ with Google is not.
 - **Password sign-in is the one where shipping a screen is a position.** The framework
   documents passwords, and a design system with a polished username/password card
   encourages it. Worth being deliberate rather than complete.
+
+---
+
+## 6-v2.11. The preview width classes (2026-09-01) — AS BUILT
+
+> Paul, with a screenshot of the Bare/field-text example: "the form
+> element examples shouldn't be scaled .. only the shells ... the scaled
+> form element examples make the examples look like they're teeny tiny.
+> I think they should be scaled only if the iframe is smaller than the
+> content, which for these examples is a much smaller breakpoint"
+
+### The measurement that settles it
+
+Every example on the site was laid out at a virtual 1200px. **This
+gallery's own stage caps at 958px at every window width** — `[rst-page]`
+has a `max-width` and the rail is a fixed 240px, so widening the window
+past about 1280px adds nothing to the column. Measured in a real engine
+across 700–1920px: the stage reads 958px at 1280, 1440, 1600 and 1920.
+
+So `--ds-k` was `958/1200 = 0.798` on every desktop, permanently, for
+every component in the gallery. Nothing was broken and nothing looked
+broken. It looked small — 12.5px type rendered at 10px — which is a
+thing a gallery of a design system must not do.
+
+### Two width classes
+
+`--ds-wd` is the width an example's desktop rendering is laid out at.
+
+| class | `--ds-wd` | threshold | who |
+|---|---|---|---|
+| `.ds-view--page` | 1200px | 54rem | the four shell demos, the two shell idioms, the modal, the demo application |
+| `.ds-view` | 900px | 40.5rem | everything else — 105 of the 114 examples |
+
+The component class is the default, because it is right 92% of the time.
+`page.go`'s `pageFrame()` sorts by anchor-id prefix (`shell-`,
+`idiom-shell-`) plus two names no rule could derive (`demo-app`,
+`idiom-modal`), so a fifth shell lands in the right class with no edit.
+
+**900px, and not the 958px that would fill the column.** `tokens.css`
+folds `.rst-m-hide` away and switches the shells to their narrow layout
+at **800px**, so a "desktop" rendering under that width would quietly be
+the MOBILE layout under a lit Desktop tab — the worst failure this
+widget has. 900px clears that line by 100px and leaves 58px of slack the
+gallery's own layout can spend without dragging every preview back under
+a scale of 1. Coupling the number to 958 would have meant re-measuring
+every entry in `previewHeights` the next time the rail or the column
+moved.
+
+### The threshold had to split with it
+
+The stage width at which a rendering stops shrinking and starts panning
+is `--ds-wd × --ds-kmin`, and `--ds-kmin` (0.72) protects a type size
+rather than a width, so it stays one number for both classes. The
+threshold does not: 1200 × 0.72 = 864px = 54rem, and 900 × 0.72 = 648px
+= 40.5rem. A CSS query condition cannot name a custom property, so this
+costs a second pair of `@container` queries — the one real price of the
+change. The component threshold is *lower*, which is the point rather
+than a side effect: a 900px page is still legible in a column where a
+1200px one is not, so a component holds its desktop rendering for 216px
+of stage longer than a shell does. One shared threshold would have had
+to pick which class to be wrong for.
+
+### What it cost the gates, and one that had to move
+
+Every drive that named 1200px now reads the widget's own `--ds-wd`, so
+the identity is asserted per class and a third class would need no edit.
+`TestThePreviewDefaultIsMonotoneInStageWidth` sweeps both the Display
+page (components) and the Overview (the demo application) and *fails if
+it did not see both classes*, because each has its own query pair and a
+one-page sweep would leave the other ungated.
+
+**The calibration had to be hoisted, and the reason is worth keeping.**
+That drive proved the `@supports` trig branch was live by finding a
+frame the engine had scaled — and `--ds-k` resolves to a plain `1` in
+the fallback branch too, so a reading of 1 proves nothing. The component
+class made every widget on a component page read exactly 1, which is
+simultaneously the whole point of the class and precisely the reading
+that cannot calibrate anything. It now calibrates once, on the Overview,
+where a 1200px page in a 958px stage is still scaled to 0.798.
+
+`previewHeights` did **not** move. Re-measured at 900px to confirm it:
+the slack already in the table covered the extra wrapping a narrower
+page causes, and no frame is smaller than its content.
+
+### Result
+
+At 1280px and wider the Display page's thirty examples render at
+`--ds-k = 1.000`: a field is a field, at its own size. Below 1184px they
+scale as before, and under 648px of stage they clamp and pan.

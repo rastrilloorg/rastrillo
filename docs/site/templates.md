@@ -471,9 +471,13 @@ page says so itself, under Partials, in all twelve languages.
 Every example on the page is shown three ways behind one control:
 **Desktop**, **Mobile** and **Code**. The two previews are one
 `<iframe>` holding a document of its own — the sample, the stylesheets,
-and nothing else — laid out at a virtual 1200px or 390px and scaled
-into whatever width you are reading at, so the desktop rendering is the
-desktop rendering on a phone. The tabs are radio inputs and `:has()`;
+and nothing else — laid out at a virtual width and scaled into whatever
+width you are reading at, so the desktop rendering is the desktop
+rendering on a phone. Mobile is 390px. Desktop is 900px for a
+component, which is the width one gets in an app's column and wide
+enough that a comfortable reading width leaves it unscaled, and 1200px
+for the examples that are a whole page — the shell demos and the demo
+application, which want a window to be a page frame in. The tabs are radio inputs and `:has()`;
 no JavaScript is involved in switching them. Each preview is a window on
 its document rather than a fit to it, so a tall sample scrolls inside
 the box — and the box has a resize grip on its bottom edge. Drag it and

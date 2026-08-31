@@ -900,6 +900,7 @@ func shellViews(mount, theme, locale string) []shellView {
 			Preview: previewView{
 				Group: id + "-0",
 				Style: previewStyle(heightOf(id)),
+				Class: previewClass(id),
 				Src:   href,
 				Title: proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
 			},
@@ -959,7 +960,7 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 					Preview: newPreview(mount, theme, locale,
 						fmt.Sprintf("%s-%d", pv.ID, i),
 						previewTitle(locale, doc.Name, s.State),
-						wrap(doc.Wrap, string(html)), heightOf(pv.ID)),
+						wrap(doc.Wrap, string(html)), pv.ID),
 				})
 			}
 			view.Partials = append(view.Partials, pv)
@@ -1088,12 +1089,50 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 // only the shell demos, whose source is a Go template and not markup to
 // copy.
 type previewView struct {
-	Group  string       // the radio group's name, unique on the page
-	Style  template.CSS // --ds-h and --ds-hm: the frame's virtual height
+	Group string       // the radio group's name, unique on the page
+	Style template.CSS // --ds-h and --ds-hm: the frame's virtual height
+	// Class is " ds-view--page" on the examples whose document is a
+	// whole page, and empty on the rest — see pageFrame. It carries its
+	// own leading space so the template can write class="ds-view{{.Class}}"
+	// without a conditional, and it is a plain string rather than an
+	// HTMLAttr because it is only ever part of an attribute's value.
+	Class  string
 	Doc    string
 	Src    string
 	Source string
 	Title  string
+}
+
+// pageFrame reports whether one example's document is a whole PAGE
+// rather than a component inside one. It is what picks the preview
+// widget's width class: the page examples lay out at a virtual 1200px,
+// everything else at 900px. gallery.css carries the argument for the
+// two numbers; this is only the sorting.
+//
+// Matched on the anchor id's prefix rather than listed, so the set
+// tracks ui rather than being a copy of it. A fifth shell in
+// ui.LayoutNames() arrives as shell-<name> and a matching idiom as
+// idiom-shell-<name>, and both land here with no edit. The two names
+// written out are the two that no rule could derive: the demo
+// application, which is this package's own page, and the modal, whose
+// whole claim is that it is a page — its backdrop is position: fixed,
+// so it is fixed to the frame's viewport and wants a window-sized one.
+//
+// Getting this wrong costs a rendering, never a broken page: a page
+// example sorted as a component is a shell squeezed into 900px, and a
+// component sorted as a page is the four-fifths scaling this class
+// split exists to remove.
+func pageFrame(id string) bool {
+	return id == "demo-app" || id == "idiom-modal" ||
+		strings.HasPrefix(id, "shell-") || strings.HasPrefix(id, "idiom-shell-")
+}
+
+// previewClass is pageFrame as the template writes it.
+func previewClass(id string) string {
+	if pageFrame(id) {
+		return " ds-view--page"
+	}
+	return ""
 }
 
 // previewStyle writes one example's two virtual heights. The frame is a
@@ -1366,10 +1405,15 @@ func previewTitle(locale, name, qualifier string) string {
 
 // newPreview is one example's widget: the source as written, and a
 // document holding the same markup with its links deadened.
-func newPreview(mount, theme, locale, group, title, source string, height int) previewView {
+// id is the example's anchor id, and both the height and the width
+// class are read off it — the two tables that size a preview are keyed
+// the same way, so a caller cannot pass one example's id and another's
+// measurements.
+func newPreview(mount, theme, locale, group, title, source, id string) previewView {
 	return previewView{
 		Group:  group,
-		Style:  previewStyle(height),
+		Style:  previewStyle(heightOf(id)),
+		Class:  previewClass(id),
 		Doc:    srcdoc(mount, theme, locale, title, deaden(mount, source)),
 		Source: source,
 		Title:  title,
@@ -1491,7 +1535,7 @@ func buildIdioms(mount string, tmpl *template.Template, theme, locale string) ([
 		}
 		view.Preview = newPreview(mount, theme, locale, view.ID+"-0",
 			previewTitle(locale, name, "UI primitives"),
-			samples[name], heightOf(view.ID))
+			samples[name], view.ID)
 		if demo, ok := demoIdioms[name]; ok {
 			view.DemoLabel = proseIn(locale, demo.Label)
 			view.DemoHref = demo.Href(mount, theme, locale)
@@ -1738,6 +1782,7 @@ func demoView(mount, theme, locale string) previewView {
 	return previewView{
 		Group: "demo-app-0",
 		Style: previewStyle(heightOf("demo-app")),
+		Class: previewClass("demo-app"),
 		Src:   demoHref(mount, theme, locale),
 		Title: proseIn(locale, "The demo application"),
 	}
@@ -2092,7 +2137,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 // overrides the width at any size. The Desktop label carries a
 // modifier class for the same reason the Mobile one does: the
 // stylesheet has to be able to say which of the two a reader chose.
-const viewTemplate = `{{define "ds-view"}}<div class="ds-view" style="{{.Style}}">
+const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{.Class}}" style="{{.Style}}">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">{{P "Preview"}}</legend>
 <label class="ds-view__tab ds-view__tab--d"><input type="radio" name="{{.Group}}">{{P "Desktop"}}</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label>
