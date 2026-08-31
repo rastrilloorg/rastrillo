@@ -16,12 +16,16 @@ the change is not yours to ship.
 One definition, run before pushing and by CI:
 
 ```
-go vet ./... && gofmt -l . && go test ./...
+make ci
 ```
 
-`gofmt -l` must print nothing. A scaffolded app's own gate is its
-`Makefile`'s `ci` target, mirrored one step per file in `.amadan/ci.d/`;
-add to both or step-reporting runners silently skip what you added.
+The `Makefile` carries `GOFLAGS=-mod=mod` and `CGO_ENABLED=0`, so
+running it by hand and running it on a runner are the same thing —
+which the old three-command gate line was not (issue #94: it omitted
+`GOFLAGS`, so it passed where CI failed). `.amadan/ci.d/` reports the
+same targets one step at a time and never keeps its own copy of a
+command; add to the `Makefile` and to `ci.d/` together, or a
+step-reporting runner silently skips what you added.
 
 The examples under `examples/` are **separate Go modules** with a
 `replace` back to the checkout, so the root `go test ./...` does not
