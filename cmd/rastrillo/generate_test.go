@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/internal/scratchmod"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -43,6 +44,27 @@ func scaffold(t *testing.T, files map[string]string) string {
 	}
 	return dir
 }
+
+// scaffoldModule is scaffold plus a real module context: scratchmod
+// writes the go.mod and go.sum, carrying the checkout's own
+// requirements, so the nested `go build` these tests run resolves
+// under the toolchain's default -mod=readonly. Writing only "module
+// demo\n\ngo ...\n" here left every one of rastrillo's dependencies
+// unresolvable, which is why CI had to set -mod=mod tree-wide — and
+// that setting is what hid the scaffold's own missing go.sum entry for
+// four releases. See internal/scratchmod.
+func scaffoldModule(t *testing.T, files map[string]string, directives ...string) string {
+	t.Helper()
+	dir := scaffold(t, files)
+	if err := scratchmod.Write(dir, "demo", repoRoot(t), directives...); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+// sqlcToolDirective is the go.mod line the generator's own tests need:
+// runGenerate shells out to `go tool sqlc`, which refuses without it.
+const sqlcToolDirective = "tool github.com/sqlc-dev/sqlc/cmd/sqlc"
 
 const handleSrc = "//go:build rastrillo_actions\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
 
@@ -187,14 +209,10 @@ basics = [{ name = "Title" }]
 `
 
 func TestGenerateWiresManifestActionsIntoTheRouter(t *testing.T) {
-	goMod := fmt.Sprintf("module demo\n\ngo 1.25.0\n\ntool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
-	dir := scaffold(t, map[string]string{
-		"go.mod":               goMod,
+	dir := scaffoldModule(t, map[string]string{
 		"actions/index.GET.go": handleSrc,
 		"manifest/notes.toml":  notesManifestTOML,
-	})
+	}, sqlcToolDirective)
 
 	getCmd := exec.Command("go", "get", "-tool", "github.com/sqlc-dev/sqlc/cmd/sqlc")
 	getCmd.Dir = dir
@@ -260,14 +278,10 @@ func TestGenerateFailsWhenAHandActionCollidesWithAManifestRoute(t *testing.T) {
 // action's package, not a manifest one (EmitActions skipped writing
 // its own copy there).
 func TestGenerateKeepsAHandActionAtTheExactGeneratedPath(t *testing.T) {
-	goMod := fmt.Sprintf("module demo\n\ngo 1.25.0\n\ntool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
-	dir := scaffold(t, map[string]string{
-		"go.mod":                           goMod,
+	dir := scaffoldModule(t, map[string]string{
 		"actions/admin/notes/index.GET.go": handleSrc,
 		"manifest/notes.toml":              notesManifestTOML,
-	})
+	}, sqlcToolDirective)
 
 	getCmd := exec.Command("go", "get", "-tool", "github.com/sqlc-dev/sqlc/cmd/sqlc")
 	getCmd.Dir = dir
@@ -352,13 +366,9 @@ func TestGenerateCheckSucceedsWithNoActionsDirectory(t *testing.T) {
 // actions/index.GET.go — proving the router still gets wired from the
 // manifest resource's own generated actions alone.
 func TestGenerateWiresAManifestOnlyAppIntoTheRouter(t *testing.T) {
-	goMod := fmt.Sprintf("module demo\n\ngo 1.25.0\n\ntool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
-	dir := scaffold(t, map[string]string{
-		"go.mod":              goMod,
+	dir := scaffoldModule(t, map[string]string{
 		"manifest/notes.toml": notesManifestTOML,
-	})
+	}, sqlcToolDirective)
 
 	getCmd := exec.Command("go", "get", "-tool", "github.com/sqlc-dev/sqlc/cmd/sqlc")
 	getCmd.Dir = dir

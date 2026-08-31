@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -9,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/internal/scratchmod"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -37,13 +37,11 @@ func repoRoot(t *testing.T) string {
 func newScratchModule(t *testing.T, withTool bool) string {
 	t.Helper()
 	root := t.TempDir()
-	goMod := "module scratch\n\ngo 1.25.0\n\n"
+	var directives []string
 	if withTool {
-		goMod += "tool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"
+		directives = append(directives, "tool github.com/sqlc-dev/sqlc/cmd/sqlc")
 	}
-	goMod += "require github.com/carlosframework/rastrillo v0.0.0\n\n" +
-		"replace github.com/carlosframework/rastrillo => " + repoRoot(t) + "\n"
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte(goMod), 0o644); err != nil {
+	if err := scratchmod.Write(root, "scratch", repoRoot(t), directives...); err != nil {
 		t.Fatal(err)
 	}
 	return root
