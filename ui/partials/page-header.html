@@ -13,14 +13,14 @@
                     every glyph aria-hidden.
 
      No overflow/kebab menu — that arrives with the dropdown slice. */}}
-{{define "page-header"}}<header class="rst-page-header">
-  <div class="rst-page-header__titles">
+{{define "page-header"}}<header rst-page-header>
+  <div rst-page-header-titles>
     <h1>{{.Title}}</h1>
     {{- if .Sub}}
-    <p class="rst-page-header__sub">{{.Sub}}</p>
+    <p rst-page-header-sub>{{.Sub}}</p>
     {{- end}}
   </div>
   {{- if .ActionHref}}
-  <a class="rst-btn rst-btn--primary" href="{{.ActionHref}}">{{if .ActionIcon}}{{icon .ActionIcon}}{{end}}{{.ActionLabel}}</a>
+  <a rst-btn="primary" href="{{.ActionHref}}">{{if .ActionIcon}}{{icon .ActionIcon}}{{end}}{{.ActionLabel}}</a>
   {{- end}}
 </header>{{end}}

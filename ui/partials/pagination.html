@@ -4,11 +4,11 @@
      The current page carries aria-current="page" as well as a filled
      chip and a heavier weight: three signals, never colour alone.
 
-     A disabled item is a plain span with a class, not aria-disabled:
-     that attribute belongs on elements with an interactive role, and a
-     bare span has none. The class is what tokens.css styles (dashed
-     border, faint text) — friction log F10 in examples/blog is what
-     happens when the two drift apart.
+     A disabled item is a plain span carrying rst-pagination-disabled,
+     never aria-disabled: that attribute belongs on elements with an
+     interactive role, and a bare span has none. The attribute is what
+     tokens.css styles (dashed border, faint text) — friction log F10 in
+     examples/blog is what happens when the two drift apart.
 
      Keys:
        Items  slice, optional — one entry per control. Each has:
@@ -23,11 +23,11 @@
               resolved through T ("rastrillo.ui.pagination" — "Pagination"
               in the framework base catalog; see Funcs/FuncsWith). An app
               passing its own Label always wins over T. */}}
-{{define "pagination"}}<nav class="rst-pagination" aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
+{{define "pagination"}}<nav rst-pagination aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
   {{- if .Items}}{{range .Items}}
-  {{- if .Gap}}<span class="rst-pagination__gap" aria-hidden="true">…</span>
+  {{- if .Gap}}<span rst-pagination-gap aria-hidden="true">…</span>
   {{- else if .Current}}<span aria-current="page">{{.Label}}</span>
-  {{- else if .Disabled}}<span class="rst-pagination__disabled">{{.Label}}</span>
+  {{- else if .Disabled}}<span rst-pagination-disabled>{{.Label}}</span>
   {{- else}}<a href="{{.Href}}">{{.Label}}</a>
   {{- end}}
   {{- end}}{{end}}

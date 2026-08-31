@@ -41,9 +41,9 @@ type wrapper int
 
 const (
 	wrapBare wrapper = iota // nothing around it
-	wrapList                // <div class="rst-list">…</div>
-	wrapForm                // <section class="rst-box"><form class="rst-form">…</form></section>
-	wrapBox                 // <section class="rst-box">…</section>
+	wrapList                // <div rst-list>…</div>
+	wrapForm                // <section rst-box><form rst-form>…</form></section>
+	wrapBox                 // <section rst-box>…</section>
 )
 
 // sample is one state of one partial: an English label for the state,
@@ -467,9 +467,9 @@ func families() []family {
 						}, Note: "A button that CHANGES something gets a loading state; a button that only reveals something, e.g. a disclosure, a dropdown, a tab, does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into."},
 						{State: "Working — what rastrillo.js writes on the way out",
 							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
-							Raw: `<div class="rst-form__foot">
-<button class="rst-btn rst-btn--primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span class="rst-spin rst-btn__spin" aria-hidden="true"></span>Publishing…</button>
-<a class="rst-btn" href="/posts">Back to posts</a>
+							Raw: `<div rst-form-foot>
+<button rst-btn="primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span rst-spin aria-hidden="true"></span>Publishing…</button>
+<a rst-btn href="/posts">Back to posts</a>
 </div>`,
 						},
 					},
@@ -684,8 +684,8 @@ func fieldSelectStates() []sample {
 		{
 			State: "Hand-written, with optgroups",
 			Note:  "Options here is a flat list, so grouped choices are markup the app writes. select.js renders the groups rather than dropping them; a hand-written select can also refuse the enhancement outright with data-rst-select=\"false\".",
-			Raw: `<div class="rst-field"><label class="rst-field__label" for="sel_grouped">Region</label>
-<select class="rst-input" id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}">
+			Raw: `<div rst-field><label rst-field-label for="sel_grouped">Region</label>
+<select rst-input id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}">
 <optgroup label="Europe"><option value="dublin" selected>Dublin</option><option value="lisbon">Lisbon</option><option value="warsaw">Warsaw</option></optgroup>
 <optgroup label="Americas"><option value="montreal">Montréal</option><option value="lima">Lima</option><option value="austin">Austin</option></optgroup>
 <optgroup label="Asia"><option value="osaka">Osaka</option><option value="hanoi">Hanoi</option><option value="dhaka">Dhaka</option></optgroup>

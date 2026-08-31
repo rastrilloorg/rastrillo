@@ -23,19 +23,19 @@
                     other hidden field. This package never generates one.
 
      ActionHref wins if both are set. No illustration slot. */}}
-{{define "empty-state"}}<div class="rst-empty">
+{{define "empty-state"}}<div rst-empty>
   {{- if .Title}}
-  <h2 class="rst-empty__title">{{.Title}}</h2>
+  <h2 rst-empty-title>{{.Title}}</h2>
   {{- end}}
-  <p class="rst-empty__body">{{.Body}}</p>
+  <p rst-empty-body>{{.Body}}</p>
   {{- if .ActionHref}}
-  <p class="rst-empty__cta"><a class="rst-btn rst-btn--primary" href="{{.ActionHref}}">{{.ActionLabel}}</a></p>
+  <p rst-empty-cta><a rst-btn="primary" href="{{.ActionHref}}">{{.ActionLabel}}</a></p>
   {{- else if .PostAction}}
-  <form class="rst-empty__cta" method="post" action="{{.PostAction}}">
+  <form rst-empty-cta method="post" action="{{.PostAction}}">
     {{- if .Hidden}}{{range .Hidden}}
     <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">
     {{- end}}{{end}}
-    <button class="rst-btn rst-btn--primary" type="submit">{{.ActionLabel}}</button>
+    <button rst-btn="primary" type="submit">{{.ActionLabel}}</button>
   </form>
   {{- end}}
 </div>{{end}}

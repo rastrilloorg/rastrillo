@@ -2,10 +2,10 @@
      icon, optional bold title, one body paragraph. The icon aligns to
      the first text line, not the block center. Alert=true adds
      role="alert" — reserve it for live problems, not ambient notes.
-     Richer bodies (lists, links) hand-write the same classes instead.
+     Richer bodies (lists, links) hand-write the same attributes instead.
      Keys:
        Body   string, required
        Title  string, optional
        Tone   string, optional — info (default) | positive | warning | negative
        Alert  bool, optional */}}
-{{define "callout"}}<div class="rst-callout" data-tone="{{or .Tone "info"}}"{{if .Alert}} role="alert"{{end}}><span class="rst-callout__ic" aria-hidden="true">{{if eq (or .Tone "info") "positive"}}{{icon "check-circle"}}{{else if eq (or .Tone "info") "warning"}}{{icon "alert-triangle"}}{{else if eq (or .Tone "info") "negative"}}{{icon "x-circle"}}{{else}}{{icon "info"}}{{end}}</span><div class="rst-callout__body">{{with .Title}}<strong>{{.}}</strong>{{end}}<p>{{.Body}}</p></div></div>{{end}}
+{{define "callout"}}<div rst-callout rst-tone="{{or .Tone "info"}}"{{if .Alert}} role="alert"{{end}}><span rst-callout-ic aria-hidden="true">{{if eq (or .Tone "info") "positive"}}{{icon "check-circle"}}{{else if eq (or .Tone "info") "warning"}}{{icon "alert-triangle"}}{{else if eq (or .Tone "info") "negative"}}{{icon "x-circle"}}{{else}}{{icon "info"}}{{end}}</span><div rst-callout-body>{{with .Title}}<strong>{{.}}</strong>{{end}}<p>{{.Body}}</p></div></div>{{end}}

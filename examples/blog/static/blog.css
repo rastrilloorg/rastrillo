@@ -5,7 +5,7 @@
  *      spacing — that is the whole mechanism by which these controls
  *      follow the dark theme without this file knowing dark exists.
  *   2. It never styles an .rst- class. The forms use field-text,
- *      field-textarea and form-foot now, and .rst-form for their
+ *      field-textarea and form-foot now, and [rst-form] for their
  *      container; no rule here redefines any of them.
  *
  * Form controls used to live here (friction finding F2, now fixed by

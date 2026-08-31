@@ -280,7 +280,7 @@ const MenuGroupDefault = "rst-menus"
 // not a state worth being able to reach by accident: it would sit open
 // beside the one the user just opened, which is the bug the group exists
 // to prevent. A caller who genuinely wants that writes the <details>
-// themselves; the class idioms are hand-written markup anyway.
+// themselves; the markup idioms are hand-written anyway.
 func menuGroup(data any) string {
 	if name := optString(data, "MenuGroup"); name != "" {
 		return name

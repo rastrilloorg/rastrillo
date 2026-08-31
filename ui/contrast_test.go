@@ -29,8 +29,8 @@ import (
 // not see specificity, :hover, or any other cascade effect. A token can
 // pass every check here and still render at the wrong contrast once a
 // browser resolves the real cascade: tokens.css's own comment on
-// .rst-btn--danger:hover documents exactly that happening — an earlier,
-// higher-specificity .rst-btn:hover rule silently won the label colour
+// [rst-btn~="danger"]:hover documents exactly that happening — an earlier,
+// higher-specificity [rst-btn]:hover rule silently won the label colour
 // back to the accent (~1.05:1 on the red fill) at the exact moment a
 // user commits to a destructive action, and no token-level check would
 // ever have caught it, because both --rst-tone-negative-fg and
@@ -273,7 +273,7 @@ func TestSplitLightDarkReadsTheV2Format(t *testing.T) {
 
 // TestContrastMathMatchesDocumentedDangerFillRatios sanity-checks this
 // file's WCAG arithmetic against numbers tokens.css's own comment already
-// published and hand-verified (the .rst-btn--danger comment — the one
+// published and hand-verified (the [rst-btn~="danger"] comment — the one
 // colour commentary that stayed with the component rule):
 // --rst-on-accent on --rst-tone-negative-fg, both schemes of the default
 // theme. If this test ever fails, suspect the formula in this file before
@@ -307,7 +307,7 @@ func TestContrastMathMatchesDocumentedDangerFillRatios(t *testing.T) {
 // --rst-text-faint is held to the same 4.5:1 body-text floor as
 // --rst-text/--rst-text-muted, not AA's lower 3:1 large-text/graphic
 // floor: this branch puts it on normal-size, normal-weight text
-// (.rst-count-line, .rst-field__hint) and on .rst-lrow--head (11.5px,
+// ([rst-count-line], [rst-field-hint]) and on [rst-lrow~="head"] (11.5px,
 // well under WCAG's ~18pt/14pt-bold "large text" threshold even with its
 // letter-spacing and uppercase transform), so 3:1 would be the wrong bar
 // for what this token is actually used for.
@@ -318,7 +318,7 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		why    string
 	}
 	// Transcribed from each theme's own "WCAG 2.2 AA, measured" header
-	// table plus the .rst-btn--danger comment's documented pair (not in
+	// table plus the [rst-btn~="danger"] comment's documented pair (not in
 	// the main table, since it reuses --rst-tone-negative-fg as a solid
 	// fill rather than declaring a dedicated --rst-danger-* token) — every
 	// row those tables publish, at its documented floor. If a header
@@ -333,7 +333,7 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		{"--rst-text-muted", "--rst-bg", 4.5, "muted text"},
 		{"--rst-text-muted", "--rst-surface-2", 4.5, "muted text on a card"},
 		{"--rst-text-muted", "--rst-accent-soft", 4.5, "muted text on an accent-tinted surface"},
-		{"--rst-text-faint", "--rst-surface", 4.5, "faint text on a card (.rst-field__hint)"},
+		{"--rst-text-faint", "--rst-surface", 4.5, "faint text on a card ([rst-field-hint])"},
 		{"--rst-text-faint", "--rst-bg", 4.5, "faint text"},
 		{"--rst-text-faint", "--rst-surface-2", 4.5, "faint text on a card"},
 		{"--rst-text-faint", "--rst-accent-soft", 4.5, "faint text on an accent-tinted surface"},
@@ -351,7 +351,7 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		{"--rst-tone-warning-fg", "--rst-tone-warning-bg", 4.5, "status pill text"},
 		{"--rst-tone-negative-fg", "--rst-tone-negative-bg", 4.5, "status pill text"},
 		// Not in the main header tables — documented separately in
-		// tokens.css's .rst-btn--danger comment, which reuses
+		// tokens.css's [rst-btn~="danger"] comment, which reuses
 		// --rst-tone-negative-fg as a solid fill rather than declaring a
 		// dedicated --rst-danger-* pair. This is the real pair the danger
 		// button's label renders against, so it belongs in the gate anyway.

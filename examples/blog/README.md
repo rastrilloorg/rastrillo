@@ -214,7 +214,7 @@ here is hand-rolled, and `tokens.css` scopes its `:focus-visible` rule to
 library containers, so `blog.css` has to restate the outline for controls
 outside them. Roughly half of `blog.css` would disappear the day form
 partials land.
-*Fixed:* the field-text/field-textarea/form-foot partials landed and these forms use them (see `templates/posts/form.html`, ejected from the manifest system's own generated form under task 11 — the field/form-foot calls are unchanged from what generation produced); tokens.css now scopes the focus ring to .rst-page, so the restatement is gone. blog.css kept only the page styling the library leaves to the app.
+*Fixed:* the field-text/field-textarea/form-foot partials landed and these forms use them (see `templates/posts/form.html`, ejected from the manifest system's own generated form under task 11 — the field/form-foot calls are unchanged from what generation produced); tokens.css now scopes the focus ring to [rst-page], so the restatement is gone. blog.css kept only the page styling the library leaves to the app.
 
 **F3 — no `dropdown`, so "show drafts only" is missing.** Also deferred.
 The obvious next control on the admin list — a status filter — has
@@ -285,7 +285,7 @@ exact line to add when a file lacks it. This app is tagged; its
 longer emits.** `ui/partials/pagination.html` renders a disabled item as
 a bare `<span>{{.Label}}</span>` — `aria-disabled` was deliberately
 dropped in `c00653c` — but `tokens.css` still carries
-`.rst-pagination [aria-disabled="true"] { border-style: dashed; color: var(--rst-text-faint) }`,
+`[rst-pagination] [aria-disabled="true"] { border-style: dashed; color: var(--rst-text-faint) }`,
 which now matches nothing. The visible result on this blog's list screens
 is that a disabled `Previous` on page 1 looks identical to a live page
 link: same border, same colour, differing only in not being clickable.
@@ -294,6 +294,6 @@ span, or restyle the rule to target the disabled item as the partial
 actually emits it — and not in an example, so this branch changes
 nothing.
 *Fixed:* in the library, the second way — the span now carries
-`class="rst-pagination__disabled"` and tokens.css styles that class.
+`rst-pagination-disabled` and tokens.css styles that attribute.
 `aria-disabled` stays dropped on purpose: the attribute belongs on
 elements with an interactive role, and a bare span has none.

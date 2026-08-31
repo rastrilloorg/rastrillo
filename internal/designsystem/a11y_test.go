@@ -326,7 +326,7 @@ func a11yTargets() []a11yTarget {
 		{"day/en form", page("day", "en", "form"), "the field partials, whose source blocks carry the labels, hints and error messages a reader copies out"},
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
-		{"day/en primitives", page("day", "en", "primitives"), "the class idioms, the callouts they carry, and the sample whose structure is a dialog"},
+		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
 		// palette itself and the display vocabulary painted in it.
@@ -457,8 +457,8 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	axeJS := axeSource(t)
 	total := 0
 	for _, sh := range []struct{ shell, open string }{
-		{"topbar", ".rst-shell__menu > summary"},
-		{"sidebar", ".rst-shell__chrome > summary"},
+		{"topbar", "[rst-shell-menu] > summary"},
+		{"sidebar", "[rst-shell-chrome] > summary"},
 	} {
 		for _, scheme := range a11ySchemes {
 			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"
@@ -572,7 +572,7 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 // previewPageKinds is every page kind that frames a sample worth
 // scanning: the component pages, read off componentPages() so a family
 // added to samples.go is scanned the day its row lands, and the
-// primitives page, which is where the class idioms are.
+// primitives page, which is where the markup idioms are.
 func previewPageKinds() []string {
 	out := make([]string, 0, len(families())+1)
 	for _, pk := range componentPages() {

@@ -1065,7 +1065,7 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 //     to its own viewport, which is where the idiom is honest.
 //   - the two shell samples are whole page frames with their own <main>
 //     landmark, and this page has one. Two documents, two mains.
-//   - .rst-form-foot is position: sticky; bottom: 0, so the form save
+//   - [rst-form-bar] is position: sticky; bottom: 0, so the form save
 //     bar stuck to the bottom of the GALLERY and floated over the
 //     sample below it. It now sticks to the bottom of its own frame,
 //     which is what it does in an app.
@@ -1141,7 +1141,7 @@ func previewStyle(h int) template.CSS {
 // for the state a reader opens, not for the closed one.
 //
 // The key is the anchor id, not the name, because "dropdown" is both a
-// partial and a class idiom and they are not the same height. Being
+// partial and a markup idiom and they are not the same height. Being
 // wrong here costs a scrollbar or some white space, never a broken
 // page.
 var previewHeights = map[string]int{
@@ -1184,7 +1184,7 @@ var previewHeights = map[string]int{
 	"partial-error-page":  390,
 	"partial-back-nav":    80,
 	"partial-locale-menu": 420, // the open menu at its full 20rem cap; twelve languages scroll inside it
-	// The class idioms.
+	// The markup idioms.
 	"idiom-box":           220,
 	"idiom-list-grid":     280,
 	"idiom-dropdown":      220,
@@ -1276,7 +1276,7 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	// like. The shells' rail is block-size: 100dvh, so padding under
 	// one is also a scrollbar that can never be got rid of.
 	b.WriteString("<style>body { padding: 1rem; }\n")
-	b.WriteString("body:has(> .rst-shell-topbar, > .rst-shell-sidebar, > .rst-backdrop) { padding: 0; }</style>\n")
+	b.WriteString("body:has(> [rst-shell-topbar], > [rst-shell-sidebar], > [rst-backdrop]) { padding: 0; }</style>\n")
 	for _, s := range srcdocScripts {
 		for _, hook := range s.hooks {
 			if strings.Contains(body, hook) {
@@ -1383,18 +1383,18 @@ func newPreview(mount, theme, locale, group, title, source string, height int) p
 func wrap(w wrapper, html string) string {
 	switch w {
 	case wrapList:
-		return `<div class="rst-list">` + html + `</div>`
+		return `<div rst-list>` + html + `</div>`
 	case wrapForm:
-		return `<section class="rst-box"><form class="rst-form" method="post" action="#">` + html + `</form></section>`
+		return `<section rst-box><form rst-form method="post" action="#">` + html + `</form></section>`
 	case wrapBox:
-		return `<section class="rst-box">` + html + `</section>`
+		return `<section rst-box>` + html + `</section>`
 	}
 	return html
 }
 
 // ── Class idioms ─────────────────────────────────────────────────────
 
-// idiomBlurbs is one English sentence per class idiom, in the page's own
+// idiomBlurbs is one English sentence per markup idiom, in the page's own
 // voice. A missing entry renders no blurb rather than an empty one.
 //
 // English here is the source AND the prose.go key, exactly as in
@@ -1404,7 +1404,7 @@ var idiomBlurbs = map[string]string{
 	"box":           "The padded section card, and the heading that sits outside it.",
 	"list-grid":     "The real data-table vocabulary: the card sets its columns once, rows only choose cells.",
 	"dropdown":      "The details/summary menu behind header overflow menus and a list bar's filter, plus an applied filter as a removable chip.",
-	"form-layout":   "The classes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.",
+	"form-layout":   "The attributes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.",
 	"tblock":        "A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.",
 	"modal":         "A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.",
 	"help":          "A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.",
@@ -1533,10 +1533,10 @@ type shellData struct {
 // exactly what ui/layouts documents.
 var accountMarkup = map[string]template.HTML{
 	"topbar": `<a href="#">Profile</a><a href="#">Billing</a><hr><a href="#">Sign out</a>`,
-	"sidebar": `<div class="rst-shell__account"><a class="rst-person" href="#">` +
-		`<span class="rst-person__av" aria-hidden="true">G</span>` +
-		`<span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span>` +
-		`<span class="rst-person__email">grace@example.com</span></span></a></div>`,
+	"sidebar": `<div rst-shell-account><a rst-person href="#">` +
+		`<span rst-person-av aria-hidden="true">G</span>` +
+		`<span rst-person-meta><span rst-person-name>Grace Hopper</span>` +
+		`<span rst-person-email>grace@example.com</span></span></a></div>`,
 }
 
 // renderShell builds one full-page shell demo: ui.Layout's own template,
@@ -1763,11 +1763,11 @@ const demoCSS = `
 #view-requests:target, #view-request:target { display: block; }
 body:has(#view-requests:target) #view-dashboard,
 body:has(#view-request:target) #view-dashboard { display: none; }
-body:not(:has(#view-requests:target, #view-request:target)) .rst-shell__nav a[href="#view-dashboard"],
-body:has(#view-requests:target) .rst-shell__nav a[href="#view-requests"],
-body:has(#view-request:target) .rst-shell__nav a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+body:not(:has(#view-requests:target, #view-request:target)) [rst-shell-nav] a[href="#view-dashboard"],
+body:has(#view-requests:target) [rst-shell-nav] a[href="#view-requests"],
+body:has(#view-request:target) [rst-shell-nav] a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
 .app-stats { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-block-end: var(--rst-sp-5); }
-.app-stats > .rst-box { margin: 0; }
+.app-stats > [rst-box] { margin: 0; }
 .app-stat__n { font-size: 1.9rem; font-weight: 650; line-height: 1.1; margin: 0; }
 .app-stat__l { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0.2rem 0 0; }
 `
@@ -1792,41 +1792,41 @@ const demoTemplate = `
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
-{{define "brand"}}<a class="rst-shell__brand" href="#view-dashboard">Harbour</a>{{end}}
+{{define "brand"}}<a rst-shell-brand href="#view-dashboard">Harbour</a>{{end}}
 {{define "nav"}}<a href="#view-dashboard">{{P "Dashboard"}}</a><a href="#view-requests">{{P "Requests"}}</a>{{end}}
-{{define "locale"}}<details class="rst-dropdown rst-locale" name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{define "account"}}<div class="rst-shell__account"><a class="rst-person" href="#view-dashboard"><span class="rst-person__av" aria-hidden="true">A</span><span class="rst-person__meta"><span class="rst-person__name">Ada Lovelace</span><span class="rst-person__email">ada@example.com</span></span></a></div>{{end}}
+{{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{define "account"}}<div rst-shell-account><a rst-person href="#view-dashboard"><span rst-person-av aria-hidden="true">A</span><span rst-person-meta><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></span></a></div>{{end}}
 {{define "content"}}
 <section class="app-view" id="view-dashboard">
 {{template "page-header" dict "Title" (P "Dashboard") "Sub" (P "Everything the team has waiting this morning.")}}
 <div class="app-stats">
-<section class="rst-box"><p class="app-stat__n">24</p><p class="app-stat__l">{{P "Open requests"}}</p></section>
-<section class="rst-box"><p class="app-stat__n">6</p><p class="app-stat__l">{{P "Waiting on us"}}</p></section>
-<section class="rst-box"><p class="app-stat__n">41</p><p class="app-stat__l">{{P "Resolved this week"}}</p></section>
+<section rst-box><p class="app-stat__n">24</p><p class="app-stat__l">{{P "Open requests"}}</p></section>
+<section rst-box><p class="app-stat__n">6</p><p class="app-stat__l">{{P "Waiting on us"}}</p></section>
+<section rst-box><p class="app-stat__n">41</p><p class="app-stat__l">{{P "Resolved this week"}}</p></section>
 </div>
-<div class="rst-box-head"><h2>{{P "Mailbox storage"}}</h2></div>
-<section class="rst-box">{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>
-<div class="rst-box-head"><h2>{{P "Latest activity"}}</h2><a class="rst-btn" href="#view-requests">{{P "Requests"}}</a></div>
-<div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px">
-<div class="rst-lrow rst-lrow--head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
+<div rst-box-head><h2>{{P "Mailbox storage"}}</h2></div>
+<section rst-box>{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>
+<div rst-box-head><h2>{{P "Latest activity"}}</h2><a rst-btn href="#view-requests">{{P "Requests"}}</a></div>
+<div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
+<div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
 </div>
 </section>
 
 <section class="app-view" id="view-requests">
 {{template "page-header" dict "Title" (P "Requests") "Sub" (P "Every request in the queue, newest first.") "ActionHref" "#view-requests" "ActionLabel" (P "New request") "ActionIcon" "plus"}}
 {{template "seg-tabs" dict "Label" (P "Requests") "Items" (list (dict "Label" (P "All") "Href" "#view-requests" "Current" true) (dict "Label" (P "Open") "Href" "#view-requests") (dict "Label" (P "Resolved") "Href" "#view-requests"))}}
-<div class="rst-card" style="--rst-cols: minmax(0, 1fr) 120px 120px">
+<div rst-card style="--rst-cols: minmax(0, 1fr) 120px 120px">
 {{template "list-bar" dict "SearchAction" "#view-requests" "Placeholder" (P "Search requests")}}
-<div class="rst-lrow rst-lrow--head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
+<div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
 </div>
-<p class="rst-count-line">{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
+<p rst-count-line>{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
 {{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" "#view-requests") (dict "Label" "3" "Href" "#view-requests"))}}
 </section>
 
@@ -1834,10 +1834,10 @@ const demoTemplate = `
 {{template "back-nav" dict "Href" "#view-requests" "Label" (P "Requests")}}
 {{template "page-header" dict "Title" "Invoice #4471 never arrived" "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
 <p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" "Billing"}}</p>
-<div class="rst-box-head"><h2>{{P "Details"}}</h2></div>
-<section class="rst-box">{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12"))}}</section>
-<div class="rst-box-head"><h2>{{P "Reply"}}</h2></div>
-<section class="rst-box"><form class="rst-form" method="post" action="#view-request">
+<div rst-box-head><h2>{{P "Details"}}</h2></div>
+<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12"))}}</section>
+<div rst-box-head><h2>{{P "Reply"}}</h2></div>
+<section rst-box><form rst-form method="post" action="#view-request">
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
 {{template "form-foot" dict "Submit" (P "Send reply") "CancelHref" "#view-requests" "CancelLabel" (P "Cancel")}}
 </form></section>
@@ -2100,44 +2100,44 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <script defer src="{{.Mount}}/datetime.js"></script>
 </head>
 <body>
-<div class="rst-shell-sidebar">
-<a class="rst-skip" href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-<details class="rst-shell__chrome"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
+<div rst-shell-sidebar>
+<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<details rst-shell-chrome><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
 
-<aside class="rst-shell__rail ds-rail">
+<aside class="ds-rail" rst-shell-rail>
   <search class="ds-search">
     <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
     <input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
-  <nav class="rst-shell__nav ds-nav" id="ds-nav" aria-label="{{P "Sections and demos"}}">
-{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
+  <nav class="ds-nav" rst-shell-nav id="ds-nav" aria-label="{{P "Sections and demos"}}">
+{{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}</details>
 {{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a>
 {{end}}{{end}}  </nav>
 </aside>
 
-<main class="rst-shell__main" id="main">
+<main rst-shell-main id="main">
 
 <header class="ds-chrome">
-  <nav class="rst-seg-tabs" aria-label="{{P "Theme"}}">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
+  <nav rst-seg-tabs aria-label="{{P "Theme"}}">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
   <div class="ds-scheme" role="group" aria-label="{{P "Colour scheme"}}">{{range .Schemes}}<button type="button" data-ds-scheme="{{.Value}}" aria-pressed="{{.Pressed}}">{{.Label}}</button>{{end}}</div>
-  <details class="rst-dropdown rst-locale" name="rst-menus">
-    <summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">{{P ", currently {language}" "language" .LocaleName}}</span></summary>
-    <div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
+  <details rst-dropdown rst-locale name="rst-menus">
+    <summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">{{P ", currently {language}" "language" .LocaleName}}</span></summary>
+    <div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
   </details>
 </header>
 
-<div class="rst-page">
+<div rst-page>
 
-<header class="rst-page-header">
-  <div class="rst-page-header__titles">
+<header rst-page-header>
+  <div rst-page-header-titles>
     <h1>{{P "rastrillo design system"}}</h1>
-    <p class="rst-page-header__sub">{{.Sub}}</p>
+    <p rst-page-header-sub>{{.Sub}}</p>
   </div>
 </header>
 
 <div class="ds-switch">
-  <nav class="rst-seg-tabs" aria-label="{{P "Sections"}}">{{range .Pages}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
+  <nav rst-seg-tabs aria-label="{{P "Sections"}}">{{range .Pages}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
 </div>
 
 {{.Body}}
@@ -2332,7 +2332,7 @@ const shellsBody = `{{define "ds-body-shells"}}
 <h3>{{.Name}}</h3>
 <p class="ds-lead">{{.Blurb}}</p>
 {{template "ds-view" .Preview}}
-<p><a class="rst-btn" href="{{.Href}}" target="_blank" rel="noopener">{{P "Open the {shell} shell" "shell" .Name}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a></p>
+<p><a rst-btn href="{{.Href}}" target="_blank" rel="noopener">{{P "Open the {shell} shell" "shell" .Name}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a></p>
 </section>
 {{end}}
 {{end}}`
@@ -2354,22 +2354,22 @@ const shellTemplate = `
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
-{{define "brand"}}<a class="rst-shell__brand" href="{{.Index}}">rastrillo</a>{{end}}
+{{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
 {{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
-{{define "locale"}}<details class="rst-dropdown rst-locale" name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span class="rst-caret" aria-hidden="true">{{icon "chevron-down"}}</span></summary><div class="rst-dropdown__menu">{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{define "foot"}}<a href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
 {{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
-<div class="rst-box-head"><h2>{{P "This page"}}</h2><a class="rst-btn" href="{{.Index}}">{{P "Back to the design system"}}</a></div>
-<section class="rst-box"><p>{{P "This is the {shell} shell, one of the three ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
-<div class="rst-box-head"><h2>Recent</h2></div>
-<div class="rst-card" style="--rst-cols: 2fr 110px 32px">
-<div class="rst-lrow rst-lrow--head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Published")}}</span><span></span></div>
-<div class="rst-lrow"><a class="rst-nm" href="#">Why we moved off the old runner<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
+<div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></div>
+<section rst-box><p>{{P "This is the {shell} shell, one of the three ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
+<div rst-box-head><h2>Recent</h2></div>
+<div rst-card style="--rst-cols: 2fr 110px 32px">
+<div rst-lrow="head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
+<div rst-lrow><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Published")}}</span><span></span></div>
+<div rst-lrow><a class="rst-nm" href="#">Why we moved off the old runner<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
 </div>
-<p class="rst-count-line">Displaying <strong>1–2</strong> of <strong>412</strong></p>
+<p rst-count-line>Displaying <strong>1–2</strong> of <strong>412</strong></p>
 {{end}}
 `
 
@@ -2391,7 +2391,7 @@ const shellTemplate = `
 //
 // The panel is <dialog open>, exactly as the sample is: rendered open,
 // never showModal()'d, so it never enters the top layer, ::backdrop
-// never paints, and .rst-modal-overlay stays the scrim. Its
+// never paints, and [rst-modal-overlay] stays the scrim. Its
 // aria-labelledby points at the panel's own <h2>, the same way the
 // sample's does — a dialog role with no name is an axe failure, and the
 // heading is already the text that names this panel.
@@ -2405,27 +2405,27 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
 </head>
 <body>
-<div class="rst-backdrop" inert>
-<main class="rst-page" id="main">
+<div rst-backdrop inert>
+<main rst-page id="main">
 {{template "page-header" dict "Title" "Settings" "Sub" (P "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up.")}}
-<div class="rst-box-head"><h2>Account</h2></div>
-<section class="rst-box"><p>{{P "Modals get their own URL."}}</p></section>
+<div rst-box-head><h2>Account</h2></div>
+<section rst-box><p>{{P "Modals get their own URL."}}</p></section>
 </main>
 </div>
-<div class="rst-modal-overlay">
-  <dialog class="rst-modal-panel" open aria-labelledby="modal-title">
+<div rst-modal-overlay>
+  <dialog rst-modal-panel open aria-labelledby="modal-title">
     <nav>
       <a href="{{.Self}}" aria-current="page">Profile</a>
       <a href="{{.Self}}">Billing</a>
       <a href="{{.Self}}">Notifications</a>
     </nav>
     <section>
-      <a class="rst-modal-close" href="{{.Index}}" aria-label="{{P "Close settings"}}">✕</a>
+      <a rst-modal-close href="{{.Index}}" aria-label="{{P "Close settings"}}">✕</a>
       <h2 id="modal-title">Profile</h2>
       <p>{{P "Update the name and photo shown across the account."}}</p>
       <p>{{P "Close link designed to work without JS."}}</p>
       <p>{{P "In an application the ✕ would return you to the screen in the backdrop."}}</p>
-      <p><a class="rst-btn" href="{{.Index}}">{{P "Back to the design system"}}</a></p>
+      <p><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></p>
     </section>
   </dialog>
 </div>

@@ -7,9 +7,9 @@
      data-poll-push and a supporting browser rides server push instead
      of the timer; unset, today's polling exactly. */}}
 {{define "job-status"}}
-<div class="rst-job"{{if eq .Status "running"}} data-poll="{{.PollURL}}" data-poll-every="{{.PollSeconds}}"{{with .PushURL}} data-poll-push="{{.}}"{{end}}{{end}}>
+<div rst-job{{if eq .Status "running"}} data-poll="{{.PollURL}}" data-poll-every="{{.PollSeconds}}"{{with .PushURL}} data-poll-push="{{.}}"{{end}}{{end}}>
 {{- if eq .Status "running"}}
-  <span class="rst-spin" aria-hidden="true"></span> <strong>{{.Name}}</strong> is running{{with .Progress}} — {{.}}{{end}}…
+  <span rst-spin aria-hidden="true"></span> <strong>{{.Name}}</strong> is running{{with .Progress}} — {{.}}{{end}}…
 {{- else if eq .Status "failed"}}
   <strong>{{.Name}}</strong> failed{{with .Err}}: {{.}}{{end}}
 {{- else}}

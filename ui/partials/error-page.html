@@ -28,13 +28,13 @@
      ref is NOT pre-wrapped in bidi marks by the caller, which would
      either escape visibly or force the caller to hand this partial
      trusted HTML. */}}
-{{define "error-page"}}{{$known := or (eq .Status 404) (eq .Status 403) (eq .Status 422) (eq .Status 500) (eq .Status 503)}}<div class="rst-error">
-  <p class="rst-error__status">{{.Status}}</p>
-  <h1 class="rst-error__title">{{if .Title}}{{.Title}}{{else if $known}}{{T (printf "rastrillo.ui.error_%d_title" .Status)}}{{else}}{{T "rastrillo.ui.error_generic_title"}}{{end}}</h1>
-  <p class="rst-error__body">{{if .Body}}{{.Body}}{{else if $known}}{{T (printf "rastrillo.ui.error_%d_body" .Status)}}{{else}}{{T "rastrillo.ui.error_generic_body"}}{{end}}</p>
-  <p class="rst-error__cta"><a class="rst-btn rst-btn--primary" href="{{or .HomeHref "/"}}">{{T "rastrillo.ui.error_home"}}</a>
-    {{- with .BackHref}} <a class="rst-btn" href="{{.}}">{{T "rastrillo.ui.error_back"}}</a>{{end}}</p>
+{{define "error-page"}}{{$known := or (eq .Status 404) (eq .Status 403) (eq .Status 422) (eq .Status 500) (eq .Status 503)}}<div rst-error>
+  <p rst-error-status>{{.Status}}</p>
+  <h1 rst-error-title>{{if .Title}}{{.Title}}{{else if $known}}{{T (printf "rastrillo.ui.error_%d_title" .Status)}}{{else}}{{T "rastrillo.ui.error_generic_title"}}{{end}}</h1>
+  <p rst-error-body>{{if .Body}}{{.Body}}{{else if $known}}{{T (printf "rastrillo.ui.error_%d_body" .Status)}}{{else}}{{T "rastrillo.ui.error_generic_body"}}{{end}}</p>
+  <p rst-error-cta><a rst-btn="primary" href="{{or .HomeHref "/"}}">{{T "rastrillo.ui.error_home"}}</a>
+    {{- with .BackHref}} <a rst-btn href="{{.}}">{{T "rastrillo.ui.error_back"}}</a>{{end}}</p>
   {{- with .Ref}}
-  <p class="rst-error__ref rst-mono" dir="auto">{{Tf "rastrillo.ui.error_ref" "ref" .}}</p>
+  <p class="rst-mono" rst-error-ref dir="auto">{{Tf "rastrillo.ui.error_ref" "ref" .}}</p>
   {{- end}}
 </div>{{end}}

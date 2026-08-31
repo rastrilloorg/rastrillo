@@ -21,8 +21,8 @@
                      own contract.
 
      To override the submit button's screen-reader text, call
-     list-bar-search directly inside your own <div class="rst-lbar">. */}}
-{{define "list-bar"}}<div class="rst-lbar">
+     list-bar-search directly inside your own <div rst-lbar>. */}}
+{{define "list-bar"}}<div rst-lbar>
   {{template "list-bar-search" dict "Action" .SearchAction "Query" .Query "Placeholder" .Placeholder "Hidden" .Hidden "ClearHref" (searchClear .)}}
   {{- if .Filter}}
   {{template "dropdown" .Filter}}

@@ -18,7 +18,7 @@
 {{if .Empty}}
 {{template "empty-state" dict "Title" "No posts yet" "Body" "Every blog starts empty. Write the first one and it will show up here." "ActionHref" "/admin/posts/new" "ActionLabel" "Write your first post"}}
 {{else}}
-<div class="rst-list">
+<div rst-list>
 {{template "list-bar" dict "SearchAction" "/admin/posts" "Query" .Query "Placeholder" "Search posts" "Hidden" .Carry "Filter" .Filter}}
 {{if .NoMatch}}<p class="blog-note">{{.NoMatchNote}}</p>
 {{else}}{{range .Rows}}{{template "list-row-action" dict "Href" .Href "Main" .Main "Sub" .Sub "StatusTone" .StatusTone "StatusLabel" .StatusLabel "ActionHref" .ActionHref "ActionLabel" .ActionLabel "ActionAria" .ActionAria}}

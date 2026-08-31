@@ -75,10 +75,10 @@ type clipReading struct {
 }
 
 // TestAMenuOpenedInsideAListCardEscapesTheCard is the live-page bug
-// Paul found: a bulk bar's Actions menu opened inside a .rst-list was
+// Paul found: a bulk bar's Actions menu opened inside a [rst-list] was
 // sliced off at the card's edge.
 //
-// The cause was .rst-list's overflow: hidden, which was there to clip
+// The cause was [rst-list]'s overflow: hidden, which was there to clip
 // the rows' corners to the card's radius and, in doing so, made the
 // card a clipping context for every absolutely positioned panel inside
 // it.
@@ -103,8 +103,8 @@ func TestAMenuOpenedInsideAListCardEscapesTheCard(t *testing.T) {
 		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
 			`<title>list card</title><link rel="stylesheet" href="/tokens.css">` +
 			`<link rel="stylesheet" href="/theme.css"></head><body>` +
-			`<div class="rst-page"><form method="post" action="/act">` +
-			`<div class="rst-list">`)
+			`<div rst-page><form method="post" action="/act">` +
+			`<div rst-list>`)
 		data := map[string]any{
 			"DoneHref": "/posts", "Count": "3 selected",
 			"MenuLabel": "Actions",
@@ -131,14 +131,14 @@ func TestAMenuOpenedInsideAListCardEscapesTheCard(t *testing.T) {
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-list .rst-bulkbar`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-list] [rst-bulkbar]`, chromedp.ByQuery),
 		// The menu is a native <details>: one real click on the
 		// summary, no script anywhere.
-		chromedp.Click(`.rst-list .rst-bulkbar details > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`.rst-list .rst-dropdown__menu`, chromedp.ByQuery),
+		chromedp.Click(`[rst-list] [rst-bulkbar] details > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-list] [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(`(() => {
-		  const card = document.querySelector(".rst-list");
-		  const menu = document.querySelector(".rst-list .rst-dropdown__menu");
+		  const card = document.querySelector("[rst-list]");
+		  const menu = document.querySelector("[rst-list] [rst-dropdown-menu]");
 		  const c = card.getBoundingClientRect();
 		  const m = menu.getBoundingClientRect();
 		  // A point inside the menu and below the card's own bottom
@@ -228,11 +228,11 @@ type railReading struct {
 // a viewport added below cannot quietly measure less than the ones
 // above it — which is how the frame went missing the first time.
 const railMeasure = `(() => {
-  const rail = document.querySelector(".rst-shell__rail");
+  const rail = document.querySelector("[rst-shell-rail]");
   const person = document.querySelector("#rail-person");
   const loc = document.querySelector("#rail-locale");
   const sum = loc.querySelector("summary");
-  const menu = loc.querySelector(".rst-dropdown__menu");
+  const menu = loc.querySelector("[rst-dropdown-menu]");
   // Both scrollers wound back to the top first. chromedp.Click scrolls
   // its target into view, and the locale summary sits at the foot of
   // the rail — so on a rail that overflows, opening the language menu
@@ -296,8 +296,8 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	}).Parse(string(src)))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "account"}}<div class="rst-shell__account" id="rail-person"><a class="rst-person" href="#"><span class="rst-person__av" aria-hidden="true">G</span><span class="rst-person__meta"><span class="rst-person__name">Grace Hopper</span><span class="rst-person__email">grace@example.com</span></span></a></div>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "locale"}}<details class="rst-dropdown rst-locale" id="rail-locale" name="rst-menus"><summary>Language</summary><div class="rst-dropdown__menu"><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "account"}}<div rst-shell-account id="rail-person"><a rst-person href="#"><span rst-person-av aria-hidden="true">G</span><span rst-person-meta><span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span></span></a></div>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "locale"}}<details rst-dropdown rst-locale id="rail-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 
 	// Cloned BEFORE anything executes: html/template refuses to Clone a
 	// tree that has already run.
@@ -349,7 +349,7 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		chromedp.Navigate(rig.Origin+"/"),
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &raw),
 	); err != nil {
 		t.Fatalf("driving the sidebar rail: %v", err)
@@ -424,11 +424,11 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(390, 780),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-shell__chrome > summary`, chromedp.ByQuery),
-		chromedp.Click(`.rst-shell__chrome > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-chrome] > summary`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-chrome] > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &narrow),
 	); err != nil {
 		t.Fatalf("driving the collapsed rail: %v", err)
@@ -482,7 +482,7 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		chromedp.Navigate(rig.Origin+"/tall"),
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale .rst-dropdown__menu`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &shortRaw),
 	); err != nil {
 		t.Fatalf("driving the rail in a short window: %v", err)
@@ -550,8 +550,8 @@ type barReading struct {
 }
 
 // TestTheTopbarCollapsesItsTailBehindOneDisclosure is §9: the topbar
-// shell had no narrow layout at all. .rst-shell__bar is a wrapping flex
-// row and .rst-shell__account has margin-inline-start: auto, so
+// shell had no narrow layout at all. [rst-shell-bar] is a wrapping flex
+// row and [rst-shell-account] has margin-inline-start: auto, so
 // narrowing the window did not collapse anything — it wrapped the
 // account and locale menus onto a second row and shoved them to the
 // trailing edge. Nothing was broken; nothing had been written.
@@ -588,7 +588,7 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "account"}}<a href="#">Profile</a><a href="#">Sign out</a>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "locale"}}<details class="rst-dropdown rst-locale" id="bar-locale" name="rst-menus"><summary>Language</summary><div class="rst-dropdown__menu"><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "locale"}}<details rst-dropdown rst-locale id="bar-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 
 	var page strings.Builder
 	if err := tmpl.ExecuteTemplate(&page, "layout", nil); err != nil {
@@ -609,13 +609,13 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 
 	const measure = `(() => {
 	  const shown = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-	  const bar = document.querySelector(".rst-shell__bar");
-	  const menu = document.querySelector(".rst-shell__menu");
-	  const tail = document.querySelector(".rst-shell__tail");
-	  const nav = document.querySelector(".rst-shell__nav");
-	  const account = document.querySelector(".rst-shell__account");
+	  const bar = document.querySelector("[rst-shell-bar]");
+	  const menu = document.querySelector("[rst-shell-menu]");
+	  const tail = document.querySelector("[rst-shell-tail]");
+	  const nav = document.querySelector("[rst-shell-nav]");
+	  const account = document.querySelector("[rst-shell-account]");
 	  const locale = document.querySelector("#bar-locale");
-	  const panel = account.querySelector(".rst-dropdown__menu");
+	  const panel = account.querySelector("[rst-dropdown-menu]");
 	  // Rows by overlap, not by equal tops: the bar is align-items:
 	  // center, so three inline blocks of three different heights sit on
 	  // one row with three different top edges. Two boxes are on the
@@ -653,7 +653,7 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-shell__bar`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
 		chromedp.Evaluate(measure, &wideRaw),
 	); err != nil {
 		t.Fatalf("driving the wide topbar: %v", err)
@@ -680,7 +680,7 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(800, 780),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-shell__bar`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
 		chromedp.Evaluate(measure, &edgeRaw),
 	); err != nil {
 		t.Fatalf("driving the topbar at the breakpoint: %v", err)
@@ -695,10 +695,10 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(390, 780),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-shell__menu > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-menu] > summary`, chromedp.ByQuery),
 		chromedp.Evaluate(measure, &closedRaw),
-		chromedp.Click(`.rst-shell__menu > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`.rst-shell__tail .rst-shell__nav`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-nav]`, chromedp.ByQuery),
 		chromedp.Evaluate(measure, &openRaw),
 	); err != nil {
 		t.Fatalf("driving the collapsed topbar: %v", err)
@@ -727,7 +727,7 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	// navigation it was opened from.
 	var trapRaw string
 	if err := chromedp.Run(ctx,
-		chromedp.Click(`.rst-shell__account > summary`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-account] > summary`, chromedp.ByQuery),
 		// Settle rather than WaitVisible: the failure this step exists
 		// for is the account menu never becoming visible, because it
 		// closed the disclosure it lives behind. Waiting for it would
@@ -755,9 +755,9 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(320, 640),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`.rst-shell__menu > summary`, chromedp.ByQuery),
-		chromedp.Click(`.rst-shell__menu > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`.rst-shell__tail .rst-shell__nav`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-menu] > summary`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-nav]`, chromedp.ByQuery),
 		chromedp.Evaluate(measure, &tinyRaw),
 	); err != nil {
 		t.Fatalf("driving the collapsed topbar at 320px: %v", err)
@@ -790,9 +790,9 @@ func (c cornerReading) uniform() bool {
 // cannot: the rules are wrapped in :where() so they weigh (0,0,0), and
 // therefore lose to ANY child that declares a radius of its own.
 //
-// Written before it was true. A bare `.rst-list > :first-child` weighs
-// (0,2,0) and beats .rst-search's and .rst-empty's (0,1,0) in every
-// source order, so a hand-written <form class="rst-search"> as the
+// Written before it was true. A bare `[rst-list] > :first-child` weighs
+// (0,2,0) and beats [rst-search]'s and [rst-empty]'s (0,1,0) in every
+// source order, so a hand-written <form rst-search> as the
 // direct first child of a list card painted 7px on its top corners and
 // 6px on its bottom ones in day — lopsided, and the exact arrangement
 // ui/partials/list-bar-search.html exists to support. The gallery does
@@ -821,8 +821,8 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 	} else {
 		t.Fatalf("list-bar-search no longer renders a <form>: %q", searchForm.String())
 	}
-	empty := `<div class="rst-empty"><p>Nothing here yet.</p></div>`
-	row := `<div class="rst-row"><span>A row</span></div>`
+	empty := `<div rst-empty><p>Nothing here yet.</p></div>`
+	row := `<div rst-row><span>A row</span></div>`
 
 	// Each case: a self-shaped element in the position under test
 	// inside a card, and the same element loose on the page. Plus the
@@ -833,14 +833,14 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 		name, inCard, loose string
 		wantOwn             bool
 	}{
-		{"a bare search form as the first child", `<div class="rst-list">` + bare + row + `</div>`, bare, true},
-		{"an empty state as the last child", `<div class="rst-list">` + row + empty + `</div>`, empty, true},
-		{"a plain row as the first child", `<div class="rst-list">` + row + row + `</div>`, row, false},
+		{"a bare search form as the first child", `<div rst-list>` + bare + row + `</div>`, bare, true},
+		{"an empty state as the last child", `<div rst-list>` + row + empty + `</div>`, empty, true},
+		{"a plain row as the first child", `<div rst-list>` + row + row + `</div>`, row, false},
 	}
 
 	var body strings.Builder
 	for i, c := range cases {
-		fmt.Fprintf(&body, `<div id="in-%d" class="rst-page">%s</div><div id="out-%d" class="rst-page">%s</div>`, i, c.inCard, i, c.loose)
+		fmt.Fprintf(&body, `<div id="in-%d" rst-page>%s</div><div id="out-%d" rst-page>%s</div>`, i, c.inCard, i, c.loose)
 	}
 	pageHTML := body.String()
 
@@ -890,11 +890,19 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 	    // first-child cases and the last for the last-child ones; the
 	    // loose copy is the page div's only child either way.
 	    const probe = loose.firstElementChild;
-	    const tag = probe.tagName + "." + probe.className;
+	    // The identity of the element under test. It used to be the class
+	    // list; the vocabulary is attributes now, so an empty state and a
+	    // row both read as "DIV." and the wrong child was measured. The
+	    // attribute NAMES are the signature — never their values, so a
+	    // variant cannot change what matches — with id left out, because
+	    // that is what tells the two copies apart.
+	    const sig = el => el.tagName + "|" +
+	      [...el.attributes].map(a => a.name).filter(n => n !== "id").sort().join(",");
+	    const tag = sig(probe);
 	    const card = inCard.firstElementChild;
 	    let mine = null;
 	    for (const kid of card.children) {
-	      if (mine === null && kid.tagName + "." + kid.className === tag) { mine = kid; }
+	      if (mine === null && sig(kid) === tag) { mine = kid; }
 	    }
 	    out.push({ In: mine ? read(mine) : null, Out: read(probe) });
 	    i++;
@@ -1007,7 +1015,7 @@ const menuMeasure = `(() => {
     const d = box.querySelector('details');
     d.open = true;
     const s = d.querySelector('summary').getBoundingClientRect();
-    const m = d.querySelector('.rst-dropdown__menu, .rst-row-menu__panel');
+    const m = d.querySelector('[rst-dropdown-menu], [rst-row-menu-panel]');
     const r = m.getBoundingClientRect();
     const cs = getComputedStyle(m);
     out[box.dataset.corner] = {
@@ -1031,7 +1039,7 @@ const menuMeasure = `(() => {
 
 // TestMenusCapTheirHeightScrollAndFlipToFitTheViewport is design spec
 // §6-v2.1b, sub-sections 1 and 2, in one drive because they are one
-// surface: .rst-dropdown__menu and .rst-row-menu__panel had no height
+// surface: [rst-dropdown-menu] and [rst-row-menu-panel] had no height
 // cap, no scroll, and no idea what was underneath them.
 //
 // THE CAP AND THE SCROLL are the everywhere half. A twelve-locale
@@ -1101,9 +1109,9 @@ func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
 				// Hand-written, the way tokens.css says the row-menu
 				// idiom is used, and here so the drive covers BOTH
 				// panels the new rule names rather than one of them.
-				b.WriteString(`<details class="rst-row-menu" name="rst-menu-` + c.id + `">` +
+				b.WriteString(`<details rst-row-menu name="rst-menu-` + c.id + `">` +
 					`<summary aria-label="Actions">` + string(rastrillo.Icon("kebab")) + `</summary>` +
-					`<div class="rst-row-menu__panel">`)
+					`<div rst-row-menu-panel>`)
 				for _, it := range items {
 					b.WriteString(`<a href="#">` + it.(map[string]any)["Label"].(string) + `</a>`)
 				}
@@ -1312,7 +1320,10 @@ func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
   const w = () => document.getElementById('ruler').getBoundingClientRect().width;
   const before = w();
   const b = document.createElement('div');
-  b.className = 'rst-backdrop';
+  // The attribute, which is what the gallery and every partial emit.
+  // It used to be a class, and tokens.css pairs both until stage 3 —
+  // so this went on passing while measuring a selector nothing writes.
+  b.setAttribute('rst-backdrop', '');
   document.body.appendChild(b);
   const after = w();
   b.remove();
@@ -1384,7 +1395,7 @@ func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
 		t.Fatalf("without the gutter, opening a modal left the page %vpx wide either way — the scroll lock is not removing a scrollbar here, so this leg is measuring nothing", auto.Before)
 	}
 	if stable.Before != stable.After {
-		t.Errorf("opening a modal took the page from %vpx to %vpx: body:has(.rst-backdrop) { overflow: hidden } is still yanking the scrollbar out from under the layout", stable.Before, stable.After)
+		t.Errorf("opening a modal took the page from %vpx to %vpx: body:has([rst-backdrop]) { overflow: hidden } is still yanking the scrollbar out from under the layout", stable.Before, stable.After)
 	}
 }
 
@@ -1405,15 +1416,15 @@ type clearReading struct {
 }
 
 const clearMeasure = `(() => {
-  const form = document.querySelector('.rst-search');
+  const form = document.querySelector('[rst-search]');
   const input = form.querySelector('input[type=search]');
-  const a = form.querySelector('.rst-search__clear');
+  const a = form.querySelector('[rst-search-clear]');
   const r = a.getBoundingClientRect(), ir = input.getBoundingClientRect(), fr = form.getBoundingClientRect();
   const hit = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
   return JSON.stringify({
     W: Math.round(r.width*100)/100, H: Math.round(r.height*100)/100,
     Href: a.getAttribute('href'),
-    HitIsTheClear: !!(hit && hit.closest('.rst-search__clear')),
+    HitIsTheClear: !!(hit && hit.closest('[rst-search-clear]')),
     Hit: hit ? hit.tagName + '.' + (hit.getAttribute('class') || '') : 'nothing',
     InputRight: ir.right, InputTop: ir.top, InputBottom: ir.bottom,
     FormLeft: fr.left, FormRight: fr.right,
@@ -1465,7 +1476,7 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		return `<!doctype html><html lang="en" dir="` + dir + `"><head><meta charset="utf-8">` +
 			`<title>search</title><link rel="stylesheet" href="/tokens.css">` +
 			`<link rel="stylesheet" href="/theme.css"></head><body>` +
-			`<div class="rst-page"><div class="rst-list">` + search.String() + `</div></div></body></html>`
+			`<div rst-page><div rst-list>` + search.String() + `</div></div></body></html>`
 	}
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -1552,11 +1563,11 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(900, 600),
 			chromedp.Navigate(rig.Origin+leg.path),
-			chromedp.WaitVisible(`.rst-search__clear`, chromedp.ByQuery),
+			chromedp.WaitVisible(`[rst-search-clear]`, chromedp.ByQuery),
 			chromedp.Evaluate(clearMeasure, &raw),
-			chromedp.Focus(`.rst-search input[type=search]`, chromedp.ByQuery),
-			clickTheNativeCross(`.rst-search input[type=search]`),
-			chromedp.Evaluate(`document.querySelector('.rst-search input[type=search]').value`, &stillThere),
+			chromedp.Focus(`[rst-search] input[type=search]`, chromedp.ByQuery),
+			clickTheNativeCross(`[rst-search] input[type=search]`),
+			chromedp.Evaluate(`document.querySelector('[rst-search] input[type=search]').value`, &stillThere),
 		); err != nil {
 			t.Fatalf("%s: driving the search form: %v", leg.name, err)
 		}
@@ -1692,7 +1703,7 @@ func TestAMenuOpenedInsideAShortFrameIsStillUsable(t *testing.T) {
     const open = id => {
       const details = d.querySelector("#" + id + " details");
       details.open = true;
-      return details.querySelector(".rst-dropdown__menu");
+      return details.querySelector("[rst-dropdown-menu]");
     };
     const s = open("short"), l = open("long");
     out.push({
@@ -1811,9 +1822,9 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 	scroller := func(id, panelStyle string) string {
 		return `<div id="` + id + `" style="block-size:220px;inline-size:320px;overflow-y:auto;` +
 			`border:1px solid #888;margin:24px">` +
-			`<details class="rst-dropdown" id="` + id + `-menu" name="rst-menu-` + id + `">` +
+			`<details rst-dropdown id="` + id + `-menu" name="rst-menu-` + id + `">` +
 			`<summary>Menu</summary>` +
-			`<div class="rst-dropdown__menu" style="` + panelStyle + `">` +
+			`<div rst-dropdown-menu style="` + panelStyle + `">` +
 			`<a href="#">One</a><a href="#">Two</a><a href="#">Three</a>` +
 			`</div></details>` +
 			`<div style="block-size:1200px">tall</div></div>`
@@ -1860,7 +1871,7 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
   const box = document.getElementById(` + "`" + id + "`" + `);
   const d = document.getElementById(` + "`" + id + `-menu` + "`" + `);
   const s = d.querySelector("summary").getBoundingClientRect();
-  const m = d.querySelector(".rst-dropdown__menu");
+  const m = d.querySelector("[rst-dropdown-menu]");
   const r = m.getBoundingClientRect();
   const b = box.getBoundingClientRect();
   const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -1895,7 +1906,7 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 		chromedp.WaitVisible(`#subject-menu`, chromedp.ByQuery),
 		chromedp.Click(`#subject-menu > summary`, chromedp.ByQuery),
 		chromedp.Click(`#control-menu > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#subject-menu .rst-dropdown__menu`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#subject-menu [rst-dropdown-menu]`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatalf("opening the menus: %v", err)
 	}

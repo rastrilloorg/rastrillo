@@ -3,4 +3,4 @@
      Keys:
        Percent  int, required — fill width, clamped here to 0..100
        Text     string, required — the fraction, already formatted */}}
-{{define "meter"}}{{$p := .Percent}}{{if lt $p 0}}{{$p = 0}}{{end}}{{if gt $p 100}}{{$p = 100}}{{end}}<span class="rst-meter"><span class="rst-meter__bar"><i style="--rst-meter-fill: {{$p}}%"></i></span><span class="rst-meter__num">{{.Text}}</span></span>{{end}}
+{{define "meter"}}{{$p := .Percent}}{{if lt $p 0}}{{$p = 0}}{{end}}{{if gt $p 100}}{{$p = 100}}{{end}}<span rst-meter><span rst-meter-bar><i style="--rst-meter-fill: {{$p}}%"></i></span><span rst-meter-num>{{.Text}}</span></span>{{end}}

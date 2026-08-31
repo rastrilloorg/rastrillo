@@ -6,22 +6,22 @@
 {{if .Empty}}
 {{template "empty-state" dict "Title" (T "resource.ticket_types.empty.title") "Body" (T "resource.ticket_types.empty.body") "ActionHref" "/admin/ticket_types/new" "ActionLabel" (T "ui.new")}}
 {{else}}
-<div class="rst-list">
-<div class="rst-lbar">
+<div rst-list>
+<div rst-lbar>
 {{template "list-bar-search" dict "Action" "/admin/ticket_types" "Query" .Query "Placeholder" (T "ui.search") "Hidden" .Carry}}
 {{/* dropdown markup inlined, not dispatched via the "dropdown" partial:
      per-item (T .LabelKey) resolution inside this range cannot be
      expressed as a single dict/list argument to one {{template}} call
      (see listHTML's doc comment). Keep this block structurally
-     identical to ui/partials/dropdown.html — same classes, same
+     identical to ui/partials/dropdown.html — same attributes, same
      aria-current/check-icon guards, same whitespace trims — so the
      existing CSS and a11y contract hold unchanged. name="rst-menus"
      is the library's shared dropdown exclusivity group, written
      literally here because the partial's MenuGroup override has no
      counterpart in a generated screen's filterView. */}}
-<details class="rst-dropdown" name="rst-menus">
-  <summary class="rst-btn rst-dropdown__summary" aria-label="Filter by {{T .Filter.AriaField}}: {{T .Filter.SummaryKey}}">{{T .Filter.SummaryKey}} {{icon "chevron-down"}}</summary>
-  <div class="rst-dropdown__menu">
+<details rst-dropdown name="rst-menus">
+  <summary rst-btn aria-label="Filter by {{T .Filter.AriaField}}: {{T .Filter.SummaryKey}}">{{T .Filter.SummaryKey}} {{icon "chevron-down"}}</summary>
+  <div rst-dropdown-menu>
     {{- range .Filter.Items}}
     <a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{T .LabelKey}}{{if .Current}} {{icon "check"}}{{end}}</a>
     {{- end}}

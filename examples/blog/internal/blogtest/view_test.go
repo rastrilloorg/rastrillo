@@ -49,7 +49,7 @@ func TestEachPageRendersItsOwnContent(t *testing.T) {
 	wantContains(t, index, "Notes, in the order they were written.")
 	wantContains(t, post, `<article class="blog-article">`)
 	wantNotContains(t, post, "Notes, in the order they were written.")
-	wantContains(t, form, `<form class="rst-form" method="post" action="/admin/posts">`)
+	wantContains(t, form, `<form rst-form method="post" action="/admin/posts">`)
 	wantNotContains(t, form, `<article class="blog-article">`)
 }
 
@@ -68,7 +68,7 @@ func TestLayoutWrapsEveryPage(t *testing.T) {
 			t.Errorf("missing a stylesheet link matching %s in:\n%s", re, html)
 		}
 	}
-	wantContains(t, html, `<div class="rst-page">`)
+	wantContains(t, html, `<div rst-page>`)
 	wantContains(t, html, `<footer class="blog-footer">`)
 	wantNotContains(t, html, "<script")
 }

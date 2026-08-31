@@ -166,12 +166,12 @@ func fieldMono(k rastrillo.Kind) bool {
 //
 //   - Filters declared: list.html builds the "rst-lbar" strip itself —
 //     {{template "list-bar-search" ...}} (only when Search is also on)
-//     plus a hand-written <details class="rst-dropdown"> block — rather
+//     plus a hand-written <details rst-dropdown> block — rather
 //     than dispatching the "list-bar"/"dropdown" partials as one call
 //     with a "Filter" dict. Both are direct children of one
-//     <div class="rst-lbar">, which tokens.css requires for the flex
+//     <div rst-lbar>, which tokens.css requires for the flex
 //     layout that puts the search box and the dropdown side by side
-//     (.rst-lbar > .rst-search's 20rem cap reserves exactly this room).
+//     ([rst-lbar] > [rst-search]'s 20rem cap reserves exactly this room).
 //     The dropdown's own MARKUP is inlined rather than reached through
 //     ui/partials/dropdown.html because that partial's contract takes
 //     ONE dict already holding a fully-built Items list of RESOLVED
@@ -186,7 +186,7 @@ func fieldMono(k rastrillo.Kind) bool {
 //     inside a {{range .Filter.Items}} sidesteps that, calling
 //     (T .LabelKey) per item exactly where a real range can reach it.
 //     The inlined block mirrors dropdown.html's own template TEXT
-//     byte-for-byte (same classes, same {{if .Current}} aria-current
+//     byte-for-byte (same attributes, same {{if .Current}} aria-current
 //     and check-icon guards, same {{- range}}/{{- end}} whitespace
 //     trims) with exactly two substitutions — .Label becomes
 //     (T .LabelKey), and .Aria/.Label on the summary become inline
@@ -211,7 +211,7 @@ func listHTML(r rastrillo.Resource) []byte {
 	fmt.Fprintf(&b, "{{template \"empty-state\" dict \"Title\" (T %q) \"Body\" (T %q) \"ActionHref\" %q \"ActionLabel\" (T \"ui.new\")}}\n",
 		resourceKey(r.Name, "empty.title"), resourceKey(r.Name, "empty.body"), newHref)
 	b.WriteString("{{else}}\n")
-	b.WriteString("<div class=\"rst-list\">\n")
+	b.WriteString("<div rst-list>\n")
 	switch {
 	case filtersDeclared:
 		b.WriteString(listBarWithDropdownHTML(r))
@@ -230,11 +230,11 @@ func listHTML(r rastrillo.Resource) []byte {
 // listBarWithDropdownHTML renders the rst-lbar strip for a resource
 // with a declared List.Filters entry: list-bar-search (only when
 // r.List.Search is also on) plus the inline dropdown block, both
-// direct children of one <div class="rst-lbar"> — see listHTML's doc
+// direct children of one <div rst-lbar> — see listHTML's doc
 // for why this doesn't dispatch "list-bar"/"dropdown" as one call.
 func listBarWithDropdownHTML(r rastrillo.Resource) string {
 	var b strings.Builder
-	b.WriteString("<div class=\"rst-lbar\">\n")
+	b.WriteString("<div rst-lbar>\n")
 	if r.List.Search {
 		fmt.Fprintf(&b, "{{template \"list-bar-search\" dict \"Action\" %q \"Query\" .Query \"Placeholder\" (T \"ui.search\") \"Hidden\" .Carry}}\n", r.Route)
 	}
@@ -242,15 +242,15 @@ func listBarWithDropdownHTML(r rastrillo.Resource) string {
 	b.WriteString("     per-item (T .LabelKey) resolution inside this range cannot be\n")
 	b.WriteString("     expressed as a single dict/list argument to one {{template}} call\n")
 	b.WriteString("     (see listHTML's doc comment). Keep this block structurally\n")
-	b.WriteString("     identical to ui/partials/dropdown.html — same classes, same\n")
+	b.WriteString("     identical to ui/partials/dropdown.html — same attributes, same\n")
 	b.WriteString("     aria-current/check-icon guards, same whitespace trims — so the\n")
 	b.WriteString("     existing CSS and a11y contract hold unchanged. name=\"rst-menus\"\n")
 	b.WriteString("     is the library's shared dropdown exclusivity group, written\n")
 	b.WriteString("     literally here because the partial's MenuGroup override has no\n")
 	b.WriteString("     counterpart in a generated screen's filterView. */}}\n")
-	b.WriteString("<details class=\"rst-dropdown\" name=\"rst-menus\">\n")
-	b.WriteString("  <summary class=\"rst-btn rst-dropdown__summary\" aria-label=\"Filter by {{T .Filter.AriaField}}: {{T .Filter.SummaryKey}}\">{{T .Filter.SummaryKey}} {{icon \"chevron-down\"}}</summary>\n")
-	b.WriteString("  <div class=\"rst-dropdown__menu\">\n")
+	b.WriteString("<details rst-dropdown name=\"rst-menus\">\n")
+	b.WriteString("  <summary rst-btn aria-label=\"Filter by {{T .Filter.AriaField}}: {{T .Filter.SummaryKey}}\">{{T .Filter.SummaryKey}} {{icon \"chevron-down\"}}</summary>\n")
+	b.WriteString("  <div rst-dropdown-menu>\n")
 	b.WriteString("    {{- range .Filter.Items}}\n")
 	b.WriteString("    <a href=\"{{.Href}}\"{{if .Current}} aria-current=\"true\"{{end}}>{{T .LabelKey}}{{if .Current}} {{icon \"check\"}}{{end}}</a>\n")
 	b.WriteString("    {{- end}}\n")
@@ -388,7 +388,7 @@ func formHTML(r rastrillo.Resource) []byte {
 	}
 	b.WriteString("{{define \"content\"}}\n")
 	b.WriteString("{{if .IsNew}}\n")
-	fmt.Fprintf(&b, "<form class=\"rst-form\" method=\"post\" action=%q>\n", r.Route)
+	fmt.Fprintf(&b, "<form rst-form method=\"post\" action=%q>\n", r.Route)
 	for _, f := range r.Form.Basics {
 		b.WriteString(formField(r, f))
 	}
@@ -398,14 +398,14 @@ func formHTML(r rastrillo.Resource) []byte {
 	b.WriteString(formFoot(r))
 	b.WriteString("</form>\n")
 	b.WriteString("{{else}}\n")
-	b.WriteString("<form class=\"rst-form\" method=\"post\" action=\"{{.BasicsAction}}\">\n")
+	b.WriteString("<form rst-form method=\"post\" action=\"{{.BasicsAction}}\">\n")
 	for _, f := range r.Form.Basics {
 		b.WriteString(formField(r, f))
 	}
 	b.WriteString(formFoot(r))
 	b.WriteString("</form>\n")
 	if hasAdvanced {
-		b.WriteString("<form class=\"rst-form\" method=\"post\" action=\"{{.AdvancedAction}}\">\n")
+		b.WriteString("<form rst-form method=\"post\" action=\"{{.AdvancedAction}}\">\n")
 		for _, f := range r.Form.Advanced {
 			b.WriteString(formField(r, f))
 		}

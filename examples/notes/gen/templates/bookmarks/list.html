@@ -6,7 +6,7 @@
 {{if .Empty}}
 {{template "empty-state" dict "Title" (T "resource.bookmarks.empty.title") "Body" (T "resource.bookmarks.empty.body") "ActionHref" "/bookmarks/new" "ActionLabel" (T "ui.new")}}
 {{else}}
-<div class="rst-list">
+<div rst-list>
 {{template "list-bar" dict "SearchAction" "/bookmarks" "Query" .Query "Placeholder" (T "ui.search") "Hidden" .Carry}}
 {{range .Rows}}{{template "list-row-action" dict "Href" .Href "Main" .Main "Sub" .Sub}}
 {{end}}

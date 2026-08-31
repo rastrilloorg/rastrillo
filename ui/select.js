@@ -62,11 +62,14 @@ function combo(native) {
   var oneFmt = native.getAttribute("data-rst-select-result-one") || "1 result";
 
   var wrap = document.createElement("div");
-  wrap.className = "rst-combo";
+  wrap.setAttribute("rst-combo", "");
 
   var input = document.createElement("input");
   input.type = "text";
-  input.className = "rst-input rst-combo__input";
+  // rst-input and nothing else: rst-combo-input never had a rule, so
+  // the flip dropped it rather than renaming a name into the
+  // vocabulary that styles nothing.
+  input.setAttribute("rst-input", "");
   input.id = id + "-combo";
   input.autocomplete = "off";
   input.setAttribute("role", "combobox");
@@ -76,7 +79,7 @@ function combo(native) {
   input.setAttribute("placeholder", filterLabel);
 
   var list = document.createElement("ul");
-  list.className = "rst-combo__list";
+  list.setAttribute("rst-combo-list", "");
   list.id = listId;
   list.setAttribute("role", "listbox");
   list.hidden = true;
@@ -96,10 +99,10 @@ function combo(native) {
   // name at all.
   var label = native.id && document.querySelector('label[for="' + native.id + '"]');
   if (label) label.setAttribute("for", input.id);
-  // Drop .rst-input too: both are single class selectors, so its
+  // Drop [rst-input] too: both are single class selectors, so its
   // width:100% wins on source order and would leave the hidden select a
   // full-width box held out of sight by clip-path alone.
-  native.classList.remove("rst-input");
+  native.removeAttribute("rst-input");
   native.classList.add("rst-sr-only");
   native.setAttribute("tabindex", "-1");
   native.setAttribute("aria-hidden", "true");
@@ -135,7 +138,7 @@ function combo(native) {
   function row(o) {
     var li = document.createElement("li");
     li.id = listId + "-" + shown.length;
-    li.className = "rst-combo__option";
+    li.setAttribute("rst-combo-option", "");
     li.setAttribute("role", "option");
     li.setAttribute("aria-selected", o.value === native.value ? "true" : "false");
     li.textContent = o.text;
@@ -170,10 +173,10 @@ function combo(native) {
         // own; role=none keeps it out of the accessibility tree, which
         // leaves the options owned by the group.
         into = document.createElement("ul");
-        into.className = "rst-combo__rows";
+        into.setAttribute("rst-combo-rows", "");
         into.setAttribute("role", "none");
         var head = document.createElement("li");
-        head.className = "rst-select__group";
+        head.setAttribute("rst-select-group", "");
         head.setAttribute("aria-hidden", "true");
         head.textContent = g.label;
         into.appendChild(head);

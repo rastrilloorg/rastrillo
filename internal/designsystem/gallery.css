@@ -27,8 +27,8 @@
 .ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
 .ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
 .ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
-.ds-chrome .rst-dropdown { position: relative; }
-.ds-chrome .rst-dropdown > summary { padding-block: 0.25rem; }
+.ds-chrome [rst-dropdown] { position: relative; }
+.ds-chrome [rst-dropdown] > summary { padding-block: 0.25rem; }
 /* The toggle is hidden until gallery.js says it is there. With scripts
    off it never appears, and the page stays on the theme's own
    color-scheme: light dark — which is the System position anyway, so
@@ -144,7 +144,7 @@
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
 
 /* The sidebar. The rail itself is the framework's own sidebar shell —
-   rst-shell-sidebar, rst-shell__rail, rst-shell__nav, and the details
+   rst-shell-sidebar, rst-shell-rail, rst-shell-nav, and the details
    chrome strip that collapses the rail below 800px — so the page that
    documents the vocabulary is laid out in it. What is left here is the
    two things a rail of links has no class for yet: a collapsible
@@ -153,7 +153,7 @@
 .ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
 .ds-nav > details > summary::-webkit-details-marker { display: none; }
 /* The disclosure glyph is the framework's own chevron: the vendored
-   Lucide chevron-down inside a .rst-caret, which tokens.css already
+   Lucide chevron-down inside an [rst-caret], which tokens.css already
    flips 180 degrees on [open] and already stills under
    prefers-reduced-motion. It replaces content: "\25b8"/"\25be", two
    geometric-shape characters that were the only arrow in the whole
@@ -161,7 +161,7 @@
    triangle on some platforms and as nothing at all where the font has
    no glyph for them. It is aria-hidden because it sits beside the
    section's own name. */
-.ds-nav > details > summary > .rst-caret { flex: none; }
+.ds-nav > details > summary > [rst-caret] { flex: none; }
 .ds-nav > details[aria-current] > summary { color: var(--rst-accent); }
 /* A section with nothing to list yet is a link to its page rather than
    a disclosure over an empty box. It wears the summary's typography so
@@ -175,7 +175,7 @@
    paints every rail link display: block — which the browser's own
    [hidden] rule loses to. This selector outranks it rather than
    shouting !important at it. */
-.rst-shell-sidebar .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
+[rst-shell-sidebar] .ds-nav a[hidden], .ds-nav details[hidden] { display: none; }
 /* The same scriptless story as the scheme toggle above: no script, no
    filter, and no box sitting there looking like one. The nav under it
    is a complete list of every anchor on the page either way. */

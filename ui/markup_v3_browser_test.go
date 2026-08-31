@@ -2,6 +2,10 @@
 
 package ui
 
+// markup-spelling: old-spelling begin — the fixture in this file is
+// authored in the class spelling on purpose: it is what the attribute
+// spelling is compared against. It ends at the file's end.
+
 // The evidence for stage 1 of the markup migration (design spec §6-v3).
 //
 // markup_v3_test.go proves the two spellings are paired in the text of
@@ -59,7 +63,7 @@ const extraFixture = `
      <a class="rst-btn rst-btn--primary" href="#a">Primary</a>
      <a class="rst-btn rst-btn--ghost" href="#a">Ghost</a>
      <button class="rst-btn rst-btn--danger" type="button">Danger</button>
-     <button class="rst-btn" type="button" aria-busy="true" disabled><span class="rst-btn__spin rst-spin" aria-hidden="true"></span>Saving</button></p>
+     <button class="rst-btn" type="button" aria-busy="true" disabled><span class="rst-spin" aria-hidden="true"></span>Saving</button></p>
 
   <p><span class="rst-badge rst-badge--positive">Paid</span>
      <span class="rst-badge rst-badge--warning">Due</span>
@@ -119,8 +123,8 @@ const extraFixture = `
       <label class="rst-switch"><input type="checkbox" checked><span class="rst-switch__track"></span> On</label>
       <fieldset class="rst-choice"><legend>Plan</legend><div class="rst-choice__cards"><label><input type="radio" name="plan" checked><span class="rst-choice__title">Free</span><span class="rst-choice__desc">Desc</span></label><label><input type="radio" name="plan"><span class="rst-choice__title">Pro</span></label></div></fieldset>
     </div>
-    <div class="rst-form-foot"><span class="rst-form-foot__note">Saves immediately.</span><div class="rst-form-actions"><button class="rst-btn rst-btn--primary" type="submit">Save</button></div></div>
-    <div class="rst-form__foot"><button class="rst-btn" type="button">Cancel</button></div>
+    <div class="rst-form-bar"><span class="rst-form-bar__note">Saves immediately.</span><div class="rst-form-actions"><button class="rst-btn rst-btn--primary" type="submit">Save</button></div></div>
+    <div class="rst-form-foot"><button class="rst-btn" type="button">Cancel</button></div>
   </form>
 
   <div class="rst-selbox"><input type="checkbox" aria-label="Select"></div>
@@ -297,12 +301,18 @@ type styleDetail struct {
 // matters for stage 1: a browser, the real tokens.css, and the same
 // fixture in both vocabularies.
 func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
-	fixture := classFixture(t)
+	// The fixture is assembled from the partials and the styleguide,
+	// which write attributes since the stage-2 flip, plus a hand-written
+	// block still in classes. A comparison of two spellings needs a
+	// fixture that really is in the first one, so it is translated back
+	// to classes here and forward again below. Everything that survives
+	// the round trip unchanged is markup neither spelling owns.
+	fixture := classSpelling(t, classFixture(t))
 	assertFixtureCoversTokensCSS(t, fixture)
 
 	spellings := map[string]string{
 		"class": fixture,
-		"attr":  attributeMarkup(fixture),
+		"attr":  attributeSpelling(fixture),
 		"bare":  bareRSTMarkup(fixture),
 	}
 	if spellings["attr"] == spellings["class"] {
@@ -418,6 +428,84 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 	t.Errorf("%d of %d elements compute differently in the two spellings; the first %d are above",
 		len(differ), len(byClass), len(show))
 }
+
+// classSpelling translates markup the other way — rst- attributes back
+// into a class list — with tokens.css's own class list as the key. That
+// key is unambiguous because TestNoTwoClassesWantTheSameAttribute
+// holds: no two classes want one attribute, so no attribute has two
+// classes to choose between.
+//
+// It exists because of the flip. The partials and the styleguide hand
+// this drive attribute markup now, and a fixture half in each spelling
+// would compare identical halves and prove nothing about them.
+func classSpelling(t *testing.T, html string) string {
+	t.Helper()
+	byAttr := map[string]string{}
+	byVariant := map[string]string{}
+	for _, m := range classInSelector.FindAllStringSubmatch(stripCSSComments(string(TokensCSS())), -1) {
+		class := m[1]
+		name, variant, ok := attributeFor(class)
+		if !ok {
+			continue
+		}
+		if variant == "" {
+			byAttr[name] = class
+			continue
+		}
+		byVariant[name+"~="+variant] = class
+	}
+
+	out := openTagInFixture.ReplaceAllStringFunc(html, func(tag string) string {
+		// The class attribute comes out of the tag before the scan: its
+		// tokens follow whitespace exactly as an attribute does, and the
+		// seven utilities that live there must survive the round trip.
+		kept := ""
+		if m := classInMarkup.FindStringSubmatch(tag); m != nil {
+			kept = m[1]
+		}
+		stripped := classInMarkup.ReplaceAllString(tag, "")
+
+		var classes []string
+		rewritten := rstAttrInFixture.ReplaceAllStringFunc(stripped, func(m string) string {
+			g := rstAttrInFixture.FindStringSubmatch(m)
+			name, value := g[1], g[2]
+			if name == "rst-tone" {
+				return ` data-tone="` + value + `"`
+			}
+			base, known := byAttr[name]
+			if !known {
+				t.Errorf("the fixture writes [%s], which tokens.css has no class for — the round trip cannot be checked", name)
+				return m
+			}
+			classes = append(classes, base)
+			for _, variant := range strings.Fields(value) {
+				v, ok := byVariant[name+"~="+variant]
+				if !ok {
+					t.Errorf("the fixture writes %s=%q, which tokens.css has no class for", name, variant)
+					continue
+				}
+				classes = append(classes, v)
+			}
+			return ""
+		})
+		if kept != "" {
+			classes = append(classes, strings.Fields(kept)...)
+		}
+		if len(classes) == 0 {
+			return tag
+		}
+		// After the tag name, so the class lands where an author would
+		// have written it rather than at the end of the attribute list.
+		i := strings.IndexAny(rewritten, " \t\n>")
+		return rewritten[:i] + ` class="` + strings.Join(classes, " ") + `"` + rewritten[i:]
+	})
+	return out
+}
+
+var (
+	openTagInFixture = regexp.MustCompile(`<[a-zA-Z][^>]*>`)
+	rstAttrInFixture = regexp.MustCompile(`(?:^|\s)(rst-[a-z0-9-]+)(?:="([^"]*)")?`)
+)
 
 // assertFixtureCoversTokensCSS is the coverage side of the drive: a
 // pairing the fixture never renders is a pairing this test never

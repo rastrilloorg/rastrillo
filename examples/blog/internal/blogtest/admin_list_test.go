@@ -21,11 +21,11 @@ func TestAdminListShowsDraftsAndPublished(t *testing.T) {
 	wantContains(t, body, "A draft")
 	wantContains(t, body, "Live post")
 	// Status now rides in the pill.
-	wantContains(t, body, `data-tone="neutral">Draft<`)
+	wantContains(t, body, `rst-tone="neutral">Draft<`)
 	wantContains(t, body, "Edited")
-	wantContains(t, body, `data-tone="positive">Published<`)
+	wantContains(t, body, `rst-tone="positive">Published<`)
 	// The published row gets a pill; the draft, having no public page, does not.
-	if n := strings.Count(body, `class="rst-row__action"`); n != 1 {
+	if n := strings.Count(body, `rst-row-action`); n != 1 {
 		t.Errorf("%d action pills, want exactly 1 (the published row)", n)
 	}
 }
@@ -58,7 +58,7 @@ func TestAdminSearchWithNoMatchRendersANoteNotTheEmptyState(t *testing.T) {
 
 	wantContains(t, body, `<p class="blog-note">`)
 	wantContains(t, body, "No posts match")
-	wantNotContains(t, body, `<div class="rst-empty">`)
+	wantNotContains(t, body, `<div rst-empty>`)
 }
 
 func TestAdminWithNoPostsRendersTheEmptyStateNotTheNote(t *testing.T) {
@@ -68,7 +68,7 @@ func TestAdminWithNoPostsRendersTheEmptyStateNotTheNote(t *testing.T) {
 	wantStatus(t, rec, http.StatusOK)
 	body := rec.Body.String()
 
-	wantContains(t, body, `<div class="rst-empty">`)
+	wantContains(t, body, `<div rst-empty>`)
 	wantContains(t, body, "No posts yet")
 	wantContains(t, body, "Write your first post")
 	wantNotContains(t, body, `<p class="blog-note">`)
@@ -84,19 +84,19 @@ func TestAdminPaginationAppearsOnlyPastOnePage(t *testing.T) {
 	wantStatus(t, ten, http.StatusOK)
 	// The partial emits its <nav> even with no items, so an unguarded call
 	// would leave an empty landmark on every single-page list.
-	wantNotContains(t, ten.Body.String(), `<nav class="rst-pagination"`)
+	wantNotContains(t, ten.Body.String(), `<nav rst-pagination`)
 
 	seed(t, db, "Post 11", "Body.", false)
 
 	eleven := get(t, app, "/admin/posts")
 	wantStatus(t, eleven, http.StatusOK)
 	body := eleven.Body.String()
-	wantContains(t, body, `<nav class="rst-pagination"`)
+	wantContains(t, body, `<nav rst-pagination`)
 	wantContains(t, body, `<span aria-current="page">1</span>`)
 	wantContains(t, body, `<a href="/admin/posts?page=2">2</a>`)
 	// Previous is present but not actionable on page 1 — and visibly
-	// so: the class is what tokens.css styles (friction log F10).
-	wantContains(t, body, `<span class="rst-pagination__disabled">Previous</span>`)
+	// so: the attribute is what tokens.css styles (friction log F10).
+	wantContains(t, body, `<span rst-pagination-disabled>Previous</span>`)
 }
 
 // html/template escapes & inside an attribute value, so the preserved

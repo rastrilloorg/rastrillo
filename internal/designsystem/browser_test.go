@@ -850,7 +850,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		t.Errorf("the desktop frame is painted %gpx wide in a 1280px window; it is not being scaled into its column", d.Painted)
 	}
 	// The scale factor, logged rather than written down anywhere: it is
-	// 100cqw / --ds-w, so it moves whenever .rst-page's cap moves, and
+	// 100cqw / --ds-w, so it moves whenever [rst-page]'s cap moves, and
 	// a number in a comment would be a number nobody re-measures. This
 	// is where to read it after changing the column.
 	t.Logf("desktop preview: a %gpx virtual page painted %gpx wide in a 1280px window — scale %.3f", d.Virtual, d.Painted, d.Painted/d.Virtual)
@@ -946,7 +946,7 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 
 	// Every page that frames anything, because previewHeights is one
 	// table over the whole tree: the partial samples are spread over
-	// the five component pages, the class idioms are on primitives.html
+	// the five component pages, the markup idioms are on primitives.html
 	// and the three shells on shells.html, and a height measured on one
 	// of them says nothing about the others.
 	// The floor per page is derived, not guessed: every partial in a
@@ -1108,11 +1108,11 @@ func TestTheDemoApplicationSwitchesViewsWithNoScript(t *testing.T) {
 		// a script doing the work.
 		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &ranScript),
 		chromedp.Evaluate(shown, &landed),
-		chromedp.Click(`.rst-shell__nav a[href="#view-requests"]`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-nav] a[href="#view-requests"]`, chromedp.ByQuery),
 		chromedp.Evaluate(shown, &list),
-		chromedp.Click(`#view-requests .rst-lrow a[href="#view-request"]`, chromedp.ByQuery),
+		chromedp.Click(`#view-requests [rst-lrow] a[href="#view-request"]`, chromedp.ByQuery),
 		chromedp.Evaluate(shown, &detail),
-		chromedp.Click(`#view-request .rst-back-nav a`, chromedp.ByQuery),
+		chromedp.Click(`#view-request [rst-back-nav] a`, chromedp.ByQuery),
 		chromedp.Evaluate(shown, &back),
 	); err != nil {
 		t.Fatalf("driving the demo application: %v", err)

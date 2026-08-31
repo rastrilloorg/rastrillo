@@ -28,19 +28,19 @@
 
      On an engine too old to know the element the cost is real but small,
      and worth stating exactly. An unknown element is display: inline, so
-     `.rst-list > search`'s margin has nothing to apply to and the search
-     box sits flush in a list card; the flex rule in `.rst-lbar` no-ops
+     `[rst-list] > search`'s margin has nothing to apply to and the search
+     box sits flush in a list card; the flex rule in `[rst-lbar]` no-ops
      the same way. And the landmark is simply absent — not moved, not
      wrong — so the search box is still a labelled input in a working
      form. Both engines that old are below the floors this library
      already documents for light-dark() and :has(), so nothing here is
      the first thing to break on one. tokens.css keeps the
-     `.rst-lbar > .rst-search` and `.rst-list > .rst-search` selectors
+     `[rst-lbar] > [rst-search]` and `[rst-list] > [rst-search]` selectors
      beside the new ones, so a hand-written bare form in your own
      toolbar strip lays out exactly as it did.
 
      This renders the <search> and the form it wraps, with no other
-     wrapper: drop it straight into a <div class="rst-list"> card for a
+     wrapper: drop it straight into a <div rst-list> card for a
      list that only searches, or let list-bar wrap it in a toolbar
      strip.
 
@@ -92,11 +92,11 @@
      them, page number included, and a page number from a searched
      result set is usually meaningless once the search is gone. Pass
      ClearHref to say "and go back to page 1". */}}
-{{define "list-bar-search"}}<search><form class="rst-search" method="get"{{if .Action}} action="{{.Action}}"{{end}}>
+{{define "list-bar-search"}}<search><form rst-search method="get"{{if .Action}} action="{{.Action}}"{{end}}>
   {{icon "search"}}
   <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}">
   {{- if .Query}}
-  <a class="rst-search__clear" href="{{searchClear .}}" aria-label="{{T "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
+  <a rst-search-clear href="{{searchClear .}}" aria-label="{{T "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
   {{- end}}
   {{- if .Hidden}}{{range .Hidden}}
   <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">

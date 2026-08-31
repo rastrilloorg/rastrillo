@@ -598,7 +598,7 @@ func TestListBarSearchRendersTheClearLink(t *testing.T) {
 	if err := tmpl.ExecuteTemplate(&without, "list-bar-search", map[string]any{"Action": "/posts"}); err != nil {
 		t.Fatalf("rendering the empty search form: %v", err)
 	}
-	if strings.Contains(without.String(), "rst-search__clear") {
+	if strings.Contains(without.String(), "rst-search-clear") {
 		t.Errorf("an empty search offers a clear link:\n%s", without.String())
 	}
 
@@ -610,7 +610,7 @@ func TestListBarSearchRendersTheClearLink(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("rendering a search that carries its own q: %v", err)
 	}
-	if want := `class="rst-search__clear" href="/posts?sort=newest"`; !strings.Contains(carryingQ.String(), want) {
+	if want := `rst-search-clear href="/posts?sort=newest"`; !strings.Contains(carryingQ.String(), want) {
 		t.Errorf("the clear link is not %s — it is handing the query back:\n%s", want, carryingQ.String())
 	}
 

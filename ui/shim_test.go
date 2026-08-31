@@ -31,10 +31,15 @@ func TestShimContract(t *testing.T) {
 		// renders.
 		"rst-dropdown", "rst-menu-group", "rst-row-menu",
 		"closeMenus", "contains", "Escape", "summary.focus()",
+		// Both spellings. tokens.css pairs them for the window between
+		// upgrading the module and running `rastrillo markup`, and the
+		// shim has to pair them for the same window or an app's menus
+		// stop dismissing halfway through the upgrade we hand it.
+		`MENUS.replace(`,
 		// The busy rule: the spinner it builds, the submitter it reads
 		// (only the clicked button goes busy), and the cancelled-submit
 		// hand-back.
-		"rst-spin rst-btn__spin", "e.submitter", "defaultPrevented",
+		`spin.setAttribute("rst-spin", "")`, "e.submitter", "defaultPrevented",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
@@ -70,7 +75,7 @@ func TestShimContract(t *testing.T) {
 	}
 	// Shell chrome and the toggle-block stay out of it: neither is a
 	// menu, and dismissing them on an outside click would fight the user.
-	for _, bad := range []string{"rst-shell__chrome", "rst-tblock"} {
+	for _, bad := range []string{"rst-shell-chrome", "rst-tblock"} {
 		if strings.Contains(js, bad) {
 			t.Errorf("shim reaches for %q; light dismiss covers menus only", bad)
 		}
@@ -299,7 +304,7 @@ func TestSelectContract(t *testing.T) {
 	if !strings.Contains(js, `!== "false"`) {
 		t.Error(`select.js does not honour data-rst-select="false"; a hand-written select cannot opt out`)
 	}
-	for _, want := range []string{"OPTGROUP", `"group"`, "rst-select__group"} {
+	for _, want := range []string{"OPTGROUP", `"group"`, "rst-select-group"} {
 		if !strings.Contains(js, want) {
 			t.Errorf("select.js does not mention %q; a grouped select would be flattened", want)
 		}

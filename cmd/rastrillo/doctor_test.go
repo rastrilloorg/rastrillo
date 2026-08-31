@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -775,4 +776,115 @@ func TestDoctorDoesNotExemptAFileItInstalled(t *testing.T) {
 			t.Errorf("datetime.js: state %v once edited, want fileMine", f.state)
 		}
 	}
+}
+
+// The upgrade hazard the staged markup migration exists for, checked
+// against the tool that is supposed to catch it.
+//
+// tokens.css is written into an app's static/ at scaffold time and
+// frozen there while the partials upgrade with the module. An app
+// scaffolded before the attribute spelling shipped has a class-only
+// stylesheet; take the module that flipped the partials and every
+// screen renders unstyled, with nothing failing and nothing to read.
+// That is exactly the shape doctor is for, so it has to be the shape
+// doctor reports — and after --fix, the app has to be clean.
+func TestDoctorCatchesAnAppOnTheClassOnlyStylesheet(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	path := filepath.Join(dir, "internal", "demoapp", "static", "tokens.css")
+	frozen := withoutAttributeSelectors(string(ui.TokensCSS()))
+	// Outside its comments: the file's own header explains the grammar,
+	// and quoting an attribute selector there styles nothing.
+	if bare := regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(frozen, ""); strings.Contains(bare, "[rst-") {
+		t.Fatalf("the fixture still carries attribute selectors, so it is not the stylesheet an old app has: %s",
+			bare[strings.Index(bare, "[rst-")-60:strings.Index(bare, "[rst-")+40])
+	}
+	if len(frozen) >= len(ui.TokensCSS()) {
+		t.Fatal("stripping the attribute selectors made the file no smaller — the fixture is not what it claims")
+	}
+	mustWrite(t, path, frozen)
+
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatalf("diagnose: %v", err)
+	}
+	if !rep.drifted() {
+		t.Fatal("an app on the class-only stylesheet is not reported as drift; this is the case the staging exists for")
+	}
+	if got := exitCode(t, rep.exit()); got != exitDrift {
+		t.Errorf("exit %d, want %d", got, exitDrift)
+	}
+	if out := printed(rep, false); !strings.Contains(out, "drift    tokens.css") || !strings.Contains(out, "--fix") {
+		t.Errorf("the report does not name tokens.css and say how to fix it:\n%s", out)
+	}
+
+	var buf bytes.Buffer
+	if err := rep.applyFix(&buf, false); err != nil {
+		t.Fatalf("applyFix: %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, ui.TokensCSS()) {
+		t.Fatal("--fix did not restore the stylesheet that styles the attribute spelling")
+	}
+}
+
+// withoutAttributeSelectors is the stylesheet an app scaffolded before
+// the pairing landed has: every selector naming an rst- attribute
+// removed, and a rule with nothing left removed with it. It descends
+// into @media and @keyframes rather than copying them whole, because
+// that is where the shells' rules live and copying them would leave the
+// fixture styling half of what it claims not to.
+func withoutAttributeSelectors(css string) string {
+	var out strings.Builder
+	i, seg := 0, 0
+	for i < len(css) {
+		switch {
+		case strings.HasPrefix(css[i:], "/*"):
+			j := strings.Index(css[i+2:], "*/")
+			if j < 0 {
+				i = len(css)
+				continue
+			}
+			i += 2 + j + 2
+		case css[i] == '{':
+			lead, selectors := splitPrelude(css[seg:i])
+			if strings.HasPrefix(strings.TrimSpace(selectors), "@") || strings.TrimSpace(selectors) == "" {
+				out.WriteString(css[seg : i+1]) // an at-rule, or a keyframe stop: descend
+				i++
+				seg = i
+				continue
+			}
+			var kept []string
+			for _, sel := range strings.Split(selectors, ",") {
+				if !strings.Contains(sel, "[rst-") {
+					kept = append(kept, sel)
+				}
+			}
+			k := i + strings.IndexByte(css[i:], '}')
+			if len(kept) > 0 {
+				out.WriteString(lead + strings.Join(kept, ",") + css[i:k+1])
+			}
+			i, seg = k+1, k+1
+		case css[i] == '}':
+			out.WriteString(css[seg : i+1])
+			i++
+			seg = i
+		default:
+			i++
+		}
+	}
+	out.WriteString(css[seg:])
+	return out.String()
+}
+
+// splitPrelude cuts a rule's prelude into whatever comes before its
+// last comment and the selector list itself, so a comment that quotes
+// an attribute selector cannot delete the rule it documents.
+func splitPrelude(prelude string) (lead, selectors string) {
+	if k := strings.LastIndex(prelude, "*/"); k >= 0 {
+		return prelude[:k+2], prelude[k+2:]
+	}
+	return "", prelude
 }

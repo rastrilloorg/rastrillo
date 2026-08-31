@@ -85,7 +85,7 @@ element rather than a div wearing a role:
 
 `<search>` carries the search role itself, so the form inside it no
 longer sets `role="search"` — two nested search landmarks for one search
-box helps nobody. The strip sizes the landmark (`.rst-lbar > search`) as
+box helps nobody. The strip sizes the landmark (`[rst-lbar] > search`) as
 well as a bare form, so hand-written markup keeps the layout it had.
 
 ### Clearing a search
@@ -162,7 +162,7 @@ around it. `<details name>` exclusivity is document-wide, not
 sibling-scoped, so a submenu sharing its parent's group closes that
 parent the moment it opens.
 
-The sidebar shell's `rst-shell__chrome` strip and the toggle-block are
+The sidebar shell's `rst-shell-chrome` strip and the toggle-block are
 deliberately outside the group: neither is a menu, and closing the
 narrow-screen nav rail because someone opened a filter would take the
 navigation away.
@@ -229,7 +229,7 @@ released. That includes a submit button that belongs to the form through
 a sticky header's Save takes. A form you came back to is a form you can
 submit again.
 
-The spinner is `.rst-spin`, the same ring `job-status` wears, and it
+The spinner is `[rst-spin]`, the same ring `job-status` wears, and it
 stops turning under `prefers-reduced-motion` — the ring stays, dimmed,
 because the message is "working", not "look at this". An
 `<input type="submit">` gets the attributes and the label swap but no
@@ -245,12 +245,12 @@ does not promise you.
 They belong to your page markup, so the library does not emit them:
 
 ```html
-<div class="rst-page">   <!-- the centred content column every screen sits in -->
-<div class="rst-list">   <!-- the card wrapping a list-bar and a run of rows -->
-<form class="rst-form">  <!-- the column a run of fields and a form-foot sit in -->
+<div rst-page>   <!-- the centred content column every screen sits in -->
+<div rst-list>   <!-- the card wrapping a list-bar and a run of rows -->
+<form rst-form>  <!-- the column a run of fields and a form-foot sit in -->
 ```
 
-There is also a class idiom vocabulary — section box, list grid,
+There is also a markup idiom vocabulary — section box, list grid,
 dropdown, filter tokens, help tooltip, selection checkbox — that is CSS
 rather than a Go partial. The `ui` package's doc comment has the full
 list.
@@ -268,9 +268,9 @@ The padded card for arbitrary content is `rst-box`, with its heading as
 a sibling `rst-box-head` before it:
 
 ```html
-<div class="rst-box-head"><h2>Sign in</h2></div>
-<section class="rst-box">
-  <form class="rst-form" method="post" action="/signin">…</form>
+<div rst-box-head><h2>Sign in</h2></div>
+<section rst-box>
+  <form rst-form method="post" action="/signin">…</form>
 </section>
 ```
 
@@ -408,7 +408,7 @@ This partial never emits it — `Plain` simply emits nothing — but
 
 ## The design system
 
-Every partial, every state, every class idiom and all three shells,
+Every partial, every state, every markup idiom and all three shells,
 rendered live for all three themes and all twelve base locales — five
 pages per theme × locale, one per section, plus a full-page demo for
 each shell and one for the modal route. It is live at
@@ -439,7 +439,7 @@ freshness gate to run.
 Every page is laid out in the `sidebar` shell, because that shell is one
 of the things the gallery exists to show. The rail is the same on all
 five: a search box over a nav that links every section, every partial
-and every class idiom in the whole gallery, with the section you are
+and every markup idiom in the whole gallery, with the section you are
 reading expanded and the rest folded away —
 `TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives that list
 from the same markers the coverage gates read, so a new partial shows up
@@ -562,15 +562,15 @@ you meant to, rather than at an upgrade. Name the file in that test's
 and [The CLI](/docs/cli).
 
 Two stylesheets, not one. `tokens.css` is structure — layout, spacing,
-the type scale, and every `rst-` component class. A theme, written
-beside it as `static/theme.css`, is the colour, the type family and the
-shape those classes paint themselves with. The split is what makes a
+the type scale, and every `rst-` component. A theme, written beside it
+as `static/theme.css`, is the colour, the type family and the shape
+those components paint themselves with. The split is what makes a
 restyle cheap: swapping one file changes how everything looks, and
 nothing about how anything is laid out.
 
 ### Menus that fit the window
 
-Every menu surface — `.rst-dropdown__menu` and `.rst-row-menu__panel` —
+Every menu surface — `[rst-dropdown-menu]` and `[rst-row-menu-panel]` —
 is capped at `min(20rem, 100dvh - 6rem)` and scrolls past that, so a
 long menu on a short window can still be reached. A twelve-locale
 language menu is 388px, which is where this came from.
@@ -597,7 +597,7 @@ html  { scrollbar-gutter: var(--rst-scrollbar-gutter); }
 The width a scrollbar takes is reserved whether or not a scrollbar is in
 it, so moving between a short screen and a long one no longer slides the
 whole page sideways — and neither does opening a modal, whose scroll
-lock (`body:has(.rst-backdrop) { overflow: hidden }`) takes the
+lock (`body:has([rst-backdrop]) { overflow: hidden }`) takes the
 scrollbar away the instant it lands.
 
 The opt-out is one line in your own stylesheet:
@@ -687,7 +687,7 @@ edit a colour, edit the row: nothing else will.
 
 Swapping in a theme of your own is replacing `static/theme.css`. The
 only contract is the token set: declare every name `day` declares, and
-every component class already knows what to do with it. The scaffold's
+every component already knows what to do with it. The scaffold's
 `vendored_test.go` pins `theme.css` to the library copy exactly as it
 pins `tokens.css`, so name it in `vendoredIsMine` when the edit is
 deliberate. `rastrillo doctor` never diffs a theme it cannot identify —
@@ -710,7 +710,7 @@ default. A page overrides only what it cares about, by redefining the
 block:
 
 ```html
-{{define "brand"}}<a class="rst-shell__brand" href="/">Notes</a>{{end}}
+{{define "brand"}}<a rst-shell-brand href="/">Notes</a>{{end}}
 {{define "nav"}}
   <a href="/" aria-current="page">Notes</a>
   <a href="/archive">Archive</a>
@@ -737,45 +737,45 @@ the head, so your own CSS wins the ties it should win against
 
 `account` is the one asymmetric block, and it is worth knowing which
 shell you are in. In `topbar` the layout owns the `<details
-class="rst-dropdown rst-shell__account">` and its summary, so your
+rst-dropdown rst-shell-account>` and its summary, so your
 `account` block is the **menu body only** — the links that go inside
-`.rst-dropdown__menu`. In `sidebar` there is no dropdown: `account` is a
+`[rst-dropdown-menu]`. In `sidebar` there is no dropdown: `account` is a
 bare slot in the rail, and you supply the whole thing. Move a block
 between shells and this is the edit you will need.
 
-The chrome classes live in `tokens.css` like every other idiom:
-`rst-shell-topbar`, `rst-shell__bar`, `rst-shell__brand`,
-`rst-shell__nav`, `rst-shell__account` and `rst-shell__foot` for the
-topbar; `rst-shell-sidebar`, `rst-shell__rail`, `rst-shell__chrome`,
-`rst-shell__group` and `rst-shell__main` for the sidebar; and
+The chrome attributes live in `tokens.css` like every other idiom:
+`rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`,
+`rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the
+topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
+`rst-shell-group` and `rst-shell-main` for the sidebar; and
 `rst-skip`, the skip link, which all three shells carry — `column`
 included. The sidebar's mobile collapse is that
-`<details class="rst-shell__chrome">` and nothing else — no JavaScript,
+`<details rst-shell-chrome>` and nothing else — no JavaScript,
 like every other idiom here.
 
 ### Upgrading: the topbar's tail is a level deeper
 
 The topbar grew a narrow layout, and with it a wrapper. Below 800px its
 `nav`, `account` and `locale` hide behind a `<details>`; above it,
-`.rst-shell__tail` is `display: contents`, so those three generate no
-box of their own and lay out as flex items of `.rst-shell__bar` exactly
+`[rst-shell-tail]` is `display: contents`, so those three generate no
+box of their own and lay out as flex items of `[rst-shell-bar]` exactly
 as they did before — the rendering is unchanged at every width.
 
-The DOM is not. They are now grandchildren of `.rst-shell__bar` through
-`.rst-shell__tail`, and `display: contents` changes box generation, not
+The DOM is not. They are now grandchildren of `[rst-shell-bar]` through
+`[rst-shell-tail]`, and `display: contents` changes box generation, not
 selector matching. If your own CSS or JavaScript reaches into the bar
 with a child combinator:
 
 ```css
 /* stops matching, at every width */
-.rst-shell__bar > .rst-shell__nav { … }
+[rst-shell-bar] > [rst-shell-nav] { … }
 ```
 
-use a descendant selector, or just target the class:
+use a descendant selector, or target the attribute on its own:
 
 ```css
-.rst-shell__bar .rst-shell__nav { … }
-.rst-shell__nav { … }
+[rst-shell-bar] [rst-shell-nav] { … }
+[rst-shell-nav] { … }
 ```
 
 The block names — `brand`, `nav`, `account`, `locale`, `foot` — did not
@@ -790,7 +790,7 @@ The `locale` block is where the language switcher goes, and
 
 It renders nothing when `Items` is empty, so a one-locale app can wire
 it and forget it. It sits on `rst-dropdown rst-locale` — the ordinary
-dropdown vocabulary, not a shell-specific class — so it looks and
+dropdown vocabulary, not a shell-specific name — so it looks and
 behaves the same in either shell. See
 [Localization](/docs/localization).
 

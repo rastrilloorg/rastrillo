@@ -30,6 +30,8 @@ func main() {
 		err = runVectors(os.Args[2:])
 	case "doctor":
 		err = runDoctor(os.Args[2:])
+	case "markup":
+		err = runMarkup(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -75,6 +77,11 @@ Usage:
                                                 exits 0 clean, 3 drift, 4 the app is on a different rastrillo version.
                                                 A convenience and an upgrade tool: the vendored_test.go the scaffold
                                                 writes is what catches drift on every commit without being run.
+  rastrillo markup [--fix] [dir]                rewrite the rst- class spelling as the rst- attribute spelling (default dir: .)
+       --fix                                    write it; without the flag it reports and exits 3 if there is work
+                                                the codemod for design doc §6-v3. Idempotent. Skips static/'s vendored
+                                                files (those are doctor's), and reports rather than guesses at a class
+                                                list it cannot take apart.
   rastrillo vectors [flags] [dir]               Go↔JS parity vectors: run cmd/genvectors, write test/vectors.json (default dir: .)
        -init                                     scaffold cmd/genvectors, the test/ parity suite, and the go-test belt (once)
        -check                                    pre-ship gate: regenerate + byte-compare, then node --test test/parity.test.mjs

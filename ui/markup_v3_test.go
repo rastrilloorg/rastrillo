@@ -1,5 +1,9 @@
 package ui
 
+// markup-spelling: old-spelling begin — this whole file is about the
+// two spellings and has to be able to write both. It ends at the file's
+// end; there is no closing marker.
+
 // The stage-1 gate for the markup migration (design spec §6-v3).
 //
 // tokens.css is moving from a class vocabulary to an attribute one:
@@ -34,136 +38,48 @@ package ui
 // match, property by property, pseudo-elements included.
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/carlosframework/rastrillo/internal/markup"
 )
 
 // ── The grammar ──────────────────────────────────────────────────────
-
-// classKeepsItsSpelling names every rst- class that does NOT gain an
-// attribute twin, with the reason. It is a closed list: the gate below
-// requires each entry to still be a real selector in tokens.css, so an
-// entry cannot rot, and a new class cannot slip in unpaired without
-// being written down here on purpose.
 //
-// The utilities are the ratified grammar (spec §6-v3, "class is for
-// utilities and the app's own CSS"). They are not kinds — they are
-// cross-cutting styling, which is what class is for — so they stay
-// class through stage 3 rather than being paired now and unpaired
-// later.
+// It lives in internal/markup, not here. The stage-2 codemod
+// (`rastrillo markup`) translates markup with the same rules this file
+// checks tokens.css against, and two implementations of one grammar
+// agree until the day they do not. attributeTwin is that package's
+// Selector; the exemption list is its Utilities.
+
+var classKeepsItsSpelling = markup.Utilities
+
+func attributeFor(class string) (name, variant string, ok bool) { return markup.Attribute(class) }
+
+func attributeTwin(selector string) string { return markup.Selector(selector) }
+
+// attributeSpelling is the same translation for markup rather than
+// selectors — the stage-2 codemod itself — and what lets the browser
+// drive render one fixture in both spellings from a single source.
 //
-// rst-form__foot is the one entry that is not a rule but a collision:
-// it would flatten to rst-form-foot, and rst-form-foot is a different
-// rule (the sticky action bar). Two names cannot share one attribute,
-// so neither takes it until the stage-2 flip picks one and retires the
-// other.
-var classKeepsItsSpelling = map[string]string{
-	"rst-sr-only":  "utility: visually-hidden text",
-	"rst-mono":     "utility: monospaced value",
-	"rst-m-hide":   "utility: hidden on a narrow screen",
-	"rst-grow":     "utility: this flex child takes the slack",
-	"rst-nm":       "utility: the name cell's type",
-	"rst-danger":   "utility: a destructive item's colour",
-	"rst-cell-mut": "utility: a muted, truncating cell",
-
-	"rst-form__foot": "collides: it would flatten onto rst-form-foot, a different rule",
-}
-
-// attributeFor translates one rst- class name into the attribute that
-// styles the same thing: a kind becomes a bare attribute, a BEM element
-// becomes a flat attribute (rst-callout__body -> rst-callout-body), and
-// a BEM modifier becomes a token in its kind's value, matched with ~=
-// (rst-btn--primary -> rst-btn~="primary"), which is the same
-// space-separated-token matching class lists get. ok is false for a
-// class that keeps its spelling.
-func attributeFor(class string) (name, variant string, ok bool) {
-	if _, exempt := classKeepsItsSpelling[class]; exempt {
-		return "", "", false
+// Respell, not Rewrite: the codemod also carries the flip's renames,
+// which translate markup written BEFORE it. This fixture is written in
+// today's class vocabulary, where the two spellings must mean the same
+// thing rather than one being an upgrade of the other.
+func attributeSpelling(html string) string {
+	out, notes := markup.Respell([]byte(html))
+	if len(notes) > 0 {
+		panic("the fixture holds a class list the codemod cannot read: " + notes[0].String())
 	}
-	body := strings.TrimPrefix(class, "rst-")
-	if k := strings.Index(body, "--"); k >= 0 {
-		variant = body[k+2:]
-		body = body[:k]
-	}
-	return "rst-" + strings.ReplaceAll(body, "__", "-"), variant, true
+	return string(out)
 }
 
 var (
 	classInSelector = regexp.MustCompile(`\.(rst-[A-Za-z0-9_-]+)`)
-	toneInSelector  = regexp.MustCompile(`\[data-tone="([a-z]+)"\]`)
-	toneInMarkup    = regexp.MustCompile(`data-tone="([a-z]+)"`)
 	classInMarkup   = regexp.MustCompile(`class="([^"]*)"`)
 )
-
-// attributeTwin is the selector that must sit beside a class selector:
-// every translatable rst- class swapped for its attribute, and
-// data-tone swapped for rst-tone. Everything else — type selectors,
-// combinators, pseudo-classes, the .icon class, an app's own class,
-// and the data-* attributes that carry runtime state (data-busy,
-// data-theme, data-lead, data-rst-select) — is left exactly as it is.
-// A selector with nothing to translate comes back unchanged, which is
-// how the gate tells "needs a twin" from "is one".
-func attributeTwin(selector string) string {
-	out := classInSelector.ReplaceAllStringFunc(selector, func(m string) string {
-		name, variant, ok := attributeFor(m[1:])
-		if !ok {
-			return m
-		}
-		if variant == "" {
-			return "[" + name + "]"
-		}
-		return fmt.Sprintf("[%s~=%q]", name, variant)
-	})
-	return toneInSelector.ReplaceAllString(out, `[rst-tone~="$1"]`)
-}
-
-// attributeMarkup is the same translation for markup rather than
-// selectors — the stage-2 codemod in miniature, and what lets the
-// browser drive render one fixture in both spellings from a single
-// source. class="rst-btn rst-btn--primary" becomes rst-btn="primary";
-// a utility, and any class that is not ours, stays in class.
-func attributeMarkup(markup string) string {
-	out := classInMarkup.ReplaceAllStringFunc(markup, func(m string) string {
-		value := m[len(`class="`) : len(m)-1]
-		var kept []string
-		variants := map[string][]string{}
-		var order []string
-		for _, token := range strings.Fields(value) {
-			name, variant, ok := "", "", false
-			if strings.HasPrefix(token, "rst-") {
-				name, variant, ok = attributeFor(token)
-			}
-			if !ok {
-				kept = append(kept, token)
-				continue
-			}
-			if _, seen := variants[name]; !seen {
-				variants[name] = nil
-				order = append(order, name)
-			}
-			if variant != "" {
-				variants[name] = append(variants[name], variant)
-			}
-		}
-		var parts []string
-		if len(kept) > 0 {
-			parts = append(parts, fmt.Sprintf("class=%q", strings.Join(kept, " ")))
-		}
-		sort.Strings(order)
-		for _, name := range order {
-			if len(variants[name]) == 0 {
-				parts = append(parts, name)
-				continue
-			}
-			parts = append(parts, fmt.Sprintf("%s=%q", name, strings.Join(variants[name], " ")))
-		}
-		return strings.Join(parts, " ")
-	})
-	return toneInMarkup.ReplaceAllString(out, `rst-tone="$1"`)
-}
 
 // ── A small CSS reader ───────────────────────────────────────────────
 
@@ -487,18 +403,29 @@ func TestClassesThatKeepTheirSpellingAreStillReal(t *testing.T) {
 	css := stripCSSComments(string(TokensCSS()))
 	for class, why := range classKeepsItsSpelling {
 		if !strings.Contains(css, "."+class) {
-			t.Errorf("classKeepsItsSpelling names %q (%s) and tokens.css has no such class: delete the entry", class, why)
+			t.Errorf("markup.Utilities names %q (%s) and tokens.css has no such class: delete the entry", class, why)
 		}
 		flat := "rst-" + strings.ReplaceAll(strings.TrimPrefix(class, "rst-"), "__", "-")
-		if class != "rst-form__foot" && strings.Contains(css, "["+flat+"]") {
-			t.Errorf("classKeepsItsSpelling names %q (%s) but tokens.css styles [%s]: it is being migrated after all, so drop the exemption", class, why, flat)
+		if strings.Contains(css, "["+flat+"]") {
+			t.Errorf("markup.Utilities names %q (%s) but tokens.css styles [%s]: it is being migrated after all, so drop the exemption", class, why, flat)
 		}
 	}
-	// The collision is the whole reason rst-form__foot is exempt. If it
-	// stops being a collision — the flip renames or deletes one of the
-	// two — the exemption has to go with it.
-	if !strings.Contains(css, ".rst-form__foot") || !strings.Contains(css, ".rst-form-foot") {
-		t.Error("rst-form__foot and rst-form-foot no longer both exist: the collision is resolved, so remove the exemption and pair what is left")
+	// Stage 1 left one class unpaired for a reason that is not the
+	// utilities': rst-form__foot and rst-form-foot both existed and
+	// wanted one attribute. Stage 2 resolved it — the partial's row
+	// took rst-form-foot, the save bar became rst-form-bar — so the
+	// exemption is gone and neither old spelling may come back.
+	for _, gone := range []string{".rst-form__foot", ".rst-form-foot__note"} {
+		if strings.Contains(css, gone) {
+			t.Errorf("%s is back in tokens.css: the flip retired it, and it collides with the attribute rst-form-foot already carries", gone)
+		}
+	}
+	// Every name the flip deletes outright must really style nothing,
+	// or the codemod is removing markup that was doing a job.
+	for class, why := range markup.Dropped {
+		if strings.Contains(css, "."+class) {
+			t.Errorf("markup.Dropped names %q (%s) but tokens.css styles it: deleting it from markup would change what renders", class, why)
+		}
 	}
 }
 
@@ -573,44 +500,7 @@ func TestSpecificityReadsSelectorsTheWayTheSpecDoes(t *testing.T) {
 	}
 }
 
-// TestAttributeTranslationIsTheGrammar pins the translation itself —
-// kind, variant, part, part-with-variant, tone, and the two things that
-// must NOT move: a utility class, and the data-* attributes that carry
-// runtime state rather than authored vocabulary.
-func TestAttributeTranslationIsTheGrammar(t *testing.T) {
-	for _, c := range []struct{ in, want string }{
-		{".rst-box", "[rst-box]"},
-		{".rst-box-head + .rst-box", "[rst-box-head] + [rst-box]"},
-		{".rst-btn--primary:hover", `[rst-btn~="primary"]:hover`},
-		{".rst-callout__body > p", "[rst-callout-body] > p"},
-		{".rst-dtp__row--set .rst-dtp__label", `[rst-dtp-row~="set"] [rst-dtp-label]`},
-		{".rst-person__av--empty", `[rst-person-av~="empty"]`},
-		{`.rst-status[data-tone="positive"]`, `[rst-status][rst-tone~="positive"]`},
-		{`.rst-btn[aria-busy="true"]`, `[rst-btn][aria-busy="true"]`},
-		{".rst-mono", ".rst-mono"},
-		{".rst-row-menu__panel .rst-danger:hover", "[rst-row-menu-panel] .rst-danger:hover"},
-		{".rst-search .icon", "[rst-search] .icon"},
-		{`.rst-row__lead[data-lead="positive"]`, `[rst-row-lead][data-lead="positive"]`},
-	} {
-		if got := attributeTwin(c.in); got != c.want {
-			t.Errorf("attributeTwin(%q) = %q, want %q", c.in, got, c.want)
-		}
-	}
-
-	for _, c := range []struct{ in, want string }{
-		{`<div class="rst-box">`, `<div rst-box>`},
-		{`<a class="rst-btn rst-btn--primary" href="/x">`, `<a rst-btn="primary" href="/x">`},
-		{`<span class="rst-badge rst-badge--positive">`, `<span rst-badge="positive">`},
-		{`<button class="rst-sr-only" type="submit">`, `<button class="rst-sr-only" type="submit">`},
-		{`<summary class="rst-btn rst-dropdown__summary">`, `<summary rst-btn rst-dropdown-summary>`},
-		{`<span class="rst-status" data-tone="warning">`, `<span rst-status rst-tone="warning">`},
-		{`<td class="rst-m-hide rst-cell-mut">`, `<td class="rst-m-hide rst-cell-mut">`},
-		{`<svg class="icon">`, `<svg class="icon">`},
-		{`<form class="rst-form" data-busy="false">`, `<form rst-form data-busy="false">`},
-		{`<div class="rst-form__foot">`, `<div class="rst-form__foot">`},
-	} {
-		if got := attributeMarkup(c.in); got != c.want {
-			t.Errorf("attributeMarkup(%q) = %q, want %q", c.in, got, c.want)
-		}
-	}
-}
+// The translation itself — both halves of the table, selectors and
+// markup — is pinned in internal/markup's own tests, where the grammar
+// now lives. It used to be duplicated here, and a duplicated table is
+// two things that agree until one of them is edited.

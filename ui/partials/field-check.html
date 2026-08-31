@@ -7,4 +7,4 @@
        Name, Label  strings, required
        Value        string, optional
        Checked, Disabled  bools, optional */}}
-{{define "field-check"}}<label class="rst-switch"><input type="checkbox" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{if .Checked}} checked{{end}}{{if .Disabled}} disabled{{end}}><span class="rst-switch__track" aria-hidden="true"></span> {{.Label}}</label>{{end}}
+{{define "field-check"}}<label rst-switch><input type="checkbox" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{if .Checked}} checked{{end}}{{if .Disabled}} disabled{{end}}><span rst-switch-track aria-hidden="true"></span> {{.Label}}</label>{{end}}
