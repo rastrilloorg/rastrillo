@@ -981,11 +981,16 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
 		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
 		`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
-		// The opening view follows the width, and the highlight
-		// follows it by the same two queries. Without these four the
-		// widget opens on nothing chosen and nothing lit.
-		`@media (min-width: 800px) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
-		`@media not all and (min-width: 800px) { .ds-view:not(:has(input:checked)) .ds-view__tab--m {`,
+		// The opening view follows the STAGE's width, and the
+		// highlight follows it by the same two queries. Without these
+		// four the widget opens on nothing chosen and nothing lit.
+		// A container query and not a media query, because the rail
+		// makes the viewport non-monotone in the stage's width — see
+		// TestThePreviewDefaultIsMonotoneInStageWidth, which fails on
+		// a media rule and passes on this one.
+		`container-name: ds-view; container-type: inline-size;`,
+		`@container ds-view (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
+		`@container ds-view not (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m {`,
 		`.ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
 		// The floor, and the reason it is a declaration of its own:
 		// block-size carries --ds-k and dies with it.

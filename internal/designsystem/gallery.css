@@ -106,16 +106,39 @@
    Desktop" from "Desktop is what the markup shipped checked", so a
    widget that opens on a checked radio can never let the width pick
    the opening view AND still take an explicit choice. With nothing
-   checked the width picks — Mobile under 800px, Desktop at or over it,
-   the same line tokens.css collapses the shell on — and either tab,
-   once clicked, overrides the width at any size. The two queries are
-   written as (min-width: 800px) and its exact negation rather than as
-   a min/max pair, because a max-width one pixel under leaves a gap a
-   fractional viewport can land in, and in that gap neither rule
+   checked the width picks, and either tab, once clicked, overrides it
+   at any size.
+
+   WHICH width picks is the part that took two goes. It is the STAGE's
+   width, asked with a container query on .ds-view, and not the
+   viewport's. The viewport is the wrong ruler because this gallery's
+   own rail arrives at 800px and takes 240px out of the column: the
+   stage measures 718px in a 799px window and 479px in an 800px one, so
+   a reader who WIDENS their window makes the preview narrower. A
+   viewport rule at 800px therefore switched to the rendering that
+   needs the most room at exactly the width where it had the least, and
+   was non-monotone in the only thing that matters. A container query
+   measures the box a reader actually gets, so the rail is accounted
+   for by arithmetic rather than by a second number, and the next
+   person to change the rail's width cannot silently move this line.
+
+   The threshold is measured, not inherited. The dominant type in these
+   samples is 14px — --rst-fs-sm; the smallest anywhere is an 11px
+   badge — --ds-k scales it linearly, and 9px is about where rendered
+   text stops being read and starts being texture. 14 × 768/1200 is
+   8.96px, so 48rem of stage is where the desktop rendering stops
+   paying for itself and the 390px one, which is 1:1 at any stage this
+   wide, becomes the better opening view. 48rem is also comfortably
+   over the 718px the stage can reach before the rail arrives, so the
+   default flips once as a window widens rather than three times.
+
+   The pair is written as (min-width: 48rem) and its exact negation
+   rather than as a min/max pair: a max-width one pixel under leaves a
+   gap a fractional width can land in, and in that gap neither rule
    applies and no tab is lit at all. The highlight below is driven by
-   those same two queries, so the tab a reader sees lit is
-   always the rendering in front of them. A 390px rendering under a lit
-   "Desktop" would be a worse bug than the one this fixed.
+   those same two queries, so the tab a reader sees lit is always the
+   rendering in front of them. A 390px rendering under a lit "Desktop"
+   would be a worse bug than the one this fixed.
 
    The scale is the other half. The frame is laid out at a virtual
    1200px (or 390px, on Mobile) and scaled to fit whatever the reader's
@@ -126,6 +149,16 @@
    scaling anything UP. Where the trig functions are missing the
    @supports block never applies, --ds-k stays 1, and the frame is a
    1200px page clipped to the column: smaller, not broken.
+
+   The container is .ds-view and not .ds-view__stage, because the tabs
+   are the stage's SIBLINGS and a query on the stage cannot reach them,
+   and a highlight and a rendering answering to two different rulers is
+   how a CSS-only default goes wrong. .ds-view carries no padding and
+   no border, so the two elements are the same number of pixels wide
+   and --ds-k did not change when the container moved up. That is not
+   left to argument: the drive measures both widths and requires them
+   equal, and checks --ds-k against the stage's own width, because a
+   divergence here would quietly rescale every preview in the gallery.
 
    --ds-h is the frame's virtual height, written per example by
    previewStyle. It sizes the BOX; the frame takes its height back off
@@ -155,7 +188,7 @@
    @supports guard tests the same shape the declaration uses, 100cqw
    and all, rather than the trig alone — a guard that does not exercise
    the thing that can fail is a guard that gates nothing. */
-.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; --ds-floor: 9rem; margin: var(--rst-sp-3) 0; }
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; --ds-floor: 9rem; container-name: ds-view; container-type: inline-size; margin: var(--rst-sp-3) 0; }
 .ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
 .ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
 .ds-view__tab + .ds-view__tab { border-inline-start: 0; }
@@ -164,17 +197,16 @@
 .ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
 .ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-@media (min-width: 800px) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
-@media not all and (min-width: 800px) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@container ds-view (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@container ds-view not (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.ds-view__stage { container-type: inline-size; }
 .ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: min(var(--ds-h), var(--ds-floor)); overflow: hidden; position: relative; resize: vertical; }
 .ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; min-block-size: 100%; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
 @supports (block-size: calc(1px * min(1, tan(atan2(100cqw, 1200px))))) {
   .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
 }
 .ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
-@media not all and (min-width: 800px) {
+@container ds-view not (min-width: 48rem) {
   .ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
   .ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { min-block-size: var(--ds-floor); }
 }

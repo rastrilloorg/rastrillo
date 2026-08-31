@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1315,6 +1316,8 @@ type previewBox struct {
 	Scale   string  // the frame's computed transform
 	Lit     []int   // the tabs the reader sees highlighted
 	Checked []int   // the radios that are actually checked
+	View    float64 // .ds-view, which is the query container
+	Stage   float64 // .ds-view__stage, which is what 100cqw used to be
 }
 
 const readBoxes = `(() => {
@@ -1338,7 +1341,9 @@ const readBoxes = `(() => {
       Width: getComputedStyle(box).getPropertyValue("--ds-w").trim(),
       Scale: getComputedStyle(frame).transform,
       Lit: lit,
-      Checked: checked
+      Checked: checked,
+      View: Math.round(v.getBoundingClientRect().width * 100) / 100,
+      Stage: Math.round(stage.getBoundingClientRect().width * 100) / 100
     });
   });
   return JSON.stringify(out);
@@ -1672,4 +1677,167 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	}
 	agree(t, "display at 390px, scripts off, Desktop chosen", offChosen)
 	clearsTheFloor(t, "display at 390px, scripts off, Desktop chosen", offChosen)
+}
+
+// ── The default is a function of the stage, not of the window ────────
+
+// stageThreshold is the stage width, in CSS pixels, at or above which
+// the widget opens on the desktop rendering. It mirrors the 48rem in
+// gallery.css and is here so this drive fails when the two disagree
+// rather than following the stylesheet wherever it goes.
+const stageThreshold = 768.0
+
+// stageReading is the widget's opening state at one window width.
+type stageReading struct {
+	VW    int
+	View  float64
+	Stage float64
+	DSW   float64
+	Lit   int
+	K     float64
+	Box   float64
+}
+
+// dsw parses the "1200px" a box computes --ds-w to.
+func dsw(t *testing.T, where, raw string) float64 {
+	t.Helper()
+	v, err := strconv.ParseFloat(strings.TrimSuffix(raw, "px"), 64)
+	if err != nil {
+		t.Fatalf("%s: --ds-w reads %q, which is not a length", where, raw)
+	}
+	return v
+}
+
+// TestThePreviewDefaultIsMonotoneInStageWidth is the drive the first
+// fix earned by getting its ruler wrong.
+//
+// The opening view used to be picked by a media query at 800px, and
+// 800px is the width this gallery's own rail arrives at: the stage
+// measures 718px in a 799px window and 479px in an 800px one. So the
+// widget switched to the rendering that needs the MOST room at exactly
+// the width where it had the LEAST, and widening a window made the
+// preview both narrower and more demanding. A viewport rule cannot
+// avoid that, because the viewport is not monotone in the stage.
+//
+// The property asserted here is the one that cannot go wrong again:
+// order every window width by the stage it produces, and the opening
+// view must never go from Desktop back to Mobile as the stage gets
+// wider. A container query on .ds-view satisfies it by construction; a
+// media query at any threshold at all does not.
+//
+// The control comes first, and it is the one that makes the rest mean
+// anything: this drive is only capable of catching the bug if the
+// fixture really does contain a window that grows while its stage
+// shrinks. So that pair is measured and required, at the exact
+// boundary — 700px and 800px — that was wrong.
+//
+// Two more readings ride along, because moving the container from
+// .ds-view__stage up to .ds-view moved what 100cqw resolves against
+// and a silent change there would rescale every preview in the gallery
+// at once: the two elements must be the same width, and --ds-k must
+// still be the stage's width over the virtual one.
+func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 240*time.Second)
+	defer cancel()
+
+	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("display"))
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(url),
+		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+		chromedp.Sleep(600*time.Millisecond),
+	); err != nil {
+		t.Fatalf("loading the display page: %v", err)
+	}
+
+	// Widths chosen around the rail's own line, because that is where
+	// the viewport stops being monotone in the stage.
+	widths := []int{390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1200, 1280, 1500}
+	readings := make([]stageReading, 0, len(widths))
+	for _, vw := range widths {
+		where := fmt.Sprintf("display at %dpx", vw)
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(int64(vw), 900),
+			chromedp.Sleep(300*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s: resizing: %v", where, err)
+		}
+		rows := boxes(t, ctx, where)
+		// The lit tab and the rendering agree at every one of these
+		// widths, not only at the two the other drive visits.
+		agree(t, where, rows)
+		r := rows[0]
+		if len(r.Lit) != 1 {
+			t.Fatalf("%s: %v tabs lit, so there is no opening view to record", where, r.Lit)
+		}
+		if len(r.Checked) != 0 {
+			t.Fatalf("%s: %v is checked; this drive reads the OPENING view and something has chosen for it", where, r.Checked)
+		}
+		readings = append(readings, stageReading{
+			VW: vw, View: r.View, Stage: r.Stage,
+			DSW: dsw(t, where, r.Width), Lit: r.Lit[0],
+			K: scaleOf(t, where, r), Box: r.Box,
+		})
+	}
+
+	for _, r := range readings {
+		t.Logf("vw=%-5d view=%-7.1f stage=%-7.1f --ds-w=%-7.0f k=%.3f box=%.1f opens on %s",
+			r.VW, r.View, r.Stage, r.DSW, r.K, r.Box, tabName(r.Lit))
+	}
+
+	// CONTROL. Without a window that GROWS while its stage SHRINKS,
+	// the monotonicity assertion below is satisfied by every rule
+	// anyone could write and proves nothing at all.
+	var grew, shrank stageReading
+	for _, r := range readings {
+		switch r.VW {
+		case 700:
+			grew = r
+		case 800:
+			shrank = r
+		}
+	}
+	if grew.VW == 0 || shrank.VW == 0 {
+		t.Fatalf("the sweep is missing the 700px/800px pair, which is the only pair that makes this drive capable of failing")
+	}
+	if shrank.Stage >= grew.Stage {
+		t.Fatalf("the control is gone: the stage is %.1fpx in a 700px window and %.1fpx in an 800px one, so this page no longer has a window that grows while its stage shrinks and the assertion below cannot catch the bug it exists for. Find the width where the rail now arrives and sweep across it", grew.Stage, shrank.Stage)
+	}
+	t.Logf("control: the stage shrinks from %.1fpx to %.1fpx as the window grows from 700px to 800px — the rail arrives", grew.Stage, shrank.Stage)
+
+	// The property. Sorted by stage width, the opening view may go
+	// from Mobile to Desktop once and never back.
+	byStage := append([]stageReading(nil), readings...)
+	sort.Slice(byStage, func(i, j int) bool { return byStage[i].Stage < byStage[j].Stage })
+	for i, wide := range byStage {
+		for _, narrow := range byStage[:i] {
+			if narrow.Lit == 0 && wide.Lit == 1 {
+				t.Errorf("a %.1fpx stage (a %dpx window) opens on Desktop and a WIDER %.1fpx stage (a %dpx window) opens on Mobile. The opening view is being picked by something other than the width of the box it describes",
+					narrow.Stage, narrow.VW, wide.Stage, wide.VW)
+			}
+		}
+	}
+
+	// And the threshold is the one the stylesheet documents.
+	for _, r := range readings {
+		want := 1
+		if r.Stage >= stageThreshold {
+			want = 0
+		}
+		if r.Lit != want {
+			t.Errorf("a %.1fpx stage (a %dpx window) opens on %s; at or over %.0fpx of stage the desktop rendering is the legible one and under it the 390px rendering is",
+				r.Stage, r.VW, tabName(r.Lit), stageThreshold)
+		}
+	}
+
+	// The container moved up a level, and 100cqw moved with it.
+	for _, r := range readings {
+		if math.Abs(r.View-r.Stage) > 0.5 {
+			t.Errorf("at %dpx the query container .ds-view is %.2fpx wide and the stage inside it is %.2fpx. The stylesheet asks (min-width: 48rem) of .ds-view and this drive checks the threshold against the STAGE, so the two have to be the same ruler; give .ds-view a padding or a border and the gallery and its gate quietly start measuring different elements", r.VW, r.View, r.Stage)
+		}
+		if want := math.Min(1, r.Stage/r.DSW); math.Abs(r.K-want) > 0.01 {
+			t.Errorf("at %dpx the frame is scaled by %.4f and the stage is %.1fpx of a %.0fpx virtual page, which is %.4f — 100cqw is not resolving to the stage's width", r.VW, r.K, r.Stage, r.DSW, want)
+		}
+	}
 }
