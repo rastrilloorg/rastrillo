@@ -352,7 +352,7 @@ paragraph of your own documentation whose subject is the spelling you
 are migrating away from — which is what this page is, and why this page
 survives its own tool.
 
-### Two things it will not do
+### What it reports instead of guessing
 
 It leaves alone — and prints — any class attribute whose shape it cannot
 read: markup built by concatenating string literals, a class list a
