@@ -348,7 +348,17 @@ var declPattern = regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
 // colourValue matches a value that is a colour on its own, so it can be
 // shown as a chip. A shadow (0 8px 24px rgba(…)) is deliberately not
 // one: it contains a colour but is not one, and it gets its own preview.
-var colourValue = regexp.MustCompile(`^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|rgba?\([^()]*\)|hsla?\([^()]*\))$`)
+//
+// The last two alternatives are for a DERIVED colour — a token whose
+// value names other tokens rather than a literal, which is what
+// --rst-header-rule is in all three themes (color-mix() in day and
+// signal, a bare var() in plain). The chip is painted with
+// var(<the token>), never with the value text, so the browser resolves
+// the derivation for us and a chip is exactly as correct here as it is
+// for a hex. Without these, a derived colour rendered as a row of text
+// with a hole where its swatch should be. Both allow nested parens,
+// which a color-mix() over two var()s always has.
+var colourValue = regexp.MustCompile(`^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|rgba?\([^()]*\)|hsla?\([^()]*\)|color-mix\(.*\)|var\(--rst-[a-z0-9-]+\))$`)
 
 // blockBody returns the brace-matched contents following header (which
 // must end in "{"). Theme files nest at most one level and no value in
@@ -468,7 +478,7 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 		Title    string
 		Prefixes []string
 	}{
-		{"Surfaces and lines", []string{"--rst-bg", "--rst-surface", "--rst-line"}},
+		{"Surfaces and lines", []string{"--rst-bg", "--rst-surface", "--rst-line", "--rst-header-rule"}},
 		{"Text", []string{"--rst-text"}},
 		{"Accent", []string{"--rst-accent", "--rst-on-accent"}},
 		{"Status tones", []string{"--rst-tone-"}},

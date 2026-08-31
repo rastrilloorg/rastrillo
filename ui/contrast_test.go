@@ -49,6 +49,13 @@ import (
 // weakening the parser to accept it silently.
 var colorMixSkip = map[string]bool{
 	// (none yet)
+	//
+	// --rst-header-rule is NOT listed here, and its absence is the
+	// point: skipping a token implies it belongs in the pair table and
+	// could not be evaluated. The header rule does not belong in the
+	// table at all. day and signal derive it with color-mix(), which
+	// this parser cannot read — and it is never asked to, because no
+	// pair below names it. See the note above the pair table.
 }
 
 // hexPattern matches a bare #rgb or #rrggbb custom-property value, the
@@ -324,6 +331,15 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 	// row those tables publish, at its documented floor. If a header
 	// table grows a row, add it here too; the two are meant to stay in
 	// lockstep.
+	//
+	// --rst-header-rule is deliberately absent. The page header's rule
+	// is decorative and carries no contrast floor (design doc §6-v2.2):
+	// the heading's size, weight and spacing carry the structure, the
+	// rule does not, so 1.4.11's 3:1 was never its bar. day and signal
+	// tint it with the accent at 18% and 45%, which on a light surface
+	// is under 3:1 by construction. That is not a defect and must not be
+	// "fixed" by adding a row here — the ruling says so in writing
+	// precisely so this argument has already been answered.
 	pairs := []pair{
 		{"--rst-text", "--rst-surface", 4.5, "body text on a card"},
 		{"--rst-text", "--rst-bg", 4.5, "body text"},

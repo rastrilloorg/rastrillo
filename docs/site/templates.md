@@ -688,6 +688,41 @@ Shape is part of the theme, not the structure. `--rst-radius`,
 nearly square and `signal` can be milled while `tokens.css` stays the
 same bytes.
 
+So is the page header's rule. `--rst-header-rule` is one token, derived
+rather than picked:
+
+```css
+/* day */    --rst-header-rule: color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line));
+/* plain */  --rst-header-rule: var(--rst-line);
+/* signal */ --rst-header-rule: color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line));
+```
+
+Deriving it means a theme that changes its accent gets a matching rule
+with nothing left behind to keep in step, which a fourth hand-picked
+colour per theme per scheme would not. `plain` draws plain grey, `day` a
+hairline you would call grey until you see it beside `plain`'s, `signal`
+a visibly blue one. Set it to whatever you like; it is a line, and one
+custom property is the whole of it.
+
+The rule is decoration. It carries no contrast floor and is not in the
+contrast gate's pair table: the heading's size, weight and spacing carry
+the structure, so a tinted line under 3:1 is doing its job rather than
+failing at somebody else's.
+
+`color-mix()` does not move the floor below. It needs Chrome 111,
+Safari 16.2 and Firefox 113, all of them older than the three engines
+`light-dark()` and `:has()` already ask for.
+
+This rule is the whole of the header's decoration. It did not use to
+be: `[rst-page-header]::after` drew a 2.5rem accent stroke over its
+inline start, and that stroke is retired. The pseudo-element is
+`content: none` rather than deleted, so a stylesheet of yours that
+styled it is now styling nothing instead of fighting for it. If you
+want the stroke back it is eight declarations in your own sheet — but
+read it first with fresh eyes: a thin full-width track in the line
+colour with a shorter saturated segment filling it from the leading
+edge is a determinate progress bar, and it was being read as one.
+
 Each file carries its own contrast table in the header comment: every
 text-on-background and border-on-background pair, in both schemes, with
 the measured ratio beside the WCAG 2.2 AA requirement it has to clear.

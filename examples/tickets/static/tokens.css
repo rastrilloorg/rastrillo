@@ -281,7 +281,7 @@ body {
 /* ── page-header ──────────────────────────────────────────────────── */
 .rst-page-header, [rst-page-header] {
   align-items: baseline;
-  border-bottom: 1px solid var(--rst-line);
+  border-bottom: 1px solid var(--rst-header-rule);
   display: flex;
   flex-wrap: wrap;
   gap: var(--rst-sp-3);
@@ -290,18 +290,33 @@ body {
   padding-bottom: var(--rst-sp-3);
   position: relative;
 }
-/* The rake line: one short accent stroke laid over the header's rule.
-   The library's one flourish — the tool it is named for, drawn once per
-   screen and nowhere else. Absolutely positioned, so it is not a flex
-   item. */
+/* The rake line is retired (design doc §6-v2.2). It drew a 2.5rem
+   accent stroke over this rule, flush to the inline start — the
+   library's one flourish, and, built from the same parts in the same
+   order, indistinguishable from a determinate progress bar at 12%. The
+   rule itself carries the theme now: --rst-header-rule is derived from
+   the theme's accent and line, so plain draws grey, day draws a barely
+   tinted hairline and signal a visibly tinted one, and an app that
+   wants its own sets one custom property instead of fighting an
+   ::after it cannot remove.
+
+   The declaration stays, rather than the rule being deleted, because a
+   stylesheet that merely stops mentioning the stroke says nothing to
+   the next reader; this says the stroke is gone on purpose. It also
+   neutralises a vendored theme or app sheet that still carries the old
+   flourish at a lower specificity.
+
+   THE RULE IS DECORATIVE AND CARRIES NO CONTRAST FLOOR. The heading's
+   size, weight and spacing carry the structure; the rule does not. It
+   is deliberately absent from ui/contrast_test.go's pair table, and a
+   later pass must not argue it up to 1.4.11's 3:1 — that floor was
+   never its. See ui/contrast_test.go's colorMixSkip comment.
+
+   position: relative stays: it is the containing block anything an app
+   absolutely positions inside its own header expects to find, and
+   removing it would move those elements rather than tidy the file. */
 .rst-page-header::after, [rst-page-header]::after {
-  background: var(--rst-accent);
-  block-size: 2px;
-  content: "";
-  inline-size: 2.5rem;
-  inset-block-end: -1px;
-  inset-inline-start: 0;
-  position: absolute;
+  content: none;
 }
 .rst-page-header__titles, [rst-page-header-titles] {
   flex: 1 1 auto;

@@ -106,6 +106,12 @@
    --rst-line is a hairline divider, not a control border, so 1.4.11's
    3:1 does not apply to it. Control borders use --rst-line-strong.
 
+   --rst-header-rule is not in the table either, and deliberately so
+   (design doc §6-v2.2): the page header's rule is decoration, not
+   structure — the heading's size, weight and spacing carry the
+   structure — so no contrast floor applies to it and it is not in
+   ui/contrast_test.go's pair table. Do not argue it up to 3:1.
+
    --rst-shadow-pop, --rst-shadow-knob, --rst-shadow-lift and
    --rst-overlay are not in the table: they paint a translucent layer
    over whatever sits underneath, not text over a fixed background, so a
@@ -133,6 +139,14 @@
   --rst-surface-2: light-dark(#eef0f4, #101318);
   --rst-line: light-dark(#dde0e7, #232830);
   --rst-line-strong: light-dark(#6d7482, #7b828f);
+
+  /* The page header's rule, derived rather than authored: the cobalt
+     folded into the line at 45%, so a theme that changes its accent
+     gets a matching rule with no second value to keep in step. signal
+     spends the tint it earns — the rule is visibly blue, which is the
+     loudest this theme is anywhere it is not asking for a click.
+     Decorative: it carries no contrast floor. */
+  --rst-header-rule: color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line));
 
   /* Text */
   --rst-text: light-dark(#0c0e12, #e9ebef);
