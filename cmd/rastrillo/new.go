@@ -914,7 +914,7 @@ func TestBrowserWalk(t *testing.T) {
 // app's own call.
 const readmeTemplate = `# %[1]s
 
-A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. ` + "`make ci`" + `
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + `
 is the gate — vet, gofmt, tests, migration check, one definition for
 CI and for you. AGENTS.md carries the working conventions.
 
@@ -1133,7 +1133,7 @@ func amadanStep(target string) string {
 
 const agentsMDTemplate = `# %s
 
-A [rastrillo](https://github.com/rastrilloorg/rastrillo) app. Read the
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Read the
 framework's own SKILL.md (repo root, or in the module cache) before
 writing app code — it is the whole app story in ~15KB. The conventions
 below are load-bearing; the framework enforces most of them

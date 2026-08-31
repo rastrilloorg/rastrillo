@@ -737,6 +737,10 @@ rastrillo new myapp
 cd myapp && go mod tidy && rastrillo dev
 ```
 
+Tags predating the move to amadan.net are history, not installable
+versions here: their own `go.mod` still names the old module path, so
+the proxy serves only tags cut after the move.
+
 Then edit an action, save, refresh — `rastrillo dev` regenerates,
 rebuilds, and restarts for you. For a one-off build without the watch
 loop: `go build ./cmd/myapp && ./myapp -addr :8080`.

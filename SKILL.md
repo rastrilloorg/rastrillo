@@ -132,8 +132,8 @@ Scoping separates users, never tenants: a CARLOS app serves one team; a
 multi-team product runs an instance per team (idle instances hibernate
 free). Roles/membership are the
 `amadan.net/rastrillo/idear` addon (Owner/Admin/Member, invitations, a
-membership gate that mints no session) — never core, never
-`github.com/carlosframework/idear`. docs/site/addons.md
+membership gate that mints no session) — never core, never a subpath of
+this repository. docs/site/addons.md
 
 One seam, every read and write:
 `func (a *app) owned(r *http.Request) *gorm.DB { uid, _ :=
