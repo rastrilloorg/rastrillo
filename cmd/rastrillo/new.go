@@ -790,13 +790,31 @@ import (
 // links: /static/tokens.<16 hex>.css.
 var hashedStylesheet = regexp.MustCompile(` + "`" + `/static/tokens\.[0-9a-f]{16}\.css` + "`" + `)
 
+// These two tests are about the PLACEHOLDER index page, and they are
+// yours to rewrite. They ship because a scaffold whose suite asserts
+// nothing teaches nothing, not because "/" answering 200 with those
+// words in it is a property of your app.
+//
+// The first feature that breaks them is sign-in, which is also the
+// first feature most apps add: put "/" in a Group behind
+// sessions.Require and a signed-out GET is a 303 to SigninPath, so
+// the status assertion fails and the redirect's body carries neither
+// the heading nor a stylesheet link. That is the app working. Point
+// them at a page that is public in your app, or delete them — the
+// rest of this file (the asset URLs, the error page) is about the
+// framework's behaviour rather than the placeholder's, and keeps
+// earning its place.
+//
+// Said in the failure messages too, and not only here. The reader who
+// needs it is looking at a red gate, and the gate prints messages
+// rather than source.
 func TestIndexRenders(t *testing.T) {
 	rec := get(t, newApp(t), "/")
 	if rec.Code != http.StatusOK {
-		t.Fatalf("GET /: status %%d, want 200", rec.Code)
+		t.Fatalf("GET /: status %%d, want 200. If you have put %%q behind sign-in this is the placeholder test, not a fault: a signed-out GET redirects, and this test is yours to repoint or delete", rec.Code, "/")
 	}
 	if !strings.Contains(rec.Body.String(), "this is a rastrillo app") {
-		t.Errorf("GET /: page is missing its heading:\n%%s", rec.Body.String())
+		t.Errorf("GET /: page is missing its heading. If you have replaced the placeholder index this test is yours to rewrite:\n%%s", rec.Body.String())
 	}
 }
 
@@ -804,7 +822,7 @@ func TestIndexLinksFingerprintedStylesheet(t *testing.T) {
 	h := newApp(t)
 	href := hashedStylesheet.FindString(get(t, h, "/").Body.String())
 	if href == "" {
-		t.Fatal("index page links no fingerprinted stylesheet")
+		t.Fatal("index page links no fingerprinted stylesheet. If you have put \"/\" behind sign-in, the redirect body has no <link> in it and this test wants pointing at a page that is still public")
 	}
 	rec := get(t, h, href)
 	if rec.Code != http.StatusOK {
@@ -1173,6 +1191,14 @@ mechanically.
 - The gate is ` + "`make ci`" + ` (vet + gofmt + tests) — the same definition
   CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the
   stack is cgo-free by design.
+- Two of the scaffolded tests are about the **placeholder index page**
+  and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
+  ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in
+  turns a signed-out GET into a 303 and both fail — that is the app
+  working, not the gate finding a fault. Repoint them at a page that
+  is public in your app, or delete them. The gate is a definition of
+  done for *your* tests; it does not promise the ones you were handed
+  are still describing your app.
 
 ## Serving
 
