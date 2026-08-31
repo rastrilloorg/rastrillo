@@ -3330,16 +3330,31 @@ floor cuts gaps out of the middle of the range, and any tolerance wide enough to
 those would report every constrained answer as honoured — turning the one signal the
 caller needs into noise.
 
-**Correction, 2026-08-31.** This section first said "gaps of up to 0.067", relayed from
-the implementer's report, and I published it and passed it to Sheets. It does not
-reproduce. An independent measurement gives **0.0580** on the shipped canvases, **0.0608**
-over a 3.27M-gap sweep, and **0.9588** at the extreme — ink `#757573` on black leaves two
-islands, at 0.0370 and 0.9958. So the argument is right and was *understated by more than
-an order of magnitude*, while the specific figure was a bound in no direction at all and
-appeared nowhere in the tests. The lesson is the one this branch keeps paying for: a
-number that supports a design decision belongs in an assertion, not in prose. What should
-be gated is the conclusion — that the largest gap exceeds any workable tolerance — and
-never the figure.
+**Corrected twice, 2026-08-31, and the sequence is more instructive than the answer.**
+
+The section first said "gaps of up to 0.067", relayed from a report; I published it and
+passed it to Sheets. A review then measured **0.0580** on the shipped canvases, **0.0608**
+over a sweep, and **0.9588** at an extreme, so I corrected the section to say the original
+figure did not reproduce. A third measurement corrected *that*: the largest gap is
+**0.0649** on the shipped canvases and **0.0666** over the wide sweep, and the 0.9588
+extreme does not exist — ink `#757573` has a *negative* dark bound (−0.000017), so only
+light fills are feasible and there is at most one achievable weight per hue, hence no
+second island.
+
+So the original 0.067 was approximately right, and my confident retraction of it was
+wrong in the opposite direction.
+
+**What resolved it was a method correction, not more sampling.** Gaps must be read off the
+**sorted set of achievable weights**, not off the lightness walk, because separation is
+V-shaped about the background — a walk crosses the background and reads a spurious span.
+Two of the three measurements made that mistake, which is almost certainly where 0.9588
+came from.
+
+The lesson survives all three passes intact, and is the reason the disagreement was cheap
+rather than expensive: **a number supporting a design decision belongs in an assertion,
+not in prose.** The conclusion is now gated as `maxGap > 10 × washTolerance` and no figure
+is quoted anywhere a test does not hold it. Had that been true at the start, none of these
+three numbers would have needed publishing, correcting, or correcting again.
 
 ### The slack constant: the pattern in one number
 
