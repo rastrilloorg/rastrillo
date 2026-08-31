@@ -234,7 +234,9 @@ weights you can ask for and become colours you can only paint:
 
 | weight | colour | |
 | --- | --- | --- |
-| 0.03 | `MinSeparation`, the floor — the palest fill Google Sheets ships | |
+| 0.030 | `MinSeparation` — **our** floor, where a fill stops being visible | |
+| 0.036 | Google Sheets' palest fill, which is a grey, `#F3F3F3` | |
+| 0.064 | Google Sheets' palest *coloured* fill, `#FFF2CC` | |
 | 0.11 | Excel's "light green" preset, `#C6EFCE` | |
 | 0.12 | Excel's "light yellow" preset, `#FFEB9C` | |
 | 0.14 | Excel's "light red" preset, `#FFC7CE` | |
@@ -243,6 +245,12 @@ weights you can ask for and become colours you can only paint:
 | — | *ceiling under near-black ink on white* | |
 | 0.45 | flat red `#FF0000` | reachable at some hues, not others |
 | 0.63 | flat blue `#0000FF` | not reachable under black ink at all |
+
+The first row is ours and is attributed to nobody: it is where this engine
+stops calling something a wash. The two below it are what the palest thing
+another product actually ships measures — a different and more useful
+claim, and the reason a request near the floor gets you something fainter
+than any coloured fill in a spreadsheet you have used.
 
 The last two rows are why the line is drawn rather than left implied.
 Flat red and flat blue are perfectly good colours and you may well store
@@ -344,7 +352,7 @@ That last check is the one worth knowing about. Hues thirty degrees apart
 are far apart as angles and can still resolve to nearly the same colour
 once a dark background has squeezed the lightness out of them — the
 shipped set's closest pair is two teals ΔE_OK 0.045 apart on a dark page,
-which is a 50% margin over the floor.
+which clears the floor by 49%.
 
 `WorstSeparation` returns that measurement, so it is also what answers
 "could we have more than twelve". Measured against the shipped surfaces,
