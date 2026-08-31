@@ -155,9 +155,15 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
 		"--rst-overlay",
 	}
+	// --rst-header-rule is declared once but is NOT in needsLightDark:
+	// it is derived from tokens the two schemes already split, so one
+	// color-mix() (or, in plain, one var()) covers both. Wrapping a
+	// derived value in light-dark() would reintroduce exactly the second
+	// hand-authored colour per scheme the derivation exists to avoid.
 	declaredOnce := append([]string{
 		"--rst-font", "--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
 		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift",
+		"--rst-header-rule",
 	}, needsLightDark...)
 
 	for _, name := range ThemeNames() {

@@ -104,6 +104,12 @@
    a meaningful graphic, so 1.4.11's 3:1 does not apply to it. Control
    borders use --rst-line-strong, which does clear 3:1.
 
+   --rst-header-rule is not in the table either, and deliberately so
+   (design doc §6-v2.2): the page header's rule is decoration, not
+   structure — the heading's size, weight and spacing carry the
+   structure — so no contrast floor applies to it and it is not in
+   ui/contrast_test.go's pair table. Do not argue it up to 3:1.
+
    Pagination chips are the one deliberate exception: they are bordered
    with --rst-line rather than --rst-line-strong, because a page strip
    ringed in hard outlines shouts louder than the list it belongs to.
@@ -138,6 +144,13 @@
   --rst-surface-2: light-dark(#f6f7f8, #15191f);
   --rst-line: light-dark(#e5e7eb, #2a3038);
   --rst-line-strong: light-dark(#7f8792, #79828e);
+
+  /* The page header's rule, derived rather than authored: the accent
+     folded into the line at 18%, so a theme that changes its accent
+     gets a matching rule with no second value to keep in step. day's
+     is barely there — a hairline you would call grey until you put it
+     beside plain's. Decorative: it carries no contrast floor. */
+  --rst-header-rule: color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line));
 
   /* Text */
   --rst-text: light-dark(#1a1d21, #e8eaed);

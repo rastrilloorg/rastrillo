@@ -104,6 +104,12 @@
    --rst-line is a hairline divider, not a control border, so 1.4.11's
    3:1 does not apply to it. Control borders use --rst-line-strong.
 
+   --rst-header-rule is not in the table either, and deliberately so
+   (design doc §6-v2.2): the page header's rule is decoration, not
+   structure — the heading's size, weight and spacing carry the
+   structure — so no contrast floor applies to it and it is not in
+   ui/contrast_test.go's pair table. Do not argue it up to 3:1.
+
    --rst-shadow-pop, --rst-shadow-knob, --rst-shadow-lift and
    --rst-overlay are not in the table: they paint a translucent layer
    over whatever sits underneath, not text over a fixed background, so a
@@ -128,6 +134,12 @@
   --rst-surface-2: light-dark(#f4f4f4, #131313);
   --rst-line: light-dark(#e0e0e0, #2b2b2b);
   --rst-line-strong: light-dark(#767676, #8f8f8f);
+
+  /* The page header's rule. plain has no accent hue to fold in, so it
+     is the line and nothing else — the same derived token every theme
+     declares, resolving here to plain grey. Decorative: it carries no
+     contrast floor. */
+  --rst-header-rule: var(--rst-line);
 
   /* Text */
   --rst-text: light-dark(#111111, #f2f2f2);
