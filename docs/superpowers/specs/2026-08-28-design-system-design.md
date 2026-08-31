@@ -2842,3 +2842,58 @@ are the content.
 
 After §6-v3 stage 2. These are new components in the class spelling
 today and would otherwise be written twice.
+
+---
+
+## 7-v2. Calibrate the instrument (2026-08-31) — a testing rule this project earned
+
+Twelve gates on this project have gated nothing. The failures looked
+different every time — a probe reading the IDL property it set, a
+sentinel checking a string nobody says, an assertion measuring the right
+thing in the wrong frame, a test submitting a form on every run while
+reporting green — and they were one failure.
+
+Stage 2 produced the cleanest instance, and it is worth the space
+because it defeated the strongest evidence a process normally has.
+
+A report claimed 577 pages, 236,495 elements, **zero differences**
+between two renders. **A reviewer reproduced it exactly**, and proved
+the drive could fail by planting a mutation. Both were wrong. The drive
+had no control: run against a *single* tree it should return zero by
+construction, and it did not — a fixed sleep, `readyState` answering
+the wrong question for a `srcdoc` frame, pages swinging between
+readings. The zero was luckier than it was sound.
+
+**Two parties agreeing about the output of an uncalibrated instrument
+is not two pieces of evidence. It is one piece, twice.** (sheets-03's
+formulation, and better than mine.)
+
+### The rule
+
+**Run the check against a case whose answer you already know, and see
+whether it says so.** A comparison of a thing with itself must be zero.
+A gate over an empty set must fail rather than pass. A drive that finds
+no violations must be shown finding one.
+
+Mutation testing — which this project already does — proves a gate can
+fail. It does not prove the gate is *measuring* rather than guessing.
+The control is the other half, and it is the half nobody remembers.
+
+### The corollary, which is about reviewing
+
+Reproduction with the **same instrument** is one measurement twice.
+Reproduction with a **different instrument** is two. Stage 2's reviewer
+did both: it re-ran the implementer's drive (one measurement, twice) and
+then wrote its own — state pseudo-classes stripped, `@media` entered,
+30,162 comparisons — which is genuinely independent and is what makes
+the final number trustworthy.
+
+When a review's job is to confirm a measurement, build a second
+instrument rather than running the first one again.
+
+### And the honest number was the useful one
+
+The calibrated drive reports **80 elements on two pages**, traceable to
+a Vietnamese copy redraft in the same branch, with the markup flip
+itself at zero. That is a result someone can act on. "Zero differences"
+was not, because it could not be told apart from a broken harness.
