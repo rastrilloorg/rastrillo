@@ -46,6 +46,23 @@ import (
 // A 2026-08-28 editorial rewrite (terser prose, same facts and API
 // names) brought the file from 17,998 back to ~15,100, so the budget
 // holds real headroom again for the design-system programme's keys.
+//
+// Held at 18_000 on 2026-08-31, when the file had grown back to 17,815
+// and a raise was on the table. It bought headroom by delegation
+// instead: five blocks whose detail was already carried by a docs page
+// (date/time kinds -> forms.md, the password plugin -> passwords.md,
+// the jobs handlers -> jobs.md, doctor's exit codes -> cli.md, the
+// locale list and switcher -> localization.md) were cut to one
+// sentence plus their link, 17,815 -> 16,196. Prose was deliberately
+// NOT re-squeezed: the 2026-08-28 pass already did that, and the
+// compression round before it withdrew four of eleven proposed cuts on
+// review for gutting meaning. The rule that made this safe is worth
+// keeping: a block stays inline if getting it wrong is silent (the
+// zero-time reads, keys-not-sentences, RenderFragment nesting the
+// layout, the noscript refresh loop), and moves to its page if you
+// would look it up anyway. Sixteen of the twenty-four docs pages are
+// still unlinked from SKILL.md, so this lever has more left in it than
+// the budget does. Trim first, still.
 const skillBudget = 18_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than

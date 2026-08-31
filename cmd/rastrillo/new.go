@@ -288,6 +288,17 @@ require (
 	github.com/go-chi/chi/v5 %s
 	gorm.io/gorm %s
 )
+
+// The CLI this app's own gate runs: make migration-check, and
+// rastrillo generate once the app declares manifest resources. It is
+// declared as a tool so that go mod tidy records the CLI's build
+// dependencies in go.sum alongside the app's own. Nothing an app
+// imports reaches, say, the TOML parser behind manifest, so without
+// this line tidy prunes it and the first make ci on a clean scaffold
+// dies with "missing go.sum entry for github.com/BurntSushi/toml" —
+// a dependency that is real at go run time and invisible at tidy
+// time. Deleting this line breaks the gate, not the app.
+tool github.com/carlosframework/rastrillo/cmd/rastrillo
 `
 
 const mainTemplate = `// Command %[1]s wires the app: resolve the platform's activation
@@ -1079,6 +1090,10 @@ fmt-check:
 # after go mod download. A bare "rastrillo migration check" failed a
 # fresh clone's very first CI run with "make: rastrillo: Command not
 # found", and nothing in the scaffold said what to install.
+#
+# What makes the go run resolve is the tool directive at the foot of
+# go.mod — it is what keeps the CLI's own dependencies in go.sum. See
+# the comment there before removing it.
 migration-check:
 	go run github.com/carlosframework/rastrillo/cmd/rastrillo migration check
 

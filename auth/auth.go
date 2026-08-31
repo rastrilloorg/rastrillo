@@ -105,6 +105,37 @@ type Config struct {
 	// this hook.
 	Authorize func(address string) bool
 
+	// SubjectFor decides what a minted session is keyed by. Nil — the
+	// default — keys it by the verified address, which is what every
+	// app wanting readable session rows should keep.
+	//
+	// It exists for the app that must not store a readable address at
+	// rest: return an opaque person ref (an HMAC of the address under
+	// a pepper the app holds, a row id from its own directory) and the
+	// address stops reaching the sessions table, and with it every
+	// table keyed off the subject — passkey credentials, challenges,
+	// pending enrollments and recovery codes all inherit whatever this
+	// returns. A gate that greps the raw database file is the point:
+	// SQLite does not zero deleted pages and a replicated WAL ships
+	// frames continuously, so "write it and clear it later" reaches
+	// the bucket regardless. The address must never be written.
+	//
+	// Two consequences worth knowing before setting it. Identity
+	// (auth.From, sessions.Current) carries this value in its Address
+	// field, so an app that remaps has no readable address at hand
+	// from the session alone — that is the trade being made. And
+	// Authorize is unaffected: admission answers a question about an
+	// address, and it still receives the verified address itself.
+	//
+	// It does not make the plugin server-blind on its own. The link
+	// store (auth_links) still holds the address at rest between
+	// sending a magic link and its click, because the link must
+	// survive a restart; sealing that store is separate work.
+	//
+	// An error refuses the sign-in — no session is minted and no
+	// address is written as a fallback.
+	SubjectFor func(address string) (string, error)
+
 	// SecondFactor is the sign-in-time 2FA seam: called at the exact
 	// point a verified first factor would mint the session, with the
 	// session that WOULD be minted. done=true means the hook took over
