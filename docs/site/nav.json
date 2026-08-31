@@ -31,7 +31,7 @@
         {
           "slug": "migrations",
           "label": "Migrations",
-          "blurb": "Numbered, applied once at boot, ledgered \u2014 and the two rules that cost data if you get them wrong."
+          "blurb": "Numbered, applied once at boot, ledgered — and the two rules that cost data if you get them wrong."
         },
         {
           "slug": "scoping",
@@ -72,6 +72,11 @@
           "slug": "templates",
           "label": "Templates & UI",
           "blurb": "One template per page, twenty-four partials, and the tokens stylesheet you own."
+        },
+        {
+          "slug": "design-system",
+          "label": "Your app's design system",
+          "blurb": "Customising what the framework ships, where your own components go, and upgrading without drift."
         },
         {
           "slug": "icons",
@@ -201,7 +206,7 @@
         {
           "slug": "reference/migrate",
           "label": "migrate",
-          "blurb": "Ordered, namespaced, ledgered migrations \u2014 and why there is no Down."
+          "blurb": "Ordered, namespaced, ledgered migrations — and why there is no Down."
         },
         {
           "slug": "reference/passkey",
