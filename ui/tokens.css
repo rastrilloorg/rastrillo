@@ -1559,10 +1559,21 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-console .rst-shell__menu[open] + .rst-shell__tail,
   [rst-shell-console] [rst-shell-menu][open] + [rst-shell-tail] { display: contents; }
   .rst-shell-console .rst-shell__tail > .rst-shell__account, [rst-shell-console] [rst-shell-tail] > [rst-shell-account] { margin-inline-start: auto; }
-  .rst-shell-console > .rst-shell__rail,
-  [rst-shell-console] > [rst-shell-rail],
+  .rst-shell-console > .rst-shell__rail, [rst-shell-console] > [rst-shell-rail] { border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; grid-area: rail; }
+  /* The undo is a rule of ITS OWN, and this is the whole reason: a
+     selector list is invalid as a whole if any selector in it is
+     invalid, so an engine that cannot parse :has() drops every
+     declaration in the list — including grid-area: rail, which has
+     nothing to do with :has() and which this shell's wide layout is
+     built on. Co-listed, the four selectors above cost the legacy
+     engine its declared frame and left the rail in the right cell only
+     because grid auto-placement happened to put it there. Split, the
+     plain pair always applies and only the fight over `display` — the
+     one declaration the narrow hide rule contests — rides on :has().
+     That is the failure direction this shell chose, actually chosen
+     rather than nearly chosen. */
   .rst-shell-console:has(.rst-shell__menu:not([open])) > .rst-shell__rail,
-  [rst-shell-console]:has([rst-shell-menu]:not([open])) > [rst-shell-rail] { border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; grid-area: rail; }
+  [rst-shell-console]:has([rst-shell-menu]:not([open])) > [rst-shell-rail] { display: flex; }
   /* THE VIEWPORT. The rail itself is a grid item stretched to the row,
      which can be taller than the window — that is what makes the
      background reach the foot of a long page. So the thing that has to

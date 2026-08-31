@@ -503,6 +503,18 @@ func TestTheConsoleRailFitsTheViewport(t *testing.T) {
 	}
 	// 1. The border box against the window. This is the regression's own
 	//    shape, and it is a claim about the box the window measures.
+	//
+	//    Its caveat, recorded where it lives rather than in a report
+	//    nobody greps: in THIS shell the padding is on the rail, not on
+	//    the nav, so a content-box mutation alone does not inflate the
+	//    nav's border box and this leg does not fire on it — leg 2 is
+	//    what catches that one, by 16px. The leg is kept for three
+	//    reasons: it fires the day somebody gives the nav padding of its
+	//    own, which is the exact edit that shipped the regression the
+	//    first time; it is the reading the control below pins to the
+	//    pixel (452 = 420 + 32), which is what proves the height
+	//    measurement is live rather than inert; and its message names
+	//    the fix, which leg 2's cannot.
 	if top.NavHeight > top.Viewport {
 		t.Errorf("the rail's nav is %dpx in a %dpx window: %dpx taller than the viewport it is sized against, so whatever is at its foot is under the fold at every scroll position. box-sizing: border-box on the capped box is the fix",
 			top.NavHeight, top.Viewport, top.NavHeight-top.Viewport)

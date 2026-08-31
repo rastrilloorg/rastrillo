@@ -1960,9 +1960,19 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		"column":  {"lang", "dir", "title", "head", "content"},
 		"topbar":  {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
 		"sidebar": {"lang", "dir", "title", "head", "brand", "nav", "locale", "account", "content"},
-		// console offers topbar's set exactly, in topbar's order: the
-		// two shells are interchangeable for a screen, which is the
-		// whole claim of a fourth shell that is the other two at once.
+		// console offers topbar's SET exactly — every block a screen
+		// can override is the same, which is what makes the two shells
+		// interchangeable for a screen and is the whole claim of a
+		// fourth shell that is the other two at once.
+		//
+		// The ORDER differs, and must: this list is source order, and
+		// console's nav lives in the rail, which comes after the bar.
+		// topbar reads brand, nav, account, locale; console reads
+		// brand, account, locale, nav. Do not "fix" that to match
+		// topbar — moving nav up the list means moving it into the
+		// bar, which is the sidebar's rail deleted and this shell with
+		// it. Order is irrelevant to the contract anyway: a block is
+		// found by name.
 		"console": {"lang", "dir", "title", "head", "brand", "account", "locale", "nav", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)

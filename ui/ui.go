@@ -223,7 +223,8 @@
 // <details rst-shell-chrome> — no JavaScript. rst-shell-console is
 // both at once: the bar's tail and the rail collapse behind the ONE
 // <details rst-shell-menu>, which gates its sibling tail with + and
-// the rail with :has(). All three carry rst-skip, the skip link. The
+// the rail with :has(). All four carry rst-skip, the skip link —
+// column included. The
 // canonical markup is Styleguide's "shell-topbar" and "shell-sidebar",
 // and an app does not usually write any of it by hand: Layout ships
 // the four shells as whole templates and rastrillo new writes the

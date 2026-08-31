@@ -2344,7 +2344,7 @@ const shellsBody = `{{define "ds-body-shells"}}
 
 // shellTemplate fills every block the four shells leave open. The
 // blocks a given shell does not declare are simply never executed, so
-// one override set covers all three.
+// one override set covers all four.
 //
 // head is the newest of them and the reason it exists: this demo is a
 // real page a reader can open in a tab of its own, and a reader who

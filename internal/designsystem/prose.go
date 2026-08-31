@@ -289,7 +289,7 @@ var prose = map[string]map[string]string{
 		`ar`:      `الجزء الذي يُستقصى من مهمة تعمل في الخلفية. لا تُكتب السمة data-poll إلا أثناء تشغيل المهمة، وحذفها هو طريقة إيقاف الاستقصاء.`,
 	},
 	`A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. Below 800px one disclosure folds both. No JavaScript.`: {
-		`ga`:      `Barra trasna an bharr agus ráille nascleanúna síos an taobh in éineacht, an cruth atá ar fhormhór na gconsól riaracháin. Faoi bhun 800px fillean nochtadh amháin an dá cheann. Gan JavaScript.`,
+		`ga`:      `Barra trasna an bharr agus ráille nascleanúna síos an taobh in éineacht, an cruth atá ar fhormhór na gconsól riaracháin. Faoi bhun 800px filleann nochtadh amháin an dá cheann. Gan JavaScript.`,
 		`zh-Hans`: `顶部一条栏，侧边一条导航轨，两者同时在场——大多数管理控制台就是这个形状。在 800px 以下，一个展开块把两者一起收起。没有 JavaScript。`,
 		`es`:      `Una barra arriba y un raíl de navegación al costado a la vez, la forma que tiene la mayoría de las consolas de administración. Por debajo de 800px un solo desplegable pliega los dos. Sin JavaScript.`,
 		`hi`:      `ऊपर एक पट्टी और बग़ल में एक नेविगेशन रेल, दोनों एक साथ — अधिकांश प्रशासन कंसोल इसी आकार के होते हैं। 800px से नीचे एक ही डिस्क्लोज़र दोनों को समेट देता है। कोई JavaScript नहीं।`,

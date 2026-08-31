@@ -658,11 +658,23 @@ Chrome 109, Safari 16.4, Firefox 120. On Chrome and Safari `lh` is the
 newer of the two, which is why the phantom label that reserves a line in
 a field row writes a `calc()` fallback ahead of its `1lh`; on Firefox
 `:has()` arrived last, so no engine there ever sees that fallback.
-Neither degrades badly — a `:has()` selector an engine cannot parse
-simply does not apply — so take the highest of all three and the floor
+Neither degrades badly, so take the highest of all three and the floor
 for `tokens.css` plus a shipped theme is Chrome 123, Safari 17.5,
 Firefox 121: `light-dark()` sets it everywhere except Firefox, where
 `:has()` does.
+
+Below that floor, be precise about what "does not apply" means, because
+it is more than the selector. A selector list is invalid **as a whole**
+if any selector in it is invalid, so an engine that cannot parse
+`:has()` drops the entire rule — every declaration in it, including the
+ones that had nothing to do with `:has()`, and including the ones the
+other selectors in the list were carrying. Keep a `:has()` selector in a
+rule of its own, or wrap it in `:is()`, whose list is forgiving. The
+console shell's rail does the first: one rule states the frame and
+always applies, and a second, `:has()`-only rule fights for the single
+declaration that the narrow layout contests. That is what makes its
+degradation a choice — the rail stays visible, the wide frame is
+untouched — rather than a coincidence.
 
 One caveat worth knowing: `light-dark()` is a colour function, so it may
 only stand where a colour is expected. A shadow token wraps its colour
