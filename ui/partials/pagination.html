@@ -4,11 +4,11 @@
      The current page carries aria-current="page" as well as a filled
      chip and a heavier weight: three signals, never colour alone.
 
-     A disabled item is a plain span with a class, not aria-disabled:
-     that attribute belongs on elements with an interactive role, and a
-     bare span has none. The class is what tokens.css styles (dashed
-     border, faint text) — friction log F10 in examples/blog is what
-     happens when the two drift apart.
+     A disabled item is a plain span carrying rst-pagination-disabled,
+     never aria-disabled: that attribute belongs on elements with an
+     interactive role, and a bare span has none. The attribute is what
+     tokens.css styles (dashed border, faint text) — friction log F10 in
+     examples/blog is what happens when the two drift apart.
 
      Keys:
        Items  slice, optional — one entry per control. Each has:

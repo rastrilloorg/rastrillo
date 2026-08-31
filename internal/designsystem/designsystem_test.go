@@ -338,7 +338,7 @@ func TestEveryPartialAppearsAcrossThePages(t *testing.T) {
 	}
 }
 
-// Every class idiom ui.Styleguide ships is rendered somewhere in each
+// Every markup idiom ui.Styleguide ships is rendered somewhere in each
 // gallery, same marker mechanism and the same union.
 func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {
 	files := render(t)
@@ -355,14 +355,14 @@ func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {
 				switch found[name] {
 				case 1:
 				case 0:
-					t.Errorf("%s: class idiom %q is on none of the %d pages (no marker comment anywhere in the directory)", where, name, len(pageKinds()))
+					t.Errorf("%s: markup idiom %q is on none of the %d pages (no marker comment anywhere in the directory)", where, name, len(pageKinds()))
 				default:
-					t.Errorf("%s: class idiom %q is marked on %d pages; a section is being rendered twice", where, name, found[name])
+					t.Errorf("%s: markup idiom %q is marked on %d pages; a section is being rendered twice", where, name, found[name])
 				}
 			}
 			for name := range found {
 				if !slices.Contains(want, name) {
-					t.Errorf("%s: a page marks class idiom %q, which ui.Styleguide does not ship", where, name)
+					t.Errorf("%s: a page marks markup idiom %q, which ui.Styleguide does not ship", where, name)
 				}
 			}
 		}

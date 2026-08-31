@@ -251,6 +251,12 @@ selector: `rst-form-foot`, the action row `form-foot` emits, and
 block-start margin — which is not rhythm but the extra air separating a
 closing action row from the last question above it.
 
+The two swapped names in the release that made the vocabulary
+attributes. `rst-form-foot` was the save bar and `rst-form__foot` the
+partial's row; flattened, both wanted one attribute, so the partial's
+row took the name the partial is called and the save bar became
+`rst-form-bar`. `rastrillo markup --fix` applies the rename.
+
 If you mean to override it, the shipped selector is
 `[rst-form] > *:not([rst-form-foot], [rst-form-bar])`, and a `:not()`
 takes the specificity of its most specific argument — so that is

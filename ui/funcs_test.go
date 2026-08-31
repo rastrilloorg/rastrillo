@@ -598,7 +598,7 @@ func TestListBarSearchRendersTheClearLink(t *testing.T) {
 	if err := tmpl.ExecuteTemplate(&without, "list-bar-search", map[string]any{"Action": "/posts"}); err != nil {
 		t.Fatalf("rendering the empty search form: %v", err)
 	}
-	if strings.Contains(without.String(), "rst-search__clear") {
+	if strings.Contains(without.String(), "rst-search-clear") {
 		t.Errorf("an empty search offers a clear link:\n%s", without.String())
 	}
 

@@ -54,7 +54,25 @@ func TestNoClassSpellingSurvives(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		exempt := false
 		for i, line := range strings.Split(string(src), "\n") {
+			// A narrow, greppable exemption for a block whose subject IS
+			// the old spelling — a fixture that has to be written in it,
+			// inside a file that otherwise must not be. Whole-file
+			// exemptions are the wrong tool for that: a browser drive is
+			// a thousand lines of markup and four of them are the
+			// fixture.
+			if strings.Contains(line, oldSpellingBegin) {
+				exempt = true
+				continue
+			}
+			if strings.Contains(line, oldSpellingEnd) {
+				exempt = false
+				continue
+			}
+			if exempt {
+				continue
+			}
 			for _, m := range classAttr.FindAllStringSubmatch(line, -1) {
 				for _, token := range strings.Fields(m[1]) {
 					if !strings.HasPrefix(token, "rst-") {
@@ -79,6 +97,13 @@ func TestNoClassSpellingSurvives(t *testing.T) {
 		t.Logf("%d call site(s) left in the old spelling; a corpus in two spellings teaches both", len(found))
 	}
 }
+
+// The markers a block whose subject is the old spelling is fenced
+// with. Split so this file's own gate does not read them as a fence.
+const (
+	oldSpellingBegin = "markup-spelling:" + " old-spelling begin"
+	oldSpellingEnd   = "markup-spelling:" + " old-spelling end"
+)
 
 // spellingExempt names the files that must keep class="rst-…" in them,
 // and why. It is short on purpose: each entry is a place whose subject

@@ -75,7 +75,7 @@ func TestShimContract(t *testing.T) {
 	}
 	// Shell chrome and the toggle-block stay out of it: neither is a
 	// menu, and dismissing them on an outside click would fight the user.
-	for _, bad := range []string{"rst-shell__chrome", "rst-tblock"} {
+	for _, bad := range []string{"rst-shell-chrome", "rst-tblock"} {
 		if strings.Contains(js, bad) {
 			t.Errorf("shim reaches for %q; light dismiss covers menus only", bad)
 		}

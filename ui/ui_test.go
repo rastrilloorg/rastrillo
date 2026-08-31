@@ -195,7 +195,7 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 // with no matching disable under @media (prefers-reduced-motion: reduce),
 // found pre-existing at the time this gate was added. Task 5 only adds
 // the gate; it does not silently fix CSS it did not write. Empty today —
-// every transition tokens.css declares (rst-caret, rst-switch__track and
+// every transition tokens.css declares (rst-caret, rst-switch-track and
 // its ::after, rst-tip::after) already has a reduce-block "transition:
 // none" counterpart, so nothing needs listing. If a future change adds a
 // transition without one, this test fails; add the selector here only
@@ -434,7 +434,7 @@ func TestPageHeaderMinimalFixture(t *testing.T) {
 	if strings.Contains(got, "<a ") {
 		t.Errorf("no action was supplied, so no link should render: %s", got)
 	}
-	if strings.Contains(got, "rst-page-header__sub") {
+	if strings.Contains(got, "rst-page-header-sub") {
 		t.Errorf("no Sub was supplied, so no subhead should render: %s", got)
 	}
 }
@@ -482,7 +482,7 @@ func TestEmptyStateMinimalFixture(t *testing.T) {
 	if strings.Contains(got, "<form") || strings.Contains(got, "<a ") {
 		t.Errorf("no CTA was supplied, so none should render: %s", got)
 	}
-	if strings.Contains(got, "rst-empty__title") {
+	if strings.Contains(got, "rst-empty-title") {
 		t.Errorf("no Title was supplied, so no heading should render: %s", got)
 	}
 }
@@ -698,10 +698,10 @@ func TestListRowActionMinimalFixture(t *testing.T) {
 	if !strings.Contains(got, `<a href="/posts/1">Release notes, August</a>`) {
 		t.Errorf("missing primary link: %s", got)
 	}
-	if strings.Contains(got, "rst-row__lead") || strings.Contains(got, "rst-row__action") {
+	if strings.Contains(got, "rst-row-lead") || strings.Contains(got, "rst-row-action") {
 		t.Errorf("optional parts rendered without data: %s", got)
 	}
-	if strings.Contains(got, "rst-row__sub") {
+	if strings.Contains(got, "rst-row-sub") {
 		t.Errorf("no Sub was supplied, so no meta line should render: %s", got)
 	}
 }
@@ -1301,37 +1301,48 @@ func TestDisabledPaginationChipIsStyled(t *testing.T) {
 	}
 }
 
-// Same drift check as TestDisabledPaginationChipIsStyled, extended to the
-// classes the five display partials added in this batch emit: every class
-// a partial can produce must have a styled selector in tokens.css, so
-// nothing new ships unstyled.
+// Same drift check as TestDisabledPaginationChipIsStyled, extended to
+// what the five display partials emit: every name a partial can produce
+// must have a styled selector in tokens.css, so nothing ships unstyled.
+//
+// Written in the attribute spelling, which is what the partials emit.
+// It used to name the class half of each pair, and that half is on its
+// way out — the check would have kept passing against selectors no
+// partial can reach, and would then have failed at stage 3 for a reason
+// that had nothing to do with the partials.
 func TestDisplayPartialClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
-	for _, class := range []string{
-		"rst-badge", "rst-badge--warning", "rst-meter", "rst-meter__bar", "rst-meter__num",
-		"rst-person", "rst-person__av", "rst-callout", "rst-callout__ic", "rst-callout__body",
-		"rst-detail", "rst-mono",
+	for _, name := range []string{
+		"rst-badge", "rst-badge~=warning", "rst-meter", "rst-meter-bar", "rst-meter-num",
+		"rst-person", "rst-person-av", "rst-callout", "rst-callout-ic", "rst-callout-body",
+		"rst-detail",
 	} {
-		if !strings.Contains(css, "."+class) {
-			t.Errorf("tokens.css has no selector for %q", class)
+		if !tokensStyle(css, name) {
+			t.Errorf("tokens.css has no selector for %q", name)
 		}
+	}
+	// rst-mono is a utility: it keeps the class spelling, so it is
+	// checked as one. If it ever gains an attribute form, the grammar
+	// changed and markup.Utilities is the place that has to say so.
+	if !strings.Contains(css, ".rst-mono") {
+		t.Error("tokens.css has no .rst-mono rule")
 	}
 }
 
-// Same drift check again, for the form family this task adds: field,
-// field-select, field-textarea, field-check and choice-field between
-// them can emit every one of these classes.
+// Same drift check again, for the form family: field, field-select,
+// field-textarea, field-check and choice-field between them can emit
+// every one of these, and every one is spelled as the partial spells it.
 func TestFormPartialClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
-	for _, class := range []string{
-		"rst-field", "rst-field__label", "rst-field__hint", "rst-field__help", "rst-field__error",
-		"rst-input", "rst-input--short",
-		"rst-switch", "rst-switch__track",
-		"rst-choice", "rst-choice__cards", "rst-choice__title", "rst-choice__desc",
+	for _, name := range []string{
+		"rst-field", "rst-field-label", "rst-field-hint", "rst-field-help", "rst-field-error",
+		"rst-input", "rst-input~=short",
+		"rst-switch", "rst-switch-track",
+		"rst-choice", "rst-choice-cards", "rst-choice-title", "rst-choice-desc",
 		"rst-seg-tabs",
 	} {
-		if !strings.Contains(css, "."+class) {
-			t.Errorf("tokens.css has no selector for %q", class)
+		if !tokensStyle(css, name) {
+			t.Errorf("tokens.css has no selector for %q", name)
 		}
 	}
 }
@@ -1806,7 +1817,7 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 		t.Errorf("the topbar shell's account dropdown is outside the exclusivity group:\n%s", layout)
 	}
 
-	// The class idioms carry it in their canonical samples, which is the
+	// The markup idioms carry it in their canonical samples, which is the
 	// only place an app copying markup by hand will read it from.
 	for _, name := range []string{"dropdown", "list-grid", "shell-topbar"} {
 		if !strings.Contains(Styleguide()[name], group) {
@@ -2127,7 +2138,7 @@ func TestFieldTextMinimalFixture(t *testing.T) {
 	if !strings.Contains(got, `<input rst-input id="q" name="q" type="text">`) {
 		t.Errorf("minimal input wrong: %s", got)
 	}
-	for _, absent := range []string{"aria-describedby", "aria-invalid", "required", "value=", "rst-field__hint", "rst-field__error"} {
+	for _, absent := range []string{"aria-describedby", "aria-invalid", "required", "value=", "rst-field-hint", "rst-field-error"} {
 		if strings.Contains(got, absent) {
 			t.Errorf("%q rendered without its key: %s", absent, got)
 		}
@@ -2679,7 +2690,7 @@ func TestErrorPageReferenceLine(t *testing.T) {
 	if strings.Contains(got, "{ref}") {
 		t.Errorf("the {ref} placeholder survived interpolation:\n%s", got)
 	}
-	if none := render(t, "error-page", map[string]any{"Status": 500}); strings.Contains(none, "rst-error__ref") {
+	if none := render(t, "error-page", map[string]any{"Status": 500}); strings.Contains(none, "rst-error-ref") {
 		t.Errorf("a page with no Ref still rendered the reference line:\n%s", none)
 	}
 }
@@ -2713,12 +2724,12 @@ func TestErrorPageBackIsOptionalAndNeverJavascript(t *testing.T) {
 // error page emits has a rule in tokens.css.
 func TestErrorPageClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
-	for _, class := range []string{
-		"rst-error", "rst-error__status", "rst-error__title",
-		"rst-error__body", "rst-error__cta", "rst-error__ref",
+	for _, name := range []string{
+		"rst-error", "rst-error-status", "rst-error-title",
+		"rst-error-body", "rst-error-cta", "rst-error-ref",
 	} {
-		if !strings.Contains(css, "."+class) {
-			t.Errorf("tokens.css has no selector for %q", class)
+		if !tokensStyle(css, name) {
+			t.Errorf("tokens.css has no selector for %q", name)
 		}
 	}
 }
@@ -2896,7 +2907,7 @@ func TestDateFieldsWireHintAndError(t *testing.T) {
 			t.Errorf("%s: error-only describedby is wrong:\n%s", partial, errOnly)
 		}
 		bare := render(t, partial, map[string]any{"Name": "when", "Label": "When"})
-		for _, gone := range []string{"aria-describedby", "aria-invalid", "rst-field__hint", "rst-field__error", " required", " min=", " max=", " value="} {
+		for _, gone := range []string{"aria-describedby", "aria-invalid", "rst-field-hint", "rst-field-error", " required", " min=", " max=", " value="} {
 			if strings.Contains(bare, gone) {
 				t.Errorf("%s emitted %q with nothing to put in it:\n%s", partial, gone, bare)
 			}

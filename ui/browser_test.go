@@ -904,6 +904,10 @@ func menuPage(t *testing.T) http.Handler {
 	// markup is still classes; its shim is this one. If MENUS only
 	// matched attributes, this page's menu would stop light-dismissing
 	// and nothing in this repository would ever have noticed.
+	// markup-spelling: old-spelling begin — the fixture below is markup
+	// in the spelling this repository retired, on purpose. It is what an
+	// app looks like mid-upgrade, and nothing else in the suite is
+	// written that way.
 	mux.HandleFunc("GET /old-spelling", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
@@ -919,6 +923,7 @@ func menuPage(t *testing.T) http.Handler {
 			`<main id="main"><p id="elsewhere">Nothing here.</p></main>`+
 			`</body></html>`)
 	})
+	// markup-spelling: old-spelling end
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+

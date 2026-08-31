@@ -352,7 +352,7 @@ func TestListHTMLDropdownMatchesPartial(t *testing.T) {
 	re := regexp.MustCompile(`(?s)<details rst-dropdown[^>]*>.*?</details>`)
 	got := re.FindString(buf.String())
 	if got == "" {
-		t.Fatalf("no <details class=%q> block found in rendered content:\n%s", "rst-dropdown", buf.String())
+		t.Fatalf("no <details %s> block found in rendered content:\n%s", "rst-dropdown", buf.String())
 	}
 
 	partialData := map[string]any{

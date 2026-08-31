@@ -80,13 +80,13 @@
 // dict-built map — and takes on keeping that struct in step with the
 // partial.
 //
-// # Class idioms
+// # Markup idioms
 //
 // Not every reusable shape can be a partial: a section box or a grid row
 // wraps a caller-chosen, arbitrary body, and a Go template partial can
 // only wrap data it already knows the shape of. For these, tokens.css
-// ships the class vocabulary and this doc shows the markup; the app
-// writes the HTML itself. The canonical, exercised versions of every
+// ships the vocabulary and this doc shows the markup; the app writes
+// the HTML itself. The canonical, exercised versions of every
 // sample below are returned by Styleguide, rendered by
 // TestStyleguideSamplesRender — copy from there, not from here, if the
 // two ever disagree.

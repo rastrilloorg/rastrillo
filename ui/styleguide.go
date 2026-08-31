@@ -48,13 +48,16 @@ var styleguideSamples = map[string]string{
 </details>
 <span rst-ftok><span rst-ftok-k>Paid</span><a href="/orders" aria-label="Remove filter Paid">✕</a></span>`,
 	// form-layout demonstrates the attributes tokens.css ships for form
-	// rhythm and the save bar (rst-form-flow, rst-field-row, rst-grow,
-	// rst-form-foot, rst-form-actions) — no partial emits these, since
-	// they wrap a caller-composed run of "field" partials rather than a
-	// single data shape. Two adjacent [rst-field] divs exercise the
-	// rst-form-flow spacing rule; the row's grown field exercises
-	// rst-grow. The cancel/save pair reuses the existing button classes
-	// (Task 3's ambiguity resolution: no new rst-btn variant needed).
+	// rhythm and the sticky save bar (rst-form-flow, rst-field-row,
+	// rst-grow, rst-form-bar, rst-form-bar-note, rst-form-actions) — no
+	// partial emits any of them, since they wrap a caller-composed run
+	// of "field" partials rather than a single data shape. The save bar
+	// is rst-form-bar and not rst-form-foot: form-foot the partial
+	// emits rst-form-foot, the plain closing row, and one attribute
+	// cannot carry two rules. Two adjacent [rst-field] divs exercise
+	// the rst-form-flow spacing rule; the row's grown field exercises
+	// rst-grow. The cancel/save pair reuses the existing buttons (Task
+	// 3's ambiguity resolution: no new rst-btn variant needed).
 	"form-layout": `<form rst-form-flow method="post" action="/settings">
   <div rst-field>
     <label rst-field-label for="name">Name</label>

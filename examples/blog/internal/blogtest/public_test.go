@@ -35,7 +35,7 @@ func TestIndexEmptyState(t *testing.T) {
 	wantContains(t, body, `<div rst-empty>`)
 	wantContains(t, body, "Nothing published yet. Check back soon.")
 	// A reader cannot act on an empty blog, so no call to action.
-	wantNotContains(t, body, "rst-empty__cta")
+	wantNotContains(t, body, "rst-empty-cta")
 }
 
 func TestIndexSecondPageShowsTheEleventhPost(t *testing.T) {

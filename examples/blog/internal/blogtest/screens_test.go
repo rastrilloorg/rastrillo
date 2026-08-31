@@ -188,14 +188,20 @@ func TestBlogCSSIsSelfContained(t *testing.T) {
 	}
 }
 
-// blog.css never styles a library class: an example that shipped
+// blog.css never styles a library component: an example that shipped
 // [rst-row] { padding: … } would be teaching every reader to fork the
-// design system on day one. Comments are stripped first, because the
-// file's own header explains the rule by naming the prefix.
+// design system on day one. Both spellings, because that is the case
+// the comment has always named and the one the markup flip made
+// reachable — a check for ".rst-" alone stopped covering its own
+// example the day the vocabulary became attributes. Comments are
+// stripped first, because the file's own header explains the rule by
+// naming the prefix.
 func TestBlogCSSStylesNoLibraryClass(t *testing.T) {
 	css := regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(readBlogCSS(t), "")
-	if strings.Contains(css, ".rst-") {
-		t.Errorf("blog.css contains a .rst- selector:\n%s", css)
+	for _, spelling := range []string{".rst-", "[rst-"} {
+		if strings.Contains(css, spelling) {
+			t.Errorf("blog.css contains a %s selector:\n%s", spelling, css)
+		}
 	}
 }
 

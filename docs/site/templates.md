@@ -562,9 +562,9 @@ you meant to, rather than at an upgrade. Name the file in that test's
 and [The CLI](/docs/cli).
 
 Two stylesheets, not one. `tokens.css` is structure — layout, spacing,
-the type scale, and every `rst-` component class. A theme, written
-beside it as `static/theme.css`, is the colour, the type family and the
-shape those classes paint themselves with. The split is what makes a
+the type scale, and every `rst-` component. A theme, written beside it
+as `static/theme.css`, is the colour, the type family and the shape
+those components paint themselves with. The split is what makes a
 restyle cheap: swapping one file changes how everything looks, and
 nothing about how anything is laid out.
 
@@ -687,7 +687,7 @@ edit a colour, edit the row: nothing else will.
 
 Swapping in a theme of your own is replacing `static/theme.css`. The
 only contract is the token set: declare every name `day` declares, and
-every component class already knows what to do with it. The scaffold's
+every component already knows what to do with it. The scaffold's
 `vendored_test.go` pins `theme.css` to the library copy exactly as it
 pins `tokens.css`, so name it in `vendoredIsMine` when the edit is
 deliberate. `rastrillo doctor` never diffs a theme it cannot identify —
@@ -743,7 +743,7 @@ rst-dropdown rst-shell-account>` and its summary, so your
 bare slot in the rail, and you supply the whole thing. Move a block
 between shells and this is the edit you will need.
 
-The chrome classes live in `tokens.css` like every other idiom:
+The chrome attributes live in `tokens.css` like every other idiom:
 `rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`,
 `rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the
 topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
@@ -771,7 +771,7 @@ with a child combinator:
 [rst-shell-bar] > [rst-shell-nav] { … }
 ```
 
-use a descendant selector, or just target the class:
+use a descendant selector, or target the attribute on its own:
 
 ```css
 [rst-shell-bar] [rst-shell-nav] { … }
@@ -790,7 +790,7 @@ The `locale` block is where the language switcher goes, and
 
 It renders nothing when `Items` is empty, so a one-locale app can wire
 it and forget it. It sits on `rst-dropdown rst-locale` — the ordinary
-dropdown vocabulary, not a shell-specific class — so it looks and
+dropdown vocabulary, not a shell-specific name — so it looks and
 behaves the same in either shell. See
 [Localization](/docs/localization).
 

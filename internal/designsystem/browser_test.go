@@ -946,7 +946,7 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 
 	// Every page that frames anything, because previewHeights is one
 	// table over the whole tree: the partial samples are spread over
-	// the five component pages, the class idioms are on primitives.html
+	// the five component pages, the markup idioms are on primitives.html
 	// and the three shells on shells.html, and a height measured on one
 	// of them says nothing about the others.
 	// The floor per page is derived, not guessed: every partial in a

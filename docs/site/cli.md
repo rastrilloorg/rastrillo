@@ -278,19 +278,56 @@ rst-btn--primary"` becomes `rst-btn="primary"`, and `data-tone` becomes
 
 It reads templates, Go source (markup in a string literal or a doc
 comment), Markdown, JavaScript and CSS, and it is the same tool the
-framework flipped itself with.
+framework flipped itself with. It skips `.git`, `node_modules`,
+`vendor`, `.design-system` and `.superpowers`.
 
 | Flag | Purpose |
 |---|---|
-| `--fix` | Write the rewrite. Without it, the command reports what would change and exits 3 |
+| `--fix` | Write the rewrite. Without it, the command reports what would change and writes nothing |
 
-Run it after upgrading the module, and **re-copy `tokens.css` first** —
-`rastrillo doctor --fix`. An app on the frozen class-only stylesheet
-whose partials have started emitting attributes renders unstyled, and
-that is the one failure this staging exists to avoid.
+| Exit | Meaning |
+|---|---|
+| `0` | Nothing to do, or `--fix` finished with nothing left over |
+| `2` | Usage |
+| `3` | There is work here: a rewrite waiting for `--fix`, or a class attribute only you can take apart |
+
+Do the upgrade in one sitting, in this order:
+
+```sh
+rastrillo doctor --fix     # 1. re-copy tokens.css
+rastrillo markup           # 2. read what would change
+rastrillo markup --fix     # 3. write it
+go test ./...
+```
+
+Step 1 is not optional. `tokens.css` is copied into your `static/` at
+scaffold time and frozen there while the partials it styles keep
+upgrading, so an app on the old, class-only stylesheet whose partials
+have started emitting attributes renders unstyled. That is the one
+failure this staged migration exists to avoid.
 
 Rewriting is idempotent, so running it twice, or over a tree half of
 which is already done, changes nothing the second time.
+
+### One name changed meaning
+
+`rst-form-foot` used to be the sticky save bar you wrote by hand, and
+`rst-form__foot` the plain closing row the `form-foot` partial emits.
+BEM's `__` flattens to a hyphen, so both wanted the same attribute, and
+one attribute cannot carry two rules. The partial's row took the name
+the partial is called:
+
+| Was | Is |
+|---|---|
+| `class="rst-form__foot"` — the partial's closing row | `rst-form-foot` |
+| `class="rst-form-foot"` — your sticky save bar | `rst-form-bar` |
+| `class="rst-form-foot__note"` | `rst-form-bar-note` |
+
+**This is the breaking change in the release.** If you hand-wrote a save
+bar and do not run the codemod, your `class="rst-form-foot"` now means
+the plain row: no border, no background, and it no longer sticks.
+`rastrillo markup --fix` applies the rename, and prints a reminder on
+every run that changes anything.
 
 ### Two things it will not do
 
@@ -300,17 +337,25 @@ are copies of the library's, and `doctor` is what refreshes them;
 rewriting one here would make your copy differ from the library's for
 good.
 
-It leaves alone any class list whose shape it cannot take apart, and
-prints it for you to read. A wrong guess renders unstyled and looks like
-markup somebody wrote on purpose.
+It leaves alone — and prints — any class attribute whose shape it cannot
+read: markup built by concatenating string literals, a class list a
+template assembles in a way it cannot take apart, or markup written as
+escaped text in a page of your own documentation. A wrong guess renders
+unstyled and looks like markup somebody wrote on purpose. Those keep the
+exit code at 3 until you have dealt with them, so a CI gate cannot mark
+a half-migrated app done.
 
 ### Your own stylesheet
 
-The report ends with every `.rst-` selector in your own CSS. A rule you
-wrote against `.rst-lrow` stops matching the moment your markup says
-`rst-lrow`, and no test in your app will notice. Change them to
-attribute selectors — `.rst-lrow` becomes `[rst-lrow]` — which weigh the
-same, so nothing in your cascade moves.
+The report ends with the `.rst-` selectors in CSS you own — every
+stylesheet except a byte-identical copy of the library's, and every
+`<style>` block in a template. Utility classes are left out; they are
+still classes and your rules still match them.
+
+A rule you wrote against `.rst-lrow` stops matching the moment your
+markup says `rst-lrow`, and no test in your app will notice. Change them
+to attribute selectors — `.rst-lrow` becomes `[rst-lrow]` — which weigh
+exactly the same, so nothing in your cascade moves.
 
 ## rastrillo vectors
 

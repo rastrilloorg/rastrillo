@@ -1404,7 +1404,7 @@ var idiomBlurbs = map[string]string{
 	"box":           "The padded section card, and the heading that sits outside it.",
 	"list-grid":     "The real data-table vocabulary: the card sets its columns once, rows only choose cells.",
 	"dropdown":      "The details/summary menu behind header overflow menus and a list bar's filter, plus an applied filter as a removable chip.",
-	"form-layout":   "The classes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.",
+	"form-layout":   "The attributes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.",
 	"tblock":        "A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.",
 	"modal":         "A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.",
 	"help":          "A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.",

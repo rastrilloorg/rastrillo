@@ -294,6 +294,6 @@ span, or restyle the rule to target the disabled item as the partial
 actually emits it — and not in an example, so this branch changes
 nothing.
 *Fixed:* in the library, the second way — the span now carries
-`rst-pagination-disabled` and tokens.css styles that class.
+`rst-pagination-disabled` and tokens.css styles that attribute.
 `aria-disabled` stays dropped on purpose: the attribute belongs on
 elements with an interactive role, and a bare span has none.

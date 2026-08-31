@@ -1320,7 +1320,10 @@ func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
   const w = () => document.getElementById('ruler').getBoundingClientRect().width;
   const before = w();
   const b = document.createElement('div');
-  b.className = 'rst-backdrop';
+  // The attribute, which is what the gallery and every partial emit.
+  // It used to be a class, and tokens.css pairs both until stage 3 —
+  // so this went on passing while measuring a selector nothing writes.
+  b.setAttribute('rst-backdrop', '');
   document.body.appendChild(b);
   const after = w();
   b.remove();
