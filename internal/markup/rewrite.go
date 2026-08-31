@@ -75,6 +75,13 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 			i = a.end
 			continue
 		}
+		if a.unreadable {
+			note(a.start, "class=%q is a shape this cannot take apart — an unquoted value with a template "+
+				"action in it. Quote it, or rewrite it by hand: left as it was", value)
+			b.WriteString(s[i:a.end])
+			i = a.end
+			continue
+		}
 		if c, bad := notAClassList(value); bad {
 			// Almost always source that builds its markup by
 			// concatenation: the reader ran past the end of a string
@@ -201,6 +208,11 @@ type classAttr struct {
 	start, end       int
 	valStart, valEnd int
 	q                string
+	// unreadable: this IS a class attribute, and its value is not
+	// something the grammar can take apart. Carried rather than
+	// silently skipped, because silence is the one thing this tool must
+	// not do about markup it has found.
+	unreadable bool
 }
 
 // nextClassAttr finds the next class attribute at or after from, in
@@ -297,8 +309,11 @@ func readAttrValue(s string, k int, lead byte) (classAttr, bool) {
 		for e < len(s) && s[e] != ' ' && s[e] != '\t' && s[e] != '\n' && s[e] != '>' && s[e] != '/' {
 			e++
 		}
-		if !looksLikeAClassList(s[k:e]) {
+		switch classify(s[k:e]) {
+		case notMarkupAtAll:
 			return classAttr{}, false
+		case unreadableList:
+			return classAttr{valStart: k, valEnd: e, end: e, q: `"`, unreadable: true}, true
 		}
 		return classAttr{valStart: k, valEnd: e, end: e, q: `"`}, true
 	}
@@ -316,21 +331,32 @@ func unquotedAttrOK(lead byte) bool {
 	return false
 }
 
-// looksLikeAClassList keeps the unquoted reader off the two things that
-// wear the same shape and are not markup: a URL query, and a class
-// attribute written as escaped text (class=&quot;rst-box&quot;), which
-// the escaped-markup pass reports instead.
-func looksLikeAClassList(value string) bool {
+// The three things an unquoted value can be.
+const (
+	plainClassList = iota
+	// Not markup: a URL query (?class=x&y=1), or a class attribute
+	// written as escaped text (class=&quot;rst-box&quot;), which the
+	// escaped-markup pass reports instead. Silence is right for these.
+	notMarkupAtAll
+	// Markup, and unreadable: an unquoted value with a template action
+	// in it. Silence is wrong for this one — it is a class attribute
+	// carrying our vocabulary that will simply never be migrated.
+	unreadableList
+)
+
+func classify(value string) int {
 	if value == "" {
-		return false
+		return notMarkupAtAll
 	}
 	for i := 0; i < len(value); i++ {
 		switch value[i] {
-		case '&', '?', '%', '#', '=', ';', '{', '}':
-			return false
+		case '&', '?', '%', '#', '=', ';':
+			return notMarkupAtAll
+		case '{', '}':
+			return unreadableList
 		}
 	}
-	return true
+	return plainClassList
 }
 
 // notAClassList reports the character that says a value is not an HTML

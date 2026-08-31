@@ -236,6 +236,21 @@ func TestMarkupBuiltByConcatenationIsReportedNotCorrupted(t *testing.T) {
 	}
 }
 
+// An unquoted value with a template action in it is markup, and it is
+// unreadable. Skipping it silently is the H3 failure wearing a
+// different hat: a class attribute carrying the vocabulary that would
+// simply never be migrated, with nothing ever saying so.
+func TestAnUnquotedTemplatedValueIsReported(t *testing.T) {
+	const in = `<div class=rst-{{.Kind}}>x</div>`
+	got, notes := Rewrite([]byte(in))
+	if string(got) != in {
+		t.Errorf("Rewrite(%q) = %q: it must not be guessed at", in, got)
+	}
+	if len(notes) != 1 || !strings.Contains(notes[0].Text, "cannot take apart") {
+		t.Errorf("an unquoted templated class value was not reported: %v", notes)
+	}
+}
+
 // TestEscapedMarkupIsReported: a documentation page showing
 // class=&quot;rst-box&quot; as source. Rewriting it would mean deciding
 // what the escaping is for; naming it is the honest half.
