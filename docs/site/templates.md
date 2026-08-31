@@ -703,6 +703,7 @@ The shell is the page frame — `templates/layout.html`, written once by
 | `column`  | a centred content column, no chrome (default)                              |
 | `topbar`  | header bar: brand, nav, account menu, locale switcher, footer              |
 | `sidebar` | a left rail of nav groups, collapsing to a `<details>` chrome bar below 800px |
+| `console` | both at once: a brand-and-account bar across the top with the rail beneath it down the side, the two folding behind one disclosure below 800px |
 
 Every shell defines `layout`, renders `{{template "content" .}}` for the
 page's own body, and puts each piece of chrome in a block with a working
