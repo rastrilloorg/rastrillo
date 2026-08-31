@@ -3029,3 +3029,86 @@ Related, and noted because it is the larger number: **`datetime.js` is 59,438 ra
 18,997 gzipped — a third of the total wire cost on its own** — and it is an optional
 enhancement. §6-v2.8 moves its strings out of the markup; it does not make the file
 smaller.
+
+---
+
+## 6-v2.2c. `Wash`: the third entry point (2026-08-31) — from Sheets, on round-trip grounds
+
+§6-v2.2b records that two downstream callers changed the colour engine's design before a
+line was written. This is the third time it happened, and it happened *after* the engine
+shipped — which is the case that section was written to make cheap.
+
+### The controller's ruling, and why it was wrong
+
+`Pair` returns a fill and an on-fill. Asked whether it should instead return a **pale
+wash leaving the caller's own ink alone**, I ruled on the API's shape: a pair only means
+something if we choose the ink, and a wash that the author's own text sits on needs no
+contrast function at all. That reasoning is sound and the conclusion was still wrong,
+because it reasoned about the return value and not about what a caller must then do with
+it.
+
+### Sheets' correction: applying an on-fill means persisting it
+
+When someone highlights a cell yellow, they are choosing a **background wash and keeping
+their own ink**. They did not ask for their font colour to change. If `Pair` hands back
+an on-fill and the app applies it, the app must store it — and on export that becomes **a
+font colour written into the XLSX that the author never set**. Import a file, highlight
+one cell, export, and it returns with font colours throughout.
+
+That is round-trip corruption. The same observation as the controller's — the on-fill is
+surplus when the caller keeps their ink — with the consequence attached: it is not
+surplus, it is destructive.
+
+`Pair` remains correct for callers that own both halves: presence cursors, comment author
+colours, and conditional formatting, where a *rule* picks the colour and the app writes
+both fill and text.
+
+### The wash constraint runs the other way
+
+Not *"given a fill, what ink survives on it"* but **"given the ink the author already
+has, what is the palest fill of this hue that their ink still clears 4.5:1 on — and that
+they can still see they applied"**.
+
+    Wash(hue, chroma, ink, background) -> Swatch
+
+Two floors, and the second is the load-bearing one:
+
+1. The caller's existing `ink` clears 4.5:1 against the returned fill.
+2. The fill stays **perceptibly different from `background`**, or the user clicks yellow
+   and nothing appears to happen.
+
+**Floor 2 uses ΔE_OK, not a contrast ratio.** Sheets' point, and it is right: contrast
+ratio is the wrong instrument for "can you tell this cell is filled". That is a
+perceptual-distance question, and the engine already computes ΔE_OK for separation, so
+it reuses that machinery rather than growing a second notion of perceptual distance. The
+two floors pull against each other, which is what makes floor 2 real rather than
+decorative — remove it and `Wash` returns something invisible.
+
+**Failing is the right answer past the floors.** "This hue cannot be a readable wash
+under your text colour" is a true statement, not an edge case to paper over. The
+precedent is worth recording because it is an accessibility improvement rather than a
+copy of the incumbent: Excel permits a dark navy fill under black text, unreadable, with
+no warning. A wash function whose offered set **cannot** produce an unreadable pairing is
+strictly better — and better *because* it constrains what is offered rather than
+overriding what the author chose.
+
+### Even coverage beats any particular hue
+
+Sheets never delivered the hand-computed hue table they promised, and supplied something
+more useful instead: **XLSX import maps arbitrary incoming hex to the nearest offered
+intent.** So even coverage of the circle is the property that matters, and a gap means
+every imported fill in that region snaps visibly sideways on a file the user never
+edited. Twelve at 30° is even coverage.
+
+The check that follows, and it is a measurement rather than an assumption: the
+nearest-offered-hue distance for the five fills people actually use — **yellow, green,
+red, orange, light blue**. Even spacing does not guarantee any of them lands well.
+
+### The open question this raises for Docs
+
+A text highlight is the same wash shape. But Paul ruled Docs' canvas light by default
+with dark as a *per-person* preference, so one stored highlight is read against paper
+white by one reader and dark paper by another, in the same document, at the same time. A
+wash perceptible on white can be imperceptible on dark. Docs therefore stores an intent
+and resolves per canvas — and if the offered set cannot satisfy floor 2 on both, that
+constrains the set for every caller, not only theirs.
