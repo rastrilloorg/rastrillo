@@ -12,10 +12,17 @@ backwards from commits is a guess wearing a date.
 
 ### Fixed — read this one if you ran `rastrillo markup --fix` on v0.22.0
 
+<!-- markup-spelling: old-spelling begin — this entry's subject IS the old
+     spelling, so it names it. The gate that would otherwise flag it has the
+     same blind spot as the bug the entry describes: prose about markup read
+     as markup. -->
+
 **`rastrillo markup --fix` rewrote Markdown as well as markup.** A sentence in
 your documentation reading `` `class="rst-box"` `` became `` `rst-box` `` — which
 destroys the explanation and leaves a diff that looks correct. If you ran it,
 check `git log -p -- '*.md'` from your v0.22.0 bump before trusting those pages.
+
+<!-- markup-spelling: old-spelling end -->
 
 The files most likely to be hit are the ones that *teach* the class-versus-attribute
 distinction, so the damage lands where the explanation lives. In this repository the
