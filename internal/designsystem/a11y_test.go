@@ -327,7 +327,7 @@ func a11yTargets() []a11yTarget {
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
-		{"day/en shells", page("day", "en", "shells"), "the three page frames, each framed at full page size"},
+		{"day/en shells", page("day", "en", "shells"), "the four page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
 		// palette itself and the display vocabulary painted in it.
 		{"plain/en tokens", page("plain", "en", "tokens"), "the theme with the least colour — where a contrast floor is closest to the line"},
@@ -337,6 +337,7 @@ func a11yTargets() []a11yTarget {
 		{"day/ar form", page("day", "ar", "form"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
+		{"day/en console shell", shellHref(mountPath, "day", "en", "console"), "the only page in the tree with two chromes at once — a banner bar and a complementary rail, both landmarks, in one document with one <main> and one contentinfo. A shell that is two other shells is exactly where a duplicated landmark, a second control with the same name, or a nav with nothing to tell it from the bar would come from, and none of the three shows on a shell that has only one of them"},
 		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
 		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
 	}
@@ -433,8 +434,8 @@ func TestA11yScansTheGallery(t *testing.T) {
 	}
 }
 
-// TestA11yScansTheShellsCollapsed is the scan the other three did not
-// cover: both chrome shells below their 800px breakpoint, with the
+// TestA11yScansTheShellsCollapsed is the scan the others did not
+// cover: every chrome shell below its 800px breakpoint, with the
 // disclosure open.
 //
 // Every scan above runs at the browser's default width, where the
@@ -459,6 +460,12 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	for _, sh := range []struct{ shell, open string }{
 		{"topbar", "[rst-shell-menu] > summary"},
 		{"sidebar", "[rst-shell-chrome] > summary"},
+		// console discloses TWO chromes from this one summary — the
+		// bar's tail and the rail — so the collapsed document it
+		// produces is the largest of the three and the only one where
+		// a landmark revealed by a disclosure sits beside another
+		// landmark revealed by the same one.
+		{"console", "[rst-shell-menu] > summary"},
 	} {
 		for _, scheme := range a11ySchemes {
 			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"
@@ -501,7 +508,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		}
 	}
 	if total == 0 {
-		t.Logf("clean: 2 shells × %d schemes at 390px, disclosed, %v", len(a11ySchemes), axeTags)
+		t.Logf("clean: 3 shells × %d schemes at 390px, disclosed, %v", len(a11ySchemes), axeTags)
 	}
 }
 

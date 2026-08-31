@@ -408,7 +408,7 @@ This partial never emits it — `Plain` simply emits nothing — but
 
 ## The design system
 
-Every partial, every state, every markup idiom and all three shells,
+Every partial, every state, every markup idiom and all four shells,
 rendered live for all three themes and all twelve base locales — five
 pages per theme × locale, one per section, plus a full-page demo for
 each shell and one for the modal route. It is live at
@@ -722,9 +722,9 @@ block:
 {{define "content"}}<h1>Your notes</h1>{{end}}
 ```
 
-The blocks are `title`, `lang`, `dir` and `head` in all three shells,
-plus `brand`, `nav`, `account` and `locale` in `topbar` and `sidebar`,
-and `foot` in `topbar` only. None of them reads a field off the data, so
+The blocks are `title`, `lang`, `dir` and `head` in all four shells,
+plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
+`console`, and `foot` in `topbar` and `console`. None of them reads a field off the data, so
 a shell renders whether your handler passes a struct, a `dict`-built map
 or nil — a shell can never break because a page's view model changed
 shape.
@@ -736,22 +736,46 @@ the head, so your own CSS wins the ties it should win against
 `tokens.css` and the theme.
 
 `account` is the one asymmetric block, and it is worth knowing which
-shell you are in. In `topbar` the layout owns the `<details
-rst-dropdown rst-shell-account>` and its summary, so your
+shell you are in. In `topbar` and `console` the layout owns the
+`<details rst-dropdown rst-shell-account>` and its summary, so your
 `account` block is the **menu body only** — the links that go inside
 `[rst-dropdown-menu]`. In `sidebar` there is no dropdown: `account` is a
-bare slot in the rail, and you supply the whole thing. Move a block
-between shells and this is the edit you will need.
+bare slot in the rail, and you supply the whole thing. Move a screen
+between `topbar` and `console` and nothing changes; move it to or from
+`sidebar` and this is the one edit you will need.
 
 The chrome attributes live in `tokens.css` like every other idiom:
 `rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`,
 `rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the
 topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
-`rst-shell-group` and `rst-shell-main` for the sidebar; and
-`rst-skip`, the skip link, which all three shells carry — `column`
+`rst-shell-group` and `rst-shell-main` for the sidebar;
+`rst-shell-console` for the console, which reuses the bar, the rail and
+the topbar's `rst-shell-menu` rather than naming anything of its own;
+and `rst-skip`, the skip link, which all four shells carry — `column`
 included. The sidebar's mobile collapse is that
 `<details rst-shell-chrome>` and nothing else — no JavaScript,
 like every other idiom here.
+
+### The console folds two chromes behind one control
+
+`console` is the only shell with two pieces of chrome to put away below
+800px: the bar's tail and the rail. It puts them away with **one**
+`<details rst-shell-menu>` rather than two, because two disclosures on a
+phone is two things to learn. The disclosure gates its own next sibling
+— the tail — with `+`, and gates the rail from the shell root with
+`:has()`.
+
+Both rules are written as *hide when closed* rather than *show when
+open*, which is worth copying if you write chrome of your own. In a
+browser without `:has()` the rail's rule never matches, so the rail
+renders as a plain column of links under the bar: a longer page, and the
+navigation still reachable. Written the other way round, the same
+missing selector would be a phone with no way to navigate.
+
+Nothing is reordered at any width. Grid places the bar and the rail by
+named area, so the DOM order — bar, rail, page — is the reading order
+and the focus order at 320px and at 1280px, in both directions of the
+language.
 
 ### Upgrading: the topbar's tail is a level deeper
 

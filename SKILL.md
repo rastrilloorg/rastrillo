@@ -19,7 +19,7 @@ go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
-`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar <name>`
+`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar|console <name>`
 (also `--icons`, `--icon-delivery`, `--ux`) writes the whole §1 shape plus
 `go.mod`, migrations, templates, static assets, app-owned icons, a test
 harness including the browser drive, a `Makefile` whose `ci` target is the

@@ -150,18 +150,20 @@ func LayoutNames() []string
 func Layout(name string) ([]byte, bool)
 ```
 
-The three shipped page frames, `column` first: `column` is the plain
+The four shipped page frames, `column` first: `column` is the plain
 centred page, `topbar` adds a header bar with nav and an account menu,
 `sidebar` a left rail that collapses to a `<details>` chrome bar below
-800px. `Layout` returns one shell's complete `layout.html` text and
-reports `false` for a name that is not shipped.
+800px, and `console` is both at once — a brand-and-account bar across
+the top with the navigation rail beneath it down the side, which is the
+shape most admin consoles are. `Layout` returns one shell's complete
+`layout.html` text and reports `false` for a name that is not shipped.
 
 A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
-`dir` and `head` in all three, plus `brand`, `nav`, `account` and
-`locale` in the two chrome shells, and `foot` in `topbar`. No block
-reads a field off the data, so a shell renders the same whether a
-handler passes a struct, a `dict`-built map, or nil.
+`dir` and `head` in all four, plus `brand`, `nav`, `account` and
+`locale` in the three chrome shells, and `foot` in `topbar` and
+`console`. No block reads a field off the data, so a shell renders the
+same whether a handler passes a struct, a `dict`-built map, or nil.
 
 `head` is the one that is not chrome: it is an empty slot at the foot of
 `<head>`, for a favicon, a meta tag, an extra stylesheet or a script
