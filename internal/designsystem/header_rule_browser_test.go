@@ -92,7 +92,7 @@ const headerRuleSweep = `(async () => {
     return "#" + [d[0], d[1], d[2]].map(n => n.toString(16).padStart(2, "0")).join("");
   };
 
-  const out = { Headers: [], Frames: frames.length, FramesRead: 0 };
+  const out = { Headers: [], Frames: frames.length, FramesRead: 0, FramesWithHeaders: 0 };
   const scan = (doc, where) => {
     const view = doc.defaultView;
     const probe = doc.createElement("span");
@@ -100,7 +100,8 @@ const headerRuleSweep = `(async () => {
     doc.body.appendChild(probe);
     const tokenRaw = view.getComputedStyle(probe).backgroundColor;
     probe.remove();
-    for (const h of doc.querySelectorAll("[rst-page-header]")) {
+    const found = doc.querySelectorAll("[rst-page-header]");
+    for (const h of found) {
       const s = view.getComputedStyle(h);
       const a = view.getComputedStyle(h, "::after");
       out.Headers.push({
@@ -115,6 +116,7 @@ const headerRuleSweep = `(async () => {
         Dir: view.getComputedStyle(doc.documentElement).direction,
       });
     }
+    return found.length;
   };
 
   scan(document, "page");
@@ -123,7 +125,7 @@ const headerRuleSweep = `(async () => {
     try { d = f.contentDocument; } catch (e) { d = null; }
     if (!d || !d.body) { continue; }
     out.FramesRead++;
-    scan(d, "frame: " + (f.getAttribute("title") || "?"));
+    if (scan(d, "frame: " + (f.getAttribute("title") || "?")) > 0) { out.FramesWithHeaders++; }
   }
   return JSON.stringify(out);
 })()`
@@ -141,9 +143,10 @@ type headerRuleHeader struct {
 }
 
 type headerRuleSweepResult struct {
-	Headers    []headerRuleHeader
-	Frames     int
-	FramesRead int
+	Headers           []headerRuleHeader
+	Frames            int
+	FramesRead        int
+	FramesWithHeaders int
 }
 
 // TestNoGalleryPageStillDrawsTheRakeLine is the sweep.
@@ -204,7 +207,7 @@ func TestNoGalleryPageStillDrawsTheRakeLine(t *testing.T) {
 	})
 
 	rtl := map[string]bool{"ar": true}
-	headers, framesRead, pagesWithFrames := 0, 0, 0
+	headers, framesRead, framesWithHeaders, pagesWithFrames := 0, 0, 0, 0
 
 	for _, tg := range targets {
 		name := tg.theme + "/" + tg.locale + "/" + tg.file
@@ -234,6 +237,17 @@ func TestNoGalleryPageStillDrawsTheRakeLine(t *testing.T) {
 				t.Errorf("%s: read %d of %d preview frames; an unread frame is an unchecked one, and the previews are where a reader judges a component", name, got.FramesRead, got.Frames)
 			}
 			framesRead += got.FramesRead
+			framesWithHeaders += got.FramesWithHeaders
+		}
+		// list-screen.html is in the target list BECAUSE one of its
+		// sixteen previews is the page-header component itself. Reading
+		// the frames is not enough: a frame whose scan finds nothing
+		// passes every assertion below vacuously, and §6-v3 stage 3
+		// flips the markup spelling, so a preview that stopped matching
+		// [rst-page-header] would hollow out the frame half of this gate
+		// without failing it. Pin the floor where the reason is.
+		if tg.file == "list-screen.html" && got.FramesWithHeaders == 0 {
+			t.Errorf("%s: read %d preview frames and not one of them contained a page header. This page is driven for its previews; frames that match nothing make the sweep look thorough and check nothing", name, got.FramesRead)
 		}
 		headers += len(got.Headers)
 
@@ -272,10 +286,10 @@ func TestNoGalleryPageStillDrawsTheRakeLine(t *testing.T) {
 	if headers < len(targets) {
 		t.Errorf("measured %d headers over %d pages; every page has at least one", headers, len(targets))
 	}
-	if pagesWithFrames == 0 || framesRead == 0 {
-		t.Errorf("read %d preview frames over %d pages carrying them; the component previews are half of what this test is for", framesRead, pagesWithFrames)
+	if pagesWithFrames == 0 || framesRead == 0 || framesWithHeaders == 0 {
+		t.Errorf("read %d preview frames over %d pages carrying them, %d of which held a page header; the component previews are half of what this test is for", framesRead, pagesWithFrames, framesWithHeaders)
 	}
-	t.Logf("swept %d page headers over %d pages, including %d preview frames", headers, len(targets), framesRead)
+	t.Logf("swept %d page headers over %d pages: %d preview frames read, %d of them carrying a header", headers, len(targets), framesRead, framesWithHeaders)
 }
 
 // rakeLineHandler is the tree, optionally with the retired flourish put

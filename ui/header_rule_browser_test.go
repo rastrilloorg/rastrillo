@@ -46,12 +46,22 @@
 //	  -run TestTheHeaderRuleIsTheThemesTintedHairline -v
 //
 // Unset — which is how CI runs it — it does nothing at all.
+//
+// The pixel strip has a control of its own, RST_RAKE_LINE_CONTROL=1,
+// which appends the deleted flourish back onto the served tokens.css.
+// It is the same variable internal/designsystem's sweep uses, and it
+// exists here for a narrower reason: the strip's claim is that the
+// decoration is uniform across the header, and the only way to know a
+// uniformity check works is to watch it meet something that is not
+// uniform.
 package ui
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"image/png"
 	"math"
 	"net/http"
 	"os"
@@ -60,6 +70,7 @@ import (
 	"testing"
 	"time"
 
+	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 
 	"github.com/carlosframework/rastrillo/harness"
@@ -112,6 +123,7 @@ func headerRulePage(t *testing.T) http.Handler {
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
+		w.Write(rakeLineControl(t))
 	})
 	mux.HandleFunc("GET /theme/{name}", func(w http.ResponseWriter, r *http.Request) {
 		name := strings.TrimSuffix(r.PathValue("name"), ".css")
@@ -149,15 +161,16 @@ func headerRulePage(t *testing.T) http.Handler {
 	return mux
 }
 
-// headerRuleReading is one measurement of one header.
+// headerRuleReading is one measurement of one header. The four
+// geometry fields are the clip for the pixel strip below, in CSS px.
 type headerRuleReading struct {
 	Rule, Accent, Line []int  // eight-bit sRGB, as painted
 	AfterContent       string // getComputedStyle(h, "::after").content
 	AfterWidth         int    // the ::after's painted width, in px
 	BorderWidth        string
 	BorderStyle        string
-	HeaderWidth        int
-	RuleWidth          int // how far the border actually spans
+	Left, Bottom       float64
+	HeaderWidth        float64
 	Dir                string
 }
 
@@ -190,11 +203,12 @@ const headerRuleMeasure = `(() => {
     AfterWidth: Math.round(parseFloat(after.width) || 0),
     BorderWidth: s.borderBottomWidth,
     BorderStyle: s.borderBottomStyle,
-    HeaderWidth: Math.round(box.width),
-    // A border-bottom spans its box by definition; measuring it says so
-    // out loud, which is the RTL claim: the rule is symmetric now, where
-    // the retired stroke was anchored to the inline start.
-    RuleWidth: Math.round(box.width),
+    // The clip for the pixel strip. Geometry only — this side of the
+    // drive deliberately makes no claim about what the rule looks like
+    // across its width; that is the screenshot's job.
+    Left: box.left,
+    Bottom: box.bottom,
+    HeaderWidth: box.width,
     Dir: getComputedStyle(document.documentElement).direction,
   });
 })()`
@@ -378,8 +392,10 @@ func TestTheHeaderRuleIsTheThemesTintedHairline(t *testing.T) {
 				if got.Dir != wantDir {
 					t.Errorf("%s: the document resolved direction %q, want %q — the RTL half of this drive measured an LTR page", name, got.Dir, wantDir)
 				}
-				if got.HeaderWidth == 0 || got.RuleWidth != got.HeaderWidth {
-					t.Errorf("%s: the rule spans %dpx of a %dpx header", name, got.RuleWidth, got.HeaderWidth)
+				if got.HeaderWidth < 100 {
+					t.Errorf("%s: the header measured %.0fpx wide; nothing useful can be read off a strip that narrow", name, got.HeaderWidth)
+				} else {
+					headerRuleStrip(ctx, t, name, got, want)
 				}
 
 				if dir == "ltr" {
@@ -407,4 +423,114 @@ func TestTheHeaderRuleIsTheThemesTintedHairline(t *testing.T) {
 			t.Errorf("%s: signal's rule is %.1f from grey and day's is %.1f; signal folds in 45%% to day's 18%% and must read as the more tinted of the two", scheme, signal, day)
 		}
 	}
+}
+
+// headerRuleStrip is the measurement that replaced a tautology.
+//
+// The drive used to assert that the rule spanned the header by
+// comparing two Go fields filled from the same JavaScript expression.
+// That could never fail, and the RTL claim — that the decoration is
+// symmetric now, where the retired stroke was anchored to the inline
+// start — rested on it. This reads pixels instead.
+//
+// It captures a strip the full width of the header, from three CSS px
+// above its bottom edge to three below, and requires every row in it to
+// be one colour across. Nothing about a border-bottom guarantees that:
+// the retired stroke sat at inset-block-end: -1px, BELOW the border
+// box, which is why the strip deliberately extends past it rather than
+// clipping to the element. A 2.5rem stroke over a 1200px header leaves
+// one row that is accent for forty pixels and line colour for the rest,
+// and a row like that is what this fails on.
+//
+// It also requires the strip to actually contain the rule, so a run
+// that clipped the wrong six rows reports that rather than passing on a
+// uniformly empty picture. The tolerance there is loose (6/255) because
+// a fractional bottom edge blends the border row with the surface
+// behind it; the exact colour is the canvas reading's job, and that one
+// is held to 2.
+func headerRuleStrip(ctx context.Context, t *testing.T, name string, got headerRuleReading, wantRule []int) {
+	t.Helper()
+	const pad = 3
+	clip := &cdppage.Viewport{
+		X:      math.Round(got.Left),
+		Y:      math.Round(got.Bottom) - pad,
+		Width:  math.Round(got.HeaderWidth),
+		Height: 2 * pad,
+		Scale:  1,
+	}
+	var buf []byte
+	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		var err error
+		buf, err = cdppage.CaptureScreenshot().
+			WithFormat(cdppage.CaptureScreenshotFormatPng).
+			WithFromSurface(true).
+			WithCaptureBeyondViewport(true).
+			WithClip(clip).
+			Do(ctx)
+		return err
+	})); err != nil {
+		t.Errorf("%s: capturing the rule strip: %v", name, err)
+		return
+	}
+	img, err := png.Decode(bytes.NewReader(buf))
+	if err != nil {
+		t.Errorf("%s: decoding the rule strip: %v", name, err)
+		return
+	}
+	b := img.Bounds()
+	if b.Dx() < 100 || b.Dy() < 2*pad {
+		t.Errorf("%s: the rule strip came back %dx%d; expected roughly %.0fx%d", name, b.Dx(), b.Dy(), clip.Width, 2*pad)
+		return
+	}
+
+	at := func(x, y int) []int {
+		r, g, bl, _ := img.At(b.Min.X+x, b.Min.Y+y).RGBA()
+		return []int{int(r >> 8), int(g >> 8), int(bl >> 8)}
+	}
+	sawRule := false
+	for y := 0; y < b.Dy(); y++ {
+		first := at(0, y)
+		for x := 1; x < b.Dx(); x++ {
+			if px := at(x, y); !rgbClose(px, first, 2) {
+				t.Errorf("%s: the rule strip is not one colour across. Row %d of %d starts %s and is %s at x=%d of %d. The header's decoration is a border that spans it; a row that changes colour partway is a stroke laid over part of it, which is what §6-v2.2 retired",
+					name, y, b.Dy(), rgbString(first), rgbString(px), x, b.Dx())
+				return
+			}
+		}
+		if rgbClose(first, wantRule, 6) {
+			sawRule = true
+		}
+	}
+	if !sawRule {
+		t.Errorf("%s: no row of the %d-row strip around the header's bottom edge is the rule colour %s; the strip was clipped somewhere else and its uniformity proves nothing", name, b.Dy(), rgbString(wantRule))
+	}
+}
+
+// rakeLineControl returns the retired flourish, byte for byte as this
+// branch deleted it, when RST_RAKE_LINE_CONTROL is set — and nothing
+// otherwise. Appended to the served tokens.css it wins on cascade
+// order, so the control exercises the real deletion rather than a
+// stand-in for it.
+//
+// It is what the pixel strip is measured against. A 2.5rem stroke over
+// a 1200px header leaves one row that is accent for forty pixels and
+// line colour for the rest, which is exactly the shape a uniformity
+// check has to catch and exactly the shape a border can never make.
+func rakeLineControl(t *testing.T) []byte {
+	t.Helper()
+	if os.Getenv("RST_RAKE_LINE_CONTROL") == "" {
+		return nil
+	}
+	t.Logf("CONTROL: serving tokens.css with the rake line appended; this run is EXPECTED to fail")
+	return []byte(`
+[rst-page-header]::after {
+  background: var(--rst-accent);
+  block-size: 2px;
+  content: "";
+  inline-size: 2.5rem;
+  inset-block-end: -1px;
+  inset-inline-start: 0;
+  position: absolute;
+}
+`)
 }

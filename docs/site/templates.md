@@ -713,15 +713,15 @@ failing at somebody else's.
 Safari 16.2 and Firefox 113, all of them older than the three engines
 `light-dark()` and `:has()` already ask for.
 
-Until v0.22 this rule carried a 2.5rem accent stroke over its inline
-start, drawn by `[rst-page-header]::after`. It is gone, and the
-pseudo-element is `content: none` rather than deleted, so a stylesheet
-of yours that styled it is now styling nothing instead of fighting for
-it. If you want the stroke back it is eight declarations in your own
-sheet — but read it first with fresh eyes: a thin full-width track in
-the line colour with a shorter saturated segment filling it from the
-leading edge is a determinate progress bar, and it was being read as
-one.
+This rule is the whole of the header's decoration. It did not use to
+be: `[rst-page-header]::after` drew a 2.5rem accent stroke over its
+inline start, and that stroke is retired. The pseudo-element is
+`content: none` rather than deleted, so a stylesheet of yours that
+styled it is now styling nothing instead of fighting for it. If you
+want the stroke back it is eight declarations in your own sheet — but
+read it first with fresh eyes: a thin full-width track in the line
+colour with a shorter saturated segment filling it from the leading
+edge is a determinate progress bar, and it was being read as one.
 
 Each file carries its own contrast table in the header comment: every
 text-on-background and border-on-background pair, in both schemes, with
