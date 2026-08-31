@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -703,5 +704,116 @@ func TestCreatingTheTableFirstStrandsTheBackfill(t *testing.T) {
 	d.G.Raw("SELECT count(*) FROM sessions WHERE token_hash = 'h1'").Scan(&n)
 	if n != 0 {
 		t.Fatal("expected the backfill never to have run — this is the stranding the order exists to prevent")
+	}
+}
+
+// SubjectFor is the server-blind seam: an app that must not store
+// readable addresses at rest maps the verified address to an opaque
+// person ref, and that ref — not the address — is what reaches the
+// sessions table and everything keyed off it (passkey credentials,
+// challenges, recovery codes). Admission still sees the real address:
+// Authorize answers a question about an address, and remapping it
+// there would break every membership check written against one.
+func TestSubjectForRemapsTheStoredSubject(t *testing.T) {
+	var authorized string
+	var gated sessions.Session
+	a, m := newTestAuth(t, func(cfg *Config) {
+		cfg.SubjectFor = func(address string) (string, error) {
+			if address != "person@example.com" {
+				t.Errorf("SubjectFor got %q, want the verified address", address)
+			}
+			return "ref_7f3a", nil
+		}
+		cfg.Authorize = func(address string) bool {
+			authorized = address
+			return true
+		}
+		cfg.SecondFactor = func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) {
+			gated = sess
+			return false, nil
+		}
+	})
+
+	beginSignin(t, a, "person@example.com")
+	link := linkRE.FindString(m.body)
+	if link == "" {
+		t.Fatalf("no verify link in mail body:\n%s", m.body)
+	}
+	w := httptest.NewRecorder()
+	a.Verify(w, httptest.NewRequest("GET", link, nil))
+
+	if authorized != "person@example.com" {
+		t.Errorf("Authorize saw %q, want the address, not the remapped subject", authorized)
+	}
+	// The hook runs before the second factor, so a 2FA implementation
+	// stores its pending half-session under the same subject the real
+	// session will carry.
+	if gated.Subject != "ref_7f3a" {
+		t.Errorf("SecondFactor saw subject %q, want the remapped ref", gated.Subject)
+	}
+
+	var session *http.Cookie
+	for _, c := range w.Result().Cookies() {
+		if c.Name == a.SessionCookie() {
+			session = c
+		}
+	}
+	if session == nil {
+		t.Fatal("no session cookie after verify")
+	}
+
+	// The point of the exercise: the address is not in the sessions
+	// table. An app whose gate greps the raw database file needs this
+	// to be true of the bytes, not just of the API.
+	var subject string
+	if err := a.cfg.DB.QueryRow(`SELECT subject FROM sessions`).Scan(&subject); err != nil {
+		t.Fatalf("read back the session row: %v", err)
+	}
+	if subject != "ref_7f3a" {
+		t.Errorf("sessions.subject = %q, want the remapped ref", subject)
+	}
+
+	// And what the app reads back is the ref too — Identity.Address
+	// carries whatever SubjectFor returned.
+	var got Identity
+	protected := a.RequireSession(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got, _ = From(r)
+	}))
+	r := httptest.NewRequest("GET", "http://app.test/private", nil)
+	r.AddCookie(session)
+	protected.ServeHTTP(httptest.NewRecorder(), r)
+	if got.Address != "ref_7f3a" {
+		t.Errorf("From().Address = %q, want the remapped ref", got.Address)
+	}
+}
+
+// A SubjectFor that fails must not fall back to the address — a
+// server-blind app would rather refuse the sign-in than write one.
+func TestSubjectForErrorRefusesSignin(t *testing.T) {
+	a, m := newTestAuth(t, func(cfg *Config) {
+		cfg.SubjectFor = func(string) (string, error) {
+			return "", errors.New("person store unreachable")
+		}
+	})
+
+	beginSignin(t, a, "person@example.com")
+	link := linkRE.FindString(m.body)
+	w := httptest.NewRecorder()
+	a.Verify(w, httptest.NewRequest("GET", link, nil))
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("verify with a failing SubjectFor: %d, want 500", w.Code)
+	}
+	for _, c := range w.Result().Cookies() {
+		if c.Name == a.SessionCookie() && c.Value != "" {
+			t.Fatal("minted a session cookie despite the failing hook")
+		}
+	}
+	var n int
+	if err := a.cfg.DB.QueryRow(`SELECT count(*) FROM sessions`).Scan(&n); err != nil {
+		t.Fatalf("count sessions: %v", err)
+	}
+	if n != 0 {
+		t.Errorf("sessions rows = %d, want 0 — no session may exist without a subject", n)
 	}
 }

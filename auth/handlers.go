@@ -132,8 +132,21 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
 	}
+	subject := id.Address
+	if a.cfg.SubjectFor != nil {
+		s, err := a.cfg.SubjectFor(id.Address)
+		if err != nil {
+			// No fallback to the address: an app sets this hook
+			// precisely because writing one is the failure it cannot
+			// have.
+			a.cfg.Logger.Error("rastrillo/auth: subject for address", "err", err)
+			http.Error(w, "sign-in failed", http.StatusInternalServerError)
+			return
+		}
+		subject = s
+	}
 	sess := sessions.Session{
-		Subject:  id.Address,
+		Subject:  subject,
 		Method:   string(id.Method),
 		AuthTime: id.AuthTime,
 	}
