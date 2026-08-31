@@ -1816,6 +1816,13 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	if !strings.Contains(string(layout), `rst-shell-account `+group) {
 		t.Errorf("the topbar shell's account dropdown is outside the exclusivity group:\n%s", layout)
 	}
+	console, ok := Layout("console")
+	if !ok {
+		t.Fatal(`Layout("console") reports no such layout`)
+	}
+	if !strings.Contains(string(console), `rst-shell-account `+group) {
+		t.Errorf("the console shell's account dropdown is outside the exclusivity group:\n%s", console)
+	}
 
 	// The markup idioms carry it in their canonical samples, which is the
 	// only place an app copying markup by hand will read it from.
@@ -1854,38 +1861,54 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	// disclosure's content, which keeps the account menu out of it
 	// altogether — but a name in the shared group would break it even
 	// so, because the exclusivity does not care about nesting.
-	for _, tag := range detailsOpenTags(string(layout)) {
-		if !strings.Contains(tag, `rst-shell-menu`) {
-			continue
+	//
+	// console is read the same way and costs more when it is wrong: its
+	// rail is gated on the SAME [open] as its tail, so a disclosure in
+	// the menus' group takes both chromes away at once rather than one.
+	for _, shell := range []string{"topbar", "console"} {
+		src, ok := Layout(shell)
+		if !ok {
+			t.Fatalf("Layout(%q) reports no such layout", shell)
 		}
-		m := detailsNamePattern.FindStringSubmatch(tag)
-		if m == nil {
-			t.Errorf("the topbar's narrow-screen disclosure carries no name at all: %s", tag)
-			continue
+		found := false
+		for _, tag := range detailsOpenTags(string(src)) {
+			if !strings.Contains(tag, `rst-shell-menu`) {
+				continue
+			}
+			found = true
+			m := detailsNamePattern.FindStringSubmatch(tag)
+			if m == nil {
+				t.Errorf("the %s's narrow-screen disclosure carries no name at all: %s", shell, tag)
+				continue
+			}
+			if m[1] == MenuGroupDefault {
+				t.Errorf("the %s's narrow-screen disclosure joined %q; opening the account menu would close the navigation it was opened from: %s", shell, MenuGroupDefault, tag)
+			}
 		}
-		if m[1] == MenuGroupDefault {
-			t.Errorf("the topbar's narrow-screen disclosure joined %q; opening the account menu would close the navigation it was opened from: %s", MenuGroupDefault, tag)
+		if !found {
+			t.Errorf("the %s shell has no narrow-screen disclosure; below 800px its chrome has nowhere to go", shell)
 		}
-	}
-	if !strings.Contains(string(layout), `rst-shell-menu`) {
-		t.Error("the topbar shell has no narrow-screen disclosure; below 800px its nav, account and locale have nowhere to go")
 	}
 }
 
-// Both shells collapse behind the same disclosure and the same icon.
+// Every chrome shell collapses behind the same disclosure and the same icon.
 // A text-only summary was the state §8 was filed against — "Menu" as a
 // bare word, with nothing to find it by at a glance — and `kebab` was
 // the cheap way to fix it, ruled out because kebab already means "more
 // actions on this row". aria-hidden throughout: the visible label
 // beside the glyph is the accessible name, and a second one would be
 // read out twice.
-func TestBothShellsCollapseBehindTheMenuIcon(t *testing.T) {
+func TestEveryChromeShellCollapsesBehindTheMenuIcon(t *testing.T) {
 	if rastrillo.Icon("menu") == "" {
 		t.Fatal(`rastrillo.Icon("menu") is empty: the shells' collapse has no icon to draw`)
 	}
 	for _, c := range []struct{ layout, class string }{
 		{"topbar", "rst-shell-menu"},
 		{"sidebar", "rst-shell-chrome"},
+		// console reuses the topbar's control rather than inventing a
+		// third: one disclosure, one icon, one idiom across all three
+		// chrome shells.
+		{"console", "rst-shell-menu"},
 	} {
 		src, ok := Layout(c.layout)
 		if !ok {
