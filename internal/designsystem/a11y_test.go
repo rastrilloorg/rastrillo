@@ -1120,3 +1120,121 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 		t.Errorf("modal demo: %d tabs never returned to %q — focus is trapped (WCAG 2.1.2)", modalCount+3, first)
 	}
 }
+
+// TestA11yScansTheGalleryAt320 is the same engine on the same pages at
+// the width the project has written down and never scanned.
+//
+// TestA11yScansTheGallery sets no viewport at all, so every axe result
+// this tree has ever produced is of a laptop-width layout. 320 CSS px
+// is not an arbitrary narrower number: it is the reflow width
+// ui/tokens.css and gallery.css both commit to in comments, and it is
+// 1280px at the 400% zoom WCAG 2.2 AA 1.4.10 asks for. A project that
+// asserts a width in its source and never scans it is asserting
+// something it has not checked.
+//
+// TestA11yReflowsAt320 already drives this width, and it could not have
+// caught what an axe pass catches: it measures whether the PAGE scrolls
+// sideways, and it explicitly blesses a preview box that scrolls inside
+// itself. That is the right call for reflow and it is why a preview box
+// cropping its own sample went unnoticed at 320px for two rounds. The
+// two tests are the same width and different questions.
+//
+// The width axis crosses the content axis and not the colour one, so
+// this runs one scheme where the wide scan runs two. A palette does not
+// change with a viewport; what changes is which things are on screen,
+// how they wrap, and how big they are to hit. Contrast is covered in
+// both schemes at the wide width and would report identically here.
+func TestA11yScansTheGalleryAt320(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 900*time.Second)
+	defer cancel()
+
+	narrow := chromedp.ActionFunc(func(c context.Context) error {
+		return emulation.SetDeviceMetricsOverride(320, 640, 1, true).Do(c)
+	})
+	wide := chromedp.ActionFunc(func(c context.Context) error {
+		return emulation.SetDeviceMetricsOverride(1280, 900, 1, true).Do(c)
+	})
+
+	// THE CONTROL, and it is the whole reason to trust anything below.
+	// A scan that adds a width and reports what it reported before is a
+	// scan of the old width with a new label on it. So the same two
+	// readings are taken at both widths on the same page, and they have
+	// to come out opposite: this gallery is laid out in the framework's
+	// own sidebar shell, whose rail collapses behind a disclosure below
+	// 800px. If the rail is still on screen at 320px, the override did
+	// not take and every result under it is of a 1280px document.
+	const rail = "[rst-shell-rail] [rst-shell-nav] a"
+	const chrome = "[rst-shell-chrome] > summary"
+	overview := rig.Origin + pageHref(mountPath, "day", "en", fileOf("overview"))
+	if err := chromedp.Run(ctx, wide, chromedp.Navigate(overview), chromedp.WaitReady("body")); err != nil {
+		t.Fatalf("the control at 1280px: loading: %v", err)
+	}
+	if !shownIn(t, ctx, "the control at 1280px", rail) {
+		t.Fatalf("the sidebar rail is not on screen at 1280px, so its absence at 320px would prove nothing about the width. This drive's control is gone; find what the shell collapses on now")
+	}
+	if err := chromedp.Run(ctx, narrow, chromedp.Navigate(overview), chromedp.WaitReady("body")); err != nil {
+		t.Fatalf("the control at 320px: loading: %v", err)
+	}
+	if shownIn(t, ctx, "the control at 320px", rail) {
+		t.Fatalf("the sidebar rail is still on screen at 320px — the viewport override did not take, and every scan below would be of a laptop-width document reported as a phone one")
+	}
+	if !shownIn(t, ctx, "the control at 320px", chrome) {
+		t.Fatalf("neither the rail nor the disclosure that replaces it is on screen at 320px; this page is not laid out in either state and the scans below are of something unexpected")
+	}
+	t.Logf("control: the rail is on screen at 1280px and behind its disclosure at 320px, so the override is real")
+
+	axeJS := axeSource(t)
+	total, scans := 0, 0
+	for _, tc := range a11yTargets() {
+		where := tc.name + " at 320px (light)"
+		if err := chromedp.Run(ctx,
+			narrow,
+			chromedp.Navigate(rig.Origin+tc.href),
+			chromedp.WaitReady("body"),
+			chromedp.Evaluate(axeJS, nil),
+		); err != nil {
+			t.Fatalf("%s: loading: %v", where, err)
+		}
+		// Per page, and cheap: the override is set per navigation and a
+		// page that came back at some other width is a page whose
+		// results belong to that width.
+		var w int
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.documentElement.clientWidth`, &w)); err != nil {
+			t.Fatalf("%s: measuring the viewport: %v", where, err)
+		}
+		if w != 320 {
+			t.Fatalf("%s: the document is %dpx wide, not 320 — this result is of another width", where, w)
+		}
+		paint(t, ctx, "light")
+		total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
+		scans++
+	}
+	if total == 0 {
+		t.Logf("clean: %d pages at 320px in light, %v", scans, axeTags)
+		return
+	}
+	// This width has never been scanned before, so the first run of it
+	// is a survey and the findings split two ways. Saying which is
+	// which here, once, saves the next reader the bisect I did.
+	//
+	//   .ds-src — a <pre> of source that scrolls sideways at 320px.
+	//     PREDATES this branch: confirmed by running this same drive
+	//     against ea74c00's gallery.css, where it is the only finding.
+	//     Two nodes on the icons page. Not touched here on purpose;
+	//     it is a different change with a different blast radius.
+	//
+	//   .ds-view__box — the preview box, on every page that frames a
+	//     sample. THIS BRANCH: the box became a scroll container when
+	//     the panning fix gave it overflow-x: auto, and axe is right
+	//     that a region a mouse can pan and a keyboard cannot reach is
+	//     not accessible. Note what it is NOT: before the branch that
+	//     content was cropped and unreachable by everyone, so nobody
+	//     is worse off — the improvement is incomplete rather than a
+	//     regression. Completing it means a focusable scroll
+	//     container, which is a tabindex in viewTemplate and about a
+	//     hundred and ten new tab stops per component page, and that
+	//     is a decision about the gallery's keyboard order rather than
+	//     about this fix.
+	t.Logf("the findings at 320px split two ways: scrollable-region-focusable on .ds-src predates this branch (confirmed against ea74c00), and on .ds-view__box it is this branch's panning fix needing a focusable scroll container. Neither is fixed here, deliberately")
+}

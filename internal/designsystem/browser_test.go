@@ -1552,10 +1552,17 @@ func showsItsSample(t *testing.T, where string, rows []previewBox) {
 }
 
 // agree is the assertion a CSS-only default has to earn. The rendering
-// is chosen by a media query and the highlight by the same one, and if
-// the two ever drift a reader is looking at a 390px rendering with
-// "Desktop" lit, which is a worse bug than the one that made this
+// is chosen by a container query on .ds-view and the highlight by the
+// same one — the same one is the point, and it is why the container
+// had to move up off .ds-view__stage, which the tabs are not inside —
+// and if the two ever drift a reader is looking at a 390px rendering
+// with "Desktop" lit, which is a worse bug than the one that made this
 // widget unreadable in the first place.
+//
+// Not a media query, and not by accident: the rail takes 240px out of
+// the column at 800px, so the viewport is not monotone in the stage
+// and a viewport rule switches renderings the wrong way round. See
+// TestThePreviewDefaultIsMonotoneInStageWidth, which fails on one.
 func agree(t *testing.T, where string, rows []previewBox) {
 	t.Helper()
 	want := map[int]string{0: "1200px", 1: "390px"}
@@ -1795,9 +1802,9 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 
 	// CONTROL 3, and the one that matters most: the whole of the above
 	// with script execution switched off at the engine. The tabs are
-	// radios and :has(), the default is a media query, and none of it
-	// is allowed to need JavaScript — a widget gate that only ever runs
-	// with script on is not testing this widget's real path.
+	// radios and :has(), the default is a container query, and none of
+	// it is allowed to need JavaScript — a widget gate that only ever
+	// runs with script on is not testing this widget's real path.
 	noJS, cancelNoJS := chromedp.NewContext(rig.Context())
 	defer cancelNoJS()
 	offCtx, cancelOff := context.WithTimeout(noJS, 120*time.Second)
