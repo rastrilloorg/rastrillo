@@ -1,0 +1,111 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<link rel="stylesheet" href="{{asset "static/theme.css"}}">
+<script defer src="{{asset "static/rastrillo.js"}}"></script>
+{{iconAssets}}
+<script defer src="{{asset "static/select.js"}}"></script>
+<script defer src="{{asset "static/datetime.js"}}"></script>
+{{/* head is the app's own slot in <head>: a favicon, a meta tag, one
+     more stylesheet. Empty by default, last in the head so an app's
+     own CSS wins over the framework's, and the only block in the
+     four shells that is not chrome. */}}
+{{block "head" .}}{{end}}
+</head>
+<body>
+{{/* The console shell — a brand-and-account bar across the top AND a
+     navigation rail down the side, which is the shape most admin
+     consoles are and the one the other three shells could not make.
+     topbar is this without the rail; sidebar is this without the bar.
+
+     THE TWO CHROMES, AND WHY THERE IS STILL ONE CONTROL.
+
+     Every other shell has one thing to fold below 800px. This one has
+     two — a bar tail and a rail — and the wrong answer is two
+     disclosures a reader has to learn, one for "the account" and one
+     for "the navigation", stacked on top of each other on a phone.
+
+     So: ONE <details>, two reveals. The disclosure below gates its own
+     next sibling (the bar's tail) with the adjacent-sibling combinator
+     the topbar already uses, and gates the rail from the shell root
+     with :has(). One state, one control, one summary drawn at 390px.
+
+     The reveals are written as HIDE-WHEN-CLOSED rather than
+     show-when-open, and that is deliberate: :has() is the newer
+     selector of the two, and in an engine that does not support it the
+     rule that hides the rail simply never matches, so the rail renders
+     as a plain block of links under the bar. The page gets longer; the
+     navigation stays reachable. The show-when-open spelling fails the
+     other way, and the other way is a phone with no way to navigate.
+
+     NOTHING MOVES. The DOM order here — bar, then rail, then main — is
+     the order at 320px and the order at 1280px. Grid places the bar
+     across the top and the rail beside the page at width, and the
+     collapsed panel discloses the bar's tail above the rail's nav
+     because that is where they already are. So focus order matches
+     visual order at every width and in both directions of the
+     language, which is the thing an `order` or a `grid-row` shuffle
+     would have quietly cost. */}}
+<div rst-shell-console>
+<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<header rst-shell-bar>
+{{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+{{/* name="rst-shell-menu", and NOT rst-menus — the same group the
+     topbar's disclosure is in, for the same reason and with one more
+     element depending on it here. <details name> exclusivity is
+     DOCUMENT-WIDE rather than sibling-scoped: a disclosure in the
+     menus' group would be closed by the account menu it just revealed,
+     and in this shell that closes the rail too, because the rail is
+     gated on the very same [open]. One wrong attribute takes both
+     chromes away at once. Read this as the reason for the gates rather
+     than as advice to change the line below. */}}
+<details rst-shell-menu name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
+{{/* The tail is a SIBLING of the disclosure, not its content: a closed
+     <details> hides its own content and no CSS reliably un-hides it,
+     so the wide layout could not be recovered from inside one. Above
+     800px tokens.css gives it display: contents and the account and
+     locale menus become flex items of the bar itself.
+
+     account here is the DROPDOWN'S MENU BODY, exactly as in topbar:
+     the layout owns the details/summary and an override supplies only
+     the links inside [rst-dropdown-menu]. sidebar's account block is
+     the other shape — a bare slot in the rail — so a screen moving
+     between console and sidebar edits that one block, while console
+     and topbar are interchangeable. */}}
+<div rst-shell-tail>
+<details rst-dropdown rst-shell-account name="rst-menus">
+<summary>{{T "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+<div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
+</details>
+{{block "locale" .}}{{end}}
+</div>
+</header>
+{{/* The rail carries navigation and nothing else — the language
+     switcher and the person are up on the bar, which is what makes
+     this shell a console rather than a sidebar with a strip above it.
+     So it has no rail-foot, and the bug that cost this project a
+     release — a person pinned to the bottom of a rail that hung 32px
+     under the window — has nothing here to pin. What it has instead is
+     a nav that sticks: see the max-block-size in tokens.css, which is
+     measured against the viewport and gated against the viewport. */}}
+<aside rst-shell-rail>
+<nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
+</aside>
+<main rst-shell-main id="main">
+<div rst-page>
+{{template "content" .}}
+</div>
+</main>
+{{/* A sibling of <main>, not a child of it: a <footer> whose nearest
+     sectioning ancestor is <body> is the contentinfo landmark, and one
+     inside <main> is a plain generic footer. Grid puts it under the
+     page column rather than under the rail. */}}
+<footer rst-shell-foot>{{block "foot" .}}{{end}}</footer>
+</div>
+</body>
+</html>
+{{end}}

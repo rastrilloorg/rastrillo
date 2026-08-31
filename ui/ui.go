@@ -220,11 +220,14 @@
 // rst-shell-account and, below the page, rst-shell-foot;
 // rst-shell-sidebar wraps a rst-shell-rail of rst-shell-group-labelled
 // nav beside rst-shell-main, collapsing below 800px into a
-// <details rst-shell-chrome> — no JavaScript. Both carry
-// rst-skip, the skip link. The canonical markup is Styleguide's
-// "shell-topbar" and "shell-sidebar", and an app does not usually write
-// any of it by hand: Layout ships the three shells as whole templates
-// and rastrillo new writes the chosen one as templates/layout.html.
+// <details rst-shell-chrome> — no JavaScript. rst-shell-console is
+// both at once: the bar's tail and the rail collapse behind the ONE
+// <details rst-shell-menu>, which gates its sibling tail with + and
+// the rail with :has(). All three carry rst-skip, the skip link. The
+// canonical markup is Styleguide's "shell-topbar" and "shell-sidebar",
+// and an app does not usually write any of it by hand: Layout ships
+// the four shells as whole templates and rastrillo new writes the
+// chosen one as templates/layout.html.
 package ui
 
 import (
@@ -347,10 +350,10 @@ func SelectJS() []byte { return selectJS }
 func DatetimeJS() []byte { return datetimeJS }
 
 // layoutNames lists the shipped shells, column first: it is the plain
-// centred page every scaffolded app starts on, and the two chrome
+// centred page every scaffolded app starts on, and the three chrome
 // shells are the ones an app opts into. The slice matches the files in
 // layouts/ exactly — adding a shell means adding both.
-var layoutNames = []string{"column", "topbar", "sidebar"}
+var layoutNames = []string{"column", "topbar", "sidebar", "console"}
 
 // LayoutNames returns the shipped shell names, column first. The
 // returned slice is a copy, so a caller sorting or truncating it cannot
@@ -366,10 +369,17 @@ func LayoutNames() []string { return append([]string(nil), layoutNames...) }
 // A shell is a page frame with holes in it. It executes
 // {{template "content" .}} for the page's own body, and every piece of
 // chrome around that is a block with a working default a page overrides
-// by redefining it: title, lang and dir in all three, plus brand, nav,
-// account and locale in the two chrome shells, and foot in topbar. No
-// block reads a field off the data, so a shell renders the same whether
-// a handler passes a struct, a dict-built map, or nil.
+// by redefining it: title, lang, dir and head in all four, plus brand,
+// nav, account and locale in the three chrome shells, and foot in
+// topbar and console. No block reads a field off the data, so a shell
+// renders the same whether a handler passes a struct, a dict-built
+// map, or nil.
+//
+// console is the fourth: a bar across the top AND a rail down the
+// side, which is what most admin consoles are and what neither topbar
+// nor sidebar could do alone. Its account block is topbar's shape (the
+// dropdown's menu body, not the whole control), so a screen moves
+// between those two with no edit at all.
 func Layout(name string) ([]byte, bool) {
 	b, err := fs.ReadFile(layoutsFS, "layouts/"+name+".html")
 	return b, err == nil

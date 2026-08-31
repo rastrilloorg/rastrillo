@@ -1492,6 +1492,94 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   }
 }
 
+
+/* console shell — a brand-and-account bar across the top AND a
+   navigation rail down the side. topbar without the rail is topbar;
+   sidebar without the bar is sidebar; this is the admin shape both of
+   them were half of, and the one an app used to hand-write.
+
+   TWO CHROMES, ONE CONTROL. Below 800px the bar's tail and the rail
+   both have to go away, and two disclosures would be two things to
+   learn. So one <details rst-shell-menu> gates both: its own next
+   sibling with +, and the rail from the shell root with :has(). One
+   [open], two reveals, one summary on screen at 390px.
+
+   Both reveals are written as HIDE-WHEN-CLOSED rather than
+   show-when-open. In an engine without :has() the rail's hide rule
+   never matches and the rail renders as a column of links under the
+   bar — longer page, navigation intact. Spelled the other way round,
+   the same missing selector is a phone that cannot navigate. Choose
+   the failure. */
+.rst-shell-console .rst-shell__bar, [rst-shell-console] [rst-shell-bar] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-4); padding-block: 0.5rem; padding-inline: var(--rst-sp-4); }
+.rst-shell-console .rst-shell__menu, [rst-shell-console] [rst-shell-menu] { margin-inline-start: auto; }
+.rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { align-items: center; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.35rem; list-style: none; min-block-size: 24px; padding-block: 0.3rem; padding-inline: 0.55rem; }
+.rst-shell-console .rst-shell__menu > summary::-webkit-details-marker, [rst-shell-console] [rst-shell-menu] > summary::-webkit-details-marker { display: none; }
+/* The rail, narrow: a full-width column under the bar, disclosed. It
+   holds navigation and nothing else — the language switcher and the
+   person are on the bar — so there is no rail-foot here and nothing
+   pinned to a bottom edge. box-sizing all the same, because the wide
+   query below sizes something in this subtree against the viewport and
+   a viewport promise has to be kept by the border box. */
+.rst-shell-console > .rst-shell__rail, [rst-shell-console] > [rst-shell-rail] { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+.rst-shell-console .rst-shell__nav, [rst-shell-console] [rst-shell-nav] { flex-direction: column; gap: 2px; }
+.rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
+.rst-shell-console .rst-shell__nav a:hover, [rst-shell-console] [rst-shell-nav] a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+/* The two hide rules. Same [open], two combinators. */
+.rst-shell-console .rst-shell__menu:not([open]) + .rst-shell__tail, [rst-shell-console] [rst-shell-menu]:not([open]) + [rst-shell-tail] { display: none; }
+.rst-shell-console:has(.rst-shell__menu:not([open])) > .rst-shell__rail, [rst-shell-console]:has([rst-shell-menu]:not([open])) > [rst-shell-rail] { display: none; }
+/* Disclosed, the tail is a column across the full width of the wrapped
+   bar. The account's margin-inline-start: auto has to be undone by
+   hand and stretch does not do it: in a column flex box the inline
+   axis is the CROSS axis, and an item with an auto cross-axis margin
+   is exempt from stretching — the same trap the topbar documents. */
+.rst-shell-console .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-console] [rst-shell-menu][open] + [rst-shell-tail] { display: flex; flex-basis: 100%; flex-direction: column; gap: var(--rst-sp-3); }
+.rst-shell-console .rst-shell__tail > .rst-shell__account, [rst-shell-console] [rst-shell-tail] > [rst-shell-account] { margin-inline-start: 0; }
+@media (min-width: 800px) {
+  /* The frame: bar across the top, rail beside the page, footer under
+     the page and not under the rail. Named areas rather than DOM
+     order, because the DOM order is the reading order and must not be
+     spent on layout — and areas map to the block and inline axes, so
+     an RTL locale gets the rail on the other side with no second rule.
+     min-block-size, never block-size: the rail reaches the foot of a
+     short page, and a long one still scrolls the document. */
+  .rst-shell-console, [rst-shell-console] { display: grid; grid-template-areas: "bar bar" "rail main" "rail foot"; grid-template-columns: 15rem 1fr; grid-template-rows: auto 1fr auto; min-block-size: 100dvh; }
+  .rst-shell-console > .rst-shell__bar, [rst-shell-console] > [rst-shell-bar] { grid-area: bar; }
+  .rst-shell-console > .rst-shell__main, [rst-shell-console] > [rst-shell-main] { grid-area: main; }
+  .rst-shell-console > .rst-shell__foot, [rst-shell-console] > [rst-shell-foot] { grid-area: foot; }
+  .rst-shell-console .rst-shell__menu, [rst-shell-console] [rst-shell-menu] { display: none; }
+  /* Every undo below repeats the narrow rule's own selector, because a
+     media query adds no specificity: without the :has() spelling here
+     a reader who opened the menu and then widened the window would
+     keep a hidden rail. */
+  .rst-shell-console .rst-shell__tail,
+  [rst-shell-console] [rst-shell-tail],
+  .rst-shell-console .rst-shell__menu:not([open]) + .rst-shell__tail,
+  [rst-shell-console] [rst-shell-menu]:not([open]) + [rst-shell-tail],
+  .rst-shell-console .rst-shell__menu[open] + .rst-shell__tail,
+  [rst-shell-console] [rst-shell-menu][open] + [rst-shell-tail] { display: contents; }
+  .rst-shell-console .rst-shell__tail > .rst-shell__account, [rst-shell-console] [rst-shell-tail] > [rst-shell-account] { margin-inline-start: auto; }
+  .rst-shell-console > .rst-shell__rail,
+  [rst-shell-console] > [rst-shell-rail],
+  .rst-shell-console:has(.rst-shell__menu:not([open])) > .rst-shell__rail,
+  [rst-shell-console]:has([rst-shell-menu]:not([open])) > [rst-shell-rail] { border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; grid-area: rail; }
+  /* THE VIEWPORT. The rail itself is a grid item stretched to the row,
+     which can be taller than the window — that is what makes the
+     background reach the foot of a long page. So the thing that has to
+     fit the window is the nav, and it is the nav that is sized against
+     it: sticky, capped at the viewport MINUS the two gaps it is inset
+     by, measured as a border box, scrolling itself when an app's
+     navigation is longer than that.
+     This is the shipped regression, avoided by construction rather
+     than by care: block-size: 100dvh on a content box that also
+     carried padding gave a border box 32px taller than the window, and
+     the gate that missed it asked where the person sat inside the rail
+     — a question that stayed true while the rail hung off the screen.
+     TestTheConsoleRailFitsTheViewport asks the other question, and
+     carries a control page that must answer it the other way. */
+  .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: var(--rst-sp-4); max-block-size: calc(100dvh - 2 * var(--rst-sp-4)); overflow-y: auto; position: sticky; }
+}
+
 /* error page — one centred column, whatever shell it lands in: the
    status as a quiet label above the sentence, one or two ways out, and
    the reference last, where an operator asked to quote it will find it.

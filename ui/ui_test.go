@@ -1937,6 +1937,10 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		"column":  {"lang", "dir", "title", "head", "content"},
 		"topbar":  {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
 		"sidebar": {"lang", "dir", "title", "head", "brand", "nav", "locale", "account", "content"},
+		// console offers topbar's set exactly, in topbar's order: the
+		// two shells are interchangeable for a screen, which is the
+		// whole claim of a fourth shell that is the other two at once.
+		"console": {"lang", "dir", "title", "head", "brand", "account", "locale", "nav", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {
@@ -2562,7 +2566,7 @@ func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 // (so a struct-vs-map decision in an app cannot break a shell), and
 // resolves every catalog key it names.
 func TestLayoutsParseAndRender(t *testing.T) {
-	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar"}) {
+	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console"}) {
 		t.Fatalf("LayoutNames = %v", got)
 	}
 	for _, name := range LayoutNames() {
