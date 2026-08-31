@@ -3306,9 +3306,20 @@ suffers, while a fill heavier than requested is merely emphatic.
 
 Proximity was tried first and abandoned on a real case (asked 0.08, got 0.0856). No
 tolerance can work: **the achievable weights are not evenly spaced**, because the ink
-floor cuts gaps of up to 0.067 out of the middle of the range, and any tolerance wide
-enough to swallow those would report every constrained answer as honoured — turning the
-one signal the caller needs into noise.
+floor cuts gaps out of the middle of the range, and any tolerance wide enough to swallow
+those would report every constrained answer as honoured — turning the one signal the
+caller needs into noise.
+
+**Correction, 2026-08-31.** This section first said "gaps of up to 0.067", relayed from
+the implementer's report, and I published it and passed it to Sheets. It does not
+reproduce. An independent measurement gives **0.0580** on the shipped canvases, **0.0608**
+over a 3.27M-gap sweep, and **0.9588** at the extreme — ink `#757573` on black leaves two
+islands, at 0.0370 and 0.9958. So the argument is right and was *understated by more than
+an order of magnitude*, while the specific figure was a bound in no direction at all and
+appeared nowhere in the tests. The lesson is the one this branch keeps paying for: a
+number that supports a design decision belongs in an assertion, not in prose. What should
+be gated is the conclusion — that the largest gap exceeds any workable tolerance — and
+never the figure.
 
 ### The slack constant: the pattern in one number
 
