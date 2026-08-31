@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/internal/scratchmod"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -36,8 +37,9 @@ func repoRoot(t *testing.T) string {
 func newScratchModule(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	goMod := "module scratch\n\ngo 1.25.0\n\nrequire github.com/carlosframework/rastrillo v0.0.0\n\nreplace github.com/carlosframework/rastrillo => " + repoRoot(t) + "\n"
-	writeFile(t, root, "go.mod", goMod)
+	if err := scratchmod.Write(root, "scratch", repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
 	return root
 }
 

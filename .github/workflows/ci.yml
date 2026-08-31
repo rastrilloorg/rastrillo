@@ -14,12 +14,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # The READMEs' documented sweep commands all run with GOFLAGS=-mod=mod;
-    # the tests that build scratch modules (replace => this repo) rely on it
-    # to resolve module data the scratch go.sum doesn't carry. Without it,
-    # -mod=readonly fails every nested go build on a fresh runner.
+    # No GOFLAGS=-mod=mod, deliberately. It used to be set here because
+    # the tests that build scratch modules (replace => this repo) had no
+    # module data for rastrillo's own dependencies, so every nested go
+    # build inside one failed under -mod=readonly. internal/scratchmod
+    # now gives those modules the checkout's requirements and go.sum, so
+    # they resolve offline without it.
+    #
+    # Getting rid of it matters beyond tidiness: under -mod=mod a missing
+    # go.sum entry is not an error — the toolchain writes the requirement
+    # and carries on — so this job cheerfully watched a scaffolded app's
+    # `make ci` pass for four releases while it failed for every user
+    # (CHANGELOG v0.24.0). The default -mod=readonly is what users run,
+    # and it is what CI must run to see what they see.
     env:
-      GOFLAGS: -mod=mod
       # The spec's acceptance criterion is CGO_ENABLED=0 across the
       # tree (static binaries; gormlite must never pull in a cgo
       # driver) — pinned job-wide so a runner image with a C toolchain
@@ -123,8 +131,14 @@ jobs:
           cd smokeapp
           go mod edit -replace github.com/carlosframework/rastrillo="$GITHUB_WORKSPACE"
           go mod tidy
-          go build ./...
-          go vet ./...
+          # The scaffolded app's OWN gate, not a hand-rolled substitute
+          # for it. This step used to run build+vet, which is a subset
+          # of `make ci` that happens to exclude the migration-check
+          # step — so a scaffold whose go.mod could not resolve the CLI
+          # passed here and failed on the first `make ci` of every real
+          # user (CHANGELOG v0.24.0). If the scaffold ships a gate, the
+          # smoke test is that gate.
+          make ci
           go build -o smokeapp ./cmd/smokeapp
           ./smokeapp -addr 127.0.0.1:8199 &
           for i in $(seq 1 20); do
@@ -141,8 +155,8 @@ jobs:
   # pass, so a runner that loses its browser fails loudly.
   browser:
     runs-on: ubuntu-latest
+    # No GOFLAGS here either — see the test job's note.
     env:
-      GOFLAGS: -mod=mod
       CGO_ENABLED: 0
     steps:
       - uses: actions/checkout@v4

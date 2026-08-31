@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/carlosframework/rastrillo"
+	"github.com/carlosframework/rastrillo/internal/scratchmod"
 )
 
 // newActionsAppRoot builds an app root with just enough of a go.mod for
@@ -18,7 +19,7 @@ import (
 func newActionsAppRoot(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module scratch\n\ngo 1.25.0\n"), 0o644); err != nil {
+	if err := scratchmod.Write(dir, "scratch", repoRoot(t)); err != nil {
 		t.Fatal(err)
 	}
 	return dir
