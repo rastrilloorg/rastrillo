@@ -147,15 +147,17 @@ which now includes the radii and the four depth tokens — and
 
 ```go
 func Pair(hue, chroma float64, background string) (Swatch, error)
+func Wash(hue, chroma float64, ink, background string) (Swatch, error)
 func Allocate(keys []string, avoid []float64) ([]Intent, bool)
 func Offered() []Intent
 func CheckIntents(intents []Intent, backgrounds []string) error
+func CheckWashes(intents []Intent, canvases []Canvas) error
 func WorstSeparation(intents []Intent, backgrounds []string) (deltaE float64, background, a, b string)
 func ContrastRatio(a, b string) (float64, error)
 func DeltaEOK(a, b string) (float64, error)
 ```
 
-Two entry points for apps that have to colour things the framework has
+Three entry points for apps that have to colour things the framework has
 never seen — a cell fill, a text highlight, a presence cursor, an author
 dot.
 
@@ -173,6 +175,50 @@ surface: a document canvas can be paper white in a dark theme, and a
 conditional format paints under a user fill. Pass a scheme instead and
 your own contrast test asserts the pair against the same wrong
 assumption it was built from, and passes.
+
+`Wash` is `Pair`'s sibling, and the difference is who owns the ink. Use
+`Pair` when a rule picks the colour and you write both halves — a
+presence cursor, an author dot, a conditional format. Use `Wash` when a
+person picked the colour and kept their own text: someone selects a cell
+and clicks yellow. They asked for a background, not for their font colour
+to change, and if you hand them an on-fill you have to persist it — which
+on export is a font colour written into the file that nobody set. Import
+a workbook, highlight one cell, export, and it comes back with font
+colours throughout.
+
+So `Wash` takes the ink the author already has and returns the palest
+fill of that hue their ink still reads on. Its two floors: the ink clears
+4.5:1 against the fill, and the fill is at least `MinSeparation` from the
+background — perceptibly different, or the user clicks yellow and nothing
+appears to happen. That second one is a perceptual distance and not a
+contrast ratio on purpose: a pale yellow wash is about 1.2:1 against
+white, a number that would condemn every wash anyone has ever shipped.
+
+`Wash` returns an error when no fill of that hue can carry that ink, and
+that is the feature. Excel will give you a dark navy fill and leave your
+text black on it, unreadable, with no warning. The hue is simply not
+offered instead — nobody's font colour is changed behind their back.
+
+`background` is a literal colour here for the same reason it is on
+`Pair`, and export is the clearest case. A stored intent resolves per
+reader, so a light reader and a dark reader see two washes of one
+highlight. XLSX carries one hex per cell, so on export that resolution
+collapses and a background must be chosen — and the theme someone
+happened to be using when they picked a colour must not leak into the
+file. A fill imported from a workbook exports as its retained original
+hex untouched; a fill picked in-app exports resolved against a canonical
+light background, because Excel's canvas is white and that is where the
+file will be opened. The export surface is not the reader's surface.
+
+`CheckWashes` is the wash half of the proof. A `Canvas` is a background
+together with every ink that can appear on it, because the two are not
+independent — a light canvas carries near-black theme ink — and because
+an author can *pin* their font colour and keep it when a reader switches
+theme. "Pinned black on dark paper" is a real canvas and the hardest one:
+black ink needs a light fill whatever surrounds the cell, so the wash
+stops being pale. It still resolves. Across the twelve offered hues, 26
+shipped canvases and three inks each — 912 combinations — there are no
+gaps.
 
 `Allocate` gives each of a set of opaque keys a hue from `Offered()`,
 chosen so no two share one for as long as the set has room. It returns
