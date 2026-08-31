@@ -8,18 +8,25 @@ import (
 	"slices"
 )
 
-// This file is rastrillo's colour engine (design doc §6-v2.2b): the two
-// entry points a caller needs to paint something in a colour it did not
-// have to hand-verify, plus the WCAG arithmetic they are built on.
+// This file is rastrillo's colour engine (design doc §6-v2.2b and
+// §6-v2.2c): the three entry points a caller needs to paint something in
+// a colour it did not have to hand-verify, plus the WCAG arithmetic they
+// are built on.
 //
 //   - Pair resolves one intent against one background into a fill and
-//     the colour to draw on it, contrast-correct by construction.
+//     the colour to draw on it, contrast-correct by construction. Use it
+//     when a RULE picks the colour and you write both halves — a presence
+//     cursor, an author dot, a conditional format.
+//   - Wash resolves one into a background wash under an ink the caller
+//     already has, and never returns an ink of its own. Use it when a
+//     PERSON picked the colour and kept their own text — someone selects
+//     a cell and clicks yellow.
 //   - Allocate hands a set of opaque keys mutually distinguishable hues.
 //
-// They are two functions and not one on purpose. Contrast-correctness
-// and mutual distinguishability are different guarantees; a single
-// function that delivers whichever one its arguments imply is the shape
-// of API nobody can gate.
+// They are three functions and not one on purpose. Contrast-correctness,
+// legibility under someone else's ink, and mutual distinguishability are
+// different guarantees; a single function that delivers whichever one its
+// arguments imply is the shape of API nobody can gate.
 //
 // # What "contrast-correct" does and does not mean
 //
@@ -200,11 +207,17 @@ type Swatch struct {
 //     initials or a run of text drawn on the fill is legible.
 //
 // What this deliberately does not give you is a pale wash under existing
-// body text — a fill three per cent away from the page that leaves the
-// author's own ink alone. That is a different guarantee (the text keeps
-// its own contrast; the fill has none) and asking one function for both
-// is what the two-entry-point split exists to prevent. If you want a
-// wash, mix your own and gate the text against it.
+// body text — a fill that leaves the author's own ink alone. That is a
+// different guarantee (the text keeps its own contrast; the fill stands
+// off the page hardly at all), and asking one function for both is what
+// the split into separate entry points exists to prevent.
+//
+// USE Wash FOR THAT, and do not mix your own. Hand-rolling it is the
+// pattern this package exists to replace: a fill chosen without the ink
+// in hand either restyles the author's text or leaves it unreadable on
+// the result, and the first of those writes a font colour into an
+// exported file that nobody set. Wash takes the ink you already have and
+// returns only a fill.
 //
 // Lightness is chosen as the least loud one that clears both floors: of
 // every lightness that works, the one nearest the background's own. So a
@@ -497,15 +510,25 @@ func ink(fill [3]uint8, hue, chroma float64) (string, float64, bool) {
 // one you know. The rule is where these stop being weights you can ask
 // for and become colours you can only paint:
 //
-//	0.03  MinSeparation, the floor — the palest fill Google Sheets ships
-//	0.11  Excel's "light green" conditional-formatting preset (#C6EFCE)
-//	0.12  Excel's "light yellow" preset (#FFEB9C)
-//	0.14  Excel's "light red" preset (#FFC7CE)
-//	0.21  flat yellow (#FFFF00), the most-clicked fill there is
-//	0.38  a solid green (#00B050)
+//	0.030  MinSeparation — OUR floor, where a fill stops being visible
+//	0.036  Google Sheets' palest fill, which is a grey (#F3F3F3)
+//	0.064  Google Sheets' palest coloured fill (#FFF2CC)
+//	0.11   Excel's "light green" conditional-formatting preset (#C6EFCE)
+//	0.12   Excel's "light yellow" preset (#FFEB9C)
+//	0.14   Excel's "light red" preset (#FFC7CE)
+//	0.21   flat yellow (#FFFF00), the most-clicked fill there is
+//	0.38   a solid green (#00B050)
 //	----- the ceiling under near-black ink on white is about here -----
-//	0.45  flat red (#FF0000)      — reachable at some hues, not others
-//	0.63  flat blue (#0000FF)     — not reachable under black ink at all
+//	0.45   flat red (#FF0000)      — reachable at some hues, not others
+//	0.63   flat blue (#0000FF)     — not reachable under black ink at all
+//
+// The first row is ours and is not attributed to anybody: it is where
+// this engine stops calling something a wash. The two below it are what
+// the palest thing another product ships actually measures, which is a
+// different claim and a more useful one — our floor sits just under
+// Sheets' palest fill and well under their palest COLOUR, so a caller
+// asking near the floor is asking for something fainter than any
+// coloured fill in a spreadsheet they have used.
 //
 // The last two rows are why the line is drawn rather than left implied.
 // Flat red and flat blue are perfectly good colours and a caller may

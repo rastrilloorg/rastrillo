@@ -654,6 +654,22 @@ func TestOfferedSetClearsEveryBackgroundWeShip(t *testing.T) {
 	if sep < MinSeparation {
 		t.Errorf("the two closest offered fills are ΔE_OK %.4f apart on %s (%s vs %s), under the %.3f floor", sep, sepBG, sepA, sepB, MinSeparation)
 	}
+
+	// And reference/ui.md publishes the figure and its margin in prose —
+	// "two teals ΔE_OK 0.045 apart, a 50% margin over the floor". Held
+	// here, rounded the safe way: the page may not claim more margin than
+	// the set has.
+	if math.Abs(sep-0.045) > 0.0005 {
+		t.Errorf("the closest offered pair measures ΔE_OK %.4f, but reference/ui.md publishes 0.045", sep)
+	}
+	// Rounded DOWN on the page, and held that way: a margin may be
+	// published as smaller than it is, never as larger.
+	if margin := (sep/MinSeparation - 1) * 100; margin < 49 || margin >= 50 {
+		t.Errorf("the closest offered pair clears the floor by %.1f%%, but reference/ui.md publishes 49%%", margin)
+	}
+	if sepA != "#00705d" || sepB != "#006d76" {
+		t.Errorf("the closest offered pair is %s/%s, but reference/ui.md names #00705d and #006d76 as the two teals", sepA, sepB)
+	}
 }
 
 // shippedBackgrounds is every surface colour the suite can render an
@@ -1445,6 +1461,24 @@ func TestOfferedSetServesEveryWashCanvas(t *testing.T) {
 	t.Logf("%d intents over %d canvases = %d background/ink pairs = %d cells (%d distinct backgrounds, %d distinct pairs)",
 		len(Offered()), len(canvases), pairs, cells, len(distinctBG), len(distinctPairs))
 
+	// reference/ui.md publishes these four numbers as facts about the
+	// shipped set. They were logged and asserted by nothing, so a fourth
+	// theme or a change to the offered set would have falsified the page
+	// silently. Asserted here, where the reason is written down.
+	for _, tt := range []struct {
+		name      string
+		got, want int
+	}{
+		{"canvases", len(canvases), 26},
+		{"background/ink pairs", pairs, 76},
+		{"cells", cells, 912},
+		{"distinct background/ink pairs", len(distinctPairs), 64},
+	} {
+		if tt.got != tt.want {
+			t.Errorf("the matrix has %d %s, but reference/ui.md publishes %d — update the page in the same commit as the set", tt.got, tt.name, tt.want)
+		}
+	}
+
 	// At the weight an app actually asks for, AND at the floor. The two
 	// are different questions: at testWeight the perceptibility floor
 	// never binds, because the target is four times it, so a run at
@@ -1791,6 +1825,13 @@ func TestWashScaleReferencePoints(t *testing.T) {
 		name, hex string
 		want      float64 // what the doc comment publishes, to 2dp
 	}
+	// The low end. These two carry the attribution the floor row used to
+	// carry wrongly: 0.03 is OUR constant, and what Google Sheets
+	// actually ships is these.
+	palest := []ref{
+		{"Sheets' palest fill (a grey)", "#F3F3F3", 0.036},
+		{"Sheets' palest coloured fill", "#FFF2CC", 0.064},
+	}
 	presets := []ref{
 		{"Excel light green preset", "#C6EFCE", 0.11},
 		{"Excel light yellow preset", "#FFEB9C", 0.12},
@@ -1820,10 +1861,19 @@ func TestWashScaleReferencePoints(t *testing.T) {
 		return got
 	}
 
-	var palest, loudestPreset, quietestSaturated = math.Inf(1), 0.0, math.Inf(1)
+	var ourPalest, loudestPreset, quietestSaturated = math.Inf(1), 0.0, math.Inf(1)
+	quietestPreset := math.Inf(1)
+	var sheetsPalest float64
+	for _, r := range palest {
+		d := measure(r)
+		if r.hex == "#F3F3F3" {
+			sheetsPalest = d
+		}
+	}
 	for _, r := range presets {
 		d := measure(r)
 		loudestPreset = math.Max(loudestPreset, d)
+		quietestPreset = math.Min(quietestPreset, d)
 	}
 	for _, r := range saturated {
 		d := measure(r)
@@ -1834,16 +1884,25 @@ func TestWashScaleReferencePoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("hue %g at the floor: %v", in.Hue, err)
 		}
-		palest = math.Min(palest, sw.Separation)
+		ourPalest = math.Min(ourPalest, sw.Separation)
+	}
+
+	// The claim the scale's first row now makes, in place of the
+	// attribution it used to carry: our floor is BELOW what Sheets
+	// actually ships as its palest fill. If that ever inverted, the
+	// comment would be telling a caller the opposite of the truth.
+	if MinSeparation >= sheetsPalest {
+		t.Errorf("MinSeparation is %v but Sheets' palest fill measures %.4f — the floor is no longer below it and the scale's note is wrong", MinSeparation, sheetsPalest)
 	}
 
 	// The ordering the scale depends on. If Excel's own rule-driven fills
 	// were LIGHTER than our floor, the floor would be the thing that was
 	// wrong, and the doc comment would be teaching a scale upside down.
-	if !(palest < loudestPreset && loudestPreset < quietestSaturated) {
-		t.Errorf("the scale is not ordered as published: our palest %.4f, loudest preset %.4f, quietest saturated fill %.4f", palest, loudestPreset, quietestSaturated)
+	if !(ourPalest < loudestPreset && loudestPreset < quietestSaturated) {
+		t.Errorf("the scale is not ordered as published: our palest %.4f, loudest preset %.4f, quietest saturated fill %.4f", ourPalest, loudestPreset, quietestSaturated)
 	}
-	t.Logf("scale: our palest %.4f < presets %.4f..%.4f < saturated %.4f..", palest, 0.1056, loudestPreset, quietestSaturated)
+	t.Logf("scale: our palest %.4f < Sheets' palest %.4f < presets %.4f..%.4f < saturated %.4f..",
+		ourPalest, sheetsPalest, quietestPreset, loudestPreset, quietestSaturated)
 
 	// The round trip that makes these numbers Swatch.Separation's and not
 	// a second implementation's: ask Wash for each preset's weight and
@@ -1985,51 +2044,171 @@ func TestAchievableWeightsHaveWideGaps(t *testing.T) {
 	}
 }
 
-// TestInkUnknownIsUnsatisfiable gates the arithmetic §6-v2.2d rests on,
-// which until now lived only in a doc comment.
+// inkUnknownCandidates enumerates the colours that could serve as an
+// INK-UNKNOWN wash on paper: ones perceptibly different from it that also
+// keep every ink still legible ON it legible on THEM.
 //
-// The claim is that an ink-unknown wash cannot simply be Wash with the
-// argument left out — that retaining the FULL 4.5:1 for every ink still
-// legible on the page is not merely hard on paper white but impossible.
-// It is a load-bearing number in a spec, so it is checked here rather
-// than believed.
+// It is a search over the candidate set, not a re-derivation. The earlier
+// version of this gate inverted the contrast formula to find the worst
+// legible ink and then pushed the result back through the same formula,
+// which returns the paper's own luminance by construction for any floor
+// and any paper — three of its four assertions were identities. This
+// enumerates instead: real inks, real candidate colours, the shipped
+// ContrastRatio and DeltaEOK between them.
 //
-// The conclusions are literals; only the arithmetic is computed.
-func TestInkUnknownIsUnsatisfiable(t *testing.T) {
-	const paper = "#ffffff"
+// The ink sample is the 256 greys. That is exhaustive rather than
+// representative, because contrast depends on luminance alone and the
+// greys cover the whole luminance range in the finest steps sRGB has. The
+// candidate sample is the greys plus the engine's own lightness grid
+// across hue and chroma, so an achromatic wash and a tinted one both get
+// their chance.
+func inkUnknownCandidates(t *testing.T, paper string, floor float64) (n int, example string) {
+	t.Helper()
 	pr, pg, pb, err := parseHex(paper)
 	if err != nil {
 		t.Fatal(err)
 	}
 	paperLum := relLuminance(pr, pg, pb)
-	if paperLum != 1.0 {
-		t.Fatalf("paper white measures luminance %v, want 1.0", paperLum)
+	paperLab := oklabOf(pr, pg, pb)
+
+	var legible []float64
+	for v := 0; v < 256; v++ {
+		l := relLuminance(uint8(v), uint8(v), uint8(v))
+		if ratioOf(l, paperLum) >= floor {
+			legible = append(legible, l)
+		}
+	}
+	if len(legible) == 0 {
+		t.Fatalf("no ink at all is legible on %s at %.1f:1 — the question this gate asks does not arise", paper, floor)
 	}
 
-	// The worst ink still legible on the page: exactly at the floor.
-	worstInk := (paperLum+0.05)/ContrastFloorText - 0.05
-	if math.Abs(worstInk-0.183333) > 1e-5 {
-		t.Errorf("the worst still-legible ink on paper white is at luminance %.6f, but the doc comment says 0.1833", worstInk)
+	try := func(rgb [3]uint8) {
+		if labDistance(oklabOf(rgb[0], rgb[1], rgb[2]), paperLab) < MinSeparation {
+			return // invisible against the paper: not a wash
+		}
+		washLum := relLuminance(rgb[0], rgb[1], rgb[2])
+		for _, inkLum := range legible {
+			if ratioOf(inkLum, washLum) < floor {
+				return // some legible ink stops being legible on it
+			}
+		}
+		n++
+		if example == "" {
+			example = hexOf(rgb)
+		}
+	}
+	for v := 0; v < 256; v++ {
+		try([3]uint8{uint8(v), uint8(v), uint8(v)})
+	}
+	for hue := 0.0; hue < 360; hue += 5 {
+		for _, c := range []float64{0.02, 0.05, 0.14, 0.3} {
+			for step := 0; step <= lightnessSteps; step++ {
+				rgb, _ := oklchRGB(stepLightness(step), c, hue)
+				try(rgb)
+			}
+		}
+	}
+	return n, example
+}
+
+// TestInkUnknownHasNoCandidateOnPaperWhite gates the premise §6-v2.2d
+// rests on: that an ink-unknown wash retaining the FULL text floor is not
+// merely hard on paper white but has no candidate at all, so that variant
+// must retain a lower floor than it admits — a design decision, not a
+// defaulted parameter.
+//
+// One step of the argument is algebra and is stated rather than asserted,
+// because asserting it would be the identity this gate previously
+// mistook for a measurement: the wash luminance required to keep the
+// worst legible ink at floor T is T*((paperLum+0.05)/T - 0.05 + 0.05) -
+// 0.05, which cancels to paperLum for every T. On paper white that is
+// 1.0. Re-running a cancellation inside an assertion measures nothing.
+//
+// What is NOT algebra, and is therefore what this gate holds, is that the
+// candidate set is empty — that nothing in sRGB sits at that luminance
+// except the paper itself, which fails the other floor. See also
+// TestOnlyWhiteReachesFullLuminance, which is the same fact from the
+// other side.
+func TestInkUnknownHasNoCandidateOnPaperWhite(t *testing.T) {
+	n, example := inkUnknownCandidates(t, "#ffffff", ContrastFloorText)
+	if n != 0 {
+		t.Errorf("paper white has %d ink-unknown wash candidates at %.1f:1 (e.g. %s) — §6-v2.2d says there are none, and if there are, an ink-unknown Wash could simply retain the whole floor",
+			n, ContrastFloorText, example)
 	}
 
-	// What a wash would have to be for that ink to keep the whole floor.
-	needed := ContrastFloorText*(worstInk+0.05) - 0.05
-	if math.Abs(needed-1.0) > 1e-9 {
-		t.Errorf("a wash retaining the full floor for that ink needs luminance %.9f, but the doc comment says exactly 1.0", needed)
+	// The control, and it has to be a case whose answer differs. Varying
+	// the FLOOR cannot provide one: the cancellation above holds for every
+	// T, so paper white has no candidate at any floor. Varying the PAPER
+	// does. signal's light page is one eight-bit step off white and the
+	// answer flips — which also says the emptiness is a property of white
+	// specifically and not of light papers generally.
+	for _, tt := range []struct {
+		paper string
+		why   string
+	}{
+		{"#f4f5f8", "signal's light page, a hair off white"},
+		{"#808080", "a mid grey"},
+		{"#111418", "day's dark page"},
+		{"#000000", "black"},
+	} {
+		n, example := inkUnknownCandidates(t, tt.paper, ContrastFloorText)
+		if n == 0 {
+			t.Errorf("%s (%s) also has no candidate — this search returns empty for everything and is not measuring the candidate set", tt.paper, tt.why)
+			continue
+		}
+		t.Logf("%-9s %-34s %6d candidates (e.g. %s)", tt.paper, tt.why, n, example)
 	}
-	if needed < paperLum {
-		t.Errorf("the required luminance %.9f is below the page's own %.9f, so the case is merely hard rather than impossible and the comment overstates it", needed, paperLum)
-	}
+}
 
-	// And the only colour at that luminance is the page itself, which
-	// fails the other floor — so there is no wash there at all, which is
-	// what makes it unsatisfiable rather than a narrow squeeze.
-	sep, err := DeltaEOK(paper, paper)
+// TestOnlyWhiteReachesFullLuminance is the other side of the same fact,
+// checked exhaustively because it can be: all 16,777,216 sRGB colours, in
+// about twenty milliseconds.
+//
+// It is the load-bearing premise underneath §6-v2.2d. The required wash on
+// paper white has to sit at relative luminance 1.0, and if any colour but
+// white did, the ink-unknown case would have a candidate and the design
+// decision behind that section would not arise.
+//
+// The runner-up is asserted too, so the test cannot pass by finding one
+// colour for the wrong reason: a scan that had stopped discriminating
+// would show the second-highest sitting at 1.0 as well.
+func TestOnlyWhiteReachesFullLuminance(t *testing.T) {
+	full, runnerUp := 0, 0.0
+	var fullHex, runnerUpHex string
+	for r := 0; r < 256; r++ {
+		for g := 0; g < 256; g++ {
+			for b := 0; b < 256; b++ {
+				l := relLuminance(uint8(r), uint8(g), uint8(b))
+				if l >= 1.0 {
+					full++
+					fullHex = hexOf([3]uint8{uint8(r), uint8(g), uint8(b)})
+					continue
+				}
+				if l > runnerUp {
+					runnerUp, runnerUpHex = l, hexOf([3]uint8{uint8(r), uint8(g), uint8(b)})
+				}
+			}
+		}
+	}
+	if full != 1 {
+		t.Errorf("%d sRGB colours reach relative luminance 1.0, want exactly 1 — §6-v2.2d rests on white being the only one", full)
+	}
+	if fullHex != "#ffffff" {
+		t.Errorf("the colour at luminance 1.0 is %s, want #ffffff", fullHex)
+	}
+	if runnerUp >= 1.0 {
+		t.Errorf("the second-highest luminance is %.9f (%s), which is not below 1.0 — the scan is not discriminating", runnerUp, runnerUpHex)
+	}
+	t.Logf("exactly one colour at luminance 1.0 (%s); the next is %s at %.9f", fullHex, runnerUpHex, runnerUp)
+
+	// And white fails the other floor against itself, which is what makes
+	// the empty candidate set an emptiness rather than a squeeze.
+	sep, err := DeltaEOK("#ffffff", "#ffffff")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if sep >= MinSeparation {
-		t.Errorf("the page against itself measures %.4f, which clears the perceptibility floor — the argument that the only candidate is invisible has gone", sep)
+		t.Errorf("the page against itself measures %.4f, clearing the perceptibility floor — the one candidate would then be admissible", sep)
 	}
 }
 
@@ -2054,15 +2233,33 @@ func TestInkUnknownIsUnsatisfiable(t *testing.T) {
 func TestReachableCeilingUnderTheDefaultCase(t *testing.T) {
 	inks := []string{"#000000", "#111111", "#1a1d21", "#0c0e12", "#0f0f0f", "#171717"}
 
+	// Far past anything the floors allow, so Wash returns the heaviest
+	// wash it can rather than the one asked for.
+	const unreachableWeight = 10.0
+
+	// The ceiling is read out of Wash itself, not out of a test-local
+	// re-enumeration of its feasible set. Asking for a weight far past
+	// anything achievable returns the closest that can be delivered,
+	// which IS the ceiling — so the published figures come off the
+	// shipped path rather than off a mirror that happens to agree with
+	// it. (§7-v2's addendum: measure freely to discover, publish only
+	// from the shipped path.)
+	ceilingOf := func(in Intent, ink string) float64 {
+		t.Helper()
+		sw, err := Wash(in.Hue, in.Chroma, unreachableWeight, ink, "#ffffff")
+		if err != nil {
+			t.Fatalf("ink %s, hue %g: no weight at all is reachable on paper white: %v", ink, in.Hue, err)
+		}
+		if sw.SeparationMet {
+			t.Fatalf("ink %s, hue %g: a request of %v was reported as met, so it is not past the ceiling and this is not measuring one", ink, in.Hue, unreachableWeight)
+		}
+		return sw.Separation
+	}
+
 	guaranteed, at := math.Inf(1), ""
 	for _, ink := range inks {
 		for _, in := range Offered() {
-			w := achievableWeights(in.Hue, in.Chroma, ink, "#ffffff")
-			if len(w) == 0 {
-				t.Errorf("ink %s, hue %g: no weight at all is reachable on paper white", ink, in.Hue)
-				continue
-			}
-			if ceiling := w[len(w)-1]; ceiling < guaranteed {
+			if ceiling := ceilingOf(in, ink); ceiling < guaranteed {
 				guaranteed, at = ceiling, fmt.Sprintf("ink %s, hue %g", ink, in.Hue)
 			}
 		}
@@ -2071,9 +2268,8 @@ func TestReachableCeilingUnderTheDefaultCase(t *testing.T) {
 
 	blackOnly, blackBest := math.Inf(1), 0.0
 	for _, in := range Offered() {
-		w := achievableWeights(in.Hue, in.Chroma, "#000000", "#ffffff")
-		blackOnly = math.Min(blackOnly, w[len(w)-1])
-		blackBest = math.Max(blackBest, w[len(w)-1])
+		c := ceilingOf(in, "#000000")
+		blackOnly, blackBest = math.Min(blackOnly, c), math.Max(blackBest, c)
 	}
 	t.Logf("under pure black ink specifically: every hue reaches %.4f, the best hue %.4f", blackOnly, blackBest)
 
@@ -2104,12 +2300,9 @@ func TestReachableCeilingUnderTheDefaultCase(t *testing.T) {
 			t.Errorf("weight %v is above the guaranteed ceiling %.4f, but it is inside the rule-driven band the docs recommend defaulting into", w, guaranteed)
 		}
 	}
-	// And the hand-picked band's floor, which is what makes two bands
-	// honest rather than one band and a disclaimer.
-	if guaranteed < 0.21 {
-		t.Errorf("the guaranteed ceiling is %.4f, below the 0.21 the docs name as the hand-picked band's floor — the second band is then mostly unreachable under the default case and the guidance is fiction", guaranteed)
-	}
-	if guaranteed < 0.30 {
-		t.Errorf("the guaranteed ceiling is %.4f, which leaves the hand-picked band too narrow to be worth naming as a band", guaranteed)
-	}
+	// The hand-picked band's floor is 0.21, and the published guaranteed
+	// ceiling is 0.39, so the check below subsumes it: anything that
+	// broke "reaches 0.39" would be caught there first. Two further
+	// assertions at 0.21 and 0.30 used to sit here and could not fire
+	// independently — three checks that were one.
 }
