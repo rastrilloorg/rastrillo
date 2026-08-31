@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // Fail logs through Ctx.Logger (when set) and answers a 500 — the app's

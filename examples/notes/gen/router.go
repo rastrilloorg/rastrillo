@@ -5,7 +5,7 @@ package gen
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 	act_bookmarks_id_delete_get "notes/gen/actions/bookmarks/id/delete_get"
 	act_bookmarks_id_delete_post "notes/gen/actions/bookmarks/id/delete_post"
 	act_bookmarks_id_edit_advanced_post "notes/gen/actions/bookmarks/id/edit_advanced_post"

@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // Option configures Funcs. No options is the framework's own behaviour,

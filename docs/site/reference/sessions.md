@@ -1,6 +1,6 @@
 # 🤖 sessions
 
-`github.com/carlosframework/rastrillo/sessions`
+`amadan.net/rastrillo/rastrillo/sessions`
 
 The signed-in-state core: SQLite-backed session rows, `__Host-` cookies
 on https origins, and the request-context surface every identity plugin

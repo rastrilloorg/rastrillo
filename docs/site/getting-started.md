@@ -5,7 +5,7 @@ This page takes you from nothing to an app serving on your machine.
 ## Install the CLI
 
 ```sh
-go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
+go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 ```
 
 You need Go 1.25 or newer. [The CLI reference](/docs/cli) has every

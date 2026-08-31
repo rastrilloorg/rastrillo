@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	rastrillo "github.com/carlosframework/rastrillo"
+	rastrillo "amadan.net/rastrillo/rastrillo"
 )
 
 func registry() []rastrillo.ToolDef {

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {

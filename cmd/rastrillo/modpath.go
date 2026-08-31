@@ -35,7 +35,7 @@ func modulePath(dir string) (string, error) {
 // rastrilloModule is the framework's own module path — what an app's
 // go.mod requires, and what rastrillo doctor compares its own version
 // against.
-const rastrilloModule = "github.com/carlosframework/rastrillo"
+const rastrilloModule = "amadan.net/rastrillo/rastrillo"
 
 // moduleRequirement reports the version dir/go.mod requires of the
 // named module, and the target of any replace directive pointing at it.

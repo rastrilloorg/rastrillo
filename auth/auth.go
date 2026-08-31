@@ -55,8 +55,8 @@ import (
 
 	"github.com/keymaildev/signin"
 
-	"github.com/carlosframework/rastrillo/mail"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/mail"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // Identity is the verified sign-in identity — signin's, aliased so an

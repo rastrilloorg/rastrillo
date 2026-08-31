@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/crypto"
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/vault"
+	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/vault"
 )
 
 func testSessions(t *testing.T) (*sessions.Sessions, *sql.DB) {

@@ -27,7 +27,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/eventlog"
+	"amadan.net/rastrillo/rastrillo/eventlog"
 )
 
 // streamPrefix namespaces this resource's streams in the shared

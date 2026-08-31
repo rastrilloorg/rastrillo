@@ -3,7 +3,7 @@ module notes
 go 1.26.0
 
 require (
-	github.com/carlosframework/rastrillo v0.1.0
+	amadan.net/rastrillo/rastrillo v0.1.0
 	github.com/go-chi/chi/v5 v5.3.2
 	gorm.io/gorm v1.31.2
 )
@@ -66,6 +66,6 @@ require (
 	modernc.org/sqlite v1.55.0 // indirect
 )
 
-replace github.com/carlosframework/rastrillo => ../..
+replace amadan.net/rastrillo/rastrillo => ../..
 
 tool github.com/sqlc-dev/sqlc/cmd/sqlc

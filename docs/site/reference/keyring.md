@@ -1,6 +1,6 @@
 # 🤖 keyring
 
-`github.com/carlosframework/rastrillo/keyring`
+`amadan.net/rastrillo/rastrillo/keyring`
 
 The E2EE seed lifecycle over [crypto](/docs/reference/crypto)'s
 primitives: one 32-byte seed per person, namespaced purpose derivation,

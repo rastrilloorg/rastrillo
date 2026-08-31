@@ -241,7 +241,7 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/plugin/dbresolver"
 
-	"github.com/carlosframework/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/gormlite"
 )
 
 type DB struct {
@@ -572,7 +572,7 @@ func Protect(origin string) func(http.Handler) http.Handler {
 }
 ```
 
-Rewrite `auth/csrf.go` to a two-line delegate: `func (a *Auth) sameOrigin(r *http.Request) bool { return csrf.SameOrigin(r, a.cfg.Origin) }` with a pointer comment. Import path: `github.com/carlosframework/rastrillo/csrf`.
+Rewrite `auth/csrf.go` to a two-line delegate: `func (a *Auth) sameOrigin(r *http.Request) bool { return csrf.SameOrigin(r, a.cfg.Origin) }` with a pointer comment. Import path: `amadan.net/rastrillo/rastrillo/csrf`.
 
 - [ ] **Step 4: Run tests to verify they pass — including auth's**
 
@@ -717,7 +717,7 @@ Read `internal/generate/actions.go` fully. Identify: (a) the helper-block emissi
 - [ ] **Step 2: Make the change**
 
 - Delete the helper-block emission entirely.
-- Add `"github.com/carlosframework/rastrillo/form"` and `"github.com/carlosframework/rastrillo/view"` to emitted imports **only when the emitted body references them** (an action with no money field must not import `form` unused — emitted code must pass vet).
+- Add `"amadan.net/rastrillo/rastrillo/form"` and `"amadan.net/rastrillo/rastrillo/view"` to emitted imports **only when the emitted body references them** (an action with no money field must not import `form` unused — emitted code must pass vet).
 - Rewrite emitted call sites: `fail(ctx, w, ...)` → `view.Fail(ctx, w, ...)` (the `what` string keeps its `"<resource>: "` prefix, now built into the argument by the emitter); `render(` → `view.Render(`; `parseID(` → `view.ParseID(`; `parseCents(` → `form.ParseCents(`; `moneyFmt` returns `"form.FormatCents"` / `"form.FormatCentsPlain"`.
 - `errs := map[string]string{}` may stay as-is (churn-free) — do not switch generated code to `form.Errors` in this task.
 
@@ -732,7 +732,7 @@ Expected: FAIL with diffs showing exactly the deletion + qualified calls. Read e
 - [ ] **Step 4: Regenerate the tickets example and run its suite**
 
 ```bash
-(cd examples/tickets && go run github.com/carlosframework/rastrillo/cmd generate && go test ./... && go vet ./...)
+(cd examples/tickets && go run amadan.net/rastrillo/rastrillo/cmd generate && go test ./... && go vet ./...)
 ```
 
 (If the CLI invocation differs, `examples/tickets/internal/ticketstest/generatecheck_test.go` shows the canonical command — mirror it.) Expected: regeneration rewrites `gen/actions/**`, tests PASS including the roundtrip/required/filter/delete suites. Run `wc -l examples/tickets/gen/actions/**/*.go` and record the before/after total in the commit message (expected: ~1,800 → ~600).

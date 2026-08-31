@@ -3,7 +3,7 @@ package act_index_get
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"blog/internal/blog"
 )

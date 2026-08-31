@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/crypto"
 )
 
 // TestBlobKeyDerivation pins the context-string format: one sealing

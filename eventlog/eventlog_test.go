@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 func openLog(t *testing.T, writer string) *Log {

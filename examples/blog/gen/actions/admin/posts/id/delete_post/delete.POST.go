@@ -3,7 +3,7 @@ package act_admin_posts_id_delete_post
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"blog/internal/blog"
 )

@@ -15,8 +15,8 @@ import (
 	gosqlite "modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/gormlite"
 )
 
 // LedgerDDL is exported so `rastrillo migration baseline` can create

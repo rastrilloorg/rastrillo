@@ -5,8 +5,8 @@ package act_admin_posts_new_get
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/view"
 )
 
 // Handle is GET /admin/posts/new.

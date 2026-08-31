@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Module path is `github.com/carlosframework/rastrillo`. New package lives at `migrate/`.
+- Module path is `amadan.net/rastrillo/rastrillo`. New package lives at `migrate/`.
 - SQLite only. No new third-party dependencies — `gormlite`, `gorm`, and `modernc.org/sqlite` are already present.
 - Migrations are forward-only. No `Down`, no rollback, no reverse — see spec §3.
 - No CLI command applies migrations, with the single exception of `rastrillo migration baseline` (spec §4).
@@ -731,7 +731,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 )
 
 func openDB(t *testing.T) *db.DB {
@@ -881,7 +881,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 )
 
 const ledgerDDL = `CREATE TABLE IF NOT EXISTS rastrillo_migrations (
@@ -1099,7 +1099,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 )
 
 // legacy is the shape a deployed app already has: the tables exist,
@@ -1499,7 +1499,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/carlosframework/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/gormlite"
 )
 
 // Change is one generated statement.
@@ -1767,7 +1767,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 type dumpNote struct {
@@ -1833,7 +1833,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // Payload is what the loader program prints and the CLI parses.
@@ -1915,12 +1915,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/blobs"
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/eventlog"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/passkey"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/blobs"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/eventlog"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // legacySQL is each package's schema exactly as it shipped before the
@@ -2032,7 +2032,7 @@ var migrationFS embed.FS
 var Schema = migrate.MustFromFS(migrationFS, "sessions")
 ```
 
-Add `"embed"` and `"github.com/carlosframework/rastrillo/migrate"` to each package's imports. Repeat for `blobs`, `eventlog`, `passkey`, changing only the namespace string.
+Add `"embed"` and `"amadan.net/rastrillo/rastrillo/migrate"` to each package's imports. Repeat for `blobs`, `eventlog`, `passkey`, changing only the namespace string.
 
 Then fix the packages' own tests: `sessions/sessions_test.go`, `blobs/blobs_test.go`, `eventlog/eventlog_test.go`, `passkey/passkey_test.go` currently call `rastrillo.OpenDB(path, Migrations)`. Replace with:
 
@@ -2379,7 +2379,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/migrate/dump"
+	"amadan.net/rastrillo/rastrillo/migrate/dump"
 )
 
 func runMigration(args []string) error {
@@ -2439,7 +2439,7 @@ package main
 import (
 	app %q
 
-	"github.com/carlosframework/rastrillo/migrate/dump"
+	"amadan.net/rastrillo/rastrillo/migrate/dump"
 )
 
 func main() { dump.Main(app.Schema.All(), app.Models) }
@@ -2899,7 +2899,7 @@ func appSet(dir string) ([]migrate.Migration, error) {
 }
 ```
 
-Add imports: `context`, `flag`, `regexp`, `github.com/carlosframework/rastrillo/db`, `github.com/carlosframework/rastrillo/migrate`.
+Add imports: `context`, `flag`, `regexp`, `amadan.net/rastrillo/rastrillo/db`, `amadan.net/rastrillo/rastrillo/migrate`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -3111,7 +3111,7 @@ Expected: FAIL — files missing, `app.go` still calls `AutoMigrate`.
 	}
 ```
 
-and add `"context"` plus `"github.com/carlosframework/rastrillo/migrate"` to its imports.
+and add `"context"` plus `"amadan.net/rastrillo/rastrillo/migrate"` to its imports.
 
 `modelsTemplate` — add below the existing comment:
 
@@ -3143,7 +3143,7 @@ const migrationsTemplate = `package %[1]s
 import (
 	"embed"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 //go:embed migrations/*.sql

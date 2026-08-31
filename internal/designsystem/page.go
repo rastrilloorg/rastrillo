@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/internal/iconsets"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/iconsets"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // ── The page model ───────────────────────────────────────────────────

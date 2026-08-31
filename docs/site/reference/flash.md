@@ -1,6 +1,6 @@
 # 🤖 flash
 
-`github.com/carlosframework/rastrillo/flash`
+`amadan.net/rastrillo/rastrillo/flash`
 
 One-shot notice messages carried in a cookie and cleared once read.
 

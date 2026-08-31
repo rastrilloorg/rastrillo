@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // Payload is what the loader program prints and the CLI parses.

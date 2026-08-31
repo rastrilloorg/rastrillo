@@ -40,8 +40,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/crypto"
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // InlineMax is the guidance threshold: blobs larger than this belong in

@@ -2,7 +2,7 @@ module tickets
 
 go 1.26.0
 
-require github.com/carlosframework/rastrillo v0.1.0
+require amadan.net/rastrillo/rastrillo v0.1.0
 
 require (
 	cel.dev/expr v0.25.1 // indirect
@@ -23,7 +23,9 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-sqlite3 v0.32.0 // indirect
+	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pganalyze/pg_query_go/v6 v6.2.2 // indirect
 	github.com/pingcap/errors v0.11.5-0.20250523034308-74f78ae071ee // indirect
@@ -61,6 +63,6 @@ require (
 	modernc.org/sqlite v1.55.0 // indirect
 )
 
-replace github.com/carlosframework/rastrillo => ../..
+replace amadan.net/rastrillo/rastrillo => ../..
 
 tool github.com/sqlc-dev/sqlc/cmd/sqlc

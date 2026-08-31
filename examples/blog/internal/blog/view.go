@@ -16,8 +16,8 @@ import (
 
 	blogassets "blog"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 //go:embed templates/layout.html templates/pages/*.html

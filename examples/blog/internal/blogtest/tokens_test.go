@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // The app vendors the library stylesheet as static/tokens.css and

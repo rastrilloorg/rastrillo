@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // EmitStore writes per resource either the sqlc inputs (exclusive:

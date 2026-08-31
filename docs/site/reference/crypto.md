@@ -1,6 +1,6 @@
 # 🤖 crypto
 
-`github.com/carlosframework/rastrillo/crypto`
+`amadan.net/rastrillo/rastrillo/crypto`
 
 The family envelope: asymmetric sealing, signing, and the symmetric
 half — every operation domain-separated by a caller-supplied context

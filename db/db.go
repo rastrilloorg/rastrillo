@@ -26,7 +26,7 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/plugin/dbresolver"
 
-	"github.com/carlosframework/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/gormlite"
 )
 
 // slogWriter adapts the app's *slog.Logger to GORM's logger.Writer.

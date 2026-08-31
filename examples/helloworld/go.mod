@@ -2,7 +2,7 @@ module helloworld
 
 go 1.25.0
 
-require github.com/carlosframework/rastrillo v0.1.0
+require amadan.net/rastrillo/rastrillo v0.1.0
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -17,4 +17,4 @@ require (
 	modernc.org/sqlite v1.55.0 // indirect
 )
 
-replace github.com/carlosframework/rastrillo => ../..
+replace amadan.net/rastrillo/rastrillo => ../..

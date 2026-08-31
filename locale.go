@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // Catalog is one locale's flat key → string table (design doc §10).

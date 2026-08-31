@@ -77,9 +77,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/webauthn"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/webauthn"
 )
 
 // challengeTTL bounds a ceremony: begin to finish inside this window,

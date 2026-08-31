@@ -732,7 +732,7 @@ author would just update.
 ## Try it
 
 ```
-go install github.com/carlosframework/rastrillo/cmd/rastrillo@latest
+go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new myapp
 cd myapp && go mod tidy && rastrillo dev
 ```

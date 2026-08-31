@@ -18,8 +18,8 @@ import (
 // version.
 func TestVectorsEndToEndOnAFixtureApp(t *testing.T) {
 	goMod := fmt.Sprintf("module fixtureapp\n\ngo 1.25.0\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
+		"require amadan.net/rastrillo/rastrillo v0.0.0\n\n"+
+		"replace amadan.net/rastrillo/rastrillo => %s\n", repoRoot(t))
 	dir := scaffold(t, map[string]string{"go.mod": goMod})
 	t.Setenv("GOFLAGS", "-mod=mod")
 

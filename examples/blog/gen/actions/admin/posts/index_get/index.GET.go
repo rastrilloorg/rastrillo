@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"blog/internal/blog"
 )

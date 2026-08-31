@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // mergeableFixtureResource is the running mergeable example — the same

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and
@@ -186,7 +186,7 @@ const fixtureMigrationsGo = `package app
 import (
 	"embed"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 //go:embed migrations/*.sql
@@ -211,7 +211,7 @@ const fixtureSubsystemGo = `package subsystem
 import (
 	"embed"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
 //go:embed migrations/*.sql
@@ -231,7 +231,7 @@ const fixtureMigrationsGoWithSubsystem = `package app
 import (
 	"embed"
 
-	"github.com/carlosframework/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate"
 
 	"fixtureapp/subsystem"
 )
@@ -249,11 +249,11 @@ const fixtureGoModTemplate = `module fixtureapp
 go 1.24
 
 require (
-	github.com/carlosframework/rastrillo v0.0.0
+	amadan.net/rastrillo/rastrillo v0.0.0
 	gorm.io/gorm v1.31.2
 )
 
-replace github.com/carlosframework/rastrillo => %s
+replace amadan.net/rastrillo/rastrillo => %s
 `
 
 // setSandboxGoEnv points every `go` invocation this test starts —

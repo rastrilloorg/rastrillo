@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/webauthn/authtest"
+	"amadan.net/rastrillo/rastrillo/webauthn/authtest"
 )
 
 var cfg = Config{RPID: "kass.training", Origin: "https://dev.kass.training"}

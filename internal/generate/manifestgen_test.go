@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/internal/manifest"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
 
 // notesManifestTOML is the plan's running "notes" example (matching
@@ -199,7 +199,7 @@ func TestGenerateManifestsCheckFailsWhenNeverGenerated(t *testing.T) {
 	}
 }
 
-const handIndexGETSrc = "//go:build rastrillo_actions\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
+const handIndexGETSrc = "//go:build rastrillo_actions\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
 
 // TestGenerateManifestsFailsOnRouteCollisionWithAHandAction covers the
 // genuine collision case: a hand action at a DIFFERENT actions/ path

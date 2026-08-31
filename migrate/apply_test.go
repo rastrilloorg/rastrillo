@@ -10,7 +10,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 )
 
 func openDB(t *testing.T) *db.DB {

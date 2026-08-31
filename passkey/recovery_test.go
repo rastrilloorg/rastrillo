@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/webauthn/authtest"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/webauthn/authtest"
 )
 
 var codeShape = regexp.MustCompile(`^[a-z2-7]{5}-[a-z2-7]{5}$`)

@@ -551,7 +551,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // Catalog is one locale's flat key → string table (design doc §10).
@@ -2103,8 +2103,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
-	"github.com/carlosframework/rastrillo/internal/icons"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/icons"
 )
 
 //go:embed ui
@@ -3489,7 +3489,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // MissingKeys reports, per non-default locale, the keys present in the
@@ -3622,7 +3622,7 @@ func scaffold(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-const handleSrc = "package actions\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
+const handleSrc = "package actions\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
 
 func TestGenerateWritesTheRouter(t *testing.T) {
 	dir := scaffold(t, map[string]string{
@@ -3726,7 +3726,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/carlosframework/rastrillo/internal/generate"
+	"amadan.net/rastrillo/rastrillo/internal/generate"
 )
 
 // runGenerate implements `rastrillo generate [flags] [dir]`: the
@@ -3915,7 +3915,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 func TestScaffoldedGoFilesParse(t *testing.T) {
@@ -4069,7 +4069,7 @@ const actionTemplate = `package actions
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
@@ -4115,7 +4115,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	app "%[1]s"
 	"%[1]s/gen"
@@ -4189,7 +4189,7 @@ git commit -m "cli: rastrillo new scaffolds locales/, templates/ and the embed r
 - Consumes: nothing at compile time beyond `embed`; Task 15 imports `app "helloworld"` for `LocaleFS`/`TemplateFS`.
 - Produces: `app.LocaleFS`, `app.TemplateFS` (package `app`, import path `helloworld`).
 
-**Note:** `examples/helloworld` is its own Go module with `replace github.com/carlosframework/rastrillo => ../..`, so the repo-root sweep does **not** build it. This task and the next carry their own build command.
+**Note:** `examples/helloworld` is its own Go module with `replace amadan.net/rastrillo/rastrillo => ../..`, so the repo-root sweep does **not** build it. This task and the next carry their own build command.
 
 **Note:** this app is deployed live at `helloworld.dev.oncarlos.com`. Changing it is deliberate — the deployed page becomes the component-vocabulary demo on the next ship — not a side effect to be surprised by.
 
@@ -4304,7 +4304,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
@@ -4406,7 +4406,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	app "helloworld"
 	"helloworld/gen"

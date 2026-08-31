@@ -1,6 +1,6 @@
 # 🤖 jobs
 
-`github.com/carlosframework/rastrillo/jobs`
+`amadan.net/rastrillo/rastrillo/jobs`
 
 Background work you can watch: `Start` runs a function in a goroutine
 and hands back an id a status page can poll.

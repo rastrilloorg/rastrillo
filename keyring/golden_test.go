@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/crypto"
 )
 
 // goldenFile is the shape of testdata/golden.json — this package's

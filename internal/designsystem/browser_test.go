@@ -37,9 +37,9 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/harness"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // treeHandler serves the rendered tree at the mount path the pages

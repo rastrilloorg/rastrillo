@@ -14,11 +14,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 
-	"github.com/carlosframework/rastrillo/flash"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/jobs"
-	"github.com/carlosframework/rastrillo/scope"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/flash"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/scope"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // app holds the dependencies every handler below needs. sess.Require

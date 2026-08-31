@@ -2,7 +2,7 @@ module blog
 
 go 1.26.0
 
-require github.com/carlosframework/rastrillo v0.1.0
+require amadan.net/rastrillo/rastrillo v0.1.0
 
 require (
 	cel.dev/expr v0.25.1 // indirect
@@ -60,6 +60,6 @@ require (
 	modernc.org/sqlite v1.55.0 // indirect
 )
 
-replace github.com/carlosframework/rastrillo => ../..
+replace amadan.net/rastrillo/rastrillo => ../..
 
 tool github.com/sqlc-dev/sqlc/cmd/sqlc

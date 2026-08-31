@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/internal/catalog"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
 // maxPerOrderFixture exercises titleCase's multi-hump case

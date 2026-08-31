@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // fixtureResource is the plan's running example (also validResource in the

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // vectorsInit scaffolds the app-side parity kit into an existing app
@@ -95,8 +95,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/carlosframework/rastrillo/eventlog"
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/eventlog"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // tally is the example read model: how many events the stream holds,
@@ -288,7 +288,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // rastrillo vectors -init delivered test/vectors.mjs once; it is

@@ -35,7 +35,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/harness"
 	"github.com/chromedp/chromedp"
 )
 

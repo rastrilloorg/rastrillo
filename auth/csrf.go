@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/csrf"
 )
 
 // sameOrigin is a pointer to the CSRF package's SameOrigin check,

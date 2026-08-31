@@ -2,7 +2,7 @@
 
 package locales
 
-import "github.com/carlosframework/rastrillo"
+import "amadan.net/rastrillo/rastrillo"
 
 // BaseCatalog is the manifest system's own base English catalog —
 // wire it as Options.BaseCatalog (serve.go) so it layers underneath

@@ -784,7 +784,7 @@ func Count(db *sql.DB, q, status string) (int, error) {
 
 Update the two existing call sites in `examples/blog/actions/admin/posts/index.GET.go` minimally so the module compiles (`blog.Count(ctx.DB, "", "")`, `blog.Count(ctx.DB, q, "")`, `blog.List(ctx.DB, q, "", …)`), then regenerate so `gen/` matches:
 
-Run (in `examples/blog`): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run github.com/carlosframework/rastrillo/cmd/rastrillo generate .`
+Run (in `examples/blog`): `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate .`
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -1041,7 +1041,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 - [ ] **Step 6: Regenerate and run the suite**
 
 Run (in `examples/blog`):
-`GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run github.com/carlosframework/rastrillo/cmd/rastrillo generate .`
+`GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go run amadan.net/rastrillo/rastrillo/cmd/rastrillo generate .`
 then `GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod go test ./... -count=1`
 Expected: PASS, including the three new tests. `TestAdminListScreenCarriesItsStockComponents` (screens_test.go) may need the dropdown added to its expectations — if it fails, extend it, don't weaken it.
 

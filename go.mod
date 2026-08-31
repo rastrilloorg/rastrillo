@@ -1,4 +1,4 @@
-module github.com/carlosframework/rastrillo
+module amadan.net/rastrillo/rastrillo
 
 go 1.25.0
 

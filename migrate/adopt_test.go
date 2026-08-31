@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 )
 
 // legacy is the shape a deployed app already has: the tables exist,

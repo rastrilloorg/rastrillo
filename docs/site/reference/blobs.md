@@ -1,6 +1,6 @@
 # 🤖 blobs
 
-`github.com/carlosframework/rastrillo/blobs`
+`amadan.net/rastrillo/rastrillo/blobs`
 
 Content-addressed bytes. Rows hold metadata — a `Ref`: hash, size,
 content type — while the bytes live in a `Store` keyed by their SHA-256.

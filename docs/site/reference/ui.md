@@ -1,6 +1,6 @@
 # 🤖 ui
 
-`github.com/carlosframework/rastrillo/ui`
+`amadan.net/rastrillo/rastrillo/ui`
 
 Rastrillo's server-shape component library: `html/template` partials, a
 design-token stylesheet, and the template helpers they need. They are

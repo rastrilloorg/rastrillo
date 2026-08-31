@@ -16,10 +16,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/password"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/password"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // errDuplicateEmail is the fake store's stand-in for whatever

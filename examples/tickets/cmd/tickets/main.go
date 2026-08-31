@@ -17,7 +17,7 @@ import (
 	"os"
 	"slices"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	ticketsassets "tickets"
 	"tickets/gen"

@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"blog/gen"
 	"blog/gen/locales"

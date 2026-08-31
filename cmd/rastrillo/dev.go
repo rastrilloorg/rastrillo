@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/carlosframework/rastrillo/internal/devloop"
+	"amadan.net/rastrillo/rastrillo/internal/devloop"
 )
 
 // watchDirs are the trees whose edits trigger the §11 loop: the design

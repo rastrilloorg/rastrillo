@@ -140,7 +140,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // actionSpec is one of the (up to) seven files EmitActions considers
@@ -414,14 +414,14 @@ func failWhat(r rastrillo.Resource, what string) string {
 // alphabetically, same as gofmt.
 func actionImportLines(r rastrillo.Resource, needsForm, needsSession bool) string {
 	var b strings.Builder
-	b.WriteString("\t\"github.com/carlosframework/rastrillo\"\n")
+	b.WriteString("\t\"amadan.net/rastrillo/rastrillo\"\n")
 	if needsForm {
-		b.WriteString("\t\"github.com/carlosframework/rastrillo/form\"\n")
+		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/form\"\n")
 	}
 	if scoped(r) && needsSession {
-		b.WriteString("\t\"github.com/carlosframework/rastrillo/sessions\"\n")
+		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/sessions\"\n")
 	}
-	b.WriteString("\t\"github.com/carlosframework/rastrillo/view\"\n")
+	b.WriteString("\t\"amadan.net/rastrillo/rastrillo/view\"\n")
 	return b.String()
 }
 

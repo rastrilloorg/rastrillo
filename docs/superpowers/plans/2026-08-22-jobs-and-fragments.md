@@ -377,7 +377,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 func testHandlers(t *testing.T, j *Jobs) *Handlers {
@@ -443,7 +443,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // pollSeconds is the status page's cadence, written by templates into

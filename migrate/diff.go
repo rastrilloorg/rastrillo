@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/carlosframework/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/gormlite"
 )
 
 // Change is one generated statement.

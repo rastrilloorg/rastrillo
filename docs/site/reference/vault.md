@@ -1,6 +1,6 @@
 # 🤖 vault
 
-`github.com/carlosframework/rastrillo/vault`
+`amadan.net/rastrillo/rastrillo/vault`
 
 The client half of the Pegamento vault: one person's named sealed
 blobs and per-method wrapped seed on a home service your operator may

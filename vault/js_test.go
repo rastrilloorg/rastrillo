@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/crypto"
 )
 
 // TestJSEmbedded pins the embed wiring, keyring's pattern: the twin

@@ -213,7 +213,7 @@ the output in the report):
 
 ```sh
 cd $(mktemp -d) && /tmp/claude-1001/rastrillo-serve-cli new smoke && cd smoke
-go mod edit -replace github.com/carlosframework/rastrillo=/tmp/claude-1001/rastrillo-serve
+go mod edit -replace amadan.net/rastrillo/rastrillo=/tmp/claude-1001/rastrillo-serve
 GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod GOPROXY=off go mod tidy
 GOCACHE=/tmp/claude-1001/gocache GOFLAGS=-mod=mod GOPROXY=off go build ./cmd/smoke
 ./smoke --socket /tmp/smoke.sock --db /tmp/smoke.db &   # exec-child shape

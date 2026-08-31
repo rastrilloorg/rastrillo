@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // runDoctor implements `rastrillo doctor [--fix] [--force] [--theme

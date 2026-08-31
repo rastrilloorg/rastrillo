@@ -421,7 +421,7 @@ running `cmd/dsgen` against the version of the framework the docs were
 vendored from, so the gallery documents the version the prose describes:
 
 ```
-go run github.com/carlosframework/rastrillo/cmd/dsgen@<version> \
+go run amadan.net/rastrillo/rastrillo/cmd/dsgen@<version> \
     -out src/design-system -mount /design-system
 ```
 

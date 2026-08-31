@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // TestEveryPageWithAHeaderLinksTheOneStylesheetThatRetiresTheRakeLine is

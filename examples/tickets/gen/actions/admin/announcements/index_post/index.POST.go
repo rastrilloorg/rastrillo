@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	announcementsstore "tickets/gen/store/announcements"
 )
 

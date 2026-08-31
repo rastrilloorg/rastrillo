@@ -7,8 +7,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/view"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/view"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 )
 

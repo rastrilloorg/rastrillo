@@ -1,6 +1,6 @@
 # 🤖 view
 
-`github.com/carlosframework/rastrillo/view`
+`amadan.net/rastrillo/rastrillo/view`
 
 The plain HTTP-response helpers a generated action needs against a
 `*rastrillo.Ctx`. Hand-written handlers are welcome to use them and

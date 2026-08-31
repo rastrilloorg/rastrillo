@@ -27,7 +27,7 @@ package keyring
 import (
 	"fmt"
 
-	"github.com/carlosframework/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/crypto"
 )
 
 // Ring namespaces every keyring operation for one app. Every context

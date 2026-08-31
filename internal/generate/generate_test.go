@@ -13,7 +13,7 @@ func writeAction(t *testing.T, dir, rel, pkg string) {
 	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	src := "package " + pkg + "\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"ok\"))\n}\n"
+	src := "package " + pkg + "\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"ok\"))\n}\n"
 	if err := os.WriteFile(full, []byte(src), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestRewriteProducesUniquePackages(t *testing.T) {
 // `import "<app module>"` where it meant the framework's own import
 // path, so a generated router.go for module "helloworld" tried to
 // import "helloworld" (itself, with no package) instead of
-// "github.com/carlosframework/rastrillo" for the *rastrillo.Ctx type
+// "amadan.net/rastrillo/rastrillo" for the *rastrillo.Ctx type
 // its own signature references.
 func TestRouterImportsFrameworkNotAppModule(t *testing.T) {
 	actions := []Action{{
@@ -137,7 +137,7 @@ func TestRouterImportsFrameworkNotAppModule(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := string(out)
-	if !contains(src, `"github.com/carlosframework/rastrillo"`) {
+	if !contains(src, `"amadan.net/rastrillo/rastrillo"`) {
 		t.Errorf("router.go doesn't import the framework:\n%s", src)
 	}
 	if contains(src, "\"helloworld\"\n") {
@@ -164,7 +164,7 @@ func writeTaggedAction(t *testing.T, dir, rel, constraint string) {
 	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	src := constraint + "\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"ok\"))\n}\n"
+	src := constraint + "\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"ok\"))\n}\n"
 	if err := os.WriteFile(full, []byte(src), 0o644); err != nil {
 		t.Fatal(err)
 	}

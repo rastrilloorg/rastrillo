@@ -1,6 +1,6 @@
 # 🤖 password
 
-`github.com/carlosframework/rastrillo/password`
+`amadan.net/rastrillo/rastrillo/password`
 
 An email-and-password identity plugin over the
 [sessions](/docs/reference/sessions) core. Storage, rendering and CSRF

@@ -43,9 +43,9 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/harness"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // headerRuleSweep forces every iframe to load, then reads every page

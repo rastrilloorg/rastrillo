@@ -12,14 +12,14 @@ import (
 
 	"notes/gen"
 
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/csrf"
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/jobs"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/password"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/password"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // App wires the example: schema, the shared session core, the

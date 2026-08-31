@@ -43,7 +43,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/internal/markup"
+	"amadan.net/rastrillo/rastrillo/internal/markup"
 )
 
 // ── The grammar ──────────────────────────────────────────────────────

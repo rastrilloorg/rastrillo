@@ -1,6 +1,6 @@
 # 🤖 harness
 
-`github.com/carlosframework/rastrillo/harness`
+`amadan.net/rastrillo/rastrillo/harness`
 
 A browser-drive rig: a real app on a real localhost origin, driven by a
 real Chromium with a CDP virtual authenticator attached, for the tests

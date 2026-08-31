@@ -1,6 +1,6 @@
 # 🤖 scope
 
-`github.com/carlosframework/rastrillo/scope`
+`amadan.net/rastrillo/rastrillo/scope`
 
 Owner-filtered GORM scopes. Two functions, and that is the whole
 package. It exists to make one discipline the short path, so every query

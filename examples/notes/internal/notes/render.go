@@ -7,12 +7,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/carlosframework/rastrillo/flash"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/jobs"
-	"github.com/carlosframework/rastrillo/password"
-	"github.com/carlosframework/rastrillo/sessions"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/flash"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/password"
+	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 //go:embed templates

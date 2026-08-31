@@ -1,6 +1,6 @@
 # 🤖 form
 
-`github.com/carlosframework/rastrillo/form`
+`amadan.net/rastrillo/rastrillo/form`
 
 Framework-independent form helpers: field parsing with validation, a
 field-error map, and money. Generated and hand-written handlers use the

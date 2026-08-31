@@ -15,12 +15,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // rastrilloImportPath is the import path a Go manifest must use to
 // declare a rastrillo.Resource var — fixed, since the type lives here.
-const rastrilloImportPath = "github.com/carlosframework/rastrillo"
+const rastrilloImportPath = "amadan.net/rastrillo/rastrillo"
 
 // goVar names one exported package-level rastrillo.Resource var found
 // by goEval, paired with the .go file it was declared in.
@@ -264,7 +264,7 @@ import (
 	"os"
 
 	m %q
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func main() {

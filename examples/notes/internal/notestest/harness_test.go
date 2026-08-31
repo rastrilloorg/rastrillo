@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/db"
 
 	"notes/internal/notes"
 )

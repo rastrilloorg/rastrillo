@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // wrongCredentials is the ONE message Signin ever shows for a failed

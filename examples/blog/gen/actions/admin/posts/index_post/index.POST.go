@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/view"
 	postsstore "blog/gen/store/posts"
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/form"
-	"github.com/carlosframework/rastrillo/view"
 )
 
 // Handle is POST /admin/posts.

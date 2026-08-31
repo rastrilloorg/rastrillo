@@ -1,6 +1,6 @@
 # 🤖 csrf
 
-`github.com/carlosframework/rastrillo/csrf`
+`amadan.net/rastrillo/rastrillo/csrf`
 
 Same-origin enforcement for state-changing requests. No tokens, nothing
 to thread through a template.

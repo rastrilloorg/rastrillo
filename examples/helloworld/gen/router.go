@@ -5,7 +5,7 @@ package gen
 import (
 	"net/http"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 	act_index_get "helloworld/gen/actions/index_get"
 )
 

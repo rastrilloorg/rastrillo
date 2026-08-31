@@ -4,7 +4,7 @@ import (
 	"crypto/ecdh"
 	"fmt"
 
-	"github.com/carlosframework/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/crypto"
 )
 
 // Grant wraps contentKey to a member's 65-byte uncompressed box public

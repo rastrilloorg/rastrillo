@@ -20,7 +20,7 @@
 
 Additional house rules for this branch:
 
-- Module path is `github.com/carlosframework/rastrillo`. New package lives at `vectors/`; new CLI files at `cmd/rastrillo/vectors.go`, `cmd/rastrillo/vectorsinit.go` (main.go's convention: one concern per file).
+- Module path is `amadan.net/rastrillo/rastrillo`. New package lives at `vectors/`; new CLI files at `cmd/rastrillo/vectors.go`, `cmd/rastrillo/vectorsinit.go` (main.go's convention: one concern per file).
 - Never merge to main directly — this branch becomes a PR, then squash-merge (MEMORY.md, PR-only workflow).
 - Facts already established by adversarial review — bake in, do not re-derive: `node --test <dir>` fails on Node ≥ 21 (explicit file always); `canonical()` drops `undefined`/`null` members AND scalar zeros (`0`, `false`, `""`) recursively, sorts keys, keeps empty arrays; the `-init` parity template carries a marked belt section of explicit-value assertions plus a vector-count floor; `Set.WriteTo` normalises nil slices/maps at TOP LEVEL of `fields` only (inner shapes are the app's discipline, said where the app will read it); no Pin/hash-pin export in this package; the treaty includes field key names and RFC 3339 time round-trip, documented in the templates.
 
@@ -1100,7 +1100,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 - Test: `cmd/rastrillo/vectorsinit_test.go`
 
 **Interfaces**
-- Consumes: `modulePath(dir)` (modpath.go), `packageName(name)` (new.go), `path.Base`, `vectors.JS()` (`github.com/carlosframework/rastrillo/vectors` — new import for cmd/rastrillo), `eventlog.Derive` (referenced by the emitted template, not by the CLI itself).
+- Consumes: `modulePath(dir)` (modpath.go), `packageName(name)` (new.go), `path.Base`, `vectors.JS()` (`amadan.net/rastrillo/rastrillo/vectors` — new import for cmd/rastrillo), `eventlog.Derive` (referenced by the emitted template, not by the CLI itself).
 - Produces: `func vectorsInit(dir string) error`; scaffolded files `cmd/genvectors/main.go`, `test/parity.test.mjs`, `test/vectors.mjs`, `internal/<pkg>test/parity_test.go`, `internal/<pkg>test/vectors_vendored_test.go`.
 
 **Steps**
@@ -1119,7 +1119,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // readInit reads one -init-scaffolded file or fails the test — the
@@ -1250,7 +1250,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // vectorsInit scaffolds the app-side parity kit into an existing app
@@ -1338,8 +1338,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/carlosframework/rastrillo/eventlog"
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/eventlog"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // tally is the example read model: how many events the stream holds,
@@ -1531,7 +1531,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // rastrillo vectors -init delivered test/vectors.mjs once; it is
@@ -1666,7 +1666,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 - Test: `cmd/rastrillo/vectors_e2e_test.go`
 
 **Interfaces**
-- Consumes: `runVectors`, `scaffold(t, files)`, `repoRoot(t)`, the `replace github.com/carlosframework/rastrillo => <checkout>` + `GOFLAGS=-mod=mod` dance (new_test.go / generate_test.go pattern), `go mod tidy` with the sqlc-shaped network skip.
+- Consumes: `runVectors`, `scaffold(t, files)`, `repoRoot(t)`, the `replace amadan.net/rastrillo/rastrillo => <checkout>` + `GOFLAGS=-mod=mod` dance (new_test.go / generate_test.go pattern), `go mod tidy` with the sqlc-shaped network skip.
 - Produces: `TestVectorsEndToEndOnAFixtureApp` — spec §3's verb test: `-init` → `vectors` → `-check` green; Go fold mutated → byte-compare fails; JS fold mutated → node leg fails.
 
 **Steps**
@@ -1694,8 +1694,8 @@ import (
 // version.
 func TestVectorsEndToEndOnAFixtureApp(t *testing.T) {
 	goMod := fmt.Sprintf("module fixtureapp\n\ngo 1.25.0\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
+		"require amadan.net/rastrillo/rastrillo v0.0.0\n\n"+
+		"replace amadan.net/rastrillo/rastrillo => %s\n", repoRoot(t))
 	dir := scaffold(t, map[string]string{"go.mod": goMod})
 	t.Setenv("GOFLAGS", "-mod=mod")
 

@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carlosframework/rastrillo/crypto"
-	"github.com/carlosframework/rastrillo/keyring"
+	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/keyring"
 )
 
 // Create is the version sentinel for a blob that must not exist yet:

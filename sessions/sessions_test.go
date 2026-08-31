@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carlosframework/rastrillo/db"
-	"github.com/carlosframework/rastrillo/migrate"
-	"github.com/carlosframework/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // newTestSessions is the shared helper: temp DB, Schema applied,

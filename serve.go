@@ -32,7 +32,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/carlosframework/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/carlos"
 
 	_ "modernc.org/sqlite"
 )

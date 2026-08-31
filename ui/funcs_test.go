@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 func TestDictBuildsAMap(t *testing.T) {

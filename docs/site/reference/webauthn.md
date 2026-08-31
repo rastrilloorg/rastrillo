@@ -1,6 +1,6 @@
 # 🤖 webauthn
 
-`github.com/carlosframework/rastrillo/webauthn`
+`amadan.net/rastrillo/rastrillo/webauthn`
 
 The passkey identity half: the WebAuthn ceremonies, a CBOR subset
 reader, and the browser module. Most apps mount

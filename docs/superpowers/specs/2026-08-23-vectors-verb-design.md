@@ -147,7 +147,7 @@ languages; the vectors are the treaty between them. Not mandatory: no
   pattern), including the zero-strip cases.
 - Verb: an `internal/` test scaffolds a fixture app (the `new_test.go` /
   `generate_test.go` pattern, including the
-  `replace github.com/carlosframework/rastrillo => <checkout>` dance and
+  `replace amadan.net/rastrillo/rastrillo => <checkout>` dance and
   `GOFLAGS=-mod=mod`), runs `-init`, then `vectors`, then `-check` green;
   mutates the Go fold and asserts `-check` fails on the byte-compare;
   mutates the JS fold and asserts `-check` fails from node. Node-dependent

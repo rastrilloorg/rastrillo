@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carlosframework/rastrillo/internal/markup"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/internal/markup"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // runMarkup implements `rastrillo markup [--fix] [dir]`: the class →

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // parseAll builds the template tree exactly the way an app is documented

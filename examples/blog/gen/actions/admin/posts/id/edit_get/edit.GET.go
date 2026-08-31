@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/view"
 	postsstore "blog/gen/store/posts"
-	"github.com/carlosframework/rastrillo"
-	"github.com/carlosframework/rastrillo/view"
 )
 
 // Handle is GET /admin/posts/{id}/edit.

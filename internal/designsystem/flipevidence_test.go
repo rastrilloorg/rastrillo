@@ -41,8 +41,8 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
-	"github.com/carlosframework/rastrillo/harness"
-	"github.com/carlosframework/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 func TestTheFlipDidNotMoveAPixel(t *testing.T) {

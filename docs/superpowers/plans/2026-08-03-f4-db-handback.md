@@ -252,7 +252,7 @@ func Open(path string) (*sql.DB, error) {
 }
 ```
 
-Add `"github.com/carlosframework/rastrillo"` to imports; drop the now-unused `_ "modernc.org/sqlite"` blank import (OpenDB's package pulls the driver) and remove the stale `// the app opens its own handle; see Open` comment. Grep `store.go` for other uses of `migration` (lowercase) and update.
+Add `"amadan.net/rastrillo/rastrillo"` to imports; drop the now-unused `_ "modernc.org/sqlite"` blank import (OpenDB's package pulls the driver) and remove the stale `// the app opens its own handle; see Open` comment. Grep `store.go` for other uses of `migration` (lowercase) and update.
 
 - [ ] **Step 2: main.go.** Replace the whole file body after the package doc comment (keep the doc comment as-is) with:
 
@@ -265,7 +265,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 
 	"blog/gen"
 	"blog/internal/blog"

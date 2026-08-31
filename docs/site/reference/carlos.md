@@ -1,6 +1,6 @@
 # 🤖 carlos
 
-`github.com/carlosframework/rastrillo/carlos`
+`amadan.net/rastrillo/rastrillo/carlos`
 
 Work that has to happen at a particular time, on a platform where your
 process is usually asleep. The platform keeps the clock and POSTs to

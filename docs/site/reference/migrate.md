@@ -1,6 +1,6 @@
 # 🤖 migrate
 
-`github.com/carlosframework/rastrillo/migrate`
+`amadan.net/rastrillo/rastrillo/migrate`
 
 One ledgered schema mechanism: an ordered, namespaced set of migrations,
 applied exactly once each and recorded. It replaced the two mechanisms a

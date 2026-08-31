@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo/vectors"
+	"amadan.net/rastrillo/rastrillo/vectors"
 )
 
 // readInit reads one -init-scaffolded file or fails the test — the

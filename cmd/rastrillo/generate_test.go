@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carlosframework/rastrillo"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -44,11 +44,11 @@ func scaffold(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-const handleSrc = "//go:build rastrillo_actions\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
+const handleSrc = "//go:build rastrillo_actions\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
 
 // untaggedHandleSrc is a pre-F9 action file: valid generator input that
 // `go build ./...` would try (and fail) to compile.
-const untaggedHandleSrc = "package actions\n\nimport (\n\t\"net/http\"\n\n\t\"github.com/carlosframework/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
+const untaggedHandleSrc = "package actions\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
 
 func TestGenerateWritesTheRouter(t *testing.T) {
 	dir := scaffold(t, map[string]string{
@@ -188,8 +188,8 @@ basics = [{ name = "Title" }]
 
 func TestGenerateWiresManifestActionsIntoTheRouter(t *testing.T) {
 	goMod := fmt.Sprintf("module demo\n\ngo 1.25.0\n\ntool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
+		"require amadan.net/rastrillo/rastrillo v0.0.0\n\n"+
+		"replace amadan.net/rastrillo/rastrillo => %s\n", repoRoot(t))
 	dir := scaffold(t, map[string]string{
 		"go.mod":               goMod,
 		"actions/index.GET.go": handleSrc,
@@ -261,8 +261,8 @@ func TestGenerateFailsWhenAHandActionCollidesWithAManifestRoute(t *testing.T) {
 // its own copy there).
 func TestGenerateKeepsAHandActionAtTheExactGeneratedPath(t *testing.T) {
 	goMod := fmt.Sprintf("module demo\n\ngo 1.25.0\n\ntool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
+		"require amadan.net/rastrillo/rastrillo v0.0.0\n\n"+
+		"replace amadan.net/rastrillo/rastrillo => %s\n", repoRoot(t))
 	dir := scaffold(t, map[string]string{
 		"go.mod":                           goMod,
 		"actions/admin/notes/index.GET.go": handleSrc,
@@ -353,8 +353,8 @@ func TestGenerateCheckSucceedsWithNoActionsDirectory(t *testing.T) {
 // manifest resource's own generated actions alone.
 func TestGenerateWiresAManifestOnlyAppIntoTheRouter(t *testing.T) {
 	goMod := fmt.Sprintf("module demo\n\ngo 1.25.0\n\ntool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"+
-		"require github.com/carlosframework/rastrillo v0.0.0\n\n"+
-		"replace github.com/carlosframework/rastrillo => %s\n", repoRoot(t))
+		"require amadan.net/rastrillo/rastrillo v0.0.0\n\n"+
+		"replace amadan.net/rastrillo/rastrillo => %s\n", repoRoot(t))
 	dir := scaffold(t, map[string]string{
 		"go.mod":              goMod,
 		"manifest/notes.toml": notesManifestTOML,
