@@ -1287,22 +1287,28 @@ func TestThePrevNextPairSitsAtTheEndsOfItsRow(t *testing.T) {
 
 // ── The preview widget on a phone ────────────────────────────────────
 
-// minPhoneBox is the shortest a preview box may be, in CSS pixels, on
-// a phone-sized viewport. Sixty-four is about four lines of body text:
-// under that a preview has stopped being a window on a sample and has
-// become a strip between two tab rows, which is what a reader on a
-// 390px screen was actually being shown.
-const minPhoneBox = 64.0
+// minShownSample is the floor this drive is actually about, and it is
+// deliberately NOT a box height.
+//
+// The first version of this gate asserted that the preview BOX cleared
+// 64px, and it passed on a state where every box was 146px tall and
+// every sample inside one was a 14px sliver in the top-left corner.
+// The box is not the quantity that broke: --ds-k scales the sample,
+// and a box floor moves the frame around the sliver without touching
+// the sliver. So what is measured here is what a reader sees — the
+// framed document's own height, times the scale actually applied to
+// it, clipped to what the box can show — and 32px of that is roughly
+// two lines of the sample's own body type at a legible scale. The
+// smallest sample in the gallery is 56 virtual pixels tall, so at the
+// scale floor below this lands at 40px and the margin is real.
+const minShownSample = 32.0
 
-// minChosenDesktopBox is the floor for the one case minPhoneBox is too
-// weak for: a reader on a phone who has deliberately asked to see the
-// desktop rendering. That rendering arrives at 26% — a 1200px page in
-// a 309px column — so the box is not a fit to it and never can be, it
-// is a window on it, and how much of the page a reader gets to see
-// through that window is the whole of the difference between useful
-// and decorative. 128px of window is about 500 virtual pixels of the
-// page; the box the stylesheet actually gives them is 9rem.
-const minChosenDesktopBox = 128.0
+// kMin is the least the frame may be scaled to, and it mirrors
+// --ds-kmin in gallery.css. 12.5px is the type that dominates most
+// pages of this gallery (--rst-fs-sm) and 12.5 × 0.72 = 9.0px, which
+// is about where rendered text stops being read and starts being
+// texture. Everything else follows from it, including stageThreshold.
+const kMin = 0.72
 
 // previewBox is one widget's geometry as the engine has it. Tabs are
 // identified by POSITION — 0 Desktop, 1 Mobile, 2 Code — and not by
@@ -1318,6 +1324,10 @@ type previewBox struct {
 	Checked []int   // the radios that are actually checked
 	View    float64 // .ds-view, which is the query container
 	Stage   float64 // .ds-view__stage, which is what 100cqw used to be
+	Doc     float64 // the framed document's own height, in VIRTUAL px
+	Inner   float64 // the box's content height: what it can show
+	PanX    float64 // how much wider than the box its scrolled content is
+	OverX   string  // computed overflow-x: whether a reader can reach it
 }
 
 const readBoxes = `(() => {
@@ -1326,6 +1336,7 @@ const readBoxes = `(() => {
     const stage = v.querySelector(".ds-view__stage");
     const box   = v.querySelector(".ds-view__box");
     const frame = v.querySelector(".ds-view__frame");
+    const d     = frame.contentDocument;
     const tabs  = [...v.querySelectorAll(".ds-view__tab")];
     const lit = [], checked = [];
     tabs.forEach((l, n) => {
@@ -1343,7 +1354,17 @@ const readBoxes = `(() => {
       Lit: lit,
       Checked: checked,
       View: Math.round(v.getBoundingClientRect().width * 100) / 100,
-      Stage: Math.round(stage.getBoundingClientRect().width * 100) / 100
+      Stage: Math.round(stage.getBoundingClientRect().width * 100) / 100,
+      // The document the box is a window ON. A box that is tall and
+      // full and a box that is tall and empty read the same to a
+      // box-only ruler, and that was the whole of the last bug.
+      Doc: d ? Math.max(d.body.getBoundingClientRect().height, d.body.scrollHeight) : -1,
+      Inner: Math.round(box.clientHeight * 10) / 10,
+      // scrollWidth reports the content even under overflow: hidden,
+      // so how much is out there and whether anyone can get to it are
+      // two readings, not one.
+      PanX: Math.round((box.scrollWidth - box.clientWidth) * 10) / 10,
+      OverX: getComputedStyle(box).overflowX
     });
   });
   return JSON.stringify(out);
@@ -1353,9 +1374,17 @@ const readBoxes = `(() => {
 // whether the clicks moved anything. It is the instrument's own
 // control: a reading taken after a click that did not land is a
 // reading of the state before it.
-const clickedMobile = `(() => {
+var clickedMobile = clickEvery("m")
+
+// clickedDesktop is the same for the Desktop tab. The drive used to
+// click one label and then report on thirty widgets, twenty-nine of
+// which were still in the default state.
+var clickedDesktop = clickEvery("d")
+
+func clickEvery(mod string) string {
+	return `(() => {
   let clicked = 0, moved = 0;
-  document.querySelectorAll(".ds-view__tab--m input").forEach(i => {
+  document.querySelectorAll(".ds-view__tab--` + mod + ` input").forEach(i => {
     const before = i.checked;
     i.click();
     clicked++;
@@ -1363,6 +1392,62 @@ const clickedMobile = `(() => {
   });
   return JSON.stringify({clicked: clicked, moved: moved});
 })()`
+}
+
+// eagerly turns every lazy frame on the page on and waits for the
+// documents to arrive. Measuring what a reader SEES means reaching
+// inside each srcdoc frame, and a frame that never loaded reports zero
+// height — which is indistinguishable from a collapsed preview, and
+// would read as this gate's own headline failure.
+func eagerly(t *testing.T, ctx context.Context, where string) {
+	t.Helper()
+	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+	  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
+	  return "ok";
+	})()`, new(string)), chromedp.Sleep(6*time.Second)); err != nil {
+		t.Fatalf("%s: loading the framed documents: %v", where, err)
+	}
+}
+
+// clickAll clicks every radio of one kind and refuses to go on unless
+// the clicks moved something. A reading taken after a click that did
+// not land is a reading of the state before it.
+func clickAll(t *testing.T, ctx context.Context, where, script, what string) {
+	t.Helper()
+	var raw string
+	if err := chromedp.Run(ctx, chromedp.Evaluate(script, &raw), chromedp.Sleep(400*time.Millisecond)); err != nil {
+		t.Fatalf("%s: choosing %s: %v", where, what, err)
+	}
+	var got struct{ Clicked, Moved int }
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatalf("%s: reading the %s click (%q): %v", where, what, raw, err)
+	}
+	if got.Clicked == 0 || got.Moved != got.Clicked {
+		t.Fatalf("%s: %d %s radios clicked and %d moved — the readings after this click are readings of the state before it", where, got.Clicked, what, got.Moved)
+	}
+}
+
+// scrolls says whether a computed overflow lets a reader reach what is
+// past the edge. hidden does not, and it is the one that looks like a
+// scroller to scrollWidth.
+func scrolls(overflow string) bool {
+	return overflow == "auto" || overflow == "scroll"
+}
+
+// noSidewaysPage is the other half of letting a box pan: the overflow
+// has to stay inside the box. A page that scrolls sideways on a phone
+// is a worse bug than the one the panning fixes.
+func noSidewaysPage(t *testing.T, ctx context.Context, where string) {
+	t.Helper()
+	var over float64
+	if err := chromedp.Run(ctx, chromedp.Evaluate(
+		`document.documentElement.scrollWidth - document.documentElement.clientWidth`, &over)); err != nil {
+		t.Fatalf("%s: measuring the page's own overflow: %v", where, err)
+	}
+	if over > 1 {
+		t.Errorf("%s: the page itself scrolls %.1fpx sideways. A preview that pans has to pan inside its own box", where, over)
+	}
+}
 
 func boxes(t *testing.T, ctx context.Context, where string) []previewBox {
 	t.Helper()
@@ -1390,30 +1475,60 @@ func tabName(n int) string {
 	return tabNames[n]
 }
 
-// clearsTheFloor holds every visible box on the page to minPhoneBox and
-// reports the shortest one either way, so a run that passes still says
-// what the margin was.
-func clearsTheFloor(t *testing.T, where string, rows []previewBox) {
+// showsItsSample is the assertion this drive exists for, and it is on
+// the rendering rather than on the box.
+//
+// What a reader can see of a sample is its own height in the frame's
+// virtual pixels, times the scale the frame is actually drawn at,
+// clipped to what the box can show. Every failure mode this widget has
+// had lands on that one number: a 1200px page squeezed into a phone
+// column (scale 0.26, so a 56px sample renders 14px tall), a box
+// floored to 146px around the same 14px sliver, and a --ds-k an engine
+// cannot resolve (box collapses to nothing, so zero). A box-height
+// assertion catches only the third.
+//
+// The scale is asserted beside it, because it is the mechanism: the
+// height floor holds only while the smallest sample in the gallery
+// stays about 56 virtual pixels tall, and kMin is true whatever anyone
+// adds to samples.go.
+func showsItsSample(t *testing.T, where string, rows []previewBox) {
 	t.Helper()
-	worst, worstID, short := math.Inf(1), "", 0
+	say := loudly(t, where, len(rows))
+	worst, worstID := math.Inf(1), ""
 	for _, r := range rows {
 		if r.Hidden {
 			continue
 		}
-		if r.Box < worst {
-			worst, worstID = r.Box, r.ID
+		if r.Doc < 0 {
+			t.Fatalf("%s: %s has no reachable document in its frame; a frame that never loaded measures zero and would read exactly like the collapse this gate is looking for", where, r.ID)
 		}
-		if r.Box < minPhoneBox {
-			short++
-			if short <= 4 {
-				t.Errorf("%s: %s is %.1fpx tall, under the %.0fpx floor — its sample is a sliver, not a preview", where, r.ID, r.Box, minPhoneBox)
-			}
+		if r.Doc == 0 {
+			t.Fatalf("%s: %s frames a document with no height at all — the reading is of an empty frame, not of a sample", where, r.ID)
+		}
+		k := scaleOf(t, where, r)
+		shown := math.Min(r.Doc*k, r.Inner)
+		if shown < worst {
+			worst, worstID = shown, r.ID
+		}
+		if shown < minShownSample {
+			say("%s: %s shows %.1fpx of its sample. The document is %.0f virtual px tall, the frame is scaled to %.3f, and the box can show %.1fpx — a reader sees a sliver whatever the box measures",
+				where, r.ID, shown, r.Doc, k, r.Inner)
+		}
+		if k < kMin-0.005 {
+			say("%s: %s is scaled to %.3f, under the %.2f floor. At that scale this gallery's 12.5px type renders at %.1fpx",
+				where, r.ID, k, kMin, 12.5*k)
+		}
+		// Clamping the scale means the sample can be wider than the
+		// box, and the whole difference between panning and cropping
+		// is whether the box is a scroller. scrollWidth answers the
+		// first question and says nothing about the second, so both
+		// are read.
+		if r.PanX > 1 && !scrolls(r.OverX) {
+			say("%s: %s has %.0fpx of sample past the right edge of its box and overflow-x is %q — that part of it is cropped and a reader has no way to reach it",
+				where, r.ID, r.PanX, r.OverX)
 		}
 	}
-	if short > 4 {
-		t.Errorf("%s: %d of %d preview boxes are under the %.0fpx floor (shortest %.1fpx, %s)", where, short, len(rows), minPhoneBox, worst, worstID)
-	}
-	t.Logf("%s: %d widgets, shortest visible box %.1fpx (%s), %d under the floor", where, len(rows), worst, worstID, short)
+	t.Logf("%s: %d widgets, least of a sample shown %.1fpx (%s)", where, len(rows), worst, worstID)
 }
 
 // agree is the assertion a CSS-only default has to earn. The rendering
@@ -1544,17 +1659,17 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 			chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(url),
 			chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
-			chromedp.Sleep(600*time.Millisecond),
 		); err != nil {
 			t.Fatalf("%s at 1280px: loading: %v", kind, err)
 		}
+		eagerly(t, ctx, kind+" at 1280px")
 		wide := boxes(t, ctx, kind+" at 1280px")
 		// The control proper: two readings whose answers this widget
 		// has had since it shipped, so they hold on the build before
 		// the fix as well as on the one after it.
 		for _, r := range wide {
 			if r.Width != "1200px" || len(r.Lit) != 1 || r.Lit[0] != 0 {
-				t.Fatalf("%s at 1280px: %s renders at --ds-w: %s with %v lit, want the desktop rendering under a lit Desktop. That has been this widget's answer at a laptop width since it shipped, so the narrow readings below are of something other than this widget", kind, r.ID, r.Width, r.Lit)
+				t.Fatalf("%s at 1280px: %s renders at --ds-w: %s with %v lit over a %.0fpx stage, want the desktop rendering under a lit Desktop. That has been this widget's answer at a laptop width since it shipped, so the narrow readings below are of something other than this widget — unless the stage has fallen under the %.0fpx threshold, in which case this is the threshold working and the sweep needs a wider window, not a fix", kind, r.ID, r.Width, r.Lit, r.Stage, stageThreshold)
 			}
 		}
 		if k := scaleOf(t, kind+" at 1280px", wide[0]); k <= 0 || k >= 1 {
@@ -1563,44 +1678,53 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		// And then the claims, at a width where they were never in
 		// doubt.
 		agree(t, kind+" at 1280px", wide)
-		clearsTheFloor(t, kind+" at 1280px", wide)
+		showsItsSample(t, kind+" at 1280px", wide)
 
 		// The phone, opening on nothing clicked.
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(390, 844),
 			chromedp.Navigate(url),
 			chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
-			chromedp.Sleep(600*time.Millisecond),
 		); err != nil {
 			t.Fatalf("%s at 390px: loading: %v", kind, err)
 		}
+		eagerly(t, ctx, kind+" at 390px")
 		phone := boxes(t, ctx, kind+" at 390px")
 		opensOn(t, kind+" at 390px, opened", phone, 1, "390px")
 		agree(t, kind+" at 390px, opened", phone)
-		clearsTheFloor(t, kind+" at 390px, opened", phone)
+		showsItsSample(t, kind+" at 390px, opened", phone)
+		noSidewaysPage(t, ctx, kind+" at 390px, opened")
 
-		// An explicit Desktop on a phone still works, and is still a
-		// window rather than a strip.
-		if err := chromedp.Run(ctx,
-			chromedp.Click(`.ds-view__tab:first-of-type`, chromedp.ByQuery),
-			chromedp.Sleep(400*time.Millisecond),
-		); err != nil {
-			t.Fatalf("%s at 390px: choosing Desktop: %v", kind, err)
-		}
+		// An explicit Desktop on a phone still works, and what it
+		// gives a reader is the desktop layout at a scale they can
+		// read, panning inside its own box — not the same sliver in a
+		// taller frame. Every widget on the page, because the drive
+		// used to click one label and then report on thirty.
+		clickAll(t, ctx, kind+" at 390px", clickedDesktop, "Desktop")
 		chosen := boxes(t, ctx, kind+" at 390px, Desktop chosen")
-		if len(chosen[0].Checked) != 1 || chosen[0].Checked[0] != 0 {
-			t.Fatalf("%s at 390px: clicking the first tab left %v checked — the click did not land, so the reading after it is the reading before it", kind, chosen[0].Checked)
-		}
-		if chosen[0].Width != "1200px" {
-			t.Errorf("%s at 390px: Desktop was chosen and the frame renders at --ds-w: %s — an explicit choice has to beat the width", kind, chosen[0].Width)
-		}
-		if chosen[0].Box < minChosenDesktopBox {
-			t.Errorf("%s at 390px: the Desktop rendering a reader asked for is %.1fpx tall, under the %.0fpx floor a chosen desktop rendering gets on a phone — at this scale that is a couple of hundred virtual pixels of a 1200px page", kind, chosen[0].Box, minChosenDesktopBox)
-		}
-		if k := scaleOf(t, kind+" at 390px, Desktop chosen", chosen[0]); k <= 0 || k >= 1 {
-			t.Errorf("%s at 390px: the Desktop frame is scaled by %v, so a 1200px page is not being fitted to a 309px column", kind, k)
+		for _, r := range chosen {
+			if len(r.Checked) != 1 || r.Checked[0] != 0 {
+				t.Fatalf("%s at 390px: %s has %v checked after every Desktop radio was clicked — the readings after it are readings of the state before it", kind, r.ID, r.Checked)
+			}
+			if r.Width != "1200px" {
+				t.Errorf("%s at 390px: %s was told Desktop and renders at --ds-w: %s — an explicit choice has to beat the width", kind, r.ID, r.Width)
+			}
 		}
 		agree(t, kind+" at 390px, Desktop chosen", chosen)
+		showsItsSample(t, kind+" at 390px, Desktop chosen", chosen)
+		// And it pans rather than crops: at 390px the clamped scale
+		// puts 864px of page in a 309px box, so there has to be
+		// somewhere for the rest of it to go.
+		panned := 0
+		for _, r := range chosen {
+			if r.PanX > 1 && scrolls(r.OverX) {
+				panned++
+			}
+		}
+		if panned != len(chosen) {
+			t.Errorf("%s at 390px with Desktop chosen: %d of %d boxes both overflow and can be scrolled. --ds-k is clamped at %.2f, so a 1200px page is %.0fpx wide inside a box the column's width; if the box is not a scroller the right-hand half of every sample is cropped and unreachable, and overflow: hidden reports the same scrollWidth as a scroller does", kind, panned, len(chosen), kMin, 1200*kMin)
+		}
+		noSidewaysPage(t, ctx, kind+" at 390px, Desktop chosen")
 
 		// CONTROL 2. Mobile, clicked, and checked for having moved.
 		var moved string
@@ -1619,7 +1743,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		}
 		back := boxes(t, ctx, kind+" at 390px, Mobile chosen")
 		agree(t, kind+" at 390px, Mobile chosen", back)
-		clearsTheFloor(t, kind+" at 390px, Mobile chosen", back)
+		showsItsSample(t, kind+" at 390px, Mobile chosen", back)
 	}
 
 	// CONTROL 3, and the one that matters most: the whole of the above
@@ -1637,10 +1761,13 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		emulation.SetScriptExecutionDisabled(true),
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
-		chromedp.Sleep(1500*time.Millisecond),
 	); err != nil {
 		t.Fatalf("display at 390px with scripts off: loading: %v", err)
 	}
+	// Turning the lazy frames on is a debugger evaluation, not a page
+	// script: the widget still needs none, and the assertion below
+	// proves the page's own script never ran.
+	eagerly(t, offCtx, "display at 390px, scripts off")
 	// Evaluate is itself script execution, so the reading below is
 	// taken through the debugger with the PAGE's scripts disabled.
 	// Assert that, or the leg proves nothing.
@@ -1655,7 +1782,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	off := boxes(t, offCtx, "display at 390px, scripts off")
 	opensOn(t, "display at 390px, scripts off", off, 1, "390px")
 	agree(t, "display at 390px, scripts off", off)
-	clearsTheFloor(t, "display at 390px, scripts off", off)
+	showsItsSample(t, "display at 390px, scripts off", off)
 
 	// And the tabs still switch, with the click the browser makes out
 	// of a label and a radio rather than one a script dispatches.
@@ -1672,20 +1799,27 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	if offChosen[0].Width != "1200px" || len(offChosen[0].Lit) != 1 || offChosen[0].Lit[0] != 0 {
 		t.Errorf("with scripts off, choosing Desktop left the widget rendering at --ds-w: %s with %v lit", offChosen[0].Width, offChosen[0].Lit)
 	}
-	if offChosen[0].Box < minChosenDesktopBox {
-		t.Errorf("with scripts off, the Desktop rendering a reader asked for is %.1fpx tall, under the %.0fpx floor", offChosen[0].Box, minChosenDesktopBox)
-	}
+	// One widget, because one label was clicked — a real input event
+	// on the page, which is the whole point of this leg. The other
+	// twenty-nine are still on the default and are not re-measured
+	// here as though they had been chosen.
 	agree(t, "display at 390px, scripts off, Desktop chosen", offChosen)
-	clearsTheFloor(t, "display at 390px, scripts off, Desktop chosen", offChosen)
+	showsItsSample(t, "display at 390px, scripts off, the first widget on Desktop", offChosen[:1])
 }
 
 // ── The default is a function of the stage, not of the window ────────
 
 // stageThreshold is the stage width, in CSS pixels, at or above which
-// the widget opens on the desktop rendering. It mirrors the 48rem in
+// the widget opens on the desktop rendering. It mirrors the 54rem in
 // gallery.css and is here so this drive fails when the two disagree
 // rather than following the stylesheet wherever it goes.
-const stageThreshold = 768.0
+//
+// It is DERIVED from kMin rather than written again, because they are
+// one decision: the threshold is the stage width at which the desktop
+// rendering reaches the least scale worth reading it at. 1200 × 0.72 =
+// 864px = 54rem. Two numbers that could drift apart would be two
+// chances to be wrong.
+const stageThreshold = 1200 * kMin
 
 // stageReading is the widget's opening state at one window width.
 type stageReading struct {
@@ -1753,7 +1887,11 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 
 	// Widths chosen around the rail's own line, because that is where
 	// the viewport stops being monotone in the stage.
-	widths := []int{390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1200, 1280, 1500}
+	// 1184 and 1186 straddle the threshold itself: with the rail in,
+	// the stage is the window less 321px, so those two windows put it
+	// at 863px and 865px. Without them the sweep's nearest pair is
+	// 779px and 879px and the threshold could sit anywhere between.
+	widths := []int{390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1184, 1186, 1200, 1280, 1500}
 	readings := make([]stageReading, 0, len(widths))
 	for _, vw := range widths {
 		where := fmt.Sprintf("display at %dpx", vw)

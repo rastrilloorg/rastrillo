@@ -122,33 +122,65 @@
    for by arithmetic rather than by a second number, and the next
    person to change the rail's width cannot silently move this line.
 
-   The threshold is measured, not inherited. The dominant type in these
-   samples is 14px — --rst-fs-sm; the smallest anywhere is an 11px
-   badge — --ds-k scales it linearly, and 9px is about where rendered
-   text stops being read and starts being texture. 14 × 768/1200 is
-   8.96px, so 48rem of stage is where the desktop rendering stops
-   paying for itself and the 390px one, which is 1:1 at any stage this
-   wide, becomes the better opening view. 48rem is also comfortably
-   over the 718px the stage can reach before the rail arrives, so the
-   default flips once as a window widens rather than three times.
+   ONE number does the deciding, and it is written twice because CSS
+   cannot put a custom property in a query condition: --ds-kmin, the
+   least the frame may be scaled to, and 54rem, the stage width at
+   which the desktop rendering reaches it. 1200 × 0.72 = 864px = 54rem.
+   Keep them in step; the drive asserts the identity.
 
-   The pair is written as (min-width: 48rem) and its exact negation
+   Where 0.72 comes from, measured rather than assumed. The type in
+   these samples is --rst-fs-base (14px), --rst-fs-sm (12.5px) and
+   --rst-fs-xs (11.5px), with an 11px badge as the smallest thing
+   anywhere. Which of them DOMINATES depends on the page — 14px carries
+   70% of the characters on the display page and none at all on
+   date-and-time, where 12.5px carries half — so the honest number to
+   protect is 12.5px, not the 14px one page suggests. --ds-k scales all
+   of it linearly and 9px is about where rendered text stops being read
+   and starts being texture. 12.5 × 0.72 = 9.0px exactly. That gives
+   both the floor and the threshold, and it is why they are one number.
+
+   54rem is also comfortably over the 718px the stage can reach before
+   the rail arrives, so the default flips once as a window widens
+   rather than three times. Under it the 390px rendering is the opening
+   view: not because it is perfect — at a real 390px phone the stage is
+   309px and that rendering is scaled to 0.79, so its 12.5px type lands
+   at 9.9px — but because it is three times the 0.26 the desktop
+   rendering would be scaled to in the same column.
+
+   The pair is written as (min-width: 54rem) and its exact negation
    rather than as a min/max pair: a max-width one pixel under leaves a
    gap a fractional width can land in, and in that gap neither rule
    applies and no tab is lit at all. The highlight below is driven by
    those same two queries, so the tab a reader sees lit is always the
    rendering in front of them. A 390px rendering under a lit "Desktop"
-   would be a worse bug than the one this fixed.
+   would be a worse bug than the one this fixed. An engine with :has()
+   but no container queries — Safari 15.4 to 15.6 is the real one —
+   gets neither query, so it gets a third rule that lights Desktop to
+   match the 1200px rendering it will be showing.
 
    The scale is the other half. The frame is laid out at a virtual
    1200px (or 390px, on Mobile) and scaled to fit whatever the reader's
    column actually is, so the desktop rendering is the desktop
    rendering on a phone too. CSS can divide two lengths into a plain
    number exactly one way — tan(atan2(a, b)) — and 100cqw is the
-   container's own width, so --ds-k is that fraction and min() stops it
-   scaling anything UP. Where the trig functions are missing the
-   @supports block never applies, --ds-k stays 1, and the frame is a
-   1200px page clipped to the column: smaller, not broken.
+   container's own width, so --ds-k is that fraction; the 1 stops it
+   scaling anything UP and --ds-kmin stops it scaling anything into
+   illegibility. Where the trig functions are missing the @supports
+   block never applies, --ds-k stays 1, and the frame is a 1200px page
+   clipped to the column: smaller, not broken.
+
+   Clamping the scale is what makes the desktop rendering worth asking
+   for on a phone, and it is the widget's own doctrine — the box is a
+   window on a document, not a fit to it — applied to the inline axis
+   at last. Below 54rem of stage the desktop rendering stops SHRINKING
+   and starts PANNING: --ds-k holds at 0.72, the box stays as wide as
+   the column, and the 864px of scaled page inside it scrolls
+   horizontally within the box. Nothing about it reaches the page, so
+   the document itself never scrolls sideways. The alternative, which
+   this replaces, was to leave the scale alone and make the BOX taller:
+   that bought 126px of blank space per widget and not one pixel of
+   legibility, because previewHeights are measured content heights and
+   the frame already fitted its document.
 
    The container is .ds-view and not .ds-view__stage, because the tabs
    are the stage's SIBLINGS and a query on the stage cannot reach them,
@@ -172,23 +204,25 @@
    scrolls inside its frame, and the grip is there for the ones a
    reader wants more of.
 
-   The floor is the last of it, and it does two jobs. --ds-k scales
-   BOTH axes, so a 1200px virtual page in a 309px phone column comes
-   out at 26% and a 70px component is an 18px sliver: present, and
-   invisible. min-block-size holds the box open at the sample's own
-   virtual height, or --ds-floor, whichever is smaller — so nothing
-   tall is made taller and nothing short disappears — and the frame
-   scrolls inside it. The second job is why it is a SEPARATE
-   declaration rather than a max() inside block-size: block-size
-   carries --ds-k, and a --ds-k an engine parses but cannot resolve
-   makes that declaration invalid at computed-value time, which drops
-   it to auto, which for a box whose only child is absolutely
-   positioned is zero. min-block-size names nothing that can go bad, so
-   the box still opens and the frame is cropped rather than gone. The
-   @supports guard tests the same shape the declaration uses, 100cqw
-   and all, rather than the trig alone — a guard that does not exercise
-   the thing that can fail is a guard that gates nothing. */
-.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; --ds-floor: 9rem; container-name: ds-view; container-type: inline-size; margin: var(--rst-sp-3) 0; }
+   min-block-size is insurance and nothing else — it buys no
+   legibility, and it is not what fixed anything here. It exists
+   because block-size names --ds-k, and a --ds-k an engine parses but
+   cannot resolve makes that declaration invalid at computed-value
+   time, which drops it to auto, which for a box whose only child is
+   absolutely positioned is ZERO. A separate declaration naming nothing
+   that can go bad keeps the box open in that engine, and the frame is
+   then cropped rather than gone. Its value is the smallest height the
+   healthy cascade can produce, --ds-h × --ds-kmin, so it never binds
+   when things work and adds no whitespace to any preview at any width.
+
+   The @supports guard tests the same shape the declaration uses,
+   100cqw and all, rather than the trig alone. Be clear about what that
+   can and cannot do: @supports tests whether a declaration PARSES, so
+   it catches an engine that will not take a container-query unit in
+   that position, and it cannot catch one that parses it and then fails
+   to resolve it. The min-block-size above is what covers the second
+   case; this guard covers the first. */
+.ds-view { --ds-w: 1200px; --ds-h: 220px; --ds-hm: 330px; --ds-kmin: 0.72; container-name: ds-view; container-type: inline-size; margin: var(--rst-sp-3) 0; }
 .ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
 .ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
 .ds-view__tab + .ds-view__tab { border-inline-start: 0; }
@@ -197,18 +231,19 @@
 .ds-view__tab input { block-size: 1px; clip-path: inset(50%); inline-size: 1px; margin: 0; overflow: hidden; position: absolute; }
 .ds-view__tab:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .ds-view__tab:has(input:checked) { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-@container ds-view (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
-@container ds-view not (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@container ds-view (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@container ds-view not (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
+@supports not (container-type: inline-size) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: min(var(--ds-h), var(--ds-floor)); overflow: hidden; position: relative; resize: vertical; }
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: calc(var(--ds-h) * var(--ds-kmin)); overflow: hidden; position: relative; resize: vertical; }
 .ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; min-block-size: 100%; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
-@supports (block-size: calc(1px * min(1, tan(atan2(100cqw, 1200px))))) {
-  .ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }
+@supports (block-size: calc(1px * clamp(0.5, tan(atan2(100cqw, 1200px)), 1))) {
+  .ds-view__box { --ds-k: clamp(var(--ds-kmin), tan(atan2(100cqw, var(--ds-w))), 1); }
 }
 .ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
-@container ds-view not (min-width: 48rem) {
+@container ds-view not (min-width: 54rem) {
   .ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
-  .ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { min-block-size: var(--ds-floor); }
+  .ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { overflow-x: auto; overscroll-behavior-x: contain; }
 }
 .ds-view__code { display: none; margin-block-start: 0; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }

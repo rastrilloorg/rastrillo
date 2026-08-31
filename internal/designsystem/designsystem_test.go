@@ -980,7 +980,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
 		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
 		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
-		`.ds-view__box { --ds-k: min(1, tan(atan2(100cqw, var(--ds-w)))); }`,
+		`.ds-view__box { --ds-k: clamp(var(--ds-kmin), tan(atan2(100cqw, var(--ds-w))), 1); }`,
 		// The opening view follows the STAGE's width, and the
 		// highlight follows it by the same two queries. Without these
 		// four the widget opens on nothing chosen and nothing lit.
@@ -989,12 +989,20 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		// TestThePreviewDefaultIsMonotoneInStageWidth, which fails on
 		// a media rule and passes on this one.
 		`container-name: ds-view; container-type: inline-size;`,
-		`@container ds-view (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
-		`@container ds-view not (min-width: 48rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m {`,
+		`@container ds-view (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
+		`@container ds-view not (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m {`,
 		`.ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
-		// The floor, and the reason it is a declaration of its own:
-		// block-size carries --ds-k and dies with it.
-		`min-block-size: min(var(--ds-h), var(--ds-floor));`,
+		// The scale floor, which is what buys legibility, and the
+		// panning that makes a clamped scale usable rather than
+		// cropped.
+		`.ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { overflow-x: auto; overscroll-behavior-x: contain; }`,
+		// The collapse guard, and the reason it is a declaration of
+		// its own: block-size carries --ds-k and dies with it. It
+		// buys no legibility and is not claimed to.
+		`min-block-size: calc(var(--ds-h) * var(--ds-kmin));`,
+		// The engine with :has() and no container queries gets a lit
+		// tab that matches the rendering it will be showing.
+		`@supports not (container-type: inline-size) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
 	} {
 		if !strings.Contains(css, rule) {
 			t.Errorf("gallery.css carries no rule %q — the tabs would switch nothing", rule)
