@@ -133,10 +133,11 @@ func rewrite(src []byte, migrate bool) ([]byte, []Note) {
 	// stays at 3 while it does. A fenced region is somebody having
 	// already dealt with it. Without this, every file that fences off a
 	// paragraph about the old spelling reports work forever, and this
-	// repository was the proof — four permanent notes against two files
-	// fenced from line 1, so `rastrillo markup .` could never exit 0 on
-	// a clean tree. A report mode that always says there is work is what
-	// teaches people to skip it and run --fix.
+	// repository was the proof: internal/markup's own files are fenced
+	// from line 1 and reported notes anyway, on every run, so
+	// `rastrillo markup .` could never exit 0 here on a clean tree. A
+	// report mode that always says there is work is what teaches people
+	// to skip it and run --fix.
 	//
 	// The regions are recomputed rather than reusing inFence: the tone
 	// pass above shortened the text at every replacement, so offsets

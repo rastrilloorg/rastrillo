@@ -302,11 +302,14 @@ func TestTheFenceIsTheOnlyOptOut(t *testing.T) {
 // and held the exit code at 3 while it did.
 //
 // This repository was the proof: internal/markup/rewrite.go and
-// internal/markup/markup_test.go are fenced from line 1 and produced
-// four permanent notes between them, so `rastrillo markup .` could
-// never exit 0 here on a clean tree. A report mode that always says
-// there is work is what teaches a person to skip reading it and run
-// --fix, which is the habit that made the Markdown defect expensive.
+// internal/markup/markup_test.go are fenced from line 1 and reported
+// notes anyway, on every run, so `rastrillo markup .` could never exit
+// 0 here on a clean tree. How many notes is not worth writing down —
+// adding this very test added another one, which is how the count an
+// earlier draft of this comment carried went stale before anyone read
+// it. A report mode that always says there is work is what teaches a
+// person to skip reading it and run --fix, which is the habit that
+// made the Markdown defect expensive.
 func TestAFencedRegionProducesNoNote(t *testing.T) {
 	// The same text TestEscapedMarkupIsReported asserts IS a note when
 	// it stands on its own — shared deliberately, so the two cannot
