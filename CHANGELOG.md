@@ -8,6 +8,87 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## v0.24.0
+
+### Fixed — read this one if you have an app scaffolded before v0.24.0
+
+**A freshly scaffolded app failed its own `make ci`**, on the first run, before
+a line of app code existed:
+
+```
+missing go.sum entry for module providing package github.com/BurntSushi/toml
+  (imported by github.com/carlosframework/rastrillo/internal/manifest)
+```
+
+The `migration-check` target runs the CLI as `go run` from inside the app
+module, so the CLI's whole package graph resolves against the app's `go.sum`.
+Nothing an app imports reaches `internal/manifest`'s TOML parser, so
+`go mod tidy` prunes it: a dependency that is real at `go run` time and
+invisible at tidy time. The scaffolded `go.mod` now declares the CLI as a
+`tool`, which is what makes tidy record it. One indirect requirement, two
+`go.sum` lines — `cmd/rastrillo` does not drag in sqlc.
+
+**Apps scaffolded before this release keep the broken `go.mod`.** Their
+`make ci` fails the same way. Add the line to yours:
+
+```
+tool github.com/carlosframework/rastrillo/cmd/rastrillo
+```
+
+then `go mod tidy`. (`go get github.com/BurntSushi/toml` also clears it, but
+names a dependency you do not use and will drift again the next time the CLI
+grows one.)
+
+Worth recording why this shipped at all. The suite *does* scaffold an app and
+run `make migration-check` — but under `GOFLAGS=-mod=mod`, which the sandbox
+environment sets so tests can work against a local module cache. Under
+`-mod=mod` a missing `go.sum` entry is not an error: `go run` writes the
+requirement into `go.mod` and carries on. So the step passed here for exactly
+as long as it failed for everyone else, who runs the default `-mod=readonly`.
+That step now runs `-mod=readonly` explicitly.
+
+Reported by the Docs team.
+
+### Added
+
+**`auth.Config.SubjectFor`**, for an app that must not store a readable email
+address at rest. `rastrillo/auth` minted every session with the verified
+address as its subject, with no way to configure it away — so the address
+landed in the `sessions` table and in everything keyed off the subject:
+passkey credentials, challenges, pending enrollments, recovery codes. An app
+whose guarantee is that publishing its database teaches an attacker nothing
+could not use the family default for identity, which is the one surface where
+it most wanted to.
+
+`SubjectFor` maps the verified address to whatever the app wants the session
+keyed by — an HMAC under a pepper it holds, a row id from its own directory.
+Nil is exactly the previous behaviour.
+
+Three things to know before setting it. `Authorize` still receives the real
+address, because admission answers a question about an address. `Identity`
+(`auth.From`, `sessions.Current`) then carries the remapped value in its
+`Address` field, which is the trade being made. And an error refuses the
+sign-in rather than falling back to the address — writing one is the failure
+the hook exists to prevent.
+
+It does not make the plugin server-blind on its own: `auth_links` still holds
+the address at rest between sending a magic link and its click, because the
+link has to survive a restart. Sealing that store is separate work.
+
+Reported by the Oficina home team.
+
+### Changed
+
+**`SKILL.md` is 1,619 bytes smaller**, and says the same things. Five blocks
+whose detail a documentation page already carried — the date and time field
+kinds, the password plugin's configuration, the jobs handlers' mount paths,
+`doctor`'s exit codes, and the shipped locale list — are now one sentence plus
+their page, which is the delegation the file already promised ("rare traps get
+one sentence plus a page") and had stopped doing. Every trap stayed inline, by
+the rule that a block stays if getting it wrong is silent and moves to its page
+if you would look it up anyway. No API changed, and the size budget did not
+move.
+
 ## v0.23.0
 
 ### Fixed — read this one if you ran `rastrillo markup --fix` on v0.22.0
