@@ -62,7 +62,7 @@ not by reading.
 This is the one consequence with no workaround, and it must be
 understood before the move rather than discovered after it.
 
-A module's identity lives in the `go.mod` at each tag. All 22 existing
+A module's identity lives in the `go.mod` at each tag. All 24 existing
 tags declare `module github.com/carlosframework/rastrillo`, so the
 proxy will reject `amadan.net/rastrillo/rastrillo@v0.19.0` with
 *"module declares its path as…"*. **No existing version is installable
@@ -74,14 +74,35 @@ Therefore:
   describe`, `git log v0.18.0..`, release archaeology — and they cost
   nothing. They are *not* installable, and `README.md` says so once
   rather than leaving a reader to discover it from a proxy error.
-- The new path starts at **`v0.20.0`**, cut after the rename lands.
-- `cmd/rastrillo/version.go`'s `rastrilloFallbackVersion` moves to
-  `v0.20.0` in the same commit as the rename. That constant is what a
-  locally built binary writes into a scaffolded app's `go.mod`, so
-  **the tag must exist on amadan before `rastrillo new` produces an app
-  that resolves.** Tagging is step 5 below for exactly this reason.
+- **The new path starts at the first tag cut after the move lands, and
+  this branch names no version anywhere.** That tag is written
+  `<first-tag-after-the-move>` throughout this spec and the plan; the
+  release-prep step at merge time chooses the concrete number as the
+  next unused version above whatever `main` last tagged.
+- `cmd/rastrillo/version.go`'s `rastrilloFallbackVersion` is therefore
+  **left exactly as `main` has it** by the rename commit. That constant
+  is what a locally built binary writes into a scaffolded app's
+  `go.mod`, so **the tag must exist on amadan before `rastrillo new`
+  produces an app that resolves** — which is why the constant moves in
+  a release-prep commit at the moment the PR lands, in step 5 below,
+  and not before.
 - `README.md`'s install line becomes `go install
-  amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest`.
+  amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest`, and says which
+  tags are installable without naming a floor version.
+
+**Why no version is named here.** Earlier drafts of this spec fixed the
+floor at `v0.20.0`, then at `v0.21.0`. Both were overtaken: while this
+work was in flight `main` cut `v0.20.0` (#117), `v0.21.0` (#123) and
+`v0.22.0` (#125), each declaring the *old* module path, so each in turn
+became unavailable to the new one — not skipped, but taken. A hardcoded
+floor also reaches further than it looks: it had been quoted in
+`README.md` prose, so every correction sent an approved copy string
+back through the human review gate for a number that was stale again
+within a day. The race is structural, because `main` tags releases
+faster than a branch of this size can land. A branch that names a
+version re-enters that race on every re-derive; one that does not,
+does not. So the number is chosen once, at merge time, by the release
+prep — and nothing on the branch depends on knowing it in advance.
 
 ### 1.2 What `docs/site/addons.md` has to stop saying
 
@@ -242,8 +263,9 @@ loop.
 The order exists to keep a working CI and a working install path at
 every point.
 
-1. **Rename.** Module path, scaffold assertions, docs corpus,
-   `rastrilloFallbackVersion` → `v0.20.0`. Green locally.
+1. **Rename.** Module path, scaffold assertions, docs corpus.
+   `rastrilloFallbackVersion` is left at whatever `main` has. Green
+   locally.
 2. **Add the amadan gate.** `Makefile`, `.amadan/ci`, `.amadan/ci.d/`.
    **Keep `.github/workflows/ci.yml`**, updated for the new path — see
    §6.1.
@@ -252,10 +274,13 @@ every point.
 4. **Prove the gate on the cloud runner.** ← **go/no-go.** Nothing
    below happens until every step reports green, including `40-race`
    and `99-browser`.
-5. **Tag `v0.20.0`** on amadan. Verify `go install
-   amadan.net/rastrillo/rastrillo/cmd/rastrillo@v0.20.0` from an empty
-   module cache, then `rastrillo new` an app in a clean directory and
-   build it — with no `replace` directive.
+5. **Choose and tag `<first-tag-after-the-move>`** on amadan — the
+   next unused version above whatever `main` last tagged — setting
+   `rastrilloFallbackVersion` to it in the same release-prep commit.
+   Verify `go install
+   amadan.net/rastrillo/rastrillo/cmd/rastrillo@<first-tag-after-the-move>`
+   from an empty module cache, then `rastrillo new` an app in a clean
+   directory and build it — with no `replace` directive.
 6. **First amadan branch:** rewrite `AGENTS.md` per §4 and
    `README.md` per §1.1. The first real exercise of the new workflow.
    `.github/workflows/ci.yml` stays.
@@ -302,7 +327,8 @@ everything. Three checks exist only because of this move:
    into an empty directory and run `make ci`. Proves the pushed repo is
    complete and the gate needs nothing from the old checkout.
 2. **Published-module install.** `go install
-   amadan.net/rastrillo/rastrillo/cmd/rastrillo@v0.20.0` with
+   amadan.net/rastrillo/rastrillo/cmd/rastrillo@<first-tag-after-the-move>`
+   with
    `GOMODCACHE` pointed at an empty directory. This exercises the whole
    chain — vanity meta tag, git-over-HTTPS, `proxy.golang.org`, sumdb —
    and is the step 4/5 go/no-go.
@@ -363,8 +389,8 @@ Two details that are not free:
 
 - **Tags are prefixed.** `carlosframework/releases` already carries
   `v0.13.0`–`v0.17.0` for carlos, which will reach `v0.20.0` in time.
-  rastrillo publishes `rastrillo-v0.20.0`; carlos's existing unprefixed
-  tags are not touched. Asset names disambiguate the files, the prefix
+  rastrillo publishes `rastrillo-<first-tag-after-the-move>`; carlos's
+  existing unprefixed tags are not touched. Asset names disambiguate the files, the prefix
   disambiguates the release.
 - **The formula stops building from source.** It gains prebuilt
   darwin/linux × arm64/amd64 binaries and drops `depends_on "go" =>

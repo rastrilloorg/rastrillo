@@ -24,8 +24,18 @@ runner (arm64, Go 1.26.5, Node 22, Playwright 1.62.1).
 - Old module path, verbatim: `github.com/carlosframework/rastrillo`
 - New module path, verbatim: `amadan.net/rastrillo/rastrillo`
 - Remote, verbatim: `https://amadan.net/rastrillo/rastrillo` (Public tier)
-- First version under the new path: **`v0.20.0`**. No earlier tag is
-  installable under the new path — their `go.mod` declares the old one.
+- **This branch names no version.** No existing tag is installable
+  under the new path — each `go.mod` declares the old one — but the
+  floor is *not* written down here, because `main` keeps tagging
+  releases under the old path faster than this branch can land (it took
+  `v0.20.0`, `v0.21.0` and `v0.22.0` while this work was in flight).
+  The first version under the new path is written
+  `<first-tag-after-the-move>` throughout, and Task 6 Step 0 chooses
+  the concrete number — the next unused version above whatever `main`
+  last tagged — at the moment the PR lands.
+- `cmd/rastrillo/version.go`'s `rastrilloFallbackVersion` is **left
+  exactly as `main` has it** by every task below. It moves once, in
+  Task 6's release-prep commit, together with the tag it must match.
 - The gate, one definition: `make ci`. CI steps delegate to `make`
   targets and never keep their own copies of the commands.
 - `.amadan/ci` and every `.amadan/ci.d/*` file must be **mode 755** and
@@ -57,9 +67,9 @@ runner (arm64, Go 1.26.5, Node 22, Playwright 1.62.1).
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: the import path `amadan.net/rastrillo/rastrillo` and the
-  constant `rastrilloFallbackVersion = "v0.20.0"`, which Tasks 3, 4 and
-  6 depend on.
+- Produces: the import path `amadan.net/rastrillo/rastrillo`, which
+  Tasks 3, 4 and 6 depend on. `rastrilloFallbackVersion` is **not**
+  touched here — see Task 6.
 
 - [ ] **Step 1: Confirm the starting count, so the rewrite is checkable**
 
@@ -96,15 +106,30 @@ git grep -c 'github\.com/carlosframework/rastrillo' ; echo "exit=$?"
 Expected: no output and `exit=1` — `git grep` exits 1 when it matches
 nothing. Any remaining match is a miss.
 
-- [ ] **Step 4: Bump the scaffold's fallback version**
+- [ ] **Step 4: Leave the scaffold's fallback version alone**
 
-`cmd/rastrillo/version.go:10`. This is what a locally built binary
-writes into a scaffolded app's `go.mod`, so it has to name the first
-version that will exist under the new path.
+`cmd/rastrillo/version.go:10`. The sed in Step 2 rewrites the module
+path inside this file's comments, which is correct and expected. The
+constant itself is **not** changed here:
 
 ```go
-const rastrilloFallbackVersion = "v0.20.0"
+const rastrilloFallbackVersion = "v0.22.0"   // whatever main has — unchanged
 ```
+
+It is what a locally built binary writes into a scaffolded app's
+`go.mod`, so it must name a tag that actually exists under the new
+path — and no such tag exists until Task 6 cuts one. Moving it early
+would only pin scaffolds to a version chosen before the race was over.
+It moves in Task 6's release-prep commit, beside the tag it names.
+
+Confirm the sed left it untouched:
+
+```bash
+grep -n 'rastrilloFallbackVersion =' cmd/rastrillo/version.go
+git diff origin/main -- cmd/rastrillo/version.go | grep '^[-+].*FallbackVersion ='
+```
+
+Expected: the first prints `main`'s value; the second prints nothing.
 
 - [ ] **Step 5: Tidy the module graph**
 
@@ -117,7 +142,7 @@ The examples keep `require amadan.net/rastrillo/rastrillo v0.1.0`
 alongside `replace amadan.net/rastrillo/rastrillo => ../..`. That
 version never resolves and never needs to: a filesystem `replace` makes
 the requirement local, which is why no `go.sum` entry is needed for it.
-Do **not** "fix" it to `v0.20.0`.
+Do **not** "fix" it to a real version.
 
 - [ ] **Step 6: Format, then run the full gate**
 
@@ -175,10 +200,14 @@ a path naming github.com/carlosframework would point at a repo that is
 about to become an archive, and the scaffold writes that path into
 every app it generates.
 
-rastrilloFallbackVersion moves to v0.20.0 in this same commit and not
-later. It is what a locally built binary pins a scaffolded go.mod to,
-and no tag before v0.20.0 is installable under the new path - their
-go.mod declares the old one, so the proxy rejects them outright.
+rastrilloFallbackVersion is deliberately left where main has it. It is
+what a locally built binary pins a scaffolded go.mod to, so it has to
+name a tag that exists under the new path - and none does until this
+lands and a release is cut. Naming one here would pin every scaffold
+to a version chosen before main stopped taking them: main tagged
+v0.20.0, v0.21.0 and v0.22.0 under the old path while this branch was
+in flight. It moves with the tag, in the release-prep commit, or not
+at all.
 
 The examples keep 'require ... v0.1.0' beside their filesystem
 replace. That version resolves through the replace and never through
@@ -196,8 +225,8 @@ watching it."
 
 **Files:**
 - Modify: `docs/site/addons.md:42-44` (the vanity-path paragraph)
-- Modify: `README.md` — the `go install` line, plus a new sentence about
-  the pre-`v0.20.0` tags
+- Modify: `README.md` — the `go install` line, plus a new sentence
+  about the tags predating the move
 - Modify: `internal/docsite/docsite.go:8` (the website repo reference,
   if it still names `carlosframework`)
 - Test: `go test ./internal/docsite/ -count=1`
@@ -247,10 +276,12 @@ repository, its own release schedule"; drop the host contrast.
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 ```
 
-Add one sentence, near it, saying that versions before `v0.20.0` exist
-as git tags for history but are not installable under this path,
-because their `go.mod` declares the old one. One sentence — a reader
-should learn this here rather than from a proxy error.
+Add one sentence, near it, saying that the tags predating the move
+exist as git history but are not installable under this path, because
+their `go.mod` declares the old one. One sentence, and **it must not
+name a version** — a floor written into prose goes stale the next time
+`main` tags a release, and this sentence is approved copy, so every
+correction costs a round through the human review gate.
 
 - [ ] **Step 4: Run the docsite gates**
 
@@ -274,9 +305,10 @@ guessing a sibling path for an addon. It now says separate module,
 separate repository, own release schedule, and leans on none of it.
 
 The README's install line follows the module, and gains one sentence
-about the pre-v0.20.0 tags: they are history, not versions the proxy
-will serve under this path. Better read here than inferred from a
-resolution error."
+about the tags predating the move: they are history, not versions the
+proxy will serve under this path. Better read here than inferred from
+a resolution error. It names no version on purpose - a floor in prose
+goes stale the next time main tags a release."
 ```
 
 ---
@@ -756,34 +788,68 @@ Expected, before proceeding: **all eleven steps green.**
 
 ---
 
-### Task 6: Publish v0.20.0 and prove the install path
+### Task 6: Publish the first tag and prove the install path
 
-**Files:** none — this task publishes a tag and verifies it.
+**Files:** `cmd/rastrillo/version.go` — the release-prep commit.
 
 **Interfaces:**
-- Consumes: Task 5's green gate, Task 1's `rastrilloFallbackVersion`.
-- Produces: `v0.20.0` resolvable at `amadan.net/rastrillo/rastrillo`.
-  Task 9 (archiving GitHub) depends on this having succeeded.
+- Consumes: Task 5's green gate.
+- Produces: `<first-tag-after-the-move>` resolvable at
+  `amadan.net/rastrillo/rastrillo`, and the matching
+  `rastrilloFallbackVersion`. Task 9 (archiving GitHub) depends on this
+  having succeeded.
 
-- [ ] **Step 1: Confirm the constant and the tag will agree**
+- [ ] **Step 0: Choose the version — do this now, not earlier**
 
 ```bash
-grep -n 'rastrilloFallbackVersion' cmd/rastrillo/version.go
+git fetch origin --tags
+git tag -l 'v0.*' | sort -V | tail -3
 ```
 
-Expected: `v0.20.0`. If it says anything else, Task 1 Step 4 did not
-land — fix that first, or a locally built `rastrillo new` emits an app
-requiring a version that does not exist.
+`<first-tag-after-the-move>` is **the next unused version above
+whatever `main` last tagged**. Read it here, at the moment of the
+release, because `main` cuts releases under the old path faster than
+this branch lands — it took `v0.20.0`, `v0.21.0` and `v0.22.0` while
+this work was in flight, each one invalidating a floor written down in
+advance. Every `<first-tag-after-the-move>` below means the number you
+just read.
+
+A tag points at one commit, so a version already tagged under the old
+path can never be reused under the new one. Verify the one you chose is
+genuinely free:
+
+```bash
+git rev-parse -q --verify '<first-tag-after-the-move>' && echo TAKEN || echo free
+```
+
+- [ ] **Step 1: Release prep — set the constant to the version you chose**
+
+`cmd/rastrillo/version.go:10`. Task 1 deliberately left this at
+`main`'s value; it moves here, in its own commit, so the constant and
+the tag are decided together and cannot drift apart.
+
+```go
+const rastrilloFallbackVersion = "<first-tag-after-the-move>"
+```
+
+```bash
+grep -n 'rastrilloFallbackVersion =' cmd/rastrillo/version.go
+GOFLAGS=-mod=mod CGO_ENABLED=0 go test ./cmd/rastrillo/ -count=1
+```
+
+Expected: the constant reads the version from Step 0. If it does not,
+a locally built `rastrillo new` emits an app requiring a version that
+does not exist.
 
 - [ ] **Step 2: Tag and push**
 
 ```bash
-git tag -a v0.20.0 -m "v0.20.0 - the first release under amadan.net/rastrillo/rastrillo
+git tag -a '<first-tag-after-the-move>' -m "<first-tag-after-the-move> - the first release under amadan.net/rastrillo/rastrillo
 
 No earlier tag is installable under this path: each declares
 github.com/carlosframework/rastrillo in its own go.mod, which the proxy
 rejects for this module. They remain as history."
-git push origin v0.20.0
+git push origin '<first-tag-after-the-move>'
 ```
 
 - [ ] **Step 3: Prove the module resolves through the proxy**
@@ -795,7 +861,8 @@ This exercises the whole chain — vanity meta tag, git over HTTPS,
 curl -sS 'https://proxy.golang.org/amadan.net/rastrillo/rastrillo/@v/list'
 ```
 
-Expected: `v0.20.0`. The proxy fetches on first request, so an empty
+Expected: `<first-tag-after-the-move>`. The proxy fetches on first
+request, so an empty
 first response warrants one retry after a few seconds; a persistent
 empty result is a real failure, not slowness.
 
@@ -803,11 +870,12 @@ empty result is a real failure, not slowness.
 
 ```bash
 cache=$(mktemp -d)
-GOMODCACHE="$cache" GOFLAGS= go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@v0.20.0
+GOMODCACHE="$cache" GOFLAGS= go install 'amadan.net/rastrillo/rastrillo/cmd/rastrillo@<first-tag-after-the-move>'
 "$(go env GOPATH)/bin/rastrillo" version
 ```
 
-Expected: a clean install and a version report of `v0.20.0` — proving
+Expected: a clean install and a version report of
+`<first-tag-after-the-move>` — proving
 `rastrilloVersion()` reads the real tag from build info rather than
 falling back to the constant.
 
@@ -821,7 +889,7 @@ proven. Prove it now:
 tmp=$(mktemp -d) && cd "$tmp"
 "$(go env GOPATH)/bin/rastrillo" new provingapp
 cd provingapp
-grep -n 'amadan.net/rastrillo/rastrillo' go.mod     # expect: require ... v0.20.0, no replace
+grep -n 'amadan.net/rastrillo/rastrillo' go.mod     # expect: require ... <first-tag-after-the-move>, no replace
 go mod tidy
 go build ./...
 go test ./... -count=1
@@ -834,7 +902,8 @@ step that earns the right to archive GitHub.
 
 ### Task 6A: Homebrew keeps working
 
-**Runs after Task 6** (it needs the `v0.20.0` tag) **and must complete
+**Runs after Task 6** (it needs the `<first-tag-after-the-move>` tag)
+**and must complete
 before Task 9's archive step** — the formula's `head` currently tracks
 the repo Task 9 archives.
 
@@ -843,10 +912,11 @@ the repo Task 9 archives.
 - Modify (in **`carlosframework/homebrew-tap`**, a different repo):
   `Formula/rastrillo.rb`
 - Publish (in **`carlosframework/releases`**, a different repo): a
-  release tagged `rastrillo-v0.20.0` with four binaries
+  release tagged `rastrillo-<first-tag-after-the-move>` with four
+  binaries
 
 **Interfaces:**
-- Consumes: Task 6's published `v0.20.0`.
+- Consumes: Task 6's published `<first-tag-after-the-move>`.
 - Produces: a working `brew install carlosframework/tap/rastrillo`.
 
 - [ ] **Step 1: Write `hack/release-artifacts.sh`**
@@ -885,14 +955,14 @@ chmod 755 hack/release-artifacts.sh
 - [ ] **Step 2: Build the artifacts and capture the checksums**
 
 ```bash
-./hack/release-artifacts.sh v0.20.0
+./hack/release-artifacts.sh '<first-tag-after-the-move>'
 ls -l dist/
 ```
 
 Expected: four binaries and four sha256 lines. Record the checksums —
 Step 4 needs them verbatim.
 
-- [ ] **Step 3: Verify a built binary actually runs and reports v0.20.0**
+- [ ] **Step 3: Verify a built binary reports the version it was cut at**
 
 Run the one matching this machine (linux/amd64 here):
 
@@ -900,7 +970,8 @@ Run the one matching this machine (linux/amd64 here):
 ./dist/rastrillo-linux-amd64 version
 ```
 
-Expected: `v0.20.0`. A cross-compiled binary that reports the fallback
+Expected: `<first-tag-after-the-move>`. A cross-compiled binary that
+reports the fallback
 constant instead means the build lost its version stamping — stop and
 report rather than publishing it.
 
@@ -910,9 +981,9 @@ This writes to a repository outside this worktree and is visible to
 anyone. Confirm with the user before running it.
 
 ```bash
-gh release create rastrillo-v0.20.0 \
+gh release create 'rastrillo-<first-tag-after-the-move>' \
   --repo carlosframework/releases \
-  --title "rastrillo v0.20.0" \
+  --title "rastrillo <first-tag-after-the-move>" \
   --notes "First release under amadan.net/rastrillo/rastrillo. Source: https://amadan.net/rastrillo/rastrillo" \
   dist/rastrillo-darwin-arm64 dist/rastrillo-darwin-amd64 \
   dist/rastrillo-linux-arm64 dist/rastrillo-linux-amd64
@@ -926,7 +997,8 @@ The `rastrillo-` tag prefix is deliberate: that repo already holds
 Also a different repository. In a checkout of
 `carlosframework/homebrew-tap`, replace `Formula/rastrillo.rb`'s source
 build with the prebuilt shape `carlos.rb` already uses: `version
-"0.20.0"`, `homepage "https://amadan.net/rastrillo/rastrillo"`, an
+"<first-tag-after-the-move, without the leading v>"`, `homepage
+"https://amadan.net/rastrillo/rastrillo"`, an
 `on_macos`/`on_linux` × `on_arm`/`on_intel` block per binary with the
 Step 2 checksums, an `install` that puts the binary at `bin/"rastrillo"`
 and chmods it 0755, and no `depends_on "go"`.
@@ -946,7 +1018,8 @@ brew install carlosframework/tap/rastrillo
 rastrillo version
 ```
 
-Expected: `v0.20.0`. If `brew` is unavailable on this machine, say so
+Expected: `<first-tag-after-the-move>`. If `brew` is unavailable on
+this machine, say so
 plainly in the report rather than claiming an untested formula works.
 
 - [ ] **Step 7: Commit the build script**
