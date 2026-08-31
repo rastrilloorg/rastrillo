@@ -7,7 +7,16 @@ import "runtime/debug"
 // plain `go build`/`go test` in a local checkout, which runtime/debug
 // reports as "(devel)". Bump this on every release tag; better still,
 // find a way to derive it so this constant needs no maintenance at all.
-const rastrilloFallbackVersion = "v0.24.0"
+//
+// Until then two tests guard it, because going stale here is not a
+// cosmetic drift: it is the version a dev-built CLI writes into every
+// scaffolded go.mod, so a value naming a version that was never tagged
+// fails the app's own `go mod tidy` with "unknown revision". That is
+// what happened between v0.24.0 and v0.25.0 — a release prep bumped
+// this to v0.24.0, the tag was never cut, and the next release tagged
+// v0.25.0 with no prep at all. See TestFallbackVersionMatchesTheChangelog
+// and TestFallbackVersionIsNotBehindTheNewestTag.
+const rastrilloFallbackVersion = "v0.25.0"
 
 // rastrilloVersion reports the version of amadan.net/rastrillo/rastrillo
 // that built this CLI binary, so `rastrillo new` can pin the scaffolded
