@@ -2628,12 +2628,32 @@ own components, its own themes, its own gallery. It is not a fork and it
 is not a theme; a theme changes colour, type and shape, and a variant
 can add a component a theme cannot.
 
-**`cmd/dsgen` going public is the first brick and was not built for
-this.** A variant needs to document itself, and the generator that
-documents rastrillo's vocabulary is now a public command any module can
-run. That was done to get 20 MB out of the repo. It happens to be the
-mechanism a variant's gallery needs, which is worth noticing before
-anyone designs a second one.
+**`cmd/dsgen` going public is NOT the mechanism a variant's gallery
+needs. Corrected 2026-08-31.** This section originally said it "happens
+to be the mechanism a variant's gallery needs". That is false, and I
+repeated it to sheets-03, who wrote it into estilo's `AGENTS.md` and
+`README` as settled fact before their implementer opened the source and
+found otherwise.
+
+What is true: `dsgen` is public, and any module can run it. What is
+false: that running it against another module documents *that module's*
+vocabulary. Its entire public surface is `-out` and `-mount`;
+`internal/designsystem` imports `github.com/carlosframework/rastrillo/ui`
+directly, and its page kinds, samples and prose are rastrillo's. Pointed
+at estilo it reproduces rastrillo.org's gallery. The tool's own usage
+string was honest throughout — "dsgen writes **rastrillo's**
+design-system gallery" — so the error was mine and never the code's.
+
+**The underlying want is real and remains open.** A variant with its own
+components needs to document them, and the two available paths are both
+refused by estilo's own rules: fork the tool, or hand-write a gallery.
+So the question is whether `dsgen` grows a seam — a way to point `Render`
+at another module's vocabulary — or whether variants are expected to
+solve it themselves. Not decided, and not urgent: estilo has no
+components yet and will not until an app needs one.
+
+Recorded rather than quietly edited, because the claim is in circulation
+and the next person will hear it from the same place sheets-03 did.
 
 ### Why this is the same problem as the rake line
 
