@@ -1310,6 +1310,22 @@ const minShownSample = 32.0
 // texture. Everything else follows from it, including stageThreshold.
 const kMin = 0.72
 
+// scrollbarGutter is what a classic scrollbar takes out of a box's
+// content when the box can pan, in CSS pixels, measured in this engine
+// with scrollbar-width: thin and the platform's scrollbars drawn.
+//
+// It is here because the harness hides scrollbars — chromedp's headless
+// default, copied from Puppeteer — so every reading this drive takes is
+// of a platform that charges nothing for one. That is the condition
+// under which a scrollbar eating a third of a 52px box is invisible,
+// and it was: measured, a classic bar took 15px of a 50.4px content box
+// and clipped 5px off the sample. scrollbar-width: thin brought it to
+// 10px, which the slack in previewHeights covers. The allowance is
+// subtracted below wherever a box can pan, so the floor is asserted
+// against the worse of the two platforms rather than the one that
+// happens to be running.
+const scrollbarGutter = 10.0
+
 // previewBox is one widget's geometry as the engine has it. Tabs are
 // identified by POSITION — 0 Desktop, 1 Mobile, 2 Code — and not by
 // the modifier classes, so this reading says the same thing about the
@@ -1506,13 +1522,17 @@ func showsItsSample(t *testing.T, where string, rows []previewBox) {
 			t.Fatalf("%s: %s frames a document with no height at all — the reading is of an empty frame, not of a sample", where, r.ID)
 		}
 		k := scaleOf(t, where, r)
-		shown := math.Min(r.Doc*k, r.Inner)
+		inner := r.Inner
+		if r.PanX > 1 {
+			inner -= scrollbarGutter
+		}
+		shown := math.Min(r.Doc*k, inner)
 		if shown < worst {
 			worst, worstID = shown, r.ID
 		}
 		if shown < minShownSample {
-			say("%s: %s shows %.1fpx of its sample. The document is %.0f virtual px tall, the frame is scaled to %.3f, and the box can show %.1fpx — a reader sees a sliver whatever the box measures",
-				where, r.ID, shown, r.Doc, k, r.Inner)
+			say("%s: %s shows %.1fpx of its sample. The document is %.0f virtual px tall, the frame is scaled to %.3f, and the box can show %.1fpx (%.1fpx once a classic scrollbar has taken its gutter) — a reader sees a sliver whatever the box measures",
+				where, r.ID, shown, r.Doc, k, r.Inner, inner)
 		}
 		if k < kMin-0.005 {
 			say("%s: %s is scaled to %.3f, under the %.2f floor. At that scale this gallery's 12.5px type renders at %.1fpx",
@@ -1695,6 +1715,33 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		showsItsSample(t, kind+" at 390px, opened", phone)
 		noSidewaysPage(t, ctx, kind+" at 390px, opened")
 
+		// And at 320px, which is not a round number chosen for
+		// symmetry: it is the reflow width tokens.css and gallery.css
+		// both commit to in writing, and until this leg existed
+		// nothing in the suite — the WCAG scan included — drove under
+		// 390px. The bug it was added for was invisible for exactly
+		// that reason: the MOBILE rendering clamps at --ds-kmin too,
+		// so under 281px of stage the opening view overflowed its box
+		// by 42px with nowhere to go. No reload, because the frames
+		// are already loaded and the queries re-evaluate on resize.
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(320, 844),
+			chromedp.Sleep(400*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s at 320px: resizing: %v", kind, err)
+		}
+		narrow := boxes(t, ctx, kind+" at 320px")
+		opensOn(t, kind+" at 320px, opened", narrow, 1, "390px")
+		agree(t, kind+" at 320px, opened", narrow)
+		showsItsSample(t, kind+" at 320px, opened", narrow)
+		noSidewaysPage(t, ctx, kind+" at 320px, opened")
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(390, 844),
+			chromedp.Sleep(400*time.Millisecond),
+		); err != nil {
+			t.Fatalf("%s: returning to 390px: %v", kind, err)
+		}
+
 		// An explicit Desktop on a phone still works, and what it
 		// gives a reader is the desktop layout at a scale they can
 		// read, panning inside its own box — not the same sliver in a
@@ -1819,6 +1866,12 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 // rendering reaches the least scale worth reading it at. 1200 × 0.72 =
 // 864px = 54rem. Two numbers that could drift apart would be two
 // chances to be wrong.
+//
+// The equality holds at a 16px root and this drive runs at one. A
+// reader who scales their root type up moves the 54rem and not the
+// 0.72, which is why the stylesheet says so beside it; if this ever
+// runs under a different root, the threshold assertion below is what
+// will say so, and it will be telling the truth.
 const stageThreshold = 1200 * kMin
 
 // stageReading is the widget's opening state at one window width.
@@ -1891,7 +1944,7 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 	// the stage is the window less 321px, so those two windows put it
 	// at 863px and 865px. Without them the sweep's nearest pair is
 	// 779px and 879px and the threshold could sit anywhere between.
-	widths := []int{390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1184, 1186, 1200, 1280, 1500}
+	widths := []int{280, 320, 360, 390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1184, 1186, 1200, 1280, 1500}
 	readings := make([]stageReading, 0, len(widths))
 	for _, vw := range widths {
 		where := fmt.Sprintf("display at %dpx", vw)
@@ -1974,8 +2027,13 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 		if math.Abs(r.View-r.Stage) > 0.5 {
 			t.Errorf("at %dpx the query container .ds-view is %.2fpx wide and the stage inside it is %.2fpx. The stylesheet asks (min-width: 48rem) of .ds-view and this drive checks the threshold against the STAGE, so the two have to be the same ruler; give .ds-view a padding or a border and the gallery and its gate quietly start measuring different elements", r.VW, r.View, r.Stage)
 		}
-		if want := math.Min(1, r.Stage/r.DSW); math.Abs(r.K-want) > 0.01 {
-			t.Errorf("at %dpx the frame is scaled by %.4f and the stage is %.1fpx of a %.0fpx virtual page, which is %.4f — 100cqw is not resolving to the stage's width", r.VW, r.K, r.Stage, r.DSW, want)
+		// The scale is the stage over the virtual width, clamped at
+		// both ends — kMin below, 1 above. Writing this as min(1, …)
+		// alone passed for two rounds because no width in the sweep
+		// reached the floor; adding 280px and 320px is what showed the
+		// assertion had never been asked the interesting question.
+		if want := math.Min(1, math.Max(kMin, r.Stage/r.DSW)); math.Abs(r.K-want) > 0.01 {
+			t.Errorf("at %dpx the frame is scaled by %.4f and the stage is %.1fpx of a %.0fpx virtual page, which clamps to %.4f — 100cqw is not resolving to the stage's width, or --ds-kmin is not the floor this drive thinks it is", r.VW, r.K, r.Stage, r.DSW, want)
 		}
 	}
 }

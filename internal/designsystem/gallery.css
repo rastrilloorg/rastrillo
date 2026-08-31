@@ -128,6 +128,15 @@
    which the desktop rendering reaches it. 1200 × 0.72 = 864px = 54rem.
    Keep them in step; the drive asserts the identity.
 
+   That arithmetic is exact at a 16px root and only there. --ds-kmin is
+   a ratio and does not move; 54rem does. A reader who scales their
+   root type up scales the type inside the frames with it, so the stage
+   width legibility needs really does grow and rem is the right unit —
+   but the two stop meeting, and the gap falls the safe way: the
+   desktop rendering stays available at 0.72 while the default holds on
+   to the 390px one for longer. Change one of these and the other
+   moves.
+
    Where 0.72 comes from, measured rather than assumed. The type in
    these samples is --rst-fs-base (14px), --rst-fs-sm (12.5px) and
    --rst-fs-xs (11.5px), with an 11px badge as the smallest thing
@@ -176,7 +185,18 @@
    and starts PANNING: --ds-k holds at 0.72, the box stays as wide as
    the column, and the 864px of scaled page inside it scrolls
    horizontally within the box. Nothing about it reaches the page, so
-   the document itself never scrolls sideways. The alternative, which
+   the document itself never scrolls sideways.
+
+   The scroller is on the box itself and not on the state that made it
+   necessary, and that distinction cost a regression. Scoped to the
+   chosen-Desktop rule it looked complete, because the MOBILE rendering
+   clamps at 0.72 as well: under 281px of stage a 390px virtual page is
+   281px wide too, and the opening view — nothing chosen, nothing to
+   scope on — was cropping 42px at a 320px window and 82px at a 280px
+   one, with no way to reach it. 320px is the reflow width tokens.css
+   and this file both commit to in writing. The rule is that a box
+   which can clamp can overflow, and one which can overflow has to
+   scroll; the state that produced the overflow is not part of it. The alternative, which
    this replaces, was to leave the scale alone and make the BOX taller:
    that bought 126px of blank space per widget and not one pixel of
    legibility, because previewHeights are measured content heights and
@@ -235,7 +255,7 @@
 @container ds-view not (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 @supports not (container-type: inline-size) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
-.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: calc(var(--ds-h) * var(--ds-kmin)); overflow: hidden; position: relative; resize: vertical; }
+.ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: calc(var(--ds-h) * var(--ds-kmin)); overflow: hidden; overflow-x: auto; overscroll-behavior-x: contain; position: relative; resize: vertical; scrollbar-width: thin; }
 .ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; min-block-size: 100%; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
 @supports (block-size: calc(1px * clamp(0.5, tan(atan2(100cqw, 1200px)), 1))) {
   .ds-view__box { --ds-k: clamp(var(--ds-kmin), tan(atan2(100cqw, var(--ds-w))), 1); }
@@ -243,7 +263,6 @@
 .ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
 @container ds-view not (min-width: 54rem) {
   .ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
-  .ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { overflow-x: auto; overscroll-behavior-x: contain; }
 }
 .ds-view__code { display: none; margin-block-start: 0; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }

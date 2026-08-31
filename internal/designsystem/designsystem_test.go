@@ -994,8 +994,15 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		`.ds-view:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
 		// The scale floor, which is what buys legibility, and the
 		// panning that makes a clamped scale usable rather than
-		// cropped.
-		`.ds-view:has(.ds-view__tab--d input:checked) .ds-view__box { overflow-x: auto; overscroll-behavior-x: contain; }`,
+		// cropped. On the box itself, not on the state that made it
+		// necessary: the mobile rendering clamps too, and scoping the
+		// scroller to the chosen-Desktop rule cropped 42px of the
+		// OPENING view at a 320px window.
+		`overflow: hidden; overflow-x: auto; overscroll-behavior-x: contain;`,
+		// A classic scrollbar comes out of the box's content, and a
+		// 52px box cannot spare 15px of it. Measured: thin is 10px,
+		// which the slack in previewHeights covers.
+		`scrollbar-width: thin;`,
 		// The collapse guard, and the reason it is a declaration of
 		// its own: block-size carries --ds-k and dies with it. It
 		// buys no legibility and is not claimed to.
