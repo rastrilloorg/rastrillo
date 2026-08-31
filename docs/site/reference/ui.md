@@ -197,10 +197,19 @@ every shipped theme declares, in both schemes.
 That last check is the one worth knowing about. Hues thirty degrees apart
 are far apart as angles and can still resolve to nearly the same colour
 once a dark background has squeezed the lightness out of them — the
-shipped set's closest pair is two teals ΔE_OK 0.045 apart on a dark page.
-`WorstSeparation` returns that measurement, and it is what says how much
-room a bigger set would have: past sixteen hues the twelve-hue spacing
-stops clearing the floor.
+shipped set's closest pair is two teals ΔE_OK 0.045 apart on a dark page,
+which is a 50% margin over the floor.
+
+`WorstSeparation` returns that measurement, so it is also what answers
+"could we have more than twelve". Measured against the shipped surfaces,
+evenly spaced hues clear the floor up to **seventeen** and fail at
+eighteen. **Sixteen is what we would recommend**, though, and the gap
+between those two numbers is the reason: seventeen clears by 1.9% and
+sixteen by 7.3%, and 1.9% is inside the range a new theme surface or a
+tweak to the palette could move. Seventeen is the measurement; sixteen is
+the one with room in it. Run `WorstSeparation` against your own canvas
+before relying on either — a dark paper we have never seen is exactly the
+kind of background that squeezes the teals together.
 
 `ContrastRatio` is the WCAG arithmetic all of it is built on, and
 `DeltaEOK` is plain euclidean distance in OKLab. Both are exported so an

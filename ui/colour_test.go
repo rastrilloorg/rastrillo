@@ -467,11 +467,26 @@ func allocationMap(t *testing.T, keys []string, avoid []float64) map[string]floa
 	return out
 }
 
-// TestAllocateHonoursAvoid checks the avoid set, and checks the one
-// thing about it that is easy to get wrong: avoid is applied INSIDE the
-// probe, so an avoided hue displaces a key exactly the way a taken one
-// does. Filtering the set first and probing the remainder gives a
-// different — and therefore incompatible — answer for the same inputs.
+// TestAllocateHonoursAvoid checks the OBSERVABLE half of the avoid set:
+// that keys land outside it while there is room, that the separation
+// flag goes false when there is not, and that a value naming no offered
+// hue is ignored rather than shifting the allocation.
+//
+// It does NOT check the rule the spec spends its longest paragraph on —
+// that avoid is applied inside the probe rather than filtering the set
+// first — and this comment says so because an earlier version of it
+// claimed otherwise, which is how a gated rule comes to look gated when
+// it is not. Every assertion below passes equally under the forbidden
+// compact-then-probe implementation, because both implementations keep
+// keys out of avoid; they disagree only about WHERE the displaced key
+// lands, and nothing here looks at that.
+//
+// That rule is gated by the golden table in colour_golden_test.go, which
+// pins the destination as data — see its "the same keys, 25° withheld"
+// case, where the two implementations differ on seven of eight keys.
+// Deliberately one gate and not two: a second test trying to own the
+// same rule is how the two drift and how one of them ends up asserting
+// nothing while reading as though it does.
 func TestAllocateHonoursAvoid(t *testing.T) {
 	all := Offered()
 	keys := []string{"a", "b", "c", "d"}
@@ -984,5 +999,54 @@ func BenchmarkColourAllocate(b *testing.B) {
 	keys := []string{"member-7", "member-3", "member-11", "guest-row-902", "member-1", "aaa", "zzz", "Member-7"}
 	for i := 0; i < b.N; i++ {
 		Allocate(keys, nil)
+	}
+}
+
+// TestPublishedCapacityCeiling pins the two numbers reference/ui.md
+// publishes about how big an evenly-spaced offered set can be.
+//
+// The page tells two apps that seventeen hues is the measured ceiling and
+// sixteen is the one to plan against. Those are numbers somebody will
+// size a feature on, and until now nothing recomputed them — the first
+// version of that sentence said sixteen, because the densities were
+// sampled two at a time and seventeen was never tried. A measurement
+// published as prose and computed once is a snapshot, and this is the
+// gate that makes it a measurement.
+//
+// The margins are asserted too, not just the pass/fail: "seventeen
+// clears by 1.9% and sixteen by 7.3%" is the whole argument for
+// recommending the smaller number, and an argument with a stale number in
+// it is worse than none.
+func TestPublishedCapacityCeiling(t *testing.T) {
+	backgrounds := shippedBackgrounds(t)
+	evenlySpaced := func(n int) []Intent {
+		out := make([]Intent, 0, n)
+		for i := 0; i < n; i++ {
+			out = append(out, Intent{Hue: 25 + float64(i)*(360.0/float64(n)), Chroma: 0.14})
+		}
+		return out
+	}
+	margin := func(n int) float64 {
+		d, _, _, _ := WorstSeparation(evenlySpaced(n), backgrounds)
+		return (d/MinSeparation - 1) * 100
+	}
+
+	// The ceiling, from both sides. Sampling only one side of a boundary
+	// is how the published number came out one short the first time.
+	if err := CheckIntents(evenlySpaced(17), backgrounds); err != nil {
+		t.Errorf("seventeen hues no longer clears the floor, but reference/ui.md says it is the ceiling:\n%v", err)
+	}
+	if err := CheckIntents(evenlySpaced(18), backgrounds); err == nil {
+		t.Error("eighteen hues now clears the floor, so seventeen is no longer the ceiling reference/ui.md publishes")
+	}
+
+	// And the margins the page quotes as the reason to recommend sixteen.
+	for _, tt := range []struct {
+		n    int
+		want float64
+	}{{16, 7.3}, {17, 1.9}} {
+		if got := margin(tt.n); math.Abs(got-tt.want) > 0.15 {
+			t.Errorf("%d hues clear the floor by %.1f%%, but reference/ui.md publishes %.1f%%", tt.n, got, tt.want)
+		}
 	}
 }
