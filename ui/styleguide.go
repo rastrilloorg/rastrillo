@@ -17,6 +17,12 @@ package ui
 var styleguideSamples = map[string]string{
 	"box": `<div rst-box-head><h2>Payout</h2><a rst-btn href="/payout/edit">Edit</a></div>
 <section rst-box><p>Everything on a screen sits inside boxes.</p><div rst-box-foot>Last updated 2 hours ago</div></section>`,
+	"stat-band": `<div rst-stats>
+  <div rst-stat="lead"><span rst-stat-label>Revenue this month</span><span rst-stat-num>&euro;48,210</span><span rst-stat-delta rst-tone="positive">+12%</span><span rst-stat-note>vs. last month</span></div>
+  <div rst-stat><span rst-stat-label>Orders today</span><span rst-stat-num>318</span></div>
+  <div rst-stat><span rst-stat-label>Average basket</span><span rst-stat-num>&euro;41.20</span><span rst-stat-delta rst-tone="negative">&minus;3%</span></div>
+  <div rst-stat><span rst-stat-label>Refunds</span><span rst-stat-num>7</span></div>
+</div>`,
 	"list-grid": `<div rst-card style="--rst-cols: 2fr 110px 32px">
   <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div rst-lrow>

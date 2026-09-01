@@ -3470,3 +3470,189 @@ with Google is not.
 - **Password sign-in is the one where shipping a screen is a position.** The framework
   documents passwords, and a design system with a polished username/password card
   encourages it. Worth being deliberate rather than complete.
+
+---
+
+## 6-v2.11. The preview width classes (2026-09-01) — AS BUILT
+
+> Paul, with a screenshot of the Bare/field-text example: "the form
+> element examples shouldn't be scaled .. only the shells ... the scaled
+> form element examples make the examples look like they're teeny tiny.
+> I think they should be scaled only if the iframe is smaller than the
+> content, which for these examples is a much smaller breakpoint"
+
+### The measurement that settles it
+
+Every example on the site was laid out at a virtual 1200px. **This
+gallery's own stage caps at 958px at every window width** — `[rst-page]`
+has a `max-width` and the rail is a fixed 240px, so widening the window
+past about 1280px adds nothing to the column. Measured in a real engine
+across 700–1920px: the stage reads 958px at 1280, 1440, 1600 and 1920.
+
+So `--ds-k` was `958/1200 = 0.798` on every desktop, permanently, for
+every component in the gallery. Nothing was broken and nothing looked
+broken. It looked small — 12.5px type rendered at 10px — which is a
+thing a gallery of a design system must not do.
+
+### Two width classes
+
+`--ds-wd` is the width an example's desktop rendering is laid out at.
+
+| class | `--ds-wd` | threshold | who |
+|---|---|---|---|
+| `.ds-view--page` | 1200px | 54rem | the four shell demos, the two shell idioms, the modal, the demo application |
+| `.ds-view` | 900px | 40.5rem | everything else — 105 of the 114 examples |
+
+The component class is the default, because it is right 92% of the time.
+`page.go`'s `pageFrame()` sorts by anchor-id prefix (`shell-`,
+`idiom-shell-`) plus two names no rule could derive (`demo-app`,
+`idiom-modal`), so a fifth shell lands in the right class with no edit.
+
+**900px, and not the 958px that would fill the column.** `tokens.css`
+folds `.rst-m-hide` away and switches the shells to their narrow layout
+at **800px**, so a "desktop" rendering under that width would quietly be
+the MOBILE layout under a lit Desktop tab — the worst failure this
+widget has. 900px clears that line by 100px and leaves 58px of slack the
+gallery's own layout can spend without dragging every preview back under
+a scale of 1. Coupling the number to 958 would have meant re-measuring
+every entry in `previewHeights` the next time the rail or the column
+moved.
+
+### The threshold had to split with it
+
+The stage width at which a rendering stops shrinking and starts panning
+is `--ds-wd × --ds-kmin`, and `--ds-kmin` (0.72) protects a type size
+rather than a width, so it stays one number for both classes. The
+threshold does not: 1200 × 0.72 = 864px = 54rem, and 900 × 0.72 = 648px
+= 40.5rem. A CSS query condition cannot name a custom property, so this
+costs a second pair of `@container` queries — the one real price of the
+change. The component threshold is *lower*, which is the point rather
+than a side effect: a 900px page is still legible in a column where a
+1200px one is not, so a component holds its desktop rendering for 216px
+of stage longer than a shell does. One shared threshold would have had
+to pick which class to be wrong for.
+
+### What it cost the gates, and one that had to move
+
+Every drive that named 1200px now reads the widget's own `--ds-wd`, so
+the identity is asserted per class and a third class would need no edit.
+`TestThePreviewDefaultIsMonotoneInStageWidth` sweeps both the Display
+page (components) and the Overview (the demo application) and *fails if
+it did not see both classes*, because each has its own query pair and a
+one-page sweep would leave the other ungated.
+
+**The calibration had to be hoisted, and the reason is worth keeping.**
+That drive proved the `@supports` trig branch was live by finding a
+frame the engine had scaled — and `--ds-k` resolves to a plain `1` in
+the fallback branch too, so a reading of 1 proves nothing. The component
+class made every widget on a component page read exactly 1, which is
+simultaneously the whole point of the class and precisely the reading
+that cannot calibrate anything. It now calibrates once, on the Overview,
+where a 1200px page in a 958px stage is still scaled to 0.798.
+
+`previewHeights` did **not** move. Re-measured at 900px to confirm it:
+the slack already in the table covered the extra wrapping a narrower
+page causes, and no frame is smaller than its content.
+
+### Result
+
+At 1280px and wider the Display page's thirty examples render at
+`--ds-k = 1.000`: a field is a field, at its own size. Below 1184px they
+scale as before, and under 648px of stage they clamp and pan.
+
+---
+
+## 6-v2.12. The stat band (2026-09-01) — AS BUILT, §6-v2.4's dashboard stats
+
+§6-v2.4 ruled the shape and this builds it: **one component with a lead
+cell, not two components.** `stat` is a partial (fixed keys) and
+`rst-stats` is a class idiom (it wraps a body only the caller knows —
+the same footing as `rst-box` and `rst-card`).
+
+### What the shape decides
+
+| | |
+|---|---|
+| `[rst-stats]` | the band: one card, `display: flex`, `flex-wrap` |
+| `[rst-stat]` | a cell: `flex: 1 1 9rem`, hairline on the inline start of all but the first |
+| `[rst-stat~="lead"]` | `flex-basis: 14rem`, number at 2.1rem instead of 1.5rem |
+| `[rst-stat-label]` | the eyebrow, uppercase and tracked |
+| `[rst-stat-num]` | tabular-nums, so a polled number does not jitter its neighbours |
+| `[rst-stat-delta]` | the change, tinted by `rst-tone` |
+| `[rst-stat-note]` | the comparison the delta is against |
+
+Flex and not a grid, because a grid needs the caller to say how many
+cells there are and any number has to work. The hairline is
+`border-inline-start`, so it lands on the right in Arabic. The one
+visual compromise is a wrapped row's first cell drawing a leading
+hairline against the card edge — accepted, because the alternative is
+`:nth-child` arithmetic against a column count nobody declared.
+
+### The two rules that are the component's whole point
+
+**The sign is in the text, and the partial does not add it.** A caller
+passing `"12%"` for a fall would get a plus, so `Delta` carries its own
+sign and a missing one is visibly wrong to everyone rather than
+invisibly wrong to a colour-blind reader.
+
+**`Tone` is never derived from the sign.** A fall is good news about
+half the time a dashboard shows one — a shorter wait, fewer errors, a
+smaller backlog — so a partial painting every minus red would be
+confidently wrong about half its uses. Which direction is good is
+product knowledge, and the product is the caller. Unset renders the
+quiet muted grey, which is the honest answer where there is no opinion.
+
+### Three things the build had to settle
+
+**The contrast gate grew by two pairs.** The delta is the first place
+in this system where a tone colours TEXT on a plain card rather than
+filling a pill behind it, and `--rst-tone-positive-fg` was chosen to
+clear 4.5:1 against `--rst-tone-positive-bg`, which is not
+`--rst-surface`. Both new pairs are in the gate and all three themes
+clear them in both schemes. **It owes the full 4.5:1 even though the
+sign already carries the meaning:** 1.4.1 is about meaning, 1.4.3 is
+about text, and this is text.
+
+**`previewStyle` gained a mobile exception, and the band earned it.**
+Mobile heights were one factor — 1.25× desktop — on the measured claim
+that no sample grows more than 1.17×. That claim holds for components
+with one column at both widths and cannot hold for one whose whole
+shape is a ROW that becomes a COLUMN: a four-cell band is 170px of
+strip and 439px of stack, 2.6×. Raising the desktop number until the
+derived mobile one fitted would have put 180px of empty box under every
+desktop rendering, paying for the phone with the page most readers are
+on. `previewMobileHeights` overrides the factor for examples that
+change axis, and for nothing else.
+
+**A gate had to learn about qualified attributes.**
+`TestIdiomClassesAreStyled` requires every attribute a styleguide sample
+writes to have a selector in tokens.css, and the band is the first
+sample to carry `rst-tone`. There is no bare `[rst-tone]` rule and there
+should not be — every rule names the kind too,
+`[rst-status][rst-tone~="positive"]` — so `rst-tone` is exempted by
+name as an attribute that never appears alone. Its variants are still
+checked, so `rst-tone="lavender"` still fails.
+
+### And a trap in samples.go worth knowing about
+
+The leak gate reads rendered bytes and cannot tell a sample's DATA from
+the page's own voice. A stat labelled "Open requests" failed the whole
+build — not because the label was wrong, but because the demo
+application already says that sentence through `P`, which makes the
+string a prose key that must not appear in English on a Japanese page.
+Sample data now has to avoid wording the page says elsewhere; the rule
+is recorded at the head of samples.go.
+
+### The demo application lost four CSS rules
+
+Its dashboard hand-rolled a three-up grid and two type rules for its
+numbers. They are gone, replaced by the band. That is the point rather
+than a tidy-up: a demo that hand-rolls a component the framework ships
+is a demo quietly saying the framework does not ship it.
+
+### Copy owed
+
+Thirteen new English strings (twelve gallery, one demo) are drafted and
+carry their eleven translations. **They have not been through the copy
+review gate.** The English is the lookup key, so an edit costs eleven
+redrafted translations — review before merge, not after.
