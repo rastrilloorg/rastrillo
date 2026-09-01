@@ -129,6 +129,20 @@ deployed, ship it alone, change a model only in a later release — else
 boot refuses on the new column, and `baseline` there strands it for
 good.
 
+**Deleting a secret from SQLite does not unwrite it.** Measured, not
+assumed: insert a value, `DELETE` it, grep the raw bytes. The value is
+in `app.db-wal` from the insert — *before* it is ever in `app.db` — and
+it is still there after the delete, because the WAL holds the page as
+it was. `PRAGMA secure_delete = ON` zeroes the freed page and so
+cleans `app.db` after a checkpoint; it never cleans the WAL. Set it on
+the writer (`d.G.Exec("PRAGMA secure_delete = ON")`) — that pool is
+capped at one connection, so it sticks — but treat it as damage
+control, not a guarantee. Anything shipping WAL frames continuously
+(Litestream) has already sent the value. For an app that must not hold
+a value at rest, the only answer is not to write it: seal it, hash it,
+or key the row by digest. A gate that greps only `app.db` passes while
+the plaintext sits in the WAL.
+
 ## 3. Scoping
 
 Scoping separates users, never tenants: a CARLOS app serves one team; a

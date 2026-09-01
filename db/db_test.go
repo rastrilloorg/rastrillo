@@ -26,6 +26,60 @@ func TestOpenWALAndPing(t *testing.T) {
 	}
 }
 
+// TestSecureDeleteOnTheWriterSticks pins the one actionable half of
+// SKILL.md §2's "deleting a secret from SQLite does not unwrite it".
+//
+// PRAGMA secure_delete is per-connection, so an app that sets it as a
+// statement rather than in the DSN is relying on the writer pool being
+// capped at one connection — which it is (Open), and which is exactly
+// the kind of fact that gets changed for a good reason by someone who
+// has never read the paragraph that depends on it. Raise the writer
+// cap and this fails, which is the moment to move the pragma into the
+// DSN instead of discovering later that a value an app promised not to
+// keep is sitting in a freed page.
+//
+// What this deliberately does NOT claim is that secure_delete makes
+// the file safe. It cleans app.db after a checkpoint and never touches
+// app.db-wal, where a written value lands first and where anything
+// shipping WAL frames will already have read it. Measured by writing a
+// value, deleting it and grepping the raw bytes; the conclusion is in
+// SKILL.md because the fix is "do not write it", not a pragma.
+func TestSecureDeleteOnTheWriterSticks(t *testing.T) {
+	d, err := Open(filepath.Join(t.TempDir(), "app.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+
+	if err := d.G.Exec("PRAGMA secure_delete = ON").Error; err != nil {
+		t.Fatal(err)
+	}
+	// Real writes in between: the pragma has to survive the pool
+	// handing the connection back and out again, which is the whole
+	// question.
+	if err := d.G.Exec(`CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)`).Error; err != nil {
+		t.Fatal(err)
+	}
+	for i := range 8 {
+		if err := d.G.Exec(`INSERT INTO t (v) VALUES (?)`, i).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var on int
+	// Through the writer's own *sql.DB, not d.G: dbresolver sends a
+	// bare Raw to the READER pool, which never had the pragma set and
+	// would report 0 no matter what the writer is doing.
+	if err := d.writer.QueryRow("PRAGMA secure_delete").Scan(&on); err != nil {
+		t.Fatal(err)
+	}
+	if on != 1 {
+		t.Errorf("secure_delete on the writer reads %d after eight writes, want 1 — "+
+			"the writer pool is no longer one connection, so setting this pragma as a "+
+			"statement reaches only whichever connection ran it (SKILL.md §2)", on)
+	}
+}
+
 // TestReadDuringOpenRows is the single-connection-deadlock regression:
 // with one shared connection, an open *sql.Rows plus any second query
 // hangs forever. The reader pool must allow a second concurrent read.
