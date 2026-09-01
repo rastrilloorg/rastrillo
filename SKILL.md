@@ -307,6 +307,19 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   rastrillo.org/design-system (built from `ui` by `cmd/dsgen`, not
   committed); `go generate ./...` renders a local copy into
   `.design-system/`. docs/site/templates.md
+- **Modern CSS is the floor, not a hazard.** `tokens.css` plus a shipped
+  theme already require Chrome 123, Safari 17.5, Firefox 121 — none older
+  than late 2023 — because every theme colour is a `light-dark()`. Reach
+  for the modern feature: anything that shipped at or below that floor is
+  free, `oklch()` and `color-mix()` included (two themes use `color-mix()`
+  today), with no hex twin and no `@supports`. Pairing every colour with a
+  hex fallback protects nobody anyway — an engine too old for `oklch()`
+  dropped the whole `light-dark()` palette several declarations earlier.
+  And self-contained means the CSS fetches nothing: no imports, no remote
+  assets, no webfont, held by `ui_test.go`. It has never meant old engines.
+  Go above the floor with `@supports`, or move the floor and say so —
+  never lower it by accident.
+  docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the
   log line's `ref`. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a
