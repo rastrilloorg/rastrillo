@@ -50,3 +50,26 @@ reading the source, so an inaccurate line there is worse than a missing
 one. When it must grow, trim genuinely redundant prose. Never delete a
 load-bearing fact to fit a number; raise the ceiling and say why in the
 test that enforces it.
+
+## User-facing copy
+
+Short sentences, plain words, and tell the reader what to do. A note
+beside a component reads "Add `Lead` to one stat in the row to make it
+big", not "One band, one lead cell. There is no second component for a
+headline stat." Both are true; only one is usable. Every note that had
+to be rewritten failed the same way — it described the design decision
+instead of the action.
+
+**The reasoning is not the copy.** Why a component works the way it does
+belongs in the code comment and the spec, where the next maintainer
+needs it. The reader of the page needs the instruction. Mixing them
+produces a page explaining itself to its own author.
+
+**Brevity is the goal; flippancy is how it fails.** Cut words, not
+seriousness. No winks, no flourishes, no sentence whose job is to sound
+good.
+
+Every user-facing string goes through the copy review before it ships,
+and in `internal/designsystem` the English is also the translation key —
+a word changed afterwards costs eleven redrafted translations. Review
+the English first, then draft the eleven.

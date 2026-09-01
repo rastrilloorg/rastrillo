@@ -321,7 +321,7 @@ func families() []family {
 				},
 				{
 					Name:   "stat",
-					Blurb:  "One reading in a stat band: a label over a number, with an optional change under it. The headline reading and the counts beside it are this one component at two sizes.",
+					Blurb:  "One number on a dashboard, with a label and how much it changed.",
 					Wrap:   wrapStats,
 					States: statStates(),
 				},
@@ -620,27 +620,32 @@ func meterStates() []sample {
 // sample and no tour of the three tones.
 func statStates() []sample {
 	return []sample{
-		{State: "The lead reading", Data: map[string]any{
+		{State: "The big number", Data: map[string]any{
 			"Label": "Revenue this month", "Value": "€48,210", "Lead": true,
 			"Delta": "+12%", "Tone": "positive", "Note": "vs. last month",
-		}, Note: "One band, one lead cell. There is no second component for a headline stat."},
-		{State: "A companion reading", Data: map[string]any{
+		}, Note: "Add Lead to one stat in the row to make it big. It is the same component, just larger."},
+		{State: "A smaller number", Data: map[string]any{
 			"Label": "Unpaid invoices", "Value": "24",
-		}, Note: "A label and a number is the whole of it. Everything else is optional."},
-		{State: "A fall that is good news", Data: map[string]any{
+		}, Note: "You only need a label and a number. Everything else is optional."},
+		{State: "When going down is good", Data: map[string]any{
 			"Label": "Time to first reply", "Value": "1h 12m",
 			"Delta": "−38%", "Tone": "positive", "Note": "vs. last week",
-		}, Note: "The tone is the caller's, never derived from the sign: a shorter wait is a fall and is good. A partial that painted every minus red would be wrong about half the deltas a dashboard shows."},
-		{State: "A rise that is bad news", Data: map[string]any{
+		}, Note: "You set the colour, not the component. Here the number went down and that is good news, so the change is green."},
+		{State: "When going up is bad", Data: map[string]any{
 			"Label": "Failed payments", "Value": "9",
 			"Delta": "+3", "Tone": "negative", "Note": "vs. last week",
-		}, Note: "And the same point from the other side."},
-		{State: "A change with no verdict", Data: map[string]any{
-			"Label": "Members", "Value": "1,204", "Delta": "+18", "Note": "since Friday",
-		}, Note: "Tone left unset. A number that moved is not always a number that improved, and the quiet grey is the honest answer where the product has no opinion."},
-		{State: "An abbreviated number", Data: map[string]any{
+		}, Note: "Here the number went up and that is bad news, so the change is red."},
+		// The label carries this example. "Members" was here first and
+		// argued against the heading: more members is plainly good news,
+		// so the grey read as a missing setting rather than a decision.
+		// A session that got longer might mean interest or might mean
+		// confusion, which is the case Tone exists to leave alone.
+		{State: "When you cannot say", Data: map[string]any{
+			"Label": "Average session length", "Value": "4m 12s", "Delta": "+18s", "Note": "since Friday",
+		}, Note: "Leave the colour out and the change is grey. Do that when you cannot say if it is good or bad."},
+		{State: "A shortened number", Data: map[string]any{
 			"Label": "Messages sent", "Value": "4.1k", "Exact": "4120",
-		}, Note: "Exact emits <data value=\"4120\">, which a machine can read. It is NOT announced: a screen reader reads the text, so an abbreviation that loses something a person needs has to be fixed in the text."},
+		}, Note: "Showing 4.1k instead of 4120? Put the full number in Exact. Screen readers only read what is on screen, so keep anything a person needs in the number itself."},
 	}
 }
 
