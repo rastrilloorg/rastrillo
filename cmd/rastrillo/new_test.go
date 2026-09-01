@@ -300,18 +300,58 @@ func TestErrorsTemplateRendersErrorPagePartial(t *testing.T) {
 
 // The manifest README carries the equal-path framing and a real
 // mounting recipe, not a dustbin note.
+//
+// "Real" is the load-bearing word, and it is why this list grew.
+// The recipe used to be one step — mount gen.Router — and point at
+// examples/blog for the adapter behind it. examples/* are separate Go
+// modules, which Go excludes from the parent's module zip, so that
+// pointer resolved to nothing for everyone consuming rastrillo as a
+// dependency (discussion #9). Following what was left, an app builds
+// and then fails at runtime, twice over: no embedded templates for
+// Ctx.Render to find, and no table under the screens.
+//
+// So the four things an app cannot start a generated screen without
+// are each pinned by a line here. Every one of them was verified by
+// scaffolding an app, declaring a resource, following this README
+// exactly, and serving the result.
 func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 	src := fmt.Sprintf(manifestReadme, "blogapp", "blogapp")
 	for _, want := range []string{
 		"equal, optional paths",
 		"rastrillo generate",
-		"gen.Router(",
-		"Render: render",
 		`scope = "user"`,
+		// The generated templates have to be embedded, from the
+		// module root — go:embed cannot reach up out of internal/.
+		"//go:embed gen/templates",
+		"var GenTemplatesFS embed.FS",
+		// The Ctx.Render seam itself, inline. A page name and a
+		// template map: without this the generated actions have
+		// nowhere to render to.
+		"func GenRender(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any)",
+		"genPages[name]",
+		// T, because the generated templates call it with keys that
+		// live in gen/locales and not in ui's default catalog.
+		"ui.WithT(genT)",
+		"locales.BaseCatalog",
+		// The migrations, which is the one whose absence looks like a
+		// framework bug rather than a missing step: everything
+		// compiles and the screen 500s on a table that was never
+		// created.
+		"migrate.Merge(genSchema, Schema)",
+		".Migrations {",
+		// And the mount.
+		"gen.Router(",
+		"Render: GenRender",
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("manifest README missing %q", want)
 		}
+	}
+	// Nothing in the scaffolded README may point at examples/: they
+	// are not in the published module, so a reader consuming
+	// rastrillo as a dependency cannot open what it names.
+	if strings.Contains(src, "examples/") {
+		t.Errorf("manifest README points at examples/, which is not shipped in the module:\n%s", src)
 	}
 }
 

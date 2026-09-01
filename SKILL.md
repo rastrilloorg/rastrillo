@@ -9,7 +9,10 @@ CARLOS middle layer, not full-stack: you write GORM models, `net/http`
 handlers on a chi router and `html/template` pages; it supplies the
 database opener, session store, identity plugins, CSRF, owner scoping,
 form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
-reference `examples/notes`. Rare traps get one sentence plus a page:
+reference `examples/notes` — in the repository, **not** in the
+published module (Go excludes nested modules from a module zip), so
+read it at amadan.net/rastrillo/rastrillo and never by looking for a
+directory that cannot be there. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
 ## 0. Start here
