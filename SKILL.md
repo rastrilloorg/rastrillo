@@ -104,6 +104,18 @@ SQLite-wired (one file, WAL, one writer connection, several readers,
 routed per statement). `d.Close()` closes both pools; `d.G.DB()` returns
 the writer `*sql.DB` for database/sql packages.
 
+**Bytes go in the object store, never on disk or in a column.** The
+instance's filesystem is ephemeral and it hibernates, so a saved upload
+is gone by the next request — silently, never at build time. The
+platform delivers a bucket as `CARLOS_STORE_*`; `blobs.S3FromEnv()`
+binds it and answers `(nil, nil)` — not an error — when there is none,
+so checking `err` alone panics later; dev falls back to
+`blobs.Dir(root)`. The row keeps a `blobs.Ref` (hex SHA-256 address,
+size, content type), and under 4 KiB may sit inline in SQLite — a rule
+stated everywhere and enforced nowhere. Presigned GET/PUT move bytes
+browser-to-bucket without the app proxying.
+docs/site/reference/blobs.md
+
 Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
 re-run, never reversed. `migrations.go` declares two `*migrate.Set`:
