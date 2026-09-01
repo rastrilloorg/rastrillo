@@ -739,6 +739,97 @@ body {
 .rst-meter__bar i, [rst-meter-bar] i { background: var(--rst-accent); border-radius: 2px; display: block; height: 100%; width: var(--rst-meter-fill, 0%); }
 .rst-meter__num, [rst-meter-num] { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+/* stats — the instrument strip a dashboard or a report opens with: a
+   lead reading at headline size, companion readings beside it, divided
+   by hairlines inside one card.
+
+   One band, one cell, one lead variant. The headline stat and the
+   counts next to it are the same component at two sizes (spec
+   §6-v2.4), so there is no second kind to keep in step with this one.
+
+   flex-wrap and a flex-basis rather than a grid with a column count.
+   Any number of cells has to work — three on one dashboard, five on
+   the next — and a grid would need the caller to say how many. The
+   basis is what decides when the strip becomes two rows, and the lead
+   cell's is larger so it keeps the line to itself when the others
+   wrap under it.
+
+   The hairline is border-inline-start on every cell but the first,
+   which is what makes the strip read as ONE instrument rather than as
+   a row of cards. Logical, so it lands on the right in Arabic. A
+   wrapped cell keeps its line, and that is the one visual compromise
+   here: at two rows the first cell of the second row draws a leading
+   hairline against the card's edge. It is a hairline, and the
+   alternative — :nth-child arithmetic against a column count nobody
+   declared — is the grid this deliberately is not. */
+.rst-stats, [rst-stats] {
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-line);
+  border-radius: var(--rst-radius);
+  display: flex;
+  flex-wrap: wrap;
+}
+.rst-stat, [rst-stat] {
+  border-inline-start: 1px solid var(--rst-line);
+  display: flex;
+  flex: 1 1 9rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-inline-size: 0;
+  padding: var(--rst-sp-4);
+}
+.rst-stat:first-child, [rst-stat]:first-child {
+  border-inline-start: 0;
+}
+.rst-stat--lead, [rst-stat~="lead"] {
+  flex-basis: 14rem;
+}
+/* The eyebrow. Uppercase and tracked, the same grammar every label in
+   this system uses above a value, so a band of cells reads as one row
+   of labels rather than as four headings. */
+.rst-stat__label, [rst-stat-label] {
+  color: var(--rst-text-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+/* tabular-nums so a column of readings lines up on its digits, and so
+   a number that changes on a poll does not jitter its neighbours. */
+.rst-stat__num, [rst-stat-num] {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  line-height: 1.1;
+}
+.rst-stat--lead .rst-stat__num, [rst-stat~="lead"] [rst-stat-num] {
+  font-size: 2.1rem;
+}
+/* The delta is TEXT in a colour, not a colour. Its sign is written by
+   the caller and is the signal a reader who cannot tell the two hues
+   apart is reading; the colour is the second one (WCAG 2.2 AA 1.4.1).
+   Both hues are held at 4.5:1 against this card by the contrast gate
+   in the same commit that added them — they are text, so the floor
+   applies whether or not the colour carries meaning of its own. */
+.rst-stat__delta, [rst-stat-delta] {
+  font-size: var(--rst-fs-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.rst-stat__delta[data-tone="positive"], [rst-stat-delta][rst-tone~="positive"] {
+  color: var(--rst-tone-positive-fg);
+}
+.rst-stat__delta[data-tone="negative"], [rst-stat-delta][rst-tone~="negative"] {
+  color: var(--rst-tone-negative-fg);
+}
+.rst-stat__delta[data-tone="neutral"], [rst-stat-delta][rst-tone~="neutral"] {
+  color: var(--rst-text-muted);
+}
+.rst-stat__note, [rst-stat-note] {
+  color: var(--rst-text-faint);
+  font-size: var(--rst-fs-xs);
+}
+
 /* person — avatar + name + email; avatar is decoration, text is identity. */
 .rst-person, [rst-person] { align-items: center; color: inherit; display: inline-flex; gap: 0.7rem; min-width: 0; text-decoration: none; }
 .rst-person__av, [rst-person-av] { align-items: center; background: var(--rst-accent); border-radius: 50%; color: var(--rst-on-accent); display: flex; flex: none; font-size: 0.6875rem; font-weight: 600; height: 28px; justify-content: center; width: 28px; }

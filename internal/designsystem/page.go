@@ -899,7 +899,7 @@ func shellViews(mount, theme, locale string) []shellView {
 			// chrome idioms above show the markup it produces.
 			Preview: previewView{
 				Group: id + "-0",
-				Style: previewStyle(heightOf(id)),
+				Style: previewStyle(id, heightOf(id)),
 				Class: previewClass(id),
 				Src:   href,
 				Title: proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
@@ -1141,14 +1141,40 @@ func previewClass(id string) string {
 // the frame reads its height back off the box, so dragging really does
 // show more of the document rather than more of the box.
 //
-// Mobile is a quarter taller than desktop, one factor for every
-// example rather than a second table of numbers. The same measuring
+// Mobile is a quarter taller than desktop for almost every example,
+// one factor rather than a second table of numbers. The same measuring
 // drive that fixed the numbers below fixed this: at 390px the tallest
 // any sample grows is 1.17× its desktop height — a page header, whose
 // title and action stack — and most grow not at all, because a
 // component this small has one column either way.
-func previewStyle(h int) template.CSS {
-	return template.CSS(fmt.Sprintf("--ds-h: %dpx; --ds-hm: %dpx", h, h*5/4))
+//
+// previewMobileHeights is the exception, and the stat band is what
+// earned it. The factor holds for components that have one column at
+// both widths; it cannot hold for one whose whole shape is a ROW that
+// becomes a COLUMN. A four-cell band is 170px of strip on a desktop
+// and 439px of stack on a phone — 2.6×, not 1.25 — and there is no
+// single factor that fits both that and a status pill. Raising the
+// desktop number until the derived mobile one fitted would have put
+// 180px of empty box under every desktop rendering of the band, which
+// is paying for the phone with the page most readers are on.
+//
+// Add an entry here only for an example whose layout genuinely changes
+// axis. An entry is not a place to absorb a desktop height that was
+// measured wrong.
+func previewStyle(id string, h int) template.CSS {
+	m, ok := previewMobileHeights[id]
+	if !ok {
+		m = h * 5 / 4
+	}
+	return template.CSS(fmt.Sprintf("--ds-h: %dpx; --ds-hm: %dpx", h, m))
+}
+
+// previewMobileHeights overrides the 1.25× factor for the examples that
+// reflow onto a different axis at 390px. Measured by the same drive as
+// previewHeights, and held by it: a number too small fails, and the
+// slack a number too large leaves is logged.
+var previewMobileHeights = map[string]int{
+	"idiom-stat-band": 450, // a four-cell strip becomes three stacked rows
 }
 
 // previewHeights is how tall each example's own document is, in CSS
@@ -1200,6 +1226,8 @@ var previewHeights = map[string]int{
 	"partial-status-pill": 70,
 	"partial-badge":       70,
 	"partial-meter":       70,
+	"partial-stat":        150, // a lead cell is label, number, delta and note stacked
+
 	"partial-person":      95,
 	"partial-callout":     160,
 	"partial-detail-list": 230,
@@ -1227,6 +1255,7 @@ var previewHeights = map[string]int{
 	// The markup idioms.
 	"idiom-box":           220,
 	"idiom-list-grid":     280,
+	"idiom-stat-band":     170,
 	"idiom-dropdown":      220,
 	"idiom-form-layout":   390,
 	"idiom-tblock":        270,
@@ -1412,7 +1441,7 @@ func previewTitle(locale, name, qualifier string) string {
 func newPreview(mount, theme, locale, group, title, source, id string) previewView {
 	return previewView{
 		Group:  group,
-		Style:  previewStyle(heightOf(id)),
+		Style:  previewStyle(id, heightOf(id)),
 		Class:  previewClass(id),
 		Doc:    srcdoc(mount, theme, locale, title, deaden(mount, source)),
 		Source: source,
@@ -1434,6 +1463,8 @@ func wrap(w wrapper, html string) string {
 		return `<section rst-box><form rst-form method="post" action="#">` + html + `</form></section>`
 	case wrapBox:
 		return `<section rst-box>` + html + `</section>`
+	case wrapStats:
+		return `<div rst-stats>` + html + `</div>`
 	}
 	return html
 }
@@ -1449,6 +1480,7 @@ func wrap(w wrapper, html string) string {
 var idiomBlurbs = map[string]string{
 	"box":           "The padded section card, and the heading that sits outside it.",
 	"list-grid":     "The real data-table vocabulary: the card sets its columns once, rows only choose cells.",
+	"stat-band":     "The instrument strip a dashboard opens with: a lead reading and its companions, divided by hairlines inside one card. Any number of cells; they wrap rather than squeeze.",
 	"dropdown":      "The details/summary menu behind header overflow menus and a list bar's filter, plus an applied filter as a removable chip.",
 	"form-layout":   "The attributes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.",
 	"tblock":        "A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.",
@@ -1781,7 +1813,7 @@ func renderDemo(mount, theme, locale string) ([]byte, error) {
 func demoView(mount, theme, locale string) previewView {
 	return previewView{
 		Group: "demo-app-0",
-		Style: previewStyle(heightOf("demo-app")),
+		Style: previewStyle("demo-app", heightOf("demo-app")),
 		Class: previewClass("demo-app"),
 		Src:   demoHref(mount, theme, locale),
 		Title: proseIn(locale, "The demo application"),
@@ -1790,8 +1822,13 @@ func demoView(mount, theme, locale string) previewView {
 
 // demoCSS is the whole of the demo's own stylesheet, and it is worth
 // reading for how little of it there is: everything visible on the page
-// is tokens.css, and this is the view switching plus a three-up grid
-// for the dashboard's numbers.
+// is tokens.css, and this is the view switching plus one margin.
+//
+// It used to carry a three-up grid and two type rules for the
+// dashboard's numbers, which was four rules doing by hand what the
+// stat band now does as vocabulary. Their going is the point rather
+// than a tidy-up: a demo that hand-rolls a component the framework
+// ships is a demo quietly saying the framework does not ship it.
 //
 // The switching, in four rules. The list and the detail view are hidden
 // until they are the :target; the dashboard is shown until one of them
@@ -1816,10 +1853,7 @@ body:has(#view-request:target) #view-dashboard { display: none; }
 body:not(:has(#view-requests:target, #view-request:target)) [rst-shell-nav] a[href="#view-dashboard"],
 body:has(#view-requests:target) [rst-shell-nav] a[href="#view-requests"],
 body:has(#view-request:target) [rst-shell-nav] a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-.app-stats { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-block-end: var(--rst-sp-5); }
-.app-stats > [rst-box] { margin: 0; }
-.app-stat__n { font-size: 1.9rem; font-weight: 650; line-height: 1.1; margin: 0; }
-.app-stat__l { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0.2rem 0 0; }
+[rst-stats] { margin-block-end: var(--rst-sp-5); }
 `
 
 // demoTemplate fills every block demoShell leaves open, and then the
@@ -1849,10 +1883,10 @@ const demoTemplate = `
 {{define "content"}}
 <section class="app-view" id="view-dashboard">
 {{template "page-header" dict "Title" (P "Dashboard") "Sub" (P "Everything the team has waiting this morning.")}}
-<div class="app-stats">
-<section rst-box><p class="app-stat__n">24</p><p class="app-stat__l">{{P "Open requests"}}</p></section>
-<section rst-box><p class="app-stat__n">6</p><p class="app-stat__l">{{P "Waiting on us"}}</p></section>
-<section rst-box><p class="app-stat__n">41</p><p class="app-stat__l">{{P "Resolved this week"}}</p></section>
+<div rst-stats>
+{{template "stat" dict "Label" (P "Open requests") "Value" "24" "Lead" true "Delta" "−6" "Tone" "positive" "Note" (P "since Monday")}}
+{{template "stat" dict "Label" (P "Waiting on us") "Value" "6"}}
+{{template "stat" dict "Label" (P "Resolved this week") "Value" "41" "Delta" "+12" "Tone" "positive" "Note" (P "since Monday")}}
 </div>
 <div rst-box-head><h2>{{P "Mailbox storage"}}</h2></div>
 <section rst-box>{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>

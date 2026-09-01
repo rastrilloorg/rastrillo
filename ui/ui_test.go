@@ -1570,6 +1570,18 @@ func rstVocabulary(markup string) map[string]bool {
 	return seen
 }
 
+// qualifiedOnly are the attributes that never appear alone in a
+// selector, because they mean nothing without the kind they modify.
+// rst-tone is the tone OF a status, a badge or a stat, and every rule
+// that reads it names both — [rst-status][rst-tone~="positive"] — so a
+// bare [rst-tone] would be a selector for a concept the grammar does
+// not have.
+//
+// Only the bare name is exempted. The variants a sample writes are
+// still required to exist, so rst-tone="lavender" fails here exactly
+// as it should.
+var qualifiedOnly = map[string]bool{"rst-tone": true}
+
 // tokensStyle reports whether tokens.css carries a selector for one
 // entry of that vocabulary.
 func tokensStyle(css, name string) bool {
@@ -1593,6 +1605,9 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 		}
 	}
 	for name := range seen {
+		if qualifiedOnly[name] {
+			continue
+		}
 		if !tokensStyle(css, name) {
 			t.Errorf("tokens.css has no selector for %q (used in a styleguide sample)", name)
 		}

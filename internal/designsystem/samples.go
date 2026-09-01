@@ -32,6 +32,15 @@ import "amadan.net/rastrillo/rastrillo"
 // for the whole of that argument. Sample DATA is exempt and stays
 // English on every page: a person is called Grace Hopper in Japanese
 // too, and a route is /posts/new in Arabic.
+//
+// One trap in that exemption, and it fails the whole build rather than
+// one page. The leak gate asserts that no prose KEY appears in English
+// on a translated page, and it reads the rendered bytes — so it cannot
+// tell a sample's data from the page's own voice. A stat labelled
+// "Open requests" fails, not because the label is wrong but because the
+// demo application already says that sentence through P and the string
+// is therefore a key. Where the obvious sample wording is one this page
+// says elsewhere, pick another.
 
 // wrapper is the container a sample needs around it, per the rules in
 // docs/site/templates.md: rst-list and rst-card hold rows only, and a
@@ -40,10 +49,11 @@ import "amadan.net/rastrillo/rastrillo"
 type wrapper int
 
 const (
-	wrapBare wrapper = iota // nothing around it
-	wrapList                // <div rst-list>…</div>
-	wrapForm                // <section rst-box><form rst-form>…</form></section>
-	wrapBox                 // <section rst-box>…</section>
+	wrapBare  wrapper = iota // nothing around it
+	wrapList                 // <div rst-list>…</div>
+	wrapForm                 // <section rst-box><form rst-form>…</form></section>
+	wrapBox                  // <section rst-box>…</section>
+	wrapStats                // <div rst-stats>…</div>
 )
 
 // sample is one state of one partial: an English label for the state,
@@ -308,6 +318,12 @@ func families() []family {
 					Name:   "meter",
 					Blurb:  "A capacity bar with its number.",
 					States: meterStates(),
+				},
+				{
+					Name:   "stat",
+					Blurb:  "One reading in a stat band: a label over a number, with an optional change under it. The headline reading and the counts beside it are this one component at two sizes.",
+					Wrap:   wrapStats,
+					States: statStates(),
 				},
 				{
 					Name:  "person",
@@ -594,6 +610,37 @@ func meterStates() []sample {
 		{State: "Full", Data: map[string]any{"Percent": 100, "Text": "500/500"}},
 		{State: "Over budget", Data: map[string]any{"Percent": 140, "Text": "700/500"},
 			Note: "The fill is clamped to 100% in the partial."},
+	}
+}
+
+// statStates is one cell at a time, because the band around them is a
+// class idiom and has its own example under UI primitives. What each
+// state is here to show is a decision the component makes rather than
+// a shape it can take: which is why there is no "with everything set"
+// sample and no tour of the three tones.
+func statStates() []sample {
+	return []sample{
+		{State: "The lead reading", Data: map[string]any{
+			"Label": "Revenue this month", "Value": "€48,210", "Lead": true,
+			"Delta": "+12%", "Tone": "positive", "Note": "vs. last month",
+		}, Note: "One band, one lead cell. There is no second component for a headline stat."},
+		{State: "A companion reading", Data: map[string]any{
+			"Label": "Unpaid invoices", "Value": "24",
+		}, Note: "A label and a number is the whole of it. Everything else is optional."},
+		{State: "A fall that is good news", Data: map[string]any{
+			"Label": "Time to first reply", "Value": "1h 12m",
+			"Delta": "−38%", "Tone": "positive", "Note": "vs. last week",
+		}, Note: "The tone is the caller's, never derived from the sign: a shorter wait is a fall and is good. A partial that painted every minus red would be wrong about half the deltas a dashboard shows."},
+		{State: "A rise that is bad news", Data: map[string]any{
+			"Label": "Failed payments", "Value": "9",
+			"Delta": "+3", "Tone": "negative", "Note": "vs. last week",
+		}, Note: "And the same point from the other side."},
+		{State: "A change with no verdict", Data: map[string]any{
+			"Label": "Members", "Value": "1,204", "Delta": "+18", "Note": "since Friday",
+		}, Note: "Tone left unset. A number that moved is not always a number that improved, and the quiet grey is the honest answer where the product has no opinion."},
+		{State: "An abbreviated number", Data: map[string]any{
+			"Label": "Messages sent", "Value": "4.1k", "Exact": "4120",
+		}, Note: "Exact emits <data value=\"4120\">, which a machine can read. It is NOT announced: a screen reader reads the text, so an abbreviation that loses something a person needs has to be fixed in the text."},
 	}
 }
 

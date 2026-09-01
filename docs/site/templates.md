@@ -59,8 +59,8 @@ bulk-bar      field-check      form-foot           page-header
 callout       field-date       job-status          pagination
 choice-field  field-daterange  list-bar            person
 confirm-form  field-datetime   list-bar-search     seg-tabs
-detail-list   field-select     list-row-action     status-pill
-dropdown      field-text       list-search-submit
+detail-list   field-select     list-row-action     stat
+dropdown      field-text       list-search-submit  status-pill
 empty-state   field-textarea   locale-menu
 ```
 
@@ -288,7 +288,14 @@ call to action is either a `callout` whose body ends in a link, or a
 `rst-box-head` (the `<h2>` plus one compact `rst-btn`) over a `rst-box`
 holding the explanation. Horizontal arrangement is reserved for the
 idioms that ship it: `rst-box-head`, `rst-field-row`, `rst-lbar`,
-`rst-lrow` cells, `rst-seg-tabs`.
+`rst-lrow` cells, `rst-seg-tabs`, `rst-stats`.
+
+`rst-stats` is the one a dashboard opens with: a strip of `stat` cells
+in a single card, divided by hairlines, one of them marked
+`rst-stat="lead"` for the headline reading. Any number of cells — they
+wrap onto a second row rather than squeezing, so you do not tell it how
+many you have. There is no separate component for the big number; the
+lead cell is the same `stat` at a larger size.
 
 ### State is never colour alone
 
@@ -296,7 +303,16 @@ A tone tells you how to feel about a value; it never carries the value.
 `status-pill` always renders its label, `meter` always prints its
 fraction as text beside the bar, and `badge` is a word before it is a
 colour — so a reader who cannot separate your positive green from your
-negative red still reads the same screen you do. `callout` with `Alert`
+negative red still reads the same screen you do.
+
+`stat`'s delta is the same rule with a sharper edge, because a change
+is the one value people are tempted to draw in colour alone. Pass the
+sign in the text — `"+12%"`, `"−4%"` — and the colour becomes the
+second signal rather than the only one. Pass `Tone` yourself, too: a
+fall is good news about half the time a dashboard shows one (a shorter
+wait, fewer errors, a smaller backlog), so the partial will not guess
+it from the sign, and a component that painted every minus red would be
+confidently wrong about half your deltas. `callout` with `Alert`
 adds `role="alert"`, which interrupts a screen reader mid-sentence:
 reserve it for a problem happening now, and leave ambient notes as the
 ordinary tones.

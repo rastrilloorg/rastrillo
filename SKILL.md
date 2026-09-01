@@ -287,7 +287,11 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   flex row; a notice with a CTA is a `callout` ending in a link. State
   is never colour alone: a `status-pill`'s label and a `meter`'s
   fraction are always visible text; `Alert` (`role="alert"`) is for
-  live problems, not ambient notes. Every menu is a
+  live problems, not ambient notes. A dashboard opens with `rst-stats`
+  holding `stat` cells, one marked `rst-stat="lead"` — there is no
+  separate headline component. Put the sign in `stat`'s `Delta`
+  (`"+12%"`, `"−4%"`) and pass `Tone` yourself: a fall is good news
+  about half the time, so it is never derived from the sign. Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
   names another group, and a nested `rst-menu-group` MUST name a

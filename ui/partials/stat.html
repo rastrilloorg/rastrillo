@@ -1,0 +1,52 @@
+{{/* stat — one reading in a stat band: a label over a number, with an
+     optional change under it.
+
+     ONE component with a lead cell, not two components (spec §6-v2.4).
+     A dashboard's headline reading and the counts beside it are the
+     same thing at two sizes, and shipping "headline-stat" and
+     "secondary-stat" would have been two names for one grammar and two
+     places to fix a bug.
+
+     Keys:
+       Label  string, required — the eyebrow over the number
+       Value  string, required — the number as a person reads it,
+              already formatted and localised by the caller. The
+              framework does not format numbers: a thousands separator
+              is a locale's business and the caller has the locale.
+       Exact  string, optional — the unrounded figure, emitted as
+              <data value>. Set it only when Value is an abbreviation
+              ("4.1k" for 4120). See the warning below.
+       Delta  string, optional — the change, WITH its sign: "+12%",
+              "−4%". The sign is not decoration and not supplied here;
+              see below.
+       Tone   string, optional — "positive", "negative" or "neutral"
+              (the default), colouring the delta. The caller's call,
+              never derived from the sign; see below.
+       Note   string, optional — a quiet line under the number, for the
+              comparison the delta is against ("vs. last week")
+       Lead   bool, optional — the oversized headline reading. One per
+              band, by convention rather than by enforcement: two lead
+              cells render, they just stop meaning "the headline".
+
+     THE SIGN IS PART OF THE TEXT, and this is the accessibility rule
+     the component exists to keep. A delta may never be green-or-red
+     alone (spec §6-v2.4, WCAG 2.2 AA 1.4.1): colour is the second
+     signal, and "+12%" is the first. The partial does not add the sign
+     itself, because a caller who passes "12%" meaning a fall would get
+     a plus — so it is the caller's string, and a Delta with no sign in
+     it renders with no sign in it, which is visibly wrong at a glance
+     rather than wrong only to a colour-blind reader.
+
+     TONE IS NOT DERIVED FROM THE SIGN, and that is not laziness. A
+     fall is good news about half the time a dashboard shows one —
+     open tickets, error rate, time to first response — so a partial
+     that painted every minus red would be confidently wrong on half
+     its uses. Which direction is good is product knowledge, and the
+     product is the caller.
+
+     <data value> IS NOT READ ALOUD. It is machine-readable and nothing
+     more: a screen reader announces the TEXT, so if "4.1k" loses
+     something a person needs, the fix is a fuller Value or an
+     accessible name — never Exact. And a date or a duration takes
+     <time>, not <data>; that is the distinction most often got wrong. */}}
+{{define "stat"}}<div rst-stat{{if .Lead}}="lead"{{end}}><span rst-stat-label>{{.Label}}</span><span rst-stat-num>{{if .Exact}}<data value="{{.Exact}}">{{.Value}}</data>{{else}}{{.Value}}{{end}}</span>{{with .Delta}}<span rst-stat-delta rst-tone="{{if $.Tone}}{{$.Tone}}{{else}}neutral{{end}}">{{.}}</span>{{end}}{{with .Note}}<span rst-stat-note>{{.}}</span>{{end}}</div>{{end}}
