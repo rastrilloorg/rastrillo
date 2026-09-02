@@ -813,15 +813,82 @@ func TestPaginationWithNoItems(t *testing.T) {
 
 func TestMeterClampsAndAlwaysShowsTheNumber(t *testing.T) {
 	over := render(t, "meter", map[string]any{"Percent": 140, "Text": "7/5"})
-	if !strings.Contains(over, "--rst-meter-fill: 100%") {
+	if !strings.Contains(over, `value="100"`) {
 		t.Errorf("percent not clamped high: %s", over)
 	}
 	under := render(t, "meter", map[string]any{"Percent": -3, "Text": "0/5"})
-	if !strings.Contains(under, "--rst-meter-fill: 0%") {
+	if !strings.Contains(under, `value="0"`) {
 		t.Errorf("percent not clamped low: %s", under)
 	}
 	if !strings.Contains(over, `<span rst-meter-num>7/5</span>`) {
 		t.Errorf("the fraction text is the accessible value and must render: %s", over)
+	}
+}
+
+// The bar is a native <meter> now, and these are the three things about
+// that which are decisions rather than syntax.
+//
+// The range is declared, because a <meter> with no max defaults to 1 and
+// a value of 82 then pins to full — the bar would read "completely full"
+// at every percentage over 1 and nobody would see anything wrong until
+// they compared two of them.
+//
+// It is hidden from assistive technology on purpose: role="meter" wants
+// an accessible name, the only name available is the fraction rendered
+// beside it, and naming it that announces the same thing twice. The text
+// is the accessible carrier and the element is the machine-readable
+// half. See the partial's comment, and §6-v2.4 on <data>.
+//
+// And the fraction is still text, which is the rule that predates all of
+// this: state is never carried by a graphic alone.
+func TestMeterIsANativeElementWithADeclaredRange(t *testing.T) {
+	got := render(t, "meter", map[string]any{"Percent": 82, "Text": "412 / 500"})
+	for _, want := range []string{
+		`<meter rst-meter-bar value="82" min="0" max="100" aria-hidden="true">`,
+		`<span rst-meter-num>412 / 500</span>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+	if strings.Contains(got, "--rst-meter-fill") {
+		t.Errorf("the old span-and-<i> fill is still being written; an app styling it would be styling nothing: %s", got)
+	}
+}
+
+// A running job's Percent is additive, and both halves of that are
+// asserted: with it there is a native <progress>, and without it the
+// fragment is byte-for-byte what it was before the key existed. The
+// second is the one that keeps this from being a redesign — most jobs
+// cannot say how far along they are, and a spinner plus a sentence is
+// the honest rendering of that.
+func TestJobStatusDrawsADeterminateBarOnlyWhenItCan(t *testing.T) {
+	with := render(t, "job-status", map[string]any{
+		"Name": "Import", "Status": "running", "Progress": "128 of 400", "Percent": 32,
+		"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
+	})
+	if want := `<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true">`; !strings.Contains(with, want) {
+		t.Errorf("a job that knows how far it is does not draw a bar.\nwant %q\ngot  %s", want, with)
+	}
+	if !strings.Contains(with, "128 of 400") {
+		t.Errorf("Progress is the text that carries the meaning and must still render: %s", with)
+	}
+
+	without := render(t, "job-status", map[string]any{
+		"Name": "Import", "Status": "running", "Progress": "128 of 400",
+		"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
+	})
+	if strings.Contains(without, "<progress") {
+		t.Errorf("a job with no Percent must draw no bar; an empty one would claim a measurement nobody has: %s", without)
+	}
+	if !strings.Contains(without, "rst-spin") {
+		t.Errorf("the spinner is what a running job of unknown length shows, and it has gone: %s", without)
+	}
+	// The spinner stays even when the bar is there: it means the page is
+	// still asking, which is a different fact from how far along the job
+	// is, and a poll can stop while a job is mid-flight.
+	if !strings.Contains(with, "rst-spin") {
+		t.Errorf("the bar replaced the spinner; they say different things and both are true while a job runs: %s", with)
 	}
 }
 

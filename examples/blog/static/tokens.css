@@ -733,10 +733,39 @@ body {
 .rst-badge--negative, [rst-badge~="negative"] { background: var(--rst-tone-negative-bg); border-color: var(--rst-tone-negative-fg); color: var(--rst-tone-negative-fg); }
 .rst-badge--neutral, [rst-badge~="neutral"] { background: var(--rst-tone-neutral-bg); border-color: var(--rst-tone-neutral-fg); color: var(--rst-tone-neutral-fg); }
 
-/* meter — 4px capacity bar; the number rides beside it as text. */
+/* meter — 4px capacity bar; the number rides beside it as text.
+
+   The bar is a native <meter> (spec §6-v2.4), and styling one is the
+   one place in this file where the same declaration has to be written
+   three times: once on the element, once for the WebKit/Blink
+   pseudo-elements, once for the Firefox one. They cannot share a rule.
+   A selector list containing a pseudo-element an engine does not know
+   is invalid AS A WHOLE in that engine, so ::-webkit-meter-bar and
+   ::-moz-meter-bar in one comma-separated rule would style nothing
+   anywhere. That is why the repetition below is not tidied up.
+
+   The two engines also disagree about which pseudo-element is which.
+   In WebKit/Blink ::-webkit-meter-bar is the TRACK and
+   ::-webkit-meter-optimum-value is the FILL; in Firefox the element
+   itself is the track and ::-moz-meter-bar is the FILL. Read the three
+   blocks with that in mind or they look contradictory.
+
+   HONESTLY FLAGGED: the -moz- rule is unverified. This project's
+   browser drive is Chromium, so the WebKit/Blink path below is measured
+   and the Firefox path is written from the spec and reasoned about. It
+   was shipped that way knowingly (Paul's call). If a Firefox drive ever
+   lands, this is the first rule to point it at.
+
+   The old markup was a <span> with an <i> in it sized by
+   --rst-meter-fill. That custom property is gone; an app that set it is
+   setting nothing now, which is why it is called out in the changelog
+   rather than only here. */
 .rst-meter, [rst-meter] { align-items: center; color: var(--rst-text-muted); display: inline-flex; font-size: var(--rst-fs-xs); gap: var(--rst-sp-2); }
-.rst-meter__bar, [rst-meter-bar] { background: var(--rst-accent-soft); border-radius: 2px; flex: 1; height: 4px; min-width: 34px; overflow: hidden; }
-.rst-meter__bar i, [rst-meter-bar] i { background: var(--rst-accent); border-radius: 2px; display: block; height: 100%; width: var(--rst-meter-fill, 0%); }
+.rst-meter__bar, [rst-meter-bar] { appearance: none; background: var(--rst-accent-soft); block-size: 4px; border: 0; border-radius: 2px; flex: 1; min-inline-size: 34px; }
+.rst-meter__bar::-webkit-meter-inner-element, [rst-meter-bar]::-webkit-meter-inner-element { block-size: 100%; }
+.rst-meter__bar::-webkit-meter-bar, [rst-meter-bar]::-webkit-meter-bar { background: var(--rst-accent-soft); block-size: 100%; border: 0; border-radius: 2px; }
+.rst-meter__bar::-webkit-meter-optimum-value, [rst-meter-bar]::-webkit-meter-optimum-value { background: var(--rst-accent); border-radius: 2px; }
+.rst-meter__bar::-moz-meter-bar, [rst-meter-bar]::-moz-meter-bar { background: var(--rst-accent); border-radius: 2px; }
 .rst-meter__num, [rst-meter-num] { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* stats — the instrument strip a dashboard or a report opens with: a
@@ -1379,6 +1408,19 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   animation: rst-spin 0.8s linear infinite;
 }
 @keyframes rst-spin { to { transform: rotate(1turn); } }
+
+/* A running job's determinate bar: a native <progress>, styled the same
+   way and for the same reasons as [rst-meter-bar] — see that block for
+   why the three engines need three rules that cannot be merged, and for
+   the same honest flag about the -moz- one being unverified here.
+   <progress>'s pseudo-elements are its own: ::-webkit-progress-bar is
+   the track, ::-webkit-progress-value the fill, ::-moz-progress-bar the
+   fill. It is a block on its own line under the sentence, because it
+   measures the job the sentence is about. */
+.rst-job__bar, [rst-job-bar] { appearance: none; background: var(--rst-accent-soft); block-size: 4px; border: 0; border-radius: 2px; display: block; inline-size: 100%; margin-block-start: var(--rst-sp-2); }
+.rst-job__bar::-webkit-progress-bar, [rst-job-bar]::-webkit-progress-bar { background: var(--rst-accent-soft); border-radius: 2px; }
+.rst-job__bar::-webkit-progress-value, [rst-job-bar]::-webkit-progress-value { background: var(--rst-accent); border-radius: 2px; }
+.rst-job__bar::-moz-progress-bar, [rst-job-bar]::-moz-progress-bar { background: var(--rst-accent); border-radius: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .rst-spin, [rst-spin] { animation: none; opacity: 0.5; }
 }

@@ -379,7 +379,7 @@ func families() []family {
 					Blurb: "A background job's polled fragment. The data-poll attribute is emitted only while the job runs — omitting it is how polling stops.",
 					States: []sample{
 						{State: "Running", Data: map[string]any{
-							"Name": "Import", "Status": "running", "Progress": "128 of 400",
+							"Name": "Import", "Status": "running", "Progress": "128 of 400", "Percent": 32,
 							"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
 						}, Note: "This one polls: it is the only sample on the page that asks the network for anything, and on a static site it simply never resolves."},
 						{State: "Finished", Data: map[string]any{"Name": "Import", "Status": "done"}},
