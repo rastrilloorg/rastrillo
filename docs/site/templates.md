@@ -297,6 +297,49 @@ wrap onto a second row rather than squeezing, so you do not tell it how
 many you have. There is no separate component for the big number; the
 lead cell is the same `stat` at a larger size.
 
+### Wrap a person's name in `<bdi>`
+
+A name is user-supplied and can be in any script, and a right-to-left
+name sitting inline with punctuation and a number reorders the line
+around it. This is not theoretical and it is not rare — it is what the
+list row's name cell does:
+
+```html
+<a class="rst-nm" href="/orders/1"><bdi>Grace Hopper</bdi><small>AB3PX · <bdi>grace@example.com</bdi></small></a>
+```
+
+Without the `<bdi>`, an Arabic or Hebrew name followed by `· 09:12`
+renders with **the time drawn to the left of the name**: European
+numbers following an Arabic letter become Arabic numbers, and those run
+right to left. The row reads backwards, in a table where every other row
+reads forwards.
+
+Wrap the name wherever it sits inline with other content. You do not
+need it where a name is alone in its own block — `person` puts the name
+and the email in blocks of their own, so it does not need one — and you
+do not need it when ordinary words separate the name from the numbers,
+which is why `job-status` does not have one. Both of those were
+measured, not assumed.
+
+### Mark a moment with `<time>`
+
+Where a value *is* a moment or a length of time, give `detail-list`'s
+item a `DateTime` alongside its `Value`:
+
+```html
+{{template "detail-list" dict "Items" (list
+  (dict "Label" "Published" "Value" "2 August 2026" "DateTime" "2026-08-02"))}}
+```
+
+`Value` stays whatever you formatted for a person to read; `DateTime`
+carries the same moment in the one syntax a machine can parse. The
+framework does not format dates — a locale decides that and you have the
+locale — so the two are supplied together.
+
+Only for moments and durations. An identifier, a quantity or a reference
+number is not a time however numeric it looks; `Mono` is what marks
+those.
+
 ### State is never colour alone
 
 A tone tells you how to feel about a value; it never carries the value.

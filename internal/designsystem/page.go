@@ -1893,9 +1893,9 @@ const demoTemplate = `
 <div rst-box-head><h2>{{P "Latest activity"}}</h2><a rst-btn href="#view-requests">{{P "Requests"}}</a></div>
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small><bdi>Otto Neurath</bdi> · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
 </div>
 </section>
 
@@ -1905,10 +1905,10 @@ const demoTemplate = `
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px 120px">
 {{template "list-bar" dict "SearchAction" "#view-requests" "Placeholder" (P "Search requests")}}
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small><bdi>Otto Neurath</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Export takes twenty minutes<small><bdi>Mary Sherman</bdi> · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
 </div>
 <p rst-count-line>{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
 {{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" "#view-requests") (dict "Label" "3" "Href" "#view-requests"))}}
@@ -1919,7 +1919,7 @@ const demoTemplate = `
 {{template "page-header" dict "Title" "Invoice #4471 never arrived" "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
 <p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" "Billing"}}</p>
 <div rst-box-head><h2>{{P "Details"}}</h2></div>
-<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12"))}}</section>
+<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12" "DateTime" "2026-08-14T09:12"))}}</section>
 <div rst-box-head><h2>{{P "Reply"}}</h2></div>
 <section rst-box><form rst-form method="post" action="#view-request">
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}

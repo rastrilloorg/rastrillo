@@ -49,6 +49,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -2369,5 +2370,152 @@ func TestBusyButtonDrive(t *testing.T) {
 		"draft:- draft-off:false draft-value:draft"
 	if scriptless != wantScriptless {
 		t.Errorf("with scripts off the page reads\n  %q\nwant\n  %q", scriptless, wantScriptless)
+	}
+}
+
+// ── Bidirectional text: the name cell ────────────────────────────────
+
+// bidiRowPage renders the documented list-row name cell twice with the
+// same right-to-left name in it: once wrapped in <bdi>, as the library's
+// own sample now writes it, and once bare, as it was written before.
+//
+// The bare one is the control, and this drive is worthless without it.
+// The whole claim is that <bdi> changes where the browser puts things,
+// so a run that cannot show the unwrapped version going wrong is a run
+// that proves the wrapper does nothing.
+func bidiRowPage(t *testing.T) http.Handler {
+	t.Helper()
+	// "Ali Muhammad" — a real name in a script the framework ships a
+	// locale for. The row shape is [rst-nm] with a <small> under it, and
+	// tokens.css makes that <small> a block, so the name, the separator
+	// and the time are one bidi paragraph. That is the whole setup.
+	const name = "علي محمد"
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		w.Write(TokensCSS())
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8">`+
+			`<title>bidi</title><link rel="stylesheet" href="/tokens.css"></head><body>`+
+			`<div rst-card style="--rst-cols: 1fr">`+
+			`<div rst-lrow><a class="rst-nm" id="wrapped" href="#">Invoice never arrived`+
+			`<small><bdi>%[1]s</bdi> · 09:12</small></a></div>`+
+			`<div rst-lrow><a class="rst-nm" id="bare" href="#">Invoice never arrived`+
+			`<small>%[1]s · 09:12</small></a></div>`+
+			`</div></body></html>`, name)
+	})
+	return mux
+}
+
+// bidiOrderJS reports, for each row, whether the name is drawn to the
+// LEFT of the time — which is the order an English reader of an
+// left-to-right table expects, whatever script the name is in.
+//
+// Measured with a Range over the text rather than off elements, because
+// the bare row has no element around its name to measure and the point
+// is to compare the two.
+const bidiOrderJS = `(() => {
+  function rectOf(root, needle) {
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = w.nextNode())) {
+      const i = n.textContent.indexOf(needle);
+      if (i >= 0) {
+        const r = document.createRange();
+        r.setStart(n, i); r.setEnd(n, i + needle.length);
+        const b = r.getBoundingClientRect();
+        return Math.round(b.x);
+      }
+    }
+    return null;
+  }
+  const out = {};
+  for (const id of ["wrapped", "bare"]) {
+    const el = document.getElementById(id);
+    out[id] = { name: rectOf(el, "علي"), time: rectOf(el, "09:12") };
+  }
+  return JSON.stringify(out);
+})()`
+
+// TestABidiIsolatedNameKeepsItsRowInOrder is the gate for the one
+// genuine bidirectional-text defect in this library's markup, and for
+// the shape of the fix.
+//
+// A person's name is user-supplied and can be in any script. Put one
+// inline before a separator and a time — which is exactly what the name
+// cell's <small> does — and the browser's bidi algorithm treats the
+// digits as part of the right-to-left run: European numbers after an
+// Arabic letter become Arabic numbers, and Arabic numbers order
+// right-to-left. The time is then drawn to the LEFT of the name it
+// belongs to, in a table every other row of which reads left to right.
+//
+// Nothing about that is visible to a Go test, to a screenshot of the
+// English page, or to a reader who does not use the language. It is
+// measured here or it is not caught.
+//
+// What was measured before writing this, and what it changed: the
+// PARTIALS turned out not to have the defect. The obvious suspect was
+// job-status, which puts a user-supplied job name inline —
+// "<strong>NAME</strong> is running — 42…" — and it renders identically
+// with and without isolation, because the Latin words "is running" sit
+// between the name and the number and insulate them. Wrapping it would
+// have been a change with no defect under it. The defect is in the name
+// cell, where nothing insulates.
+func TestABidiIsolatedNameKeepsItsRowInOrder(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return bidiRowPage(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+	defer cancel()
+
+	var raw string
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible("#wrapped", chromedp.ByQuery),
+		chromedp.Sleep(300*time.Millisecond),
+		chromedp.Evaluate(bidiOrderJS, &raw),
+	); err != nil {
+		t.Fatalf("measuring the rows: %v", err)
+	}
+	var got map[string]struct{ Name, Time *int }
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatalf("decoding %q: %v", raw, err)
+	}
+	for _, id := range []string{"wrapped", "bare"} {
+		if got[id].Name == nil || got[id].Time == nil {
+			t.Fatalf("%s: could not find the name and the time in the rendered row (%q)", id, raw)
+		}
+	}
+
+	// THE CONTROL, first. Without it a green run means nothing: if the
+	// engine ever stopped reordering the bare row, the assertion below
+	// would pass on a page where <bdi> was doing no work at all, and
+	// somebody would later delete it as decoration.
+	bare := got["bare"]
+	if *bare.Name < *bare.Time {
+		t.Fatalf("the unwrapped row draws the name at x=%d and the time at x=%d, already in order — this engine is not reordering, so the wrapped row below proves nothing about <bdi>",
+			*bare.Name, *bare.Time)
+	}
+	t.Logf("control: unwrapped, the time is drawn at x=%d and the name at x=%d — the time has jumped to the left of the name it belongs to",
+		*bare.Time, *bare.Name)
+
+	// And the fix.
+	w := got["wrapped"]
+	if *w.Name >= *w.Time {
+		t.Errorf("with <bdi> the name is at x=%d and the time at x=%d; the name has to come first in a left-to-right row. The isolation is not working",
+			*w.Name, *w.Time)
+	}
+}
+
+// TestTheLibrarysOwnSamplesIsolateAName holds the samples to the rule
+// the drive above establishes. A gate on the mechanism with no gate on
+// the markup leaves the library shipping an example of the defect.
+func TestTheLibrarysOwnSamplesIsolateAName(t *testing.T) {
+	grid, ok := Styleguide()["list-grid"]
+	if !ok {
+		t.Fatal("no list-grid sample to check")
+	}
+	if !strings.Contains(grid, "<bdi>Grace Hopper</bdi>") {
+		t.Errorf("the list-grid sample does not isolate the person's name. It is the markup readers copy for a row, and an unwrapped name reorders the row it is in:\n%s", grid)
 	}
 }

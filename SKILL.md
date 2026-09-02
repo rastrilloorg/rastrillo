@@ -303,7 +303,10 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   holding `stat` cells, one marked `rst-stat="lead"` — there is no
   separate headline component. Put the sign in `stat`'s `Delta`
   (`"+12%"`, `"−4%"`) and pass `Tone` yourself: a fall is good news
-  about half the time, so it is never derived from the sign. Every menu is a
+  about half the time, so it is never derived from the sign.
+  A name inline with other content needs `<bdi>` — an RTL name beside a
+  number draws the number to its LEFT. `detail-list` takes `DateTime`
+  beside `Value` for a moment (`<time>`), never an identifier. Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
   names another group, and a nested `rst-menu-group` MUST name a
