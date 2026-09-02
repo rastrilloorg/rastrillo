@@ -14,9 +14,11 @@
 //	echo '{"locale":"en","catalogs":{"en":{…},…}}' |
 //	  node datetime_node.mjs testdata/datetime/en.json
 //
-// With --round-trip in place of a fixture it runs the read-back loop
-// instead: every catalog on stdin, formatted with the combobox's own
-// display options and parsed straight back. See roundTrip below.
+// Two modes take the place of a fixture path. --round-trip runs the
+// read-back loop: every catalog on stdin, formatted with the combobox's
+// own display options and parsed straight back. --calendar holds
+// ui/calendar.js's grid arithmetic to its invariants in every shipped
+// locale. See roundTrip and calendar below.
 //
 // The vocabulary comes in on stdin rather than out of the fixture,
 // because it is not test data: it is the framework's own base catalog
@@ -40,7 +42,7 @@ import parser from "./datetime.js";
 
 const fixturePath = process.argv[2];
 if (!fixturePath) {
-  process.stderr.write("usage: datetime_node.mjs <fixture.json | --round-trip>\n");
+  process.stderr.write("usage: datetime_node.mjs <fixture.json | --round-trip | --calendar>\n");
   process.exit(2);
 }
 
@@ -130,6 +132,155 @@ const roundTrip = () => {
 
 if (fixturePath === "--round-trip") roundTrip();
 
+// ── the calendar's arithmetic ────────────────────────────────────────
+//
+// ui/calendar.js draws the month grid a date field opens. Everything in
+// it that touches a page is behind a `document` guard Node never takes,
+// and the three functions in front of that guard are the ones that can
+// be quietly WRONG: a grid that drops a day in a zone that moved its
+// clocks that morning, a week that starts on the wrong day, column
+// headings that do not describe their own columns.
+//
+// None of that needs a browser to catch, and none of it shows up in a
+// screenshot either — a calendar missing 1 March looks exactly like a
+// calendar. So this mode asserts the invariants directly, over every
+// locale the framework ships and over a span of months wide enough to
+// include the awkward ones: a leap February, both hemispheres' clock
+// changes, and a month beginning on each of the seven weekdays.
+//
+// Run as `datetime_node.mjs --calendar`, with the same catalogs on
+// stdin as every other mode — used here only for the list of locales.
+const calendar = async () => {
+  const cal = (await import("./calendar.js")).default;
+  const two = (n) => String(n).padStart(2, "0");
+  const day = (d) => `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+  const langs = Object.keys(catalogs);
+  const broken = new Set();
+  const failures = [];
+  const anchors = [];
+
+  // Every month of 2026 and 2027, plus February 2028 for the leap day.
+  // Wide enough that a month beginning on each of the seven weekdays
+  // appears several times over, and that both hemispheres' clock
+  // changes are covered whatever zone the runner sits in.
+  const months = [];
+  for (let y = 2026; y <= 2027; y++) for (let m = 0; m < 12; m++) months.push([y, m]);
+  months.push([2028, 1]);
+
+  // Four facts about the world, pinned in the TEST rather than in the
+  // file under it. calendar.js derives the first day of the week from
+  // Intl and keeps no table, which is right — but a derivation that
+  // came back consistently wrong would still satisfy every invariant
+  // below, because they all check the grid against the same number.
+  // These four are the anchor: they are not in dispute, they are
+  // stable in CLDR, and they belong here, where a table is evidence
+  // rather than a thing to maintain.
+  for (const [tag, want, who] of [
+    ["en-US", 0, "the United States starts its weeks on Sunday"],
+    ["en-GB", 1, "the United Kingdom starts its weeks on Monday"],
+    ["ar-EG", 6, "Egypt starts its weeks on Saturday"],
+    ["ja-JP", 0, "Japan starts its weeks on Sunday"],
+  ]) {
+    const got = cal.firstDayOfWeek(tag);
+    if (got !== want) anchors.push(`      ${tag}: firstDayOfWeek = ${got}, want ${want} — ${who}`);
+  }
+
+  for (const lang of langs) {
+    const say = (msg) => {
+      broken.add(lang);
+      if (failures.length < 40) failures.push(`      ${lang}: ${msg}`);
+    };
+    const first = cal.firstDayOfWeek(lang);
+    const heads = cal.weekdayNames(lang, first);
+
+    if (!Number.isInteger(first) || first < 0 || first > 6) {
+      say(`firstDayOfWeek = ${first}, which is not a getDay number`);
+    }
+    if (heads.length !== 7) say(`weekdayNames gave ${heads.length} columns, want 7`);
+    else {
+      // The headings must describe the columns they sit over. This is
+      // the failure that would look right and read wrong: a grid
+      // starting on Monday under a heading row starting on Sunday is
+      // off by one the whole way across, and every date in it is
+      // announced on the wrong weekday.
+      for (let i = 0; i < 7; i++) {
+        if (heads[i].day !== (first + i) % 7) {
+          say(`column ${i} heads day ${heads[i].day}, want ${(first + i) % 7}`);
+        }
+        if (!heads[i].short || !heads[i].long) say(`column ${i} has an empty name`);
+      }
+      if (new Set(heads.map((h) => h.long)).size !== 7) {
+        say(`the seven spoken weekday names are not seven distinct names`);
+      }
+    }
+
+    for (const [y, m] of months) {
+      const grid = cal.monthGrid(y, m, first);
+      const where = `${y}-${two(m + 1)}`;
+
+      // Always 42 cells, so the panel keeps one height all year.
+      if (grid.length !== 42) {
+        say(`${where}: ${grid.length} cells, want 42`);
+        continue;
+      }
+
+      // Every cell at local midnight, and each exactly one day after
+      // the one before it. Building the grid by adding 86,400,000
+      // milliseconds instead of counting whole days breaks precisely
+      // here, in the two months a clock changes, and nowhere else.
+      let stop = false;
+      for (let i = 0; i < 42 && !stop; i++) {
+        const d = grid[i];
+        if (d.getHours() || d.getMinutes() || d.getSeconds()) {
+          say(`${where}: cell ${i} is ${d}, not local midnight`);
+          stop = true;
+        } else if (i > 0) {
+          const p = grid[i - 1];
+          const want = new Date(p.getFullYear(), p.getMonth(), p.getDate() + 1);
+          if (day(d) !== day(want)) {
+            say(`${where}: cell ${i} is ${day(d)}, want ${day(want)} — a day was dropped or repeated`);
+            stop = true;
+          }
+        }
+      }
+      if (stop) continue;
+
+      if (grid[0].getDay() !== first) {
+        say(`${where}: the grid starts on day ${grid[0].getDay()}, want ${first}`);
+      }
+
+      // Every day of the month present, exactly once, with the 1st in
+      // the first week. Six rows is enough for every month there is —
+      // 31 days beginning on the last day of the week needs 37 cells —
+      // but only when the leading run is the right length.
+      const inMonth = grid.filter((d) => d.getMonth() === m && d.getFullYear() === y);
+      const last = new Date(y, m + 1, 0).getDate();
+      if (inMonth.length !== last) {
+        say(`${where}: ${inMonth.length} of the month's ${last} days are on the grid`);
+      }
+      const at = grid.findIndex((d) => d.getDate() === 1 && d.getMonth() === m);
+      if (at < 0 || at > 6) say(`${where}: the 1st sits at cell ${at}, not in the first week`);
+    }
+  }
+
+  process.stdout.write(
+    `calendar grid: ${langs.length - broken.size} of ${langs.length} locales draw ` +
+      `${months.length} months each with the right days in the right columns\n` +
+      (anchors.length
+        ? `FAIL: the first day of the week is derived wrongly in ${anchors.length} of 4 anchor locales:\n` +
+          `${anchors.join("\n")}\n`
+        : "") +
+      (broken.size
+        ? `FAIL: ${broken.size} locale(s) draw a month wrong: ${[...broken].join(", ")}\n` +
+          `${failures.join("\n")}\n`
+        : ""),
+  );
+  process.exit(broken.size || anchors.length ? 1 : 0);
+};
+
+if (fixturePath === "--calendar") await calendar();
+
+
 const cases = JSON.parse(readFileSync(fixturePath, "utf8"));
 
 // One set of locale tables per language in the file, built once.
@@ -166,19 +317,35 @@ for (const [i, c] of cases.entries()) {
     throw new Error(`case ${id} in ${fixturePath} has no "expected" key`);
   }
   const lang = langOf(c);
-  let got, err = null;
+  let got, err = null, override = null;
   try {
     const setup = setupFor(lang);
-    const read = parser.parse(c.input, setup.vocab, setup.tables, at(c.now), {
+    // parseAll, not parse, because parseAll is what the FIELD reads
+    // with: the exact grammar first, and where that refuses, the
+    // readings a half-typed word could still be finished into. Its
+    // first answer is the one Enter takes, so that is what "expected"
+    // means here, and a case may name the rest with "alternatives".
+    //
+    // Every reading in the list is the strict grammar's own — a
+    // completion only ever hands it a longer sentence to read — so a
+    // fixture asserting null still asserts exactly what it used to.
+    const reads = parser.parseAll(c.input, setup.vocab, setup.tables, at(c.now), {
       prev: c.prev ? at(c.prev) : null,
       base: c.base ? at(c.base) : null,
     });
-    got = read ? wire(read.date) : null;
+    got = reads.length ? wire(reads[0].date) : null;
+    if (Object.prototype.hasOwnProperty.call(c, "alternatives")) {
+      const rest = reads.slice(1).map((r) => wire(r.date));
+      if (JSON.stringify(rest) !== JSON.stringify(c.alternatives)) {
+        got = `${got} + alternatives ${JSON.stringify(rest)}`;
+        override = `${c.expected} + alternatives ${JSON.stringify(c.alternatives)}`;
+      }
+    }
   } catch (e) {
     err = e;
     got = `threw: ${e && e.message}`;
   }
-  const want = c.expected;
+  const want = override === null ? c.expected : override;
   if (got !== want) {
     failures.push(
       `  ${id} [${lang}] input=${JSON.stringify(c.input)} now=${c.now}` +

@@ -9,6 +9,7 @@
 // every field in its error state, the RTL and CJK renderings of the same
 // markup — and it is the only place the two enhanced controls
 // (select.js's filterable combobox, datetime.js's natural-language date
+// field and the month grid calendar.js opens for it
 // field) actually run.
 //
 // Render returns the whole tree in memory, keyed by path relative to the
@@ -113,7 +114,9 @@ const DefaultMount = "/design-system"
 //	<theme>/<locale>/demo.html            36 copies of the demo app
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
 //	tokens.css theme-<theme>.css          the stylesheets, once each
-//	rastrillo.js select.js datetime.js    the framework's three scripts
+//	rastrillo.js select.js datetime.js    the framework's four scripts
+//	calendar.js                           (calendar.js draws the month
+//	                                      grid datetime.js opens)
 //	gallery.js gallery.css                the gallery's own furniture,
 //	                                      once each
 //
@@ -134,6 +137,7 @@ func Render(mount string) (map[string][]byte, error) {
 		"rastrillo.js": ui.ShimJS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
+		"calendar.js":  ui.CalendarJS(),
 		"gallery.js":   GalleryJS(),
 		"gallery.css":  GalleryCSS(),
 	}

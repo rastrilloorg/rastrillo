@@ -53,6 +53,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -298,7 +299,7 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 // datePage serves one form carrying an enhanced field-date, the real
 // datetime.js, tokens.css and theme, and records what a submit
 // delivers.
-func datePage(t *testing.T) (http.Handler, chan string) {
+func datePage(t *testing.T, partial, field string) (http.Handler, chan string) {
 	t.Helper()
 	tmpl := template.Must(template.New("").Funcs(Funcs()).ParseFS(Templates(), "*.html"))
 
@@ -307,6 +308,10 @@ func datePage(t *testing.T) (http.Handler, chan string) {
 	mux.HandleFunc("GET /datetime.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(DatetimeJS())
+	})
+	mux.HandleFunc("GET /calendar.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(CalendarJS())
 	})
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
@@ -324,7 +329,7 @@ func datePage(t *testing.T) (http.Handler, chan string) {
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
 		select {
-		case got <- r.PostFormValue("due"):
+		case got <- r.PostFormValue(field):
 		default:
 		}
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>ok</title></head><body><p id="done">received</p></body></html>`)
@@ -334,10 +339,11 @@ func datePage(t *testing.T) (http.Handler, chan string) {
 		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
 			`<title>date</title><link rel="stylesheet" href="/tokens.css">` +
 			`<link rel="stylesheet" href="/theme.css">` +
+			`<script defer src="/calendar.js"></script>` +
 			`<script defer src="/datetime.js"></script></head><body>` +
 			`<form method="post" action="/submit">`)
-		if err := tmpl.ExecuteTemplate(&body, "field-date", map[string]any{
-			"Name": "due", "Label": "Due",
+		if err := tmpl.ExecuteTemplate(&body, partial, map[string]any{
+			"Name": field, "Label": "Due",
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -370,7 +376,7 @@ func datePage(t *testing.T) (http.Handler, chan string) {
 // one never submitted the page out from under itself the way the
 // select drive did. See the file header, and issue #86.
 func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
-	mux, submitted := datePage(t)
+	mux, submitted := datePage(t, "field-date", "due")
 	rig := harness.New(t, func(string) http.Handler { return mux })
 
 	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
@@ -551,7 +557,7 @@ func TestEnterCommitsWithoutSubmittingTheForm(t *testing.T) {
 		},
 		{
 			name:    "date",
-			page:    datePage,
+			page:    func(t *testing.T) (http.Handler, chan string) { return datePage(t, "field-date", "due") },
 			typed:   "tomorrow",
 			mirror:  `document.querySelector('input[name="due"]')?.value ?? ''`,
 			wantVal: func(v string) bool { return v != "" },
@@ -1333,6 +1339,10 @@ func fieldRowPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(DatetimeJS())
 	})
+	mux.HandleFunc("GET /calendar.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(CalendarJS())
+	})
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
@@ -1355,6 +1365,7 @@ func fieldRowPage(t *testing.T) http.Handler {
 		fmt.Fprintf(&body, `<!doctype html><html lang="en" dir=%q><head><meta charset="utf-8">`+
 			`<title>rows</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
+			`<script defer src="/calendar.js"></script>`+
 			`<script defer src="/datetime.js"></script></head><body rst-page>`+
 			`<form rst-form method="post" action="/submit">`, dir)
 		if err := tmpl.ExecuteTemplate(&body, "field-daterange", map[string]any{
@@ -2517,5 +2528,340 @@ func TestTheLibrarysOwnSamplesIsolateAName(t *testing.T) {
 	}
 	if !strings.Contains(grid, "<bdi>Grace Hopper</bdi>") {
 		t.Errorf("the list-grid sample does not isolate the person's name. It is the markup readers copy for a row, and an unwrapped name reorders the row it is in:\n%s", grid)
+	}
+}
+
+// TestCalendarOverlayDrivesTheWholeJourney is the overlay's browser
+// test, on the same terms as the two above: a real engine, real focus,
+// real keys, one drive covering a whole journey.
+//
+// It exists because every bug class below renders perfectly and says
+// nothing wrong — which is exactly how the thing it replaced shipped.
+// The old button called native.showPicker(): the panel it opened
+// belonged to the browser, and because that panel does not move focus,
+// the guard on the change listener swallowed the pick. The field looked
+// like it had simply ignored the date somebody had just chosen.
+//
+//   - the button opens nothing, or opens the browser's panel again,
+//     because window.rastrilloCalendar was not found;
+//   - a day is clicked and the grid closes, but the carrier never takes
+//     the value, so the form posts an empty date over a filled-in
+//     screen;
+//   - the grid draws the right days under the wrong headings, or off by
+//     a week, so every date is a weekday out;
+//   - the words and the grid drift apart: typing moves neither, or
+//     moves the grid without moving what Enter would commit;
+//   - the grid takes no keyboard at all, which is the difference
+//     between a date picker and a date picker for people with mice.
+//
+// The month is pinned by typing a date rather than by pinning a clock,
+// which a real browser will not let a Go test do: "25 dec 2027" is a
+// day the grid can be asked for by name and asserted on exactly.
+func TestCalendarOverlayDrivesTheWholeJourney(t *testing.T) {
+	mux, submitted := datePage(t, "field-date", "due")
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancelTimeout()
+
+	var (
+		hasPanel                       bool
+		calRole, calLabel              string
+		headCount, dayCount, rowCount  int
+		headings, previewDay, titleOne string
+		titleTwo, afterKeys            string
+		selectedDay, ariaExpanded      string
+		nativeValue, comboText         string
+		gridClosed, disabledCount      int
+		firstColumnAgrees              bool
+	)
+
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
+		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+
+		// The button is there, and it is the overlay's button rather
+		// than a fallback to the browser's own panel.
+		chromedp.Evaluate(`!!document.querySelector('[rst-dtp-pick]')`, &hasPanel),
+		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-haspopup') ?? ''`, &calRole),
+
+		// Type a date first, so the month on screen is one this test
+		// can name. The grid must open on what the words already say,
+		// not on this month.
+		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
+		chromedp.SendKeys(`input[role="combobox"]`, "25 dec 2027", chromedp.ByQuery), at("typed-date"),
+		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("reading-armed"),
+
+		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery), at("pressed-calendar-button"),
+		chromedp.WaitVisible(`[rst-cal] [role="gridcell"]`, chromedp.ByQuery), at("grid-drawn"),
+
+		chromedp.Evaluate(`document.querySelector('[rst-cal]')?.getAttribute('role') ?? ''`, &calLabel),
+		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-expanded') ?? ''`, &ariaExpanded),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal-grid] th[role="columnheader"]').length`, &headCount),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal] [role="gridcell"]').length`, &dayCount),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal] tbody tr[role="row"]').length`, &rowCount),
+		chromedp.Evaluate(`document.querySelector('[rst-cal-title]')?.textContent ?? ''`, &titleOne),
+		// Every heading has a spoken name as well as the two letters
+		// the eye reads: "Mo" alone is not a weekday.
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-cal-grid] th'))
+			.map(th => (th.querySelector('.rst-sr-only')?.textContent ?? '')).join('|')`, &headings),
+		// The headings describe the columns they sit over. This is the
+		// off-by-one that would look completely normal and put every
+		// date on the wrong weekday: the first cell's own weekday,
+		// asked of the browser, against the first column's name.
+		chromedp.Evaluate(`(function () {
+			var td = document.querySelector('[rst-cal] tbody [role="gridcell"]');
+			var th = document.querySelector('[rst-cal-grid] th .rst-sr-only');
+			if (!td || !th) return false;
+			var d = new Date(td.getAttribute('data-rst-day') + 'T00:00');
+			var lang = document.documentElement.getAttribute('lang') || undefined;
+			return new Intl.DateTimeFormat(lang, { weekday: 'long' }).format(d) === th.textContent;
+		})()`, &firstColumnAgrees),
+		// Opened on the typed date, and marked as the preview rather
+		// than as a selection: nothing has been committed yet.
+		chromedp.Evaluate(`document.querySelector('[rst-cal-day].is-preview')?.getAttribute('data-rst-day') ?? ''`, &previewDay),
+
+		// The live half of the brief. The grid is open; changing the
+		// words moves it, with no commit and no focus change.
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			return chromedp.Evaluate(`(function () {
+				var i = document.querySelector('input[role="combobox"]');
+				i.value = '3 mar 2028';
+				i.dispatchEvent(new Event('input', { bubbles: true }));
+				return true;
+			})()`, new(bool)).Do(ctx)
+		}), at("retyped-while-open"),
+		chromedp.Evaluate(`document.querySelector('[rst-cal-title]')?.textContent ?? ''`, &titleTwo),
+
+		// The keyboard. Down out of the box lands on the grid; a week
+		// back from 3 March 2028 is 25 February 2028.
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrowed-into-grid"),
+		// To whatever has focus, deliberately: the claim under test is
+		// that ArrowDown MOVED focus onto the grid, and re-selecting
+		// the cell first would prove it by assuming it.
+		chromedp.KeyEvent(kb.ArrowUp), at("arrowed-a-week-back"),
+		chromedp.Evaluate(`document.activeElement?.getAttribute('data-rst-day') ?? ''`, &afterKeys),
+
+		// Enter on the focused day commits it, and the grid closes.
+		chromedp.KeyEvent(kb.Enter), at("entered-on-a-day"),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			deadline := time.Now().Add(10 * time.Second)
+			for {
+				var v string
+				if err := chromedp.Evaluate(`document.querySelector('input[name="due"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+					return err
+				}
+				if v != "" {
+					nativeValue = v
+					return nil
+				}
+				if time.Now().After(deadline) {
+					return fmt.Errorf("the carrier never took a value within 10s of Enter on the grid")
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(100 * time.Millisecond):
+				}
+			}
+		}), at("read-carrier-value"),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]:not([hidden])').length`, &gridClosed),
+		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &comboText),
+
+		// Reopened, the day it now holds is the SELECTED one — the
+		// committed value, said in the accessibility tree and not only
+		// in a class.
+		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery), at("reopened-calendar"),
+		chromedp.WaitVisible(`[rst-cal] [role="gridcell"]`, chromedp.ByQuery), at("grid-redrawn"),
+		chromedp.Evaluate(`document.querySelector('[rst-cal-day][aria-selected="true"]')?.getAttribute('data-rst-day') ?? ''`, &selectedDay),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal-day][aria-disabled="true"]').length`, &disabledCount),
+
+		chromedp.KeyEvent(kb.Escape), at("escaped"),
+		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+	); err != nil {
+		t.Fatalf("drive failed after %q: %v\n  title=%q preview=%q afterKeys=%q nativeValue=%q",
+			reached, err, titleOne, previewDay, afterKeys, nativeValue)
+	}
+
+	if !hasPanel {
+		t.Fatal("no calendar button was rendered at all")
+	}
+	if calRole != "dialog" {
+		t.Errorf("the button says aria-haspopup=%q; with calendar.js on the page it opens a dialog, not %q", calRole, calRole)
+	}
+	if calLabel != "dialog" {
+		t.Errorf("the overlay carries role=%q, want dialog", calLabel)
+	}
+	if ariaExpanded != "true" {
+		t.Errorf("the button says aria-expanded=%q while its panel is open", ariaExpanded)
+	}
+	if headCount != 7 {
+		t.Errorf("the grid has %d column headers, want 7", headCount)
+	}
+	if dayCount != 42 {
+		t.Errorf("the grid has %d cells, want 42 — six weeks, so the panel keeps one height all year", dayCount)
+	}
+	if rowCount != 6 {
+		t.Errorf("the grid has %d rows, want 6", rowCount)
+	}
+	if n := len(strings.Split(headings, "|")); n != 7 || strings.Contains(headings, "||") {
+		t.Errorf("the column headings have no spoken names (%q): two letters read aloud is not a weekday", headings)
+	}
+	if !firstColumnAgrees {
+		t.Error("the first column's heading does not name the first cell's own weekday: the grid is off by a column, and every date in it is on the wrong day")
+	}
+	if previewDay != "2027-12-25" {
+		t.Errorf("the grid opened previewing %q, want 2027-12-25 — it should open on what the words already say", previewDay)
+	}
+	if titleOne == titleTwo {
+		t.Errorf("the title stayed %q when the text changed under it: the words are not driving the grid", titleOne)
+	}
+	// A week up from 3 March 2028. Pinned exactly, because "the grid
+	// moved" and "the grid moved by a week" are different claims.
+	if afterKeys != "2028-02-25" {
+		t.Errorf("ArrowDown then ArrowUp left focus on %q, want 2028-02-25 (a week back from the previewed 3 March)", afterKeys)
+	}
+	if nativeValue != "2028-02-25" {
+		t.Errorf("the carrier holds %q, want 2028-02-25: Enter on the grid must write the focused day back", nativeValue)
+	}
+	if gridClosed != 0 {
+		t.Error("the grid is still open after the date was set; committing a value closes it")
+	}
+	if comboText == "" || strings.Contains(comboText, "2028-02-25") {
+		t.Errorf("the box reads %q; it should show the date in the page's own words, not the wire format", comboText)
+	}
+	if selectedDay != "2028-02-25" {
+		t.Errorf("reopened, the grid marks %q as selected, want 2028-02-25", selectedDay)
+	}
+	if disabledCount != 0 {
+		t.Errorf("%d days are disabled on a field with no min or max", disabledCount)
+	}
+
+	select {
+	case got := <-submitted:
+		if got != "2028-02-25" {
+			t.Errorf("the server received due=%q, want 2028-02-25", got)
+		}
+	default:
+		t.Fatal("the form never reached the server")
+	}
+
+	rig.Screen("body", "after the calendar journey")
+}
+
+// A time field has no calendar, so its button opens the clock instead:
+// every half hour of the day, in the field's own locale, scrolled to the
+// one it is already showing. Its own drive because it is its own popup —
+// and because the failure it guards against is the one the whole branch
+// began with. datetime.js used to hand a time field to showPicker() too,
+// and on the engines where a time input has no panel, that button was a
+// control that did nothing at all.
+func TestTimeFieldOpensAClockRatherThanACalendar(t *testing.T) {
+	mux, submitted := datePage(t, "field-time", "at")
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 180*time.Second)
+	defer cancelTimeout()
+
+	var (
+		calendars, slots int
+		haspopup, label  string
+		firstSlot, last  string
+		activeText       string
+		nativeValue      string
+	)
+
+	reached := "start"
+	at := func(name string) chromedp.Action {
+		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	}
+
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
+		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+
+		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-haspopup') ?? ''`, &haspopup),
+		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-label') ?? ''`, &label),
+
+		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery), at("pressed-the-button"),
+		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("slots-drawn"),
+
+		// No calendar was built for it, and the popup is the day's half
+		// hours: twenty-four hours at two slots each.
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]').length`, &calendars),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &slots),
+		chromedp.Evaluate(`document.querySelector('[role="option"] [rst-dtp-label]')?.textContent ?? ''`, &firstSlot),
+		chromedp.Evaluate(`(function () {
+			var all = document.querySelectorAll('[role="option"] [rst-dtp-label]');
+			return all.length ? all[all.length - 1].textContent : '';
+		})()`, &last),
+		chromedp.Evaluate(`document.querySelector('[role="option"].is-active [rst-dtp-label]')?.textContent ?? ''`, &activeText),
+
+		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("committed-a-slot"),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			deadline := time.Now().Add(10 * time.Second)
+			for {
+				var v string
+				if err := chromedp.Evaluate(`document.querySelector('input[name="at"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+					return err
+				}
+				if v != "" {
+					nativeValue = v
+					return nil
+				}
+				if time.Now().After(deadline) {
+					return fmt.Errorf("the carrier never took a value within 10s of Enter on a slot")
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(100 * time.Millisecond):
+				}
+			}
+		}), at("read-carrier-value"),
+
+		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
+		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+	); err != nil {
+		t.Fatalf("drive failed after %q: %v\n  slots=%d first=%q active=%q", reached, err, slots, firstSlot, activeText)
+	}
+
+	if haspopup != "listbox" {
+		t.Errorf("the time field's button says aria-haspopup=%q, want listbox: it opens a list of times, not a dialog", haspopup)
+	}
+	if label == "" || strings.Contains(strings.ToLower(label), "calendar") {
+		t.Errorf("the time field's button is labelled %q; a time field opens a clock", label)
+	}
+	if calendars != 0 {
+		t.Errorf("%d calendar panels were built for a time field", calendars)
+	}
+	if slots != 48 {
+		t.Errorf("the clock offers %d slots, want 48 — every half hour of the day", slots)
+	}
+	if firstSlot == "" || last == "" || firstSlot == last {
+		t.Errorf("the slots do not span a day: first=%q last=%q", firstSlot, last)
+	}
+	// Something is armed, so Enter commits a time rather than nothing.
+	if activeText == "" {
+		t.Error("no slot is highlighted, so Enter would commit nothing")
+	}
+	// The carrier holds a wire clock, and one that lands on a half hour.
+	if !regexp.MustCompile(`^\d{2}:(00|30)$`).MatchString(nativeValue) {
+		t.Errorf("the carrier holds %q, want a HH:00 or HH:30 wire time", nativeValue)
+	}
+
+	select {
+	case got := <-submitted:
+		if got != nativeValue {
+			t.Errorf("the server received at=%q, but the carrier held %q", got, nativeValue)
+		}
+	default:
+		t.Fatal("the form never reached the server")
 	}
 }

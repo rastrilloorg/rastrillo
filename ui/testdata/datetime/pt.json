@@ -44,5 +44,5 @@
   {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
   {"id": "spelled-out-quantity", "input": "em duas semanas", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null},
-  {"id": "weekday-without-its-feira-is-not-a-name-intl-knows", "input": "próxima segunda", "now": "2026-08-28T10:30", "expected": null}
+  {"id": "weekday-without-its-feira-is-completed-into-one", "input": "próxima segunda", "now": "2026-08-28T10:30", "expected": "2026-08-31T09:00"}
 ]
