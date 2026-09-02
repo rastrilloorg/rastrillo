@@ -29,8 +29,13 @@ if err != nil {
 r.Post("/signin", a.Begin)
 r.Get("/auth/callback", a.Callback)
 r.Get("/auth/verify", a.Verify)
+r.Post("/auth/verify", a.Verify)
 r.Post("/signout", a.Signout)
 ```
+
+`Verify` wants both methods, and the reason is
+[link scanners](#link-scanners-eat-magic-links). Mount only the GET and
+the confirm step 405s, which means nobody signs in.
 
 The migration order is not optional:
 
@@ -123,6 +128,55 @@ r.Use(a.RequireSession)
 and `a.RequireFreshSession(maxAge)` for step-up, matching
 `sessions.Require` and `sessions.RequireFresh` — see
 [Sessions](/docs/sessions).
+
+## Link scanners eat magic links
+
+Corporate mail goes through a security gateway — Microsoft Defender's
+Safe Links, Proofpoint URL Defense, Barracuda, a long tail of others.
+They fetch every URL in an inbound message before the recipient opens
+it. A single-use sign-in link that redeems on GET is therefore spent by
+the time the person clicks it, and all they see is "that link has
+expired". Forward the message and it happens again.
+
+So `GET /auth/verify` consumes nothing. It draws a small page naming the
+app you're signing in to, with one button; the button POSTs the token,
+and the POST is what redeems it. Scanners issue GETs, not form
+submissions, so the link survives them. The cost is one extra click.
+
+That is the whole defence. It is deliberately not user-agent sniffing:
+gateways drive real headless browsers now, and you cannot win that game
+for long.
+
+Two consequences worth knowing. A link that has already been used shows
+the confirm page and only then reports `?err=expired`, because the GET
+looks nothing up. And the POST is same-origin-checked like `Begin` and
+`Signout`, so a refused post doesn't spend the link on its way to the
+403.
+
+### Drawing the page yourself
+
+The default page is self-contained — no layout, no assets, no script —
+so upgrading costs you nothing but the extra route. Set `RenderConfirm`
+when you'd rather it looked like your app:
+
+```go
+a, err := auth.New(auth.Config{
+	// ...
+	RenderConfirm: func(w http.ResponseWriter, r *http.Request, d auth.ConfirmPageData) {
+		page.Confirm(w, d) // d.Token, d.Action, d.Host
+	},
+})
+```
+
+Your form needs `method="post"`, `action` set to `d.Action`, and a
+hidden field named `token` holding `d.Token`. Miss one and nobody signs
+in.
+
+rastrillo sets `Cache-Control: no-store`, `Referrer-Policy: no-referrer`
+and `frame-ancestors 'none'` before handing you the writer. Leave them
+be. The last one matters more than it sounds: without it, someone can
+frame the confirm page carrying a token minted for *their* address, coax
+a click out of your user, and land them inside the attacker's account.
 
 ## Links are single-use
 

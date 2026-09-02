@@ -74,9 +74,16 @@ the sessions table, and `migrate.Merge`'s argument order is apply order.
 ```text
 POST /signin         -> Auth.Begin
 GET  /auth/verify    -> Auth.Verify     (the emailed link's landing)
+POST /auth/verify    -> Auth.Verify     (confirming that landing)
 GET  /auth/callback  -> Auth.Callback   (the keymail OAuth return)
 POST /signout        -> Auth.Signout
 ```
+
+`Verify` answers on both methods and needs both mounted. The GET draws a
+confirm page and redeems nothing; the POST redeems. That is what stops a
+mail-security gateway spending the link before its recipient sees it —
+see [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
+Anything else gets a 405.
 
 The sign-in page stays yours. These handlers report outcomes by
 redirecting to `SigninPath` with a query your page renders: `?sent=1`
@@ -112,6 +119,27 @@ upstream ceremony produces, so it cannot drift from it.
 `NewToken` and `HashToken` re-export the
 [sessions](/docs/reference/sessions) helpers, so a caller already
 holding an `*Auth` need not import both.
+
+## The confirm page
+
+```go
+type ConfirmPageData struct {
+	Token  string // carry it in a hidden field named "token"
+	Action string // where the form posts: the request's own path
+	Host   string // Config.Origin without its scheme, for the copy
+}
+```
+
+`Config.RenderConfirm func(w, r, ConfirmPageData)` draws the page in
+your layout. Nil gets a self-contained default, so upgrading needs no
+code change beyond the POST route.
+
+Before calling you, `Verify` sets `Cache-Control: no-store`,
+`Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`,
+`X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors
+'none'`. The framing headers are login-CSRF defence: a framed confirm
+button carrying an attacker's token signs your user into the attacker's
+account.
 
 ## Links are single-use
 

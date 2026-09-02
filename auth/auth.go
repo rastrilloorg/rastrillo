@@ -10,12 +10,20 @@
 // The shape: an app builds one *Auth at boot (New), merges auth.Schema
 // into its migrate.Set — migrate.Merge(sessions.Schema, auth.Schema),
 // since auth's backfill migration reads the sessions table — and
-// mounts four handlers —
+// mounts five routes —
 //
 //	POST /signin         → a.Begin
 //	GET  /auth/callback  → a.Callback   (the keymail OAuth return)
 //	GET  /auth/verify    → a.Verify     (the magic-link landing)
+//	POST /auth/verify    → a.Verify     (confirming that landing)
 //	POST /signout        → a.Signout
+//
+// Verify wants both methods. The GET draws a confirm page and spends
+// nothing; the POST redeems. That is what keeps a mail-security
+// gateway — Safe Links, URL Defense and the rest, which fetch every
+// link in an inbound message before the recipient sees it — from
+// spending a single-use link on the recipient's behalf. Mount the GET
+// alone and the confirm form 405s: sign-in breaks, loudly.
 //
 // — then guards routes with a.RequireSession and reads the signed-in
 // identity with auth.From(r). The signin *page* stays the app's: Begin
@@ -146,6 +154,15 @@ type Config struct {
 	// ignorant of any particular factor — anything with this signature
 	// can gate.
 	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
+
+	// RenderConfirm draws the magic-link confirm page — the
+	// interstitial that keeps a mail-security scanner's GET from
+	// spending the link. Nil gets a self-contained default page, so an
+	// app upgrading into this behavior needs no code change beyond
+	// mounting Verify on POST as well as GET. Set it to put the
+	// confirmation in your own layout: write the response yourself,
+	// including a form that POSTs d.Token as "token" to d.Action.
+	RenderConfirm func(w http.ResponseWriter, r *http.Request, d ConfirmPageData)
 
 	// SigninPath is the app's sign-in page, the target of outcome
 	// redirects. Default "/signin".

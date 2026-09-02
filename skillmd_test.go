@@ -84,7 +84,19 @@ import (
 // closed 146 of the 437, which is the honest measure of how much slack
 // is left in re-squeezing: not much. The lever with room in it is still
 // the one named above, sixteen unlinked docs pages.
-const skillBudget = 19_000
+//
+// Raised 19,000 -> 19,500 on 2026-09-02, the same day, and by the same
+// mechanism the entry above predicted: main arrived at 19,199 — already
+// 199 over — from a merge of two branches that each passed on their own.
+// The magic-link confirm step then had to say one more thing, because an
+// app that mounts Verify on GET alone has a sign-in that 405s, and an app
+// that never learns about the POST has links a mail gateway spends before
+// the recipient sees them. Neither is discoverable from the source.
+// Trimmed first: the modern-CSS bullet gave up 99 bytes of restated
+// argument, which is again the honest measure of the slack left in the
+// prose. Everything else in the file is a fact you cannot get wrong
+// quietly, so the ceiling moved instead.
+const skillBudget = 19_500
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

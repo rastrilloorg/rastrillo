@@ -100,11 +100,48 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	a.admit(w, r, id)
 }
 
-// Verify is GET /auth/verify: the magic-link landing. One error for
-// unknown, used and expired alike — signin refuses to be an oracle, and
-// so does this handler.
+// Verify is the magic-link landing, and it answers on two methods —
+// mount it on both:
+//
+//	r.Get("/auth/verify", a.Verify)
+//	r.Post("/auth/verify", a.Verify)
+//
+// GET draws a confirm page and consumes nothing. POST redeems the token
+// the page carries. The split exists because mail-security gateways
+// fetch every link in an inbound message before the recipient sees it,
+// and a GET that redeemed would hand a single-use sign-in to the
+// scanner — the person then clicks a link that is already spent. See
+// confirm for the full reasoning.
+//
+// A GET-only mount fails loudly: the confirm form 405s and nobody signs
+// in. That is the intended failure — a silent one would be a sign-in
+// flow quietly regressing to scanner-burnable links.
+//
+// One error for unknown, used and expired alike — signin refuses to be
+// an oracle, and so does this handler.
 func (a *Auth) Verify(w http.ResponseWriter, r *http.Request) {
-	id, err := a.flow.CompleteMagicLink(r.Context(), r.URL.Query().Get("token"))
+	switch r.Method {
+	case http.MethodGet, http.MethodHead:
+		a.confirm(w, r)
+	case http.MethodPost:
+		a.redeem(w, r)
+	default:
+		w.Header().Set("Allow", "GET, HEAD, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// redeem is the POST half of Verify: consume the token and mint the
+// session. Same-origin-checked like Begin and Signout — the token is a
+// bearer credential, and this is a browser-form endpoint, so a post
+// carrying no browser evidence of same-origin submission (a scanner
+// that decided to submit the form out of band, say) is refused.
+func (a *Auth) redeem(w http.ResponseWriter, r *http.Request) {
+	if !a.sameOrigin(r) {
+		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
+		return
+	}
+	id, err := a.flow.CompleteMagicLink(r.Context(), r.FormValue("token"))
 	if err != nil {
 		a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
 		return

@@ -8,6 +8,36 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Changed — mount `auth.Verify` on POST as well as GET
+
+Mail-security gateways — Microsoft Defender's Safe Links, Proofpoint URL
+Defense, Barracuda and the rest — fetch every URL in an inbound message before
+the recipient opens it. `GET /auth/verify` redeemed the link on sight, so for
+anyone behind such a gateway the sign-in was spent by the time they clicked it,
+and all they ever saw was "that link had expired".
+
+The GET now consumes nothing. It draws a confirm page naming the app, with one
+button, and the button POSTs the token back; the POST is what redeems. Scanners
+issue GETs, not form submissions.
+
+**Every app using `rastrillo/auth` must add the POST route:**
+
+```go
+r.Get("/auth/verify", a.Verify)
+r.Post("/auth/verify", a.Verify)   // new
+```
+
+Miss it and the confirm form 405s, which means nobody signs in. That failure is
+loud on purpose — the alternative was a sign-in flow that keeps working for you
+and quietly stays burnable for your users at large companies.
+
+The default confirm page is self-contained, so nothing else changes. Set
+`auth.Config.RenderConfirm` to draw it in your own layout: you get the token,
+the path to post it back to, and your host for the copy. Full treatment in
+[Magic links](docs/site/magic-links.md).
+
 ## v0.25.0
 
 Written after the fact. This release was tagged without a prep commit, so it
