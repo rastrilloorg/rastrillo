@@ -1307,6 +1307,17 @@ var srcdocScripts = []struct {
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
 	{"select.js", []string{"data-rst-select"}},
+	// calendar.js comes FIRST, and the order is load-bearing here in a
+	// way it is not on an ordinary page. datetime.js scans on
+	// DOMContentLoaded, but a srcdoc document is already past "loading"
+	// when its deferred scripts run, so it scans the moment it
+	// executes. Loaded after it, calendar.js has not published its
+	// factory yet: every field in the frame enhances without a
+	// calendar, and the button falls back to the browser's own picker —
+	// the control this overlay exists to replace, restored by a script
+	// tag in the wrong order. Same hooks, because calendar.js draws
+	// nothing on its own and a frame needs the pair or neither.
+	{"calendar.js", []string{"data-rst-date", "data-rst-time", "data-rst-range"}},
 	{"datetime.js", []string{"data-rst-date", "data-rst-time", "data-rst-range"}},
 }
 
@@ -2195,6 +2206,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <script src="{{.Mount}}/gallery.js"></script>
 <script defer src="{{.Mount}}/rastrillo.js"></script>
 <script defer src="{{.Mount}}/select.js"></script>
+<script defer src="{{.Mount}}/calendar.js"></script>
 <script defer src="{{.Mount}}/datetime.js"></script>
 </head>
 <body>
