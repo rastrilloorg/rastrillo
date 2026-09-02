@@ -1341,7 +1341,7 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	b.WriteString("<!doctype html>\n")
 	b.WriteString(`<html lang="` + locale + `" dir="` + rastrillo.Dir(locale) + `">` + "\n")
 	b.WriteString("<head>\n<meta charset=\"utf-8\">\n")
-	b.WriteString(`<meta name="viewport" content="width=device-width, initial-scale=1">` + "\n")
+	b.WriteString(`<meta name="viewport" content="width=device-width">` + "\n")
 	// The same words the frame's title attribute carries. A frame is a
 	// document, and a document with no title fails WCAG 2.4.2 — which
 	// the a11y gate says out loud, because it scans these documents in
@@ -2198,7 +2198,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>{{.Title}} — {{P "rastrillo design system"}} — {{.Theme}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
@@ -2509,7 +2509,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>{{P "The modal route"}} — {{P "rastrillo design system"}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">

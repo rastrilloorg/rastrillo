@@ -1818,6 +1818,40 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-error__ref, [rst-error-ref] { color: var(--rst-text-faint); margin-block: 2rem 0; }
 
 /* ---------------------------------------------------------------------
+   Touch: the two zooms nobody asked for.
+
+   Mobile Safari zooms the whole page when it focuses a form control
+   whose text is under 16px, and this file's base type is 14px on
+   purpose. So every text-entry control comes back up to 16px where the
+   pointer is coarse, and stays 14px under a mouse. max() rather than a
+   flat 1rem, so a control deliberately set larger keeps its size; rem
+   rather than px, so a reader who raised the browser default keeps the
+   increase. This is the fix. The other one — user-scalable=no in the
+   viewport tag — buys the same quiet by taking pinch-zoom away from
+   everyone, which is a WCAG 1.4.4 failure and not on offer here.
+
+   Double-tap is the second zoom: tap a button or a row twice in quick
+   succession and the second tap lands as a zoom gesture rather than a
+   click. touch-action: manipulation drops that gesture on interactive
+   elements only, so panning and pinch-zoom are untouched, and so is
+   double-tapping prose or an image, which is a real way to read a
+   narrow column. :where() weighs nothing, so any rule can override it.
+   --------------------------------------------------------------------- */
+
+@media (pointer: coarse) {
+  input, select, textarea,
+  .rst-input, [rst-input],
+  .rst-textarea, [rst-textarea],
+  .rst-search input[type="search"], [rst-search] input[type="search"] {
+    font-size: max(1rem, 1em);
+  }
+}
+
+:where(a[href], button, input, select, textarea, label, summary, [role="button"], [role="tab"], [role="option"]) {
+  touch-action: manipulation;
+}
+
+/* ---------------------------------------------------------------------
    Utilities, last on purpose.
 
    .rst-sr-only competes with component rules of the same specificity —
