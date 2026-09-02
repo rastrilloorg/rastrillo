@@ -10,12 +10,20 @@
 // The shape: an app builds one *Auth at boot (New), merges auth.Schema
 // into its migrate.Set — migrate.Merge(sessions.Schema, auth.Schema),
 // since auth's backfill migration reads the sessions table — and
-// mounts four handlers —
+// mounts five routes —
 //
 //	POST /signin         → a.Begin
 //	GET  /auth/callback  → a.Callback   (the keymail OAuth return)
 //	GET  /auth/verify    → a.Verify     (the magic-link landing)
+//	POST /auth/verify    → a.Verify     (confirming that landing)
 //	POST /signout        → a.Signout
+//
+// Verify wants both methods. The GET draws a confirm page and spends
+// nothing; the POST redeems. That is what keeps a mail-security
+// gateway — Safe Links, URL Defense and the rest, which fetch every
+// link in an inbound message before the recipient sees it — from
+// spending a single-use link on the recipient's behalf. Mount the GET
+// alone and the confirm form 405s: sign-in breaks, loudly.
 //
 // — then guards routes with a.RequireSession and reads the signed-in
 // identity with auth.From(r). The signin *page* stays the app's: Begin
@@ -234,6 +242,17 @@ type Config struct {
 	// remembered to begin with. A pointer because an explicit false must
 	// be told apart from unset.
 	Remember *bool
+
+	// RenderConfirm draws the page an emailed link lands on: GET
+	// Verify's confirm step, which spends nothing so a mail-security
+	// scanner's fetch cannot spend the link. Nil gets a self-contained
+	// English page. With SigninScreen on, set it to your sign-in page's
+	// handler: SigninState(r) on the request it is given answers
+	// StepConfirm, and ui's signin partial draws a Sign in button in
+	// your layout. Otherwise write the page yourself, with a form that
+	// POSTs d.Token as "token" to d.Action. Either way the headers that
+	// keep the page out of caches and frames are already set.
+	RenderConfirm func(w http.ResponseWriter, r *http.Request, d ConfirmPageData)
 
 	// KeymailServers is the closed set of keymail servers (host or
 	// host:port, compared ignoring case, one trailing dot and an

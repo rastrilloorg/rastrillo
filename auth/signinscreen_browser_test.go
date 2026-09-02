@@ -130,6 +130,8 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 			}
 		}
 		mux.HandleFunc("GET /signin", signinPage(true))
+		// The emailed link lands on the same screen, as an app wires it.
+		a.cfg.RenderConfirm = func(w http.ResponseWriter, r *http.Request, _ ConfirmPageData) { signinPage(true)(w, r) }
 		// The same screen in an app with no passkeys: email only.
 		mux.HandleFunc("GET /signin-plain", signinPage(false))
 		// An ordinary page, to show the door's module is not everyone's.
@@ -141,6 +143,7 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		mux.HandleFunc("POST /signin/forget", a.Forget)
 		mux.HandleFunc("GET /auth/callback", a.Callback)
 		mux.HandleFunc("GET /auth/verify", a.Verify)
+		mux.HandleFunc("POST /auth/verify", a.Verify)
 		mux.HandleFunc("POST /signout", a.Signout)
 		mux.HandleFunc("POST /passkey/discover/begin", pk.DiscoverBegin)
 		mux.HandleFunc("POST /passkey/discover/finish", pk.DiscoverFinish)
@@ -362,6 +365,21 @@ func awaitSent(t *testing.T, rig *harness.Rig) string {
 
 var verifyLink = regexp.MustCompile(`http://localhost:\d+/auth/verify\?token=[A-Za-z0-9_-]+`)
 
+// openLink opens the latest emailed link and presses Sign in on the
+// screen it lands on, the way a person does: opening it spends nothing,
+// so the press is what signs in, through csrf.Protect and the app's CSP.
+func openLink(t *testing.T, rig *harness.Rig, app *screenApp) {
+	t.Helper()
+	confirm := `form[action="/auth/verify"] button[autofocus]`
+	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible(confirm, chromedp.ByQuery))
+	var label string
+	eval(t, rig, `document.querySelector('form[action="/auth/verify"] button').textContent.trim()`, &label)
+	if want := rastrillo.BaseCatalog()["rastrillo.ui.signin_confirm_submit"]; label != want {
+		t.Fatalf("the confirm button reads %q, want %q", label, want)
+	}
+	run(t, rig, chromedp.Click(confirm, chromedp.ByQuery), chromedp.WaitVisible("#home", chromedp.ByQuery))
+}
+
 const registerPasskey = `(async () => {
   const m = await import("/static/webauthn.mjs");
   const post = (u, b) => fetch(u, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(b || {})});
@@ -527,7 +545,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	rig.Screen("[rst-signin]", "the Sent screen")
 
 	// The link signs Ada in; she enrols a passkey and signs out.
-	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible("#home", chromedp.ByQuery))
+	openLink(t, rig, app)
 	var status float64
 	eval(t, rig, registerPasskey, &status)
 	if status != http.StatusOK {
@@ -681,7 +699,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 			t.Fatalf("Sent names %q", s)
 		}
 		requireReflow(t, rig, "the Sent page with "+address)
-		run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible("#home", chromedp.ByQuery))
+		openLink(t, rig, app)
 		signOut(t, rig)
 		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin"] button[autofocus]`, chromedp.ByQuery))
 		eval(t, rig, `document.querySelector("form[action='/signin'] button[autofocus]").textContent.replace(/\s+/g, " ").trim()`, &s)

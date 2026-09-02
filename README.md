@@ -322,9 +322,11 @@ the meantime. This list is their union. **Built:**
   fails open, so every address always works), wrapping
   `keymaildev/signin` the way seapointish's reviewed integration does —
   explicit rate limiter, single-use links via `DELETE … RETURNING`,
-  real session revocation, same-origin CSRF on every state-changing
-  handler, an `Authorize` admission hook, and `RequireFreshSession`
-  for step-up on sensitive routes.
+  a confirm step so a mail-security gateway's prefetch cannot spend the
+  link before its recipient clicks it, real session revocation,
+  same-origin CSRF on every state-changing handler, an `Authorize`
+  admission hook, and `RequireFreshSession` for step-up on sensitive
+  routes.
 - **`rastrillo/secondfactor`** — the seam between a verified first
   factor and the session it earns: the pending half-session (`Hold`,
   wired into a plugin's `SecondFactor` hook, trades a would-be session

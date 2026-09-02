@@ -44,6 +44,14 @@
 <h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_continue_heading"}}</h1>
 <p>{{T "rastrillo.ui.signin_continue_body"}}</p>
 <a rst-btn="primary block" href="{{if $preview}}#{{else}}{{$s.ContinueURL}}{{end}}">{{T "rastrillo.ui.signin_to_keymail"}}</a>
+{{else if eq $door "confirm"}}{{/* Where the emailed link lands, inside auth's RenderConfirm. Opening
+     the link spent nothing; this button spends it, so a mail scanner's
+     fetch cannot. No proof: Verify checks none, and the token is the
+     proof of work here. */}}<h1 id="rst-signin-heading">{{Tf "rastrillo.ui.signin_heading" "name" $name}}</h1>
+<form rst-signin-form method="post" action="{{$s.Confirm.Action}}">
+<input type="hidden" name="token" value="{{$s.Confirm.Token}}">
+<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}>{{T "rastrillo.ui.signin_confirm_submit"}}</button>
+</form>
 {{else if eq $door "sent"}}<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_sent_heading"}}</h1>
 {{if $s.SentInstead}}<p>{{T "rastrillo.ui.signin_sent_instead"}}</p>
 {{end}}<p>{{if $s.SentTo}}{{Tbdi "rastrillo.ui.signin_sent_to" "address" $s.SentTo}}{{else}}{{T "rastrillo.ui.signin_sent_inbox"}}{{end}} {{T "rastrillo.ui.signin_sent_once"}}</p>
@@ -86,9 +94,10 @@
 {{end}}{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
 {{end}}{{end}}{{end}}{{end}}{{end}}{{/* The way out of a remembered or kept address — the three one-taps
      and Sent — written once, after whichever door this is. Not on Ask,
-     where the field already is the different email, and not on
-     Continue, which has no controls but its link. */}}{{if and (ne $door "ask") (ne $door "continue")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
-{{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (not $preview)}}{{$proof.Script}}{{end}}</div>
+     where the field already is the different email, not on Continue,
+     which has no controls but its link, and not on Confirm, whose link
+     may have been sent to anyone. */}}{{if and (ne $door "ask") (ne $door "continue") (ne $door "confirm")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
+{{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (ne $door "confirm") (not $preview)}}{{$proof.Script}}{{end}}</div>
 </section>{{end}}
 {{/* signin-title — the document title for the same state, for the
      page's title block: every state has one heading and a title
