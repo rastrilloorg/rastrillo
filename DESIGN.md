@@ -253,6 +253,27 @@ weight and colour before size. A card's `<h2>` is body-sized at 600;
 reaching for a larger size to make a section feel important is how this
 system loses its density.
 
+**The Grouped Number Rule.** Every number a person reads as a quantity is
+grouped for their locale — `54,173` in English, `54.173` in German,
+`٥٤٬١٧٣` in Arabic. Never a bare run of digits. Grouping is not "add a
+comma": the separator, the group size and the digits themselves all
+change with the locale, and a number's readability is the whole reason
+the rule exists — `54173` is counted, `54,173` is read.
+
+The exception is exact and small: **an identifier is not a quantity.**
+Reference codes, order numbers, years, versions and port numbers are
+labels that happen to be made of digits, and grouping one changes what it
+appears to be. Order 4471 is not order 4,471.
+
+This rule is **ruled and not yet met**. `form.FormatCents` writes
+`$1284.50` today. Grouping needs the reader's locale, which the server
+has, and `golang.org/x/text` is already in the module graph — so the gap
+is a decision about `FormatCents`'s signature rather than a missing
+capability. Where a number is grouped in the browser instead,
+`Intl.NumberFormat` is legitimate enhancement here in a way it is not for
+currency: an ungrouped number is harder to read but still correct, while
+a currency guessed from the reader's locale is wrong.
+
 ## Layout
 
 A single centred content column, capped at **64rem** with `1.5rem 1rem
@@ -414,6 +435,8 @@ because a falling number is good about as often as it is bad.
   both schemes.
 - **Do** give state a second signal besides colour — a label, a sign, a
   number as text.
+- **Do** group the digits of any number a person reads as a quantity, for
+  their locale — and never group an identifier, a year or a version.
 - **Do** keep type in `rem` and the base at 14px, so the scale tracks a
   reader's own browser setting.
 - **Do** use logical properties (`border-inline-start`,
