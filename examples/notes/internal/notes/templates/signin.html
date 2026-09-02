@@ -1,16 +1,12 @@
 {{define "content"}}
-<h1>Sign in</h1>
+{{template "page-header" dict "Title" "Sign in"}}
 {{with .Content}}
-{{if .Error}}<p role="alert" class="error">{{.Error}}</p>{{end}}
-<form method="post" action="/signin">
+{{template "form-error" .Error}}
+<form rst-form method="post" action="/signin">
 <input type="hidden" name="return_to" value="{{.ReturnTo}}">
-<label>Email
-<input type="email" name="email" value="{{.Email}}" required autofocus>
-</label>
-<label>Password
-<input type="password" name="password" required>
-</label>
-<button type="submit">Sign in</button>
+{{template "field-text" dict "Name" "email" "Label" "Email" "Type" "email" "Value" .Email "Required" true "Autocomplete" "email"}}
+{{template "field-text" dict "Name" "password" "Label" "Password" "Type" "password" "Required" true "Autocomplete" "current-password"}}
+{{template "form-foot" dict "Submit" "Sign in"}}
 </form>
 {{end}}
 <p><a href="/signup">Need an account? Sign up</a></p>

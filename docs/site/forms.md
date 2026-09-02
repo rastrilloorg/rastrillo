@@ -197,6 +197,60 @@ Both handle negatives correctly, writing the sign once against the
 absolute value. Formatting a negative directly produces `"$-1.-50"`,
 since Go's `/` and `%` both truncate toward zero.
 
+## What a form looks like
+
+Everything above is about reading a form. This is about drawing one,
+and it is the half that gets hand-rolled by accident: `<label>Email
+<input></label>` compiles, submits and validates perfectly well, so
+nothing fails — it just renders as a ragged column of labels sitting
+inline beside inputs of a dozen different widths, with an unstyled
+button under it.
+
+**A labelled control is never hand-written.** Three partials cover
+every field this framework has, and each one draws the label above the
+control, wires `aria-describedby` to whichever of the hint and error
+lines actually rendered, and sets `aria-invalid` when there is an
+error:
+
+```html
+<form rst-form method="post" action="/notes">
+{{template "field-text" dict "Name" "title" "Label" "Title" "Value" .Note.Title "Required" true "Error" (index .Errors "Title")}}
+{{template "field-textarea" dict "Name" "body" "Label" "Body" "Value" .Note.Body "Error" (index .Errors "Body")}}
+{{template "form-foot" dict "Submit" "Create" "CancelHref" "/" "CancelLabel" "Cancel"}}
+</form>
+```
+
+`field-select` is the third, and `field-check`, `field-date`,
+`field-datetime`, `field-time` and `field-daterange` handle the rest.
+`field` is the older, more configurable text control — reach for it
+when you need `Pattern`, `Maxlength` or `Placeholder`.
+
+`rst-form` is yours to write, as `rst-page` and `rst-list` are. It is
+what makes the column a column: a `44rem` maximum, so lines stay
+readable, and a consistent gap between fields. Without it the fields
+are loose in the page and inherit whatever the surrounding layout does.
+
+`form-foot` closes the form. It emits one primary submit and, given
+`CancelHref`, a cancel that is a real `<a>` — leaving a form is
+navigation, so it must survive middle-click, a new tab and no JS.
+Destructive actions do not belong there; they get a confirm route of
+their own.
+
+### Buttons have a size
+
+`rst-btn` comes in three steps — `sm`, the default, and `lg` — and the
+size composes with the variant, so a form's submit is
+`rst-btn="primary lg"`. `form-foot` already writes that for you.
+
+The default step is sized for a control that sits beside other controls:
+a page-header action, a button in a row. It is the wrong size for a
+form's submit, and the failure is easy to recognise once you have seen
+it — a 34px-tall button with a 12.5px label stretched the full width of
+a 44rem column reads as a skinny blue bar rather than the thing the
+screen is asking you to press. If you are reaching for a full-width
+button, that is `rst-btn="primary lg block"`, and `block` centres its
+own label.
+
 ## Two fields on one row
 
 `rst-field-row` is the wrapper for fields that belong side by side — a

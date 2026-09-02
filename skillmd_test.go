@@ -84,7 +84,30 @@ import (
 // closed 146 of the 437, which is the honest measure of how much slack
 // is left in re-squeezing: not much. The lever with room in it is still
 // the one named above, sixteen unlinked docs pages.
-const skillBudget = 19_000
+// Raised 19,000 -> 20,000 on 2026-09-02 for the form-markup rule in
+// §7's UI bullet, and this one is worth naming because the file's
+// silence was itself the bug.
+//
+// SKILL.md described how to READ a form — form.Parse, the kinds, the
+// Select allowlist — and said nothing about how to DRAW one. An agent
+// following it wrote `<label>Email <input></label>` and an unstyled
+// <button>, which compiles, submits, validates and passes every test
+// in this repo. The only in-repo model was examples/notes, which was
+// written the same way, so the mistake was being taught rather than
+// merely permitted. That is the exact failure mode the budget comment
+// above calls out as the reason a block stays inline: getting it wrong
+// is silent.
+//
+// Trimmed first, per AGENTS.md, and the honest report is that there
+// was little left to take: the entry was cut by roughly a fifth in
+// review (the worked markup went to forms.md's new "What a form looks
+// like" section, which the bullet's existing templates.md and
+// forms.md pointers already reach), and that closed 110 of the 537.
+// The two documented squeeze passes before this one did their job.
+// The lever named above — sixteen unlinked docs pages — is still the
+// one with room in it, and this change spent a little of it in the
+// right direction by giving forms.md the detail rather than the file.
+const skillBudget = 20_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

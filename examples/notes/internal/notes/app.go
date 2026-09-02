@@ -132,6 +132,25 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		w.Write(ui.ShimJS())
 	})
 
+	// The stylesheet, served the same way and for the same reason. It
+	// is one response rather than two files because tokens.css styles
+	// nothing without a theme to supply the colours: the tokens are
+	// written in terms of custom properties a theme defines, so an
+	// example that served only the first would render as bare HTML and
+	// look like the design system had failed. day is the default and
+	// the reference theme.
+	r.Get("/static/app.css", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		theme, ok := ui.ThemeCSS("day")
+		if !ok {
+			http.Error(w, "theme missing", http.StatusInternalServerError)
+			return
+		}
+		w.Write(theme)
+		w.Write([]byte("\n"))
+		w.Write(ui.TokensCSS())
+	})
+
 	mux := http.NewServeMux()
 	mux.Handle("/", r)
 	return mux, nil

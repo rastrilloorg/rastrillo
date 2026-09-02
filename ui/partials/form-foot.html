@@ -9,13 +9,19 @@
      Wrap the whole form in <form rst-form> — the app owns that
      element, as it owns [rst-page] and [rst-list].
 
+     Both buttons are `lg`. A form's submit is the thing the screen is
+     asking you to press, not a toolbar control, and the default button
+     step is sized for the latter — see tokens.css's button-size block.
+     Cancel matches it because two buttons side by side at different
+     heights read as a rendering fault rather than a hierarchy.
+
      Keys:
        Submit       string, required — the submit button's text
        CancelHref   string, optional — the cancel link target, with
        CancelLabel  string           — its visible text */}}
 {{define "form-foot"}}<div rst-form-foot>
-  <button rst-btn="primary" type="submit">{{.Submit}}</button>
+  <button rst-btn="primary lg" type="submit">{{.Submit}}</button>
   {{- if .CancelHref}}
-  <a rst-btn href="{{.CancelHref}}">{{.CancelLabel}}</a>
+  <a rst-btn="lg" href="{{.CancelHref}}">{{.CancelLabel}}</a>
   {{- end}}
 </div>{{end}}

@@ -22,10 +22,20 @@
        Hint          string, optional — muted guidance under the input
        Error         string, optional — validation message; also sets
                      aria-invalid
-       Autocomplete  string, optional — the autocomplete attribute */}}
+       Autocomplete  string, optional — the autocomplete attribute
+       Autofocus     bool, optional — the autofocus attribute. For the
+                     first field of a page whose whole purpose is this
+                     one form (sign in, a dedicated create screen);
+                     never a settings panel, where it steals the
+                     caret from someone who came to read.
+       Minlength     string, optional — the minlength attribute, for a
+                     rule the server already enforces. It is a courtesy
+                     to someone typing, never the check itself: a
+                     client can skip it, so the handler still validates
+                     and still renders Error. */}}
 {{define "field-text"}}<div rst-field>
   <label rst-field-label for="{{.Name}}">{{.Label}}{{if .Required}} <span rst-field-required aria-hidden="true">*</span>{{end}}</label>
-  <input rst-input id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+  <input rst-input id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{with .Minlength}} minlength="{{.}}"{{end}}{{if .Autofocus}} autofocus{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
   {{- if .Hint}}
   <small rst-field-hint id="{{.Name}}-hint">{{.Hint}}</small>
   {{- end}}

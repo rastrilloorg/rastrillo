@@ -1,15 +1,10 @@
 {{define "content"}}
-<h1>New note</h1>
+{{template "page-header" dict "Title" "New note"}}
 {{with .Content}}
-{{if .Errors.Any}}<p role="alert" class="error">{{index .Errors "Title"}}</p>{{end}}
-<form method="post" action="/notes">
-<label>Title
-<input type="text" name="title" value="{{.Note.Title}}" required autofocus>
-</label>
-<label>Body
-<textarea name="body">{{.Note.Body}}</textarea>
-</label>
-<button type="submit">Create</button>
+<form rst-form method="post" action="/notes">
+{{template "field-text" dict "Name" "title" "Label" "Title" "Value" .Note.Title "Required" true "Autofocus" true "Error" (index .Errors "Title")}}
+{{template "field-textarea" dict "Name" "body" "Label" "Body" "Value" .Note.Body "Error" (index .Errors "Body")}}
+{{template "form-foot" dict "Submit" "Create" "CancelHref" "/" "CancelLabel" "Cancel"}}
 </form>
 {{end}}
 {{end}}

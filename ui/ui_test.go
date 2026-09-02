@@ -2316,8 +2316,8 @@ func TestFormFootRendersSubmitAndCancel(t *testing.T) {
 	})
 	for _, want := range []string{
 		`<div rst-form-foot>`,
-		`<button rst-btn="primary" type="submit">Save</button>`,
-		`<a rst-btn href="/admin/posts">Back to posts</a>`,
+		`<button rst-btn="primary lg" type="submit">Save</button>`,
+		`<a rst-btn="lg" href="/admin/posts">Back to posts</a>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
