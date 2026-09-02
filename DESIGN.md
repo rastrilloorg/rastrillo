@@ -233,6 +233,10 @@ sets one property.
   nothing else. The only genuinely large type in the system.
 - **Headline** (600, 1.375rem, 1.25, −0.015em): a screen's `<h1>` in the
   page header. Drops to 1.25rem under 34rem.
+- **Field** (550, 1.0625rem = 17px, inherited 1.5): the form's headline
+  input — a title, a name — and the only control that leaves the body
+  step. Its label stays at Label size, so the emphasis is carried by
+  the reader's own words rather than by the form's furniture.
 - **Title** (600, 0.875rem, 1.4): section headings inside a card head,
   button labels, a row's name. Note that a section `<h2>` is the same
   SIZE as body text and separates by weight alone.
@@ -252,6 +256,15 @@ their browser default. Do not convert any of it to `px`.
 weight and colour before size. A card's `<h2>` is body-sized at 600;
 reaching for a larger size to make a section feel important is how this
 system loses its density.
+
+The one exception is a form's headline field (the Field step above),
+and it is an exception because of what is being sized. Everywhere else
+the rule governs *chrome* — a heading the system wrote, labelling
+content underneath it — and chrome has no business growing. A title
+input is the opposite case: the large thing is what the reader typed,
+which is the only content on a form that is not furniture. The
+exception is deliberately narrow, one control on one form; a second
+large field on the same screen is the density loss this rule is about.
 
 ## Layout
 

@@ -1410,7 +1410,7 @@ func TestFormPartialClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
 	for _, name := range []string{
 		"rst-field", "rst-field-label", "rst-field-hint", "rst-field-help", "rst-field-error",
-		"rst-input", "rst-input~=short",
+		"rst-input", "rst-input~=short", "rst-input~=primary",
 		"rst-switch", "rst-switch-track",
 		"rst-choice", "rst-choice-cards", "rst-choice-title", "rst-choice-desc",
 		"rst-seg-tabs",
@@ -2267,6 +2267,45 @@ func TestFieldTextMinimalFixture(t *testing.T) {
 	for _, absent := range []string{"aria-describedby", "aria-invalid", "required", "value=", "rst-field-hint", "rst-field-error"} {
 		if strings.Contains(got, absent) {
 			t.Errorf("%q rendered without its key: %s", absent, got)
+		}
+	}
+}
+
+// Primary is a variant token in the kind's value, not a second
+// attribute and not a class, so it composes with the other tokens the
+// value slot carries. The bare case is pinned as hard as the set one:
+// an unconditional rst-input="" would still match [rst-input], so
+// nothing would look broken while every plain field grew an empty
+// value the grammar never asked for.
+func TestFieldTextPrimaryIsAVariantToken(t *testing.T) {
+	on := render(t, "field-text", map[string]any{"Name": "title", "Label": "Title", "Primary": true})
+	if !strings.Contains(on, `<input rst-input="primary" id="title"`) {
+		t.Errorf("Primary did not reach the value slot: %s", on)
+	}
+	off := render(t, "field-text", map[string]any{"Name": "title", "Label": "Title"})
+	if strings.Contains(off, "rst-input=") {
+		t.Errorf("a field with no Primary grew a value: %s", off)
+	}
+}
+
+// field carries Short already, so Primary has to share the value slot
+// with it rather than replace it — the ~= matching is what makes two
+// variants of one kind legal, and this is the only partial where two
+// can meet.
+func TestFieldComposesShortAndPrimary(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		data map[string]any
+		want string
+	}{
+		{"neither", map[string]any{}, `<input rst-input type="text"`},
+		{"short", map[string]any{"Short": true}, `<input rst-input="short" type="text"`},
+		{"primary", map[string]any{"Primary": true}, `<input rst-input="primary" type="text"`},
+		{"both", map[string]any{"Short": true, "Primary": true}, `<input rst-input="short primary" type="text"`},
+	} {
+		c.data["ID"], c.data["Name"], c.data["Label"] = "f", "f", "L"
+		if got := render(t, "field", c.data); !strings.Contains(got, c.want) {
+			t.Errorf("%s: want %q in %s", c.name, c.want, got)
 		}
 	}
 }

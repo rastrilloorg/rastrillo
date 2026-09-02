@@ -22,10 +22,16 @@
        Hint          string, optional — muted guidance under the input
        Error         string, optional — validation message; also sets
                      aria-invalid
-       Autocomplete  string, optional — the autocomplete attribute */}}
+       Autocomplete  string, optional — the autocomplete attribute
+       Primary       bool, optional — the form's headline field, the
+                     title or name the record is known by. Size only,
+                     never colour: the control grows, the label above
+                     it stays the quiet line every other field gets.
+                     One per form — a second one leaves neither of
+                     them looking like the headline. */}}
 {{define "field-text"}}<div rst-field>
   <label rst-field-label for="{{.Name}}">{{.Label}}{{if .Required}} <span rst-field-required aria-hidden="true">*</span>{{end}}</label>
-  <input rst-input id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+  <input rst-input{{if .Primary}}="primary"{{end}} id="{{.Name}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Value}} value="{{.Value}}"{{end}}{{if .Autocomplete}} autocomplete="{{.Autocomplete}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
   {{- if .Hint}}
   <small rst-field-hint id="{{.Name}}-hint">{{.Hint}}</small>
   {{- end}}
