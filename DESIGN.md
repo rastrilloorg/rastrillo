@@ -50,6 +50,7 @@ typography:
     fontWeight: 650
     letterSpacing: "0.06em"
 rounded:
+  bar: "2px"
   sm: "6px"
   md: "8px"
   pill: "999px"
@@ -313,10 +314,22 @@ on cards and 6px on controls, `plain` 4px and 3px, `signal` 4px and 2px.
 A pill radius (999px) is reserved for status pills and count chips —
 things that are read as tokens rather than operated.
 
+A 2px radius is the thin-bar step, and it is not on the theme axis: the
+capacity meter and a running job's progress bar both use it, at a height
+of 4px where a themed 8px corner would swallow the bar whole.
+
 Borders do most of the structural work: 1px hairlines between and around
 surfaces, and a distinctly darker 1px edge on anything operable. Focus
 is a 2px accent outline offset 2px, never a border swap, so focus never
 changes an element's size.
+
+**Known gap, recorded rather than smoothed over.** `tokens.css` also
+hard-codes 9px, 7px, 4px, 10px and 14px radii in a handful of places —
+the combobox and date-picker lists, and a few small chrome pieces — that
+do not resolve through `var(--rst-radius*)`. A theme that changes its
+corner language does not change those. It is a real limit on the
+remixability this system claims, it predates this record, and it is not
+something to fix by editing one component in passing.
 
 **The Derived Rule Rule.** The page header's underline is not authored
 per theme — it is `color-mix(in oklab, var(--rst-accent) N%, var(--rst-line))`,

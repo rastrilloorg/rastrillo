@@ -1,6 +1,27 @@
 {{/* meter — a capacity bar with its number: 412/500 next to a 4px fill.
      The fraction is ALWAYS text — a bar never carries the number alone.
+
+     The bar is a native <meter>, which is the element this partial has
+     been named after since it shipped without using it (spec §6-v2.4).
+
+     Be precise about what that buys, because it is not what it looks
+     like. It buys machine-readability and the right element for a
+     scalar measurement in a known range — value and max are in the DOM
+     for anything reading the page. It does NOT buy accessibility, and
+     the aria-hidden says so out loud: role="meter" requires an
+     accessible name, the only name available here is the fraction
+     already rendered beside it, and a meter named "412 / 500" sitting
+     next to the text "412 / 500" announces everything twice. So the bar
+     stays what it always was — decoration over authoritative text, the
+     same footing person's avatar is on — and the text stays the thing a
+     reader actually gets. That is the same distinction §6-v2.4 draws
+     about <data>: machine-readability is not accessibility.
+
+     If this ever needs to be exposed, the fix is a real name for the
+     measurement ("Mailbox storage"), passed in as a key. Not the
+     fraction, and not a removal of aria-hidden on its own.
+
      Keys:
-       Percent  int, required — fill width, clamped here to 0..100
+       Percent  int, required — fill, clamped here to 0..100
        Text     string, required — the fraction, already formatted */}}
-{{define "meter"}}{{$p := .Percent}}{{if lt $p 0}}{{$p = 0}}{{end}}{{if gt $p 100}}{{$p = 100}}{{end}}<span rst-meter><span rst-meter-bar><i style="--rst-meter-fill: {{$p}}%"></i></span><span rst-meter-num>{{.Text}}</span></span>{{end}}
+{{define "meter"}}{{$p := .Percent}}{{if lt $p 0}}{{$p = 0}}{{end}}{{if gt $p 100}}{{$p = 100}}{{end}}<span rst-meter><meter rst-meter-bar value="{{$p}}" min="0" max="100" aria-hidden="true"></meter><span rst-meter-num>{{.Text}}</span></span>{{end}}

@@ -37,12 +37,14 @@ width fix (§6-v2.11) and the stat band (§6-v2.12), which have landed.
   control borders, three themes × two schemes.
 - WCAG 2.2 AA: the axe scan covers every page kind. Zero violations,
   zero exemptions.
-- `SKILL.md` ≤ 18,000 bytes (16,471 now).
+- `SKILL.md` ≤ 19,000 bytes. Raised from 18,000 on 2026-09-02 after a
+  clean merge of two under-budget branches summed to 18,084 and turned
+  `main` red; the reason is recorded in `skillmd_test.go`.
 - Never hardcode the theme, locale, shell or icon lists.
 
 ---
 
-### Task 0: copy review of what has already landed — DO THIS FIRST
+### Task 0: copy review of what has already landed — DONE (2026-09-01)
 
 **Files:** `internal/designsystem/samples.go`, `page.go`, `prose.go`.
 
@@ -51,9 +53,11 @@ translations and **no copy review**: the six state names and six notes
 in `statStates()`, the `stat` partial blurb, the `stat-band` idiom
 blurb, and `"since Monday"` in the demo dashboard.
 
-- [ ] Run the copy-review gate over those thirteen. Apply Paul's text
-      verbatim, then redraft the eleven translations of anything he
-      changed. Commit `designsystem: the stat band's copy, as reviewed`.
+Done, over two rerolls. It was fifteen strings rather than thirteen —
+miscounted across three insertion passes. Paul's verdict on the first
+draft was "I have NO idea what this means"; the notes had been written
+about the design decision instead of the action. The rewrite is in
+AGENTS.md now as a standing rule.
 
 ---
 
@@ -71,17 +75,21 @@ prose. Independent of every other task and the cheapest real value here.
 2. **`<time datetime>`** in `detail-list` (an optional `DateTime` per
    item) and `job-status`. An API addition, not a change: an item
    without it renders exactly as today.
-3. **`<figure>`/`<figcaption>`** for the gallery's preview frames.
-   **Decide first:** a visible caption changes the page's design; a
-   visually-hidden one duplicates the `title` attribute that is already
-   there. Ask before building.
+3. **`<figure>`/`<figcaption>`** for the gallery's preview frames —
+   **still open, still needs a decision.** A visible caption changes the
+   page's design; a visually-hidden one duplicates the `title` attribute
+   already on the frame, which is what a screen reader announces on
+   entering it. Neither is obviously right, so neither was built.
 
-- [ ] TDD per element. `<bdi>` needs a browser drive with an Arabic
-      name in an English sentence — a Go assertion on the markup proves
-      the element is present, not that it fixed the reordering.
-      Commit `ui: bdi, time, and the elements the framework was missing`.
+**DONE (2026-09-02),** and the measurement moved the target. A probe of
+the real patterns found `person` and `job-status` are NOT affected —
+blocks and intervening Latin words insulate them — while the list row's
+name cell reorders badly: the time draws left of the name. The fix went
+there, plus the rule in templates.md for app authors. `<time>` landed on
+`detail-list` as an optional `DateTime`. `<figure>` was not built; see
+below.
 
-### Task 2: `<meter>` and `<progress>` — RAISE BEFORE BUILDING
+### Task 2: `<meter>` and `<progress>` — DONE (2026-09-02)
 
 **Files:** `ui/partials/meter.html`, `job-status.html`, `ui/tokens.css`.
 
@@ -98,9 +106,13 @@ Chromium. Shipping untested Firefox pseudo-element rules into a
 framework this careful about cross-engine behaviour is a decision, not
 an implementation detail.
 
-- [ ] Ask Paul: native elements with a Firefox rule we cannot test, or
-      keep the spans? If native: build, and say plainly in the commit
-      that the `-moz-` branch is unverified.
+**RULED 2026-09-02 by Paul: ship native, flag the risk.** Built. The
+`-moz-` rules are unverified and the commit and the stylesheet both say
+so. `meter` keeps `aria-hidden` — the fraction beside it is the
+accessible carrier, and a nameless meter would announce it twice —
+so what the element buys is machine-readability, not accessibility.
+`job-status` takes an optional `Percent` and draws a `<progress>` only
+when it has one.
 
 ### Task 3: the Common data formats page
 
@@ -142,18 +154,19 @@ is what sits under it.
 gallery has no tier for one except the single demo app. See "The screens
 tier" below — settle it here, because Task 5 wants the same answer.
 
-### Task 5: sign-in screens — BLOCKED ON TWO ANSWERS
+### Task 5: sign-in screens
 
-**Spec:** §6-v2.10, which is already written in detail and ends with two
-questions addressed to Paul.
+**Spec:** §6-v2.10.
 
-- [ ] **Do the screens live in `ui` as partials, or in `auth` as
-      renderable pages?** Partials keep `auth` free of HTML and let an
-      app compose its own; renderable pages are turnkey and match how
-      `auth` already owns its routes.
-- [ ] **Is a polished username/password card a position we want to
-      take?** The framework documents passwords; a beautiful password
-      card in the gallery encourages them.
+**RULED 2026-09-02 by Paul: partials now, pages later.** The screens are
+built as `ui` partials so the gallery can show them and an app can
+compose its own; `auth` stays free of HTML. A renderable-page layer over
+them is a separate decision, taken once the shapes have settled rather
+than now.
+
+**Still open:** is a polished username/password card a position we want
+to take? The framework documents passwords, and a beautiful password
+card in the gallery encourages them.
 
 Everything else in §6-v2.10 is settled: the one-primary-door
 composition, find-or-create rather than a sign-in/sign-up split,
@@ -162,9 +175,34 @@ server-rendered/enhancement split, and the honesty constraint — **ship
 the buttons, never imply `auth` implements Google, Apple, Microsoft or
 GitHub sign-in.**
 
-Add: **the security settings screen** (registered passkeys, recovery
-codes). Passkey sign-in documented with nowhere to manage the keys is
-half a story.
+### Task 6: the account lifecycle — everything behind the door
+
+**RULED 2026-09-02 by Paul: yes, as its own task.** §6-v2.10 covers
+getting in and stops there. Grep it for "enroll", "profile", "settings",
+"change", "2FA" or "recovery" and it says nothing, which leaves out most
+of the account surface and all of the screens an app needs *after* the
+first session.
+
+The screens, in the order an app needs them:
+
+- **Security** — enrolled passkeys with add and remove, recovery codes
+  with regenerate. `passkey` ships enrollment and `recovery.go`
+  already; the design system documents the door and nothing behind it.
+- **Profile** — name, email, the ordinary account record.
+- **Email and password change** — both are re-authentication flows, not
+  plain form saves, and the screens should show that.
+- **Two-factor setup** — the enrolment step, its recovery codes, and
+  the "you will be signed out elsewhere" consequence.
+- **Active sessions** — what is signed in, and signing one out.
+
+Same home as Task 5 (partials), and the same honesty constraint applies
+with more force: **ship screens for what `auth`, `passkey` and
+`password` actually implement.** This is a documentation gap rather than
+a build gap — the mechanisms exist — so a screen here that implies a
+flow the framework does not have is a straightforward lie about the
+product.
+
+Copy-heavy. Review before translation, as everywhere else.
 
 ---
 
@@ -189,10 +227,15 @@ without the framework claiming to own one.
 
 ## Suggested order
 
-Task 0 first and alone — it is cheap and it stops the copy debt
-compounding. Tasks 1 and 2 are independent of everything and can land
-next. Task 3 is the largest copy surface. Tasks 4 and 5 both wait on the
-screens-tier decision, and 5 additionally on §6-v2.10's two questions.
+Tasks 0, 1 and 2 have landed. What is left, in order:
+
+**Task 3 (Common data formats)** is unblocked and is the largest copy
+surface — draft, review, then translate. **Tasks 4, 5 and 6** all wait
+on the screens-tier decision below; 5 and 6 are otherwise unblocked now
+that the partials-not-pages ruling is in. The one remaining question
+inside Task 5 is whether to ship a password card at all.
+
+`<figure>` from Task 1 is still unbuilt and still needs a decision.
 
 ## Self-review
 

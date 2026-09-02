@@ -110,7 +110,8 @@ const extraFixture = `
 
   <div class="rst-seg-tabs"><a href="#a" aria-current="page">All</a><a href="#a">Open</a><a href="#a">Closed</a></div>
 
-  <div class="rst-meter"><span class="rst-meter__bar"><i style="width:40%"></i></span><span class="rst-meter__num">40%</span></div>
+  <div class="rst-meter"><meter class="rst-meter__bar" value="40" min="0" max="100" aria-hidden="true"></meter><span class="rst-meter__num">40%</span></div>
+  <div class="rst-job"><span class="rst-spin" aria-hidden="true"></span> <strong>Import</strong> is running — 128 of 400…<progress class="rst-job__bar" value="32" min="0" max="100" aria-hidden="true"></progress></div>
 
   <dl class="rst-detail"><dt>Reference</dt><dd class="rst-mono">AB-1001</dd></dl>
 
