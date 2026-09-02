@@ -3656,3 +3656,116 @@ Thirteen new English strings (twelve gallery, one demo) are drafted and
 carry their eleven translations. **They have not been through the copy
 review gate.** The English is the lookup key, so an edit costs eleven
 redrafted translations — review before merge, not after.
+
+---
+
+## 6-v2.13. Money has no currency (2026-09-02) — RULED, partly built
+
+> Paul, reading a draft that documented the limit rather than fixing it:
+> *"shouldn't we be using browser locale formatting for this?"*
+
+Partly, and the half that browser formatting cannot do is the half that
+does damage. Recorded here because the answer is not obvious and the
+obvious answer is wrong.
+
+### Why `Intl.NumberFormat` is not the fix on its own
+
+`Intl.NumberFormat` needs `{ style: "currency", currency: "EUR" }`. **The
+currency code is a property of the money, not of the reader.** An Irish
+customer looking at a US shop's prices must still see USD. Derive the
+currency from the reader's locale and a $10 charge silently relabels
+itself as €10 — worse than an unlocalised format, because it is wrong
+rather than merely foreign.
+
+The reader's locale decides *how* an amount is written: the separators,
+the symbol's side, the digit grouping. The seller decides *what it is*.
+Conflating them is the classic money defect.
+
+**There is nothing to pass it anyway.** Verified 2026-09-02: `grep -ri
+currency` over the Go source returns two unrelated prose comments.
+`form.FormatCents(cents int64)` takes only cents; no model, no field
+kind, no catalog entry anywhere carries a currency. The gap is in the
+data model, and the formatter is only where it shows.
+
+**And a price must survive scripts being off**, which for money is not a
+nicety. The existing `Intl` precedent is narrower than it looks:
+`datetime.js` uses it for the date picker's month names and digit
+folding — an enhancement widget — while a date rendered into a page
+still comes from the server.
+
+### The shape of the fix, in order
+
+1. **Carry a currency beside the amount.** Nothing else works without
+   it. That is a model concern and a `form` field-kind concern before it
+   is a formatting one.
+2. **Format completely server-side**, so the scriptless page is correct
+   and complete.
+3. **Then** let `Intl` refine presentation to the reader's locale as an
+   enhancement — the shape `select.js` and `datetime.js` already have,
+   where the server's answer is right and the script only improves it.
+
+Not built. Steps 1 and 2 are a framework change with a migration behind
+them, and they should not be smuggled in beside a documentation page.
+
+### Built now: the errors stopped saying "dollar"
+
+`form.ParseCents` returned hardcoded English — *"enter a valid dollar
+amount"* — in a framework that ships twelve locales. Wrong twice: it was
+untranslatable, and it named a currency the framework does not store.
+
+`form.Error` carries a `rastrillo.ui.*` catalog key beside its message,
+so a caller with a translator renders the reader's language and a caller
+without one prints the English. The key rather than a translated string
+because `form` imports nothing from rastrillo and has no request in
+reach — and a package-level translator hook would be worse than none,
+since the locale is per request and a global would hand one request's
+language to another's error.
+
+`FormatCents` still writes a dollar sign. Its doc comment now says so,
+because the function name does not, and until step 1 lands that is the
+honest position rather than a defensible one.
+
+### §6-v2.13 addendum (2026-09-02): numbers are grouped, identifiers are not
+
+**RULED by Paul:** *"always format numbers locally? e.g. never 54173,
+always 54,173 or the local equivalent, unless there's a good reason not
+to."*
+
+Taken, with the exception written down because it is the half that gets
+missed. **A quantity is grouped for the reader's locale; an identifier
+is not.** Reference codes, order numbers, years, versions and port
+numbers are labels that happen to be made of digits, and grouping one
+changes what it appears to be — order 4471 is not order 4,471. Someone
+told to group numbers will group these too unless told not to.
+
+Grouping is not a comma. The separator, the group size (Indian grouping
+is 2-2-3, not 3-3-3) and the digits themselves all change with the
+locale.
+
+### Why this is tractable where currency was not
+
+The distinction matters and is the reason these two rulings landed
+differently on the same day. **Grouping needs only the reader's locale,
+which the server already has**; currency needs a fact about the money
+that the framework does not store anywhere. So:
+
+- server-side grouping is possible today — `golang.org/x/text` is
+  already in the module graph as an indirect dependency, so this is a
+  decision about `form.FormatCents`'s signature rather than a missing
+  capability;
+- and where a number is grouped in the browser instead,
+  `Intl.NumberFormat` is legitimate enhancement, because **an ungrouped
+  number is harder to read but still correct.** A currency guessed from
+  the reader's locale is wrong. That asymmetry is what makes `Intl`
+  acceptable for one and not the other.
+
+### The obligation this creates, unmet
+
+`form.FormatCents(cents int64) string` writes `$1284.50` — ungrouped,
+and with no locale parameter to group by. The framework therefore fails
+its own new rule, which is recorded here rather than smoothed over.
+
+Fixing it is an API change (a locale argument, or a second function),
+and it is entangled with the currency gap above: both want
+`FormatCents` to know more than an int64. They should be designed
+together rather than patched one at a time. Not started.

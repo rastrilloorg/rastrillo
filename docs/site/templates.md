@@ -321,6 +321,27 @@ do not need it when ordinary words separate the name from the numbers,
 which is why `job-status` does not have one. Both of those were
 measured, not assumed.
 
+### Group the digits of a quantity
+
+Every number a person reads as a quantity is grouped for their locale:
+`54,173` in English, `54.173` in German, `٥٤٬١٧٣` in Arabic. Never a bare
+run of digits. Grouping is not "add a comma" — the separator, the group
+size and the digits themselves all change with the locale — and the
+reason is plain legibility: `54173` has to be counted, `54,173` is read.
+
+**An identifier is not a quantity.** Reference codes, order numbers,
+years, versions and port numbers are labels that happen to be made of
+digits. Grouping one changes what it appears to be: order 4471 is not
+order 4,471.
+
+The framework does not do this for you yet. `form.FormatCents` writes
+`$1284.50`, ungrouped, and its signature carries no locale to group by.
+Until that changes, group your own — server-side where you can, since the
+request's locale is in reach there, and with `Intl.NumberFormat` in the
+browser where you cannot. `Intl` is a reasonable fallback here in a way
+it is not for currency: an ungrouped number is harder to read but still
+correct, while a currency guessed from the reader's locale is wrong.
+
 ### Mark a moment with `<time>`
 
 Where a value *is* a moment or a length of time, give `detail-list`'s
