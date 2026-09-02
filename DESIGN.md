@@ -425,3 +425,7 @@ because a falling number is good about as often as it is bad.
 - **Don't** compose a heading, a paragraph and a button side by side in a
   flex row. Screens stack vertically; horizontal arrangement is reserved
   for the idioms that ship it.
+- **Don't** stack two ways to start work on one screen — a create form
+  and an import panel over a list, say. Each action gets a link on the
+  screen it belongs to and a page of its own; a screen shows a thing or
+  asks for one thing, never both.

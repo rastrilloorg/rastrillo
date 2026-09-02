@@ -277,7 +277,34 @@ never the clock. One-offs: `carlos.ScheduleAt(ctx,
 name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 `ErrDeclaredSchedule`, `ErrTooManyTimers`) and `carlos.ScheduleCancel`.
 
-## 7. What NOT to do
+## 7. Screens and flows
+
+**One screen, one job.** A screen shows a thing, or asks for one thing —
+never both. The failure it prevents is stacking: a list page that also
+carries a create form, an import panel and a dropzone, so the first
+thing a person meets is four half-started decisions and no obvious one.
+
+Nearly every interaction is the same short flow, as full pages or as
+modals — a modal here is its own URL, so it is the same four steps and
+the same back button, not a second mode:
+
+1. **A link naming the action**, on the screen you are already on: "New
+   sheet", "Import a spreadsheet". A link or button, never the form
+   itself inlined.
+2. **A page for that action alone** — `GET /sheets/new` — one form, one
+   primary button. Two ways to make a sheet are two pages behind two
+   links, never two panels side by side.
+3. **An interstitial only when the work outlives the request**: the jobs
+   status page of §6. Skip it when the POST answers immediately.
+4. **A confirmation** — 303 to the new thing's show page, with a flash
+   notice (§4). Re-rendering the form is not a confirmation.
+
+An empty list is step 1, not an exception: `empty-state` says what the
+screen is for and carries the one link — do not pre-empt it with the
+create form. Destructive actions are the same shape, with `confirm-form`
+on its own URL at step 2, never a modal fired from the row.
+
+## 8. What NOT to do
 
 - **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`:**
   glebarez re-registers modernc's `sqlite` driver name, so the binary
@@ -344,3 +371,4 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 5. One `migrate.Apply` at boot; `make ci` runs `rastrillo migration check`.
 6. `opts.DBPath` blanked before `Serve` when the app opened its own handle.
 7. Not-found and not-yours both answer 404.
+8. No screen carries two ways to start work; each action has its own page.

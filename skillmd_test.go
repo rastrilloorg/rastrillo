@@ -63,7 +63,31 @@ import (
 // would look it up anyway. Sixteen of the twenty-four docs pages are
 // still unlinked from SKILL.md, so this lever has more left in it than
 // the budget does. Trim first, still.
-const skillBudget = 18_000
+//
+// Raised, 18_000 to 30_000, on 2026-09-02 — a change of regime rather
+// than another notch, so read this one before citing the paragraphs
+// above. Each earlier raise bought room for one new subsystem and was
+// defended by a trim. This one is a deliberate decision to stop trimming
+// for a while, and two things forced it. The file reached main 84 bytes
+// OVER 18_000, red before a word was added: the delegation lever
+// (2026-08-31) had already been pulled and the file grew back past the
+// ceiling within two days, which is what a lever with nothing left in it
+// looks like. And the trimming now costs more than it saves. An agent
+// building an app from this file stacked a create form, an import panel
+// and a list onto one screen, because nothing here said not to — §7 did
+// not exist, because a byte ceiling had it competing with the SQL. Every
+// remaining gap has that shape: a rule the framework holds and never
+// wrote down.
+//
+// The ceiling was sized for a context window that is no longer the
+// binding constraint — Opus and GLM 5.3 both load a 30 KB file without
+// noticing. Concision is still the rule: an inaccurate or padded line is
+// worse here than a missing one, and small models still read this file.
+// The pruning is deferred, not cancelled — one human pass, once the
+// framework is reliably producing good apps across a variety of them,
+// which today it is not. Until that pass: write the rule down, keep it
+// short, and do not read this number as room to fill.
+const skillBudget = 30_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance
