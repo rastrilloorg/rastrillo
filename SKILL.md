@@ -335,15 +335,17 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   `.design-system/`. docs/site/templates.md
 - **Modern CSS is the floor, not a hazard.** `tokens.css` plus a shipped
   theme already require Chrome 123, Safari 17.5, Firefox 121 — none older
-  than late 2023 — because every theme colour is a `light-dark()`. Anything
-  that shipped at or below that floor is free, `oklch()` and `color-mix()`
-  included, with no hex twin and no `@supports`: an engine too old for
-  `oklch()` dropped the whole `light-dark()` palette several declarations
-  earlier. Self-contained means the CSS fetches nothing — no imports, no
-  remote assets, no webfont, held by `ui_test.go` — never that old engines
-  are supported. Go above the floor with `@supports`, or move the floor and
-  say so. The bar is a year in all three engines; `cssfloor_test.go` fails
-  once the floor has gone nine months unreviewed.
+  than late 2023 — because every theme colour is a `light-dark()`. Reach
+  for the modern feature: anything that shipped at or below that floor is
+  free, `oklch()` and `color-mix()` included, with no hex twin and no
+  `@supports`. A hex fallback protects nobody anyway — an engine too old
+  for `oklch()` dropped the whole `light-dark()` palette several
+  declarations earlier. And self-contained means the CSS fetches nothing:
+  no imports, no remote assets, no webfont, held by `ui_test.go`. It has
+  never meant old engines. Go above the floor with `@supports`, or move
+  the floor and say so. The bar for adopting something newer is a year in
+  all three engines; `cssfloor_test.go` fails once the floor has gone nine
+  months unreviewed.
   docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the
