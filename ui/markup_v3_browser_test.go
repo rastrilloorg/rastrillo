@@ -140,6 +140,12 @@ const extraFixture = `
 
   <div class="rst-dtp"><input class="rst-input rst-dtp__input" type="text" aria-label="When"><button class="rst-dtp__pick" type="button" aria-label="Pick"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"></circle></svg></button>
     <div class="rst-dtp__list"><div class="rst-dtp__row"><span class="rst-dtp__label">Today</span></div><div class="rst-dtp__row rst-dtp__row--set"><span class="rst-dtp__label">Set</span></div><div class="rst-dtp__row is-active" aria-selected="true"><span class="rst-dtp__label">Tomorrow</span></div><div class="rst-dtp__quick"><button class="rst-dtp__set" type="button">Now</button></div><p class="rst-dtp__hint">Hint</p></div></div>
+  <div class="rst-dtp"><div class="rst-dtp__list"><div class="rst-dtp__row rst-dtp__row--alt"><span class="rst-dtp__label">5 June</span></div></div>
+    <div class="rst-cal" role="dialog" aria-label="Calendar">
+      <div class="rst-cal__head"><button class="rst-cal__nav" type="button" aria-label="Previous month"><svg viewBox="0 0 16 16"><path d="M10 2L4 8l6 6"></path></svg></button><div class="rst-cal__title">September 2026</div><button class="rst-cal__nav rst-cal__nav--next" type="button" aria-label="Next month"><svg viewBox="0 0 16 16"><path d="M10 2L4 8l6 6"></path></svg></button></div>
+      <table class="rst-cal__grid" role="grid"><thead><tr role="row"><th scope="col" role="columnheader"><span aria-hidden="true">Mo</span><span class="rst-sr-only">Monday</span></th></tr></thead>
+      <tbody><tr role="row"><td class="rst-cal__day is-outside" role="gridcell" tabindex="-1" data-rst-day="2026-08-31">31</td><td class="rst-cal__day is-today" role="gridcell" tabindex="-1" aria-current="date" data-rst-day="2026-09-01">1</td><td class="rst-cal__day is-selected" role="gridcell" tabindex="0" aria-selected="true" data-rst-day="2026-09-05">5</td><td class="rst-cal__day is-preview" role="gridcell" tabindex="-1" data-rst-day="2026-09-06">6</td><td class="rst-cal__day is-disabled" role="gridcell" tabindex="-1" aria-disabled="true" data-rst-day="2026-09-07">7</td></tr></tbody></table>
+    </div></div>
 
   <a class="rst-skip" href="#a">Skip to content</a>
   <div class="rst-backdrop"></div>

@@ -257,6 +257,9 @@ var selectJS []byte
 //go:embed datetime.js
 var datetimeJS []byte
 
+//go:embed calendar.js
+var calendarJS []byte
+
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
 // layout:
@@ -349,6 +352,31 @@ func SelectJS() []byte { return selectJS }
 // request's catalog. Like select.js it does keep English fallbacks for
 // the labels it renders, for the field that arrives without them.
 func DatetimeJS() []byte { return datetimeJS }
+
+// CalendarJS returns calendar.js — the month grid the date fields open
+// when their calendar button is pressed, on the same terms as the other
+// three: delivered once by rastrillo new, app-owned from then on, and
+// inert until datetime.js asks it for a panel.
+//
+// It is a separate file from datetime.js because it is a separate job.
+// datetime.js reads and writes dates as TEXT — a parser and a combobox
+// — and this draws six weeks of days with a roving tabindex, a live
+// preview and a month that pages. Neither half needs the other's code,
+// and together they were past the size at which datetime.js's own test
+// says to split something out.
+//
+// The seam between them is one function, window.rastrilloCalendar,
+// which this file publishes and datetime.js looks up at enhance time.
+// An app that ships datetime.js without this one still gets a working
+// field: the calendar button falls back to the browser's own picker,
+// the same way both files fall back when an attribute is missing.
+//
+// Like the others it holds no month names, no weekday names and no
+// English: the names, the digits and the day a week starts on all come
+// from Intl for the page's own lang, and the three strings it puts on
+// screen arrive translated on data-rst-date-calendar,
+// data-rst-date-prev-month and data-rst-date-next-month.
+func CalendarJS() []byte { return calendarJS }
 
 // layoutNames lists the shipped shells, column first: it is the plain
 // centred page every scaffolded app starts on, and the three chrome

@@ -327,13 +327,14 @@ func TestSelectContract(t *testing.T) {
 	}
 }
 
-// No scaffolded script may reach off-origin: all three are vendored,
+// No scaffolded script may reach off-origin: all four are vendored,
 // first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
 	for name, js := range map[string]string{
 		"rastrillo.js": string(ShimJS()),
 		"select.js":    string(SelectJS()),
 		"datetime.js":  string(DatetimeJS()),
+		"calendar.js":  string(CalendarJS()),
 	} {
 		for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
 			if strings.Contains(js, bad) {

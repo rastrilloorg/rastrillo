@@ -2104,6 +2104,8 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
 		"The date fields' natural-language input. Inert until a field opts in with data-rst-date or data-rst-time, and deletable on its own.")
+	add(&out, "calendar.js", ui.CalendarJS(),
+		"The month grid that field's calendar button opens. Inert until datetime.js asks it for a panel, and deletable on its own: without it the button falls back to the browser's own picker.")
 	return out
 }
 

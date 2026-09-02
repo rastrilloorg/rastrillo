@@ -761,7 +761,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "select.js", "datetime.js",
+		"tokens.css", "rastrillo.js", "select.js", "datetime.js", "calendar.js",
 		"gallery.js", "gallery.css",
 	}
 	for _, theme := range ui.ThemeNames() {

@@ -87,5 +87,21 @@
   {"id": "trailing-junk", "input": "tomorrow wibble", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-day", "input": "31 february", "now": "2026-08-28T10:30", "expected": null},
   {"id": "impossible-clock", "input": "25:00", "now": "2026-08-28T10:30", "expected": null},
-  {"id": "impossible-minute", "input": "14:70", "now": "2026-08-28T10:30", "expected": null}
+  {"id": "impossible-minute", "input": "14:70", "now": "2026-08-28T10:30", "expected": null},
+
+  {"id": "day-and-a-month-prefix", "input": "5j", "now": "2026-08-28T10:30", "expected": "2027-01-05T09:00", "alternatives": ["2027-06-05T09:00", "2027-07-05T09:00"]},
+  {"id": "day-and-a-month-prefix-spaced", "input": "5 j", "now": "2026-08-28T10:30", "expected": "2027-01-05T09:00", "alternatives": ["2027-06-05T09:00", "2027-07-05T09:00"]},
+  {"id": "a-longer-prefix-offers-fewer-months", "input": "5 ju", "now": "2026-08-28T10:30", "expected": "2027-06-05T09:00", "alternatives": ["2027-07-05T09:00"]},
+  {"id": "an-unambiguous-prefix-is-one-reading", "input": "5 jun", "now": "2026-08-28T10:30", "expected": "2027-06-05T09:00", "alternatives": []},
+  {"id": "a-prefix-month-still-ahead-keeps-this-year", "input": "25 dece", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00", "alternatives": []},
+
+  {"id": "a-word-of-the-vocabulary-completes", "input": "tomo", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
+  {"id": "yesterday-half-typed", "input": "yest", "now": "2026-08-28T10:30", "expected": "2026-08-27T09:00"},
+  {"id": "midnight-half-typed", "input": "midn", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
+  {"id": "a-weekday-half-typed", "input": "wedn", "now": "2026-08-28T10:30", "expected": "2026-09-02T09:00"},
+
+  {"id": "a-prefix-of-no-month-is-still-refused", "input": "5 z", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "junk-that-is-not-a-prefix-is-still-junk", "input": "wibbl", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "two-unfinished-words-complete-neither", "input": "qq 5 j", "now": "2026-08-28T10:30", "expected": null},
+  {"id": "a-month-prefix-with-no-day-is-refused", "input": "dece", "now": "2026-08-28T10:30", "expected": null}
 ]

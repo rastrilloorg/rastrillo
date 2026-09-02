@@ -146,6 +146,110 @@ func TestDatetimeReadsItsOwnDisplayBack(t *testing.T) {
 	t.Log(strings.TrimSpace(string(out)))
 }
 
+// The calendar overlay draws six weeks of days, and the arithmetic
+// behind that is the half of it that can be quietly wrong: a grid that
+// drops a day in a zone that moved its clocks that morning, a week that
+// starts on the wrong day, column headings that do not describe their
+// own columns. None of that shows up in a screenshot — a calendar
+// missing 1 March looks exactly like a calendar — and none of it needs
+// a browser to catch, because ui/calendar.js keeps that arithmetic in
+// front of its own document guard for precisely this reason.
+//
+// --calendar walks every shipped locale over twenty-five months (both
+// of 2026 and 2027, plus a leap February) and holds each grid to its
+// invariants: forty-two cells, every one at local midnight, each one
+// day after the last, starting on that locale's own first day of the
+// week, with every day of the month present exactly once and the 1st in
+// the first row. Four undisputed week-start facts are pinned there too
+// — the derivation keeps no table, so the test carries the anchor.
+//
+// The DST case is not hypothetical: building the grid by adding
+// 86,400,000 milliseconds instead of counting whole days fails here in
+// every locale, on the two months a clock changes, and passes
+// everywhere else. TZ is deliberately NOT pinned to UTC, unlike the
+// fixture runs — a zone with no clock changes is the one zone that
+// cannot catch it, and the invariants hold in every zone by
+// construction.
+func TestCalendarGridHoldsInEveryLocale(t *testing.T) {
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node is not on PATH, so calendar.js's grid is unverified here: " +
+			"install Node and rerun `go test ./ui/` to exercise ui/datetime_node.mjs --calendar")
+	}
+	cmd := exec.Command(node, "datetime_node.mjs", "--calendar")
+	cmd.Stdin = bytes.NewReader(vocabStdin(t, "en"))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s\n%v", out, err)
+	}
+	t.Log(strings.TrimSpace(string(out)))
+}
+
+// calendar.js holds to the same contract as the other three scripts:
+// its own vocabulary, a native-input-free widget built in the browser,
+// a document guard so Node can load its arithmetic, and no English
+// month or weekday name anywhere in it.
+func TestCalendarContract(t *testing.T) {
+	js := string(CalendarJS())
+	for _, want := range []string{
+		// The seam datetime.js looks up at enhance time. If this name
+		// moves, the button silently falls back to the browser's own
+		// picker — which is the failure this whole branch removed.
+		"rastrilloCalendar",
+		// The roles a calendar has to carry to be usable without sight:
+		// a named dialog, a grid, real column headers, the committed
+		// day marked as selected and today marked as today.
+		`"dialog"`, `"grid"`, `"columnheader"`, `"gridcell"`,
+		"aria-selected", "aria-current", "aria-disabled",
+		// The keys it has to answer to.
+		"ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", "Escape",
+		// The three strings it puts on screen all arrive translated.
+		"data-rst-day", "tabIndex",
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("calendar.js does not mention %q", want)
+		}
+	}
+	if !strings.Contains(js, `typeof document !== "undefined"`) {
+		t.Error("calendar.js must keep its panel behind a document guard, or the Node harness cannot load it")
+	}
+	if !strings.Contains(js, "module.exports") {
+		t.Error("calendar.js must export its arithmetic for ui/datetime_node.mjs --calendar")
+	}
+	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") {
+		t.Error("calendar.js must stay CSP-clean")
+	}
+	if bytes.Contains(CalendarJS(), []byte("\t")) {
+		t.Error("calendar.js uses two-space indentation, not tabs")
+	}
+	// Its own budget, set where datetime.js's was first set and for the
+	// same reason: an app owner has to be able to read the whole file in
+	// one sitting, and the next few hundred bytes should be a decision
+	// rather than a drift. It lands at about 15KB, roughly half of it
+	// the prose explaining the other half.
+	if n := len(CalendarJS()); n > 24*1024 {
+		t.Fatalf("calendar.js is %d bytes; split something out before it stops being readable", n)
+	}
+}
+
+// The same rule datetime.js lives under, for the same reason: a month
+// or weekday name written down here would work in English and fail
+// silently in every other language the framework ships. calendar.js
+// asks Intl, in the page's own lang, for all of it — the names, the
+// digits, and the day a week starts on.
+func TestCalendarDerivesItsNames(t *testing.T) {
+	body := string(CalendarJS())
+	body = body[strings.Index(body, "(function ("):]
+	for _, name := range []string{
+		"january", "february", "december", "\"jan\"", "\"dec\"",
+		"monday", "friday", "sunday", "\"mon\"", "\"fri\"",
+	} {
+		if strings.Contains(body, name) {
+			t.Errorf("calendar.js spells %s itself; month and weekday names come from Intl", name)
+		}
+	}
+}
+
 // Every shipped locale gets its own fixture, because the vocabulary is
 // the part of this parser that cannot be derived: a missing fixture is
 // a language nobody has checked can type a date.
@@ -175,12 +279,29 @@ func TestDatetimeContract(t *testing.T) {
 		"data-rst-date-quick-next-week", "data-rst-date-quick-plus-1h",
 		"data-rst-date-quick-plus-2h", "data-rst-date-quick-end-of-day",
 		"data-rst-date-quick-next-day", "data-rst-range",
+		// The calendar overlay's own strings, and a time field's own
+		// button label — the overlay builds its markup in the browser,
+		// where the catalog is out of reach, so every word it shows has
+		// to arrive on an attribute.
+		"data-rst-date-pick-time", "data-rst-date-calendar",
+		"data-rst-date-prev-month", "data-rst-date-next-month",
+		// The seam to ui/calendar.js. If this name moves and the other
+		// file is not moved with it, nothing breaks loudly: the button
+		// quietly falls back to the browser's own picker, which is the
+		// unusable control this whole overlay replaced.
+		"rastrilloCalendar",
+		// The completion layer, which is what lets "5j" read as a date
+		// at all — and parse, which stays strict underneath it.
+		"parseAll", "function parse(",
 		// The convention, pinned: an ARIA combobox that mirrors rather
 		// than replaces, announced to assistive tech.
 		"combobox", "aria-activedescendant", "aria-expanded", "aria-live",
 		"rst-sr-only",
 		// The month and weekday names are Intl's, never a table.
-		"formatToParts", "showPicker",
+		"formatToParts",
+		// showPicker survives as the fallback for a page that links
+		// this file without calendar.js, and nowhere else.
+		"showPicker",
 		// {example} is substituted here, in the locale's own format —
 		// the partials emit the hint template verbatim.
 		"{example}", "{n}",
@@ -241,7 +362,33 @@ func TestDatetimeContract(t *testing.T) {
 	// code, about 3.2KB of comment. More than half of both raises is
 	// prose, which is the trade this file makes on purpose — the cap is
 	// on what an owner has to page through, not on what runs.
-	if n := len(DatetimeJS()); n > 60*1024 {
+	//
+	// 60KB → 76KB, by the calendar overlay, and this raise came with a
+	// SPLIT in front of it. The button used to call native.showPicker(),
+	// which is one line and close to useless in a form: the panel
+	// belongs to the browser, cannot be styled to match the page, does
+	// not exist at all for a time input on some engines, and — measured,
+	// not guessed — opens WITHOUT moving focus, so the guard on the
+	// change listener here swallowed the pick and the field looked like
+	// it had ignored the selection. Replacing it took a real widget, so
+	// the widget went to ui/calendar.js: 22KB that would otherwise have
+	// landed on this number, in a file that needs none of the parser.
+	//
+	// What stayed is +15.1KB, an honest 7.3KB of code and 7.8KB of
+	// prose, and none of it draws a calendar. The popup became three
+	// states rather than one — the suggestions, the grid, and a time
+	// field's half hours — so there is still only one thing to close and
+	// one thing the arrow keys drive; the words drive the grid live
+	// while it is open; min/max became bounds a range's end can tighten;
+	// the panel flips above the field where there is no room below it;
+	// and parseAll arrived, which offers a reading where the exact
+	// grammar had none — "5j" is not a date, and 5 January, 5 June and
+	// 5 July are three.
+	//
+	// The cap is on what an owner has to page through. Two files at 74KB
+	// and 22KB is that; one file at 96KB is not, which is the whole
+	// reason the split came first and the raise second.
+	if n := len(DatetimeJS()); n > 76*1024 {
 		t.Fatalf("datetime.js is %d bytes; split something out before it stops being readable", n)
 	}
 }
