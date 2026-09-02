@@ -49,6 +49,14 @@ typography:
     fontSize: "0.71875rem"
     fontWeight: 650
     letterSpacing: "0.06em"
+  stat:
+    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 650
+    lineHeight: 1.1
+  mono:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    fontSize: "0.78125rem"
 rounded:
   bar: "2px"
   sm: "6px"
@@ -218,8 +226,11 @@ theme choice re-resolves the same declarations by setting
 **Display / Body Font:** the platform UI stack — `system-ui`,
 `-apple-system`, `"Segoe UI"`, `Roboto`, `"Helvetica Neue"`, `Arial`,
 `sans-serif`. `signal` leads the same stack with `"Helvetica Neue"`.
-**Label/Mono Font:** no separate family; monospaced values use the
-`rst-mono` utility.
+**Mono Font:** `ui-monospace, SFMono-Regular, Menlo, Consolas,
+monospace`, on the `rst-mono` utility. It is a real second family and
+not a weight of the first — reference codes, identifiers and machine
+values are set in it so they read as things to be copied rather than
+read.
 
 **Character:** the type has no personality of its own on purpose. The
 family is a theme axis, and the shipped default is whatever the reader's
@@ -241,6 +252,22 @@ sets one property.
 - **Label** (650, 0.71875rem = 11.5px, +0.06em, uppercase): the eyebrow
   over a value — stat labels, table column heads, the nav rail's section
   names.
+
+### Steps outside the roles
+
+Three literal sizes appear in `tokens.css` that are not roles above, and
+they are recorded rather than tidied away:
+
+- **1.5rem** — a stat's number when it is not the lead. A role now
+  (`stat`), because a dashboard uses it as one.
+- **1.25rem** — the headline under 34rem. A responsive step of `headline`
+  rather than a size of its own.
+- **1.0625rem** — the large person avatar's initials and the shell's
+  brand.
+- **0.6875rem** — the ordinary person avatar's initials.
+
+The last two are decoration sized to fit a circle, not type a reader
+parses, which is why they are not roles.
 
 ### Named Rules
 
