@@ -62,3 +62,5 @@ rastrillo.ui.date_quick_next_day = "الوقت نفسه في اليوم التا
 rastrillo.ui.date_invalid = "تعذّرت قراءة هذا التاريخ. جرّب الصيغة المعروضة، أو استخدم التقويم."
 rastrillo.ui.date_end_before_start = "النهاية تسبق البداية."
 rastrillo.ui.field_required = "هذا الحقل مطلوب."
+rastrillo.ui.money_invalid = "أدخل مبلغًا صالحًا."
+rastrillo.ui.money_precision = "أدخل مبلغًا بمنزلتين عشريتين على الأكثر."

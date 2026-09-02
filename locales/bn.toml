@@ -62,3 +62,5 @@ rastrillo.ui.date_quick_next_day = "পরের দিন একই সময�
 rastrillo.ui.date_invalid = "সেই তারিখটি পড়া যায়নি। দেখানো বিন্যাসে লিখুন, বা ক্যালেন্ডার ব্যবহার করুন।"
 rastrillo.ui.date_end_before_start = "শেষের সময় শুরুর আগে পড়ছে।"
 rastrillo.ui.field_required = "এই ঘরটি পূরণ করা আবশ্যক।"
+rastrillo.ui.money_invalid = "একটি বৈধ পরিমাণ লিখুন।"
+rastrillo.ui.money_precision = "সর্বোচ্চ ২ দশমিক স্থান সহ একটি পরিমাণ লিখুন।"
