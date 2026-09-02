@@ -280,9 +280,9 @@ body {
 
 /* block — a button that fills its container, for the one-action form
    (sign in, sign up, a confirm page) where the submit IS the screen.
-   It centres its own label: inline-flex left-aligns a stretched button's
-   text against the ordinary `align-items: center` default, which looks
-   like a mistake rather than a choice.
+   It centres its own label: .rst-btn sets no justify-content, so a
+   stretched button's text sits at the row's flex-start and reads as a
+   mistake rather than a choice.
 
    Pair it with lg. A block button at the default size is precisely the
    skinny bar described above — the width comes from the container and

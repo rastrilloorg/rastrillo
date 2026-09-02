@@ -139,6 +139,10 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	// example that served only the first would render as bare HTML and
 	// look like the design system had failed. day is the default and
 	// the reference theme.
+	//
+	// Tokens first, theme second — the order a scaffolded app's <head>
+	// is required to use (cmd/rastrillo/new_test.go gates it), so the
+	// theme has the last word on any property both declare.
 	r.Get("/static/app.css", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		theme, ok := ui.ThemeCSS("day")
@@ -146,9 +150,9 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 			http.Error(w, "theme missing", http.StatusInternalServerError)
 			return
 		}
-		w.Write(theme)
-		w.Write([]byte("\n"))
 		w.Write(ui.TokensCSS())
+		w.Write([]byte("\n"))
+		w.Write(theme)
 	})
 
 	mux := http.NewServeMux()

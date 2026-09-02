@@ -62,8 +62,10 @@
 
    Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
    WCAG 2.2): pagination chips measure about 30px, row action pills
-   about 27px and buttons about 34px on their smaller axis, all clear of
-   the 24px minimum. Do not shrink them without re-measuring.
+   about 27px, and the button sizes about 28px (sm), 34px (default) and
+   44px (lg) on their smaller axis, all clear of the 24px minimum. Do
+   not shrink them without re-measuring; the button block shows the
+   arithmetic.
 
    Type sizes are rem, not px, so the whole scale tracks a reader who has
    raised their browser's default font size. Spacing is rem for the same
@@ -242,6 +244,56 @@ body {
   border-color: var(--rst-tone-negative-fg);
   color: var(--rst-on-accent);
   filter: brightness(0.9);
+}
+
+/* ── Button sizes ─────────────────────────────────────────────────────
+   Three steps, and they are a size scale rather than a set of variants:
+   size composes with primary/ghost/danger, so `rst-btn="primary lg"` is
+   the ordinary spelling of a form's submit.
+
+   The default step is the one the page-header action and the row pill
+   want — small, dense, a control beside other controls. It was the ONLY
+   step for a long time, and that is how a form's submit ended up
+   wearing it: a 34px, 12.5px-labelled button stretched across a 44rem
+   column, which reads as a skinny bar rather than the thing the whole
+   screen is asking you to press. A CTA is not a toolbar button; give it
+   `lg`.
+
+   Measured on the smaller axis, against SC 2.5.8's 24px floor — padding
+   both sides, plus the label's line box, plus the 1px border top and
+   bottom (the border is why the default step is 34px and not 32px). The
+   header comment carries these too; keep the two in step:
+     sm       0.3rem  × 2 +  11.5px × 1.4 + 2  =  9.6 + 16.1 + 2  ≈ 28px
+     default  0.45rem × 2 +  12.5px × 1.4 + 2  = 14.4 + 17.5 + 2  ≈ 34px
+     lg       0.7rem  × 2 +  14px   × 1.4 + 2  = 22.4 + 19.6 + 2  ≈ 44px
+   sm is the tightest thing in the file that is still a button. It is
+   for a dense row of them, not for making an ordinary button smaller,
+   and there is deliberately nothing below it. */
+.rst-btn--sm, [rst-btn~="sm"] {
+  font-size: var(--rst-fs-xs);
+  padding: 0.3rem 0.55rem;
+}
+.rst-btn--lg, [rst-btn~="lg"] {
+  font-size: var(--rst-fs-base);
+  padding: 0.7rem 1.15rem;
+}
+
+/* block — a button that fills its container, for the one-action form
+   (sign in, sign up, a confirm page) where the submit IS the screen.
+   It centres its own label: .rst-btn sets no justify-content, so a
+   stretched button's text sits at the row's flex-start and reads as a
+   mistake rather than a choice.
+
+   Pair it with lg. A block button at the default size is precisely the
+   skinny bar described above — the width comes from the container and
+   the height does not follow, so the ratio goes wrong in proportion to
+   how wide the column is. Nothing here enforces that pairing, because a
+   narrow container is a legitimate place for a block button at the
+   default size; the wide ones are where it fails. */
+.rst-btn--block, [rst-btn~="block"] {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 /* busy — the loading state rastrillo.js gives every submit button on

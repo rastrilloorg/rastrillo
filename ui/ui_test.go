@@ -1473,7 +1473,7 @@ func TestSegTabsMarksCurrent(t *testing.T) {
 func TestConfirmFormShape(t *testing.T) {
 	got := render(t, "confirm-form", fixtureFor(t, "confirm-form"))
 	for _, want := range []string{`method="post"`, `action="/orders/1/refund"`,
-		`<input type="hidden" name="csrf" value="tok">`, `rst-btn="danger"`,
+		`<input type="hidden" name="csrf" value="tok">`, `rst-btn="danger lg"`,
 		`href="/orders/1"`, ">Cancel</a>"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
@@ -1485,7 +1485,7 @@ func TestConfirmFormShape(t *testing.T) {
 	}
 	// Cancel precedes the submit button in the DOM — the sole source of
 	// both visual order and tab order now that no CSS reorders them.
-	if cancel, submit := strings.Index(got, `<a rst-btn="ghost"`), strings.Index(got, `<button type="submit"`); cancel == -1 || submit == -1 || cancel > submit {
+	if cancel, submit := strings.Index(got, `<a rst-btn="ghost lg"`), strings.Index(got, `<button type="submit"`); cancel == -1 || submit == -1 || cancel > submit {
 		t.Errorf("cancel must precede the submit button in the DOM: %s", got)
 	}
 	// Hidden inputs render in the caller's slice order, not key-sorted —
@@ -2267,6 +2267,27 @@ func TestFieldTextMinimalFixture(t *testing.T) {
 	for _, absent := range []string{"aria-describedby", "aria-invalid", "required", "value=", "rst-field-hint", "rst-field-error"} {
 		if strings.Contains(got, absent) {
 			t.Errorf("%q rendered without its key: %s", absent, got)
+		}
+	}
+}
+
+// Minlength and Autofocus are the two attributes the auth screens
+// needed when they moved off hand-written markup, and both are the
+// omit-when-unset kind — TestFieldTextMinimalFixture would not notice
+// either of them leaking, because neither name appears in its absent
+// list. Assert the rendered attribute and its absence together.
+func TestFieldTextEmitsMinlengthAndAutofocusOnlyWhenAsked(t *testing.T) {
+	got := render(t, "field-text", map[string]any{
+		"Name": "password", "Label": "Password", "Type": "password",
+		"Minlength": "8", "Autofocus": true, "Required": true,
+	})
+	if !strings.Contains(got, `minlength="8" autofocus required`) {
+		t.Errorf("minlength/autofocus wrong: %s", got)
+	}
+	without := render(t, "field-text", map[string]any{"Name": "q", "Label": "Query"})
+	for _, absent := range []string{"minlength", "autofocus"} {
+		if strings.Contains(without, absent) {
+			t.Errorf("%q rendered without its key: %s", absent, without)
 		}
 	}
 }

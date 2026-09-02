@@ -98,15 +98,24 @@ import (
 // above calls out as the reason a block stays inline: getting it wrong
 // is silent.
 //
-// Trimmed first, per AGENTS.md, and the honest report is that there
-// was little left to take: the entry was cut by roughly a fifth in
-// review (the worked markup went to forms.md's new "What a form looks
-// like" section, which the bullet's existing templates.md and
-// forms.md pointers already reach), and that closed 110 of the 537.
-// The two documented squeeze passes before this one did their job.
-// The lever named above — sixteen unlinked docs pages — is still the
-// one with room in it, and this change spent a little of it in the
-// right direction by giving forms.md the detail rather than the file.
+// The numbers, exactly. main was 18,995 — five bytes under the old
+// ceiling, which is how little slack the two documented squeeze passes
+// above left behind. The entry as first drafted was 542 bytes; trimming
+// it in review took 26, and adding the docs/site/forms.md pointer it
+// needed put 22 back. It lands at 538, the file at 19,533, and no
+// arrangement of this entry fits under 19,000: even cut to its bare
+// rule — roughly 250 bytes, with every word of motivation gone — the
+// file clears the old ceiling by a couple of hundred. The raise was
+// not avoidable by editing the entry, which is the test the trim-first
+// rule is really asking.
+//
+// The worked markup went to forms.md's new "What a form looks like"
+// section rather than into this file, and the entry carries its own
+// docs/site/forms.md pointer to reach it: the UI bullet it sits in
+// links only templates.md, which says nothing about drawing a form.
+// That is the lever named above — sixteen unlinked docs pages — being
+// spent in the right direction: the file gets the rule, the page gets
+// the detail.
 const skillBudget = 20_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than

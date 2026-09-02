@@ -484,8 +484,8 @@ func families() []family {
 						{State: "Working — what rastrillo.js writes on the way out",
 							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
 							Raw: `<div rst-form-foot>
-<button rst-btn="primary" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span rst-spin aria-hidden="true"></span>Publishing…</button>
-<a rst-btn href="/posts">Back to posts</a>
+<button rst-btn="primary lg" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span rst-spin aria-hidden="true"></span>Publishing…</button>
+<a rst-btn="lg" href="/posts">Back to posts</a>
 </div>`,
 						},
 					},

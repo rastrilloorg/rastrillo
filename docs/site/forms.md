@@ -206,11 +206,11 @@ nothing fails — it just renders as a ragged column of labels sitting
 inline beside inputs of a dozen different widths, with an unstyled
 button under it.
 
-**A labelled control is never hand-written.** Three partials cover
-every field this framework has, and each one draws the label above the
-control, wires `aria-describedby` to whichever of the hint and error
-lines actually rendered, and sets `aria-invalid` when there is an
-error:
+**A labelled control is never hand-written.** There is a partial for
+every field kind, and each draws the label above the control, wires
+`aria-describedby` to the lines that actually rendered, and sets
+`aria-invalid` when there is an error. `field-text` and
+`field-textarea` are the two you reach for most:
 
 ```html
 <form rst-form method="post" action="/notes">
@@ -220,10 +220,18 @@ error:
 </form>
 ```
 
-`field-select` is the third, and `field-check`, `field-date`,
-`field-datetime`, `field-time` and `field-daterange` handle the rest.
-`field` is the older, more configurable text control — reach for it
-when you need `Pattern`, `Maxlength` or `Placeholder`.
+The rest are `field-select`, `field-check`, `field-date`,
+`field-datetime`, `field-time` and `field-daterange`. `field` is the
+older, more configurable text control — reach for it when you need
+`Pattern`, `Maxlength` or `Placeholder`.
+
+**Read the partial's own doc comment before your first call to it;
+the keys are not uniform.** `field-text` derives the control's `id`
+from `Name`, and its `Hint` is the muted line under the control.
+`field-select` and `field` take `ID` *and* `Name` separately, put
+`Hint` in parentheses after the label, and use `Help` for the line
+underneath. Copying one call shape onto the other silently renders
+`for=""` and drops the guidance.
 
 `rst-form` is yours to write, as `rst-page` and `rst-list` are. It is
 what makes the column a column: a `44rem` maximum, so lines stay
@@ -240,7 +248,11 @@ their own.
 
 `rst-btn` comes in three steps — `sm`, the default, and `lg` — and the
 size composes with the variant, so a form's submit is
-`rst-btn="primary lg"`. `form-foot` already writes that for you.
+`rst-btn="primary lg"`. `form-foot` and `confirm-form` both write that
+for you; the one place a submit stays at the default step is the sticky
+save bar (`rst-form-bar`), which is persistent chrome pinned to the
+viewport rather than the end of a form, and where a taller button just
+eats the page.
 
 The default step is sized for a control that sits beside other controls:
 a page-header action, a button in a row. It is the wrong size for a

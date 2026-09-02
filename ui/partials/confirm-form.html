@@ -36,7 +36,7 @@
               in the DOM, before the submit button — see the doc comment
               above: that order is load-bearing for tab order, not
               incidental to how the default renders. */}}
-{{define "confirm-form"}}<form rst-form-actions method="post" action="{{.Action}}">{{range .Hidden}}<input type="hidden" name="{{index . 0}}" value="{{index . 1}}">{{end}}{{if .CancelHref}}<a rst-btn="ghost" href="{{.CancelHref}}">{{if .CancelLabel}}{{.CancelLabel}}{{else}}{{T "rastrillo.ui.cancel"}}{{end}}</a>{{end}}<button type="submit" rst-btn="{{if .Danger}}danger{{else}}primary{{end}}">{{.Label}}</button></form>{{end}}
+{{define "confirm-form"}}<form rst-form-actions method="post" action="{{.Action}}">{{range .Hidden}}<input type="hidden" name="{{index . 0}}" value="{{index . 1}}">{{end}}{{if .CancelHref}}<a rst-btn="ghost lg" href="{{.CancelHref}}">{{if .CancelLabel}}{{.CancelLabel}}{{else}}{{T "rastrillo.ui.cancel"}}{{end}}</a>{{end}}<button type="submit" rst-btn="{{if .Danger}}danger{{else}}primary{{end}} lg">{{.Label}}</button></form>{{end}}
 
 {{/* back-nav — the ← return link above a confirm or detail page. A
      <nav>, not a paragraph: it is navigation, and a screen-reader user

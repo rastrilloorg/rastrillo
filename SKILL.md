@@ -314,7 +314,7 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   over an unstyled button — nothing fails, so nothing tells you.
   Button sizes `sm`/default/`lg` compose with the variant: a submit is
   `rst-btn="primary lg"` (form-foot writes it), never the toolbar-sized
-  default stretched across the column.
+  default stretched across the column. docs/site/forms.md
   Screens stack vertically — never heading, paragraph and button in one
   flex row; a notice with a CTA is a `callout` ending in a link. State
   is never colour alone: a `status-pill`'s label and a `meter`'s
