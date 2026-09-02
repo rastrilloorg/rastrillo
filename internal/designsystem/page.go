@@ -180,6 +180,10 @@ type pageView struct {
 	Icons  iconsView
 	Assets assetsView
 
+	// Screens is the Screens page: whole compositions rather than
+	// components. See screenViews.
+	Screens []screenView
+
 	// Nav is the sidebar: derived from the five fields above it, once
 	// they are built, so it cannot list anything the page does not
 	// render and cannot miss anything it does. See galleryNav.
@@ -299,6 +303,8 @@ func pageKinds() []pageKind {
 	return append(kinds,
 		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
 			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
+		pageKind{Kind: "screens", File: "screens.html", Title: "Screens", Nav: screenNav,
+			Blurb: "Examples of screens using the design system. You can use these as starter templates for your own apps."},
 		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
 			Blurb: "The page frames rastrillo new can scaffold. Each opens full width."},
 	)
@@ -669,6 +675,10 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	screens, err := buildScreens(mount, theme, locale, tmpl)
+	if err != nil {
+		return nil, err
+	}
 
 	localeName := rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"]
 	base := pageView{
@@ -681,6 +691,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		Structure:  localiseGroups(locale, structure),
 		Families:   families,
 		Idioms:     idioms,
+		Screens:    screens,
 		Shells:     shellViews(mount, theme, locale),
 		Icons:      buildIcons(locale),
 		Assets:     buildAssets(mount, theme, locale),
@@ -729,6 +740,7 @@ func bodyTemplates() []struct{ kind, src string } {
 		{"tokens", tokensBody},
 		{"icons", iconsBody},
 		{"primitives", primitivesBody},
+		{"screens", screensBody},
 		{"shells", shellsBody},
 		// The one family body, under a name no page kind has, so
 		// renderBody never reaches it directly.
@@ -1270,6 +1282,14 @@ var previewHeights = map[string]int{
 	// The demo application, framed at the top of the Overview. Taller
 	// than the shells because it is a screen with content in it rather
 	// than a frame with a sentence in it.
+	// The sign-in screens. A form in a card is taller than a component:
+	// a heading, a field or two, a button and a way out.
+	"screen-signin-link":     300,
+	"screen-signin-sent":     220,
+	"screen-signin-passkey":  230,
+	"screen-signin-social":   290,
+	"screen-signin-password": 420,
+
 	"demo-app":      780,
 	"shell-column":  780,
 	"shell-topbar":  780,

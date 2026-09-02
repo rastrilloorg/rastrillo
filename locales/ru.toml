@@ -66,3 +66,5 @@ rastrillo.ui.date_quick_next_day = "То же время на следующий
 rastrillo.ui.date_invalid = "Не удалось распознать эту дату. Попробуйте формат из подсказки или используйте календарь."
 rastrillo.ui.date_end_before_start = "Окончание раньше начала."
 rastrillo.ui.field_required = "Это поле обязательно."
+rastrillo.ui.money_invalid = "Введите корректную сумму."
+rastrillo.ui.money_precision = "Введите сумму не более чем с 2 знаками после запятой."
