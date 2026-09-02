@@ -354,7 +354,7 @@ func families() []family {
 							"Items": []any{
 								map[string]any{"Label": "Audience", "Value": "Members"},
 								map[string]any{"Label": "Main page", "Value": "No"},
-								map[string]any{"Label": "Published", "Value": "2 August 2026"},
+								map[string]any{"Label": "Published", "Value": "2 August 2026", "DateTime": "2026-08-02"},
 								map[string]any{"Label": "Reference", "Value": "post_01H9ZQ", "Mono": true},
 							},
 						}},

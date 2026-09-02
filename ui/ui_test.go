@@ -2299,6 +2299,35 @@ func TestDetailListEmptyItemsRendersEmptyList(t *testing.T) {
 	}
 }
 
+// A date in a detail list is a moment, and a moment is <time>. The
+// element is what a machine can read; the text stays whatever the caller
+// formatted for a person, because the framework does not format dates —
+// that is a locale's business and the caller has the locale.
+//
+// Both directions are asserted, and the second is the one that matters:
+// an item with no DateTime must render exactly as it did before, with no
+// empty element around it. A partial that wrapped every value would make
+// <time> mean "a value" rather than "a moment", which is worse than not
+// having it at all — an identifier or a quantity is not a time, however
+// numeric it looks.
+func TestDetailListMarksAMomentAsTime(t *testing.T) {
+	got := render(t, "detail-list", map[string]any{
+		"Items": []any{
+			map[string]any{"Label": "Published", "Value": "2 August 2026", "DateTime": "2026-08-02"},
+			map[string]any{"Label": "Reference", "Value": "post_01H9ZQ", "Mono": true},
+		},
+	})
+	if want := `<dd><time datetime="2026-08-02">2 August 2026</time></dd>`; !strings.Contains(got, want) {
+		t.Errorf("a dated item does not carry its machine-readable moment.\nwant %q\ngot  %s", want, got)
+	}
+	if want := `<dd class="rst-mono">post_01H9ZQ</dd>`; !strings.Contains(got, want) {
+		t.Errorf("an item with no DateTime must render exactly as it did before.\nwant %q\ngot  %s", want, got)
+	}
+	if n := strings.Count(got, "<time"); n != 1 {
+		t.Errorf("%d time elements for one dated item of two; a reference number is not a moment", n)
+	}
+}
+
 // job-status emits data-poll (and its spinner) only while running — that
 // attribute's presence is how the shim knows to keep polling, and its
 // absence is how the shim stops. A done job must never carry it.

@@ -2930,15 +2930,24 @@ var templateFixtures = map[string]bool{
 	"Card declined on renewal":           true,
 	"Export takes twenty minutes":        true,
 	"Seat count is wrong on the invoice": true,
-	"Fiona Reid · 09:12":                 true,
-	"Otto Neurath · 08:40":               true,
-	"Hedy Lamarr · 11 August":            true,
-	"Fiona Reid · Billing":               true,
-	"Otto Neurath · Billing":             true,
-	"Mary Sherman · Data":                true,
-	"Hedy Lamarr · Billing":              true,
-	"12 August":                          true,
-	"11 August":                          true,
+	// The four people are registered alone rather than as
+	// "Fiona Reid · 09:12", because each name is now wrapped in <bdi>
+	// and the element splits the run. That is the point of the wrapper
+	// — a person's name is its own bidirectional island — so the
+	// fixtures follow the markup rather than the markup being written
+	// to suit the fixtures.
+	"Fiona Reid":   true,
+	"Otto Neurath": true,
+	"Hedy Lamarr":  true,
+	"Mary Sherman": true,
+	// The tails the wrapper leaves behind. A run that used to read
+	// "Fiona Reid · Billing" is now the name, then the separator and
+	// the queue; the scanner sees the second half on its own.
+	"· Billing":   true,
+	"· Data":      true,
+	"· 11 August": true,
+	"12 August":   true,
+	"11 August":   true,
 }
 
 // dictFixtures is the literal English a dict argument is allowed to
