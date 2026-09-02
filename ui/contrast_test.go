@@ -300,6 +300,20 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		{"--rst-tone-positive-fg", "--rst-tone-positive-bg", 4.5, "status pill text"},
 		{"--rst-tone-warning-fg", "--rst-tone-warning-bg", 4.5, "status pill text"},
 		{"--rst-tone-negative-fg", "--rst-tone-negative-bg", 4.5, "status pill text"},
+		// The stat band's delta, which is the first place in this
+		// system where a tone colours TEXT on a plain card rather than
+		// filling a pill behind it. The pill pairs above say nothing
+		// about this one: --rst-tone-positive-fg was chosen to clear
+		// 4.5:1 on --rst-tone-positive-bg, a tinted ground, and
+		// --rst-surface is not that ground.
+		//
+		// It owes the full 4.5:1 even though the delta's sign already
+		// carries the meaning and the colour is the second signal.
+		// 1.4.1 is about meaning; 1.4.3 is about text, and this is
+		// text. A reader who cannot resolve the hue still has to be
+		// able to READ the number.
+		{"--rst-tone-positive-fg", "--rst-surface", 4.5, "a stat's rising delta"},
+		{"--rst-tone-negative-fg", "--rst-surface", 4.5, "a stat's falling delta"},
 		// Not in the main header tables — documented separately in
 		// tokens.css's [rst-btn~="danger"] comment, which reuses
 		// --rst-tone-negative-fg as a solid fill rather than declaring a

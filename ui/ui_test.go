@@ -813,15 +813,82 @@ func TestPaginationWithNoItems(t *testing.T) {
 
 func TestMeterClampsAndAlwaysShowsTheNumber(t *testing.T) {
 	over := render(t, "meter", map[string]any{"Percent": 140, "Text": "7/5"})
-	if !strings.Contains(over, "--rst-meter-fill: 100%") {
+	if !strings.Contains(over, `value="100"`) {
 		t.Errorf("percent not clamped high: %s", over)
 	}
 	under := render(t, "meter", map[string]any{"Percent": -3, "Text": "0/5"})
-	if !strings.Contains(under, "--rst-meter-fill: 0%") {
+	if !strings.Contains(under, `value="0"`) {
 		t.Errorf("percent not clamped low: %s", under)
 	}
 	if !strings.Contains(over, `<span rst-meter-num>7/5</span>`) {
 		t.Errorf("the fraction text is the accessible value and must render: %s", over)
+	}
+}
+
+// The bar is a native <meter> now, and these are the three things about
+// that which are decisions rather than syntax.
+//
+// The range is declared, because a <meter> with no max defaults to 1 and
+// a value of 82 then pins to full — the bar would read "completely full"
+// at every percentage over 1 and nobody would see anything wrong until
+// they compared two of them.
+//
+// It is hidden from assistive technology on purpose: role="meter" wants
+// an accessible name, the only name available is the fraction rendered
+// beside it, and naming it that announces the same thing twice. The text
+// is the accessible carrier and the element is the machine-readable
+// half. See the partial's comment, and §6-v2.4 on <data>.
+//
+// And the fraction is still text, which is the rule that predates all of
+// this: state is never carried by a graphic alone.
+func TestMeterIsANativeElementWithADeclaredRange(t *testing.T) {
+	got := render(t, "meter", map[string]any{"Percent": 82, "Text": "412 / 500"})
+	for _, want := range []string{
+		`<meter rst-meter-bar value="82" min="0" max="100" aria-hidden="true">`,
+		`<span rst-meter-num>412 / 500</span>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q: %s", want, got)
+		}
+	}
+	if strings.Contains(got, "--rst-meter-fill") {
+		t.Errorf("the old span-and-<i> fill is still being written; an app styling it would be styling nothing: %s", got)
+	}
+}
+
+// A running job's Percent is additive, and both halves of that are
+// asserted: with it there is a native <progress>, and without it the
+// fragment is byte-for-byte what it was before the key existed. The
+// second is the one that keeps this from being a redesign — most jobs
+// cannot say how far along they are, and a spinner plus a sentence is
+// the honest rendering of that.
+func TestJobStatusDrawsADeterminateBarOnlyWhenItCan(t *testing.T) {
+	with := render(t, "job-status", map[string]any{
+		"Name": "Import", "Status": "running", "Progress": "128 of 400", "Percent": 32,
+		"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
+	})
+	if want := `<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true">`; !strings.Contains(with, want) {
+		t.Errorf("a job that knows how far it is does not draw a bar.\nwant %q\ngot  %s", want, with)
+	}
+	if !strings.Contains(with, "128 of 400") {
+		t.Errorf("Progress is the text that carries the meaning and must still render: %s", with)
+	}
+
+	without := render(t, "job-status", map[string]any{
+		"Name": "Import", "Status": "running", "Progress": "128 of 400",
+		"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
+	})
+	if strings.Contains(without, "<progress") {
+		t.Errorf("a job with no Percent must draw no bar; an empty one would claim a measurement nobody has: %s", without)
+	}
+	if !strings.Contains(without, "rst-spin") {
+		t.Errorf("the spinner is what a running job of unknown length shows, and it has gone: %s", without)
+	}
+	// The spinner stays even when the bar is there: it means the page is
+	// still asking, which is a different fact from how far along the job
+	// is, and a poll can stop while a job is mid-flight.
+	if !strings.Contains(with, "rst-spin") {
+		t.Errorf("the bar replaced the spinner; they say different things and both are true while a job runs: %s", with)
 	}
 }
 
@@ -1570,6 +1637,18 @@ func rstVocabulary(markup string) map[string]bool {
 	return seen
 }
 
+// qualifiedOnly are the attributes that never appear alone in a
+// selector, because they mean nothing without the kind they modify.
+// rst-tone is the tone OF a status, a badge or a stat, and every rule
+// that reads it names both — [rst-status][rst-tone~="positive"] — so a
+// bare [rst-tone] would be a selector for a concept the grammar does
+// not have.
+//
+// Only the bare name is exempted. The variants a sample writes are
+// still required to exist, so rst-tone="lavender" fails here exactly
+// as it should.
+var qualifiedOnly = map[string]bool{"rst-tone": true}
+
 // tokensStyle reports whether tokens.css carries a selector for one
 // entry of that vocabulary.
 func tokensStyle(css, name string) bool {
@@ -1593,6 +1672,9 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 		}
 	}
 	for name := range seen {
+		if qualifiedOnly[name] {
+			continue
+		}
 		if !tokensStyle(css, name) {
 			t.Errorf("tokens.css has no selector for %q (used in a styleguide sample)", name)
 		}
@@ -2281,6 +2363,35 @@ func TestDetailListEmptyItemsRendersEmptyList(t *testing.T) {
 	got := render(t, "detail-list", map[string]any{"Items": []any{}})
 	if !strings.Contains(got, `<dl rst-detail>`) || strings.Contains(got, "<dt>") {
 		t.Errorf("empty detail-list wrong: %s", got)
+	}
+}
+
+// A date in a detail list is a moment, and a moment is <time>. The
+// element is what a machine can read; the text stays whatever the caller
+// formatted for a person, because the framework does not format dates —
+// that is a locale's business and the caller has the locale.
+//
+// Both directions are asserted, and the second is the one that matters:
+// an item with no DateTime must render exactly as it did before, with no
+// empty element around it. A partial that wrapped every value would make
+// <time> mean "a value" rather than "a moment", which is worse than not
+// having it at all — an identifier or a quantity is not a time, however
+// numeric it looks.
+func TestDetailListMarksAMomentAsTime(t *testing.T) {
+	got := render(t, "detail-list", map[string]any{
+		"Items": []any{
+			map[string]any{"Label": "Published", "Value": "2 August 2026", "DateTime": "2026-08-02"},
+			map[string]any{"Label": "Reference", "Value": "post_01H9ZQ", "Mono": true},
+		},
+	})
+	if want := `<dd><time datetime="2026-08-02">2 August 2026</time></dd>`; !strings.Contains(got, want) {
+		t.Errorf("a dated item does not carry its machine-readable moment.\nwant %q\ngot  %s", want, got)
+	}
+	if want := `<dd class="rst-mono">post_01H9ZQ</dd>`; !strings.Contains(got, want) {
+		t.Errorf("an item with no DateTime must render exactly as it did before.\nwant %q\ngot  %s", want, got)
+	}
+	if n := strings.Count(got, "<time"); n != 1 {
+		t.Errorf("%d time elements for one dated item of two; a reference number is not a moment", n)
 	}
 }
 

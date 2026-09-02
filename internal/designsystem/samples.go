@@ -32,6 +32,15 @@ import "amadan.net/rastrillo/rastrillo"
 // for the whole of that argument. Sample DATA is exempt and stays
 // English on every page: a person is called Grace Hopper in Japanese
 // too, and a route is /posts/new in Arabic.
+//
+// One trap in that exemption, and it fails the whole build rather than
+// one page. The leak gate asserts that no prose KEY appears in English
+// on a translated page, and it reads the rendered bytes — so it cannot
+// tell a sample's data from the page's own voice. A stat labelled
+// "Open requests" fails, not because the label is wrong but because the
+// demo application already says that sentence through P and the string
+// is therefore a key. Where the obvious sample wording is one this page
+// says elsewhere, pick another.
 
 // wrapper is the container a sample needs around it, per the rules in
 // docs/site/templates.md: rst-list and rst-card hold rows only, and a
@@ -40,10 +49,11 @@ import "amadan.net/rastrillo/rastrillo"
 type wrapper int
 
 const (
-	wrapBare wrapper = iota // nothing around it
-	wrapList                // <div rst-list>…</div>
-	wrapForm                // <section rst-box><form rst-form>…</form></section>
-	wrapBox                 // <section rst-box>…</section>
+	wrapBare  wrapper = iota // nothing around it
+	wrapList                 // <div rst-list>…</div>
+	wrapForm                 // <section rst-box><form rst-form>…</form></section>
+	wrapBox                  // <section rst-box>…</section>
+	wrapStats                // <div rst-stats>…</div>
 )
 
 // sample is one state of one partial: an English label for the state,
@@ -310,6 +320,12 @@ func families() []family {
 					States: meterStates(),
 				},
 				{
+					Name:   "stat",
+					Blurb:  "One number on a dashboard, with a label and how much it changed.",
+					Wrap:   wrapStats,
+					States: statStates(),
+				},
+				{
 					Name:  "person",
 					Blurb: "Initials avatar, name and email. Quickly identifies people records.",
 					States: []sample{
@@ -338,7 +354,7 @@ func families() []family {
 							"Items": []any{
 								map[string]any{"Label": "Audience", "Value": "Members"},
 								map[string]any{"Label": "Main page", "Value": "No"},
-								map[string]any{"Label": "Published", "Value": "2 August 2026"},
+								map[string]any{"Label": "Published", "Value": "2 August 2026", "DateTime": "2026-08-02"},
 								map[string]any{"Label": "Reference", "Value": "post_01H9ZQ", "Mono": true},
 							},
 						}},
@@ -363,7 +379,7 @@ func families() []family {
 					Blurb: "A background job's polled fragment. The data-poll attribute is emitted only while the job runs — omitting it is how polling stops.",
 					States: []sample{
 						{State: "Running", Data: map[string]any{
-							"Name": "Import", "Status": "running", "Progress": "128 of 400",
+							"Name": "Import", "Status": "running", "Progress": "128 of 400", "Percent": 32,
 							"PollURL": "/jobs/1/fragment", "PollSeconds": 2,
 						}, Note: "This one polls: it is the only sample on the page that asks the network for anything, and on a static site it simply never resolves."},
 						{State: "Finished", Data: map[string]any{"Name": "Import", "Status": "done"}},
@@ -594,6 +610,42 @@ func meterStates() []sample {
 		{State: "Full", Data: map[string]any{"Percent": 100, "Text": "500/500"}},
 		{State: "Over budget", Data: map[string]any{"Percent": 140, "Text": "700/500"},
 			Note: "The fill is clamped to 100% in the partial."},
+	}
+}
+
+// statStates is one cell at a time, because the band around them is a
+// class idiom and has its own example under UI primitives. What each
+// state is here to show is a decision the component makes rather than
+// a shape it can take: which is why there is no "with everything set"
+// sample and no tour of the three tones.
+func statStates() []sample {
+	return []sample{
+		{State: "The big number", Data: map[string]any{
+			"Label": "Revenue this month", "Value": "€48,210", "Lead": true,
+			"Delta": "+12%", "Tone": "positive", "Note": "vs. last month",
+		}, Note: "Add Lead to one stat in the row to make it big. It is the same component, just larger."},
+		{State: "A smaller number", Data: map[string]any{
+			"Label": "Unpaid invoices", "Value": "24",
+		}, Note: "You only need a label and a number. Everything else is optional."},
+		{State: "When going down is good", Data: map[string]any{
+			"Label": "Time to first reply", "Value": "1h 12m",
+			"Delta": "−38%", "Tone": "positive", "Note": "vs. last week",
+		}, Note: "You set the colour, not the component. Here the number went down and that is good news, so the change is green."},
+		{State: "When going up is bad", Data: map[string]any{
+			"Label": "Failed payments", "Value": "9",
+			"Delta": "+3", "Tone": "negative", "Note": "vs. last week",
+		}, Note: "Here the number went up and that is bad news, so the change is red."},
+		// The label carries this example. "Members" was here first and
+		// argued against the heading: more members is plainly good news,
+		// so the grey read as a missing setting rather than a decision.
+		// A session that got longer might mean interest or might mean
+		// confusion, which is the case Tone exists to leave alone.
+		{State: "When you cannot say", Data: map[string]any{
+			"Label": "Average session length", "Value": "4m 12s", "Delta": "+18s", "Note": "since Friday",
+		}, Note: "Leave the colour out and the change is grey. Do that when you cannot say if it is good or bad."},
+		{State: "A shortened number", Data: map[string]any{
+			"Label": "Messages sent", "Value": "4.1k", "Exact": "4120",
+		}, Note: "Showing 4.1k instead of 4120? Put the full number in Exact. Screen readers only read what is on screen, so keep anything a person needs in the number itself."},
 	}
 }
 

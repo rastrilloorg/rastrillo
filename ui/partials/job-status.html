@@ -5,11 +5,34 @@
      PollURL (the fragment endpoint), PollSeconds, and optionally
      PushURL (the SSE events endpoint): set, a running job also emits
      data-poll-push and a supporting browser rides server push instead
-     of the timer; unset, today's polling exactly. */}}
+     of the timer; unset, today's polling exactly.
+
+     Percent (0..100, optional) adds a native <progress> under the line
+     — the element for exactly this, per spec §6-v2.4. It is additive:
+     without it a running job is what it always was, a spinner and a
+     sentence, because that is the honest rendering of a job whose
+     length nobody knows.
+
+     Two things about it worth knowing before using it. The spinner
+     stays either way: it means "this page is still asking", which is a
+     different fact from "the job is 32% done", and a job can be the
+     second while the poll has stopped being the first. And Percent is
+     hidden from assistive technology for the same reason meter's bar
+     is — Progress is the text that says how far along it is, and a
+     nameless progressbar announcing "32" beside the words "128 of 400"
+     is noise, not access. Progress carries the meaning; this draws it.
+
+     Percent of 0 renders no bar, because {{with}} treats it as unset.
+     That is the right rendering by luck rather than design — a job that
+     has done nothing looks the same as one that cannot say — but it is
+     worth knowing before someone reports it as a bug. */}}
 {{define "job-status"}}
 <div rst-job{{if eq .Status "running"}} data-poll="{{.PollURL}}" data-poll-every="{{.PollSeconds}}"{{with .PushURL}} data-poll-push="{{.}}"{{end}}{{end}}>
 {{- if eq .Status "running"}}
   <span rst-spin aria-hidden="true"></span> <strong>{{.Name}}</strong> is running{{with .Progress}} — {{.}}{{end}}…
+  {{- with .Percent}}
+  <progress rst-job-bar value="{{.}}" min="0" max="100" aria-hidden="true"></progress>
+  {{- end}}
 {{- else if eq .Status "failed"}}
   <strong>{{.Name}}</strong> failed{{with .Err}}: {{.}}{{end}}
 {{- else}}

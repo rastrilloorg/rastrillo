@@ -898,11 +898,11 @@ func shellViews(mount, theme, locale string) []shellView {
 			// {{block}} in it, not markup to copy, and the two shell
 			// chrome idioms above show the markup it produces.
 			Preview: previewView{
-				Group:  id + "-0",
-				Style:  previewStyle(heightOf(id)),
-				Src:    href,
-				Title:  proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
-				Scaled: true,
+				Group: id + "-0",
+				Style: previewStyle(id, heightOf(id)),
+				Class: previewClass(id),
+				Src:   href,
+				Title: proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
 			},
 		})
 	}
@@ -960,7 +960,7 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 					Preview: newPreview(mount, theme, locale,
 						fmt.Sprintf("%s-%d", pv.ID, i),
 						previewTitle(locale, doc.Name, s.State),
-						wrap(doc.Wrap, string(html)), heightOf(pv.ID)),
+						wrap(doc.Wrap, string(html)), pv.ID),
 				})
 			}
 			view.Partials = append(view.Partials, pv)
@@ -1088,29 +1088,51 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 // demos, which are already documents). Source empty means no Code tab —
 // only the shell demos, whose source is a Go template and not markup to
 // copy.
-//
-// Scaled says whether the frame is laid out at a virtual 1200px and
-// scaled down to the column, or simply given the column's own width.
-// Only a whole page wants the first: a shell is a page frame, and the
-// question it answers — where does the rail sit next to the content —
-// is a question about a window, so showing a window shrunk is showing
-// the right thing. A component is not a window. Scaling an input down
-// to 0.72 renders its 12.5px label at 9px and answers no question at
-// all; it just makes the sample harder to read than the same control
-// in a real app, which is the one thing a gallery must not do
-// (discussion #7). So this is off for everything but the page frames,
-// and it is a field rather than "Src != ”" because the two happen to
-// coincide today and are not the same claim: the two shell-chrome
-// idioms on the primitives page are srcdoc documents that are still
-// page frames.
 type previewView struct {
-	Group  string       // the radio group's name, unique on the page
-	Style  template.CSS // --ds-h and --ds-hm: the frame's virtual height
+	Group string       // the radio group's name, unique on the page
+	Style template.CSS // --ds-h and --ds-hm: the frame's virtual height
+	// Class is " ds-view--page" on the examples whose document is a
+	// whole page, and empty on the rest — see pageFrame. It carries its
+	// own leading space so the template can write class="ds-view{{.Class}}"
+	// without a conditional, and it is a plain string rather than an
+	// HTMLAttr because it is only ever part of an attribute's value.
+	Class  string
 	Doc    string
 	Src    string
 	Source string
 	Title  string
-	Scaled bool
+}
+
+// pageFrame reports whether one example's document is a whole PAGE
+// rather than a component inside one. It is what picks the preview
+// widget's width class: the page examples lay out at a virtual 1200px,
+// everything else at 900px. gallery.css carries the argument for the
+// two numbers; this is only the sorting.
+//
+// Matched on the anchor id's prefix rather than listed, so the set
+// tracks ui rather than being a copy of it. A fifth shell in
+// ui.LayoutNames() arrives as shell-<name> and a matching idiom as
+// idiom-shell-<name>, and both land here with no edit. The two names
+// written out are the two that no rule could derive: the demo
+// application, which is this package's own page, and the modal, whose
+// whole claim is that it is a page — its backdrop is position: fixed,
+// so it is fixed to the frame's viewport and wants a window-sized one.
+//
+// Getting this wrong costs a rendering, never a broken page: a page
+// example sorted as a component is a shell squeezed into 900px, and a
+// component sorted as a page is the four-fifths scaling this class
+// split exists to remove.
+func pageFrame(id string) bool {
+	return id == "demo-app" || id == "idiom-modal" ||
+		strings.HasPrefix(id, "shell-") || strings.HasPrefix(id, "idiom-shell-")
+}
+
+// previewClass is pageFrame as the template writes it.
+func previewClass(id string) string {
+	if pageFrame(id) {
+		return " ds-view--page"
+	}
+	return ""
 }
 
 // previewStyle writes one example's two virtual heights. The frame is a
@@ -1119,14 +1141,40 @@ type previewView struct {
 // the frame reads its height back off the box, so dragging really does
 // show more of the document rather than more of the box.
 //
-// Mobile is a quarter taller than desktop, one factor for every
-// example rather than a second table of numbers. The same measuring
+// Mobile is a quarter taller than desktop for almost every example,
+// one factor rather than a second table of numbers. The same measuring
 // drive that fixed the numbers below fixed this: at 390px the tallest
 // any sample grows is 1.17× its desktop height — a page header, whose
 // title and action stack — and most grow not at all, because a
 // component this small has one column either way.
-func previewStyle(h int) template.CSS {
-	return template.CSS(fmt.Sprintf("--ds-h: %dpx; --ds-hm: %dpx", h, h*5/4))
+//
+// previewMobileHeights is the exception, and the stat band is what
+// earned it. The factor holds for components that have one column at
+// both widths; it cannot hold for one whose whole shape is a ROW that
+// becomes a COLUMN. A four-cell band is 170px of strip on a desktop
+// and 439px of stack on a phone — 2.6×, not 1.25 — and there is no
+// single factor that fits both that and a status pill. Raising the
+// desktop number until the derived mobile one fitted would have put
+// 180px of empty box under every desktop rendering of the band, which
+// is paying for the phone with the page most readers are on.
+//
+// Add an entry here only for an example whose layout genuinely changes
+// axis. An entry is not a place to absorb a desktop height that was
+// measured wrong.
+func previewStyle(id string, h int) template.CSS {
+	m, ok := previewMobileHeights[id]
+	if !ok {
+		m = h * 5 / 4
+	}
+	return template.CSS(fmt.Sprintf("--ds-h: %dpx; --ds-hm: %dpx", h, m))
+}
+
+// previewMobileHeights overrides the 1.25× factor for the examples that
+// reflow onto a different axis at 390px. Measured by the same drive as
+// previewHeights, and held by it: a number too small fails, and the
+// slack a number too large leaves is logged.
+var previewMobileHeights = map[string]int{
+	"idiom-stat-band": 450, // a four-cell strip becomes three stacked rows
 }
 
 // previewHeights is how tall each example's own document is, in CSS
@@ -1178,6 +1226,8 @@ var previewHeights = map[string]int{
 	"partial-status-pill": 70,
 	"partial-badge":       70,
 	"partial-meter":       70,
+	"partial-stat":        150, // a lead cell is label, number, delta and note stacked
+
 	"partial-person":      95,
 	"partial-callout":     160,
 	"partial-detail-list": 230,
@@ -1205,6 +1255,7 @@ var previewHeights = map[string]int{
 	// The markup idioms.
 	"idiom-box":           220,
 	"idiom-list-grid":     280,
+	"idiom-stat-band":     170,
 	"idiom-dropdown":      220,
 	"idiom-form-layout":   390,
 	"idiom-tblock":        270,
@@ -1383,10 +1434,15 @@ func previewTitle(locale, name, qualifier string) string {
 
 // newPreview is one example's widget: the source as written, and a
 // document holding the same markup with its links deadened.
-func newPreview(mount, theme, locale, group, title, source string, height int) previewView {
+// id is the example's anchor id, and both the height and the width
+// class are read off it — the two tables that size a preview are keyed
+// the same way, so a caller cannot pass one example's id and another's
+// measurements.
+func newPreview(mount, theme, locale, group, title, source, id string) previewView {
 	return previewView{
 		Group:  group,
-		Style:  previewStyle(height),
+		Style:  previewStyle(id, heightOf(id)),
+		Class:  previewClass(id),
 		Doc:    srcdoc(mount, theme, locale, title, deaden(mount, source)),
 		Source: source,
 		Title:  title,
@@ -1407,6 +1463,8 @@ func wrap(w wrapper, html string) string {
 		return `<section rst-box><form rst-form method="post" action="#">` + html + `</form></section>`
 	case wrapBox:
 		return `<section rst-box>` + html + `</section>`
+	case wrapStats:
+		return `<div rst-stats>` + html + `</div>`
 	}
 	return html
 }
@@ -1422,6 +1480,7 @@ func wrap(w wrapper, html string) string {
 var idiomBlurbs = map[string]string{
 	"box":           "The padded section card, and the heading that sits outside it.",
 	"list-grid":     "The real data-table vocabulary: the card sets its columns once, rows only choose cells.",
+	"stat-band":     "A row of stats across the top of a dashboard.",
 	"dropdown":      "The details/summary menu behind header overflow menus and a list bar's filter, plus an applied filter as a removable chip.",
 	"form-layout":   "The attributes that give a form its rhythm and its save bar. No partial emits these — they wrap a caller-composed run of fields.",
 	"tblock":        "A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.",
@@ -1479,20 +1538,6 @@ var demoIdioms = map[string]demoIdiom{
 	},
 }
 
-// pageFrameIdioms are the idioms on the primitives page that are whole
-// page frames rather than components, and so the only ones there that
-// keep the scaled rendering — the same judgement demoIdioms above makes
-// in prose ("the two shells are whole page frames"), stated once more
-// where the preview is built because that is where it changes what a
-// reader sees. The modal is deliberately not here: its overlay fills
-// whatever viewport it is in, so it fills the column just as honestly
-// as it fills a scaled 1200px window, and at the column's own width
-// its text is legible.
-var pageFrameIdioms = map[string]bool{
-	"shell-topbar":  true,
-	"shell-sidebar": true,
-}
-
 // buildIdioms renders ui.Styleguide in sorted order. The samples are
 // complete HTML with no template actions, so they go onto the page as
 // they are — the point is that the page shows the same bytes the ui
@@ -1522,8 +1567,7 @@ func buildIdioms(mount string, tmpl *template.Template, theme, locale string) ([
 		}
 		view.Preview = newPreview(mount, theme, locale, view.ID+"-0",
 			previewTitle(locale, name, "UI primitives"),
-			samples[name], heightOf(view.ID))
-		view.Preview.Scaled = pageFrameIdioms[name]
+			samples[name], view.ID)
 		if demo, ok := demoIdioms[name]; ok {
 			view.DemoLabel = proseIn(locale, demo.Label)
 			view.DemoHref = demo.Href(mount, theme, locale)
@@ -1768,18 +1812,23 @@ func renderDemo(mount, theme, locale string) ([]byte, error) {
 // application is not a snippet to paste.
 func demoView(mount, theme, locale string) previewView {
 	return previewView{
-		Group:  "demo-app-0",
-		Style:  previewStyle(heightOf("demo-app")),
-		Src:    demoHref(mount, theme, locale),
-		Title:  proseIn(locale, "The demo application"),
-		Scaled: true,
+		Group: "demo-app-0",
+		Style: previewStyle("demo-app", heightOf("demo-app")),
+		Class: previewClass("demo-app"),
+		Src:   demoHref(mount, theme, locale),
+		Title: proseIn(locale, "The demo application"),
 	}
 }
 
 // demoCSS is the whole of the demo's own stylesheet, and it is worth
 // reading for how little of it there is: everything visible on the page
-// is tokens.css, and this is the view switching plus a three-up grid
-// for the dashboard's numbers.
+// is tokens.css, and this is the view switching plus one margin.
+//
+// It used to carry a three-up grid and two type rules for the
+// dashboard's numbers, which was four rules doing by hand what the
+// stat band now does as vocabulary. Their going is the point rather
+// than a tidy-up: a demo that hand-rolls a component the framework
+// ships is a demo quietly saying the framework does not ship it.
 //
 // The switching, in four rules. The list and the detail view are hidden
 // until they are the :target; the dashboard is shown until one of them
@@ -1804,10 +1853,7 @@ body:has(#view-request:target) #view-dashboard { display: none; }
 body:not(:has(#view-requests:target, #view-request:target)) [rst-shell-nav] a[href="#view-dashboard"],
 body:has(#view-requests:target) [rst-shell-nav] a[href="#view-requests"],
 body:has(#view-request:target) [rst-shell-nav] a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-.app-stats { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-block-end: var(--rst-sp-5); }
-.app-stats > [rst-box] { margin: 0; }
-.app-stat__n { font-size: 1.9rem; font-weight: 650; line-height: 1.1; margin: 0; }
-.app-stat__l { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0.2rem 0 0; }
+[rst-stats] { margin-block-end: var(--rst-sp-5); }
 `
 
 // demoTemplate fills every block demoShell leaves open, and then the
@@ -1837,19 +1883,19 @@ const demoTemplate = `
 {{define "content"}}
 <section class="app-view" id="view-dashboard">
 {{template "page-header" dict "Title" (P "Dashboard") "Sub" (P "Everything the team has waiting this morning.")}}
-<div class="app-stats">
-<section rst-box><p class="app-stat__n">24</p><p class="app-stat__l">{{P "Open requests"}}</p></section>
-<section rst-box><p class="app-stat__n">6</p><p class="app-stat__l">{{P "Waiting on us"}}</p></section>
-<section rst-box><p class="app-stat__n">41</p><p class="app-stat__l">{{P "Resolved this week"}}</p></section>
+<div rst-stats>
+{{template "stat" dict "Label" (P "Open requests") "Value" "24" "Lead" true "Delta" "−6" "Tone" "positive" "Note" (P "since Monday")}}
+{{template "stat" dict "Label" (P "Waiting on us") "Value" "6"}}
+{{template "stat" dict "Label" (P "Resolved this week") "Value" "41" "Delta" "+12" "Tone" "positive" "Note" (P "since Monday")}}
 </div>
 <div rst-box-head><h2>{{P "Mailbox storage"}}</h2></div>
 <section rst-box>{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>
 <div rst-box-head><h2>{{P "Latest activity"}}</h2><a rst-btn href="#view-requests">{{P "Requests"}}</a></div>
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small><bdi>Otto Neurath</bdi> · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
 </div>
 </section>
 
@@ -1859,10 +1905,10 @@ const demoTemplate = `
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px 120px">
 {{template "list-bar" dict "SearchAction" "#view-requests" "Placeholder" (P "Search requests")}}
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small>Fiona Reid · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small>Otto Neurath · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Export takes twenty minutes<small>Mary Sherman · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small>Hedy Lamarr · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small><bdi>Otto Neurath</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Export takes twenty minutes<small><bdi>Mary Sherman</bdi> · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
+<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
 </div>
 <p rst-count-line>{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
 {{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" "#view-requests") (dict "Label" "3" "Href" "#view-requests"))}}
@@ -1873,7 +1919,7 @@ const demoTemplate = `
 {{template "page-header" dict "Title" "Invoice #4471 never arrived" "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
 <p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" "Billing"}}</p>
 <div rst-box-head><h2>{{P "Details"}}</h2></div>
-<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12"))}}</section>
+<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12" "DateTime" "2026-08-14T09:12"))}}</section>
 <div rst-box-head><h2>{{P "Reply"}}</h2></div>
 <section rst-box><form rst-form method="post" action="#view-request">
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
@@ -2125,7 +2171,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 // overrides the width at any size. The Desktop label carries a
 // modifier class for the same reason the Mobile one does: the
 // stylesheet has to be able to say which of the two a reader chose.
-const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{if not .Scaled}} ds-view--fluid{{end}}" style="{{.Style}}">
+const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{.Class}}" style="{{.Style}}">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">{{P "Preview"}}</legend>
 <label class="ds-view__tab ds-view__tab--d"><input type="radio" name="{{.Group}}">{{P "Desktop"}}</label>
 <label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label>

@@ -5,10 +5,25 @@
        Items  []map, required — list of items; each has:
          Label  string, required — the property name
          Value  string, required — the property value
-         Mono   bool, optional — marks machine-ish values */}}
+         Mono   bool, optional — marks machine-ish values
+         DateTime  string, optional — a machine-readable date, time or
+                duration, emitted as <time datetime="…"> around Value.
+                Set it when Value IS a moment or a length of time.
+
+     DateTime is the element and not a format: Value stays whatever the
+     caller formatted for a person to read ("14 August, 09:12"), and
+     DateTime carries the same moment in the one syntax a machine can
+     parse ("2026-08-14T09:12"). The framework does not format dates —
+     that is a locale's business and the caller has the locale — so the
+     two are supplied together or not at all.
+
+     Use <time> for a moment or a duration and nothing else. An
+     identifier, a quantity or a reference number is not a time, however
+     numeric it looks; that is what Mono is for. Getting this wrong is
+     the mistake this key exists to make easy to avoid. */}}
 {{define "detail-list"}}<dl rst-detail>
   {{- range .Items}}
   <dt>{{.Label}}</dt>
-  <dd{{if .Mono}} class="rst-mono"{{end}}>{{.Value}}</dd>
+  <dd{{if .Mono}} class="rst-mono"{{end}}>{{if .DateTime}}<time datetime="{{.DateTime}}">{{.Value}}</time>{{else}}{{.Value}}{{end}}</dd>
   {{- end}}
 </dl>{{end}}

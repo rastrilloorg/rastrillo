@@ -878,18 +878,17 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 
 // ── The preview widget ───────────────────────────────────────────────
 
-// widgetsOf cuts a page into its preview widgets: everything from one
-// `<div class="ds-view"` up to the next one (or to the end).
-// widgetRoot matches a preview widget's opening tag in both its
-// renderings: a page frame is a bare .ds-view, a component carries the
-// --fluid modifier that turns the scaling off (previewView.Scaled).
-// Matched as an alternation rather than by prefix because
-// .ds-view__stage and .ds-view__box are divs on the same page, and a
-// prefix match would count three widgets for every one.
-var widgetRoot = regexp.MustCompile(`<div class="ds-view(?: ds-view--fluid)?" style=`)
+// widgetOpen matches the opening tag of a preview widget in either
+// width class. The optional modifier is spelled out rather than matched
+// loosely, because `<div class="ds-view` alone also matches the
+// ds-view__stage and ds-view__box divs inside every widget and would
+// cut each one into four.
+var widgetOpen = regexp.MustCompile(`<div class="ds-view(?: ds-view--page)?" style=`)
 
+// widgetsOf cuts a page into its preview widgets: everything from one
+// widget's opening tag up to the next one (or to the end).
 func widgetsOf(page string) []string {
-	parts := widgetRoot.Split(page, -1)
+	parts := widgetOpen.Split(page, -1)
 	if len(parts) < 2 {
 		return nil
 	}
@@ -916,7 +915,7 @@ func widgetsOf(page string) []string {
 // screenshot.
 func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 	files := render(t)
-	var total int
+	var total, pageWidth int
 	for _, name := range galleryFiles(RootTheme(), "en") {
 		page := string(files[name])
 		widgets := widgetsOf(page)
@@ -934,6 +933,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		if n := strings.Count(page, `<div class="ds-sample">`) + framedPages; n != len(widgets) {
 			t.Errorf("%s: %d preview widgets for %d examples", name, len(widgets), n)
 		}
+		pageWidth += strings.Count(page, `ds-view--page`)
 		total += len(widgets)
 		groups := map[string]bool{}
 		var withCode int
@@ -977,6 +977,24 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		}
 
 	}
+	// The width class, counted off the render and held against the set
+	// ui itself defines. pageFrame() sorts by anchor-id prefix, which
+	// is what lets a fifth shell arrive with no edit and is also the
+	// thing that can go quietly wrong — a rename in ui.LayoutNames() or
+	// ui.Styleguide() that stops matching leaves a 1200px page frame
+	// squeezed into a 900px box, which renders and reads perfectly.
+	// Derived here from the same two sources rather than written down,
+	// so the arithmetic moves with them.
+	wantPageWidth := len(ui.LayoutNames()) + 2 // the shell demos, plus the demo application and the modal
+	for name := range ui.Styleguide() {
+		if strings.HasPrefix(name, "shell-") {
+			wantPageWidth++
+		}
+	}
+	if pageWidth != wantPageWidth {
+		t.Errorf("%d widgets take the page width class across the English tree, want %d — every shell demo, every shell idiom, the modal and the demo application, and nothing else", pageWidth, wantPageWidth)
+	}
+
 	// The mechanism, asserted where it lives — which is gallery.css,
 	// once, since the stylesheet stopped being inlined into all 397
 	// pages. Without these four rules the tabs are three radios that
@@ -997,21 +1015,24 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		// TestThePreviewDefaultIsMonotoneInStageWidth, which fails on
 		// a media rule and passes on this one.
 		`container-name: ds-view; container-type: inline-size;`,
-		`@container ds-view (min-width: 54rem) { .ds-view:not(:has(input:checked)) .ds-view__tab--d {`,
-		`@container ds-view not (min-width: 54rem) { .ds-view:not(.ds-view--fluid):not(:has(input:checked)) .ds-view__tab--m {`,
-		`.ds-view:not(.ds-view--fluid):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
-		// The component rendering, which is the three properties every
-		// rule above already reads rather than a second geometry: a
-		// virtual width of 100% and a scale of 1 turn the existing
-		// arithmetic into the column's own pixels at 1:1. The :not()
-		// is what hands the Mobile tab back to the rules above, so a
-		// reader who asks for 390px still gets 390px scaled.
-		`.ds-view--fluid:not(:has(.ds-view__tab--m input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-k: 1; --ds-w: 100%; }`,
-		// And the lit tab that goes with it. A component has no width
-		// at which the desktop rendering stops being legible, so it
-		// opens on Desktop at every width — the excluded auto-switch
-		// above, stated as the rule that replaces it.
-		`.ds-view--fluid:not(:has(input:checked)) .ds-view__tab--d {`,
+		// One pair per width class, because the threshold is
+		// --ds-wd × --ds-kmin and a query condition cannot name a
+		// custom property. 900 × 0.72 = 648px = 40.5rem for a
+		// component, 1200 × 0.72 = 864px = 54rem for a page frame;
+		// TestThePreviewDefaultIsMonotoneInStageWidth measures both
+		// identities in an engine rather than trusting this arithmetic.
+		`@container ds-view (min-width: 40.5rem) { .ds-view:not(.ds-view--page):not(:has(input:checked)) .ds-view__tab--d {`,
+		`.ds-view:not(.ds-view--page):not(:has(input:checked)) .ds-view__tab--m {`,
+		`.ds-view:not(.ds-view--page):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		`@container ds-view (min-width: 54rem) { .ds-view--page:not(:has(input:checked)) .ds-view__tab--d {`,
+		`.ds-view--page:not(:has(input:checked)) .ds-view__tab--m {`,
+		`.ds-view--page:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		// The two widths themselves. Without the second declaration
+		// every example is a component and the shells lose their
+		// window; without the first every example is 1200px again and
+		// the whole gallery is back to four-fifths size.
+		`.ds-view { --ds-wd: 900px; --ds-w: var(--ds-wd);`,
+		`.ds-view--page { --ds-wd: 1200px; }`,
 		// The scale floor, which is what buys legibility, and the
 		// panning that makes a clamped scale usable rather than
 		// cropped. On the box itself, not on the state that made it
@@ -2909,15 +2930,24 @@ var templateFixtures = map[string]bool{
 	"Card declined on renewal":           true,
 	"Export takes twenty minutes":        true,
 	"Seat count is wrong on the invoice": true,
-	"Fiona Reid · 09:12":                 true,
-	"Otto Neurath · 08:40":               true,
-	"Hedy Lamarr · 11 August":            true,
-	"Fiona Reid · Billing":               true,
-	"Otto Neurath · Billing":             true,
-	"Mary Sherman · Data":                true,
-	"Hedy Lamarr · Billing":              true,
-	"12 August":                          true,
-	"11 August":                          true,
+	// The four people are registered alone rather than as
+	// "Fiona Reid · 09:12", because each name is now wrapped in <bdi>
+	// and the element splits the run. That is the point of the wrapper
+	// — a person's name is its own bidirectional island — so the
+	// fixtures follow the markup rather than the markup being written
+	// to suit the fixtures.
+	"Fiona Reid":   true,
+	"Otto Neurath": true,
+	"Hedy Lamarr":  true,
+	"Mary Sherman": true,
+	// The tails the wrapper leaves behind. A run that used to read
+	// "Fiona Reid · Billing" is now the name, then the separator and
+	// the queue; the scanner sees the second half on its own.
+	"· Billing":   true,
+	"· Data":      true,
+	"· 11 August": true,
+	"12 August":   true,
+	"11 August":   true,
 }
 
 // dictFixtures is the literal English a dict argument is allowed to

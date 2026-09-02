@@ -17,10 +17,16 @@ package ui
 var styleguideSamples = map[string]string{
 	"box": `<div rst-box-head><h2>Payout</h2><a rst-btn href="/payout/edit">Edit</a></div>
 <section rst-box><p>Everything on a screen sits inside boxes.</p><div rst-box-foot>Last updated 2 hours ago</div></section>`,
+	"stat-band": `<div rst-stats>
+  <div rst-stat="lead"><span rst-stat-label>Revenue this month</span><span rst-stat-num>&euro;48,210</span><span rst-stat-delta rst-tone="positive">+12%</span><span rst-stat-note>vs. last month</span></div>
+  <div rst-stat><span rst-stat-label>Orders today</span><span rst-stat-num>318</span></div>
+  <div rst-stat><span rst-stat-label>Average basket</span><span rst-stat-num>&euro;41.20</span><span rst-stat-delta rst-tone="negative">&minus;3%</span></div>
+  <div rst-stat><span rst-stat-label>Refunds</span><span rst-stat-num>7</span></div>
+</div>`,
 	"list-grid": `<div rst-card style="--rst-cols: 2fr 110px 32px">
   <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div rst-lrow>
-    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
+    <a class="rst-nm" href="/orders/AB3PX"><bdi>Grace Hopper</bdi><small>AB3PX · <bdi>grace@example.com</bdi></small></a>
     <span class="rst-m-hide rst-cell-mut">Paid</span>
     <details rst-row-menu name="rst-menus"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
       <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>

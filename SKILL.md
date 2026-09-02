@@ -10,9 +10,8 @@ handlers on a chi router and `html/template` pages; it supplies the
 database opener, session store, identity plugins, CSRF, owner scoping,
 form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
-published module (Go excludes nested modules from a module zip), so
-read it at amadan.net/rastrillo/rastrillo and never by looking for a
-directory that cannot be there. Rare traps get one sentence plus a page:
+published module (Go excludes nested modules from a zip), so read it
+there, never in your checkout. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
 ## 0. Start here
@@ -107,6 +106,18 @@ SQLite-wired (one file, WAL, one writer connection, several readers,
 routed per statement). `d.Close()` closes both pools; `d.G.DB()` returns
 the writer `*sql.DB` for database/sql packages.
 
+**Bytes go in the object store, never on disk or in a column.** The
+instance's filesystem is ephemeral and it hibernates, so a saved upload
+is gone by the next request — silently, never at build time. The
+platform delivers a bucket as `CARLOS_STORE_*`; `blobs.S3FromEnv()`
+binds it and answers `(nil, nil)` — not an error — when there is none,
+so checking `err` alone panics later; dev falls back to
+`blobs.Dir(root)`. The row keeps a `blobs.Ref` (hex SHA-256 address,
+size, content type), and under 4 KiB may sit inline in SQLite — a rule
+stated everywhere and enforced nowhere. Presigned GET/PUT move bytes
+browser-to-bucket without the app proxying.
+docs/site/reference/blobs.md
+
 Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
 re-run, never reversed. `migrations.go` declares two `*migrate.Set`:
@@ -129,19 +140,15 @@ deployed, ship it alone, change a model only in a later release — else
 boot refuses on the new column, and `baseline` there strands it for
 good.
 
-**Deleting a secret from SQLite does not unwrite it.** Measured, not
-assumed: insert a value, `DELETE` it, grep the raw bytes. The value is
-in `app.db-wal` from the insert — *before* it is ever in `app.db` — and
-it is still there after the delete, because the WAL holds the page as
-it was. `PRAGMA secure_delete = ON` zeroes the freed page and so
-cleans `app.db` after a checkpoint; it never cleans the WAL. Set it on
-the writer (`d.G.Exec("PRAGMA secure_delete = ON")`) — that pool is
-capped at one connection, so it sticks — but treat it as damage
-control, not a guarantee. Anything shipping WAL frames continuously
-(Litestream) has already sent the value. For an app that must not hold
-a value at rest, the only answer is not to write it: seal it, hash it,
-or key the row by digest. A gate that greps only `app.db` passes while
-the plaintext sits in the WAL.
+**Deleting a secret from SQLite does not unwrite it.** A value is in
+`app.db-wal` from the insert — *before* it reaches `app.db` — and
+survives `DELETE`: the WAL keeps the page as it was. So a gate
+grepping only `app.db` passes while the plaintext sits in the WAL, and
+Litestream has shipped it. `secure_delete = ON` cleans `app.db` at the
+next checkpoint, never the WAL: set it on the writer (one connection,
+so it sticks) and treat it as damage control. For a value that must
+not be at rest the only answer is not to write it — seal, hash, or key
+by digest.
 
 ## 3. Scoping
 
@@ -304,7 +311,14 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   flex row; a notice with a CTA is a `callout` ending in a link. State
   is never colour alone: a `status-pill`'s label and a `meter`'s
   fraction are always visible text; `Alert` (`role="alert"`) is for
-  live problems, not ambient notes. Every menu is a
+  live problems, not ambient notes. A dashboard opens with `rst-stats`
+  holding `stat` cells, one marked `rst-stat="lead"` — there is no
+  separate headline component. Put the sign in `stat`'s `Delta`
+  (`"+12%"`, `"−4%"`) and pass `Tone` yourself: a fall is good news
+  about half the time, so it is never derived from the sign.
+  A name inline with other content needs `<bdi>` — an RTL name beside a
+  number draws the number to its LEFT. `detail-list` takes `DateTime`
+  beside `Value` for a moment (`<time>`), never an identifier. Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
   names another group, and a nested `rst-menu-group` MUST name a
@@ -312,6 +326,20 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   rastrillo.org/design-system (built from `ui` by `cmd/dsgen`, not
   committed); `go generate ./...` renders a local copy into
   `.design-system/`. docs/site/templates.md
+- **Modern CSS is the floor, not a hazard.** `tokens.css` plus a shipped
+  theme already require Chrome 123, Safari 17.5, Firefox 121 — none older
+  than late 2023 — because every theme colour is a `light-dark()`. Reach
+  for the modern feature: anything that shipped at or below that floor is
+  free, `oklch()` and `color-mix()` included, with no hex twin and no
+  `@supports`. A hex fallback protects nobody anyway — an engine too old
+  for `oklch()` dropped the whole `light-dark()` palette several
+  declarations earlier. And self-contained means the CSS fetches nothing:
+  no imports, no remote assets, no webfont, held by `ui_test.go`. It has
+  never meant old engines. Go above the floor with `@supports`, or move
+  the floor and say so. The bar for adopting something newer is a year in
+  all three engines; `cssfloor_test.go` fails once the floor has gone nine
+  months unreviewed.
+  docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the
   log line's `ref`. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a

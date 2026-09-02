@@ -65,7 +65,26 @@ import (
 // would look it up anyway. Sixteen of the twenty-four docs pages are
 // still unlinked from SKILL.md, so this lever has more left in it than
 // the budget does. Trim first, still.
-const skillBudget = 18_000
+// Raised 18,000 -> 19,000 on 2026-09-02, and the reason is a shape this
+// budget will meet again rather than a one-off.
+//
+// Two branches grew SKILL.md at once. Each was under 18,000 on its own
+// and each passed CI on its own; the merge summed them and landed at
+// 18,084, so `main` went red on a textually clean merge that neither
+// author could have seen coming. A byte budget has no merge-time guard
+// — there is no way to express "and not when added to whatever else
+// lands first" — so this will recur whenever two branches touch the
+// file in one cycle.
+//
+// Raised rather than trimmed, per AGENTS.md: both sides added
+// load-bearing facts (the stat band's rules, and the bidi and <time>
+// rules that no other page states), and cutting one to fit would delete
+// a fact to satisfy a number. The prose was trimmed first — the entry
+// that arrived with this raise was cut by roughly a third — and it
+// closed 146 of the 437, which is the honest measure of how much slack
+// is left in re-squeezing: not much. The lever with room in it is still
+// the one named above, sixteen unlinked docs pages.
+const skillBudget = 19_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

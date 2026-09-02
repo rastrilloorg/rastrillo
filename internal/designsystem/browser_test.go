@@ -624,11 +624,6 @@ type framing struct {
 	// page after the scale.
 	Virtual float64
 	Painted float64
-	// The box's CONTENT width — Painted less its 1px border on each
-	// side. The frame lives inside that, so it is the number a fluid
-	// frame must equal; comparing against Painted instead makes the
-	// border look like a 2px layout error.
-	Content float64
 	// What the framed document itself reports: the width its <html>
 	// laid out to, and whether its body really has the sample in it.
 	Inner float64
@@ -696,7 +691,6 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		  return JSON.stringify({
 		    Virtual: parseFloat(getComputedStyle(f).width),
 		    Painted: box.getBoundingClientRect().width,
-		    Content: box.clientWidth,
 		    Inner: d ? d.documentElement.getBoundingClientRect().width : -1,
 		    Gutter: d ? d.defaultView.innerWidth - d.documentElement.getBoundingClientRect().width : 0,
 		    Body: d ? d.body.innerHTML.trim().slice(0, 120) : "",
@@ -839,42 +833,38 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		}
 	}
 
-	// Desktop, for a component: the frame is the box and the box is the
-	// column, at 1:1. This is discussion #7 — the callout's 12.5px type
-	// used to be painted at 9px here, because the frame was laid out at
-	// a virtual 1200px and scaled by 958/1200 to fit. A shell is still
-	// scaled that way and TestAShellPreviewIsStillScaledIntoItsColumn
-	// holds it, which is the half of this claim that is easy to lose:
-	// "not scaled" is the right answer for a component and the wrong
-	// one for a page frame, so neither test means much without the
-	// other.
-	//
-	// Frame against box and document against frame are separate
-	// readings because they fail differently. The first going wrong is
-	// the fluid rule not applying at all; the second is a frame laying
-	// out short for a reason of its own, which a single end-to-end
-	// comparison would report as the same thing.
-	if d.Virtual != d.Content {
-		t.Errorf("the component frame lays out at %gpx inside a box %gpx wide inside its border — a fluid preview is exactly its column, so these are one number", d.Virtual, d.Content)
-	}
-	if d.Painted >= 1280 || d.Painted < 200 {
-		t.Errorf("the component frame is painted %gpx wide in a 1280px window, which is not this page's column", d.Painted)
+	// Desktop: the frame lays out at its class's virtual width whatever
+	// the column is. The callout is a component, so that is 900px, and
+	// the number is written here rather than read off --ds-wd on
+	// purpose — this is the one assertion in the file that would still
+	// pass if the stylesheet lost the component class altogether and
+	// every example went back to 1200px. Everything else derives.
+	const componentWidth = 900
+	if d.Virtual != componentWidth {
+		t.Errorf("the desktop frame lays out at %gpx, want %d — a component preview is laid out at the width a component gets in an app, and a preview that is only the reader's own width is not a desktop preview at all", d.Virtual, componentWidth)
 	}
 	// Inner plus the gutter, not Inner alone: tokens.css reserves the
 	// scrollbar's width inside every framed document too (§6-v2.1b.4),
-	// so the document lays out 15px short on a platform with classic
-	// scrollbars and full width on one with overlay scrollbars. Adding
-	// the two back together is exact on both, where a tolerance would
-	// have quietly accepted a frame laying out short for some other
-	// reason.
-	if d.Inner+d.Gutter != d.Virtual {
-		t.Errorf("the framed document laid out at %gpx with a %gpx scrollbar gutter, %gpx in all, in a %gpx frame", d.Inner, d.Gutter, d.Inner+d.Gutter, d.Virtual)
+	// so a 900px frame lays its document out at 885 on a platform with
+	// classic scrollbars and at 900 on one with overlay scrollbars.
+	// Adding the two back together is exact on both, where a tolerance
+	// would have quietly accepted a frame laying out short for some
+	// other reason.
+	if d.Inner+d.Gutter != componentWidth {
+		t.Errorf("the framed document laid out at %gpx with a %gpx scrollbar gutter, %gpx in all, want %d", d.Inner, d.Gutter, d.Inner+d.Gutter, componentWidth)
 	}
-	// The column's width, logged rather than written down anywhere: it
-	// moves whenever [rst-page]'s cap moves, and a number in a comment
-	// would be a number nobody re-measures. This is where to read it
-	// after changing the column.
-	t.Logf("component preview: a %gpx frame painted %gpx wide in a 1280px window — scale %.3f", d.Virtual, d.Painted, d.Painted/d.Virtual)
+	// Painted at its own width, not squeezed into the column: 900px in
+	// a 958px stage is --ds-k = 1, which is the whole of what the
+	// component class bought. Before it, this same example was painted
+	// at 0.798 of a 1200px page on every desktop there is.
+	if d.Painted < componentWidth-2 || d.Painted > componentWidth+2 {
+		t.Errorf("the desktop frame is painted %gpx wide in a 1280px window and its virtual page is %dpx; a component that fits its stage is not to be scaled at all", d.Painted, componentWidth)
+	}
+	// The scale factor, logged rather than written down anywhere: it is
+	// 100cqw / --ds-w, so it moves whenever [rst-page]'s cap moves, and
+	// a number in a comment would be a number nobody re-measures. This
+	// is where to read it after changing the column.
+	t.Logf("desktop preview: a %gpx virtual page painted %gpx wide in a 1280px window — scale %.3f", d.Virtual, d.Painted, d.Painted/d.Virtual)
 	if !d.FrameShown || d.CodeShown {
 		t.Error("the page does not open on the framed rendering")
 	}
@@ -933,78 +923,6 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	if off.FrameShown || !off.CodeShown {
 		t.Errorf("with scripts disabled the Code tab shows frame=%v code=%v — the tabs need JavaScript", off.FrameShown, off.CodeShown)
 	}
-}
-
-// TestAShellPreviewIsStillScaledIntoItsColumn is the other half of the
-// drive above, and it exists because discussion #7 is easy to overshoot.
-//
-// The complaint was that scaling an INPUT down to 0.72 made its label
-// tiny for no gain, and the fix was to stop scaling components. A shell
-// is the case that argument does not reach: the question it answers is
-// where a rail sits beside its content, which is a question about a
-// window, so a window shrunk to fit the column is the honest rendering
-// and the column's own width would be a different shell rather than the
-// same one smaller. Delete the modifier class from the template and
-// every preview in the gallery goes fluid; nothing in the component
-// drives would notice, and this is what does.
-func TestAShellPreviewIsStillScaledIntoItsColumn(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
-	defer cancel()
-
-	// The column shell: the plain one, on the page in every language.
-	const widget = `#shell-column .ds-view`
-	var raw string
-	if err := chromedp.Run(ctx,
-		chromedp.EmulateViewport(1280, 900),
-		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf("shells"))),
-		chromedp.WaitVisible(`#shell-column .ds-view__frame`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
-		  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
-		  return "ok";
-		})()`, new(string)),
-		chromedp.Sleep(4*time.Second),
-		chromedp.Evaluate(`(() => {
-		  const v = document.querySelector(`+"`"+widget+"`"+`);
-		  const f = v.querySelector(".ds-view__frame");
-		  const box = v.querySelector(".ds-view__box");
-		  return JSON.stringify({
-		    Fluid: v.classList.contains("ds-view--fluid"),
-		    Virtual: parseFloat(getComputedStyle(f).width),
-		    Painted: box.getBoundingClientRect().width,
-		    Width: getComputedStyle(box).getPropertyValue("--ds-w").trim(),
-		    Scale: getComputedStyle(f).transform
-		  });
-		})()`, &raw),
-	); err != nil {
-		t.Fatalf("measuring the column shell's preview: %v", err)
-	}
-
-	var got struct {
-		Fluid            bool
-		Virtual, Painted float64
-		Width, Scale     string
-	}
-	if err := json.Unmarshal([]byte(raw), &got); err != nil {
-		t.Fatalf("reading the shell preview (%q): %v", raw, err)
-	}
-
-	if got.Fluid {
-		t.Fatal("the column shell's preview carries ds-view--fluid — a shell is a page frame, and the readings below would be measuring a component")
-	}
-	if got.Width != "1200px" || got.Virtual != 1200 {
-		t.Errorf("the shell frame lays out at %gpx with --ds-w: %s, want a virtual 1200px — a shell shown at the reader's own width is a different shell, not this one smaller", got.Virtual, got.Width)
-	}
-	if got.Painted >= 1200 || got.Painted < 200 {
-		t.Errorf("the shell frame is painted %gpx wide in a 1280px window; a 1200px page in a narrower column has to be scaled DOWN into it", got.Painted)
-	}
-	// Read off the transform and not inferred from the two widths
-	// agreeing: a frame that had lost its transform and been given the
-	// box's width instead would paint at exactly the same number.
-	if k := scaleOf(t, "the column shell", previewBox{ID: "shell-column", Scale: got.Scale}); k <= 0 || k >= 1 {
-		t.Errorf("the shell frame's transform is %q (scale %v); the scaling is what makes a 1200px page fit a %gpx column", got.Scale, k, got.Painted)
-	}
-	t.Logf("shell preview: a %gpx virtual page painted %gpx wide in a 1280px window — scale %.3f", got.Virtual, got.Painted, got.Painted/got.Virtual)
 }
 
 // The heights in previewHeights are measurements, and this is where
@@ -1422,11 +1340,18 @@ const scrollbarGutter = 10.0
 // the modifier classes, so this reading says the same thing about the
 // markup before the fix and after it.
 type previewBox struct {
-	ID      string
-	Fluid   bool    // a component: the column's own width at 1:1, not a scaled 1200px page
-	Hidden  bool    // the Code tab is showing, so there is no frame to measure
-	Box     float64 // the painted height of .ds-view__box
-	Width   string  // --ds-w as the box computes it: which rendering is on screen
+	ID     string
+	Hidden bool    // the Code tab is showing, so there is no frame to measure
+	Box    float64 // the painted height of .ds-view__box
+	Width  string  // --ds-w as the box computes it: which rendering is on screen
+	// Desk is --ds-wd, the width this widget's DESKTOP rendering is
+	// laid out at, and it is read separately from Width because the two
+	// differ exactly when the reading is interesting: on the mobile
+	// rendering Width is 390px and Desk is still the widget's own
+	// class. Every threshold in this file is derived from it rather
+	// than written down, so the two width classes cannot drift apart
+	// from their gates. See gallery.css, "Two width classes".
+	Desk    string
 	Scale   string  // the frame's computed transform
 	Lit     []int   // the tabs the reader sees highlighted
 	Checked []int   // the radios that are actually checked
@@ -1455,10 +1380,10 @@ const readBoxes = `(() => {
     const section = v.closest("article, section");
     out.push({
       ID: section && section.id ? section.id : "widget-" + out.length,
-      Fluid: v.classList.contains("ds-view--fluid"),
       Hidden: getComputedStyle(stage).display === "none",
       Box: Math.round(box.getBoundingClientRect().height * 10) / 10,
       Width: getComputedStyle(box).getPropertyValue("--ds-w").trim(),
+      Desk: getComputedStyle(box).getPropertyValue("--ds-wd").trim(),
       Scale: getComputedStyle(frame).transform,
       Lit: lit,
       Checked: checked,
@@ -1673,9 +1598,22 @@ func agree(t *testing.T, where string, rows []previewBox) {
 			}
 			continue
 		}
-		w, ok := virtualWidthFor(r)[r.Lit[0]]
-		if !ok {
+		// The desktop rendering's width is the widget's own --ds-wd,
+		// not a constant: a component lays out at 900px and a page
+		// frame at 1200px, and a table of two literals here would have
+		// to be kept in step with the stylesheet by hand.
+		var w string
+		switch r.Lit[0] {
+		case 0:
+			w = r.Desk
+		case 1:
+			w = "390px"
+		default:
 			say("%s: %s lights %s and still shows a frame", where, r.ID, tabName(r.Lit[0]))
+			continue
+		}
+		if w == "" {
+			say("%s: %s computes no --ds-wd at all, so this widget has no width class and nothing below is measuring the rendering it claims to", where, r.ID)
 			continue
 		}
 		if r.Width != w {
@@ -1687,50 +1625,16 @@ func agree(t *testing.T, where string, rows []previewBox) {
 	}
 }
 
-// openingTab is the tab a widget of each kind lights with nothing
-// clicked, in a column too narrow for a 1200px page.
-func openingTab(fluid bool) int {
-	if fluid {
-		return 0
-	}
-	return 1
-}
-
-// virtualWidthFor is what --ds-w must read under each lit tab, which
-// is the one thing that differs between the gallery's two kinds of
-// preview. A page frame is laid out at a virtual 1200px and scaled
-// into the column; a component has no virtual width at all and is
-// simply the column, which the stylesheet writes as --ds-w: 100% so
-// this reading can tell the two apart rather than seeing a frame
-// claiming 1200px it does not have. Mobile is 390px for both — a
-// phone rendering is a phone rendering whatever it contains.
-//
-// Keyed off the widget's own class and not off what it happens to
-// report, so a page frame that quietly lost its scaling reads as a
-// disagreement rather than as the other rendering.
-func virtualWidthFor(r previewBox) map[int]string {
-	if r.Fluid {
-		return map[int]string{0: "100%", 1: "390px"}
-	}
-	return map[int]string{0: "1200px", 1: "390px"}
-}
-
 // opensOn asserts what the widget shows a reader who has clicked
 // nothing: the rendering, and the tab lit over it.
-// The rendering is named by the tab it belongs to rather than by a
-// width the caller writes out, because the width that means "Desktop"
-// now depends on which kind of preview it is — 1200px for a page
-// frame, the column itself for a component. Passing the tab keeps the
-// caller saying what a reader sees and leaves virtualWidthFor to say
-// what that costs in pixels.
-func opensOn(t *testing.T, where string, rows []previewBox, tab int) {
+func opensOn(t *testing.T, where string, rows []previewBox, tab int, width string) {
 	t.Helper()
 	say := loudly(t, where, len(rows))
 	for _, r := range rows {
 		if len(r.Checked) != 0 {
 			say("%s: %s opens with %v already checked; CSS cannot tell that from a choice the reader made, so the width can never pick the opening view", where, r.ID, r.Checked)
 		}
-		if width := virtualWidthFor(r)[tab]; r.Width != width {
+		if r.Width != width {
 			say("%s: %s opens rendering at --ds-w: %s, want %s — the opening view does not follow the reader's width", where, r.ID, r.Width, width)
 		}
 		if len(r.Lit) != 1 || r.Lit[0] != tab {
@@ -1794,31 +1698,69 @@ func scaleOf(t *testing.T, where string, r previewBox) float64 {
 // and a frame whose transform proves the trig branch is live in this
 // engine: without them a green run here is a reading of an instrument
 // nobody calibrated.
+// calibrate proves the @supports branch that computes --ds-k with
+// tan(atan2(…)) is live in this engine, by finding a frame the engine
+// actually scaled. Fatal rather than an error: a drive whose instrument
+// is uncalibrated should stop, not report.
+//
+// It needs a page whose widgets are wider than the stage they sit in,
+// which since the width classes landed means a .ds-view--page one — see
+// CONTROL 0 for why the component pages can no longer answer this.
+func calibrate(t *testing.T, ctx context.Context, origin, kind string) {
+	t.Helper()
+	where := kind + " at 1280px, calibrating"
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
+		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+	); err != nil {
+		t.Fatalf("%s: loading: %v", where, err)
+	}
+	eagerly(t, ctx, where)
+	for _, r := range boxes(t, ctx, where) {
+		if r.Hidden || dsw(t, where, r.Desk) <= r.Stage {
+			continue
+		}
+		k := scaleOf(t, where, r)
+		if k <= 0 || k >= 1 {
+			t.Fatalf("%s: %s is a %s page in a %.0fpx stage and is scaled by %v; it has to be scaled DOWN, so the @supports guard is not admitting this engine and every scale reading in this drive is of the fallback branch", where, r.ID, r.Desk, r.Stage, k)
+		}
+		t.Logf("%s: %s is a %s page in a %.0fpx stage, scaled %.3f — the trig branch is live", where, r.ID, r.Desk, r.Stage, k)
+		return
+	}
+	t.Fatalf("%s: no widget on this page is wider than its stage, so nothing here can prove the engine scales at all. Calibrate on a page that carries a .ds-view--page widget", where)
+}
+
 func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 	defer cancel()
 
-	// Both kinds of preview, because they now answer differently and
-	// each answer is one this drive exists to hold. The display page
-	// is components — the column's own width at 1:1, which is what
-	// discussion #7 asked for. The overview frames the demo
-	// application, a whole page, so it is still the scaled rendering
-	// and still the only one of the two that can exercise the trig
-	// branch, the scale floor and the panning.
-	for _, page := range []struct {
-		kind  string
-		fluid bool
-	}{{"display", true}, {"overview", false}} {
-		kind := page.kind
+	// CONTROL 0, and it is hoisted out of the loop for a reason worth
+	// reading. The calibration this drive needs is a frame the engine
+	// really did scale: --ds-k resolves to a plain 1 in the @supports
+	// FALLBACK too, so a reading of 1 cannot tell a live trig branch
+	// from a dead one, and every scale assertion below would be
+	// measuring an instrument nobody had checked.
+	//
+	// It used to be taken on whatever page the loop was on, and the
+	// component width class took that away: at 1280px the gallery's
+	// stage is 958px and a 900px component is scaled by exactly 1 —
+	// which is the whole point of the class and is also, precisely, the
+	// reading that proves nothing. The demo application is still a
+	// 1200px page in that 958px stage, so it is scaled to 0.798 and can
+	// still answer the question. The engine does not change between
+	// pages, so asking it once is enough.
+	calibrate(t, ctx, rig.Origin, "overview")
+
+	for _, kind := range []string{"display", "overview"} {
 		url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf(kind))
 
 		// CONTROL 1. A wide viewport, where the answer has been known
 		// since the widget shipped: the desktop rendering, the Desktop
-		// tab lit over it, every box clear of the floor, and a frame
-		// scaled DOWN — which is the reading that proves the
-		// @supports guard still admits this engine. If any of that is
-		// wrong, the narrow numbers below are measuring something else.
+		// tab lit over it, and every box clear of the floor. If any of
+		// that is wrong, the narrow numbers below are measuring
+		// something else.
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(url),
@@ -1832,26 +1774,9 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		// has had since it shipped, so they hold on the build before
 		// the fix as well as on the one after it.
 		for _, r := range wide {
-			if r.Fluid != page.fluid {
-				t.Fatalf("%s at 1280px: %s is fluid=%v, want %v — this page is not the kind of preview the sweep below is written for", kind, r.ID, r.Fluid, page.fluid)
+			if r.Width != r.Desk || len(r.Lit) != 1 || r.Lit[0] != 0 {
+				t.Fatalf("%s at 1280px: %s renders at --ds-w: %s with %v lit over a %.0fpx stage, want its own desktop width (--ds-wd: %s) under a lit Desktop. That has been this widget's answer at a laptop width since it shipped, so the narrow readings below are of something other than this widget — unless the stage has fallen under the %.0fpx threshold, in which case this is the threshold working and the sweep needs a wider window, not a fix", kind, r.ID, r.Width, r.Lit, r.Stage, r.Desk, stageThreshold(t, kind+" at 1280px", r))
 			}
-			if want := virtualWidthFor(r)[0]; r.Width != want || len(r.Lit) != 1 || r.Lit[0] != 0 {
-				t.Fatalf("%s at 1280px: %s renders at --ds-w: %s with %v lit over a %.0fpx stage, want %s under a lit Desktop. That has been this widget's answer at a laptop width since it shipped, so the narrow readings below are of something other than this widget — unless the stage has fallen under the %.0fpx threshold, in which case this is the threshold working and the sweep needs a wider window, not a fix", kind, r.ID, r.Width, r.Lit, r.Stage, want, stageThreshold)
-			}
-		}
-		// The scale is the calibration, and what it calibrates depends
-		// on the kind. A page frame scaled DOWN is what proves the
-		// @supports trig branch is live in this engine; there is no
-		// other reading that can tell the live branch from the
-		// fallback, since both leave --ds-k a number. A component has
-		// no trig to exercise, so the control there is the opposite
-		// claim, and it is worth just as much: exactly 1, because a
-		// component scaled at all is the bug this page was changed to
-		// fix and a drifting --ds-k would reintroduce it silently.
-		if k := scaleOf(t, kind+" at 1280px", wide[0]); page.fluid && math.Abs(k-1) > 0.005 {
-			t.Fatalf("%s at 1280px: the first frame is scaled by %v, want exactly 1 — a component preview is the column's own pixels, and anything else is the scaling this page had removed", kind, k)
-		} else if !page.fluid && (k <= 0 || k >= 1) {
-			t.Fatalf("%s at 1280px: the first frame is scaled by %v; a 1200px page in a column narrower than that has to be scaled DOWN, so the @supports guard is not admitting this engine and every scale reading below is of the fallback branch", kind, k)
 		}
 		// And then the claims, at a width where they were never in
 		// doubt.
@@ -1868,14 +1793,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		}
 		eagerly(t, ctx, kind+" at 390px")
 		phone := boxes(t, ctx, kind+" at 390px")
-		// Which tab a phone opens on is the one thing the two kinds
-		// disagree about, and the disagreement is the point. A page
-		// frame falls back to the 390px rendering because its desktop
-		// one would be a 0.26 sliver in this column. A component has
-		// no such cliff — its desktop rendering IS this column — so it
-		// opens on Desktop at every width, and the 54rem auto-switch
-		// is excluded from it rather than retuned.
-		opensOn(t, kind+" at 390px, opened", phone, openingTab(page.fluid))
+		opensOn(t, kind+" at 390px, opened", phone, 1, "390px")
 		agree(t, kind+" at 390px, opened", phone)
 		showsItsSample(t, kind+" at 390px, opened", phone)
 		noSidewaysPage(t, ctx, kind+" at 390px, opened")
@@ -1896,7 +1814,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 			t.Fatalf("%s at 320px: resizing: %v", kind, err)
 		}
 		narrow := boxes(t, ctx, kind+" at 320px")
-		opensOn(t, kind+" at 320px, opened", narrow, openingTab(page.fluid))
+		opensOn(t, kind+" at 320px, opened", narrow, 1, "390px")
 		agree(t, kind+" at 320px, opened", narrow)
 		showsItsSample(t, kind+" at 320px, opened", narrow)
 		noSidewaysPage(t, ctx, kind+" at 320px, opened")
@@ -1918,37 +1836,24 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 			if len(r.Checked) != 1 || r.Checked[0] != 0 {
 				t.Fatalf("%s at 390px: %s has %v checked after every Desktop radio was clicked — the readings after it are readings of the state before it", kind, r.ID, r.Checked)
 			}
-			if want := virtualWidthFor(r)[0]; r.Width != want {
-				t.Errorf("%s at 390px: %s was told Desktop and renders at --ds-w: %s, want %s — an explicit choice has to beat the width", kind, r.ID, r.Width, want)
+			if r.Width != r.Desk {
+				t.Errorf("%s at 390px: %s was told Desktop and renders at --ds-w: %s rather than its class's %s — an explicit choice has to beat the width", kind, r.ID, r.Width, r.Desk)
 			}
 		}
 		agree(t, kind+" at 390px, Desktop chosen", chosen)
 		showsItsSample(t, kind+" at 390px, Desktop chosen", chosen)
 		// And it pans rather than crops: at 390px the clamped scale
-		// puts 864px of page in a 309px box, so there has to be
-		// somewhere for the rest of it to go.
-		//
-		// Only for a page frame. A component's Desktop rendering is
-		// the column itself, so there is nothing past the edge to
-		// reach and a box that pans would mean the frame had escaped
-		// its box — which is asserted as its own claim below rather
-		// than left as an absence.
-		if page.fluid {
-			for _, r := range chosen {
-				if r.PanX > 1 {
-					t.Errorf("%s at 390px with Desktop chosen: %s has %.0fpx of sample past the right edge of a box it is supposed to exactly fill — a component preview is its column, so anything to pan means the frame is not taking its width from the box", kind, r.ID, r.PanX)
-				}
+		// puts 864px of a page frame — or 648px of a component — in a
+		// 309px box, so there has to be somewhere for the rest of it
+		// to go. Either way it is more than twice the box.
+		panned := 0
+		for _, r := range chosen {
+			if r.PanX > 1 && scrolls(r.OverX) {
+				panned++
 			}
-		} else {
-			panned := 0
-			for _, r := range chosen {
-				if r.PanX > 1 && scrolls(r.OverX) {
-					panned++
-				}
-			}
-			if panned != len(chosen) {
-				t.Errorf("%s at 390px with Desktop chosen: %d of %d boxes both overflow and can be scrolled. --ds-k is clamped at %.2f, so a 1200px page is %.0fpx wide inside a box the column's width; if the box is not a scroller the right-hand half of every sample is cropped and unreachable, and overflow: hidden reports the same scrollWidth as a scroller does", kind, panned, len(chosen), kMin, 1200*kMin)
-			}
+		}
+		if panned != len(chosen) {
+			t.Errorf("%s at 390px with Desktop chosen: %d of %d boxes both overflow and can be scrolled. --ds-k is clamped at %.2f, so a virtual page is drawn %.0f%% of its own width inside a box only the column's width; if the box is not a scroller the right-hand half of every sample is cropped and unreachable, and overflow: hidden reports the same scrollWidth as a scroller does", kind, panned, len(chosen), kMin, kMin*100)
 		}
 		noSidewaysPage(t, ctx, kind+" at 390px, Desktop chosen")
 
@@ -2006,72 +1911,80 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		t.Fatal("gallery.js ran on the scriptless page — the scriptless leg proves nothing")
 	}
 	off := boxes(t, offCtx, "display at 390px, scripts off")
-	opensOn(t, "display at 390px, scripts off", off, openingTab(true))
+	opensOn(t, "display at 390px, scripts off", off, 1, "390px")
 	agree(t, "display at 390px, scripts off", off)
 	showsItsSample(t, "display at 390px, scripts off", off)
 
 	// And the tabs still switch, with the click the browser makes out
 	// of a label and a radio rather than one a script dispatches.
-	//
-	// Mobile, and not Desktop as this leg used to click. A component
-	// page opens on Desktop now, so clicking Desktop would leave the
-	// widget exactly where it already was and a broken tab would read
-	// as a working one — the leg would pass with the radios inert,
-	// which is the single thing it exists to rule out. Mobile is the
-	// tab whose arrival is visible in --ds-w.
 	if err := chromedp.Run(offCtx,
-		chromedp.Click(`.ds-view__tab--m`, chromedp.ByQuery),
+		chromedp.Click(`.ds-view__tab:first-of-type`, chromedp.ByQuery),
 		chromedp.Sleep(400*time.Millisecond),
 	); err != nil {
-		t.Fatalf("display at 390px with scripts off: choosing Mobile: %v", err)
+		t.Fatalf("display at 390px with scripts off: choosing Desktop: %v", err)
 	}
-	offChosen := boxes(t, offCtx, "display at 390px, scripts off, Mobile chosen")
-	if len(offChosen[0].Checked) != 1 || offChosen[0].Checked[0] != 1 {
-		t.Fatalf("with scripts off, clicking the Mobile label left %v checked — the tabs need JavaScript", offChosen[0].Checked)
+	offChosen := boxes(t, offCtx, "display at 390px, scripts off, Desktop chosen")
+	if len(offChosen[0].Checked) != 1 || offChosen[0].Checked[0] != 0 {
+		t.Fatalf("with scripts off, clicking the Desktop label left %v checked — the tabs need JavaScript", offChosen[0].Checked)
 	}
-	if offChosen[0].Width != "390px" || len(offChosen[0].Lit) != 1 || offChosen[0].Lit[0] != 1 {
-		t.Errorf("with scripts off, choosing Mobile left the widget rendering at --ds-w: %s with %v lit", offChosen[0].Width, offChosen[0].Lit)
+	if offChosen[0].Width != offChosen[0].Desk || len(offChosen[0].Lit) != 1 || offChosen[0].Lit[0] != 0 {
+		t.Errorf("with scripts off, choosing Desktop left the widget rendering at --ds-w: %s rather than its class's %s, with %v lit", offChosen[0].Width, offChosen[0].Desk, offChosen[0].Lit)
 	}
 	// One widget, because one label was clicked — a real input event
 	// on the page, which is the whole point of this leg. The other
 	// twenty-nine are still on the default and are not re-measured
 	// here as though they had been chosen.
-	agree(t, "display at 390px, scripts off, Mobile chosen", offChosen)
-	showsItsSample(t, "display at 390px, scripts off, the first widget on Mobile", offChosen[:1])
+	agree(t, "display at 390px, scripts off, Desktop chosen", offChosen)
+	showsItsSample(t, "display at 390px, scripts off, the first widget on Desktop", offChosen[:1])
 }
 
 // ── The default is a function of the stage, not of the window ────────
 
 // stageThreshold is the stage width, in CSS pixels, at or above which
-// the widget opens on the desktop rendering. It mirrors the 54rem in
-// gallery.css and is here so this drive fails when the two disagree
-// rather than following the stylesheet wherever it goes.
+// one widget opens on the desktop rendering. It mirrors the two rem
+// values in gallery.css and is here so this drive fails when they
+// disagree rather than following the stylesheet wherever it goes.
 //
-// It is DERIVED from kMin rather than written again, because they are
-// one decision: the threshold is the stage width at which the desktop
-// rendering reaches the least scale worth reading it at. 1200 × 0.72 =
-// 864px = 54rem. Two numbers that could drift apart would be two
-// chances to be wrong.
+// It is DERIVED — from kMin and from the widget's own --ds-wd — rather
+// than written again, because they are one decision: the threshold is
+// the stage width at which the desktop rendering reaches the least
+// scale worth reading it at. 1200 × 0.72 = 864px = 54rem for a page
+// frame, 900 × 0.72 = 648px = 40.5rem for a component. Numbers that
+// could drift apart would be chances to be wrong, and there are two
+// width classes now, so there would be four of them.
+//
+// Passing the widget rather than the class is what makes a third class
+// cost nothing here: gallery.css would gain a --ds-wd and a query pair,
+// and this drive would measure the identity for it with no edit.
 //
 // The equality holds at a 16px root and this drive runs at one. A
-// reader who scales their root type up moves the 54rem and not the
-// 0.72, which is why the stylesheet says so beside it; if this ever
+// reader who scales their root type up moves the rem values and not the
+// 0.72, which is why the stylesheet says so beside them; if this ever
 // runs under a different root, the threshold assertion below is what
 // will say so, and it will be telling the truth.
-const stageThreshold = 1200 * kMin
+func stageThreshold(t *testing.T, where string, r previewBox) float64 {
+	t.Helper()
+	return dsw(t, where, r.Desk) * kMin
+}
 
 // stageReading is the widget's opening state at one window width.
 type stageReading struct {
+	Kind  string
 	VW    int
 	View  float64
 	Stage float64
 	DSW   float64
-	Lit   int
-	K     float64
-	Box   float64
+	// Desk is the widget's own desktop virtual width, which is what
+	// its threshold is derived from. Read separately from DSW because
+	// DSW is whichever rendering is on screen and is 390px for half
+	// this sweep.
+	Desk float64
+	Lit  int
+	K    float64
+	Box  float64
 }
 
-// dsw parses the "1200px" a box computes --ds-w to.
+// dsw parses the "900px" a box computes --ds-w to.
 func dsw(t *testing.T, where, raw string) float64 {
 	t.Helper()
 	v, err := strconv.ParseFloat(strings.TrimSuffix(raw, "px"), 64)
@@ -2114,24 +2027,36 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 240*time.Second)
 	defer cancel()
 
-	// The shells page, not a component one. The property this drive
-	// asserts is about the width-driven SWITCH between the two
-	// renderings, and after discussion #7 that switch exists only for
-	// a preview that has a virtual width to be switched away from: a
-	// component opens on its own column at every width and is monotone
-	// by having nothing to do. Driving it here would be green forever
-	// and prove nothing, which is the failure this comment exists to
-	// stop the next person walking into. The shells are page frames,
-	// they sit in the same column under the same rail, and the 700px/
-	// 800px control below is checked rather than assumed.
-	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("shells"))
+	// Both width classes are swept, and that is not thoroughness for
+	// its own sake: each class has its own pair of container queries
+	// now, so a sweep of one page would leave the other pair — and the
+	// other threshold — with no gate at all. Display is components at
+	// 900px; the Overview frames the demo application at 1200px. The
+	// control at the foot requires that the sweep really did see both,
+	// so a page that stopped carrying the class it was chosen for fails
+	// here rather than silently halving the coverage.
+	classes := map[float64]string{}
+	for _, kind := range []string{"display", "overview"} {
+		monotoneSweep(t, ctx, rig.Origin, kind, classes)
+	}
+	if len(classes) < 2 {
+		t.Errorf("the sweep saw %d width class(es) (%v); it is written to cover both, and a run that sees one has left a pair of container queries and a threshold ungated", len(classes), classes)
+	}
+}
+
+// monotoneSweep is the drive above, run over one page. Every desktop
+// virtual width it meets is recorded in classes, which is the caller's
+// control that both were covered.
+func monotoneSweep(t *testing.T, ctx context.Context, origin, kind string, classes map[float64]string) {
+	t.Helper()
+	url := origin + pageHref(mountPath, RootTheme(), "en", fileOf(kind))
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
 		chromedp.Sleep(600*time.Millisecond),
 	); err != nil {
-		t.Fatalf("loading the shells page: %v", err)
+		t.Fatalf("loading the %s page: %v", kind, err)
 	}
 
 	// Widths chosen around the rail's own line, because that is where
@@ -2143,7 +2068,7 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 	widths := []int{280, 320, 360, 390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1184, 1186, 1200, 1280, 1500}
 	readings := make([]stageReading, 0, len(widths))
 	for _, vw := range widths {
-		where := fmt.Sprintf("display at %dpx", vw)
+		where := fmt.Sprintf("%s at %dpx", kind, vw)
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(int64(vw), 900),
 			chromedp.Sleep(300*time.Millisecond),
@@ -2161,16 +2086,18 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 		if len(r.Checked) != 0 {
 			t.Fatalf("%s: %v is checked; this drive reads the OPENING view and something has chosen for it", where, r.Checked)
 		}
+		desk := dsw(t, where, r.Desk)
+		classes[desk] = kind
 		readings = append(readings, stageReading{
-			VW: vw, View: r.View, Stage: r.Stage,
-			DSW: dsw(t, where, r.Width), Lit: r.Lit[0],
+			Kind: kind, VW: vw, View: r.View, Stage: r.Stage,
+			DSW: dsw(t, where, r.Width), Desk: desk, Lit: r.Lit[0],
 			K: scaleOf(t, where, r), Box: r.Box,
 		})
 	}
 
 	for _, r := range readings {
-		t.Logf("vw=%-5d view=%-7.1f stage=%-7.1f --ds-w=%-7.0f k=%.3f box=%.1f opens on %s",
-			r.VW, r.View, r.Stage, r.DSW, r.K, r.Box, tabName(r.Lit))
+		t.Logf("%-9s vw=%-5d view=%-7.1f stage=%-7.1f --ds-wd=%-7.0f --ds-w=%-7.0f k=%.3f box=%.1f opens on %s",
+			r.Kind, r.VW, r.View, r.Stage, r.Desk, r.DSW, r.K, r.Box, tabName(r.Lit))
 	}
 
 	// CONTROL. Without a window that GROWS while its stage SHRINKS,
@@ -2206,15 +2133,19 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 		}
 	}
 
-	// And the threshold is the one the stylesheet documents.
+	// And the threshold is the one the stylesheet documents — this
+	// widget's own --ds-wd × --ds-kmin, so the identity is measured for
+	// whichever width class this page carries rather than assumed to be
+	// the one the sweep was first written against.
 	for _, r := range readings {
+		threshold := r.Desk * kMin
 		want := 1
-		if r.Stage >= stageThreshold {
+		if r.Stage >= threshold {
 			want = 0
 		}
 		if r.Lit != want {
-			t.Errorf("a %.1fpx stage (a %dpx window) opens on %s; at or over %.0fpx of stage the desktop rendering is the legible one and under it the 390px rendering is",
-				r.Stage, r.VW, tabName(r.Lit), stageThreshold)
+			t.Errorf("%s: a %.1fpx stage (a %dpx window) on a %.0fpx virtual page opens on %s; at or over %.0fpx of stage the desktop rendering is the legible one and under it the 390px rendering is",
+				r.Kind, r.Stage, r.VW, r.Desk, tabName(r.Lit), threshold)
 		}
 	}
 
