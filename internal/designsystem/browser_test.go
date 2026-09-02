@@ -983,6 +983,7 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
 		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
 		{"screens", len(screenDocs()), "every screen screenDocs() ships has a section here"},
+		{"formats", len(formatDocs()), "every section formatDocs() ships has a sample here"},
 	}
 	for _, fam := range families() {
 		rows = append(rows, struct {

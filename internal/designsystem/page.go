@@ -184,6 +184,9 @@ type pageView struct {
 	// components. See screenViews.
 	Screens []screenView
 
+	// Formats is the Dates, numbers and names page. See buildFormats.
+	Formats []formatView
+
 	// Nav is the sidebar: derived from the five fields above it, once
 	// they are built, so it cannot list anything the page does not
 	// render and cannot miss anything it does. See galleryNav.
@@ -303,6 +306,8 @@ func pageKinds() []pageKind {
 	return append(kinds,
 		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
 			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
+		pageKind{Kind: "formats", File: "formats.html", Title: "Dates, numbers and names", Nav: formatNav,
+			Blurb: "How to show dates, numbers, money, names and addresses, and which ones people mix up."},
 		pageKind{Kind: "screens", File: "screens.html", Title: "Screens", Nav: screenNav,
 			Blurb: "Examples of screens using the design system. You can use these as starter templates for your own apps."},
 		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
@@ -691,6 +696,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		Structure:  localiseGroups(locale, structure),
 		Families:   families,
 		Idioms:     idioms,
+		Formats:    buildFormats(mount, theme, locale),
 		Screens:    screens,
 		Shells:     shellViews(mount, theme, locale),
 		Icons:      buildIcons(locale),
@@ -740,6 +746,7 @@ func bodyTemplates() []struct{ kind, src string } {
 		{"tokens", tokensBody},
 		{"icons", iconsBody},
 		{"primitives", primitivesBody},
+		{"formats", formatsBody},
 		{"screens", screensBody},
 		{"shells", shellsBody},
 		// The one family body, under a name no page kind has, so
@@ -1282,6 +1289,12 @@ var previewHeights = map[string]int{
 	// The demo application, framed at the top of the Overview. Taller
 	// than the shells because it is a screen with content in it rather
 	// than a frame with a sentence in it.
+	// The data-format samples. Two are taller than the rest: the ratios
+	// section shows a meter and a progress bar in a box each, and the
+	// output section is a form.
+	"format-ratios": 320,
+	"format-output": 260,
+
 	// The sign-in screens. A form in a card is taller than a component:
 	// a heading, a field or two, a button and a way out.
 	"screen-signin-link":     300,

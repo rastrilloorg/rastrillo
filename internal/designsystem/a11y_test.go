@@ -327,6 +327,7 @@ func a11yTargets() []a11yTarget {
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
+		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
 		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: five forms in five frames, and the only page in the tree carrying a password field, an autocomplete token and a warning callout above the thing it warns about"},
 		{"day/en shells", page("day", "en", "shells"), "the four page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
