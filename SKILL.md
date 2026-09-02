@@ -9,7 +9,9 @@ CARLOS middle layer, not full-stack: you write GORM models, `net/http`
 handlers on a chi router and `html/template` pages; it supplies the
 database opener, session store, identity plugins, CSRF, owner scoping,
 form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
-reference `examples/notes`. Rare traps get one sentence plus a page:
+reference `examples/notes` — in the repository, **not** in the
+published module (Go excludes nested modules from a zip), so read it
+there, never in your checkout. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
 ## 0. Start here
@@ -137,6 +139,16 @@ schema-neutral.** Generate `0001_init` from the models as already
 deployed, ship it alone, change a model only in a later release — else
 boot refuses on the new column, and `baseline` there strands it for
 good.
+
+**Deleting a secret from SQLite does not unwrite it.** A value is in
+`app.db-wal` from the insert — *before* it reaches `app.db` — and
+survives `DELETE`: the WAL keeps the page as it was. So a gate
+grepping only `app.db` passes while the plaintext sits in the WAL, and
+Litestream has shipped it. `secure_delete = ON` cleans `app.db` at the
+next checkpoint, never the WAL: set it on the writer (one connection,
+so it sticks) and treat it as damage control. For a value that must
+not be at rest the only answer is not to write it — seal, hash, or key
+by digest.
 
 ## 3. Scoping
 

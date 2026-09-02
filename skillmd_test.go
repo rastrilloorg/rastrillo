@@ -2,6 +2,8 @@ package rastrillo
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -95,5 +97,44 @@ func TestSkillMDStaysWithinBudget(t *testing.T) {
 	if len(b) > skillBudget {
 		t.Fatalf("SKILL.md is %d bytes — %d over the %d budget; trim, don't grow",
 			len(b), len(b)-skillBudget, skillBudget)
+	}
+}
+
+// TestSkillMDSaysExamplesAreNotInTheModule holds one sentence in place,
+// and the fact under it.
+//
+// SKILL.md is what an agent loads instead of reading the source, and it
+// names examples/notes as the worked reference. Every example is its own
+// Go module — that is what keeps the root `go test ./...` from compiling
+// them — and Go excludes a nested module from its parent's module zip.
+// So for everyone consuming rastrillo as a dependency that pointer names
+// a directory their checkout cannot contain. Measured cost, from a
+// docs-only build test: four agents found the declarative path, three
+// planned to use it, and the hunt for examples/ is where each of them
+// stopped (discussion #9).
+//
+// Two assertions rather than one, because the sentence and the reason
+// for it fail separately. If examples/ ever does ship in the module
+// zip, the caveat becomes false and should go — and the second
+// assertion is what will say so, by finding a nested module that is no
+// longer there.
+func TestSkillMDSaysExamplesAreNotInTheModule(t *testing.T) {
+	b, err := os.ReadFile("SKILL.md")
+	if err != nil {
+		t.Fatalf("SKILL.md must exist at the repo root: %v", err)
+	}
+	src := string(b)
+	if strings.Contains(src, "examples/") && !strings.Contains(src, "not** in the\npublished module") {
+		t.Error("SKILL.md names examples/ without saying it is absent from the published module; a reader consuming rastrillo as a dependency will go looking for a directory that cannot be there")
+	}
+
+	// The reason, checked rather than asserted: examples/* really are
+	// separate modules, which is why the zip excludes them.
+	nested, err := filepath.Glob(filepath.Join("examples", "*", "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nested) == 0 {
+		t.Error("no examples/*/go.mod — the examples are no longer nested modules, so SKILL.md's caveat about the module zip may now be false")
 	}
 }

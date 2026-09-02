@@ -8,6 +8,40 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## v0.25.0
+
+Written after the fact. This release was tagged without a prep commit, so it
+had no entry here and did not bump the scaffold's fallback version — see the
+Fixed note below.
+
+### Changed — the module path moved
+
+rastrillo's repository is now `amadan.net/rastrillo/rastrillo`, and so is its
+module path. An app pinning the old `github.com/carlosframework/rastrillo`
+keeps building against the version it already has; to move, rewrite the path
+in `go.mod` and in every import, then `go mod tidy`.
+
+Note that v0.24.0 was prepared but never tagged, under either path. The
+release before this one is v0.23.0.
+
+### Fixed — a dev-built CLI scaffolded an unbuildable app
+
+`rastrillo new` writes the framework version into the app's `go.mod`. A CLI
+installed with `go install ...@vX.Y.Z` reads that from its own build info, but
+one built from a checkout has no tag to read and falls back to a constant —
+and the constant still said `v0.24.0`, a version that was never tagged. So a
+scaffold from any local build failed on the first command it prints:
+
+```
+go: amadan.net/rastrillo/rastrillo@v0.24.0: reading .../go.mod at revision
+  v0.24.0: unknown revision v0.24.0
+```
+
+The constant now tracks the newest tag, and two tests hold it there: one
+compares it against this file's newest heading, the other against the newest
+`v*` tag in the checkout. Between them a release cut without a prep commit —
+which is exactly how this happened — turns the gate red.
+
 ## v0.24.0
 
 ### Fixed — read this one if you have an app scaffolded before v0.24.0
