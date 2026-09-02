@@ -84,7 +84,37 @@ import (
 // closed 146 of the 437, which is the honest measure of how much slack
 // is left in re-squeezing: not much. The lever with room in it is still
 // the one named above, sixteen unlinked docs pages.
-const skillBudget = 19_000
+//
+// The 19,000 notch above and the regime change below were raised from
+// 18,000 on the same day, on the two forges separately, and only found
+// each other when a branch cut from this one tried to raise 19,000
+// again. The regime wins: the notch is one more of exactly what it
+// stopped doing. #142's reasoning, verbatim:
+//
+// Raised, 18_000 to 30_000, on 2026-09-02 — a change of regime rather
+// than another notch, so read this one before citing the paragraphs
+// above. Each earlier raise bought room for one new subsystem and was
+// defended by a trim. This one is a deliberate decision to stop trimming
+// for a while, and two things forced it. The file reached main 84 bytes
+// OVER 18_000, red before a word was added: the delegation lever
+// (2026-08-31) had already been pulled and the file grew back past the
+// ceiling within two days, which is what a lever with nothing left in it
+// looks like. And the trimming now costs more than it saves. An agent
+// building an app from this file stacked a create form, an import panel
+// and a list onto one screen, because nothing here said not to — §7 did
+// not exist, because a byte ceiling had it competing with the SQL. Every
+// remaining gap has that shape: a rule the framework holds and never
+// wrote down.
+//
+// The ceiling was sized for a context window that is no longer the
+// binding constraint — Opus and GLM 5.3 both load a 30 KB file without
+// noticing. Concision is still the rule: an inaccurate or padded line is
+// worse here than a missing one, and small models still read this file.
+// The pruning is deferred, not cancelled — one human pass, once the
+// framework is reliably producing good apps across a variety of them,
+// which today it is not. Until that pass: write the rule down, keep it
+// short, and do not read this number as room to fill.
+const skillBudget = 30_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance
