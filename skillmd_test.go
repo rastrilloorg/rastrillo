@@ -84,7 +84,20 @@ import (
 // closed 146 of the 437, which is the honest measure of how much slack
 // is left in re-squeezing: not much. The lever with room in it is still
 // the one named above, sixteen unlinked docs pages.
-const skillBudget = 19_000
+//
+// Raised 19,000 -> 19,600 on 2026-09-02 for the CSP paragraph in §5.
+// It is a fact an agent cannot infer and gets no warning about: the
+// baseline `form-action 'self'` is checked against a form submission's
+// whole redirect chain, so auth's own 303 out to a keymail server is
+// refused by the framework's own default policy, in the browser, only
+// at sign-in. Nothing else in the file mentions the baseline's
+// contents, and the fix is unguessable twice over — Options.CSP
+// replaces the policy wholesale rather than adding to it, so the
+// paragraph has to carry the literal baseline string as well as the
+// rule. A trim pass over §5 found nothing to pay for it; the sections
+// read this cycle are facts, not prose. The lever is still the one
+// named above.
+const skillBudget = 19_600
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

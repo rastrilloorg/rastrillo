@@ -248,6 +248,15 @@ to the keymail ceremony where the address has one): `auth.New` with
 Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
 user row's id before scoping.
 
+**CSP:** the baseline's `form-action 'self'` is enforced across a form
+submission's whole redirect chain, so `Begin`'s 303 out to the address's
+keymail server is refused — as is any POST of yours that lands
+off-origin. `Options.CSP` replaces the policy wholesale, so restate it
+with the origin appended: `default-src 'self'; style-src 'self'
+'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri
+'self'; form-action 'self' https://keymail.dev`. Only listed servers
+work — a federated address on another keymail host is still refused.
+
 ## 6. Background work
 
 `jobs` runs observable in-memory goroutines: a restart kills them, fn's
