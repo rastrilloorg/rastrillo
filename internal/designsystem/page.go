@@ -180,6 +180,13 @@ type pageView struct {
 	Icons  iconsView
 	Assets assetsView
 
+	// Screens is the Screens page: whole compositions rather than
+	// components. See screenViews.
+	Screens []screenView
+
+	// Formats is the Dates, numbers and names page. See buildFormats.
+	Formats []formatView
+
 	// Nav is the sidebar: derived from the five fields above it, once
 	// they are built, so it cannot list anything the page does not
 	// render and cannot miss anything it does. See galleryNav.
@@ -299,6 +306,10 @@ func pageKinds() []pageKind {
 	return append(kinds,
 		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
 			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
+		pageKind{Kind: "formats", File: "formats.html", Title: "Dates, numbers and names", Nav: formatNav,
+			Blurb: "How to show dates, numbers, money, names and addresses, and which ones people mix up."},
+		pageKind{Kind: "screens", File: "screens.html", Title: "Screens", Nav: screenNav,
+			Blurb: "Examples of screens using the design system. You can use these as starter templates for your own apps."},
 		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
 			Blurb: "The page frames rastrillo new can scaffold. Each opens full width."},
 	)
@@ -669,6 +680,10 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	screens, err := buildScreens(mount, theme, locale, tmpl)
+	if err != nil {
+		return nil, err
+	}
 
 	localeName := rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"]
 	base := pageView{
@@ -681,6 +696,8 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		Structure:  localiseGroups(locale, structure),
 		Families:   families,
 		Idioms:     idioms,
+		Formats:    buildFormats(mount, theme, locale),
+		Screens:    screens,
 		Shells:     shellViews(mount, theme, locale),
 		Icons:      buildIcons(locale),
 		Assets:     buildAssets(mount, theme, locale),
@@ -729,6 +746,8 @@ func bodyTemplates() []struct{ kind, src string } {
 		{"tokens", tokensBody},
 		{"icons", iconsBody},
 		{"primitives", primitivesBody},
+		{"formats", formatsBody},
+		{"screens", screensBody},
 		{"shells", shellsBody},
 		// The one family body, under a name no page kind has, so
 		// renderBody never reaches it directly.
@@ -1270,6 +1289,20 @@ var previewHeights = map[string]int{
 	// The demo application, framed at the top of the Overview. Taller
 	// than the shells because it is a screen with content in it rather
 	// than a frame with a sentence in it.
+	// The data-format samples. Two are taller than the rest: the ratios
+	// section shows a meter and a progress bar in a box each, and the
+	// output section is a form.
+	"format-ratios": 320,
+	"format-output": 260,
+
+	// The sign-in screens. A form in a card is taller than a component:
+	// a heading, a field or two, a button and a way out.
+	"screen-signin-link":     300,
+	"screen-signin-sent":     220,
+	"screen-signin-passkey":  230,
+	"screen-signin-social":   290,
+	"screen-signin-password": 420,
+
 	"demo-app":      780,
 	"shell-column":  780,
 	"shell-topbar":  780,
@@ -1307,6 +1340,17 @@ var srcdocScripts = []struct {
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
 	{"select.js", []string{"data-rst-select"}},
+	// calendar.js comes FIRST, and the order is load-bearing here in a
+	// way it is not on an ordinary page. datetime.js scans on
+	// DOMContentLoaded, but a srcdoc document is already past "loading"
+	// when its deferred scripts run, so it scans the moment it
+	// executes. Loaded after it, calendar.js has not published its
+	// factory yet: every field in the frame enhances without a
+	// calendar, and the button falls back to the browser's own picker —
+	// the control this overlay exists to replace, restored by a script
+	// tag in the wrong order. Same hooks, because calendar.js draws
+	// nothing on its own and a frame needs the pair or neither.
+	{"calendar.js", []string{"data-rst-date", "data-rst-time", "data-rst-range"}},
 	{"datetime.js", []string{"data-rst-date", "data-rst-time", "data-rst-range"}},
 }
 
@@ -1330,7 +1374,7 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	b.WriteString("<!doctype html>\n")
 	b.WriteString(`<html lang="` + locale + `" dir="` + rastrillo.Dir(locale) + `">` + "\n")
 	b.WriteString("<head>\n<meta charset=\"utf-8\">\n")
-	b.WriteString(`<meta name="viewport" content="width=device-width, initial-scale=1">` + "\n")
+	b.WriteString(`<meta name="viewport" content="width=device-width">` + "\n")
 	// The same words the frame's title attribute carries. A frame is a
 	// document, and a document with no title fails WCAG 2.4.2 — which
 	// the a11y gate says out loud, because it scans these documents in
@@ -2104,6 +2148,8 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
 		"The date fields' natural-language input. Inert until a field opts in with data-rst-date or data-rst-time, and deletable on its own.")
+	add(&out, "calendar.js", ui.CalendarJS(),
+		"The month grid that field's calendar button opens. Inert until datetime.js asks it for a panel, and deletable on its own: without it the button falls back to the browser's own picker.")
 	return out
 }
 
@@ -2185,7 +2231,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>{{.Title}} — {{P "rastrillo design system"}} — {{.Theme}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
@@ -2193,6 +2239,7 @@ const pageTemplate = `{{define "ds-page"}}<!doctype html>
 <script src="{{.Mount}}/gallery.js"></script>
 <script defer src="{{.Mount}}/rastrillo.js"></script>
 <script defer src="{{.Mount}}/select.js"></script>
+<script defer src="{{.Mount}}/calendar.js"></script>
 <script defer src="{{.Mount}}/datetime.js"></script>
 </head>
 <body>
@@ -2495,7 +2542,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>{{P "The modal route"}} — {{P "rastrillo design system"}}</title>
 <link rel="stylesheet" href="{{.Mount}}/tokens.css">
 <link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">

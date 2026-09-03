@@ -161,7 +161,7 @@ Money is `int64` cents throughout. Never a float.
 func ParseCents(s string) (int64, error)
 ```
 
-Parses decimal dollars into cents. Strict on purpose: at most two
+Parses a decimal amount into cents. Strict on purpose: at most two
 decimal places, no `$`, no sign character at all, both halves ASCII
 digits. An empty string parses to zero, because a required money field
 has already rejected blankness on the raw text before this runs.
@@ -169,7 +169,37 @@ has already rejected blankness on the raw text before this runs.
 The strictness earns its keep. Handing each half to `strconv.ParseInt`
 accepts its own `+`/`-`, so `"12.-5"` would quietly parse to a different
 magnitude than its digits suggest instead of being rejected as the
-not-a-dollar-amount it is.
+not-an-amount it is.
+
+### Error
+
+```go
+type Error struct {
+    Key string // a rastrillo.ui.* catalog key
+    Msg string // the English, and what Error() returns
+}
+
+func (e *Error) Error() string
+```
+
+Every error `ParseCents` returns is one of these. It names the catalog
+key for its message as well as carrying the message, so a caller that
+has a translator can render it in the reader's language:
+
+```go
+cents, err := form.ParseCents(r.FormValue("price"))
+var fe *form.Error
+if errors.As(err, &fe) {
+    fields["price"] = t(fe.Key) // or fe.Error() for the English
+}
+```
+
+The key rather than a translated string, because this package imports
+nothing from rastrillo and has no request in reach. A package-level
+translator hook would be worse than none: the locale is per request, and
+a global would hand one request's language to another's error. A caller
+that ignores `Key` and prints the error gets English, which is the same
+three-step fallback the rest of the framework walks.
 
 ### FormatCents and FormatCentsPlain
 
@@ -187,3 +217,9 @@ money field always fails.
 Both write the sign once against the absolute value. Formatting a
 negative directly produces `"$-1.-50"`, because Go's `/` and `%` both
 truncate toward zero.
+
+**`FormatCents` writes a dollar sign and knows no other currency.**
+Nothing in the framework stores a currency, so there is nothing for it
+to read. Format your own money anywhere that is not what you want, and
+store the currency beside the amount when you do — a reader's locale
+decides how a price is written, never which currency it is in.

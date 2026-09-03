@@ -432,6 +432,7 @@ func TokensCSS() []byte
 func ShimJS() []byte
 func SelectJS() []byte
 func DatetimeJS() []byte
+func CalendarJS() []byte
 ```
 
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
@@ -457,7 +458,28 @@ from the request's catalog.
 Its on-screen labels have English fallbacks, the same way `select.js`
 does, for a field that reaches it without the attributes.
 
-All four are delivered once and yours from then on. Edit them freely;
+`CalendarJS` is the month grid those fields open when you press their
+calendar button — a real `<table>` with real column headers under a
+`role="grid"`, so it is a calendar to a screen reader and not a wall of
+numbers. Exactly one day sits in the tab order at a time; the arrow keys
+walk days and weeks, the `Page` keys walk months, `Shift`+`Page` walks
+years, `Home` and `End` reach the ends of the week, and `Escape` closes
+the panel and puts focus back in the box. It obeys the input's own `min`
+and `max`, and a range's end will not open before its start. Type while
+it is open and the grid follows the words, committing nothing until you
+choose.
+
+It is a separate file from `datetime.js` because it is a separate job:
+one reads and writes dates as text, the other draws them. `datetime.js`
+looks it up at enhance time through `window.rastrilloCalendar`, so an
+app that ships one and not the other still has a working field — the
+button falls back to the browser's own picker. Like the others it knows
+no month names, no weekday names and no English: the names, the digits
+and the day a week starts on all come from `Intl` for the page's `lang`,
+and its three visible strings arrive on `data-rst-date-calendar`,
+`data-rst-date-prev-month` and `data-rst-date-next-month`.
+
+All five are delivered once and yours from then on. Edit them freely;
 nothing in the framework overwrites them. The scaffold's
 `vendored_test.go` pins the delivered copies byte-identical to these, so
 drift is something you choose rather than discover — name the file in
@@ -470,7 +492,7 @@ func VendoredAssets(theme string) (map[string][]byte, bool)
 ```
 
 `VendoredAssets` is the whole vendored set for one theme, keyed by the
-name each file takes in an app's `static/` directory: the four above
+name each file takes in an app's `static/` directory: the five above
 plus `theme.css`, which is `ThemeCSS(theme)`. It reports `false` for a
 theme that is not shipped. `VendoredNames` is the same set as an ordered
 list of names, for reporting on the files one at a time.

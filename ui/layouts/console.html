@@ -2,13 +2,14 @@
 <html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
 <link rel="stylesheet" href="{{asset "static/theme.css"}}">
 <script defer src="{{asset "static/rastrillo.js"}}"></script>
 {{iconAssets}}
 <script defer src="{{asset "static/select.js"}}"></script>
+<script defer src="{{asset "static/calendar.js"}}"></script>
 <script defer src="{{asset "static/datetime.js"}}"></script>
 {{/* head is the app's own slot in <head>: a favicon, a meta tag, one
      more stylesheet. Empty by default, last in the head so an app's

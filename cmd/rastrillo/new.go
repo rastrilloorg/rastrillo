@@ -170,9 +170,14 @@ func runNew(args []string) error {
 	//	               until a <select> opts in with data-rst-select
 	//	datetime.js    the date fields' natural-language combobox,
 	//	               inert until an input opts in with data-rst-date
+	//	calendar.js    the month grid that combobox's button opens,
+	//	               inert until datetime.js asks it for a panel
 	//
 	// An app that never renders a big select or a date field can delete
-	// that script and its tag; nothing else changes.
+	// that script and its tag; nothing else changes. The date fields are
+	// two files, and deleting one of the pair is the awkward case: drop
+	// calendar.js alone and the field still works, with its button
+	// falling back to the browser's own picker.
 	for name, content := range vendored {
 		files[filepath.Join(appDir, "static", name)] = string(content)
 	}

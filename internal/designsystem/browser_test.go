@@ -982,6 +982,8 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 		{"overview", 1, "the demo application is framed here"},
 		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
 		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
+		{"screens", len(screenDocs()), "every screen screenDocs() ships has a section here"},
+		{"formats", len(formatDocs()), "every section formatDocs() ships has a sample here"},
 	}
 	for _, fam := range families() {
 		rows = append(rows, struct {
@@ -990,6 +992,31 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 			owed  string
 		}{fam.Key, len(fam.Partials), "every partial samples.go puts in this family has a section here"})
 	}
+	// The rows above are hand-written, with a reason each, and that is
+	// worth keeping — but a page kind whose author forgets to add one is
+	// never height-checked at all, and the only symptom is a preview
+	// clipped halfway down a button. That is exactly what happened when
+	// the Screens page landed: axe had a gate saying it was unscanned,
+	// this drive had none, and two of its five screens shipped cut off.
+	//
+	// So the list is held to pageKinds(), with the pages that frame
+	// nothing named and reasoned rather than silently absent.
+	framesNothing := map[string]string{
+		"tokens":          "a swatch grid and two scale tables; no preview frames",
+		"icons":           "inline SVG drawn directly on the page, not framed",
+		"getting-started": "prose, links and two source blocks",
+	}
+	covered := map[string]bool{}
+	for _, tc := range rows {
+		covered[tc.kind] = true
+	}
+	for _, pk := range pageKinds() {
+		if covered[pk.Kind] || framesNothing[pk.Kind] != "" {
+			continue
+		}
+		t.Errorf("page kind %q has no row in this drive and is not listed as framing nothing, so its preview heights are never measured — add a row with the count it owes, or say here why it frames nothing", pk.Kind)
+	}
+
 	for _, tc := range rows {
 		kind := tc.kind
 		var desktop, mobile string

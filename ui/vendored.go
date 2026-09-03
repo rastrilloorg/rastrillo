@@ -12,9 +12,11 @@ package ui
 
 // vendoredNames lists the vendored files in the order they are worth
 // reading: the structural stylesheet, the theme that colours it, then
-// the three scripts, shim first. TestVendoredNamesMatchVendoredAssets
+// the four scripts, shim first — with calendar.js last because it is
+// the only one that is not an enhancement in its own right: it draws
+// the month grid datetime.js asks it for. TestVendoredNamesMatchVendoredAssets
 // holds this and VendoredAssets to the same set.
-var vendoredNames = []string{"tokens.css", "theme.css", "rastrillo.js", "select.js", "datetime.js"}
+var vendoredNames = []string{"tokens.css", "theme.css", "rastrillo.js", "select.js", "datetime.js", "calendar.js"}
 
 // VendoredNames returns the names the vendored files take in an app's
 // static/ directory, in a stable order, for a caller that wants to
@@ -45,5 +47,6 @@ func VendoredAssets(theme string) (map[string][]byte, bool) {
 		"rastrillo.js": ShimJS(),
 		"select.js":    SelectJS(),
 		"datetime.js":  DatetimeJS(),
+		"calendar.js":  CalendarJS(),
 	}, true
 }
