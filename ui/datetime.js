@@ -24,7 +24,12 @@
      data-rst-date-hint          guidance under the list, {example}
                                  substituted here with a date this
                                  locale's own formatter wrote
-     data-rst-date-pick          label for the native-picker button
+     data-rst-date-pick          label for the calendar button
+     data-rst-date-pick-time     label for a TIME field's button, which
+                                 opens a clock rather than a calendar
+     data-rst-date-calendar      the calendar overlay's own name
+     data-rst-date-prev-month    label for the overlay's back chevron
+     data-rst-date-next-month    label for the overlay's forward one
      data-rst-date-results       live-region text, {n} substituted
      data-rst-date-result-one    live-region text for exactly one
      data-rst-date-quick-*       the seven quick-pick labels: today,
@@ -58,7 +63,22 @@
 
    The pure half is exported for Node at the bottom of the file, behind
    a guard a browser never takes; ui/datetime_node.mjs drives it
-   against ui/testdata/datetime/*.json. */
+   against ui/testdata/datetime/*.json.
+
+   Two things live NEXT to the strict grammar rather than inside it.
+   parseAll offers a reading where the grammar refuses one, by finishing
+   a half-typed word into the names this locale actually has: "5j" is
+   not a date, and 5 January, 5 June and 5 July are three, nearest
+   first. It never overrules the grammar — an exact reading wins
+   outright — and every completion is shown with its date written out
+   before anyone commits it.
+
+   And the calendar itself is ui/calendar.js, a sibling file. This one
+   reads and writes dates as TEXT; that one draws six weeks of them.
+   The seam is window.rastrilloCalendar, looked up at enhance time, so
+   an app that ships this file without that one still has a working
+   field — the button falls back to the browser's own picker, the same
+   way everything here falls back when an attribute is missing. */
 (function () {
   "use strict";
 
@@ -399,6 +419,20 @@
     return list;
   }
 
+  // The index for this table, built once and kept on it. Cached
+  // against the vocabulary itself, not just the locale: a page could
+  // in principle carry two, and a stale index would parse the second
+  // field with the first field's words.
+  function indexFor(vocab, tbl) {
+    var key = "", name;
+    for (name in vocab) if (Object.prototype.hasOwnProperty.call(vocab, name)) key += name + "=" + vocab[name] + "\u0000";
+    if (tbl.indexKey !== key) {
+      tbl.index = index(vocab, tbl);
+      tbl.indexKey = key;
+    }
+    return tbl.index;
+  }
+
   // A separator is never a letter, whatever block it lives in. The
   // Arabic comma sits at \u060c, inside the same range as the letters
   // either side of it, so a class drawn by range alone reads
@@ -444,8 +478,15 @@
     // being counted ("3 months"). A fact about the typing, not about
     // any language, which is why it can be recorded without knowing
     // which language was typed.
-    function push(tok) {
+    //
+    // Where the token was read is recorded alongside it, because
+    // completion below rewrites exactly one token and hands the
+    // sentence back to the grammar unchanged around it. A scanner that
+    // forgets where it read a word cannot offer to finish it.
+    function push(tok, from, to) {
       tok.glued = glued;
+      tok.from = from;
+      tok.to = to;
       toks.push(tok);
       glued = true;
     }
@@ -453,15 +494,15 @@
       if (BREAKS.test(s.charAt(pos))) { pos++; glued = false; continue; }
       m = /^(\d{1,2}):(\d{2})/.exec(s.slice(pos));
       if (m) {
-        push({ t: "clock", h: +m[1], mi: +m[2] });
+        push({ t: "clock", h: +m[1], mi: +m[2] }, pos, pos + m[0].length);
         pos += m[0].length;
         continue;
       }
       hit = matchAt(s, pos, idx);
-      if (hit) { push(hit.tok); pos += hit.len; continue; }
+      if (hit) { push(hit.tok, pos, pos + hit.len); pos += hit.len; continue; }
       m = /^\d+/.exec(s.slice(pos));
       if (m) {
-        push({ t: "num", n: +m[0], digits: m[0].length });
+        push({ t: "num", n: +m[0], digits: m[0].length }, pos, pos + m[0].length);
         pos += m[0].length;
         continue;
       }
@@ -471,7 +512,7 @@
         pos++;
       }
       if (pos === start) pos++;
-      push({ t: "other", raw: s.slice(start, pos) });
+      push({ t: "other", raw: s.slice(start, pos) }, start, pos);
     }
     return toks;
   }
@@ -491,16 +532,7 @@
     ctx = ctx || {};
     var raw = tbl.fold(text);
     if (!raw) return null;
-    // Cached against the vocabulary itself, not just the locale: a
-    // page could in principle carry two, and a stale index would parse
-    // the second field with the first field's words.
-    var key = "";
-    for (var name in vocab) if (Object.prototype.hasOwnProperty.call(vocab, name)) key += name + "=" + vocab[name] + "\u0000";
-    if (tbl.indexKey !== key) {
-      tbl.index = index(vocab, tbl);
-      tbl.indexKey = key;
-    }
-    var idx = tbl.index;
+    var idx = indexFor(vocab, tbl);
 
     var prev = ctx.prev || null;
     var base = ctx.base || null;
@@ -916,6 +948,92 @@
     return out ? { date: out, hasDate: hasDate, hasTime: hasTime } : null;
   }
 
+  /* ── completion ──────────────────────────────────────────────────
+     The grammar above is exact, and says so: one word it does not know
+     makes the whole reading null. That refusal is the promise which
+     keeps this field from ever committing a date nobody typed, and it
+     is not up for negotiation.
+
+     Completion is the other half of that bargain. It never overrules a
+     reading — an exact one wins outright and nothing below runs — it
+     only offers one where the grammar had none. "5j" is not a date.
+     "5 January", "5 June" and "5 July" are three, and putting all
+     three on screen with their dates written out in full is precisely
+     how a guess stops being a guess: the person reads the answer
+     before they accept it.
+
+     Nearest first, which is the whole of "the fifth of the next month
+     starting with j": inferYear already rolls a bare day-and-month
+     forward to its next occurrence, so ordering the readings by date
+     IS that rule. Nothing here knows what a month is called. */
+
+  // How many finishings one unfinished word may offer. A single letter
+  // is the front of three months in English, and of more than that
+  // once the weekdays and the vocabulary are in; a list nobody can
+  // read at a glance has stopped being a suggestion.
+  var MAX_COMPLETIONS = 6;
+
+  // Every word in this locale's index that the run could still become.
+  // A prefix, never an infix: people type the front of a word, so "ju"
+  // finishes to June and July and "une" finishes to nothing.
+  //
+  // Two kinds are skipped. A literal is punctuation Intl threads
+  // between numbers, which nobody is halfway through typing; and "at"
+  // is optional everywhere it appears, so finishing a word INTO it
+  // changes no reading and only spends a row.
+  function completionsFor(run, idx) {
+    var out = [], seen = {}, i, e;
+    if (!run) return out;
+    for (i = 0; i < idx.length; i++) {
+      e = idx[i];
+      if (e.role === "word" && (e.kind === "ignore" || e.kind === "at")) continue;
+      if (e.text.length <= run.length) continue;
+      if (e.text.slice(0, run.length) !== run) continue;
+      if (seen[e.text]) continue;
+      seen[e.text] = true;
+      out.push(e.text);
+    }
+    return out;
+  }
+
+  // parseAll(text, vocab, tbl, now, ctx) -> [reading, ...], best first,
+  // and empty where the grammar and the completions both come back
+  // with nothing. This is what the field itself reads with; parse
+  // stays exactly as strict as it was, and the read-back gate still
+  // holds it to reading its own writing with no help from here.
+  function parseAll(text, vocab, tbl, now, ctx) {
+    var exact = parse(text, vocab, tbl, now, ctx);
+    if (exact) return [exact];
+    var raw = tbl.fold(text);
+    if (!raw) return [];
+    var idx = indexFor(vocab, tbl);
+    var toks = scan(raw, idx), at = -1, i;
+    for (i = 0; i < toks.length; i++) {
+      if (toks[i].t !== "other") continue;
+      // Two unfinished words is not a typo anybody is mid-way through,
+      // it is prose — and finishing both would multiply out into a
+      // list of dates nobody asked for.
+      if (at >= 0) return [];
+      at = i;
+    }
+    if (at < 0) return [];
+    var names = completionsFor(toks[at].raw, idx), out = [], seen = {}, read, key;
+    for (i = 0; i < names.length; i++) {
+      // The sentence handed back to the grammar with that one run
+      // finished, spaced off on both sides so a finished word cannot
+      // glue itself onto its neighbour and mean something else.
+      read = parse(raw.slice(0, toks[at].from) + " " + names[i] + " " + raw.slice(toks[at].to),
+        vocab, tbl, now, ctx);
+      if (!read) continue;
+      key = String(read.date.getTime()) + (read.hasTime ? "t" : "");
+      if (seen[key]) continue;
+      seen[key] = true;
+      out.push(read);
+    }
+    out.sort(function (a, b) { return a.date - b.date; });
+    return out.slice(0, MAX_COMPLETIONS);
+  }
+
   /* ── the page ────────────────────────────────────────────────────
      Everything below is behind the document guard, so Node loads the
      parser above and nothing else. */
@@ -925,6 +1043,12 @@
     var CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
       '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+
+    // A time field's button opens a clock, not a calendar, and says so
+    // with the one glyph everybody reads the same way.
+    var CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
     var seq = 0;
 
@@ -998,6 +1122,10 @@
       var setLabel = attr(native, "data-rst-date-set", "Set");
       var hintText = attr(native, "data-rst-date-hint", "");
       var pickLabel = attr(native, "data-rst-date-pick", "Open the calendar");
+      var clockLabel = attr(native, "data-rst-date-pick-time", "Open the clock");
+      var calLabel = attr(native, "data-rst-date-calendar", "Calendar");
+      var prevLabel = attr(native, "data-rst-date-prev-month", "Previous month");
+      var nextLabel = attr(native, "data-rst-date-next-month", "Next month");
       var manyFmt = attr(native, "data-rst-date-results", "{n} suggestions");
       var oneFmt = attr(native, "data-rst-date-result-one", "1 suggestion");
       var quick = {
@@ -1057,21 +1185,12 @@
       native.setAttribute("tabindex", "-1");
       native.setAttribute("aria-hidden", "true");
 
-      var pick = null;
-      if (canPick(native)) {
-        pick = document.createElement("button");
-        pick.type = "button";
-        pick.setAttribute("rst-dtp-pick", "");
-        pick.setAttribute("aria-label", pickLabel);
-        pick.innerHTML = CAL_SVG;
-        wrap.insertBefore(pick, list);
-      }
-
       var rows = [];      // [{li, date, hasTime}] — selectable rows only
       var active = -1;
       var baseOf = null;  // range end: () => Date|null, the start's value
       var onCommit = null;
       var isEnd = false;
+      var mine = false;   // true while WE are the ones writing to the carrier
 
       function current() { return fromWire(kind, native.value, new Date()); }
       function show(d) { return fmt ? fmt.format(d) : toWire(kind, d); }
@@ -1087,10 +1206,10 @@
         else input.removeAttribute("aria-activedescendant");
       }
 
-      // extra is the row's variant ("set") or a second attribute
-      // ("rst-dtp-quick"): the vocabulary spells a variant in the
-      // value slot and a kind as an attribute of its own, so one
-      // parameter cannot be both, and the caller says which.
+      // extra is the row's variant ("set", "alt") or a second attribute
+      // ("rst-dtp-quick"): the vocabulary spells a variant in the value
+      // slot and a kind as an attribute of its own, so one parameter
+      // cannot be both, and the caller says which.
       function addRow(label, meta, date, hasTime, variant, extra) {
         var li = document.createElement("li");
         li.setAttribute("rst-dtp-row", variant || "");
@@ -1155,11 +1274,22 @@
         list.textContent = "";
         rows = [];
         var text = String(query || "").trim();
-        var read = text ? parse(text, vocab, tbl, now, ctx()) : null;
-        if (read) addRow(show(read.date), setLabel, read.date, read.hasTime, "set");
-        var quickPicks = picks(now), i, skip = read ? toWire(kind, read.date) : "";
+        var reads = text ? parseAll(text, vocab, tbl, now, ctx()) : [];
+        var i, skip = {}, wire;
+        for (i = 0; i < reads.length; i++) {
+          // The first reading is the one Enter takes, and it is
+          // labelled as such. The rest are the other months a
+          // half-typed word could still have meant — offered, never
+          // chosen, each with its date written out in full, which is
+          // what keeps a completion from being a guess.
+          addRow(show(reads[i].date), i === 0 ? setLabel : "", reads[i].date, reads[i].hasTime,
+            i === 0 ? "set" : "alt");
+          skip[toWire(kind, reads[i].date)] = true;
+        }
+        var quickPicks = picks(now);
         for (i = 0; i < quickPicks.length; i++) {
-          if (toWire(kind, quickPicks[i].date) === skip) continue;
+          wire = toWire(kind, quickPicks[i].date);
+          if (skip[wire]) continue;
           addRow(quickPicks[i].label, show(quickPicks[i].date), quickPicks[i].date, kind !== "date", "", "rst-dtp-quick");
         }
         if (hintText) {
@@ -1170,30 +1300,196 @@
           list.appendChild(hint);
         }
         status.textContent = rows.length === 1 ? oneFmt : manyFmt.replace("{n}", String(rows.length));
-        // Text that failed to parse leaves NOTHING armed: a quick pick
+        // Text that read as nothing leaves NOTHING armed: a quick pick
         // sitting under the cursor would make Enter on a date the
         // grammar did not understand commit today instead of refusing.
-        setActive(rows.length && (read || !text) ? 0 : -1);
+        setActive(rows.length && (reads.length || !text) ? 0 : -1);
       }
 
-      function open() {
+      // What the carrier itself allows, plus — for a range's end — the
+      // start it must not come before. Asked fresh on every question
+      // rather than captured once, because the start moves.
+      function bounds() {
+        var when = new Date();
+        var lo = fromWire(kind, native.getAttribute("min"), when);
+        var hi = fromWire(kind, native.getAttribute("max"), when);
+        var start = baseOf ? baseOf() : null;
+        if (isEnd && start && (!lo || start > lo)) lo = midnight(start);
+        return { min: lo, max: hi };
+      }
+
+      // What the text in the box currently reads as, committing
+      // nothing. Null where it reads as nothing at all.
+      function previewOf(text) {
+        var t = String(text || "").trim();
+        if (!t) return null;
+        var reads = parseAll(t, vocab, tbl, new Date(), ctx());
+        return reads.length ? reads[0].date : null;
+      }
+
+      // The calendar overlay, when calendar.js is on the page. Looked
+      // up here rather than at load time so the two files may arrive
+      // in either order: both are deferred and this runs on
+      // DOMContentLoaded, by which point both have executed.
+      //
+      // Absent, the button falls back to the browser's own panel —
+      // the same posture this file takes towards a missing attribute.
+      // A page that links one script and not the other gets the old
+      // behaviour rather than a dead control.
+      var makeCal = (typeof window !== "undefined" && window.rastrilloCalendar) || null;
+      var cal = null;
+
+      if (makeCal && kind !== "time") {
+        cal = makeCal({
+          id: id,
+          locale: locale,
+          labels: { calendar: calLabel, prev: prevLabel, next: nextLabel },
+          value: current,
+          bounds: bounds,
+          onPick: function (day) {
+            // A day chosen on the grid keeps the clock the field
+            // already holds: picking the 5th for a meeting says
+            // nothing about what time it starts, and throwing the time
+            // away would be a second edit nobody asked for.
+            var had = current();
+            commit(new Date(day.getFullYear(), day.getMonth(), day.getDate(),
+              had ? had.getHours() : 9, had ? had.getMinutes() : 0), kind !== "date");
+          },
+          onDismiss: function () {
+            closeAll();
+            input.focus();
+          }
+        });
+        cal.el.id = id + "-cal";
+        wrap.appendChild(cal.el);
+      }
+
+      var pick = null;
+      if (cal || kind === "time" || canPick(native)) {
+        pick = document.createElement("button");
+        pick.type = "button";
+        pick.setAttribute("rst-dtp-pick", "");
+        pick.setAttribute("aria-label", kind === "time" ? clockLabel : pickLabel);
+        pick.setAttribute("aria-expanded", "false");
+        pick.setAttribute("aria-haspopup", cal ? "dialog" : "listbox");
+        pick.innerHTML = kind === "time" ? CLOCK_SVG : CAL_SVG;
+        wrap.insertBefore(pick, list);
+      }
+
+      /* ── which popup is open ─────────────────────────────────────
+         One region under the field, in one of three states, so there
+         is only ever one thing to close, one thing the arrow keys
+         drive, and one Escape:
+
+           "list"   the suggestions — readings, quick picks, the hint
+           "cal"    the month grid, on a date or datetime field
+           "slots"  every half hour, on a time field
+
+         The calendar REPLACES the suggestions rather than sitting
+         beside them, because two popups under one field is two things
+         the same keystroke could mean. The words keep working while it
+         is open: typing moves the grid, and Enter still commits what
+         the text reads as. */
+
+      var mode = "";
+
+      function closeAll() {
+        mode = "";
+        list.hidden = true;
+        active = -1;
+        input.setAttribute("aria-expanded", "false");
+        input.setAttribute("aria-controls", listId);
+        input.removeAttribute("aria-activedescendant");
+        if (cal) cal.close();
+        if (pick) pick.setAttribute("aria-expanded", "false");
+        wrap.classList.remove("is-above");
+      }
+
+      // Which side of the field the popup opens on. Below by default,
+      // above where there is no room below and there is room above: a
+      // panel hanging off the bottom of the window is a panel whose
+      // last week nobody can click.
+      function place() {
+        var panel = mode === "cal" && cal ? cal.el : list;
+        wrap.classList.remove("is-above");
+        if (!panel || panel.hidden) return;
+        var box = wrap.getBoundingClientRect();
+        var need = panel.getBoundingClientRect().height;
+        if (need > window.innerHeight - box.bottom && box.top > need) {
+          wrap.classList.add("is-above");
+        }
+      }
+
+      function openList() {
+        if (cal) cal.close();
+        mode = "list";
         list.hidden = false;
         input.setAttribute("aria-expanded", "true");
+        input.setAttribute("aria-controls", listId);
+        if (pick) pick.setAttribute("aria-expanded", "false");
         rebuild(input.value);
+        place();
       }
 
-      function close() {
+      function openCal() {
         list.hidden = true;
-        input.setAttribute("aria-expanded", "false");
-        input.removeAttribute("aria-activedescendant");
         active = -1;
+        input.removeAttribute("aria-activedescendant");
+        mode = "cal";
+        // Opened on what the text already says, so somebody who typed
+        // "next march" and then reached for the calendar arrives in
+        // March rather than in this month.
+        cal.open(previewOf(input.value));
+        input.setAttribute("aria-expanded", "true");
+        input.setAttribute("aria-controls", cal.el.id);
+        if (pick) pick.setAttribute("aria-expanded", "true");
+        place();
+      }
+
+      // A time field has no calendar, so its button opens the clock:
+      // every half hour of its own day, written in the field's own
+      // locale and scrolled to the one it is already showing. The same
+      // list element and the same keys as the suggestions — one popup,
+      // one Escape, one set of arrows.
+      function openSlots() {
+        var base = current() || new Date();
+        var day = midnight(base);
+        var want = base.getHours() * 60 + base.getMinutes();
+        var i, at, best = -1, near = 0, gap;
+        mode = "slots";
+        list.hidden = false;
+        list.textContent = "";
+        rows = [];
+        for (i = 0; i < 48; i++) {
+          at = new Date(day.getFullYear(), day.getMonth(), day.getDate(),
+            Math.floor(i / 2), (i % 2) * 30);
+          gap = Math.abs(at.getHours() * 60 + at.getMinutes() - want);
+          if (best < 0 || gap < best) { best = gap; near = rows.length; }
+          addRow(show(at), "", at, true, "", "rst-dtp-quick");
+        }
+        input.setAttribute("aria-expanded", "true");
+        input.setAttribute("aria-controls", listId);
+        if (pick) pick.setAttribute("aria-expanded", "true");
+        status.textContent = manyFmt.replace("{n}", String(rows.length));
+        setActive(near);
+        place();
+        // The nearest half hour put where the eye lands. The list's own
+        // scrollTop rather than scrollIntoView, which would also scroll
+        // the page out from under the field.
+        if (rows[near]) {
+          list.scrollTop = rows[near].li.offsetTop - Math.round(list.clientHeight / 2);
+        }
       }
 
       function commit(date, hasTime) {
+        // Ours, so the change listener below leaves the repaint alone:
+        // this path has already painted.
+        mine = true;
         native.value = toWire(kind, date);
         native.dispatchEvent(new Event("change", { bubbles: true }));
+        mine = false;
         input.value = show(date);
-        close();
+        closeAll();
         if (onCommit) onCommit(date, hasTime);
       }
 
@@ -1205,43 +1501,58 @@
           // would with no script at all.
           input.value = "";
           if (native.value) {
+            mine = true;
             native.value = "";
             native.dispatchEvent(new Event("change", { bubbles: true }));
+            mine = false;
           }
           return;
         }
-        var read = parse(text, vocab, tbl, new Date(), ctx());
-        if (read) commit(read.date, read.hasTime);
+        var reads = parseAll(text, vocab, tbl, new Date(), ctx());
+        if (reads.length) commit(reads[0].date, reads[0].hasTime);
         else paint(); // unreadable text is not a value: put the old one back
       }
 
       input.addEventListener("focus", function () {
         input.select();
-        open();
+        if (!mode) openList();
       });
-      input.addEventListener("click", open);
-      input.addEventListener("input", function () { open(); });
+      input.addEventListener("click", function () {
+        if (!mode) openList();
+      });
+      input.addEventListener("input", function () {
+        // The live half of the brief: while the grid is up, the words
+        // drive it. Every keystroke re-reads the text and moves the
+        // calendar to what it now says, committing nothing and taking
+        // focus out of nothing.
+        if (mode === "cal" && cal) return cal.show(previewOf(input.value));
+        openList();
+      });
       input.addEventListener("keydown", function (e) {
         switch (e.key) {
           case "ArrowDown":
             e.preventDefault();
-            if (list.hidden) return open();
+            // Down out of the box is down into whatever is open: the
+            // grid takes focus, and the arrow keys become days.
+            if (mode === "cal" && cal) { cal.focusGrid(); break; }
+            if (!mode) { openList(); break; }
             if (rows.length) setActive(Math.min(active + 1, rows.length - 1));
             break;
           case "ArrowUp":
             e.preventDefault();
-            if (list.hidden) return open();
+            if (mode === "cal" && cal) { cal.focusGrid(); break; }
+            if (!mode) { openList(); break; }
             if (rows.length) setActive(Math.max(active - 1, 0));
             break;
           case "Enter":
             e.preventDefault();
-            if (!list.hidden && active >= 0) commit(rows[active].date, rows[active].hasTime);
-            else { commitText(); close(); }
+            if (mode !== "cal" && !list.hidden && active >= 0) commit(rows[active].date, rows[active].hasTime);
+            else { commitText(); closeAll(); }
             break;
           case "Escape":
             e.preventDefault();
             paint();
-            close();
+            closeAll();
             break;
         }
       });
@@ -1260,15 +1571,46 @@
         if (e.key === "Enter") e.preventDefault();
       });
 
-      wrap.addEventListener("focusout", function (e) {
-        if (wrap.contains(e.relatedTarget)) return;
-        commitText();
-        close();
+      // Focus left the field, so commit what is in the box and shut
+      // the popup — but only if it really left.
+      //
+      // The check is deferred by a tick, and that tick is the whole
+      // point. Paging the calendar REBUILDS the grid, which removes the
+      // very cell that had focus; the browser fires focusout with a
+      // null relatedTarget on the way out and calendar.js puts focus on
+      // the new cell immediately afterwards. Reading relatedTarget
+      // alone, every arrow key inside the grid looked like a person
+      // walking away: the field committed whatever the box happened to
+      // say and slammed the panel shut under the cursor. A tick later
+      // the answer is not in doubt — document.activeElement is either
+      // back inside this field or it is not.
+      wrap.addEventListener("focusout", function () {
+        setTimeout(function () {
+          if (wrap.contains(document.activeElement)) return;
+          commitText();
+          closeAll();
+        }, 0);
       });
 
       if (pick) {
+        // The press must not blur the box: a blur commits the text,
+        // and not committing it yet is the whole reason the button is
+        // being pressed.
+        pick.addEventListener("mousedown", function (e) { e.preventDefault(); });
         pick.addEventListener("click", function () {
-          close();
+          if (mode === "cal" || mode === "slots") {
+            closeAll();
+            input.focus();
+            return;
+          }
+          input.focus();
+          if (cal) return openCal();
+          if (kind === "time") return openSlots();
+          // Neither a calendar nor a clock, which means calendar.js is
+          // not on the page. The browser's own panel is better than a
+          // button that does nothing, and this is the only line in
+          // this file that opens it.
+          closeAll();
           try {
             native.showPicker();
           } catch (err) {
@@ -1276,9 +1618,22 @@
           }
         });
       }
-      // A pick made in the native panel lands in the carrier; repaint.
+
+      // The carrier changed underneath us: a pick in the browser's own
+      // panel, a range's start seeding its end, an app's own script.
+      // Repaint, so the box shows what the form will actually post.
+      //
+      // The guard here used to be "unless the combobox has focus",
+      // which silently swallowed the one case it most needed to catch.
+      // The native panel opens WITHOUT moving focus, so a date picked
+      // in it never reached the box and the field looked like it had
+      // ignored the selection. It now skips only our own commits, which
+      // have painted already, and a change that arrives while somebody
+      // is genuinely mid-word with a popup open.
       native.addEventListener("change", function () {
-        if (document.activeElement !== input) paint();
+        if (mine) return;
+        if (mode && document.activeElement === input) return;
+        paint();
       });
 
       paint();
@@ -1333,6 +1688,11 @@
   // The pure half, for ui/datetime_node.mjs. A browser has no `module`
   // and never takes this branch.
   if (typeof module !== "undefined" && module && module.exports) {
-    module.exports = { parse: parse, tables: tables, displayOptions: displayOptions };
+    module.exports = {
+      parse: parse,
+      parseAll: parseAll,
+      tables: tables,
+      displayOptions: displayOptions
+    };
   }
 })();

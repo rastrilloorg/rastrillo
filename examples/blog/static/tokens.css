@@ -1528,6 +1528,72 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-dtp__set, [rst-dtp-set] { flex: none; font-size: var(--rst-fs-xs); color: var(--rst-muted); }
 .rst-dtp__hint, [rst-dtp-hint] { color: var(--rst-muted); font-size: var(--rst-fs-xs); padding: 0.35rem 0.65rem 0.15rem; }
 
+/* The popup opens above the field where there is no room below it —
+   datetime.js measures and sets .is-above, because a panel hanging off
+   the bottom of the window is a panel whose last week nobody can click.
+   One rule for both popups: only ever one of them is open. */
+.rst-dtp.is-above .rst-dtp__list, [rst-dtp].is-above [rst-dtp-list], .rst-dtp.is-above .rst-cal, [rst-dtp].is-above [rst-cal] { inset-block-end: 100%; margin-block-end: 4px; margin-block-start: 0; top: auto; }
+/* A completion offered rather than chosen — the other months a
+   half-typed word could still have meant. Lighter than the reading
+   above it, because it is a second-best by construction. */
+.rst-dtp__row--alt .rst-dtp__label, [rst-dtp-row~="alt"] [rst-dtp-label] { color: var(--rst-text-muted); }
+
+/* ── The calendar overlay (ui/calendar.js): the month grid a date
+      field's button opens. A real <table> with real column headers,
+      because that is what a calendar is, with role="grid" over the top
+      and a roving tabindex so exactly one day sits in the tab order.
+
+      Sized in rem so the grid keeps its shape when a page is zoomed:
+      seven columns of text, not seven columns of pixels. A fixed inline
+      size rather than the field's, because a calendar is a calendar
+      whatever it hangs under — a month stretched across a wide input is
+      a grid nobody can aim at.
+
+      Everything here is logical (inline/block, never left/right), so a
+      right-to-left page mirrors the panel and the grid together. The
+      chevrons are the one thing that needs saying twice, below.
+      ───────────────────────────────────────────────────────────────── */
+.rst-cal, [rst-cal] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inline-size: 18rem; inset-inline-start: 0; margin-block-start: 4px; padding: var(--rst-sp-2); position: absolute; top: 100%; z-index: 40; }
+.rst-cal__head, [rst-cal-head] { align-items: center; display: flex; gap: var(--rst-sp-1); justify-content: space-between; padding-block-end: var(--rst-sp-2); }
+.rst-cal__title, [rst-cal-title] { flex: 1; font-size: var(--rst-fs-sm); font-weight: 600; text-align: center; }
+.rst-cal__nav, [rst-cal-nav] { align-items: center; background: none; block-size: 1.75rem; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; justify-content: center; padding: 0; }
+.rst-cal__nav:hover:not(:disabled), [rst-cal-nav]:hover:not(:disabled) { background: var(--rst-accent-soft); color: var(--rst-text); }
+/* A month with nothing pickable in it — past the field's min, or past
+   its max. Dimmed and inert rather than removed, so the header keeps
+   its shape and the title stays where the eye left it. */
+.rst-cal__nav:disabled, [rst-cal-nav]:disabled { cursor: default; opacity: 0.35; }
+.rst-cal__nav svg, [rst-cal-nav] svg { block-size: 1.1rem; inline-size: 1.1rem; }
+/* One chevron, drawn once and turned round for the other direction, so
+   "back" always points at the start of the line — which is the other
+   end of the box in a right-to-left page, and handled there by the
+   panel's own direction rather than a second rule. */
+[rst-cal-nav~="next"] svg, .rst-cal__nav--next svg { transform: scaleX(-1); }
+.rst-cal__grid, [rst-cal-grid] { border-collapse: collapse; inline-size: 100%; table-layout: fixed; }
+.rst-cal__grid th, [rst-cal-grid] th { color: var(--rst-muted); font-size: var(--rst-fs-xs); font-weight: 500; padding-block: var(--rst-sp-1); text-align: center; }
+.rst-cal__day, [rst-cal-day] { border-radius: var(--rst-radius-sm); cursor: pointer; font-size: var(--rst-fs-sm); font-variant-numeric: tabular-nums; line-height: 2.15; text-align: center; }
+.rst-cal__day:hover, [rst-cal-day]:hover { background: var(--rst-accent-soft); }
+/* The days either side of the month. Still pickable — reaching for the
+   1st from the row above it is how people use a calendar — but plainly
+   not part of the month on screen. */
+.rst-cal__day.is-outside, [rst-cal-day].is-outside { color: var(--rst-text-faint); }
+/* Today is a ring rather than a fill, so it can still be read when the
+   selection is sitting on top of it. */
+.rst-cal__day.is-today, [rst-cal-day].is-today { box-shadow: inset 0 0 0 1px var(--rst-line-strong); font-weight: 600; }
+/* What the text in the box currently reads as: an outline that follows
+   the words as they are typed. Deliberately quieter than the selection
+   — it is a preview, and nothing has been chosen yet. */
+.rst-cal__day.is-preview, [rst-cal-day].is-preview { box-shadow: inset 0 0 0 2px var(--rst-accent); }
+/* The committed value. aria-selected says so in the accessibility tree;
+   this is the matching visual, never the only signal. */
+.rst-cal__day.is-selected, [rst-cal-day].is-selected { background: var(--rst-accent); color: var(--rst-on-accent); font-weight: 600; }
+.rst-cal__day.is-selected.is-outside, [rst-cal-day].is-selected.is-outside { color: var(--rst-on-accent); }
+/* Outside the field's own min/max. aria-disabled carries it to a screen
+   reader and calendar.js refuses the pick; this says the same to the
+   eye. */
+.rst-cal__day.is-disabled, [rst-cal-day].is-disabled { color: var(--rst-text-faint); cursor: default; text-decoration: line-through; }
+.rst-cal__day.is-disabled:hover, [rst-cal-day].is-disabled:hover { background: none; }
+.rst-cal__day:focus-visible, [rst-cal-day]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+
 /* ── Shells: the page frames an app's layout template wraps .rst-page
       in — topbar and sidebar. Written in logical properties throughout,
       so a right-to-left locale gets a mirrored shell for free: the rail
@@ -1802,6 +1868,40 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-error__body, [rst-error-body] { color: var(--rst-text-muted); margin-block: var(--rst-sp-3) 0; }
 .rst-error__cta, [rst-error-cta] { display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); justify-content: center; margin-block: var(--rst-sp-5) 0; }
 .rst-error__ref, [rst-error-ref] { color: var(--rst-text-faint); margin-block: 2rem 0; }
+
+/* ---------------------------------------------------------------------
+   Touch: the two zooms nobody asked for.
+
+   Mobile Safari zooms the whole page when it focuses a form control
+   whose text is under 16px, and this file's base type is 14px on
+   purpose. So every text-entry control comes back up to 16px where the
+   pointer is coarse, and stays 14px under a mouse. max() rather than a
+   flat 1rem, so a control deliberately set larger keeps its size; rem
+   rather than px, so a reader who raised the browser default keeps the
+   increase. This is the fix. The other one — user-scalable=no in the
+   viewport tag — buys the same quiet by taking pinch-zoom away from
+   everyone, which is a WCAG 1.4.4 failure and not on offer here.
+
+   Double-tap is the second zoom: tap a button or a row twice in quick
+   succession and the second tap lands as a zoom gesture rather than a
+   click. touch-action: manipulation drops that gesture on interactive
+   elements only, so panning and pinch-zoom are untouched, and so is
+   double-tapping prose or an image, which is a real way to read a
+   narrow column. :where() weighs nothing, so any rule can override it.
+   --------------------------------------------------------------------- */
+
+@media (pointer: coarse) {
+  input, select, textarea,
+  .rst-input, [rst-input],
+  .rst-textarea, [rst-textarea],
+  .rst-search input[type="search"], [rst-search] input[type="search"] {
+    font-size: max(1rem, 1em);
+  }
+}
+
+:where(a[href], button, input, select, textarea, label, summary, [role="button"], [role="tab"], [role="option"]) {
+  touch-action: manipulation;
+}
 
 /* ---------------------------------------------------------------------
    Utilities, last on purpose.

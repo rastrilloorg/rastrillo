@@ -1,56 +1,415 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-01T00:00:00Z",
+  "generatedAt": "2026-09-02T22:42:36Z",
   "title": "Design System: Rastrillo",
   "extensions": {
     "colorMeta": {
-      "bg": { "role": "neutral", "displayName": "Page", "canonical": "light-dark(#ffffff, #111418)", "tonalRamp": ["#0b0d10", "#111418", "#1a1f26", "#2a3038", "#4b5563", "#9aa2ad", "#d7dbe0", "#ffffff"] },
-      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "light-dark(#ffffff, #1a1f26)", "tonalRamp": ["#0e1116", "#141820", "#1a1f26", "#2a3038", "#525a66", "#9aa2ad", "#e3e6ea", "#ffffff"] },
-      "surface-2": { "role": "neutral", "displayName": "Surface Sunken", "canonical": "light-dark(#f6f7f8, #15191f)", "tonalRamp": ["#0b0e12", "#15191f", "#1f242b", "#2f353d", "#565d67", "#9ba2ab", "#dfe2e5", "#f6f7f8"] },
-      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "light-dark(#e5e7eb, #2a3038)", "tonalRamp": ["#14171c", "#2a3038", "#3b424c", "#59616c", "#7f8792", "#adb3bc", "#e5e7eb", "#f7f8f9"] },
-      "line-strong": { "role": "neutral", "displayName": "Control Edge", "canonical": "light-dark(#7f8792, #79828e)", "tonalRamp": ["#181b20", "#2b3038", "#414852", "#5b636e", "#7f8792", "#a5abb4", "#cbcfd5", "#eceef0"] },
-      "text": { "role": "neutral", "displayName": "Ink", "canonical": "light-dark(#1a1d21, #e8eaed)", "tonalRamp": ["#0a0c0e", "#1a1d21", "#2e333a", "#4b5563", "#727a86", "#a3aab4", "#cfd4d9", "#e8eaed"] },
-      "text-muted": { "role": "neutral", "displayName": "Ink Muted", "canonical": "light-dark(#4b5563, #a8b0ba)", "tonalRamp": ["#12161b", "#232a33", "#374151", "#4b5563", "#6b7382", "#949ca8", "#c3c9d1", "#e6e9ed"] },
-      "text-faint": { "role": "neutral", "displayName": "Ink Faint", "canonical": "light-dark(#656c78, #98a1ac)", "tonalRamp": ["#151920", "#262c34", "#3c434e", "#535a66", "#656c78", "#98a1ac", "#c6cbd2", "#e9ebee"] },
-      "accent": { "role": "primary", "displayName": "Interface Blue", "canonical": "light-dark(#2464e0, #7ba7ff)", "tonalRamp": ["#0a1b3f", "#102a63", "#173d8f", "#1a4fc0", "#2464e0", "#5b8bee", "#7ba7ff", "#eef3fe"] },
-      "accent-strong": { "role": "primary", "displayName": "Interface Blue Deep", "canonical": "light-dark(#1a4fc0, #a3c0ff)", "tonalRamp": ["#08152f", "#0e2354", "#143a86", "#1a4fc0", "#3a6ddc", "#6e97f2", "#a3c0ff", "#e4ecff"] },
-      "accent-soft": { "role": "primary", "displayName": "Interface Blue Wash", "canonical": "light-dark(#eef3fe, #17233a)", "tonalRamp": ["#0c1526", "#17233a", "#22334f", "#33496b", "#5d7cae", "#93a9cf", "#cbd9f4", "#eef3fe"] },
-      "on-accent": { "role": "primary", "displayName": "On Accent", "canonical": "light-dark(#ffffff, #0b1220)", "tonalRamp": ["#0b1220", "#16203a", "#293c5a", "#475874", "#7386a3", "#a6b4c9", "#d3dae5", "#ffffff"] },
-      "tone-neutral-fg": { "role": "tertiary", "displayName": "Neutral Tone Ink", "canonical": "light-dark(#374151, #c3c9d1)", "tonalRamp": ["#0f1318", "#1c222a", "#293240", "#374151", "#5b6675", "#8b95a3", "#c3c9d1", "#eef0f2"] },
-      "tone-neutral-bg": { "role": "tertiary", "displayName": "Neutral Tone Ground", "canonical": "light-dark(#eef0f2, #262c34)", "tonalRamp": ["#12151a", "#262c34", "#39414c", "#525b68", "#78818e", "#a6adb7", "#d2d7dc", "#eef0f2"] },
-      "tone-positive-fg": { "role": "tertiary", "displayName": "Positive Tone Ink", "canonical": "light-dark(#166534, #6ee7a8)", "tonalRamp": ["#04170c", "#0a2e18", "#0f4724", "#166534", "#22874a", "#3fb673", "#6ee7a8", "#dcfce7"] },
-      "tone-positive-bg": { "role": "tertiary", "displayName": "Positive Tone Ground", "canonical": "light-dark(#dcfce7, #10281c)", "tonalRamp": ["#06150e", "#10281c", "#1b432e", "#2a6647", "#3f8f65", "#6bbb8e", "#a6dcbf", "#dcfce7"] },
-      "tone-warning-fg": { "role": "tertiary", "displayName": "Warning Tone Ink", "canonical": "light-dark(#854d0e, #f0c46a)", "tonalRamp": ["#1c1104", "#38230a", "#573710", "#854d0e", "#b3741f", "#d69f3f", "#f0c46a", "#fef3c7"] },
-      "tone-warning-bg": { "role": "tertiary", "displayName": "Warning Tone Ground", "canonical": "light-dark(#fef3c7, #2c2110)", "tonalRamp": ["#150f07", "#2c2110", "#46351a", "#665029", "#8f733f", "#bda067", "#e0cb9b", "#fef3c7"] },
-      "tone-negative-fg": { "role": "tertiary", "displayName": "Negative Tone Ink", "canonical": "light-dark(#b91c1c, #f79aa0)", "tonalRamp": ["#210607", "#420b0c", "#6d1414", "#b91c1c", "#d64a48", "#ea7377", "#f79aa0", "#fee2e2"] },
-      "tone-negative-bg": { "role": "tertiary", "displayName": "Negative Tone Ground", "canonical": "light-dark(#fee2e2, #331819)", "tonalRamp": ["#190b0c", "#331819", "#502527", "#73393b", "#9c5c5e", "#c58a8c", "#e6b8ba", "#fee2e2"] }
+      "bg": {
+        "role": "neutral",
+        "displayName": "Page",
+        "canonical": "light-dark(#ffffff, #111418)",
+        "tonalRamp": [
+          "#0b0d10",
+          "#111418",
+          "#1a1f26",
+          "#2a3038",
+          "#4b5563",
+          "#9aa2ad",
+          "#d7dbe0",
+          "#ffffff"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "light-dark(#ffffff, #1a1f26)",
+        "tonalRamp": [
+          "#0e1116",
+          "#141820",
+          "#1a1f26",
+          "#2a3038",
+          "#525a66",
+          "#9aa2ad",
+          "#e3e6ea",
+          "#ffffff"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Surface Sunken",
+        "canonical": "light-dark(#f6f7f8, #15191f)",
+        "tonalRamp": [
+          "#0b0e12",
+          "#15191f",
+          "#1f242b",
+          "#2f353d",
+          "#565d67",
+          "#9ba2ab",
+          "#dfe2e5",
+          "#f6f7f8"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "light-dark(#e5e7eb, #2a3038)",
+        "tonalRamp": [
+          "#14171c",
+          "#2a3038",
+          "#3b424c",
+          "#59616c",
+          "#7f8792",
+          "#adb3bc",
+          "#e5e7eb",
+          "#f7f8f9"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Control Edge",
+        "canonical": "light-dark(#7f8792, #79828e)",
+        "tonalRamp": [
+          "#181b20",
+          "#2b3038",
+          "#414852",
+          "#5b636e",
+          "#7f8792",
+          "#a5abb4",
+          "#cbcfd5",
+          "#eceef0"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "light-dark(#1a1d21, #e8eaed)",
+        "tonalRamp": [
+          "#0a0c0e",
+          "#1a1d21",
+          "#2e333a",
+          "#4b5563",
+          "#727a86",
+          "#a3aab4",
+          "#cfd4d9",
+          "#e8eaed"
+        ]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "light-dark(#4b5563, #a8b0ba)",
+        "tonalRamp": [
+          "#12161b",
+          "#232a33",
+          "#374151",
+          "#4b5563",
+          "#6b7382",
+          "#949ca8",
+          "#c3c9d1",
+          "#e6e9ed"
+        ]
+      },
+      "text-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "light-dark(#656c78, #98a1ac)",
+        "tonalRamp": [
+          "#151920",
+          "#262c34",
+          "#3c434e",
+          "#535a66",
+          "#656c78",
+          "#98a1ac",
+          "#c6cbd2",
+          "#e9ebee"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Interface Blue",
+        "canonical": "light-dark(#2464e0, #7ba7ff)",
+        "tonalRamp": [
+          "#0a1b3f",
+          "#102a63",
+          "#173d8f",
+          "#1a4fc0",
+          "#2464e0",
+          "#5b8bee",
+          "#7ba7ff",
+          "#eef3fe"
+        ]
+      },
+      "accent-strong": {
+        "role": "primary",
+        "displayName": "Interface Blue Deep",
+        "canonical": "light-dark(#1a4fc0, #a3c0ff)",
+        "tonalRamp": [
+          "#08152f",
+          "#0e2354",
+          "#143a86",
+          "#1a4fc0",
+          "#3a6ddc",
+          "#6e97f2",
+          "#a3c0ff",
+          "#e4ecff"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Interface Blue Wash",
+        "canonical": "light-dark(#eef3fe, #17233a)",
+        "tonalRamp": [
+          "#0c1526",
+          "#17233a",
+          "#22334f",
+          "#33496b",
+          "#5d7cae",
+          "#93a9cf",
+          "#cbd9f4",
+          "#eef3fe"
+        ]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "On Accent",
+        "canonical": "light-dark(#ffffff, #0b1220)",
+        "tonalRamp": [
+          "#0b1220",
+          "#16203a",
+          "#293c5a",
+          "#475874",
+          "#7386a3",
+          "#a6b4c9",
+          "#d3dae5",
+          "#ffffff"
+        ]
+      },
+      "tone-neutral-fg": {
+        "role": "tertiary",
+        "displayName": "Neutral Tone Ink",
+        "canonical": "light-dark(#374151, #c3c9d1)",
+        "tonalRamp": [
+          "#0f1318",
+          "#1c222a",
+          "#293240",
+          "#374151",
+          "#5b6675",
+          "#8b95a3",
+          "#c3c9d1",
+          "#eef0f2"
+        ]
+      },
+      "tone-neutral-bg": {
+        "role": "tertiary",
+        "displayName": "Neutral Tone Ground",
+        "canonical": "light-dark(#eef0f2, #262c34)",
+        "tonalRamp": [
+          "#12151a",
+          "#262c34",
+          "#39414c",
+          "#525b68",
+          "#78818e",
+          "#a6adb7",
+          "#d2d7dc",
+          "#eef0f2"
+        ]
+      },
+      "tone-positive-fg": {
+        "role": "tertiary",
+        "displayName": "Positive Tone Ink",
+        "canonical": "light-dark(#166534, #6ee7a8)",
+        "tonalRamp": [
+          "#04170c",
+          "#0a2e18",
+          "#0f4724",
+          "#166534",
+          "#22874a",
+          "#3fb673",
+          "#6ee7a8",
+          "#dcfce7"
+        ]
+      },
+      "tone-positive-bg": {
+        "role": "tertiary",
+        "displayName": "Positive Tone Ground",
+        "canonical": "light-dark(#dcfce7, #10281c)",
+        "tonalRamp": [
+          "#06150e",
+          "#10281c",
+          "#1b432e",
+          "#2a6647",
+          "#3f8f65",
+          "#6bbb8e",
+          "#a6dcbf",
+          "#dcfce7"
+        ]
+      },
+      "tone-warning-fg": {
+        "role": "tertiary",
+        "displayName": "Warning Tone Ink",
+        "canonical": "light-dark(#854d0e, #f0c46a)",
+        "tonalRamp": [
+          "#1c1104",
+          "#38230a",
+          "#573710",
+          "#854d0e",
+          "#b3741f",
+          "#d69f3f",
+          "#f0c46a",
+          "#fef3c7"
+        ]
+      },
+      "tone-warning-bg": {
+        "role": "tertiary",
+        "displayName": "Warning Tone Ground",
+        "canonical": "light-dark(#fef3c7, #2c2110)",
+        "tonalRamp": [
+          "#150f07",
+          "#2c2110",
+          "#46351a",
+          "#665029",
+          "#8f733f",
+          "#bda067",
+          "#e0cb9b",
+          "#fef3c7"
+        ]
+      },
+      "tone-negative-fg": {
+        "role": "tertiary",
+        "displayName": "Negative Tone Ink",
+        "canonical": "light-dark(#b91c1c, #f79aa0)",
+        "tonalRamp": [
+          "#210607",
+          "#420b0c",
+          "#6d1414",
+          "#b91c1c",
+          "#d64a48",
+          "#ea7377",
+          "#f79aa0",
+          "#fee2e2"
+        ]
+      },
+      "tone-negative-bg": {
+        "role": "tertiary",
+        "displayName": "Negative Tone Ground",
+        "canonical": "light-dark(#fee2e2, #331819)",
+        "tonalRamp": [
+          "#190b0c",
+          "#331819",
+          "#502527",
+          "#73393b",
+          "#9c5c5e",
+          "#c58a8c",
+          "#e6b8ba",
+          "#fee2e2"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "The lead reading in a stat band, and nothing else. The only genuinely large type in the system." },
-      "headline": { "displayName": "Headline", "purpose": "A screen's h1 in the page header. Drops to 1.25rem under 34rem." },
-      "title": { "displayName": "Title", "purpose": "Section headings in a card head, button labels, a row's name. Body-sized; separates by weight." },
-      "body": { "displayName": "Body", "purpose": "Everything else. 14px base. Subheads cap at 44rem." },
-      "label": { "displayName": "Label", "purpose": "The uppercase eyebrow over a value: stat labels, column heads, rail section names." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "The lead reading in a stat band, and nothing else. The only genuinely large type in the system."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "A screen's h1 in the page header. Drops to 1.25rem under 34rem."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings in a card head, button labels, a row's name. Body-sized; separates by weight."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Everything else. 14px base. Subheads cap at 44rem."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "The uppercase eyebrow over a value: stat labels, column heads, rail section names."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "A stat's number when it is not the lead. A role because a dashboard uses it as one."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Reference codes, identifiers and machine values, on the rst-mono utility. A real second family, so they read as things to copy rather than to read."
+      }
     },
     "themes": [
-      { "name": "day", "role": "default", "font": "system UI stack", "radius": "8px / 6px", "accent": "light-dark(#2464e0, #7ba7ff)", "headerRule": "color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line))", "character": "Soft: wide low-alpha shadows, the roundest corners." },
-      { "name": "plain", "role": "alternate", "font": "system UI stack", "radius": "4px / 3px", "accent": "light-dark(#111111, #f2f2f2)", "headerRule": "var(--rst-line)", "character": "Nearly square, near-black accent, one hairline shadow layer." },
-      { "name": "signal", "role": "alternate", "font": "Helvetica Neue stack", "radius": "4px / 2px", "accent": "light-dark(#1a56ff, #6d90ff)", "headerRule": "color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line))", "character": "Milled: short dense shadows, electric blue, tightest corners." }
+      {
+        "name": "day",
+        "role": "default",
+        "font": "system UI stack",
+        "radius": "8px / 6px",
+        "accent": "light-dark(#2464e0, #7ba7ff)",
+        "headerRule": "color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line))",
+        "character": "Soft: wide low-alpha shadows, the roundest corners."
+      },
+      {
+        "name": "plain",
+        "role": "alternate",
+        "font": "system UI stack",
+        "radius": "4px / 3px",
+        "accent": "light-dark(#111111, #f2f2f2)",
+        "headerRule": "var(--rst-line)",
+        "character": "Nearly square, near-black accent, one hairline shadow layer."
+      },
+      {
+        "name": "signal",
+        "role": "alternate",
+        "font": "Helvetica Neue stack",
+        "radius": "4px / 2px",
+        "accent": "light-dark(#1a56ff, #6d90ff)",
+        "headerRule": "color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line))",
+        "character": "Milled: short dense shadows, electric blue, tightest corners."
+      }
     ],
     "shadows": [
-      { "name": "pop", "value": "0 8px 24px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5))", "purpose": "Surfaces that float over the page: an open menu, a dropdown panel, a modal. Theme-owned; signal uses 0 4px 10px and plain 0 1px 3px." },
-      { "name": "knob", "value": "0 1px 2px rgba(0, 0, 0, 0.3)", "purpose": "The moving part of a control, such as a switch's knob." },
-      { "name": "lift", "value": "0 1px 2px rgba(0, 0, 0, 0.08)", "purpose": "Barely-there separation on a raised strip." },
-      { "name": "overlay", "value": "light-dark(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6))", "purpose": "The modal scrim. Deeper in dark because black reads lighter against a dark backdrop." }
+      {
+        "name": "pop",
+        "value": "0 8px 24px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5))",
+        "purpose": "Surfaces that float over the page: an open menu, a dropdown panel, a modal. Theme-owned; signal uses 0 4px 10px and plain 0 1px 3px."
+      },
+      {
+        "name": "knob",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.3)",
+        "purpose": "The moving part of a control, such as a switch's knob."
+      },
+      {
+        "name": "lift",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.08)",
+        "purpose": "Barely-there separation on a raised strip."
+      },
+      {
+        "name": "overlay",
+        "value": "light-dark(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6))",
+        "purpose": "The modal scrim. Deeper in dark because black reads lighter against a dark backdrop."
+      }
     ],
     "motion": [
-      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce)", "purpose": "Honoured throughout; animated affordances fall back to a static treatment rather than disappearing." }
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: reduce)",
+        "purpose": "Honoured throughout; animated affordances fall back to a static treatment rather than disappearing."
+      }
     ],
     "breakpoints": [
-      { "name": "reflow-floor", "value": "320px" },
-      { "name": "header-stack", "value": "34rem" },
-      { "name": "rail-collapse", "value": "800px" },
-      { "name": "page-column-cap", "value": "64rem" }
+      {
+        "name": "reflow-floor",
+        "value": "320px"
+      },
+      {
+        "name": "header-stack",
+        "value": "34rem"
+      },
+      {
+        "name": "rail-collapse",
+        "value": "800px"
+      },
+      {
+        "name": "page-column-cap",
+        "value": "64rem"
+      }
     ]
   },
   "components": [
@@ -122,12 +481,41 @@
       "Works with JavaScript off. Scripts are enhancement and each is deletable on its own."
     ],
     "rules": [
-      { "name": "The Gated Pair Rule", "body": "A colour that carries text owes 4.5:1 against the surface it actually sits on, and a control boundary owes 3:1 — and owes it in every theme and both schemes, in the contrast gate, before it ships. Adding a colour means adding its pair to that gate. A tone chosen against a tinted ground says nothing about the same tone on a plain card.", "section": "colors" },
-      { "name": "The Two-Signal Rule", "body": "State is never colour alone. A status pill renders its label, a meter prints its fraction as text beside the bar, and a stat's change carries its own + or − sign. Colour is the second signal, never the first.", "section": "colors" },
-      { "name": "The Light-Dark Rule", "body": "Every colour is declared once as light-dark(<light>, <dark>) under color-scheme: light dark. There is no dark stylesheet and no second palette to keep in step; an explicit theme choice re-resolves the same declarations by setting color-scheme.", "section": "colors" },
-      { "name": "The Small-Base Rule", "body": "The base is 14px, not 16px, and every step is declared in rem so the whole scale tracks a reader who has raised their browser default. Do not convert any of it to px.", "section": "typography" },
-      { "name": "The Weight-Not-Size Rule", "body": "Hierarchy inside a screen is carried by weight and colour before size. A card's h2 is body-sized at 600; reaching for a larger size to make a section feel important is how this system loses its density.", "section": "typography" },
-      { "name": "The Derived Rule Rule", "body": "The page header's underline is not authored per theme — it is color-mix(in oklab, var(--rst-accent) N%, var(--rst-line)), mixed at 18% in day, 45% in signal, and left as the plain hairline in plain. A theme that changes its accent gets a matching rule with no second value to keep in step. It is decorative and carries no contrast floor.", "section": "shapes" }
+      {
+        "name": "The Gated Pair Rule",
+        "body": "A colour that carries text owes 4.5:1 against the surface it actually sits on, and a control boundary owes 3:1 — and owes it in every theme and both schemes, in the contrast gate, before it ships. Adding a colour means adding its pair to that gate. A tone chosen against a tinted ground says nothing about the same tone on a plain card.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Signal Rule",
+        "body": "State is never colour alone. A status pill renders its label, a meter prints its fraction as text beside the bar, and a stat's change carries its own + or − sign. Colour is the second signal, never the first.",
+        "section": "colors"
+      },
+      {
+        "name": "The Light-Dark Rule",
+        "body": "Every colour is declared once as light-dark(<light>, <dark>) under color-scheme: light dark. There is no dark stylesheet and no second palette to keep in step; an explicit theme choice re-resolves the same declarations by setting color-scheme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Small-Base Rule",
+        "body": "The base is 14px, not 16px, and every step is declared in rem so the whole scale tracks a reader who has raised their browser default. Do not convert any of it to px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight-Not-Size Rule",
+        "body": "Hierarchy inside a screen is carried by weight and colour before size. A card's h2 is body-sized at 600; reaching for a larger size to make a section feel important is how this system loses its density.",
+        "section": "typography"
+      },
+      {
+        "name": "The Derived Rule Rule",
+        "body": "The page header's underline is not authored per theme — it is color-mix(in oklab, var(--rst-accent) N%, var(--rst-line)), mixed at 18% in day, 45% in signal, and left as the plain hairline in plain. A theme that changes its accent gets a matching rule with no second value to keep in step. It is decorative and carries no contrast floor.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Grouped Number Rule",
+        "body": "Every number a person reads as a quantity is grouped for their locale — 54,173 in English, 54.173 in German, ٥٤٬١٧٣ in Arabic. Never a bare run of digits. The exception is exact: an identifier is not a quantity. Reference codes, order numbers, years, versions and port numbers are labels made of digits, and grouping one changes what it appears to be. Ruled 2026-09-02 and not yet met: form.FormatCents writes $1284.50 today.",
+        "section": "typography"
+      }
     ],
     "dos": [
       "Do change the system by setting custom properties. Every colour, radius, shadow and type family resolves through one; a fourth theme is a single :root block.",
@@ -136,7 +524,8 @@
       "Do give state a second signal besides colour — a label, a sign, a number as text.",
       "Do keep type in rem and the base at 14px, so the scale tracks a reader's own browser setting.",
       "Do use logical properties (border-inline-start, margin-block-end) so borders and dividers land correctly in Arabic.",
-      "Do let the scriptless rendering be the real one; add script only as enhancement that can be deleted."
+      "Do let the scriptless rendering be the real one; add script only as enhancement that can be deleted.",
+      "Do group the digits of any number a person reads as a quantity, for their locale — and never group an identifier, a year or a version."
     ],
     "donts": [
       "Don't reach for the SaaS gradient template — purple-to-blue washes, glassmorphism, oversized rounded cards, decorative blobs.",

@@ -389,3 +389,11 @@
 .ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
 .ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
 .ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
+/* The rail's filter box is 12.5px like everything else in here, and a
+   sub-16px field is exactly what makes mobile Safari zoom the whole
+   page when it takes focus. tokens.css lifts the app's own controls on
+   a coarse pointer; this one carries a ds- class of its own, so it
+   outranks that rule and has to say the same thing again. */
+@media (pointer: coarse) {
+  .ds-search input { font-size: max(1rem, 1em); }
+}

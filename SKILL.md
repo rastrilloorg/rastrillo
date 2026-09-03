@@ -320,13 +320,13 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
   is never colour alone: a `status-pill`'s label and a `meter`'s
   fraction are always visible text; `Alert` (`role="alert"`) is for
   live problems, not ambient notes. A dashboard opens with `rst-stats`
-  holding `stat` cells, one marked `rst-stat="lead"` — there is no
-  separate headline component. Put the sign in `stat`'s `Delta`
-  (`"+12%"`, `"−4%"`) and pass `Tone` yourself: a fall is good news
-  about half the time, so it is never derived from the sign.
-  A name inline with other content needs `<bdi>` — an RTL name beside a
-  number draws the number to its LEFT. `detail-list` takes `DateTime`
-  beside `Value` for a moment (`<time>`), never an identifier. Every menu is a
+  holding `stat` cells, one `rst-stat="lead"`; there is no separate
+  headline component. Put the sign in `Delta` and pass `Tone` yourself —
+  a fall is good news about half the time.
+  A name inline with other content needs `<bdi>`, or an RTL name draws
+  the number beside it to its LEFT. Group a QUANTITY's digits for the
+  locale; never an identifier, year or version — order 4471, not 4,471.
+  `detail-list` takes `DateTime` beside `Value` for a moment (`<time>`). Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
   names another group, and a nested `rst-menu-group` MUST name a

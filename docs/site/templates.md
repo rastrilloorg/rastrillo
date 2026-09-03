@@ -321,6 +321,27 @@ do not need it when ordinary words separate the name from the numbers,
 which is why `job-status` does not have one. Both of those were
 measured, not assumed.
 
+### Group the digits of a quantity
+
+Every number a person reads as a quantity is grouped for their locale:
+`54,173` in English, `54.173` in German, `٥٤٬١٧٣` in Arabic. Never a bare
+run of digits. Grouping is not "add a comma" — the separator, the group
+size and the digits themselves all change with the locale — and the
+reason is plain legibility: `54173` has to be counted, `54,173` is read.
+
+**An identifier is not a quantity.** Reference codes, order numbers,
+years, versions and port numbers are labels that happen to be made of
+digits. Grouping one changes what it appears to be: order 4471 is not
+order 4,471.
+
+The framework does not do this for you yet. `form.FormatCents` writes
+`$1284.50`, ungrouped, and its signature carries no locale to group by.
+Until that changes, group your own — server-side where you can, since the
+request's locale is in reach there, and with `Intl.NumberFormat` in the
+browser where you cannot. `Intl` is a reasonable fallback here in a way
+it is not for currency: an ungrouped number is harder to read but still
+correct, while a currency guessed from the reader's locale is wrong.
+
 ### Mark a moment with `<time>`
 
 Where a value *is* a moment or a length of time, give `detail-list`'s
@@ -437,7 +458,41 @@ written in the file:
 
 Unreadable text is not a value. Type something the parser cannot read
 and the field puts the old value back rather than guessing, so nothing
-is committed that nobody chose. The picker button is a real labelled
+is committed that nobody chose.
+
+It will, though, offer to finish a word you have half typed. `5j` is not
+a date, and the fifth of January, of June and of July are three — so the
+list shows all three with their dates written out, nearest first, and
+`Enter` takes the top one. The same goes for `5 ju`, `tomo` and `wedn`.
+Completion never overrules the parser: an exact reading wins outright,
+and a run of letters that is the front of nothing is still refused.
+
+### The calendar overlay
+
+The button beside a date field opens `calendar.js`'s month grid — a real
+table with real column headers under a `role="grid"`, so it is a
+calendar to a screen reader and not a wall of numbers. Exactly one day
+sits in the tab order at a time; the arrow keys walk days and weeks, the
+`Page` keys walk months, `Shift`+`Page` walks years, `Home` and `End`
+reach the ends of the week, and `Escape` closes the panel and puts focus
+back in the box. In a right-to-left page the horizontal arrows swap over
+with the layout. The grid obeys the input's own `min` and `max`, and a
+range's end will not open before its start.
+
+The words and the grid stay in step while it is open. Type, and the
+calendar follows what you are typing — paging to the month, outlining
+the day, committing nothing. Set the date, however you set it, and the
+calendar closes.
+
+A time field has no calendar, so its button opens a clock instead: every
+half hour of the day, in the field's own locale, scrolled to the one it
+is already showing.
+
+`calendar.js` is a separate file from `datetime.js` because it is a
+separate job — one reads and writes dates as text, the other draws them.
+`datetime.js` looks it up at enhance time, so an app that ships one and
+not the other still has a working field: the button falls back to the
+browser's own `showPicker()`. Every shipped shell links both. The picker button is a real labelled
 button calling `showPicker()` — the browser's own calendar or clock
 grid, rather than a hand-built one to keep accessible.
 

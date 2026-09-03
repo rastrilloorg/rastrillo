@@ -49,6 +49,14 @@ typography:
     fontSize: "0.71875rem"
     fontWeight: 650
     letterSpacing: "0.06em"
+  stat:
+    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 650
+    lineHeight: 1.1
+  mono:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    fontSize: "0.78125rem"
 rounded:
   bar: "2px"
   sm: "6px"
@@ -218,8 +226,11 @@ theme choice re-resolves the same declarations by setting
 **Display / Body Font:** the platform UI stack — `system-ui`,
 `-apple-system`, `"Segoe UI"`, `Roboto`, `"Helvetica Neue"`, `Arial`,
 `sans-serif`. `signal` leads the same stack with `"Helvetica Neue"`.
-**Label/Mono Font:** no separate family; monospaced values use the
-`rst-mono` utility.
+**Mono Font:** `ui-monospace, SFMono-Regular, Menlo, Consolas,
+monospace`, on the `rst-mono` utility. It is a real second family and
+not a weight of the first — reference codes, identifiers and machine
+values are set in it so they read as things to be copied rather than
+read.
 
 **Character:** the type has no personality of its own on purpose. The
 family is a theme axis, and the shipped default is whatever the reader's
@@ -242,6 +253,22 @@ sets one property.
   over a value — stat labels, table column heads, the nav rail's section
   names.
 
+### Steps outside the roles
+
+Three literal sizes appear in `tokens.css` that are not roles above, and
+they are recorded rather than tidied away:
+
+- **1.5rem** — a stat's number when it is not the lead. A role now
+  (`stat`), because a dashboard uses it as one.
+- **1.25rem** — the headline under 34rem. A responsive step of `headline`
+  rather than a size of its own.
+- **1.0625rem** — the large person avatar's initials and the shell's
+  brand.
+- **0.6875rem** — the ordinary person avatar's initials.
+
+The last two are decoration sized to fit a circle, not type a reader
+parses, which is why they are not roles.
+
 ### Named Rules
 
 **The Small-Base Rule.** The base is 14px, not 16px, and every step is
@@ -252,6 +279,27 @@ their browser default. Do not convert any of it to `px`.
 weight and colour before size. A card's `<h2>` is body-sized at 600;
 reaching for a larger size to make a section feel important is how this
 system loses its density.
+
+**The Grouped Number Rule.** Every number a person reads as a quantity is
+grouped for their locale — `54,173` in English, `54.173` in German,
+`٥٤٬١٧٣` in Arabic. Never a bare run of digits. Grouping is not "add a
+comma": the separator, the group size and the digits themselves all
+change with the locale, and a number's readability is the whole reason
+the rule exists — `54173` is counted, `54,173` is read.
+
+The exception is exact and small: **an identifier is not a quantity.**
+Reference codes, order numbers, years, versions and port numbers are
+labels that happen to be made of digits, and grouping one changes what it
+appears to be. Order 4471 is not order 4,471.
+
+This rule is **ruled and not yet met**. `form.FormatCents` writes
+`$1284.50` today. Grouping needs the reader's locale, which the server
+has, and `golang.org/x/text` is already in the module graph — so the gap
+is a decision about `FormatCents`'s signature rather than a missing
+capability. Where a number is grouped in the browser instead,
+`Intl.NumberFormat` is legitimate enhancement here in a way it is not for
+currency: an ungrouped number is harder to read but still correct, while
+a currency guessed from the reader's locale is wrong.
 
 ## Layout
 
@@ -414,6 +462,8 @@ because a falling number is good about as often as it is bad.
   both schemes.
 - **Do** give state a second signal besides colour — a label, a sign, a
   number as text.
+- **Do** group the digits of any number a person reads as a quantity, for
+  their locale — and never group an identifier, a year or a version.
 - **Do** keep type in `rem` and the base at 14px, so the scale tracks a
   reader's own browser setting.
 - **Do** use logical properties (`border-inline-start`,
