@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-01T00:00:00Z",
+  "generatedAt": "2026-09-02T22:42:36Z",
   "title": "Design System: Rastrillo",
   "extensions": {
     "colorMeta": {
@@ -325,6 +325,14 @@
       "label": {
         "displayName": "Label",
         "purpose": "The uppercase eyebrow over a value: stat labels, column heads, rail section names."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "A stat's number when it is not the lead. A role because a dashboard uses it as one."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Reference codes, identifiers and machine values, on the rst-mono utility. A real second family, so they read as things to copy rather than to read."
       }
     },
     "themes": [
