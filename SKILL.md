@@ -257,6 +257,22 @@ with the origin appended: `default-src 'self'; style-src 'self'
 'self'; form-action 'self' https://keymail.dev`. Only listed servers
 work — a federated address on another keymail host is still refused.
 
+**Public forms** (`rastrillo/pow`: the front door for anything the
+internet can post to — proof of work, sealed challenge, honeypot).
+`pow.New(Config{InstanceKey, Nonces: pow.SQLNonces(d.Writer())})` plus
+`pow.Schema`; `Issue(now)` mints a challenge and **writes nothing** (a
+row per challenge makes every page view a serialised write);
+`Challenge.Fields`/`FormAttrs` render the hidden fields and the
+honeypot; `Check(r, binding)` runs honeypot → seal → clock → proof of
+work → single-use nonce, in that order, returning a closed `Reason`.
+The work is bound to the submitted value, so one solve buys one
+address, not a list. Render the submit **disabled** inside a form with a
+`<noscript>` — the module enables it, and JS cannot enable a control
+inside `<noscript>`. Serve both halves from the module
+(`rastrillo.NewAssets(pow.Assets())`); never vendor the JS, because a
+copy that drifts from the Go verifier fails silently in the browser.
+docs/site/reference/pow.md
+
 ## 6. Background work
 
 `jobs` runs observable in-memory goroutines: a restart kills them, fn's
