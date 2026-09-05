@@ -65,6 +65,13 @@ const extraFixture = `
      <button class="rst-btn rst-btn--danger" type="button">Danger</button>
      <button class="rst-btn" type="button" aria-busy="true" disabled><span class="rst-spin" aria-hidden="true"></span>Saving</button></p>
 
+  <!-- The size scale. lg reaches the fixture through form-foot and
+       confirm-form, which both emit it; sm and block are rendered by no
+       partial, so they are here or their pairing is unproven. -->
+  <p><button class="rst-btn rst-btn--sm" type="button">Small</button>
+     <button class="rst-btn rst-btn--lg" type="button">Large</button></p>
+  <p><button class="rst-btn rst-btn--primary rst-btn--lg rst-btn--block" type="button">Block</button></p>
+
   <p><span class="rst-badge rst-badge--positive">Paid</span>
      <span class="rst-badge rst-badge--warning">Due</span>
      <span class="rst-badge rst-badge--negative">Failed</span>
