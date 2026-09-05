@@ -16,7 +16,7 @@ import "runtime/debug"
 // this to v0.24.0, the tag was never cut, and the next release tagged
 // v0.25.0 with no prep at all. See TestFallbackVersionMatchesTheChangelog
 // and TestFallbackVersionIsNotBehindTheNewestTag.
-const rastrilloFallbackVersion = "v0.25.0"
+const rastrilloFallbackVersion = "v0.26.0"
 
 // rastrilloVersion reports the version of amadan.net/rastrillo/rastrillo
 // that built this CLI binary, so `rastrillo new` can pin the scaffolded
