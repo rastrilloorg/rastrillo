@@ -45,6 +45,11 @@ var profiles = map[string]profile{
 			"Components are all worth your time — none of them is endorsed by, " +
 			"or authoritative for, this framework.",
 		Conventions: []convention{
+			// First because it governs the shape a screen has before any
+			// component lands on it, and because it is the one an agent
+			// gets wrong by addition: every panel it stacks onto a list
+			// page looked, on its own, like a helpful thing to add.
+			{"Screen flow", "one job per screen — a link, then a page for that action alone, then a confirmation; never two ways to start work side by side", ""},
 			{"Fields", "label, hint, help and error in one envelope, wired with aria-describedby", "ui/field, ui/field-select, ui/field-text"},
 			{"Destructive actions", "their own confirm-page URL, never a modal", "ui/confirm-form"},
 			{"State", "never colour alone — always a text label too", "ui/status-pill, ui/badge"},
