@@ -35,6 +35,7 @@ var referencePages = map[string]string{
 	"password": "reference/password",
 	"auth":     "reference/auth",
 	"passkey":  "reference/passkey",
+	"pow":      "reference/pow",
 	"webauthn": "reference/webauthn",
 	"jobs":     "reference/jobs",
 	"ui":       "reference/ui",
