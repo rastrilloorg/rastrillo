@@ -75,6 +75,7 @@
 /* ── Scale: type and spacing. Theme-independent. Radius is not here —
       it is part of the theme's shape axis; see themes/. ────────────── */
 :root {
+  --rst-fs-lg: 1.0625rem;    /* 17px — the one step above base */
   --rst-fs-base: 0.875rem;   /* 14px at the browser default */
   --rst-fs-sm: 0.78125rem;   /* 12.5px */
   --rst-fs-xs: 0.71875rem;   /* 11.5px */
@@ -708,7 +709,7 @@ body {
    document outline, not a paragraph dressed up as one. */
 .rst-empty__title, [rst-empty-title] {
   color: var(--rst-text);
-  font-size: 1.0625rem;
+  font-size: var(--rst-fs-lg);
   font-weight: 600;
   margin: 0 0 var(--rst-sp-2);
 }
@@ -1211,6 +1212,17 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
    and it is wide enough for the postcodes and codes it is for. The
    max keeps it from overflowing a column narrower than itself. */
 .rst-input--short, [rst-input~="short"] { inline-size: 8rem; max-inline-size: 100%; }
+/* primary is the form's headline field — the title or name the record is
+   known by — and the size is the whole signal, because the label above it
+   stays the same quiet line every other field gets. font-size has to be
+   restated rather than inherited: .rst-input sets `font: inherit`, so the
+   shorthand would otherwise reset it back to the body's 14px. 550 is the
+   weight .rst-nm and .rst-person__name already give a name; 600 reads as a
+   heading, which this is not. The padding grows with the type so the box
+   keeps its proportions instead of looking like a squeezed plain input.
+   17px is also where iOS Safari stops zooming a focused input, which the
+   14px base does not clear — a real bonus, not the reason. */
+.rst-input--primary, [rst-input~="primary"] { font-size: var(--rst-fs-lg); font-weight: 550; padding: 0.6rem 0.7rem; }
 textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
 /* field-text/field-textarea (the interim pair the manifest generator
    emits) mark a required label with * and put the textarea on its own

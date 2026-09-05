@@ -84,39 +84,44 @@ import (
 // closed 146 of the 437, which is the honest measure of how much slack
 // is left in re-squeezing: not much. The lever with room in it is still
 // the one named above, sixteen unlinked docs pages.
-// Raised 19,000 -> 20,000 on 2026-09-02 for the form-markup rule in
-// §7's UI bullet, and this one is worth naming because the file's
-// silence was itself the bug.
 //
-// SKILL.md described how to READ a form — form.Parse, the kinds, the
-// Select allowlist — and said nothing about how to DRAW one. An agent
-// following it wrote `<label>Email <input></label>` and an unstyled
-// <button>, which compiles, submits, validates and passes every test
-// in this repo. The only in-repo model was examples/notes, which was
-// written the same way, so the mistake was being taught rather than
-// merely permitted. That is the exact failure mode the budget comment
-// above calls out as the reason a block stays inline: getting it wrong
-// is silent.
+// Raised 19,000 -> 19,600 on 2026-09-02 for the CSP paragraph in §5.
+// It is a fact an agent cannot infer and gets no warning about: the
+// baseline `form-action 'self'` is checked against a form submission's
+// whole redirect chain, so auth's own 303 out to a keymail server is
+// refused by the framework's own default policy, in the browser, only
+// at sign-in. Nothing else in the file mentions the baseline's
+// contents, and the fix is unguessable twice over — Options.CSP
+// replaces the policy wholesale rather than adding to it, so the
+// paragraph has to carry the literal baseline string as well as the
+// rule. A trim pass over §5 found nothing to pay for it; the sections
+// read this cycle are facts, not prose. The lever is still the one
+// named above.
 //
-// The numbers, exactly. main was 18,995 — five bytes under the old
-// ceiling, which is how little slack the two documented squeeze passes
-// above left behind. The entry as first drafted was 542 bytes; trimming
-// it in review took 26, and adding the docs/site/forms.md pointer it
-// needed put 22 back. It lands at 538, the file at 19,533, and no
-// arrangement of this entry fits under 19,000: even cut to its bare
-// rule — roughly 250 bytes, with every word of motivation gone — the
-// file clears the old ceiling by a couple of hundred. The raise was
-// not avoidable by editing the entry, which is the test the trim-first
-// rule is really asking.
+// Raised, 19_600 to 30_000, on 2026-09-05 — a change of regime rather
+// than another notch, so read this one before citing the paragraphs
+// above. Every raise above it bought room for one new subsystem and was
+// defended by a trim; the two most recent were the narrow answer to an
+// incident this one answers properly. The file reached main 84 bytes
+// OVER 18_000, red before a word was added: the delegation lever
+// (2026-08-31) had already been pulled and the file grew back past the
+// ceiling within two days, which is what a lever with nothing left in it
+// looks like. And the trimming now costs more than it saves. An agent
+// building an app from this file stacked a create form, an import panel
+// and a list onto one screen, because nothing here said not to — §7 did
+// not exist, because a byte ceiling had it competing with the SQL. Every
+// remaining gap has that shape: a rule the framework holds and never
+// wrote down.
 //
-// The worked markup went to forms.md's new "What a form looks like"
-// section rather than into this file, and the entry carries its own
-// docs/site/forms.md pointer to reach it: the UI bullet it sits in
-// links only templates.md, which says nothing about drawing a form.
-// That is the lever named above — sixteen unlinked docs pages — being
-// spent in the right direction: the file gets the rule, the page gets
-// the detail.
-const skillBudget = 20_000
+// The ceiling was sized for a context window that is no longer the
+// binding constraint — Opus and GLM 5.3 both load a 30 KB file without
+// noticing. Concision is still the rule: an inaccurate or padded line is
+// worse here than a missing one, and small models still read this file.
+// The pruning is deferred, not cancelled — one human pass, once the
+// framework is reliably producing good apps across a variety of them,
+// which today it is not. Until that pass: write the rule down, keep it
+// short, and do not read this number as room to fill.
+const skillBudget = 30_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

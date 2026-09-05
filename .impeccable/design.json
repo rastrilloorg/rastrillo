@@ -314,6 +314,10 @@
         "displayName": "Headline",
         "purpose": "A screen's h1 in the page header. Drops to 1.25rem under 34rem."
       },
+      "field": {
+        "displayName": "Field",
+        "purpose": "The form's headline input — a title, a name. The only control that leaves the body step, and the one exception to the Weight-Not-Size Rule, because what grows is the reader's own words rather than chrome."
+      },
       "title": {
         "displayName": "Title",
         "purpose": "Section headings in a card head, button labels, a row's name. Body-sized; separates by weight."

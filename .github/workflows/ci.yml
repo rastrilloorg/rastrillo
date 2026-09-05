@@ -6,10 +6,17 @@
 # this workflow is those exact commands, pinned.
 name: ci
 
+# This repository is developed on amadan; GitHub is a mirror. The
+# pull_request trigger is deliberately gone: green checks on a PR here
+# are an invitation to merge here, and merging here is what stranded
+# three pieces of SKILL.md for days (#142, squash-merged on the mirror,
+# whose commits origin's main never saw). Branch review runs on
+# amadan against .amadan/ci.d/. What is left is a push trigger on the
+# mirrored main — a second, independent reading of the same gate on
+# work that has already landed.
 on:
   push:
     branches: [main]
-  pull_request:
 
 jobs:
   test:
@@ -136,7 +143,8 @@ jobs:
 
   # The browser drive: rastrillo's own browser-tagged tests — the ui
   # select journey, the harness's own checks, and webauthn's PRF
-  # ceremonies including the prfByAssertion fallback — on every PR.
+  # ceremonies including the prfByAssertion fallback — on every push to
+  # the mirrored main.
   # RASTRILLO_BROWSER_OPTIONAL stays unset on purpose: a skip is not a
   # pass, so a runner that loses its browser fails loudly.
   browser:

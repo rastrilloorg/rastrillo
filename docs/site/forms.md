@@ -263,6 +263,15 @@ screen is asking you to press. If you are reaching for a full-width
 button, that is `rst-btn="primary lg block"`, and `block` centres its
 own label.
 
+## The main field
+
+Most forms have one main field that is required to be filled and
+typically labels the record.
+
+Mark it `Primary` to get a bigger input; the label stays the same, so
+the emphasis lands on what someone types. One per form. A primary field
+almost always sits on its own row (except in cases like first/last name).
+
 ## Two fields on one row
 
 `rst-field-row` is the wrapper for fields that belong side by side — a

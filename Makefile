@@ -4,7 +4,8 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser
+.PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser \
+        mirror mirror-check
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -104,3 +105,40 @@ scaffold-smoke: build-cli
 # its browser fails loudly instead of reporting green.
 browser:
 	go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./internal/designsystem/ -count=1
+
+# origin (amadan) is where work lands; the GitHub remote is a mirror and
+# nothing else. Deliberately NOT part of ci: a runner must not push, and a
+# drift alarm wired into the gate would turn every branch red for
+# something no branch did.
+#
+# The push is fast-forward only, on purpose. A commit that exists on the
+# mirror and not on origin is the failure this pair exists to catch -
+# #142 was squash-merged on GitHub, so its commits were never ancestors
+# of anything origin had, and three pieces of SKILL.md sat there for
+# days looking merged. --force would paper over exactly that, so if this
+# target is rejected, do not reach for it: read what the mirror has that
+# origin does not, carry it across as a branch, and land it here.
+MIRROR_REMOTE ?= github
+
+mirror:
+	git fetch origin main
+	git push $(MIRROR_REMOTE) refs/remotes/origin/main:refs/heads/main
+	git push $(MIRROR_REMOTE) '+refs/amadan/ledger/*:refs/amadan/ledger/*'
+
+# Run before branching. The two mains agreeing is the only state either
+# remote is ever in; anything else means someone worked on the mirror.
+mirror-check:
+	@git fetch -q origin main
+	@git fetch -q $(MIRROR_REMOTE) main
+	@o=$$(git rev-parse refs/remotes/origin/main); \
+	m=$$(git rev-parse refs/remotes/$(MIRROR_REMOTE)/main); \
+	if [ "$$o" = "$$m" ]; then echo "mirror in sync: $$o"; exit 0; fi; \
+	echo "MIRROR DRIFT"; \
+	echo "  origin/main            $$o"; \
+	echo "  $(MIRROR_REMOTE)/main  $$m"; \
+	echo; \
+	echo "on the mirror and not on origin:"; \
+	git log --oneline refs/remotes/$(MIRROR_REMOTE)/main ^refs/remotes/origin/main | sed 's/^/  /'; \
+	echo; \
+	echo "carry those across as a branch and land them, then: make mirror"; \
+	exit 1

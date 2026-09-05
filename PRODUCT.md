@@ -78,9 +78,11 @@ doing the same work:
 - One gate definition, run before pushing and by CI:
   `go vet ./... && gofmt -l . && go test ./...`. A scaffolded app's own
   gate is its `Makefile`'s `ci` target.
-- Every change lands through a pull request and a squash merge, never a
-  direct merge to main. On the amadan hub the branch *is* the pull
-  request.
+- Every change lands on its own branch through `amadan branch merge`,
+  never a direct merge to main and never a squash. On the amadan hub the
+  branch *is* the pull request, and merge is detected by ancestry — a
+  squash rewrites the commits and the branch stays open. The GitHub
+  remote is a mirror; `make mirror` and `make mirror-check` keep it one.
 - The design system gallery is generated at build time by the public
   `cmd/dsgen` and is not committed; it is published at
   rastrillo.org/design-system.

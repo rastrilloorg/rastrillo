@@ -693,6 +693,10 @@ func fieldStates() []sample {
 		{State: "Short", Data: map[string]any{
 			"ID": "f_short", "Name": "f_short", "Label": "Postcode", "Short": true, "Value": "D02 XY45",
 		}},
+		{State: "The headline field", Data: map[string]any{
+			"ID": "f_primary", "Name": "f_primary", "Label": "Title", "Primary": true,
+			"Value": "Quarterly board meeting",
+		}},
 	}
 }
 
@@ -709,6 +713,10 @@ func fieldTextStates() []sample {
 			"Name": "ft_error", "Label": "Title", "Value": "Release notes",
 			"Error": "A post with that title already exists.",
 		}},
+		{State: "The headline field", Data: map[string]any{
+			"Name": "ft_primary", "Label": "What is it?", "Primary": true,
+			"Value": "Quarterly board meeting",
+		}, Note: "Add Primary to the main form field, e.g. a title or a name to get a more visually prominent input."},
 	}
 }
 

@@ -21,3 +21,15 @@ copy-review/
 # whole on every change to ui. It is not any more, and this line is what
 # stops a `dsgen -out docs/design-system` from putting it back by habit.
 docs/design-system/
+
+# .claude/ is one machine's harness configuration — settings, hooks,
+# worktrees, whatever that operator happens to run — and none of it is
+# the project's. The one exception is the amadan house rules, which
+# AGENTS.md sends every agent to read, so they have to arrive with a
+# clone rather than with the person who last ran the installer. Until
+# this repo held a tracked file under .claude/ nothing here mattered;
+# now that it does, a `git add -A` would sweep the rest in.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/amadan/
