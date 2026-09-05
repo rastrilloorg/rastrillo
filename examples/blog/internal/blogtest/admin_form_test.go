@@ -43,7 +43,7 @@ func TestNewPostFormRenders(t *testing.T) {
 	wantContains(t, body, `<label rst-field-label for="Title">Title</label>`)
 	wantContains(t, body, `<input rst-input id="Title" name="Title" type="text">`)
 	wantContains(t, body, `<textarea rst-textarea id="Body" name="Body">`)
-	wantContains(t, body, `<button rst-btn="primary" type="submit">Save</button>`)
+	wantContains(t, body, `<button rst-btn="primary lg" type="submit">Save</button>`)
 	wantContains(t, body, `<header rst-page-header>`)
 	wantContains(t, body, `<h1>New post</h1>`)
 	// No required marker: the manifest declares no required fields. No

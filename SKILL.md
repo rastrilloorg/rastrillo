@@ -343,6 +343,14 @@ on its own URL at step 2, never a modal fired from the row.
   written the old way. `rst-list`/`rst-card` hold rows only (unpadded
   by design).
   Forms, prose, links go in `rst-box` with a sibling `rst-box-head`.
+  **A labelled control is never hand-rolled**: `field-text`,
+  `field-textarea`, `field-select` (and the date kinds) inside `<form
+  rst-form>`, closed by `form-foot`. A hand-written `<label>Email
+  <input></label>` validates fine and renders as ragged inline labels
+  over an unstyled button — nothing fails, so nothing tells you.
+  Button sizes `sm`/default/`lg` compose with the variant: a submit is
+  `rst-btn="primary lg"` (form-foot writes it), never the toolbar-sized
+  default stretched across the column. docs/site/forms.md
   Screens stack vertically — never heading, paragraph and button in one
   flex row; a notice with a CTA is a `callout` ending in a link. State
   is never colour alone: a `status-pill`'s label and a `meter`'s

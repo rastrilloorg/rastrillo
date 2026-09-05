@@ -33,16 +33,19 @@ var pages = map[string]*template.Template{}
 var fragmentTmpl = template.Must(template.New("fragment").Funcs(ui.Funcs()).ParseFS(ui.Templates(), "*.html"))
 
 func init() {
-	for _, name := range []string{"signin", "signup", "index", "show", "new", "edit"} {
-		pages[name] = template.Must(template.New("layout").ParseFS(templatesFS,
-			"templates/layout.html", "templates/"+name+".html"))
+	// Every page gets ui's partials and their funcs, then its own two
+	// files on top — the shape a scaffolded app's render.go is born
+	// with. It used to be status alone, and the hand-written screens
+	// paid for it: with no field-text or form-foot in the tree they
+	// were written as bare <label><input> pairs and an unstyled
+	// <button>, which is exactly the stacked-label, skinny-button
+	// layout this example then taught everyone who copied it.
+	for _, name := range []string{"signin", "signup", "index", "show", "new", "edit", "status"} {
+		pages[name] = template.Must(
+			template.Must(template.New("layout").Funcs(ui.Funcs()).
+				ParseFS(ui.Templates(), "*.html")).
+				ParseFS(templatesFS, "templates/layout.html", "templates/"+name+".html"))
 	}
-	// status additionally needs ui's partials (job-status) and the
-	// funcs they call, parsed into the same tree as layout.html and
-	// status.html so status.html's {{template "job-status" .Content}}
-	// resolves.
-	status := template.Must(template.New("layout").Funcs(ui.Funcs()).ParseFS(ui.Templates(), "*.html"))
-	pages["status"] = template.Must(status.ParseFS(templatesFS, "templates/layout.html", "templates/status.html"))
 }
 
 // page is the data every template renders against: layout.html reads

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
+<link rel="stylesheet" href="/static/app.css">
 <title>Notes</title>
 </head>
 <body>
@@ -19,7 +20,7 @@
 </nav>
 </header>
 {{if .HasFlash}}<p role="status" class="flash flash-{{.Flash.Kind}}">{{.Flash.Message}}</p>{{end}}
-<main>
+<main rst-page>
 {{template "content" .}}
 </main>
 <script defer src="/static/rastrillo.js"></script>
