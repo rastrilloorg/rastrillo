@@ -84,7 +84,44 @@ import (
 // closed 146 of the 437, which is the honest measure of how much slack
 // is left in re-squeezing: not much. The lever with room in it is still
 // the one named above, sixteen unlinked docs pages.
-const skillBudget = 19_000
+//
+// Raised 19,000 -> 19,600 on 2026-09-02 for the CSP paragraph in §5.
+// It is a fact an agent cannot infer and gets no warning about: the
+// baseline `form-action 'self'` is checked against a form submission's
+// whole redirect chain, so auth's own 303 out to a keymail server is
+// refused by the framework's own default policy, in the browser, only
+// at sign-in. Nothing else in the file mentions the baseline's
+// contents, and the fix is unguessable twice over — Options.CSP
+// replaces the policy wholesale rather than adding to it, so the
+// paragraph has to carry the literal baseline string as well as the
+// rule. A trim pass over §5 found nothing to pay for it; the sections
+// read this cycle are facts, not prose. The lever is still the one
+// named above.
+//
+// Raised, 19_600 to 30_000, on 2026-09-05 — a change of regime rather
+// than another notch, so read this one before citing the paragraphs
+// above. Every raise above it bought room for one new subsystem and was
+// defended by a trim; the two most recent were the narrow answer to an
+// incident this one answers properly. The file reached main 84 bytes
+// OVER 18_000, red before a word was added: the delegation lever
+// (2026-08-31) had already been pulled and the file grew back past the
+// ceiling within two days, which is what a lever with nothing left in it
+// looks like. And the trimming now costs more than it saves. An agent
+// building an app from this file stacked a create form, an import panel
+// and a list onto one screen, because nothing here said not to — §7 did
+// not exist, because a byte ceiling had it competing with the SQL. Every
+// remaining gap has that shape: a rule the framework holds and never
+// wrote down.
+//
+// The ceiling was sized for a context window that is no longer the
+// binding constraint — Opus and GLM 5.3 both load a 30 KB file without
+// noticing. Concision is still the rule: an inaccurate or padded line is
+// worse here than a missing one, and small models still read this file.
+// The pruning is deferred, not cancelled — one human pass, once the
+// framework is reliably producing good apps across a variety of them,
+// which today it is not. Until that pass: write the rule down, keep it
+// short, and do not read this number as room to fill.
+const skillBudget = 30_000
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance
