@@ -97,6 +97,50 @@ visitor's address to the log on every uninvited signup is noise and
 personal data both. An addon that wants the audit trail keeps it
 itself, at whatever fidelity its own policy calls for.
 
+### aviso — Web Push
+
+**Status:** released, v0.1.0. The manual iOS smoke test
+(`docs/ios-smoke.md` in the module) is written down and not yet run.
+
+**Module:** `amadan.net/rastrillo/aviso` ·
+**Source:** <https://amadan.net/rastrillo/aviso>
+
+The subscriptions a signed-in person enrols from their browsers, one
+VAPID key per app, and a sender that fans a payload out to those
+devices through the browser vendors' push services. Extracted from
+Eleven messenger's push transport; the design is in
+`docs/superpowers/specs/2026-09-07-aviso-web-push-design.md`.
+
+```sh
+go get amadan.net/rastrillo/aviso
+cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/aviso)/SKILL.md"
+```
+
+It moves bytes to devices; the app owns policy. Who is notified, what
+the payload means, and the service worker's lifecycle stay the app's —
+aviso never decides who should be told what. Ownership of a
+subscription is the [session](/docs/sessions) subject; the request
+body never names one, and an endpoint another account enrolled is
+refused rather than reassigned. The VAPID private key is provisioned
+once, as one environment variable refused when empty, the way every
+family secret is; nothing mints a key at boot, because a key minted
+into local state is a key lost at the next restore.
+
+Three halves: a Go transport (subscriptions table merged into
+`BootSchema`, an SSRF-guarded sender over `webpush-go`, three handlers
+gated by session and origin), an embedded browser module for
+enrolment, and an embedded service-worker helper the app's own
+`sw.js` loads with `importScripts`. Every push ends in a visible
+notification, because WebKit revokes push for a worker that receives
+silently.
+
+**What it deliberately does not do.** It does not cache, work offline,
+or own the worker's lifecycle. It does not retry, queue, or report
+delivery: a push service's acceptance is where its knowledge ends. It
+does not make the app installable — the manifest is the app's
+identity — but it ships the recipe, because iOS delivers push only to
+a Home Screen app.
+
 ## Publishing an addon
 
 Follow the four rules above, then serve `SKILL.md` at a stable URL and
