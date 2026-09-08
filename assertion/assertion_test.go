@@ -303,7 +303,7 @@ func TestOriginGrammar(t *testing.T) {
 			t.Fatal(s)
 		}
 	}
-	for _, s := range []string{"http://example.com", "https://EXAMPLE.com", "https://example.com/", "https://example.com.", "https://127.0.0.1", "https://127.1", "https://2130706433", "https://[::1]", "https://0x7f000001", "https://user@example.com", "https://example.com:443", "https://example.com:0443", "https://example.com:0", "https://example.com:65536", "https://example.com:+1", "https://example.com?x=1", "https://example.com#x", "https://*.example.com", "https://-a.example", "https://a-.example", "https://bücher.example", "https://a_b.example"} {
+	for _, s := range []string{"http://example.com", "https://EXAMPLE.com", "https://example.com/", "https://example.com.", "https://127.0.0.1", "https://127.1", "https://2130706433", "https://[::1]", "https://0x7f000001", "https://0x", "https://1.0x", "https://user@example.com", "https://example.com:443", "https://example.com:0443", "https://example.com:0", "https://example.com:65536", "https://example.com:+1", "https://example.com?x=1", "https://example.com#x", "https://*.example.com", "https://-a.example", "https://a-.example", "https://bücher.example", "https://a_b.example"} {
 		if origin(s) {
 			t.Fatal(s)
 		}

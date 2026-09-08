@@ -66,7 +66,8 @@ func RandomID() (string, error) {
 }
 
 // Sign validates the claims without consulting a clock. The receiver applies
-// expiry checks against its own clock. The caller must not mutate key or Ext
+// expiry checks against its own clock. Serialization may compact or re-escape
+// Ext while preserving its JSON value. The caller must not mutate key or Ext
 // while this call is running.
 func Sign(key *crypto.Keypair, claims Claims) (string, error) {
 	if err := validate(claims); err != nil {
@@ -343,7 +344,7 @@ func origin(s string) bool {
 		}
 	}
 	if strings.HasPrefix(last, "0x") {
-		if _, err := strconv.ParseUint(last[2:], 16, 64); err == nil {
+		if _, err := strconv.ParseUint(last[2:], 16, 64); last == "0x" || err == nil {
 			return false
 		}
 	}
