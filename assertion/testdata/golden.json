@@ -1,0 +1,5 @@
+{
+  "payload": "{\"v\":1,\"iss\":\"https://id.example.com\",\"aud\":\"https://team.docs.example.com\",\"sub\":\"person_123\",\"kid\":\"key_1\",\"jti\":\"AAAAAAAAAAAAAAAAAAAAAA\",\"nonce\":\"AQEBAQEBAQEBAQEBAQEBAQ\",\"iat\":1700000000,\"exp\":1700000120,\"auth_time\":1699999900}",
+  "publicKey": "BDCOQvhKcaCUYvSkRK3JSnEN8ojaiv1e1LYhJS950Gh-mOm0WTILXryTbv4M-_xJsp0usUXSdjjaK8Gt7CJmeWY",
+  "signature": "iMv_NYhDM1GC6U4aSeqsxy7q6nGzgHt95sUb7j29M1BZ2gJWONLtuPViE_YZnsELzwLWWYB9jMMDgcpa-fTZcQ"
+}
