@@ -3,7 +3,9 @@
 `rastrillo/passkey` adds a WebAuthn second factor in two places: at
 step-up, where an assertion refreshes a stale session instead of a full
 re-sign-in, and at sign-in, where a verified first factor has to be
-completed by an assertion before a session exists.
+completed by an assertion before a session exists. It is one of two
+factors the [second-factor gate](/docs/second-factors) knows; the
+other is an [authenticator app](/docs/second-factors#totp).
 
 ## What a passkey is allowed to do
 
@@ -34,7 +36,6 @@ POST /passkey/stepup/begin      -> {"challenge": ...}
 POST /passkey/stepup/finish     <- authenticate()'s result
 POST /passkey/signin/begin      -> {"challenge": ...}
 POST /passkey/signin/finish     <- authenticate()'s result
-POST /passkey/signin/recovery   <- form field "code"
 ```
 
 ## Step-up
@@ -48,67 +49,37 @@ A challenge lives two minutes: long enough for an authenticator prompt,
 short enough that an abandoned one is not a standing invitation.
 Challenges are single-use and subject-bound.
 
-## Sign-in-time 2FA: the Gate
+## Sign-in-time 2FA
 
-`Handlers.Gate` is the `SecondFactor` hook both identity plugins expose:
+The pending half-session between factors is the
+[second-factor gate](/docs/second-factors)'s, not this package's. Wire
+it once:
 
 ```go
+g, err := secondfactor.New(secondfactor.Config{ /* ... */ })
+pk, err := passkey.New(passkey.Config{ /* ..., */ Gate: g})
+g.Add(pk)
+
 a, err := auth.New(auth.Config{
 	// ...
-	SecondFactor: pk.Gate,
+	SecondFactor: g.Hold,
 })
 ```
 
-Called where the plugin would mint the session, it trades the immediate
-sign-in for a pending half-session — a short-lived cookie plus a hashed
-row naming who must still assert, which opens nothing by itself — and
-redirects to `Config.ConfirmPath`, your "confirm with your passkey"
-page.
-
-That page runs `webauthn.mjs`'s `authenticate()` against
-`/passkey/signin/{begin,finish}`. A verified assertion consumes the
-pending row, clears the cookie, and mints the real session with the
+`Hold` is the `SecondFactor` hook every identity plugin exposes. Called
+where the plugin would mint the session, it trades the immediate sign-in
+for a half-session for any account with a factor enrolled and redirects
+to your confirm page. That page runs `webauthn.mjs`'s `authenticate()`
+against `/passkey/signin/{begin,finish}`; a verified assertion completes
+the half-session through the gate, which mints the real session with the
 original first-factor method plus `"+passkey"` — `"magiclink+passkey"`,
 say.
 
-An account with no passkey passes the Gate untouched, returning
-`(false, nil)`. So you can turn the Gate on for everyone and let
-enrollment decide who it applies to.
-
-The gap between factors is bounded at five minutes. Miss it and you sign
-in again from the top.
-
-## Recovery codes
-
-For the account whose only passkey is lost.
-
-```go
-codes, err := pk.RegenerateRecoveryCodes(subject)
-```
-
-You get ten single-use codes, shown once, from a page you mount behind
-`sessions.RequireFresh`. `pk.RecoveryCodesRemaining(subject)` tells you
-how many are left, for a settings page that should nag.
-
-`SignInRecovery` redeems one against the pending half-session where an
-assertion would have gone. It is a plain form POST with no JavaScript,
-deliberately: recovery is exactly the moment WebAuthn is not working,
-and a flow that needs a working WebAuthn stack to recover from a broken
-one is not a recovery flow.
-
-A wrong code does not consume the half-session. It redirects back to
-`ConfirmPath?recovery=failed` so the user can try another. A correct one
-burns the code, consumes the pending session, and mints a session whose
-method is the first factor plus `"+recovery"` — a marker you can use to
-nudge enrolling a replacement passkey.
-
-This is sign-in only. There is no recovery step-up, and `RequireFresh`
-stays satisfiable only by an assertion or a full re-sign-in.
-
-There is no attempt counter either. Redeeming needs a live half-session,
-which means the first factor already verified and is held for at most
-five minutes, and ten codes at 2⁻⁵⁰ apiece put brute force far below any
-practical odds inside that window.
+Recovery codes, for the account whose only passkey is lost, live on the
+gate too: `g.RegenerateRecoveryCodes`, `g.RecoveryCodesRemaining` and
+the plain-form `g.SignInRecovery`. A passkey handler with no `Gate`
+still enrols and steps up; only the sign-in pair refuses, because
+nothing can be pending.
 
 ## What webauthn checks
 

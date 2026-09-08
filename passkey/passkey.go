@@ -5,8 +5,8 @@
 //
 // The trust boundary is deliberate: a passkey upgrades an EXISTING
 // session's freshness (step-up), or completes a sign-in whose FIRST
-// factor already verified (the Gate's pending half-session) — it never
-// signs anybody in from nothing. Step-up endpoints demand a valid
+// factor already verified (secondfactor's pending half-session) — it
+// never signs anybody in from nothing. Step-up endpoints demand a valid
 // session (stale is fine; absent is not); the sign-in pair demands a
 // live pending half-session, which only a verified first factor mints.
 // Either way a stolen credential id alone opens no door, and the
@@ -23,45 +23,25 @@
 //	POST /passkey/stepup/finish    <- authenticate()'s result
 //	POST /passkey/signin/begin     -> {"challenge": ...}   (Gate flow)
 //	POST /passkey/signin/finish    <- authenticate()'s result
-//	POST /passkey/signin/recovery  <- form field "code"    (Gate flow)
 //
 // — behind the app's csrf.Protect like every other mutating route.
 // A successful step-up calls sessions.SignIn, which rotates the
 // session with Method "passkey" and a fresh AuthTime — exactly what
 // RequireFresh checks.
 //
-// # Sign-in-time 2FA (the Gate)
+// # Sign-in-time 2FA
 //
-// Handlers.Gate is the identity plugins' SecondFactor hook
-// (auth.Config.SecondFactor / password.Config.SecondFactor): called at
-// the exact point a plugin would mint the session, it lets an enrolled
-// account trade the immediate sign-in for a pending half-session — a
-// short-lived cookie-plus-hashed-row that names who must still assert,
-// and opens nothing by itself — and a redirect to Config.ConfirmPath,
-// the app's "confirm with your passkey" page. That page runs
-// webauthn.mjs's authenticate() against /passkey/signin/{begin,finish};
-// a verified assertion consumes the pending row (single use), clears
-// the cookie, and mints the real session with the ORIGINAL first-factor
-// method plus "+passkey" ("magiclink+passkey", say) and AuthTime now.
-// An account with no passkey passes the Gate untouched: (false, nil),
-// and the plugin signs in exactly as it always did.
-//
-// # Recovery codes
-//
-// The Gate's escape hatch, for the account whose only passkey is lost:
-// RegenerateRecoveryCodes mints ten single-use codes (shown once, from
-// a page mounted behind sessions.RequireFresh), and SignInRecovery — a
-// plain form POST, no JavaScript, because recovery is exactly the
-// moment WebAuthn isn't working — redeems one against the pending
-// half-session where an assertion would have gone. The minted session
-// is the first-factor method plus "+recovery", a marker apps can use
-// to nudge enrolling a replacement passkey. Sign-in only, by design:
-// there is no recovery step-up, and RequireFresh stays satisfiable
-// only by an assertion or a full re-sign-in. There is deliberately no
-// attempt counter — redeeming requires a live half-session (the first
-// factor already verified) held for pendingTTL at most, and ten codes
-// at 2^-50 apiece leave brute force far below any practical odds
-// inside that window.
+// The pending half-session between factors is the secondfactor
+// package's (Config.Gate): an identity plugin's SecondFactor hook is
+// secondfactor.Gate.Hold, which for an enrolled account trades the
+// immediate sign-in for a half-session and a redirect to the app's
+// confirm page. That page runs webauthn.mjs's authenticate() against
+// /passkey/signin/{begin,finish}; a verified assertion completes the
+// half-session through the Gate, which mints the real session as the
+// ORIGINAL first-factor method plus "+passkey" ("magiclink+passkey",
+// say) and AuthTime now. Recovery codes live there too, for the
+// account whose only passkey is lost. *Handlers is a
+// secondfactor.Factor: register it with Gate.Add.
 package passkey
 
 import (
@@ -74,10 +54,10 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/webauthn"
 )
@@ -87,12 +67,6 @@ import (
 // enough that an abandoned challenge is not a standing invitation.
 const challengeTTL = 2 * time.Minute
 
-// pendingTTL bounds the gap between factors: first-factor success to
-// finished assertion inside this window, or sign in again from the
-// top. Long enough to find the authenticator, short enough that an
-// abandoned half-session is not a standing invitation.
-const pendingTTL = 5 * time.Minute
-
 //go:embed migrations/*.sql
 var migrationFS embed.FS
 
@@ -101,7 +75,9 @@ var migrationFS embed.FS
 // []string: the ledger records what ran, so these statements are no
 // longer re-executed on every boot. Credentials are public material (a
 // public key verifies signatures and nothing else); challenges are
-// single-use rows consumed by DELETE ... RETURNING.
+// single-use rows consumed by DELETE ... RETURNING. The half-session
+// and recovery-code tables this set once created are secondfactor's
+// now; its Schema adopts them (merge it after this one).
 var Schema = migrate.MustFromFS(migrationFS, "passkey")
 
 // Config configures New. Sessions, DB and Origin are required.
@@ -122,11 +98,11 @@ type Config struct {
 	// registration) so a hostname move doesn't strand enrolled keys.
 	LegacyRPID string
 
-	// ConfirmPath is where Gate sends a first-factor-verified caller
-	// who still has a passkey to assert: the app's "confirm with your
-	// passkey" page, which runs webauthn.mjs's authenticate() against
-	// /passkey/signin/{begin,finish}. Default "/passkey/confirm".
-	ConfirmPath string
+	// Gate is the shared second-factor seam the sign-in pair redeems
+	// (SignInBegin/SignInFinish read its pending half-session and
+	// complete it). Nil leaves step-up and enrolment working and makes
+	// the sign-in pair refuse: without a Gate nothing can be pending.
+	Gate *secondfactor.Gate
 
 	Logger *slog.Logger
 }
@@ -150,9 +126,6 @@ func New(cfg Config) (*Handlers, error) {
 	if err != nil || u.Hostname() == "" || (u.Scheme != "https" && u.Scheme != "http") {
 		return nil, errors.New("rastrillo/passkey: Config.Origin must be an absolute origin like https://app.example.com")
 	}
-	if cfg.ConfirmPath == "" {
-		cfg.ConfirmPath = "/passkey/confirm"
-	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
@@ -162,90 +135,15 @@ func New(cfg Config) (*Handlers, error) {
 	}, nil
 }
 
-// ── the sign-in gate: a pending half-session between factors ────────
+// ── the sign-in half: completing secondfactor's half-session ────────
 
-// pendingCookieName mirrors sessions' own cookie policy: __Host- on
-// https (the prefix requires Secure), plain on a http dev origin.
-func (h *Handlers) pendingCookieName() string {
-	if strings.HasPrefix(h.cfg.Origin, "https://") {
-		return "__Host-rastrillo_passkey_pending"
+// pending resolves the request's half-session through the Gate; with
+// no Gate configured nothing can ever be pending.
+func (h *Handlers) pending(r *http.Request) (secondfactor.Pending, bool) {
+	if h.cfg.Gate == nil {
+		return secondfactor.Pending{}, false
 	}
-	return "rastrillo_passkey_pending"
-}
-
-func (h *Handlers) setPendingCookie(w http.ResponseWriter, value string, maxAge int) {
-	http.SetCookie(w, &http.Cookie{
-		Name: h.pendingCookieName(), Value: value, Path: "/",
-		MaxAge: maxAge, HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   strings.HasPrefix(h.cfg.Origin, "https://"),
-	})
-}
-
-// Gate is the identity plugins' SecondFactor hook (see the package
-// doc): called where the plugin would mint the session. No passkey
-// enrolled → (false, nil), and the plugin signs in exactly as before.
-// Enrolled → store a pending half-session (only its hash lands in the
-// database, only the token rides the cookie — sessions' own token
-// discipline), remember a same-site return_to, redirect to
-// ConfirmPath, (true, nil). The half-session opens nothing by itself:
-// it only names who must still assert, and SignInFinish is the only
-// door it fits.
-func (h *Handlers) Gate(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) {
-	enrolled, err := h.Enrolled(sess.Subject)
-	if err != nil {
-		return false, err
-	}
-	if !enrolled {
-		return false, nil
-	}
-	token, hash, err := sessions.NewToken()
-	if err != nil {
-		return false, err
-	}
-	_, err = h.cfg.DB.Exec(
-		`INSERT INTO passkey_pending (token_hash, subject, method, return_to, expires_at) VALUES (?, ?, ?, ?, ?)`,
-		hash, sess.Subject, sess.Method, sessions.SafeReturn(r, "/"),
-		time.Now().Add(pendingTTL).UTC().Format(time.RFC3339))
-	if err != nil {
-		return false, err
-	}
-	h.setPendingCookie(w, token, int(pendingTTL.Seconds()))
-	http.Redirect(w, r, h.cfg.ConfirmPath, http.StatusSeeOther)
-	return true, nil
-}
-
-// pendingRow is one live half-session, resolved from the pending
-// cookie.
-type pendingRow struct {
-	hash     string
-	subject  string
-	method   string
-	returnTo string
-}
-
-// pendingFrom resolves the request's pending cookie to its live row —
-// expiry-checked, NOT consumed (a failed assertion must not burn the
-// whole between-factors window; consumption is SignInFinish's last
-// step, on success only).
-func (h *Handlers) pendingFrom(r *http.Request) (pendingRow, bool) {
-	c, err := r.Cookie(h.pendingCookieName())
-	if err != nil {
-		return pendingRow{}, false
-	}
-	p := pendingRow{hash: sessions.HashToken(c.Value)}
-	var expires string
-	err = h.cfg.DB.QueryRow(
-		`SELECT subject, method, return_to, expires_at FROM passkey_pending WHERE token_hash = ?`,
-		p.hash).Scan(&p.subject, &p.method, &p.returnTo, &expires)
-	if err != nil {
-		return pendingRow{}, false
-	}
-	exp, err := time.Parse(time.RFC3339, expires)
-	if err != nil || time.Now().After(exp) {
-		return pendingRow{}, false
-	}
-	return p, true
+	return h.cfg.Gate.Pending(r)
 }
 
 // SignInBegin is POST /passkey/signin/begin: mint an assertion
@@ -257,23 +155,23 @@ func (h *Handlers) SignInBegin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
-	p, ok := h.pendingFrom(r)
+	p, ok := h.pending(r)
 	if !ok {
 		h.refuse(w)
 		return
 	}
-	h.begin(w, p.subject, "signin")
+	h.begin(w, p.Subject, "signin")
 }
 
 // SignInFinish is POST /passkey/signin/finish: verify the assertion
-// against the pending subject's enrolled credentials, consume the
-// half-session (DELETE ... RETURNING — single use, so a raced second
-// finish loses), clear the cookie, and mint the real session: the
-// ORIGINAL first-factor method plus "+passkey", AuthTime now. The JSON
-// answer carries "to" — the return_to the Gate stored — for the
-// confirm page's JS to navigate.
+// against the pending subject's enrolled credentials, then complete
+// the half-session through the Gate — single use, so a raced second
+// finish loses — which mints the real session: the ORIGINAL
+// first-factor method plus "+passkey", AuthTime now. The JSON answer
+// carries "to" — the return_to the Gate stored — for the confirm
+// page's JS to navigate.
 func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
-	p, ok := h.pendingFrom(r)
+	p, ok := h.pending(r)
 	if !ok {
 		h.refuse(w)
 		return
@@ -291,7 +189,7 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	credID, authData, signature := fields[0], fields[1], fields[2]
 
-	challenge, err := h.takeChallenge(clientDataJSON, p.subject, "signin")
+	challenge, err := h.takeChallenge(clientDataJSON, p.Subject, "signin")
 	if err != nil {
 		h.badRequest(w, err)
 		return
@@ -301,7 +199,7 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 	var count uint32
 	err = h.cfg.DB.QueryRow(
 		`SELECT public_key, sign_count FROM passkey_credentials WHERE id = ? AND subject = ?`,
-		hex.EncodeToString(credID), p.subject).Scan(&pub, &count)
+		hex.EncodeToString(credID), p.Subject).Scan(&pub, &count)
 	if err != nil {
 		h.badRequest(w, errors.New("unknown credential"))
 		return
@@ -320,31 +218,23 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Consume the half-session last, on success only — and refuse if a
-	// raced (or replayed) finish already did.
-	var consumed string
-	if err := h.cfg.DB.QueryRow(
-		`DELETE FROM passkey_pending WHERE token_hash = ? RETURNING subject`,
-		p.hash).Scan(&consumed); err != nil {
-		h.badRequest(w, errors.New("pending sign-in already completed or expired"))
-		return
-	}
-	h.setPendingCookie(w, "", -1)
-
-	if err := h.cfg.Sessions.SignIn(w, r, sessions.Session{
-		Subject:  p.subject,
-		Method:   p.method + "+passkey",
-		AuthTime: time.Now(),
-	}); err != nil {
+	// Complete the half-session last, on success only — and refuse if
+	// a raced (or replayed) finish already did.
+	if err := h.cfg.Gate.Complete(w, r, p, "passkey"); err != nil {
+		if errors.Is(err, secondfactor.ErrConsumed) {
+			h.badRequest(w, err)
+			return
+		}
 		h.fail(w, "mint session", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "to": p.returnTo})
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "to": p.ReturnTo})
 }
 
 // Enrolled reports whether subject has at least one passkey — the
 // app's cue to offer "confirm with your passkey" instead of a full
-// re-sign-in on its step-up page.
+// re-sign-in on its step-up page, and the secondfactor.Factor contract
+// the Gate consults.
 func (h *Handlers) Enrolled(subject string) (bool, error) {
 	var n int
 	err := h.cfg.DB.QueryRow(
@@ -609,15 +499,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	json.NewEncoder(w).Encode(v)
 }
 
-// Sweep deletes expired challenge and pending-half-session rows.
-// Correctness never depends on it — takeChallenge and pendingFrom
-// check expiry themselves — it just keeps abandoned ceremonies from
-// accumulating. Call it from boot, a sidecar pass, or not at all.
+// Sweep deletes expired challenge rows. Correctness never depends on
+// it — takeChallenge checks expiry itself — it just keeps abandoned
+// ceremonies from accumulating. Call it from boot, a sidecar pass, or
+// not at all (secondfactor.Sweep does the same for half-sessions).
 func Sweep(db *sql.DB, now time.Time) error {
-	stamp := now.UTC().Format(time.RFC3339)
-	if _, err := db.Exec(`DELETE FROM passkey_challenges WHERE expires_at < ?`, stamp); err != nil {
-		return err
-	}
-	_, err := db.Exec(`DELETE FROM passkey_pending WHERE expires_at < ?`, stamp)
+	_, err := db.Exec(`DELETE FROM passkey_challenges WHERE expires_at < ?`, now.UTC().Format(time.RFC3339))
 	return err
 }

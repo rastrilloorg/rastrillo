@@ -325,20 +325,27 @@ the meantime. This list is their union. **Built:**
   real session revocation, same-origin CSRF on every state-changing
   handler, an `Authorize` admission hook, and `RequireFreshSession`
   for step-up on sensitive routes.
-- **`rastrillo/passkey`** — the WebAuthn second factor, both places it
+- **`rastrillo/secondfactor`** — the seam between a verified first
+  factor and the session it earns: the pending half-session (`Hold`,
+  wired into a plugin's `SecondFactor` hook, trades a would-be session
+  for a cookie-plus-hashed-row that only a factor's `Complete` redeems
+  — the session it mints names both, `"magiclink+passkey"`), a strike
+  budget for guessable proofs, and the escape hatch: ten single-use
+  recovery codes, minted behind `RequireFresh` and shown once, redeemed
+  by plain form POST — no JavaScript, because a lost factor is exactly
+  when the clever path isn't working. An app calling `Hold` itself with
+  a method of its own gets a remembered-device sign-in for free.
+- **`rastrillo/passkey`** — the WebAuthn factor, both places it
   belongs: on the step-up seam (a signed-in user enrolls, and a
   valid-but-stale session is made fresh again by an assertion instead
-  of a full re-sign-in) and at first sign-in (`Gate`, wired into a
-  plugin's `SecondFactor` hook: a verified first factor becomes a
-  pending half-session that only an assertion completes — the session
-  it mints names both factors, `"magiclink+passkey"`). Single-use
-  server-side challenges and half-sessions, subject-bound, over
-  `rastrillo/webauthn`'s ceremonies and browser module. And the escape
-  hatch: ten single-use recovery codes, minted behind `RequireFresh`
-  and shown once, redeem at the gate by plain form POST — no
-  JavaScript, because a lost passkey is exactly when WebAuthn isn't
-  working — minting `"magiclink+recovery"` so the app can nudge
-  re-enrollment. Sign-in only: step-up still takes a real assertion.
+  of a full re-sign-in) and at sign-in, completing the gate's
+  half-session. Single-use server-side challenges, subject-bound, over
+  `rastrillo/webauthn`'s ceremonies and browser module.
+- **`rastrillo/totp`** — the authenticator-app factor: RFC 6238 as
+  every app defaults to it, secrets sealed at rest under a derived key,
+  each verified step spent so a code is never accepted twice, a QR as
+  inline SVG for enrolment, and form-POST sign-in and step-up so the
+  confirm page works with JavaScript off.
 - **`rastrillo/webauthn`** — the passkey identity half, lifted from
   kass tests-and-all: ES256 only, no attestation checking, the CBOR
   subset reader, `LegacyRPID` for hostname moves, plus the `authtest`

@@ -8,7 +8,9 @@ import (
 	"amadan.net/rastrillo/rastrillo/eventlog"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/totp"
 )
 
 // frozenChecksums is the migrate.Checksum of every migration this
@@ -61,12 +63,18 @@ var frozenChecksums = map[string]string{
 	"blobs/0001_init":             "005e7bef1f2007a3ac88c05944ceba3a3db9c39ba824f73af3d3e7d4140c2427",
 	"eventlog/0001_init":          "e507976d87082ac5ee20e2d9cabca305b2d685c7ab4db2c23e650781aa6f9595",
 	"passkey/0001_init":           "56d5073a880c3b1b8330654873b13cbd42a72596138499380b5a013e4d43196e",
+	"secondfactor/0001_init":      "de005b11635c6c487a19b929c091df10fa6c097a6cf05d4a1592d6fd8c6a2488",
+	// A Go migration: no SQL, so the empty checksum. What it does is
+	// frozen by the same rule; the ledger simply cannot see it.
+	"secondfactor/0002_adopt_passkey": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"totp/0001_init":                  "4a473153c05278f96b8f55a8612acdd84576f46788d0f2d7406a56fdbb2d62bd",
 }
 
 func TestFrameworkMigrationsAreFrozen(t *testing.T) {
 	seen := map[string]bool{}
 	for _, s := range []*migrate.Set{
 		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, passkey.Schema,
+		secondfactor.Schema, totp.Schema,
 	} {
 		for _, m := range s.All() {
 			seen[m.ID] = true

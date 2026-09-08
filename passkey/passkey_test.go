@@ -15,6 +15,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/webauthn/authtest"
 )
@@ -26,6 +27,7 @@ const (
 
 type env struct {
 	h    *passkey.Handlers
+	g    *secondfactor.Gate
 	sess *sessions.Sessions
 	db   *sql.DB
 }
@@ -37,7 +39,7 @@ func newEnv(t *testing.T) env {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { d.Close() })
-	full := migrate.Merge(sessions.Schema, passkey.Schema)
+	full := migrate.Merge(sessions.Schema, passkey.Schema, secondfactor.Schema)
 	if _, err := migrate.Apply(context.Background(), d, full); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
@@ -46,11 +48,16 @@ func newEnv(t *testing.T) env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := passkey.New(passkey.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin})
+	g, err := secondfactor.New(secondfactor.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return env{h: h, sess: sess, db: sqlDB}
+	h, err := passkey.New(passkey.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin, Gate: g})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.Add(h)
+	return env{h: h, g: g, sess: sess, db: sqlDB}
 }
 
 // signIn mints a session and returns its cookie.

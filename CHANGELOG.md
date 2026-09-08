@@ -8,6 +8,51 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Changed — `passkey.Config.ConfirmPath` and `Handlers.Gate` are gone; the half-session moved
+
+The pending half-session between a first factor and a passkey, and the
+recovery codes that were its escape hatch, now live in `rastrillo/secondfactor`
+so a second factor of a different kind can complete the same half-session. An
+app wiring the Gate changes three lines:
+
+```go
+g, _ := secondfactor.New(secondfactor.Config{Sessions: sess, DB: writer, Origin: origin})
+pk, _ := passkey.New(passkey.Config{ /* ..., */ Gate: g})   // ConfirmPath is gone
+g.Add(pk)
+au, _ := auth.New(auth.Config{ /* ..., */ SecondFactor: g.Hold})   // was pk.Gate
+```
+
+`pk.RegenerateRecoveryCodes`, `pk.RecoveryCodesRemaining` and `pk.SignInRecovery`
+are `g.`'s now, and the confirm page defaults to `/signin/confirm` rather than
+`/passkey/confirm`. The pending cookie is renamed, so a sign-in in flight across
+the upgrade starts again from the first factor.
+
+**Merge `secondfactor.Schema` after `passkey.Schema`.** Its second migration is
+a Go migration that copies every recovery code out of `passkey_recovery_codes`
+and drops that table and `passkey_pending`. Merged before, it finds nothing to
+copy on a fresh database and leaves passkey's frozen first migration to
+recreate two tables nothing reads; on a deployed database the order does not
+matter, because passkey's migration already ran. The codes people printed
+survive either way.
+
+### Added — `rastrillo/totp`, an authenticator-app second factor
+
+RFC 6238 exactly as every authenticator app defaults to it, on the same two
+seams as `passkey`: `SignIn` completes the gate's half-session, `StepUp` makes
+a stale session fresh. Enrolment is `Begin` (key, otpauth URI, QR as inline
+SVG), `Confirm` (the factor is live only once a code proves the scan) and
+`Disable`, with `Pending` to redraw an unconfirmed enrolment on a GET. Secrets are sealed under `Config.Key` before they reach the
+database; a verified step is spent and never accepted twice; a wrong sign-in
+code is a `secondfactor` strike, five per half-session. Every endpoint is a
+form POST, so a confirm page built on it works with JavaScript off. One new
+dependency, `github.com/skip2/go-qrcode`, for the QR.
+
+`secondfactor.Gate.Hold` is also callable from app code with a method of its
+own — hold `"device"` for a remembered browser, and a passkey alone gets the
+person back in, minting `"device+passkey"`.
+
 ## v0.27.0
 
 Stricter security headers, and a new package for passing a signed-in identity

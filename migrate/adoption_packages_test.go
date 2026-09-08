@@ -12,7 +12,9 @@ import (
 	"amadan.net/rastrillo/rastrillo/eventlog"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/totp"
 )
 
 // legacySQL is each package's schema exactly as it shipped before the
@@ -143,10 +145,12 @@ func TestPackagesAdoptLegacyDatabases(t *testing.T) {
 
 func TestPackagesApplyToEmptyDatabase(t *testing.T) {
 	for name, s := range map[string]*migrate.Set{
-		"sessions": sessions.Schema,
-		"blobs":    blobs.Schema,
-		"eventlog": eventlog.Schema,
-		"passkey":  passkey.Schema,
+		"sessions":     sessions.Schema,
+		"blobs":        blobs.Schema,
+		"eventlog":     eventlog.Schema,
+		"passkey":      passkey.Schema,
+		"secondfactor": secondfactor.Schema,
+		"totp":         totp.Schema,
 	} {
 		t.Run(name, func(t *testing.T) {
 			d, err := db.Open(filepath.Join(t.TempDir(), name+".db"), nil)

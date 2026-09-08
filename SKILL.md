@@ -227,10 +227,14 @@ verifies a credential and calls `SignIn` — the whole contract.
   redirects to `SigninPath` with a same-site `return_to`; the rest 403.
   `s.Middleware` only resolves, blocks nothing.
 - `s.RequireFresh(maxAge)` step-up: past maxAge, GET/HEAD goes to
-  `SigninPath?reauth=1`; re-signing-in or a `passkey` assertion rotates
-  fresh (2FA: `Config.SecondFactor` = passkey's `Gate`). Lost passkey: a
-  recovery code redeems at POST `/passkey/signin/recovery`, minted by
-  `RegenerateRecoveryCodes` behind `RequireFresh`. docs/site/passkeys.md
+  `SigninPath?reauth=1`; re-signing-in, a `passkey` assertion or a
+  `totp` code rotates fresh. 2FA: `secondfactor.New` is the gate;
+  `Config.SecondFactor` = `g.Hold`; `g.Add(pk, tp)`; a factor completes
+  `g.Pending(r)` via `g.Complete`. Merge `secondfactor.Schema` AFTER
+  `passkey.Schema` (it adopts passkey's old tables). Lost factor: a
+  recovery code redeems at POST `/signin/recovery` (`g.SignInRecovery`),
+  minted by `g.RegenerateRecoveryCodes` behind `RequireFresh`.
+  docs/site/second-factors.md
 - Viewer: `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (Subject, Method, AuthTime, At). Past `Require`, `ok` holds only when
   the plugin's Subject is a numeric user id — see the `auth` warning.
