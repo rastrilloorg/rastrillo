@@ -1,0 +1,1 @@
+{"v":1,"iss":"https://id.example.com","aud":"https://team.docs.example.com","sub":"person_123","kid":"key_1","jti":"AAAAAAAAAAAAAAAAAAAAAA","nonce":"AQEBAQEBAQEBAQEBAQEBAQ","iat":1700000000,"exp":1700000120,"auth_time":1699999900} {}

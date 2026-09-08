@@ -134,6 +134,11 @@
           "blurb": "Every rastrillo command and flag, and when you reach for it."
         },
         {
+          "slug": "reference/assertion",
+          "label": "assertion",
+          "blurb": "Pass an authenticated identity from one exact HTTPS origin to another."
+        },
+        {
           "slug": "reference/auth",
           "label": "auth",
           "blurb": "The magic-link plugin: its handlers, its admission hook, and its email subject."

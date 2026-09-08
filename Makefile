@@ -48,11 +48,11 @@ chromedp-graph:
 
 # -race needs cgo, so this one target overrides the file-wide
 # CGO_ENABLED=0: the static-binary criterion is about what ships, not
-# what a detector build links. Scoped to the two packages whose tests
+# what a detector build links. Scoped to the packages whose tests
 # are actually concurrent - jobs (Start spawns a goroutine per job while
-# Get reads the same map) and sessions.
+# Get reads the same map) sessions and assertion verification.
 race:
-	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/
+	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/
 
 # The examples are separate modules with a replace back to this
 # checkout, so the root sweep does not compile them - each needs its own
