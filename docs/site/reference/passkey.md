@@ -43,13 +43,60 @@ Mount them behind `csrf.Protect` like every other mutating route:
 | `POST /passkey/signin/begin` | `Handlers.SignInBegin` |
 | `POST /passkey/signin/finish` | `Handlers.SignInFinish` |
 | `POST /passkey/signin/recovery` | `Handlers.SignInRecovery` |
+| `POST /passkey/discover/begin` | `Handlers.DiscoverBegin` |
+| `POST /passkey/discover/finish` | `Handlers.DiscoverFinish` |
 
 The begin handlers answer `{"challenge": ...}`; the finish handlers take
-`webauthn.mjs`'s `register()` or `authenticate()` result.
+`webauthn.mjs`'s `register()` or `authenticate()` result. `RegisterFinish`
+also reads an optional `"label"`, the name the person gives the new
+credential.
 
 A successful step-up calls `sessions.SignIn`, rotating the session with
-method `"passkey"` and a fresh `AuthTime` — exactly what
-`sessions.RequireFresh` checks.
+a fresh `AuthTime` — exactly what `sessions.RequireFresh` checks — and a
+method that says how the authenticator checked the person: `Method`
+(`"passkey"`) when it verified them with a PIN, fingerprint or face,
+`MethodUnverified` (`"passkey-nouv"`) when it only found somebody
+present. A finished registration rotates the session the same way: the
+ceremony proved the new passkey as surely as an assertion would. The Gate
+flow suffixes the same two words onto the first factor.
+
+## Discover: the passkey as the front door
+
+A passkey asserted with user verification has already proved possession
+and the person, so `DiscoverBegin`/`DiscoverFinish` let it sign in on
+its own: no session, no half-session, no address typed. The browser is
+asked for any credential it holds for this relying party
+(`allowCredentials` empty) and the credential it answers with says who.
+`Config.Authorize`, when set, is asked before anyone is admitted this
+way — the roster check the app's other doors take.
+
+An assertion WITHOUT user verification is a weaker proof. With
+`Config.OtherFactor` reporting another factor for the subject, the
+sign-in is held at the Gate as `MethodUnverified` for that factor to
+complete, and the JSON answer's `"to"` is the confirm page; with nothing
+else to prove, the person is signed in at the weaker method and it is
+the app's job to nudge. Verified or not, the answer carries `"to"`, the
+same-site `return_to` or `Config.SignedInPath`.
+
+## The inventory
+
+```go
+func (h *Handlers) List(subject string) ([]Info, error)
+func (h *Handlers) Rename(subject, id, label string) error
+func (h *Handlers) Remove(subject, id string) error
+```
+
+`Info` is one credential as a person's Security page shows it: `ID` (the
+credential id, hex), `Label`, `UserVerified` (the authenticator verified
+the user at registration, so a policy rates it a tier higher),
+`BackupEligible` and `BackupState` (a synced passkey, or one bound to the
+device it lives on), `AAGUID` (the authenticator's make, where
+attestation carried one), `CreatedAt` and `LastUsedAt`. Nothing secret
+is in it. `Rename` and `Remove` take the subject with the id, so a
+handle from one person's list is never redeemed by another; an id that
+is not theirs answers `ErrNotYours`. Whether an account may lose a
+credential — its last factor, its only strong one — is the app's rule
+to hold before calling `Remove`.
 
 ## The timeouts
 

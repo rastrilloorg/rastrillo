@@ -57,13 +57,14 @@ import (
 // second exception: from the first deploy, a checksum failure here
 // means revert the edit, and adding a table means adding a 0002_.
 var frozenChecksums = map[string]string{
-	"sessions/0001_init":          "50bbfc92cfcc708b09b672b71f24da789ae6065f426c9db7af61befa90098bbb",
-	"auth/0001_init":              "3f6bf7e80d71e5d008fc56284e1342a28eecff1dc1da67cc5353bee4fd41a76a",
-	"auth/0002_sessions_backfill": "90798138a17a2f5d3f89ea4591985fdd53e9144c63040ae59d45ad6ca6a01a98",
-	"blobs/0001_init":             "005e7bef1f2007a3ac88c05944ceba3a3db9c39ba824f73af3d3e7d4140c2427",
-	"eventlog/0001_init":          "e507976d87082ac5ee20e2d9cabca305b2d685c7ab4db2c23e650781aa6f9595",
-	"passkey/0001_init":           "56d5073a880c3b1b8330654873b13cbd42a72596138499380b5a013e4d43196e",
-	"secondfactor/0001_init":      "de005b11635c6c487a19b929c091df10fa6c097a6cf05d4a1592d6fd8c6a2488",
+	"sessions/0001_init":              "50bbfc92cfcc708b09b672b71f24da789ae6065f426c9db7af61befa90098bbb",
+	"auth/0001_init":                  "3f6bf7e80d71e5d008fc56284e1342a28eecff1dc1da67cc5353bee4fd41a76a",
+	"auth/0002_sessions_backfill":     "90798138a17a2f5d3f89ea4591985fdd53e9144c63040ae59d45ad6ca6a01a98",
+	"blobs/0001_init":                 "005e7bef1f2007a3ac88c05944ceba3a3db9c39ba824f73af3d3e7d4140c2427",
+	"eventlog/0001_init":              "e507976d87082ac5ee20e2d9cabca305b2d685c7ab4db2c23e650781aa6f9595",
+	"passkey/0001_init":               "56d5073a880c3b1b8330654873b13cbd42a72596138499380b5a013e4d43196e",
+	"passkey/0002_credential_details": "55d308094dfdeef241b1401b7f72d4c7219d715591bc8e5c14ada4032e9bd15a",
+	"secondfactor/0001_init":          "de005b11635c6c487a19b929c091df10fa6c097a6cf05d4a1592d6fd8c6a2488",
 	// A Go migration: no SQL, so the empty checksum. What it does is
 	// frozen by the same rule; the ledger simply cannot see it.
 	"secondfactor/0002_adopt_passkey": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

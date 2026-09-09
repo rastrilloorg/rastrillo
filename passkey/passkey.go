@@ -3,26 +3,29 @@
 // a valid-but-stale session (refused by sessions.RequireFresh) is made
 // fresh again by an assertion ceremony instead of a full re-sign-in.
 //
-// The trust boundary is deliberate: a passkey upgrades an EXISTING
-// session's freshness (step-up), or completes a sign-in whose FIRST
-// factor already verified (secondfactor's pending half-session) — it
-// never signs anybody in from nothing. Step-up endpoints demand a valid
-// session (stale is fine; absent is not); the sign-in pair demands a
-// live pending half-session, which only a verified first factor mints.
-// Either way a stolen credential id alone opens no door, and the
-// primary factor (magic link, keymail, password) stays the way an
-// account is entered.
+// A passkey serves three ways. It upgrades an EXISTING session's
+// freshness (step-up); it completes a sign-in whose FIRST factor
+// already verified (secondfactor's pending half-session); and, as a
+// discoverable credential asserted with user verification, it signs a
+// person in on its own — a phishing-resistant credential that has
+// already proved possession and a PIN or biometric is both factors,
+// and stacking an emailed link in front of it adds friction and no
+// security. An assertion WITHOUT user verification is a weaker proof:
+// the discover flow hands it to the Gate for a second factor where the
+// account holds one, and the session it earns says so in its method.
 //
 // The shape: an app builds one *Handlers at boot (New), merges
 // passkey.Schema into its migrate.Set, serves webauthn.JS() as a
 // static asset for the browser half, and mounts the JSON endpoints —
 //
 //	POST /passkey/register/begin   -> {"challenge": ...}
-//	POST /passkey/register/finish  <- register()'s result (webauthn.mjs)
+//	POST /passkey/register/finish  <- register()'s result (webauthn.mjs), plus "label"
 //	POST /passkey/stepup/begin     -> {"challenge": ...}
 //	POST /passkey/stepup/finish    <- authenticate()'s result
 //	POST /passkey/signin/begin     -> {"challenge": ...}   (Gate flow)
 //	POST /passkey/signin/finish    <- authenticate()'s result
+//	POST /passkey/discover/begin   -> {"challenge": ...}   (no session, no half-session)
+//	POST /passkey/discover/finish  <- authenticate()'s result -> {"to": ...}
 //
 // — behind the app's csrf.Protect like every other mutating route.
 // A successful step-up calls sessions.SignIn, which rotates the
@@ -60,6 +63,16 @@ import (
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/webauthn"
+)
+
+// Method and MethodUnverified are the words a session carries for a
+// passkey proof: the first when the authenticator verified the user (a
+// PIN, a fingerprint, a face — phishing-resistant and two factors in
+// one), the second when it only found somebody present. An app's tier
+// policy reads them; the Gate suffixes them onto the first factor.
+const (
+	Method           = "passkey"
+	MethodUnverified = "passkey-nouv"
 )
 
 // challengeTTL bounds a ceremony: begin to finish inside this window,
@@ -104,6 +117,24 @@ type Config struct {
 	// the sign-in pair refuse: without a Gate nothing can be pending.
 	Gate *secondfactor.Gate
 
+	// Authorize, when set, is asked before the discover flow signs a
+	// subject in on a passkey alone — the app's roster check, the same
+	// hook its other identity plugins take. Nil admits every subject
+	// that holds a credential.
+	Authorize func(subject string) bool
+
+	// OtherFactor, when set, says whether subject holds a second factor
+	// that is not a passkey — an authenticator app, say. The discover
+	// flow asks it when an assertion arrives without user verification:
+	// with another factor to prove, the sign-in is held at the Gate for
+	// it; without one, the person is signed in at the weaker tier and it
+	// is the app's job to nudge. Nil means no other factor exists.
+	OtherFactor func(subject string) (bool, error)
+
+	// SignedInPath is where a discover sign-in lands when the request
+	// carries no same-site return_to. Default "/".
+	SignedInPath string
+
 	// Refused, when set, hears about every ceremony that failed
 	// verification, with the reason the caller is never told — so an
 	// app can write "a passkey was refused: origin does not match" to
@@ -135,6 +166,9 @@ func New(cfg Config) (*Handlers, error) {
 	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
+	}
+	if cfg.SignedInPath == "" {
+		cfg.SignedInPath = "/"
 	}
 	return &Handlers{
 		cfg: cfg,
@@ -183,51 +217,14 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 		h.refuse(w)
 		return
 	}
-	var body struct {
-		ID             string `json:"id"`
-		ClientDataJSON string `json:"clientDataJSON"`
-		AuthData       string `json:"authenticatorData"`
-		Signature      string `json:"signature"`
-	}
-	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.ID, &body.AuthData, &body.Signature)
-	if err != nil {
-		h.badRequest(w, r, err)
-		return
-	}
-	credID, authData, signature := fields[0], fields[1], fields[2]
-
-	challenge, err := h.takeChallenge(clientDataJSON, p.Subject, "signin")
-	if err != nil {
-		h.badRequest(w, r, err)
-		return
-	}
-
-	var pub []byte
-	var count uint32
-	err = h.cfg.DB.QueryRow(
-		`SELECT public_key, sign_count FROM passkey_credentials WHERE id = ? AND subject = ?`,
-		hex.EncodeToString(credID), p.Subject).Scan(&pub, &count)
-	if err != nil {
-		h.badRequest(w, r, errors.New("unknown credential"))
-		return
-	}
-
-	next, err := h.wa.Verify(webauthn.Credential{ID: credID, PublicKey: pub, SignCount: count},
-		challenge, clientDataJSON, authData, signature)
-	if err != nil {
-		h.badRequest(w, r, err)
-		return
-	}
-	if _, err := h.cfg.DB.Exec(
-		`UPDATE passkey_credentials SET sign_count = ? WHERE id = ?`,
-		next, hex.EncodeToString(credID)); err != nil {
-		h.fail(w, "update sign count", err)
+	_, a, ok := h.assert(w, r, p.Subject, "signin")
+	if !ok {
 		return
 	}
 
 	// Complete the half-session last, on success only — and refuse if
 	// a raced (or replayed) finish already did.
-	if err := h.cfg.Gate.Complete(w, r, p, "passkey"); err != nil {
+	if err := h.cfg.Gate.Complete(w, r, p, methodFor(a)); err != nil {
 		if errors.Is(err, secondfactor.ErrConsumed) {
 			h.badRequest(w, r, err)
 			return
@@ -248,6 +245,229 @@ func (h *Handlers) Enrolled(subject string) (bool, error) {
 		`SELECT COUNT(*) FROM passkey_credentials WHERE subject = ?`, subject).Scan(&n)
 	return n > 0, err
 }
+
+// Info is one credential as the inventory sees it: nothing secret (a
+// public key verifies signatures and nothing else, and it is not even
+// here), just what a person needs to tell their passkeys apart and a
+// policy needs to rate them.
+type Info struct {
+	// ID is the credential id, hex — the handle Rename and Remove take.
+	ID    string
+	Label string
+	// UserVerified says the authenticator verified the user at
+	// registration; a credential that did not is rated a tier lower.
+	UserVerified bool
+	// BackupEligible and BackupState say whether this is a synced
+	// passkey (eligible, and backed up) or one bound to a single device
+	// — the one whose loss is the account's loss.
+	BackupEligible bool
+	BackupState    bool
+	// AAGUID names the authenticator's make, hex, where attestation
+	// carried one; all zeros where it did not.
+	AAGUID     string
+	CreatedAt  time.Time
+	LastUsedAt time.Time
+}
+
+// ErrNotYours is Rename's and Remove's answer to an id that is not one
+// of the subject's credentials — unknown and someone else's alike.
+var ErrNotYours = errors.New("rastrillo/passkey: no such credential for this subject")
+
+// List is every credential subject holds, oldest first.
+func (h *Handlers) List(subject string) ([]Info, error) {
+	rows, err := h.cfg.DB.Query(`SELECT id, label, user_verified, backup_eligible, backup_state, aaguid, created_at, last_used_at
+		FROM passkey_credentials WHERE subject = ? ORDER BY created_at, rowid`, subject)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Info
+	for rows.Next() {
+		var in Info
+		var uv, be, bs int
+		var created, used string
+		if err := rows.Scan(&in.ID, &in.Label, &uv, &be, &bs, &in.AAGUID, &created, &used); err != nil {
+			return nil, err
+		}
+		in.UserVerified, in.BackupEligible, in.BackupState = uv != 0, be != 0, bs != 0
+		in.CreatedAt, _ = time.Parse(time.RFC3339, created)
+		if used != "" {
+			in.LastUsedAt, _ = time.Parse(time.RFC3339, used)
+		}
+		out = append(out, in)
+	}
+	return out, rows.Err()
+}
+
+// Rename gives one of subject's credentials a new label.
+func (h *Handlers) Rename(subject, id, label string) error {
+	res, err := h.cfg.DB.Exec(`UPDATE passkey_credentials SET label = ? WHERE id = ? AND subject = ?`, label, id, subject)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotYours
+	}
+	return nil
+}
+
+// Remove deletes one of subject's credentials; it no longer
+// authenticates. Whether the account may lose it — its last factor, its
+// only strong one — is the app's rule to hold before calling this.
+func (h *Handlers) Remove(subject, id string) error {
+	res, err := h.cfg.DB.Exec(`DELETE FROM passkey_credentials WHERE id = ? AND subject = ?`, id, subject)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotYours
+	}
+	return nil
+}
+
+// methodFor is the session method an assertion earns.
+func methodFor(a webauthn.Assertion) string {
+	if a.UserVerified {
+		return Method
+	}
+	return MethodUnverified
+}
+
+// assert is the shared half of every assertion endpoint: decode the
+// ceremony, spend its challenge (minted for subject and purpose),
+// look the credential up under subject, verify, and record the counter
+// and the moment. It answers the caller itself on any failure and
+// reports ok=false; on success it returns the credential's subject
+// (which is subject, unless subject was "" — the discover flow, where
+// the credential says who) and what the assertion proved.
+func (h *Handlers) assert(w http.ResponseWriter, r *http.Request, subject, purpose string) (string, webauthn.Assertion, bool) {
+	var body struct {
+		ID             string `json:"id"`
+		ClientDataJSON string `json:"clientDataJSON"`
+		AuthData       string `json:"authenticatorData"`
+		Signature      string `json:"signature"`
+	}
+	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.ID, &body.AuthData, &body.Signature)
+	if err != nil {
+		h.badRequest(w, r, err)
+		return "", webauthn.Assertion{}, false
+	}
+	credID, authData, signature := fields[0], fields[1], fields[2]
+
+	challenge, err := h.takeChallenge(clientDataJSON, subject, purpose)
+	if err != nil {
+		h.badRequest(w, r, err)
+		return "", webauthn.Assertion{}, false
+	}
+
+	var pub []byte
+	var count uint32
+	var owner string
+	q := `SELECT subject, public_key, sign_count FROM passkey_credentials WHERE id = ?`
+	args := []any{hex.EncodeToString(credID)}
+	if subject != "" {
+		q += ` AND subject = ?`
+		args = append(args, subject)
+	}
+	if err := h.cfg.DB.QueryRow(q, args...).Scan(&owner, &pub, &count); err != nil {
+		h.badRequest(w, r, errors.New("unknown credential"))
+		return "", webauthn.Assertion{}, false
+	}
+
+	a, err := h.wa.Assert(webauthn.Credential{ID: credID, PublicKey: pub, SignCount: count},
+		challenge, clientDataJSON, authData, signature)
+	if err != nil {
+		h.badRequest(w, r, err)
+		return "", webauthn.Assertion{}, false
+	}
+	if _, err := h.cfg.DB.Exec(
+		`UPDATE passkey_credentials SET sign_count = ?, backup_state = ?, last_used_at = ? WHERE id = ?`,
+		a.SignCount, boolInt(a.BackupState), time.Now().UTC().Format(time.RFC3339), hex.EncodeToString(credID)); err != nil {
+		h.fail(w, "update credential", err)
+		return "", webauthn.Assertion{}, false
+	}
+	return owner, a, true
+}
+
+func boolInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// ── the discover flow: a passkey signs in on its own ─────────────────
+
+// DiscoverBegin is POST /passkey/discover/begin: a challenge for a
+// caller nobody knows yet. The browser is asked for any credential it
+// holds for this relying party (allowCredentials empty), and the
+// credential it answers with says who.
+func (h *Handlers) DiscoverBegin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	h.begin(w, "", "discover")
+}
+
+// DiscoverFinish is POST /passkey/discover/finish: verify the assertion
+// against whichever credential it names, and admit its owner. With user
+// verification the session is minted outright, Method "passkey" — the
+// authenticator has proved possession and the person, and nothing
+// weaker need be asked. Without it, and with another factor to prove,
+// the sign-in is held at the Gate as Method "passkey-nouv" for that
+// factor to complete; with nothing else to prove, the person is signed
+// in at that weaker method for the app to nudge. The JSON answer's "to"
+// is where the page's JS should go next: the return_to, or the Gate's
+// confirm page.
+func (h *Handlers) DiscoverFinish(w http.ResponseWriter, r *http.Request) {
+	subject, a, ok := h.assert(w, r, "", "discover")
+	if !ok {
+		return
+	}
+	if h.cfg.Authorize != nil && !h.cfg.Authorize(subject) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "not admitted"})
+		return
+	}
+	sess := sessions.Session{Subject: subject, Method: methodFor(a), AuthTime: time.Now()}
+	to := sessions.SafeReturn(r, h.cfg.SignedInPath)
+	if !a.UserVerified && h.cfg.Gate != nil && h.cfg.OtherFactor != nil {
+		other, err := h.cfg.OtherFactor(subject)
+		if err != nil {
+			h.fail(w, "other factor", err)
+			return
+		}
+		if other {
+			// Hold writes a redirect for a page flow; this is a fetch,
+			// so catch it and hand the destination back as JSON.
+			hold := &heldResponse{ResponseWriter: w}
+			done, err := h.cfg.Gate.Hold(hold, r, sess)
+			if err != nil {
+				h.fail(w, "hold", err)
+				return
+			}
+			if done {
+				writeJSON(w, http.StatusOK, map[string]any{"ok": true, "to": hold.Header().Get("Location"), "pending": true})
+				return
+			}
+		}
+	}
+	if err := h.cfg.Sessions.SignIn(w, r, sess); err != nil {
+		h.fail(w, "mint session", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "to": to})
+}
+
+// heldResponse lets Gate.Hold set its cookie and name its redirect
+// without the redirect reaching the wire: the cookie header passes
+// through, the status and body are swallowed.
+type heldResponse struct {
+	http.ResponseWriter
+}
+
+func (h *heldResponse) WriteHeader(int)             {}
+func (h *heldResponse) Write(b []byte) (int, error) { return len(b), nil }
 
 // current resolves the calling session — valid is enough, fresh is
 // not required (a stale session is exactly who step-up serves).
@@ -338,6 +558,9 @@ func (h *Handlers) RegisterFinish(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ClientDataJSON    string `json:"clientDataJSON"`
 		AttestationObject string `json:"attestationObject"`
+		// Label is the name the person (or the page, from what it
+		// knows of the device) gives the credential. Optional.
+		Label string `json:"label"`
 	}
 	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.AttestationObject)
 	if err != nil {
@@ -354,16 +577,49 @@ func (h *Handlers) RegisterFinish(w http.ResponseWriter, r *http.Request) {
 		h.badRequest(w, r, err)
 		return
 	}
+	// The same credential id registering twice is the same authenticator
+	// re-enrolling, which changes nothing: the row it has is the row it
+	// keeps. A different person presenting it is refused — a credential
+	// belongs to whoever registered it first.
+	var owner string
+	switch err := h.cfg.DB.QueryRow(`SELECT subject FROM passkey_credentials WHERE id = ?`, hex.EncodeToString(cred.ID)).Scan(&owner); {
+	case err == nil && owner != sess.Subject:
+		h.badRequest(w, r, errors.New("credential is already registered"))
+		return
+	case err == nil:
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": hex.EncodeToString(cred.ID), "existing": true})
+		return
+	case err != sql.ErrNoRows:
+		h.fail(w, "lookup credential", err)
+		return
+	}
+	label := body.Label
+	if len(label) > 80 {
+		label = label[:80]
+	}
 	_, err = h.cfg.DB.Exec(
-		`INSERT OR REPLACE INTO passkey_credentials (id, subject, public_key, sign_count, created_at)
-		 VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO passkey_credentials (id, subject, public_key, sign_count, created_at, label, aaguid, user_verified, backup_eligible, backup_state)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		hex.EncodeToString(cred.ID), sess.Subject, cred.PublicKey, cred.SignCount,
-		time.Now().UTC().Format(time.RFC3339))
+		time.Now().UTC().Format(time.RFC3339), label, hex.EncodeToString(cred.AAGUID),
+		boolInt(cred.UserVerified), boolInt(cred.BackupEligible), boolInt(cred.BackupState))
 	if err != nil {
 		h.fail(w, "store credential", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+	// The ceremony just proved the new passkey, as surely as an
+	// assertion would: the session is rotated fresh at the tier the
+	// authenticator earned, so the change the person is about to make
+	// next needs no second step-up with the thing in their hand.
+	method := Method
+	if !cred.UserVerified {
+		method = MethodUnverified
+	}
+	if err := h.cfg.Sessions.SignIn(w, r, sessions.Session{Subject: sess.Subject, Method: method, AuthTime: time.Now()}); err != nil {
+		h.fail(w, "rotate session", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": hex.EncodeToString(cred.ID), "verified": cred.UserVerified})
 }
 
 // StepUpBegin is POST /passkey/stepup/begin: mint an assertion
@@ -402,51 +658,14 @@ func (h *Handlers) StepUpFinish(w http.ResponseWriter, r *http.Request) {
 		h.refuse(w)
 		return
 	}
-	var body struct {
-		ID             string `json:"id"`
-		ClientDataJSON string `json:"clientDataJSON"`
-		AuthData       string `json:"authenticatorData"`
-		Signature      string `json:"signature"`
-	}
-	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.ID, &body.AuthData, &body.Signature)
-	if err != nil {
-		h.badRequest(w, r, err)
-		return
-	}
-	credID, authData, signature := fields[0], fields[1], fields[2]
-
-	challenge, err := h.takeChallenge(clientDataJSON, sess.Subject, "stepup")
-	if err != nil {
-		h.badRequest(w, r, err)
-		return
-	}
-
-	var pub []byte
-	var count uint32
-	err = h.cfg.DB.QueryRow(
-		`SELECT public_key, sign_count FROM passkey_credentials WHERE id = ? AND subject = ?`,
-		hex.EncodeToString(credID), sess.Subject).Scan(&pub, &count)
-	if err != nil {
-		h.badRequest(w, r, errors.New("unknown credential"))
-		return
-	}
-
-	next, err := h.wa.Verify(webauthn.Credential{ID: credID, PublicKey: pub, SignCount: count},
-		challenge, clientDataJSON, authData, signature)
-	if err != nil {
-		h.badRequest(w, r, err)
-		return
-	}
-	if _, err := h.cfg.DB.Exec(
-		`UPDATE passkey_credentials SET sign_count = ? WHERE id = ?`,
-		next, hex.EncodeToString(credID)); err != nil {
-		h.fail(w, "update sign count", err)
+	_, a, ok := h.assert(w, r, sess.Subject, "stepup")
+	if !ok {
 		return
 	}
 
 	if err := h.cfg.Sessions.SignIn(w, r, sessions.Session{
 		Subject:  sess.Subject,
-		Method:   "passkey",
+		Method:   methodFor(a),
 		AuthTime: time.Now(),
 	}); err != nil {
 		h.fail(w, "rotate session", err)

@@ -47,11 +47,32 @@ key is public material: it verifies signatures and nothing else.
 func (c Config) Verify(cred Credential, challenge, clientDataJSON, authData, signature []byte) (uint32, error)
 ```
 
-Verifies an assertion and returns the new signature counter.
+Verifies an assertion and returns the new signature counter. It insists
+the authenticator verified the user: the strict reading, for a caller
+with one policy.
 
 A counter going backwards is refused: that is the cloned-authenticator
 signal the spec provides. An authenticator that never counts, reporting
 zero every time, is allowed, because plenty do.
+
+## Assert
+
+```go
+func (c Config) Assert(cred Credential, challenge, clientDataJSON, authData, signature []byte) (Assertion, error)
+```
+
+The same check with the verification flag returned instead of enforced.
+Presence is still required — an assertion nobody touched is not one —
+and everything else the authenticator flagged comes back in `Assertion`
+for the caller's policy to weigh: `SignCount` to persist, `UserVerified`
+(a PIN, a fingerprint, a face, as against presence alone), and
+`BackupEligible` and `BackupState` (a synced passkey, or one bound to a
+single device). A passkey asserted without user verification is a
+weaker proof, not a forged one, and which tier that earns is policy.
+
+`Register` records the same flags on the `Credential` it returns, along
+with the authenticator's `AAGUID` where the attestation carried one, so
+a credential can be rated and described from the day it is made.
 
 ## The errors
 

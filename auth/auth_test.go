@@ -638,8 +638,13 @@ func TestRecoveryStampsBeforeCreatingTheTable(t *testing.T) {
 		t.Fatal("auth/0002 was recorded without running: the backfill is stranded and every user is signed out")
 	}
 
-	// Step 3, then step 4.
+	// Step 3 — the migration the baseline stamped, run by hand; later
+	// sessions migrations are unstamped and Apply runs them itself in
+	// step 4 — then step 4.
 	for _, m := range sessions.Schema.All() {
+		if m.ID != "sessions/0001_init" {
+			continue
+		}
 		if err := d.G.Exec(m.SQL).Error; err != nil {
 			t.Fatal(err)
 		}

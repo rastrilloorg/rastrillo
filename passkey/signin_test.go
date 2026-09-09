@@ -79,7 +79,7 @@ func TestGateThenSignInMintsBothFactorSession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	// First factor verifies; the plugin offers the would-be session to
 	// the Gate, which trades it for a pending half-session.
@@ -155,7 +155,7 @@ func TestPendingHalfSessionExpires(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	_, pending := gate(t, e, sessions.Session{Subject: "42", Method: "password"}, "")
 	if pending == nil {
@@ -182,7 +182,7 @@ func TestStepUpChallengeCannotFinishSignIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	_, pending := gate(t, e, sessions.Session{Subject: "42", Method: "password"}, "")
 	if pending == nil {
@@ -217,7 +217,7 @@ func TestSignInPairRefusesWithoutGate(t *testing.T) {
 	}
 	cookie := e.signIn(t, "42")
 	a, _ := authtest.New()
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 	_, pending := gate(t, e, sessions.Session{Subject: "42", Method: "password"}, "")
 	if w := postJSON(t, h.SignInBegin, pending, nil); w.Code != http.StatusForbidden {
 		t.Fatalf("SignInBegin with no Gate: %d, want 403", w.Code)

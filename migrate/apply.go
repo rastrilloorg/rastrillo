@@ -31,6 +31,11 @@ const LedgerDDL = `CREATE TABLE IF NOT EXISTS rastrillo_migrations (
 type Result struct {
 	Applied []string
 	Skipped int
+	// Adopted says a database with tables but no ledger was recognised
+	// and stamped. Applied is then usually empty — adoption runs no
+	// DDL against a live database — except for migrations marked
+	// PostAdoption, which are exactly the ones adoption exists to let
+	// run.
 	Adopted bool
 }
 
@@ -79,14 +84,22 @@ func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error) {
 	}
 
 	if len(applied) == 0 {
-		adopted, err := adopt(ctx, conn, migrations)
+		stamped, err := adopt(ctx, conn, migrations)
 		if err != nil {
 			return res, err
 		}
-		if adopted {
+		if stamped == len(migrations) {
 			res.Adopted = true
 			res.Skipped = len(migrations)
 			return res, nil
+		}
+		if stamped > 0 {
+			// Adopted through the base set; the post-adoption
+			// migrations are pending and run below like any other.
+			res.Adopted = true
+			if applied, err = readLedger(ctx, conn); err != nil {
+				return res, err
+			}
 		}
 	}
 

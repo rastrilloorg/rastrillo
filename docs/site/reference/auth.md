@@ -123,3 +123,16 @@ single use.
 An unknown hash, a wrong purpose and an expired row all come back as the
 same "not ok"; telling them apart would be an oracle. The row is deleted
 even when expired, because a presented token is spent either way.
+## SpendLinks
+
+```go
+func (a *Auth) SpendLinks(ctx context.Context, address string) (int, error)
+```
+
+Deletes every outstanding sign-in link for an address and returns how
+many it spent. A link is a credential waiting to be used; once the
+person is in by any door — this one, a password, a passkey on a
+remembered browser — the ones still in their inbox are a credential
+nobody needs, and an app calls this at every sign-in so a stolen inbox
+cannot cash one later.
+

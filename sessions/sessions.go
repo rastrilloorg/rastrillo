@@ -53,7 +53,10 @@ type Config struct {
 	// attributes and nothing else: sessions does not redirect off of it.
 	Origin string
 
-	// TTL is how long a minted session lives. Default 30 days.
+	// TTL is how long a minted session lives from the moment it is
+	// minted, however much it is used: the absolute lifetime. Default
+	// 30 days. An idle lifetime is the app's to hold — it knows when a
+	// browser was last seen; this table's shape is frozen by adoption.
 	TTL time.Duration
 
 	// SigninPath is where Require sends a signed-out GET/HEAD request.
