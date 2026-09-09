@@ -195,3 +195,22 @@ func TestRecoveryGetRefused(t *testing.T) {
 		t.Fatalf("GET recovery: %d, want 405", w.Code)
 	}
 }
+
+func TestRecoveryMissesStrikeThenExhaust(t *testing.T) {
+	e := newEnv(t)
+	enrolledWithCodes(t, e, "alice")
+	_, pending := hold(t, e, sessions.Session{Subject: "alice", Method: "magiclink"}, "/")
+	for i := 0; i < 4; i++ {
+		w := postRecovery(t, e, pending, "aaaaa-aaaaa")
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin/confirm?recovery=failed" {
+			t.Fatalf("miss %d: %d -> %q, want the failed redirect with the half-session alive", i+1, w.Code, w.Header().Get("Location"))
+		}
+	}
+	w := postRecovery(t, e, pending, "aaaaa-aaaaa")
+	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin/confirm?recovery=exhausted" {
+		t.Fatalf("fifth miss: %d -> %q, want the exhausted redirect", w.Code, w.Header().Get("Location"))
+	}
+	if _, ok := e.g.Pending(withPending(pending)); ok {
+		t.Fatal("half-session survived five misses")
+	}
+}

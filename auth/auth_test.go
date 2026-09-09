@@ -817,3 +817,24 @@ func TestSubjectForErrorRefusesSignin(t *testing.T) {
 		t.Errorf("sessions rows = %d, want 0 — no session may exist without a subject", n)
 	}
 }
+
+func TestSpendLinksClearsTheAddressAndNobodyElse(t *testing.T) {
+	a, _ := newTestAuth(t, nil)
+	beginSignin(t, a, "alice@example.com")
+	beginSignin(t, a, "alice@example.com")
+	beginSignin(t, a, "bob@example.com")
+	n, err := a.SpendLinks(context.Background(), "Alice@Example.com")
+	if err != nil {
+		t.Fatalf("SpendLinks: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("SpendLinks spent %d, want 2", n)
+	}
+	var left int
+	if err := a.cfg.DB.QueryRow(`SELECT count(*) FROM auth_links`).Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+	if left != 1 {
+		t.Fatalf("%d links left, want bob's 1", left)
+	}
+}

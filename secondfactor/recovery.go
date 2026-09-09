@@ -132,6 +132,15 @@ func (g *Gate) SignInRecovery(w http.ResponseWriter, r *http.Request) {
 		`DELETE FROM secondfactor_recovery_codes WHERE code_hash = ? AND subject = ? RETURNING subject`,
 		sessions.HashToken(code), p.Subject).Scan(&redeemed); err != nil {
 		g.cfg.Logger.Warn("rastrillo/secondfactor: recovery code refused")
+		// A miss is a strike, the same as a wrong authenticator code:
+		// the codes are not guessable inside the window, but a secret
+		// that is never rate limited is a secret somebody will one day
+		// find a reason to hammer, and five misses in a row is not how
+		// a person reads a code off a printout.
+		if err := g.Strike(w, p); err != nil {
+			http.Redirect(w, r, g.cfg.ConfirmPath+"?recovery=exhausted", http.StatusSeeOther)
+			return
+		}
 		http.Redirect(w, r, failedTo, http.StatusSeeOther)
 		return
 	}

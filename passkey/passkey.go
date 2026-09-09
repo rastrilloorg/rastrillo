@@ -104,6 +104,13 @@ type Config struct {
 	// the sign-in pair refuse: without a Gate nothing can be pending.
 	Gate *secondfactor.Gate
 
+	// Refused, when set, hears about every ceremony that failed
+	// verification, with the reason the caller is never told — so an
+	// app can write "a passkey was refused: origin does not match" to
+	// the account's own security activity. It runs before the response
+	// is written and must not write one itself.
+	Refused func(r *http.Request, err error)
+
 	Logger *slog.Logger
 }
 
@@ -184,14 +191,14 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.ID, &body.AuthData, &body.Signature)
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	credID, authData, signature := fields[0], fields[1], fields[2]
 
 	challenge, err := h.takeChallenge(clientDataJSON, p.Subject, "signin")
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 
@@ -201,14 +208,14 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 		`SELECT public_key, sign_count FROM passkey_credentials WHERE id = ? AND subject = ?`,
 		hex.EncodeToString(credID), p.Subject).Scan(&pub, &count)
 	if err != nil {
-		h.badRequest(w, errors.New("unknown credential"))
+		h.badRequest(w, r, errors.New("unknown credential"))
 		return
 	}
 
 	next, err := h.wa.Verify(webauthn.Credential{ID: credID, PublicKey: pub, SignCount: count},
 		challenge, clientDataJSON, authData, signature)
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	if _, err := h.cfg.DB.Exec(
@@ -222,7 +229,7 @@ func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
 	// a raced (or replayed) finish already did.
 	if err := h.cfg.Gate.Complete(w, r, p, "passkey"); err != nil {
 		if errors.Is(err, secondfactor.ErrConsumed) {
-			h.badRequest(w, err)
+			h.badRequest(w, r, err)
 			return
 		}
 		h.fail(w, "mint session", err)
@@ -334,17 +341,17 @@ func (h *Handlers) RegisterFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.AttestationObject)
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	challenge, err := h.takeChallenge(clientDataJSON, sess.Subject, "register")
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	cred, err := h.wa.Register(challenge, clientDataJSON, fields[0])
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	_, err = h.cfg.DB.Exec(
@@ -403,14 +410,14 @@ func (h *Handlers) StepUpFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	clientDataJSON, fields, err := decodeCeremony(r, &body, &body.ClientDataJSON, &body.ID, &body.AuthData, &body.Signature)
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	credID, authData, signature := fields[0], fields[1], fields[2]
 
 	challenge, err := h.takeChallenge(clientDataJSON, sess.Subject, "stepup")
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 
@@ -420,14 +427,14 @@ func (h *Handlers) StepUpFinish(w http.ResponseWriter, r *http.Request) {
 		`SELECT public_key, sign_count FROM passkey_credentials WHERE id = ? AND subject = ?`,
 		hex.EncodeToString(credID), sess.Subject).Scan(&pub, &count)
 	if err != nil {
-		h.badRequest(w, errors.New("unknown credential"))
+		h.badRequest(w, r, errors.New("unknown credential"))
 		return
 	}
 
 	next, err := h.wa.Verify(webauthn.Credential{ID: credID, PublicKey: pub, SignCount: count},
 		challenge, clientDataJSON, authData, signature)
 	if err != nil {
-		h.badRequest(w, err)
+		h.badRequest(w, r, err)
 		return
 	}
 	if _, err := h.cfg.DB.Exec(
@@ -482,9 +489,13 @@ func (h *Handlers) refuse(w http.ResponseWriter) {
 
 // badRequest answers a ceremony that failed verification. One generic
 // message: which check failed (challenge, origin, signature, counter)
-// is logged for the operator, never enumerated to the caller.
-func (h *Handlers) badRequest(w http.ResponseWriter, err error) {
+// is logged for the operator and handed to Config.Refused, never
+// enumerated to the caller.
+func (h *Handlers) badRequest(w http.ResponseWriter, r *http.Request, err error) {
 	h.cfg.Logger.Warn("rastrillo/passkey: ceremony refused", "err", err)
+	if h.cfg.Refused != nil {
+		h.cfg.Refused(r, err)
+	}
 	writeJSON(w, http.StatusBadRequest, map[string]string{"error": "ceremony failed"})
 }
 
