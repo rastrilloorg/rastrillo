@@ -82,11 +82,12 @@ and macOS scaffold builds. Adoption runs each app's existing Swift suite
 and native builds. Physical-device installation and actual push delivery
 remain distinct checks, not implied by browser or compile gates.
 
-New kit repositories begin with an empty root commit on their feature
-branch. Amadan refuses an unborn default branch; the operator must seed
-`main` from that empty commit before implementation lands through
-`amadan branch merge`. No implementation is pushed directly to `main`.
-Consumer branches wait until their pinned native revision is landed.
+New kit repositories began with empty root commits on their feature
+branches. Amadan refuses an unborn default branch, so repository setup
+initialised `main` from each verified empty root before implementation
+landed through `amadan branch merge`. No implementation was pushed directly
+to `main`. Consumer branches wait until their pinned native revision is
+landed.
 
 ## Offline acceptance gate
 

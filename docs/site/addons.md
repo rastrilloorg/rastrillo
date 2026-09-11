@@ -150,6 +150,8 @@ can be used without adding a server-framework dependency.
 
 ### PWA — installation and an offline fallback
 
+**Status:** released, v0.1.0.
+
 **Source and Go module:** `amadan.net/rastrillo/pwa` ·
 [Repository](https://amadan.net/rastrillo/pwa)
 
@@ -162,6 +164,7 @@ update cannot silently discard edits.
 Install a reviewed revision, then read the bundled skill:
 
 ```sh
+go get amadan.net/rastrillo/pwa@v0.1.0
 cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/pwa)/SKILL.md"
 ```
 
@@ -172,6 +175,8 @@ not provision push subscriptions or send notifications; use aviso's skill
 for those steps.
 
 ### Native — shared components and an Apple companion scaffold
+
+**Status:** released, v0.1.0; adopted by Keymail and Ocho.
 
 **Swift package:** `RastrilloNative` ·
 [Repository](https://amadan.net/rastrillo/native)
