@@ -141,6 +141,79 @@ does not make the app installable — the manifest is the app's
 identity — but it ships the recipe, because iOS delivers push only to
 a Home Screen app.
 
+## Client kits
+
+Add a client kit when the app needs installation or a native companion.
+Each lives in its own repository, with its own skill and release schedule.
+The web framework does not import either kit. Browser and Swift helpers
+can be used without adding a server-framework dependency.
+
+### PWA — installation and an offline fallback
+
+**Status:** released, v0.1.0.
+
+**Source and Go module:** `amadan.net/rastrillo/pwa` ·
+[Repository](https://amadan.net/rastrillo/pwa)
+
+Use the kit to serve an app manifest, register one service worker and show
+a public offline page when navigation fails. Its worker never stores
+application pages, API responses, keys or pending writes. Waiting updates
+are reported to the app; activation and reloading remain explicit so an
+update cannot silently discard edits.
+
+Install a reviewed revision, then read the bundled skill:
+
+```sh
+go get amadan.net/rastrillo/pwa@v0.1.0
+cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/pwa)/SKILL.md"
+```
+
+The repository's `examples/basic` is the complete wiring example, including
+manifest icons and aviso's worker helper. Add aviso's handlers to the same
+worker and use the same registration for push enrolment. The example does
+not provision push subscriptions or send notifications; use aviso's skill
+for those steps.
+
+### Native — shared components and an Apple companion scaffold
+
+**Status:** released, v0.1.0; adopted by Keymail and Ocho.
+
+**Swift package:** `RastrilloNative` ·
+[Repository](https://amadan.net/rastrillo/native)
+
+Add the repository URL as a Swift package dependency pinned to a reviewed
+revision. Read `SKILL.md` from that checkout. The initial package supports
+iOS 17+ and macOS 14+; its `examples/companion` supplies an app-owned SwiftUI
+starting point for both platforms.
+
+`CoalescedRunner` shares the refresh gate previously copied between
+Keymail and Eleven/Ocho. A burst of refresh requests queues one trailing
+pass, and callers wait for fresh data before resuming. Use one runner per
+operation and account.
+
+The native skill includes optional Go Mobile binding guidance. This first
+kit does not ship Android adapters, account linking, native push or a
+cross-platform UI renderer. Those components need their own extraction and
+consumer proof before joining the package.
+
+Prefer fully native UI so menus, right-click actions, links and navigation
+work as people expect on their platform. For complex apps, use native
+navigation around selected webview screens. Consider a shared manifest of
+destinations and commands rendered separately for web and native; the kit's
+architecture guide describes that approach, but no dual-target compiler
+ships yet. The existing resource manifests still generate web CRUD only.
+
+### Offline data
+
+For offline reading or editing, define the app's local data and sync
+contract first. The PWA fallback is not an offline data engine. A reusable
+offline kit must prove restart recovery, duplicate-safe retries, account
+isolation, migrations and conflict handling in a second, different app.
+Encrypted offline storage also needs explicit locking, key recovery and
+notification-preview policy. Reuse the existing crypto and keyring
+contracts where compatible; do not import an app's message policy into a
+general storage library.
+
 ## Publishing an addon
 
 Follow the four rules above, then serve `SKILL.md` at a stable URL and

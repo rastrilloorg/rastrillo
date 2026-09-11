@@ -14,6 +14,14 @@ published module (Go excludes nested modules from a zip), so read it
 there, never in your checkout. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
+Optional clients: `amadan.net/rastrillo/pwa` adds installation and a public
+offline fallback; `amadan.net/rastrillo/native` ships Swift components and
+an Apple companion scaffold, with optional Go Mobile guidance. Prefer native
+UI with platform conventions; use a native shell around selected webviews
+when complexity warrants it. Load the chosen kit's own `SKILL.md`. Neither
+supplies offline data synchronisation.
+Discovery and installation: docs/site/addons.md
+
 ## 0. Start here
 
 ```sh
