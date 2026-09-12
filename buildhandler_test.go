@@ -283,6 +283,12 @@ func TestBuildHandlerSetsSecurityHeaders(t *testing.T) {
 		if got := hd.Get("Referrer-Policy"); got != "strict-origin-when-cross-origin" {
 			t.Errorf("%s: Referrer-Policy = %q, want strict-origin-when-cross-origin", path, got)
 		}
+		// get's request has no TLS state, which is the point: behind the
+		// CARLOS edge TLS ends before the process, so a header gated on
+		// r.TLS would never reach a production browser.
+		if got := hd.Get("Strict-Transport-Security"); got != "max-age=31536000" {
+			t.Errorf("%s: Strict-Transport-Security = %q, want max-age=31536000", path, got)
+		}
 	}
 }
 
