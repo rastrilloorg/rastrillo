@@ -8,6 +8,50 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## v0.27.0
+
+Stricter security headers, and a new package for passing a signed-in identity
+between origins. The first section can change how an existing app looks: read
+it before you upgrade.
+
+### Changed — the default CSP blocks inline styles
+
+The baseline `style-src` no longer includes `'unsafe-inline'`. The browser now
+drops any `style` attribute or `<style>` block in your templates, with no
+error on the page. Move those styles into your stylesheet. To keep them
+working while you do, set `Options.CSP` with `'unsafe-inline'` back in
+`style-src`.
+
+The list grid is where most apps will see it:
+`<div rst-card style="--rst-cols: …">` falls back to one column. Give the card
+a class and set `--rst-cols` in your stylesheet instead.
+
+pow's honeypot still uses an inline style, and the baseline allows it by its
+hash. If you set `Options.CSP`, add `'unsafe-hashes'` and
+`pow.HoneypotStyleHash` to your `style-src`, or the trap field shows on your
+public forms.
+
+### Added — `Strict-Transport-Security` on every response
+
+Every response now carries `Strict-Transport-Security: max-age=31536000`, with
+no `includeSubDomains` or `preload`. Browsers ignore it over plain HTTP, so
+local development is unaffected. To change it, set your own header in a
+handler or `Options.Wrap`.
+
+### Added — `rastrillo/assertion`, passing an identity between origins
+
+`assertion.NewVerifier` checks a signed assertion from one exact HTTPS origin
+to another: signature, issuer, audience, key, claims and expiry. Replay
+prevention and session creation stay in your app. See
+[assertion](/docs/reference/assertion).
+
+### Added — aviso and two client kits in the addons directory
+
+The [addons](/docs/addons) page now lists aviso for Web Push, the PWA kit for
+installation and an offline fallback, and the native kit for Swift components
+and an Apple companion app. Each is its own module with its own skill. The
+framework imports none of them.
+
 ## v0.26.0
 
 Two new subsystems — a front door for public forms, and mail that can go to a
