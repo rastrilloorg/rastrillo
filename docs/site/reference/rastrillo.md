@@ -69,9 +69,9 @@ before falling back to `:8080`.
 **`Locales`**, **`DefaultLocale`**, **`LocaleFS`** — the locale set and
 its catalogs.
 
-**`CSP`** — swaps the baseline content-security policy. The framework
-sets baseline security headers outermost, and your own `Set` or `Del`
-wins.
+**`CSP`** — swaps the baseline content-security policy. The baseline
+allows no inline styles or scripts. The framework sets baseline security
+headers outermost, and your own `Set` or `Del` wins.
 
 **`NextDue`** — answers the activator's `GET /api/next-due` scheduled-wake
 poll. Unset, the route does not exist.

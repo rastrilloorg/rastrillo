@@ -277,6 +277,21 @@ a sibling `rst-box-head` before it:
 `rst-form` is a hook the form partials assume, not a container: it draws
 nothing on its own, so it needs a `rst-box` (or the bare page) around it.
 
+### Set a grid's columns in your stylesheet
+
+A `rst-card` of `rst-lrow` rows takes its columns from `--rst-cols`. Set
+it with a class in your own stylesheet, not a `style` attribute. The
+baseline content-security policy blocks inline styles, and the rows fall
+back to one column.
+
+```html
+<div rst-card class="orders">…</div>
+```
+
+```css
+.orders { --rst-cols: 2fr 110px 32px; }
+```
+
 ### Screens stack vertically
 
 A screen is a column: page-header, then section-header + card, then the

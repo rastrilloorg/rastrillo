@@ -94,10 +94,11 @@ a screen-reader user, or anyone with a password manager, fills the trap
 and has a real submission silently discarded behind a cheerful success
 page.
 
-The baseline CSP already allows all this: the worker is same-origin, so
-`default-src 'self'` covers it, and the honeypot's inline `style`
-attribute is covered by `style-src 'self' 'unsafe-inline'`. If you have
-replaced the policy wholesale, keep both.
+The baseline CSP already allows all this. The worker is same-origin, so
+`default-src 'self'` covers it. The honeypot's inline `style` is allowed
+by its hash, which the baseline lists next to `'unsafe-hashes'`. If you
+replace the policy, keep `'unsafe-hashes'` and `pow.HoneypotStyleHash`
+in `style-src`, or the trap field shows on your form.
 
 ## Checking a submission
 

@@ -103,14 +103,15 @@
 // display: grid on the table and its rows, which throws away the table
 // semantics the conversion would be for. Reach for a <table> when the
 // content is a data table you want announced as one; this is for list
-// screens whose rows are links. The card sets its columns
-// once with the --rst-cols custom property (trailing 32px reserved for a
-// kebab); rows only choose cells. A head row carries rst-lrow="head"; a
-// data row's identity cell is rst-nm, a column hidden below 800px is
-// rst-m-hide, and the per-row overflow menu is a native
-// <details rst-row-menu> — no JavaScript:
+// screens whose rows are links. The card sets its columns once: give it
+// a class and set the --rst-cols custom property in your stylesheet
+// (trailing 32px reserved for a kebab), never in a style attribute,
+// which the default CSP blocks. Rows only choose cells. A head row
+// carries rst-lrow="head"; a data row's identity cell is rst-nm, a
+// column hidden below 800px is rst-m-hide, and the per-row overflow
+// menu is a native <details rst-row-menu> — no JavaScript:
 //
-//	<div rst-card style="--rst-cols: 2fr 110px 32px">
+//	<div rst-card class="orders">
 //	  <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
 //	  <div rst-lrow>
 //	    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
@@ -120,6 +121,8 @@
 //	    </details>
 //	  </div>
 //	</div>
+//
+//	.orders { --rst-cols: 2fr 110px 32px; }
 //
 // dropdown — the details/summary menu vocabulary behind header overflow
 // menus and a list-bar's Filter/Sort controls. Only one menu is open at

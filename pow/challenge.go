@@ -134,7 +134,8 @@ func (c Challenge) expiry(maxAge time.Duration) time.Time {
 // It is positioned off-screen with an inline style rather than a class,
 // so there is no stylesheet to vendor and nothing for an app's CSS to
 // fail to carry. Not display:none: a hidden input is a shape some bots
-// learned to skip.
+// learned to skip. The style is fixed so that a CSP can admit it by
+// hash — see HoneypotStyleHash.
 func (c Challenge) Fields() template.HTML {
 	var b strings.Builder
 	hidden := func(name, value string) {
@@ -147,12 +148,28 @@ func (c Challenge) Fields() template.HTML {
 	hidden(fieldSeal, c.Seal)
 	fmt.Fprintf(&b, "<input type=\"hidden\" name=\"%s\" value=\"\" data-pow-counter>\n", fieldCounter)
 	fmt.Fprintf(&b,
-		"<div aria-hidden=\"true\" style=\"position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden\">"+
+		"<div aria-hidden=\"true\" style=\"%s\">"+
 			"<label for=\"%s\">Leave this field empty</label>"+
 			"<input type=\"text\" id=\"%s\" name=\"%s\" tabindex=\"-1\" autocomplete=\"off\"></div>\n",
-		fieldHoneypot, fieldHoneypot, fieldHoneypot)
+		honeypotStyle, fieldHoneypot, fieldHoneypot, fieldHoneypot)
 	return template.HTML(b.String())
 }
+
+// honeypotStyle is the honeypot wrapper's inline style. Changing one
+// byte of it without recomputing HoneypotStyleHash makes a strict CSP
+// block it, and the trap renders in plain view.
+const honeypotStyle = "position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"
+
+// HoneypotStyleHash is the CSP hash source that admits the honeypot's
+// inline style, for a policy whose style-src has no 'unsafe-inline'.
+// A hash matches a style attribute only alongside 'unsafe-hashes':
+//
+//	style-src 'self' 'unsafe-hashes' 'sha256-…'
+//
+// rastrillo's default policy already carries both. An app that replaces
+// the policy through Options.CSP must restate them, or its public forms
+// show the trap field.
+const HoneypotStyleHash = "'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='"
 
 // FormAttrs renders the attributes browser/pow.js looks for on the form
 // element:

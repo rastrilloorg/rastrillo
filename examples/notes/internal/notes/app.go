@@ -153,12 +153,22 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		w.Write(ui.TokensCSS())
 		w.Write([]byte("\n"))
 		w.Write(theme)
+		w.Write([]byte(notesCSS))
 	})
 
 	mux := http.NewServeMux()
 	mux.Handle("/", r)
 	return mux, nil
 }
+
+// notesCSS is the app's own stylesheet, served last so it wins ties with
+// the theme. It holds what would otherwise be a style attribute: the
+// framework's default CSP blocks those, so an inline style="display:inline"
+// on the delete form would be dropped and the button would fall onto its
+// own line.
+const notesCSS = `
+nav form { display: inline; }
+`
 
 // lookupUser is password.Config.Lookup: scope-free by design — a
 // visitor signing in isn't owned by anyone yet, so there is nothing
