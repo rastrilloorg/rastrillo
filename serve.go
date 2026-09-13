@@ -145,8 +145,9 @@ type Options struct {
 	// CSP replaces the value of the Content-Security-Policy header the
 	// framework sets on every response (see the package's default
 	// below: same-origin everything, no inline styles but pow's
-	// honeypot by hash, framing denied). Empty
-	// keeps the default. The other baseline headers have no Options
+	// honeypot by hash, framing denied). Empty keeps the default. The
+	// other baseline headers — nosniff, frame denial, referrer policy, a
+	// one-year host-only HSTS — have no Options
 	// field on purpose: all of them — this one included — are set
 	// before any app code runs, so an app that wants different values
 	// sets (or deletes) its own in a handler or Options.Wrap middleware
@@ -423,6 +424,14 @@ func securityHeaders(csp string, next http.Handler) http.Handler {
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		// Unconditional, not gated on r.TLS: behind the CARLOS edge TLS
+		// ends before the process, so r.TLS is nil in production and a
+		// gate would never send it. That is safe because browsers ignore
+		// HSTS received over plain HTTP (RFC 6797 §8.1), so a local
+		// `-addr :8080` is unaffected. No includeSubDomains or preload:
+		// both commit hosts beyond this app's own, which is the app
+		// owner's call — set a wider value in a handler or Options.Wrap.
+		h.Set("Strict-Transport-Security", "max-age=31536000")
 		next.ServeHTTP(w, r)
 	})
 }
