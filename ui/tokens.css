@@ -979,7 +979,8 @@ body {
 .rst-box > .rst-detail, [rst-box] > [rst-detail] { margin: 0; }
 
 /* The list grid — the real data-table vocabulary. The card sets the
-   columns once (--rst-cols, inline, trailing 32px for the kebab);
+   columns once (--rst-cols, from a class in the app's stylesheet —
+   the default CSP blocks inline styles — trailing 32px for the kebab);
    rows only choose cells. Hover fill only on rows that contain the
    identity link — a display-only row must never look clickable.
    Like .rst-list, .rst-card has no padding: rows only. Anything that

@@ -2,6 +2,8 @@ package pow
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -326,6 +328,22 @@ func TestFieldsCarriesTheHoneypotContract(t *testing.T) {
 		if !strings.Contains(html, `name="`+name+`"`) {
 			t.Errorf("Fields does not render %s", name)
 		}
+	}
+}
+
+func TestHoneypotStyleHashMatchesTheStyle(t *testing.T) {
+	// A CSP hash admits one exact byte string. Edit the style without
+	// the hash and the honeypot renders in plain view under the default
+	// policy — a visible "Leave this field empty" box on every public
+	// form, and nothing in a Go test that would otherwise say so.
+	sum := sha256.Sum256([]byte(honeypotStyle))
+	want := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	if HoneypotStyleHash != want {
+		t.Errorf("HoneypotStyleHash = %s, want %s", HoneypotStyleHash, want)
+	}
+	html := string(newTestGuard(t, nil).Issue(time.Now()).Fields())
+	if !strings.Contains(html, `style="`+honeypotStyle+`"`) {
+		t.Errorf("Fields does not render the hashed style byte for byte:\n%s", html)
 	}
 }
 

@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"amadan.net/rastrillo/rastrillo/pow"
 )
 
 // captured records what the app mux's handler saw for a request that
@@ -283,6 +285,24 @@ func TestBuildHandlerSetsSecurityHeaders(t *testing.T) {
 		if got := hd.Get("Referrer-Policy"); got != "strict-origin-when-cross-origin" {
 			t.Errorf("%s: Referrer-Policy = %q, want strict-origin-when-cross-origin", path, got)
 		}
+	}
+}
+
+// The default style-src admits the framework's own stylesheets and the
+// one inline style the framework emits — pow's honeypot, by hash — and
+// nothing else. 'unsafe-inline' there is what surface scanners flag, and
+// it is the gap CSS-based exfiltration uses when markup injection gets
+// through (GitHub #147).
+func TestDefaultCSPStyleSrcAllowsOnlyThePowHoneypot(t *testing.T) {
+	var styleSrc string
+	for _, d := range strings.Split(defaultCSP, ";") {
+		if f := strings.Fields(d); len(f) > 0 && f[0] == "style-src" {
+			styleSrc = strings.Join(f[1:], " ")
+		}
+	}
+	want := "'self' 'unsafe-hashes' " + pow.HoneypotStyleHash
+	if styleSrc != want {
+		t.Errorf("default style-src = %q, want %q", styleSrc, want)
 	}
 }
 

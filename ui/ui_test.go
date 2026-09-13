@@ -3303,3 +3303,34 @@ func TestTheUIDrivesRunWholeInTheBrowserJob(t *testing.T) {
 	}
 	checkBrowserGate(t, workflow, yml)
 }
+
+// The framework's default CSP has no 'unsafe-inline' for styles (GitHub
+// #147), so a style attribute or <style> element in a partial or a shell
+// would be silently dropped by the browser in every app that keeps the
+// default — a layout that looks right in a test render and wrong in
+// production. The markup is read as source rather than rendered so that
+// a branch no test data happens to reach is still covered.
+func TestPartialsAndLayoutsEmitNoInlineStyles(t *testing.T) {
+	inline := regexp.MustCompile(`(?i)(\sstyle\s*=|<style[\s>])`)
+	for _, tc := range []struct {
+		dir  string
+		fsys fs.FS
+	}{
+		{"partials", partialsFS},
+		{"layouts", layoutsFS},
+	} {
+		ents, err := fs.ReadDir(tc.fsys, tc.dir)
+		if err != nil {
+			t.Fatalf("ReadDir(%s): %v", tc.dir, err)
+		}
+		for _, e := range ents {
+			b, err := fs.ReadFile(tc.fsys, tc.dir+"/"+e.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if m := inline.Find(b); m != nil {
+				t.Errorf("%s/%s carries %q, which the default CSP blocks: set it from tokens.css instead", tc.dir, e.Name(), m)
+			}
+		}
+	}
+}

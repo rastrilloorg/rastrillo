@@ -261,8 +261,9 @@ submission's whole redirect chain, so `Begin`'s 303 out to the address's
 keymail server is refused — as is any POST of yours that lands
 off-origin. `Options.CSP` replaces the policy wholesale, so restate it
 with the origin appended: `default-src 'self'; style-src 'self'
-'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri
-'self'; form-action 'self' https://keymail.dev`. Only listed servers
+'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=';
+img-src 'self' data:; frame-ancestors 'none'; base-uri 'self';
+form-action 'self' https://keymail.dev`. Only listed servers
 work — a federated address on another keymail host is still refused.
 
 **Public forms** (`rastrillo/pow`: the front door for anything the
@@ -366,6 +367,9 @@ on its own URL at step 2, never a modal fired from the row.
   `rst-danger`, `rst-cell-mut`. `rastrillo markup --fix` converts an app
   written the old way. `rst-list`/`rst-card` hold rows only (unpadded
   by design).
+  No `style` attributes and no `<style>` blocks: the baseline CSP blocks
+  them, and the browser drops them without an error. For a grid card,
+  give `rst-card` a class and set `--rst-cols` in your stylesheet.
   Forms, prose, links go in `rst-box` with a sibling `rst-box-head`.
   **A labelled control is never hand-rolled**: `field-text`,
   `field-textarea`, `field-select` (and the date kinds) inside `<form

@@ -183,3 +183,55 @@ func TestBrowserNormaliserMatchesGo(t *testing.T) {
 		}
 	}
 }
+
+// honeypotRig serves one form carrying Fields through rastrillo.Handler,
+// so the page gets the Content-Security-Policy an app really sends:
+// the default when csp is empty, a replacement otherwise.
+func honeypotRig(t *testing.T, csp string) *harness.Rig {
+	t.Helper()
+	return harness.New(t, func(string) http.Handler {
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprintf(w, "<!doctype html><title>pow</title><form method=post>%s</form>",
+				pow.Challenge{}.Fields())
+		})
+		h, closeDB, err := rastrillo.Handler(rastrillo.Options{Mux: mux, CSP: csp})
+		if err != nil {
+			t.Fatalf("rastrillo.Handler: %v", err)
+		}
+		t.Cleanup(func() { closeDB() })
+		return h
+	})
+}
+
+// honeypotPosition is the computed position of the honeypot's wrapper:
+// "absolute" when its inline style was applied, "static" when the page's
+// policy blocked it and the trap is sitting in plain view.
+const honeypotPosition = `getComputedStyle(document.querySelector('[aria-hidden="true"]')).position`
+
+func TestBrowserHoneypotStaysOffScreenUnderTheDefaultCSP(t *testing.T) {
+	// The default policy has no 'unsafe-inline' for styles, so the
+	// honeypot's style attribute survives only because its hash is
+	// listed. If the two ever disagree a person sees a "Leave this field
+	// empty" box on every public form — and some will fill it in.
+	rig := honeypotRig(t, "")
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	var got string
+	rig.Run(chromedp.Evaluate(honeypotPosition, &got))
+	if got != "absolute" {
+		t.Fatalf("honeypot wrapper position = %q under the default CSP, want absolute", got)
+	}
+}
+
+func TestBrowserHoneypotStyleIsBlockedWithoutItsHash(t *testing.T) {
+	// The control: without this, the test above would pass just as well
+	// against a browser that ignored style-src for attributes entirely.
+	rig := honeypotRig(t, "default-src 'self'; style-src 'self'")
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	var got string
+	rig.Run(chromedp.Evaluate(honeypotPosition, &got))
+	if got != "static" {
+		t.Fatalf("honeypot wrapper position = %q under style-src 'self', want static (blocked)", got)
+	}
+}
