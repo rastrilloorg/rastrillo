@@ -6,10 +6,11 @@ import (
 	"os"
 	"strconv"
 
-	"amadan.net/rastrillo/rastrillo/money"
 	"math"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/money"
 )
 
 func TestParseCents(t *testing.T) {
@@ -171,7 +172,7 @@ func TestParseCentsGrammarCompatibility(t *testing.T) {
 }
 
 func TestMoneyCompatibilityCorpus(t *testing.T) {
-	data, err := os.ReadFile("../money/testdata/decimal.json")
+	data, err := os.ReadFile("testdata/decimal.json")
 	if err != nil {
 		t.Fatal(err)
 	}

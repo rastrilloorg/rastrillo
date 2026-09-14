@@ -13,10 +13,7 @@ import (
 
 // FormatCents renders cents as a dollar string for a DISPLAY context.
 //
-// It writes a dollar sign and nothing else: an
-// app whose money is not dollars formats its own. That is a real gap
-// rather than a considered minimalism — see the spec — and the reason
-// this doc says so out loud is that the function name does not.
+// It writes a dollar sign; apps whose money is not dollars format their own.
 // (show.html's Fields/Title, index.GET's Rows) — the only money
 // formatting a generated template ever sees there; a template never
 // does money math itself. The sign, if any, is written once up front
