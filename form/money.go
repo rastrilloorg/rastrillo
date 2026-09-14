@@ -6,15 +6,14 @@
 package form
 
 import (
-	"fmt"
-	"strconv"
 	"strings"
+
+	"amadan.net/rastrillo/rastrillo/money"
 )
 
 // FormatCents renders cents as a dollar string for a DISPLAY context.
 //
-// It writes a dollar sign and nothing else: this package has no notion
-// of a currency, and neither does anything else in the framework, so an
+// It writes a dollar sign and nothing else: an
 // app whose money is not dollars formats its own. That is a real gap
 // rather than a considered minimalism — see the spec — and the reason
 // this doc says so out loud is that the function name does not.
@@ -30,12 +29,11 @@ import (
 // some other path, so the sign is still handled correctly here as
 // defense in depth.
 func FormatCents(cents int64) string {
-	sign := ""
-	if cents < 0 {
-		sign = "-"
-		cents = -cents
+	decimal := money.Decimal(cents, "usd")
+	if strings.HasPrefix(decimal, "-") {
+		return "-$" + decimal[1:]
 	}
-	return fmt.Sprintf("%s$%d.%02d", sign, cents/100, cents%100)
+	return "$" + decimal
 }
 
 // FormatCentsPlain renders cents exactly like FormatCents but without
@@ -47,12 +45,7 @@ func FormatCents(cents int64) string {
 // FormatCents there instead (an earlier draft did) meant resubmitting
 // an untouched Money field always 400ed.
 func FormatCentsPlain(cents int64) string {
-	sign := ""
-	if cents < 0 {
-		sign = "-"
-		cents = -cents
-	}
-	return fmt.Sprintf("%s%d.%02d", sign, cents/100, cents%100)
+	return money.Decimal(cents, "usd")
 }
 
 // ParseCents parses a decimal amount (e.g. "12.34") into cents,
@@ -86,22 +79,18 @@ func ParseCents(s string) (int64, error) {
 	if !isDigits(whole) || !isDigits(frac) {
 		return 0, &Error{Key: "rastrillo.ui.money_invalid", Msg: moneyInvalidEN}
 	}
-	wholeN, err := strconv.ParseInt(whole, 10, 64)
+	value, err := money.ParseDecimal(whole+"."+frac, "usd")
 	if err != nil {
 		return 0, &Error{Key: "rastrillo.ui.money_invalid", Msg: moneyInvalidEN}
 	}
-	fracN, err := strconv.ParseInt(frac, 10, 64)
-	if err != nil {
-		return 0, &Error{Key: "rastrillo.ui.money_invalid", Msg: moneyInvalidEN}
-	}
-	return wholeN*100 + fracN, nil
+	return value, nil
 }
 
 // Error is a field error that names the catalog key for its message as
 // well as carrying the message itself.
 //
 // This package is deliberately framework-independent — it imports
-// nothing from rastrillo, and a generated action or a hand-written
+// only the standalone money module, and a generated action or a hand-written
 // handler uses it without a Ctx in reach — so it cannot call T. A
 // package-level translator hook would be worse than not translating at
 // all: the locale is per request, and a global would hand one request's

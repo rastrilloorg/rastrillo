@@ -1,7 +1,13 @@
 package form
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
+	"strconv"
+
+	"amadan.net/rastrillo/rastrillo/money"
+	"math"
 	"strings"
 	"testing"
 )
@@ -117,5 +123,100 @@ func TestMoneyErrorKeysAreTheOnesTheCatalogCarries(t *testing.T) {
 	_, err = ParseCents("abc")
 	if !errors.As(err, &fe) || fe.Key != "rastrillo.ui.money_invalid" {
 		t.Errorf("an unparseable amount names %v, want rastrillo.ui.money_invalid", err)
+	}
+}
+
+func TestMoneyIntegerBounds(t *testing.T) {
+	for _, in := range []string{"92233720368547758.08", "92233720368547759", "184467440737095516.16", "9223372036854775807"} {
+		_, err := ParseCents(in)
+		var fieldErr *Error
+		if !errors.As(err, &fieldErr) || fieldErr.Key != "rastrillo.ui.money_invalid" || fieldErr.Msg != moneyInvalidEN {
+			t.Errorf("ParseCents(%q) = %v; want translated invalid amount", in, err)
+		}
+	}
+	if got, err := ParseCents("92233720368547758.07"); got != math.MaxInt64 || err != nil {
+		t.Errorf("maximum = %d, %v", got, err)
+	}
+	if got := FormatCentsPlain(math.MinInt64); got != "-92233720368547758.08" {
+		t.Errorf("plain minimum = %q", got)
+	}
+	if got := FormatCents(math.MinInt64); got != "-$92233720368547758.08" {
+		t.Errorf("display minimum = %q", got)
+	}
+}
+
+func TestParseCentsGrammarCompatibility(t *testing.T) {
+	for _, c := range []struct {
+		input string
+		want  int64
+		key   string
+	}{
+		{".", 0, ""}, {"  .  ", 0, ""}, {"12.", 1200, ""}, {".5", 50, ""},
+		{"+1", 0, "rastrillo.ui.money_invalid"}, {"-0", 0, "rastrillo.ui.money_invalid"},
+		{"1.000", 0, "rastrillo.ui.money_precision"}, {"1,50", 0, "rastrillo.ui.money_invalid"},
+		{"1.2.3", 0, "rastrillo.ui.money_precision"}, {"1e2", 0, "rastrillo.ui.money_invalid"},
+	} {
+		got, err := ParseCents(c.input)
+		if c.key == "" {
+			if got != c.want || err != nil {
+				t.Errorf("%q = %d, %v", c.input, got, err)
+			}
+		} else {
+			var fieldErr *Error
+			if !errors.As(err, &fieldErr) || fieldErr.Key != c.key {
+				t.Errorf("%q = %v; want %s", c.input, err, c.key)
+			}
+		}
+	}
+}
+
+func TestMoneyCompatibilityCorpus(t *testing.T) {
+	data, err := os.ReadFile("../money/testdata/decimal.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []struct {
+		Name, Input, Currency, Decimal string
+		Minor                          *string
+	}
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	refused := map[string]bool{
+		"negative": true, "negative below one": true, "explicit plus": true,
+		"negative zero": true, "exact extra zero": true, "no grouping dot": true,
+		"int64 minimum eur": true,
+	}
+	for _, c := range cases {
+		if money.MinorUnits(c.Currency) != 2 {
+			continue
+		}
+		t.Run(c.Name, func(t *testing.T) {
+			if c.Minor != nil {
+				minor, err := strconv.ParseInt(*c.Minor, 10, 64)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got := FormatCentsPlain(minor); got != c.Decimal {
+					t.Errorf("format = %q; want %q", got, c.Decimal)
+				}
+			}
+			got, err := ParseCents(c.Input)
+			if c.Name == "lone dot legacy form" {
+				if got != 0 || err != nil {
+					t.Errorf("lone dot = %d, %v", got, err)
+				}
+				return
+			}
+			if c.Minor == nil || refused[c.Name] {
+				if err == nil {
+					t.Errorf("%q accepted as %d", c.Input, got)
+				}
+				return
+			}
+			if err != nil || strconv.FormatInt(got, 10) != *c.Minor {
+				t.Errorf("%q = %d, %v; want %s", c.Input, got, err, *c.Minor)
+			}
+		})
 	}
 }
