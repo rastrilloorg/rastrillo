@@ -30,6 +30,7 @@ var referencePages = map[string]string{
 	"migrate":   "reference/migrate",
 	"view":      "reference/view",
 	"form":      "reference/form",
+	"money":     "reference/money",
 	"flash":     "reference/flash",
 	"csrf":      "reference/csrf",
 	"sessions":  "reference/sessions",

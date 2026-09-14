@@ -33,3 +33,5 @@ docs/design-system/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/amadan/
+
+writing/

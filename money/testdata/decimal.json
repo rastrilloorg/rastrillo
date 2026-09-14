@@ -1,0 +1,352 @@
+[
+  {
+    "name": "eur integer",
+    "input": "25",
+    "currency": "eur",
+    "minor": "2500",
+    "decimal": "25.00",
+    "form_minor": "2500"
+  },
+  {
+    "name": "short fraction",
+    "input": "25.5",
+    "currency": "eur",
+    "minor": "2550",
+    "decimal": "25.50",
+    "form_minor": "2550"
+  },
+  {
+    "name": "trimmed",
+    "input": " 25.50 ",
+    "currency": "eur",
+    "minor": "2550",
+    "decimal": "25.50",
+    "form_minor": "2550"
+  },
+  {
+    "name": "zero",
+    "input": "0",
+    "currency": "usd",
+    "minor": "0",
+    "decimal": "0.00",
+    "form_minor": "0"
+  },
+  {
+    "name": "blank import",
+    "input": "",
+    "currency": "eur",
+    "minor": "0",
+    "decimal": "0.00"
+  },
+  {
+    "name": "blank spaces",
+    "input": "  ",
+    "currency": "eur",
+    "minor": "0",
+    "decimal": "0.00"
+  },
+  {
+    "name": "negative",
+    "input": "-12.34",
+    "currency": "eur",
+    "minor": "-1234",
+    "decimal": "-12.34"
+  },
+  {
+    "name": "negative below one",
+    "input": "-0.50",
+    "currency": "eur",
+    "minor": "-50",
+    "decimal": "-0.50"
+  },
+  {
+    "name": "explicit plus",
+    "input": "+12.34",
+    "currency": "eur",
+    "minor": "1234",
+    "decimal": "12.34"
+  },
+  {
+    "name": "negative zero",
+    "input": "-0",
+    "currency": "eur",
+    "minor": "0",
+    "decimal": "0.00"
+  },
+  {
+    "name": "missing whole",
+    "input": ".5",
+    "currency": "eur",
+    "minor": "50",
+    "decimal": "0.50",
+    "form_minor": "50"
+  },
+  {
+    "name": "empty fraction",
+    "input": "5.",
+    "currency": "eur",
+    "minor": "500",
+    "decimal": "5.00",
+    "form_minor": "500"
+  },
+  {
+    "name": "zero decimal",
+    "input": "1299",
+    "currency": "jpy",
+    "minor": "1299",
+    "decimal": "1299",
+    "form_minor": "1299"
+  },
+  {
+    "name": "sql zero decimal",
+    "input": "5000.00",
+    "currency": "jpy",
+    "minor": "5000",
+    "decimal": "5000"
+  },
+  {
+    "name": "fractional yen",
+    "input": "5000.50",
+    "currency": "jpy"
+  },
+  {
+    "name": "isk real units",
+    "input": "4990.00",
+    "currency": "isk",
+    "minor": "4990",
+    "decimal": "4990"
+  },
+  {
+    "name": "ugx real units",
+    "input": "4990",
+    "currency": "ugx",
+    "minor": "4990",
+    "decimal": "4990",
+    "form_minor": "4990"
+  },
+  {
+    "name": "three decimal",
+    "input": "1.299",
+    "currency": "bhd",
+    "minor": "1299",
+    "decimal": "1.299"
+  },
+  {
+    "name": "chargeable three decimal",
+    "input": "1.290",
+    "currency": "bhd",
+    "minor": "1290",
+    "decimal": "1.290",
+    "form_minor": "1290"
+  },
+  {
+    "name": "padded three decimal",
+    "input": "1.29",
+    "currency": "bhd",
+    "minor": "1290",
+    "decimal": "1.290",
+    "form_minor": "1290"
+  },
+  {
+    "name": "exact extra zero",
+    "input": "1.990",
+    "currency": "eur",
+    "minor": "199",
+    "decimal": "1.99"
+  },
+  {
+    "name": "inexact extra digit",
+    "input": "1.999",
+    "currency": "eur"
+  },
+  {
+    "name": "inexact third unit",
+    "input": "1.2995",
+    "currency": "bhd"
+  },
+  {
+    "name": "unknown fallback",
+    "input": "12.34",
+    "currency": "xyz",
+    "minor": "1234",
+    "decimal": "12.34",
+    "form_minor": "1234"
+  },
+  {
+    "name": "uppercase currency",
+    "input": "12",
+    "currency": "JPY",
+    "minor": "12",
+    "decimal": "12",
+    "form_minor": "12"
+  },
+  {
+    "name": "comma form",
+    "input": "25,50",
+    "currency": "eur",
+    "form_minor": "2550"
+  },
+  {
+    "name": "no grouping comma",
+    "input": "1,500",
+    "currency": "eur"
+  },
+  {
+    "name": "no grouping dot",
+    "input": "1.500",
+    "currency": "eur",
+    "minor": "150",
+    "decimal": "1.50"
+  },
+  {
+    "name": "multiple dots",
+    "input": "1.2.3",
+    "currency": "eur"
+  },
+  {
+    "name": "bad digit",
+    "input": "12a.00",
+    "currency": "eur"
+  },
+  {
+    "name": "exponent",
+    "input": "1e2",
+    "currency": "eur"
+  },
+  {
+    "name": "unicode digit",
+    "input": "１２",
+    "currency": "eur"
+  },
+  {
+    "name": "lone dot legacy form",
+    "input": ".",
+    "currency": "eur",
+    "form_minor": "0"
+  },
+  {
+    "name": "lone comma legacy form",
+    "input": ",",
+    "currency": "eur",
+    "form_minor": "0"
+  },
+  {
+    "name": "fraction sign legacy form",
+    "input": "1.+5",
+    "currency": "eur",
+    "form_minor": "105"
+  },
+  {
+    "name": "fraction negative zero legacy form",
+    "input": "1.-0",
+    "currency": "eur",
+    "form_minor": "100"
+  },
+  {
+    "name": "fraction sign rejected",
+    "input": "1.-5",
+    "currency": "eur"
+  },
+  {
+    "name": "bare sign",
+    "input": "+",
+    "currency": "eur"
+  },
+  {
+    "name": "price cap",
+    "input": "99999999.99",
+    "currency": "eur",
+    "minor": "9999999999",
+    "decimal": "99999999.99",
+    "form_minor": "9999999999"
+  },
+  {
+    "name": "past price cap",
+    "input": "100000000",
+    "currency": "eur",
+    "minor": "10000000000",
+    "decimal": "100000000.00"
+  },
+  {
+    "name": "int64 maximum jpy",
+    "input": "9223372036854775807",
+    "currency": "jpy",
+    "minor": "9223372036854775807",
+    "decimal": "9223372036854775807"
+  },
+  {
+    "name": "int64 minimum jpy",
+    "input": "-9223372036854775808",
+    "currency": "jpy",
+    "minor": "-9223372036854775808",
+    "decimal": "-9223372036854775808"
+  },
+  {
+    "name": "positive overflow jpy",
+    "input": "9223372036854775808",
+    "currency": "jpy"
+  },
+  {
+    "name": "negative overflow jpy",
+    "input": "-9223372036854775809",
+    "currency": "jpy"
+  },
+  {
+    "name": "int64 maximum eur",
+    "input": "92233720368547758.07",
+    "currency": "eur",
+    "minor": "9223372036854775807",
+    "decimal": "92233720368547758.07"
+  },
+  {
+    "name": "int64 minimum eur",
+    "input": "-92233720368547758.08",
+    "currency": "eur",
+    "minor": "-9223372036854775808",
+    "decimal": "-92233720368547758.08"
+  },
+  {
+    "name": "positive overflow eur",
+    "input": "92233720368547758.08",
+    "currency": "eur"
+  },
+  {
+    "name": "negative overflow eur",
+    "input": "-92233720368547758.09",
+    "currency": "eur"
+  },
+  {
+    "name": "int64 maximum bhd",
+    "input": "9223372036854775.807",
+    "currency": "bhd",
+    "minor": "9223372036854775807",
+    "decimal": "9223372036854775.807"
+  },
+  {
+    "name": "int64 minimum bhd",
+    "input": "-9223372036854775.808",
+    "currency": "bhd",
+    "minor": "-9223372036854775808",
+    "decimal": "-9223372036854775.808"
+  },
+  {
+    "name": "positive overflow bhd",
+    "input": "9223372036854775.808",
+    "currency": "bhd"
+  },
+  {
+    "name": "negative overflow bhd",
+    "input": "-9223372036854775.809",
+    "currency": "bhd"
+  },
+  {
+    "name": "scaling overflow",
+    "input": "92233720368547759",
+    "currency": "eur"
+  },
+  {
+    "name": "first fractional digit overflow",
+    "input": "999999999999999999.99",
+    "currency": "eur"
+  }
+]

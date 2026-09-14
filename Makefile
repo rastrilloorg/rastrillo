@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser \
-        mirror mirror-check
+        mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -25,13 +25,16 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt root chromedp-graph race \
+ci: gofmt money root chromedp-graph race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
 gofmt:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then \
 		echo "gofmt needed on:"; echo "$$out"; exit 1; fi
+
+money:
+	cd money && go build ./... && go vet ./... && go test ./... -count=1
 
 root:
 	go build ./...

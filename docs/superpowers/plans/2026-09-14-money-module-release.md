@@ -1,0 +1,15 @@
+# Money module release and consumer adoption
+
+Execution of Tito roadmap M3. Core source and corpus originate in Tito merge 16282feff9798bfa0f85f941fe2b04f3b71269fd and are byte-identical here; only the external test import changes.
+
+Ownership: Rastrillo maintainers, canonical repository https://amadan.net/rastrillo/rastrillo. Use the independent nested module amadan.net/rastrillo/rastrillo/money, tagged money/v0.1.0. It requires only Go 1.25 and the standard library. Importing the root framework module would raise Tito's SQLite dependency from v1.53.0 to v1.55.0; the nested module avoids that unrelated change. The vanity endpoint was checked and resolves the nested path to this repository. Verify a published module download before pinning consumers.
+
+Release order:
+1. Core, MPL licence, existing compatibility corpus, reference page and explicit nested-module CI gate. Fable approved the core and packaging; public reference copy awaits review. The make money target is phony, runs build/vet/tests, belongs to make ci, and is called by both amadan and mirror CI.
+2. Merge through amadan after the full gate, then tag money/v0.1.0 at the landed commit. Mirror through the repository workflow. Download the immutable version and compare its files to the reviewed source.
+3. A separate Rastrillo branch pins v0.1.0 and delegates form arithmetic. Preserve blank/lone-dot zero, rejected signs, rejected excess precision, existing Error type and catalog keys. Overflow refusal and MinInt64 formatting are explicit fixes. Regressions reproduced on the old implementation before delegation; old and new grammar checks pass. Shared two-decimal corpus cases run through the form adapter; signed/extra-precision policy exceptions are explicit.
+4. Tito pins the same release, switches its existing adapters, deletes internal/money, and retains the byte-identical corpus at internal/testdata/money/decimal.json. It is a pinned snapshot of money/v0.1.0 testdata, with Tito form expectations; compare with upstream whenever the dependency is bumped. No private arithmetic remains. Keep money's own core tests upstream; retain Tito importer/form/export corpus and currency/browser-table checks.
+
+Temporary modfiles outside both repositories supply a local replace for development tests only. No replace or workspace file ships. Verify both consumer go.mod/go.sum diffs: no unrelated dependencies or toolchain changes. Tito merge/deployment still requires its own explicit approval; this branch does not authorize it.
+
+Validation: the first full root run found an unstaged CI executable and a missing reference page. The executable is staged; add the reference page through the copy-review gate. Remaining root tests passed on the second run, except reference-page coverage. All other make ci targets are run separately while copy review is pending; rerun affected documentation checks once approved. Fable's remaining note about sign-stripped parser diagnostics is inherited from Tito and remains a separate follow-up rather than a new extraction change.
