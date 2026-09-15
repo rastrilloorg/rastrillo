@@ -214,6 +214,11 @@
           "blurb": "Ordered, namespaced, ledgered migrations — and why there is no Down."
         },
         {
+          "slug": "reference/money",
+          "label": "money",
+          "blurb": "Parse decimal amounts into signed `int64` minor units with `money`. The package uses only the Go standard library."
+        },
+        {
           "slug": "reference/passkey",
           "label": "passkey",
           "blurb": "Step-up and sign-in WebAuthn, the Gate, and recovery codes."

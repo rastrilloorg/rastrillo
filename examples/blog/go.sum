@@ -1,3 +1,5 @@
+amadan.net/rastrillo/rastrillo/money v0.0.0-20260914085644-fedf6de50d9d h1:O3PiQMc1QdJwnLwZ0Y09Zci9zgo/sbstVIegRFqEuQM=
+amadan.net/rastrillo/rastrillo/money v0.0.0-20260914085644-fedf6de50d9d/go.mod h1:cmgkjBEIQh1pFSYvQk0UU6oPYS8kSDypdT9+t4Flx0U=
 cel.dev/expr v0.25.1 h1:1KrZg61W6TWSxuNZ37Xy49ps13NUovb66QLprthtwi4=
 cel.dev/expr v0.25.1/go.mod h1:hrXvqGP6G6gyx8UAHSHJ5RGk//1Oj5nXQ2NI02Nrsg4=
 filippo.io/edwards25519 v1.1.1 h1:YpjwWWlNmGIDyXOn8zLzqiD+9TyIlPhGFG96P39uBpw=

@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser \
-        mirror mirror-check
+        mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -20,18 +20,24 @@ export GOFLAGS = -mod=mod
 export CGO_ENABLED = 0
 
 BIN := $(CURDIR)/.build
+
+# Keep compiler/linker scratch on the checkout filesystem when shared /tmp is full.
+export GOTMPDIR ?= $(BIN)/tmp
 EXAMPLES := helloworld blog tickets notes
 
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt root chromedp-graph race \
+ci: gofmt money root chromedp-graph race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
 gofmt:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then \
 		echo "gofmt needed on:"; echo "$$out"; exit 1; fi
+
+money:
+	cd money && go build ./... && go vet ./... && go test ./... -count=1
 
 root:
 	go build ./...
@@ -60,7 +66,7 @@ race:
 # their first run fetches sqlc through the module proxy; that network
 # access is load-bearing - do not cache it away without keeping the
 # module download path working.
-example-%:
+example-%: | $(BIN)/tmp
 	cd examples/$* && go build ./... && go vet ./... && go test ./... -count=1
 
 # Not a file target, deliberately. A stale binary from an earlier
@@ -103,8 +109,9 @@ scaffold-smoke: build-cli
 # Chromium cold-starts contend for one machine. RASTRILLO_BROWSER_OPTIONAL
 # stays unset on purpose: a skip is not a pass, so a machine that loses
 # its browser fails loudly instead of reporting green.
+# Chromium profiles also need room when the shared /tmp tmpfs fills.
 browser:
-	go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ -count=1
+	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ -count=1
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a
@@ -142,3 +149,8 @@ mirror-check:
 	echo; \
 	echo "carry those across as a branch and land them, then: make mirror"; \
 	exit 1
+
+root money chromedp-graph race build-cli browser: | $(BIN)/tmp
+
+$(BIN)/tmp:
+	mkdir -p "$@"

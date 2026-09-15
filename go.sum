@@ -1,3 +1,5 @@
+amadan.net/rastrillo/rastrillo/money v0.0.0-20260914085644-fedf6de50d9d h1:O3PiQMc1QdJwnLwZ0Y09Zci9zgo/sbstVIegRFqEuQM=
+amadan.net/rastrillo/rastrillo/money v0.0.0-20260914085644-fedf6de50d9d/go.mod h1:cmgkjBEIQh1pFSYvQk0UU6oPYS8kSDypdT9+t4Flx0U=
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327 h1:UQ4AU+BGti3Sy/aLU8KVseYKNALcX9UXY6DfpwQ6J8E=

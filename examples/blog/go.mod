@@ -5,6 +5,7 @@ go 1.26.0
 require amadan.net/rastrillo/rastrillo v0.1.0
 
 require (
+	amadan.net/rastrillo/rastrillo/money v0.0.0-20260914085644-fedf6de50d9d // indirect
 	cel.dev/expr v0.25.1 // indirect
 	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect

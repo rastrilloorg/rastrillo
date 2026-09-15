@@ -46,6 +46,9 @@ jobs:
             echo "gofmt needed on:" && echo "$unformatted" && exit 1
           fi
 
+      - name: money module
+        run: make money
+
       - name: root module
         run: |
           go build ./...

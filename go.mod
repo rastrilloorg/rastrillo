@@ -3,6 +3,7 @@ module amadan.net/rastrillo/rastrillo
 go 1.25.0
 
 require (
+	amadan.net/rastrillo/rastrillo/money v0.0.0-20260914085644-fedf6de50d9d
 	github.com/BurntSushi/toml v1.6.0
 	github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327
 	github.com/chromedp/chromedp v0.14.2
