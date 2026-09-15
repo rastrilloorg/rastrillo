@@ -446,8 +446,14 @@ on its own URL at step 2, never a modal fired from the row.
   headline component. Put the sign in `Delta` and pass `Tone` yourself —
   a fall is good news about half the time.
   A name inline with other content needs `<bdi>`, or an RTL name draws
-  the number beside it to its LEFT. Group a QUANTITY's digits for the
-  locale; never an identifier, year or version — order 4471, not 4,471.
+  the number beside it to its LEFT. Format every displayed quantity with `{{number .Count}}`, including
+  stats, tables, totals and chart labels. Bind `ui.WithLocale(rastrillo.LocaleFrom(r))`
+  with the other `ui.Funcs` options on each request's cloned template;
+  no locale means English. `stat.Value` formats numbers and plain integer
+  strings automatically; `detail-list.Value` formats numeric types. Pass
+  quantities as numbers, identifiers/years/versions as strings; never
+  group IDs, input values, URLs or machine attributes. Keep currency and
+  percent formatting explicit and locale-aware.
   `detail-list` takes `DateTime` beside `Value` for a moment (`<time>`). Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
