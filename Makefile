@@ -109,8 +109,9 @@ scaffold-smoke: build-cli
 # Chromium cold-starts contend for one machine. RASTRILLO_BROWSER_OPTIONAL
 # stays unset on purpose: a skip is not a pass, so a machine that loses
 # its browser fails loudly instead of reporting green.
+# Chromium profiles also need room when the shared /tmp tmpfs fills.
 browser:
-	go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ -count=1
+	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ -count=1
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a

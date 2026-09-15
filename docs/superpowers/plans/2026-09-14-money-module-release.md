@@ -21,3 +21,5 @@ Verified locally: nested core build/vet/tests, all root tests except pending doc
 
 
 Release continuation: the approved reference page passes the documentation gate. The unrelated Tito CI failure was TestOrderPageSurvivesBlockExtraction: its hashes changed with the rte-clipboard import-map entry. Main fixed those hashes in 0b7620fd5 and separated the import map from the golden in 9eb8f5746. Rebase to b5d1e78f4 includes those fixes; the exact test now passes. No golden constants or application behaviour were changed by this branch. Local build temporary storage moved to /var/tmp after the shared /tmp filled; no other session files were removed.
+
+CI environment follow-up: compiler scratch now defaults to the ignored checkout .build/tmp (overridable with GOTMPDIR), reviewed by Fable. The next remote run reached the browser gate but timed out while measuring preview frames; the same complete suite passed locally using disk-backed TMPDIR. The browser target now also defaults unset TMPDIR to /var/tmp for Chromium profiles, retaining an explicit environment override. No test assertion or timeout is relaxed.
