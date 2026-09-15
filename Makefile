@@ -20,6 +20,9 @@ export GOFLAGS = -mod=mod
 export CGO_ENABLED = 0
 
 BIN := $(CURDIR)/.build
+
+# Keep compiler/linker scratch on the checkout filesystem when shared /tmp is full.
+export GOTMPDIR ?= $(BIN)/tmp
 EXAMPLES := helloworld blog tickets notes
 
 # ci is the one gate: what a runner executes and what you run before
@@ -63,7 +66,7 @@ race:
 # their first run fetches sqlc through the module proxy; that network
 # access is load-bearing - do not cache it away without keeping the
 # module download path working.
-example-%:
+example-%: | $(BIN)/tmp
 	cd examples/$* && go build ./... && go vet ./... && go test ./... -count=1
 
 # Not a file target, deliberately. A stale binary from an earlier
@@ -145,3 +148,8 @@ mirror-check:
 	echo; \
 	echo "carry those across as a branch and land them, then: make mirror"; \
 	exit 1
+
+root money chromedp-graph race build-cli browser: | $(BIN)/tmp
+
+$(BIN)/tmp:
+	mkdir -p "$@"
