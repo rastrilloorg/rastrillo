@@ -1,6 +1,6 @@
 ---
 name: rastrillo
-description: Build a multi-user CARLOS app: GORM models, chi routes, sessions, owner-scoped queries.
+description: "Build a multi-user CARLOS app: GORM models, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
@@ -324,6 +324,17 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 `ErrDeclaredSchedule`, `ErrTooManyTimers`) and `carlos.ScheduleCancel`.
 
 ## 7. Screens and flows
+
+**Use Rastrillo's design system by default.** Start with its shells,
+`ui` partials, `rst-` attributes, tokens and a shipped theme. Check the
+design-system vocabulary (§8) before building a custom component.
+Customise with a thin app-owned CSS layer loaded after `tokens.css` and
+`theme.css` through the shell's `head` block. Prefer `--rst-*` token
+overrides for colour, type and shape; use app-specific classes for layout
+or components the system does not cover. Keep the base styles intact so
+framework fixes remain easy to adopt. Follow an explicit user design
+requirement when it calls for more, but reuse the system wherever it fits.
+docs/site/templates.md
 
 **One screen, one job.** A screen shows a thing, or asks for one thing —
 never both. The failure it prevents is stacking: a list page that also
