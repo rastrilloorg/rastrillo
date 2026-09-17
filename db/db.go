@@ -50,7 +50,13 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 	if log == nil {
 		log = slog.Default()
 	}
-	dsn := path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)"
+	// _time_format=sqlite: time.Time values are written as
+	// "2006-01-02 15:04:05.999999999-07:00" rather than the driver's
+	// default time.Time.String(), whose "-0700 MST" tail only parses
+	// back when the zone has a name. A time in a bare numeric zone — a
+	// mail Date header's "+0100", say — would otherwise be stored as
+	// "+0100 +0100" and every row carrying it would fail to scan.
+	dsn := path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_time_format=sqlite"
 
 	w, err := sql.Open("sqlite", dsn)
 	if err != nil {
