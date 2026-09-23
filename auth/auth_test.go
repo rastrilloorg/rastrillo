@@ -638,8 +638,13 @@ func TestRecoveryStampsBeforeCreatingTheTable(t *testing.T) {
 		t.Fatal("auth/0002 was recorded without running: the backfill is stranded and every user is signed out")
 	}
 
-	// Step 3, then step 4.
+	// Step 3 — the migration the baseline stamped, run by hand; later
+	// sessions migrations are unstamped and Apply runs them itself in
+	// step 4 — then step 4.
 	for _, m := range sessions.Schema.All() {
+		if m.ID != "sessions/0001_init" {
+			continue
+		}
 		if err := d.G.Exec(m.SQL).Error; err != nil {
 			t.Fatal(err)
 		}
@@ -815,5 +820,26 @@ func TestSubjectForErrorRefusesSignin(t *testing.T) {
 	}
 	if n != 0 {
 		t.Errorf("sessions rows = %d, want 0 — no session may exist without a subject", n)
+	}
+}
+
+func TestSpendLinksClearsTheAddressAndNobodyElse(t *testing.T) {
+	a, _ := newTestAuth(t, nil)
+	beginSignin(t, a, "alice@example.com")
+	beginSignin(t, a, "alice@example.com")
+	beginSignin(t, a, "bob@example.com")
+	n, err := a.SpendLinks(context.Background(), "Alice@Example.com")
+	if err != nil {
+		t.Fatalf("SpendLinks: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("SpendLinks spent %d, want 2", n)
+	}
+	var left int
+	if err := a.cfg.DB.QueryRow(`SELECT count(*) FROM auth_links`).Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+	if left != 1 {
+		t.Fatalf("%d links left, want bob's 1", left)
 	}
 }

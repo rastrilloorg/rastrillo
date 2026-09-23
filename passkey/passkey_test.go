@@ -15,6 +15,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/webauthn/authtest"
 )
@@ -26,18 +27,22 @@ const (
 
 type env struct {
 	h    *passkey.Handlers
+	g    *secondfactor.Gate
 	sess *sessions.Sessions
 	db   *sql.DB
 }
 
-func newEnv(t *testing.T) env {
+func newEnv(t *testing.T) env { return newEnvWith(t, nil) }
+
+// newEnvWith is newEnv with the passkey Config adjusted first.
+func newEnvWith(t *testing.T, mut func(*passkey.Config)) env {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "p.db"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { d.Close() })
-	full := migrate.Merge(sessions.Schema, passkey.Schema)
+	full := migrate.Merge(sessions.Schema, passkey.Schema, secondfactor.Schema)
 	if _, err := migrate.Apply(context.Background(), d, full); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
@@ -46,11 +51,20 @@ func newEnv(t *testing.T) env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := passkey.New(passkey.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin})
+	g, err := secondfactor.New(secondfactor.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return env{h: h, sess: sess, db: sqlDB}
+	cfg := passkey.Config{Sessions: sess, DB: sqlDB, Origin: testOrigin, Gate: g}
+	if mut != nil {
+		mut(&cfg)
+	}
+	h, err := passkey.New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.Add(h)
+	return env{h: h, g: g, sess: sess, db: sqlDB}
 }
 
 // signIn mints a session and returns its cookie.
@@ -109,8 +123,11 @@ func challengeFrom(t *testing.T, w *httptest.ResponseRecorder) []byte {
 
 func b64(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
-// enroll runs the full registration ceremony for cookie's subject.
-func enroll(t *testing.T, e env, cookie *http.Cookie, a *authtest.Authenticator) {
+// enroll runs the full registration ceremony for cookie's subject and
+// returns the session cookie the finish rotated to: registration
+// proves the passkey, so the session is fresh at its tier from then on
+// and the old cookie is spent.
+func enroll(t *testing.T, e env, cookie *http.Cookie, a *authtest.Authenticator) *http.Cookie {
 	t.Helper()
 	challenge := challengeFrom(t, postJSON(t, e.h.RegisterBegin, cookie, nil))
 	clientData, attestation := a.Create(challenge, authtest.Options{RPID: testRPID, Origin: testOrigin})
@@ -121,6 +138,13 @@ func enroll(t *testing.T, e env, cookie *http.Cookie, a *authtest.Authenticator)
 	if w.Code != http.StatusOK {
 		t.Fatalf("RegisterFinish: status %d, body %s", w.Code, w.Body.String())
 	}
+	for _, c := range w.Result().Cookies() {
+		if c.Name == "rastrillo_session" && c.Value != "" {
+			return c
+		}
+	}
+	t.Fatal("RegisterFinish rotated no session")
+	return nil
 }
 
 // assert runs the step-up assertion ceremony and returns the response.
@@ -152,7 +176,7 @@ func TestEnrollThenStepUpSatisfiesRequireFresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 	if ok, _ := e.h.Enrolled("42"); !ok {
 		t.Fatal("Enrolled = false after registration")
 	}
@@ -235,7 +259,7 @@ func TestChallengeIsSingleUseAndSubjectBound(t *testing.T) {
 	e := newEnv(t)
 	alice := e.signIn(t, "alice")
 	a, _ := authtest.New()
-	enroll(t, e, alice, a)
+	alice = enroll(t, e, alice, a)
 
 	// Replay: run a full assertion, then replay the same body — the
 	// challenge row was consumed, so the replay must fail.
@@ -263,7 +287,7 @@ func TestChallengeIsSingleUseAndSubjectBound(t *testing.T) {
 	// alice, even holding alice's public ceremony output.
 	bob := e.signIn(t, "bob")
 	ab, _ := authtest.New()
-	enroll(t, e, bob, ab)
+	bob = enroll(t, e, bob, ab)
 	aliceChallenge := challengeFrom(t, postJSON(t, e.h.StepUpBegin, alice2, nil))
 	cd, ad, s2, err := ab.Get(aliceChallenge, authtest.Options{RPID: testRPID, Origin: testOrigin})
 	if err != nil {
@@ -282,7 +306,7 @@ func TestBadCeremoniesRefused(t *testing.T) {
 	e := newEnv(t)
 	cookie := e.signIn(t, "42")
 	a, _ := authtest.New()
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	// Wrong origin in the signed client data.
 	if w := assert(t, e, cookie, a, authtest.Options{Origin: "http://evil.test"}); w.Code != http.StatusBadRequest {
@@ -322,7 +346,7 @@ func TestSweepDeletesOnlyExpired(t *testing.T) {
 	e := newEnv(t)
 	cookie := e.signIn(t, "42")
 	a, _ := authtest.New()
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	// A live challenge survives a sweep and still finishes.
 	challenge := challengeFrom(t, postJSON(t, e.h.StepUpBegin, cookie, nil))

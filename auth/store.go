@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"strings"
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/migrate"
@@ -120,4 +121,19 @@ func (a *Auth) Sweep(now time.Time) error {
 		return err
 	}
 	return a.sessions.Sweep(now)
+}
+
+// SpendLinks deletes every outstanding sign-in link for address. A
+// link is a credential waiting to be used; once the person is in by
+// any door — this one, a password, a passkey on a remembered browser —
+// the ones still in their inbox are a credential nobody needs, and the
+// app calls this so a stolen inbox cannot cash them later. It returns
+// how many it spent.
+func (a *Auth) SpendLinks(ctx context.Context, address string) (int, error) {
+	res, err := a.cfg.DB.ExecContext(ctx, `DELETE FROM auth_links WHERE address = ?`, strings.ToLower(address))
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
 }

@@ -169,6 +169,32 @@ because a plugin storing its own single-use credentials — a magic link,
 a recovery code — should hash them the same way instead of inventing a
 second scheme.
 
+## The inventory
+
+```go
+func (s *Sessions) Hash(r *http.Request) (string, bool)
+func (s *Sessions) List(subject string) ([]Info, error)
+func (s *Sessions) Revoke(subject, hash string) error
+func (s *Sessions) RevokeOthers(r *http.Request, subject string) (int, error)
+func (s *Sessions) RevokeAll(subject string) (int, error)
+```
+
+What an app needs to show a person their own live sessions and let them
+end any of them. `List` is every live row a subject holds, newest first,
+as `Info`: the row's `Hash` (an opaque handle that names the row and
+opens nothing, so it is safe to carry in a form), the `Session`, and
+`ExpiresAt`. `Hash` is the storage hash of the token a request presents
+— how a handler finds its own row in the list. `Revoke` ends one row by
+its hash, and takes the subject with it so a handle from one person's
+list is never redeemed by another; an unknown row and someone else's row
+alike answer `ErrNotYours`. `RevokeOthers` ends every row but the one
+the request presents — what a credential change does, so a stolen
+session does not outlive the password it was stolen alongside — and
+`RevokeAll` ends every row, the presented one included: sign out
+everywhere. Both return how many they ended. What a session looks like
+from the outside — the browser, the address, when it was last seen — is
+the app's to remember, keyed by the hash.
+
 ## Sweep
 
 ```go

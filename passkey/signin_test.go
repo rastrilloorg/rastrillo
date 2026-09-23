@@ -1,6 +1,6 @@
-// signin_test.go proves the sign-in-time gate: the pending
-// half-session between factors, its single use, its expiry, and the
-// purpose wall between step-up and sign-in ceremonies.
+// signin_test.go proves the sign-in half: a passkey completes
+// secondfactor's pending half-session, once, while it lives, and the
+// purpose wall between step-up and sign-in ceremonies holds.
 package passkey_test
 
 import (
@@ -16,9 +16,9 @@ import (
 	"amadan.net/rastrillo/rastrillo/webauthn/authtest"
 )
 
-// gate invokes Gate as an identity plugin would: at the moment sess
-// would have been minted, with the sign-in request (whose form may
-// carry return_to).
+// gate invokes the Gate's Hold as an identity plugin would: at the
+// moment sess would have been minted, with the sign-in request (whose
+// form may carry return_to).
 func gate(t *testing.T, e env, sess sessions.Session, returnTo string) (*httptest.ResponseRecorder, *http.Cookie) {
 	t.Helper()
 	form := url.Values{}
@@ -28,15 +28,15 @@ func gate(t *testing.T, e env, sess sessions.Session, returnTo string) (*httptes
 	r := httptest.NewRequest("POST", testOrigin+"/signin", strings.NewReader(form.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
-	done, err := e.h.Gate(w, r, sess)
+	done, err := e.g.Hold(w, r, sess)
 	if err != nil {
-		t.Fatalf("Gate: %v", err)
+		t.Fatalf("Hold: %v", err)
 	}
 	if !done {
 		return w, nil
 	}
 	for _, c := range w.Result().Cookies() {
-		if c.Name == "rastrillo_passkey_pending" && c.Value != "" {
+		if c.Name == "rastrillo_secondfactor" && c.Value != "" {
 			return w, c
 		}
 	}
@@ -79,7 +79,7 @@ func TestGateThenSignInMintsBothFactorSession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	// First factor verifies; the plugin offers the would-be session to
 	// the Gate, which trades it for a pending half-session.
@@ -87,8 +87,8 @@ func TestGateThenSignInMintsBothFactorSession(t *testing.T) {
 	if pending == nil {
 		t.Fatal("Gate did not take over for an enrolled subject")
 	}
-	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/passkey/confirm" {
-		t.Fatalf("Gate: %d -> %q, want 303 -> /passkey/confirm", w.Code, w.Header().Get("Location"))
+	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin/confirm" {
+		t.Fatalf("Hold: %d -> %q, want 303 -> /signin/confirm", w.Code, w.Header().Get("Location"))
 	}
 	// The half-session minted no real session.
 	if len(w.Result().Cookies()) != 1 {
@@ -109,7 +109,7 @@ func TestGateThenSignInMintsBothFactorSession(t *testing.T) {
 		switch c.Name {
 		case e.sess.CookieName():
 			minted = c
-		case "rastrillo_passkey_pending":
+		case "rastrillo_secondfactor":
 			cleared = c
 		}
 	}
@@ -155,13 +155,13 @@ func TestPendingHalfSessionExpires(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	_, pending := gate(t, e, sessions.Session{Subject: "42", Method: "password"}, "")
 	if pending == nil {
 		t.Fatal("Gate did not take over")
 	}
-	if _, err := e.db.Exec(`UPDATE passkey_pending SET expires_at = ?`,
+	if _, err := e.db.Exec(`UPDATE secondfactor_pending SET expires_at = ?`,
 		time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)); err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestStepUpChallengeCannotFinishSignIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	enroll(t, e, cookie, a)
+	cookie = enroll(t, e, cookie, a)
 
 	_, pending := gate(t, e, sessions.Session{Subject: "42", Method: "password"}, "")
 	if pending == nil {
@@ -207,24 +207,19 @@ func TestStepUpChallengeCannotFinishSignIn(t *testing.T) {
 	}
 }
 
-func TestSweepClearsExpiredPending(t *testing.T) {
+// Without a Gate there is no half-session to complete: the sign-in
+// pair refuses rather than pretending, and step-up is untouched.
+func TestSignInPairRefusesWithoutGate(t *testing.T) {
 	e := newEnv(t)
-	stamp := func(d time.Duration) string { return time.Now().Add(d).UTC().Format(time.RFC3339) }
-	for hash, exp := range map[string]string{"dead": stamp(-time.Minute), "live": stamp(time.Minute)} {
-		if _, err := e.db.Exec(
-			`INSERT INTO passkey_pending (token_hash, subject, expires_at) VALUES (?, 's', ?)`,
-			hash, exp); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := passkey.Sweep(e.db, time.Now()); err != nil {
+	h, err := passkey.New(passkey.Config{Sessions: e.sess, DB: e.db, Origin: testOrigin})
+	if err != nil {
 		t.Fatal(err)
 	}
-	var n int
-	if err := e.db.QueryRow(`SELECT COUNT(*) FROM passkey_pending`).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	if n != 1 {
-		t.Fatalf("after Sweep: %d pending rows, want the 1 live one", n)
+	cookie := e.signIn(t, "42")
+	a, _ := authtest.New()
+	cookie = enroll(t, e, cookie, a)
+	_, pending := gate(t, e, sessions.Session{Subject: "42", Method: "password"}, "")
+	if w := postJSON(t, h.SignInBegin, pending, nil); w.Code != http.StatusForbidden {
+		t.Fatalf("SignInBegin with no Gate: %d, want 403", w.Code)
 	}
 }

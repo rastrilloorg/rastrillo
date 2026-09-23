@@ -36,6 +36,15 @@ import (
 type Migration struct {
 	ID  string
 	SQL string
+	// PostAdoption marks a migration that changes a table which
+	// existed before this package had a ledger — one a deployed
+	// database built from the old Migrations []string already holds.
+	// Adoption (adopt.go) compares such a database against the set
+	// WITHOUT these, stamps what matches, and then runs these like any
+	// other pending migration: the only way an adoption-era table can
+	// ever gain a column. A SQL file says so with a comment line
+	// reading "-- rastrillo: post-adoption" near the top.
+	PostAdoption bool
 	// Fn runs on the same pinned connection, inside the same
 	// BEGIN IMMEDIATE transaction, as its own ledger row — Apply
 	// builds it a *gorm.DB backed by that one *sql.Conn rather than
@@ -97,9 +106,24 @@ func FromFS(fsys fs.FS, namespace string) (*Set, error) {
 			return nil, fmt.Errorf("migrate: %s/%s: duplicate migration id", namespace, id)
 		}
 		seen[id] = true
-		s.migrations = append(s.migrations, Migration{ID: id, SQL: string(body)})
+		s.migrations = append(s.migrations, Migration{ID: id, SQL: string(body), PostAdoption: postAdoption(string(body))})
 	}
 	return s, nil
+}
+
+// postAdoptionMarker is the comment a SQL migration carries, in its
+// first few lines, to declare itself Migration.PostAdoption.
+const postAdoptionMarker = "rastrillo: post-adoption"
+
+func postAdoption(sql string) bool {
+	lines := strings.SplitN(sql, "\n", 8)
+	for _, l := range lines {
+		l = strings.TrimSpace(l)
+		if strings.HasPrefix(l, "--") && strings.Contains(l, postAdoptionMarker) {
+			return true
+		}
+	}
+	return false
 }
 
 func MustFromFS(fsys fs.FS, namespace string) *Set {

@@ -1,6 +1,6 @@
 ---
 name: rastrillo
-description: Build a multi-user CARLOS app: GORM models, chi routes, sessions, owner-scoped queries.
+description: "Build a multi-user CARLOS app: GORM models, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
@@ -227,10 +227,14 @@ verifies a credential and calls `SignIn` — the whole contract.
   redirects to `SigninPath` with a same-site `return_to`; the rest 403.
   `s.Middleware` only resolves, blocks nothing.
 - `s.RequireFresh(maxAge)` step-up: past maxAge, GET/HEAD goes to
-  `SigninPath?reauth=1`; re-signing-in or a `passkey` assertion rotates
-  fresh (2FA: `Config.SecondFactor` = passkey's `Gate`). Lost passkey: a
-  recovery code redeems at POST `/passkey/signin/recovery`, minted by
-  `RegenerateRecoveryCodes` behind `RequireFresh`. docs/site/passkeys.md
+  `SigninPath?reauth=1`; re-signing-in, a `passkey` assertion or a
+  `totp` code rotates fresh. 2FA: `secondfactor.New` is the gate;
+  `Config.SecondFactor` = `g.Hold`; `g.Add(pk, tp)`; a factor completes
+  `g.Pending(r)` via `g.Complete`. Merge `secondfactor.Schema` AFTER
+  `passkey.Schema` (it adopts passkey's old tables). Lost factor: a
+  recovery code redeems at POST `/signin/recovery` (`g.SignInRecovery`),
+  minted by `g.RegenerateRecoveryCodes` behind `RequireFresh`.
+  docs/site/second-factors.md
 - Viewer: `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (Subject, Method, AuthTime, At). Past `Require`, `ok` holds only when
   the plugin's Subject is a numeric user id — see the `auth` warning.
@@ -324,6 +328,17 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 `ErrDeclaredSchedule`, `ErrTooManyTimers`) and `carlos.ScheduleCancel`.
 
 ## 7. Screens and flows
+
+**Use Rastrillo's design system by default.** Start with its shells,
+`ui` partials, `rst-` attributes, tokens and a shipped theme. Check the
+design-system vocabulary (§8) before building a custom component.
+Customise with a thin app-owned CSS layer loaded after `tokens.css` and
+`theme.css` through the shell's `head` block. Prefer `--rst-*` token
+overrides for colour, type and shape; use app-specific classes for layout
+or components the system does not cover. Keep the base styles intact so
+framework fixes remain easy to adopt. Follow an explicit user design
+requirement when it calls for more, but reuse the system wherever it fits.
+docs/site/templates.md
 
 **One screen, one job.** A screen shows a thing, or asks for one thing —
 never both. The failure it prevents is stacking: a list page that also
