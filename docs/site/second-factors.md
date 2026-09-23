@@ -97,7 +97,7 @@ marker you can use to nudge enrolling a replacement. Sign-in only:
 there is no recovery step-up, and no attempt counter, because ten codes
 at 2⁻⁵⁰ apiece inside a five-minute window need none.
 
-## TOTP {#totp}
+## TOTP
 
 `rastrillo/totp` is RFC 6238 exactly as every authenticator app
 defaults to it — SHA-1, six digits, thirty seconds, one step of skew

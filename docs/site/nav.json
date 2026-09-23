@@ -249,6 +249,11 @@
           "blurb": "Owner-filtered GORM scopes: the one seam every owned query goes through."
         },
         {
+          "slug": "reference/secondfactor",
+          "label": "secondfactor",
+          "blurb": "The half-session between a first factor and its session: hold, complete, strike, recovery codes."
+        },
+        {
           "slug": "reference/sessions",
           "label": "sessions",
           "blurb": "Session rows, cookies, the three middlewares, and SafeReturn."
@@ -257,6 +262,11 @@
           "slug": "reference/tools",
           "label": "tools",
           "blurb": "Schemas, dispatch through your own mux, and the three refusals."
+        },
+        {
+          "slug": "reference/totp",
+          "label": "totp",
+          "blurb": "Authenticator apps: enrolment and the QR, sign-in and step-up, and secrets sealed at rest."
         },
         {
           "slug": "reference/ui",
