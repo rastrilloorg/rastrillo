@@ -268,3 +268,16 @@ func TestScheduleCancel(t *testing.T) {
 		}
 	})
 }
+
+// Running is the socket and nothing else: set, it is CARLOS; unset or
+// empty, it is not.
+func TestRunning(t *testing.T) {
+	t.Setenv("CARLOS_CONTROL_SOCKET", "")
+	if Running() {
+		t.Fatal("Running with no control socket")
+	}
+	t.Setenv("CARLOS_CONTROL_SOCKET", "/run/carlos/app.sock.control")
+	if !Running() {
+		t.Fatal("not Running with a control socket")
+	}
+}

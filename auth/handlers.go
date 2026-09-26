@@ -39,7 +39,7 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		force = signin.MethodMagicLink
 	}
 
-	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.cfg.TrustedProxyHops), force)
+	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.hops), force)
 	switch {
 	case errors.Is(err, signin.ErrRateLimited):
 		a.redirect(w, r, a.cfg.SigninPath+"?err=rate")
