@@ -55,7 +55,35 @@ const (
 	// a number the file chose: ZZZZZZ1 alone asked for 321 million
 	// slots before this cap.
 	maxColumns = 16384
+	// maxRows is Excel's row limit, which a row reference may not pass:
+	// the gap before a row is restored as empty rows, and following an
+	// unbounded r="…" would size the sheet by a number the file chose.
+	maxRows = 1 << 20
+	// maxTextBytes caps the decoded text a whole workbook read may keep.
+	// The cell count alone does not bound memory: a small file can list
+	// one worksheet a hundred times, each copy a hundred 8 KiB strings,
+	// and hold 77 MiB in ten thousand cells.
+	maxTextBytes = 50 << 20
 )
+
+// readBudget is what one workbook read may keep, shared by every sheet
+// in it: slots (cells, the empty slots padding a row out to a cell, and
+// the rows themselves, since an empty <row/> still costs a slice) and
+// decoded text bytes. One budget for the workbook, not one per sheet,
+// because every sheet read stays in memory until the caller is done.
+type readBudget struct{ slots, bytes int }
+
+func (b *readBudget) take(slots, bytes int) error {
+	b.slots -= slots
+	b.bytes -= bytes
+	if b.slots < 0 {
+		return errors.New("xlsx: too many cells")
+	}
+	if b.bytes < 0 {
+		return errors.New("xlsx: too much text")
+	}
+	return nil
+}
 
 // Sheet is one tab in a workbook: a name and its rows of strings.
 type Sheet struct {
@@ -78,6 +106,22 @@ func Write(w io.Writer, sheetName string, rows [][]string) error {
 func WriteSheets(w io.Writer, sheets []Sheet) error {
 	if len(sheets) == 0 {
 		return errors.New("xlsx: a workbook needs at least one sheet")
+	}
+	// Excel's limits, checked before a byte is written: a reference past
+	// XFD or row 1,048,576 is a file Excel will not open and Read
+	// refuses, and a download that arrives broken is worse than an error
+	// the caller can report.
+	for _, sh := range sheets {
+		if len(sh.Rows) > maxRows {
+			return fmt.Errorf("xlsx: sheet %q has %d rows; a sheet holds at most %d", sh.Name, len(sh.Rows), maxRows)
+		}
+		for r, row := range sh.Rows {
+			for c := len(row) - 1; c >= maxColumns; c-- {
+				if row[c] != "" {
+					return fmt.Errorf("xlsx: sheet %q row %d has a value in column %d; a sheet holds at most %d columns", sh.Name, r+1, c+1, maxColumns)
+				}
+			}
+		}
 	}
 	names := sheetNames(sheets)
 	zw := zip.NewWriter(w)
@@ -253,6 +297,7 @@ func ReadSheets(data []byte) ([]Sheet, error) {
 	if err != nil {
 		return nil, err
 	}
+	budget := &readBudget{slots: maxCells, bytes: maxTextBytes}
 	var shared []string
 	if sharedPath != "" {
 		// A workbook that declares shared strings and cannot supply
@@ -265,18 +310,23 @@ func ReadSheets(data []byte) ([]Sheet, error) {
 		if shared, err = parseSharedStrings(raw); err != nil {
 			return nil, err
 		}
+		// Counted once, here: a shared string is one allocation however
+		// many cells refer to it.
+		text := 0
+		for _, sh := range shared {
+			text += len(sh)
+		}
+		if err := budget.take(len(shared), text); err != nil {
+			return nil, err
+		}
 	}
 	out := make([]Sheet, 0, len(paths))
-	// One cell budget for the whole workbook, not one per sheet: a
-	// workbook may list the same sparse sheet any number of times, and
-	// every sheet read stays in memory until the caller is done.
-	budget := maxCells
 	for _, sp := range paths {
 		raw, err := read(sp.path)
 		if err != nil {
 			return nil, err
 		}
-		rows, err := parseSheet(raw, shared, &budget)
+		rows, err := parseSheet(raw, shared, budget)
 		if err != nil {
 			return nil, err
 		}
@@ -397,7 +447,7 @@ func parseSharedStrings(raw []byte) ([]string, error) {
 
 // parseSheet streams sheetData into rows. Cell references place values;
 // missing cells inside a row read as ""; trailing empties are trimmed.
-func parseSheet(raw []byte, shared []string, budget *int) ([][]string, error) {
+func parseSheet(raw []byte, shared []string, budget *readBudget) ([][]string, error) {
 	decoder := xml.NewDecoder(bytes.NewReader(raw))
 	var rows [][]string
 	inData := false
@@ -407,8 +457,8 @@ func parseSheet(raw []byte, shared []string, budget *int) ([][]string, error) {
 			return errors.New("xlsx: cell reference past the last column")
 		}
 		if grow := col + 1 - len(row); grow > 0 {
-			if *budget -= grow; *budget < 0 {
-				return errors.New("xlsx: too many cells")
+			if err := budget.take(grow, 0); err != nil {
+				return err
 			}
 			row = append(row, make([]string, grow)...)
 		}
@@ -429,8 +479,29 @@ func parseSheet(raw []byte, shared []string, budget *int) ([][]string, error) {
 			case "sheetData":
 				inData = true
 			case "row":
-				if inData {
-					row = nil
+				if !inData {
+					continue
+				}
+				row = nil
+				// A producer may omit empty rows and say where the next
+				// one sits; restore the gap, or A3 reads back as A2.
+				for _, attr := range el.Attr {
+					if attr.Name.Local != "r" {
+						continue
+					}
+					n, err := strconv.Atoi(attr.Value)
+					if err != nil || n < 1 {
+						break
+					}
+					if n > maxRows {
+						return nil, errors.New("xlsx: row reference past the last row")
+					}
+					for len(rows)+1 < n {
+						if err := budget.take(1, 0); err != nil {
+							return nil, err
+						}
+						rows = append(rows, nil)
+					}
 				}
 			case "c":
 				if !inData {
@@ -480,6 +551,11 @@ func parseSheet(raw []byte, shared []string, budget *int) ([][]string, error) {
 				if err != nil {
 					return nil, err
 				}
+				if typ != "s" { // shared strings were counted once, at the table
+					if err := budget.take(0, len(value)); err != nil {
+						return nil, err
+					}
+				}
 				if err := appendCell(col, value); err != nil {
 					return nil, err
 				}
@@ -488,6 +564,9 @@ func parseSheet(raw []byte, shared []string, budget *int) ([][]string, error) {
 			if el.Name.Local == "row" && inData {
 				for len(row) > 0 && row[len(row)-1] == "" {
 					row = row[:len(row)-1]
+				}
+				if err := budget.take(1, 0); err != nil {
+					return nil, err
 				}
 				rows = append(rows, row)
 				row = nil

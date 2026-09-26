@@ -143,3 +143,13 @@ func TestServeCSVShape(t *testing.T) {
 		t.Fatalf("csv = %q, want %q", got, want)
 	}
 }
+
+// A table Excel cannot open is an error from Serve, not a broken
+// download.
+func TestServeRefusesAnXLSXPastExcelsLimits(t *testing.T) {
+	wide := make([]string, 16385)
+	wide[16384] = "too far"
+	if err := Serve(httptest.NewRecorder(), XLSX, Export{Filename: "t", Header: wide}); err == nil {
+		t.Fatal("Serve wrote an XLSX with a value past the last column")
+	}
+}

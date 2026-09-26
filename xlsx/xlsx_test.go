@@ -469,3 +469,64 @@ func TestEscapedSurrogatePairsDecodeTogether(t *testing.T) {
 		t.Fatalf("read %q (%v)", got[0][0], err)
 	}
 }
+
+// An empty <row/> still costs a slice, and a 50 MB part holds millions
+// of them; every row counts toward the cap, not only cells.
+func TestReadCountsEmptyRowsTowardTheCap(t *testing.T) {
+	rows := strings.Repeat("<row/>", maxCells+1)
+	if _, err := Read(workbook(t, rows, "", "")); err == nil {
+		t.Fatal("more empty rows than the cap were read")
+	}
+}
+
+// Text is budgeted across the workbook as well as cells: one sheet of a
+// hundred 8 KiB strings, listed a hundred times, is ten thousand cells
+// and 80 MB.
+func TestReadBudgetsTextAcrossTheWorkbook(t *testing.T) {
+	big := strings.Repeat("x", 8<<10)
+	var rows strings.Builder
+	for i := 1; i <= 100; i++ {
+		fmt.Fprintf(&rows, `<row r="%d"><c r="A%d" t="inlineStr"><is><t>%s</t></is></c></row>`, i, i, big)
+	}
+	if _, err := ReadSheets(workbookSheets(t, 1, rows.String(), "", "")); err != nil {
+		t.Fatalf("one sheet of 800 KB: %v", err)
+	}
+	if _, err := ReadSheets(workbookSheets(t, 100, rows.String(), "", "")); err == nil {
+		t.Fatal("80 MB of text across one workbook was read")
+	}
+}
+
+// A producer may omit empty rows and give each row its number; the gap
+// is restored, so A3 reads back as the third row, not the second.
+func TestReadRestoresOmittedRows(t *testing.T) {
+	got, err := Read(workbook(t,
+		`<row r="1"><c r="A1" t="inlineStr"><is><t>one</t></is></c></row><row r="3"><c r="A3" t="inlineStr"><is><t>three</t></is></c></row>`, "", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := [][]string{{"one"}, nil, {"three"}}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	// Refused as a row past the last, before any gap is padded: the
+	// cell budget would refuse it too, but only after allocating.
+	if _, err := Read(workbook(t, `<row r="1048577"><c t="inlineStr"><is><t>x</t></is></c></row>`, "", "")); err == nil || !strings.Contains(err.Error(), "last row") {
+		t.Fatalf("a row past Excel's last: %v", err)
+	}
+}
+
+// Write refuses what Excel cannot open, rather than handing out a file
+// that fails later: a value past XFD, or more rows than a sheet holds.
+func TestWriteRefusesPastExcelsLimits(t *testing.T) {
+	wide := make([]string, maxColumns+1)
+	wide[maxColumns] = "too far"
+	if err := Write(io.Discard, "S", [][]string{wide}); err == nil {
+		t.Error("a value in column 16,385 was written")
+	}
+	// Empty cells past the limit are fine: they are never written.
+	if err := Write(io.Discard, "S", [][]string{make([]string, maxColumns+5)}); err != nil {
+		t.Errorf("trailing empty cells: %v", err)
+	}
+	if err := Write(io.Discard, "S", make([][]string, maxRows+1)); err == nil {
+		t.Error("more rows than a sheet holds were written")
+	}
+}
