@@ -126,8 +126,10 @@ func TestLeavingTheBoxNeverPicksBetweenTwoExactHits(t *testing.T) {
 		{Value: "IL", Name: "Springfield (IL)", Text: "Springfield (IL)"},
 		{Value: "MA", Name: "Springfield (MA)", Text: "Springfield (MA)"},
 		{Value: "SH", Name: "Shelbyville", Text: "Shelbyville"},
+		{Value: "PA", Name: "Portland (OR)", Text: "Portland (OR)", First: true},
+		{Value: "PM", Name: "Portland (ME)", Text: "Portland (ME)"},
 	}
-	in, err := json.Marshal(map[string]any{"options": opts, "queries": []string{"springfield", "shelbyville"}})
+	in, err := json.Marshal(map[string]any{"options": opts, "queries": []string{"springfield", "shelbyville", "portland"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,6 +141,11 @@ func TestLeavingTheBoxNeverPicksBetweenTwoExactHits(t *testing.T) {
 	}
 	if got.Settled["springfield"] != "" {
 		t.Errorf("leaving after \"springfield\" picked %q between two exact hits, want nothing", got.Settled["springfield"])
+	}
+	// Exactly one of the exact ties marked first is the single best row,
+	// the rule a shared calling code settles by.
+	if got.Settled["portland"] != "PA" {
+		t.Errorf("leaving after \"portland\" picked %q, want PA: one exact tie is marked first", got.Settled["portland"])
 	}
 	if got.Settled["shelbyville"] != "SH" {
 		t.Errorf("leaving after \"shelbyville\" picked %q, want SH: a lone exact hit still settles", got.Settled["shelbyville"])

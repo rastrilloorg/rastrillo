@@ -530,6 +530,9 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		AfterRemove      string `json:"afterRemove"`
 		AfterRemoveInDOM bool   `json:"afterRemoveInDOM"`
 		BorrowedCleared  bool   `json:"borrowedCleared"`
+		AriaRequired     string `json:"ariaRequired"`
+		OpenFlipListed   bool   `json:"openFlipListed"`
+		OpenFlipActive   string `json:"openFlipActive"`
 		ScreenOrder      string `json:"screenOrder"`
 		KeyOrder         string `json:"keyOrder"`
 	}
@@ -551,6 +554,19 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		await frame();
 		out.requiredShown = input.value;
 		out.requiredSelected = blank.getAttribute('aria-selected');
+		out.ariaRequired = input.getAttribute('aria-required');
+		select.required = false;
+		await frame();
+		// And with the list OPEN when it flips: the blank leaves the list
+		// and is not left highlighted.
+		input.focus();
+		input.click();
+		await frame();
+		select.required = true;
+		await frame();
+		out.openFlipListed = !blank.hidden;
+		out.openFlipActive = input.getAttribute('aria-activedescendant') || '';
+		key('Escape');
 		select.required = false;
 		await frame();
 		out.backShown = input.value;
@@ -611,6 +627,12 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if got.RequiredShown != "" || got.RequiredSelected != "false" {
 		t.Errorf("made required, the blank shows %q and reads aria-selected=%q, want empty and false: the observer did not re-derive the prompt", got.RequiredShown, got.RequiredSelected)
+	}
+	if got.AriaRequired != "true" {
+		t.Errorf("the box of a required select reads aria-required=%q, want \"true\": an ARIA boolean is a string", got.AriaRequired)
+	}
+	if got.OpenFlipListed || got.OpenFlipActive == "size-listbox-0" {
+		t.Errorf("made required with the list open, the blank is still listed (%v) or highlighted (%q): the open list did not re-read its prompts", got.OpenFlipListed, got.OpenFlipActive)
 	}
 	if got.BackShown != "None" {
 		t.Errorf("made optional again, the box shows %q, want \"None\"", got.BackShown)

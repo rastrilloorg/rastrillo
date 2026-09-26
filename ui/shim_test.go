@@ -318,7 +318,7 @@ func TestSelectContract(t *testing.T) {
 	// per optgroup, and a filter that hides a heading when its rows all
 	// go. That is the trade, and it is a decision, not a drift.
 	//
-	// Raised again, to 35KB (measured 35,672 bytes), by the convergence
+	// Raised again, to 37KB (measured 36,296 bytes), by the convergence
 	// with Tito Go's searchselect (2026-09-26): ranking that puts the row
 	// someone meant first (accents folded, ISO and calling codes as
 	// terms), prompts that are never picks, a list that keeps pace with
@@ -330,7 +330,9 @@ func TestSelectContract(t *testing.T) {
 	// app that re-vendored without editing its layout would lose the
 	// enhancement silently. Most of the growth is the why-comments, which
 	// are what let the app owner who now owns it read it in one sitting.
-	if n := len(SelectJS()); n > 35*1024 {
+	// The headroom is about what the old 12KB ceiling had: room for a fix
+	// and its why, not for a feature.
+	if n := len(SelectJS()); n > 37*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {

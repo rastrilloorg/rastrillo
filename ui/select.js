@@ -139,10 +139,16 @@
     const q = fold(query);
     const bare = q.replace(/^\+/, "");
     const r0 = rank(hits[0], query);
-    if (r0 === 0 && /^\d+$/.test(bare) && hits[0].first) return hits[0];
+    // An exact hit settles only as the single best row: no other exact
+    // hit, or exactly one of them marked first (the country that owns a
+    // shared calling code). "Springfield (IL)" and "(MA)" settle nothing.
+    const exact = () => {
+      const ties = hits.filter((h) => rank(h, query) === 0);
+      return ties.length === 1 || ties.filter((h) => h.first).length === 1 ? hits[0] : null;
+    };
+    if (r0 === 0 && /^\d+$/.test(bare)) return hits[0].first ? exact() : null;
     if (bare.length < 3 || /^\d+$/.test(bare)) return null;
-    // Only the one row that good: two exact hits ("Springfield (IL)" and
-    // "(MA)") mean nothing, like two prefix hits.
+    if (r0 === 0) return exact();
     return r0 < rank(hits[1], query) ? hits[0] : null;
   };
 
@@ -750,7 +756,11 @@
       input.setCustomValidity("");
     };
     native.addEventListener("invalid", () => input.setAttribute("aria-invalid", "true"));
-    const settleRequired = () => input.toggleAttribute("aria-required", native.required);
+    // "true", not an empty value: an ARIA boolean is a string.
+    const settleRequired = () => {
+      if (native.required) input.setAttribute("aria-required", "true");
+      else input.removeAttribute("aria-required");
+    };
     settleRequired();
     // A sibling script may stop the select being required (or start it)
     // without touching it otherwise. That changes which blanks are prompts,
@@ -762,7 +772,10 @@
         if (!o.run) o.prompt = isPrompt(native.options[o.index].value, o.marked, native.required, native.options[o.index].disabled);
       }
       markSelected();
-      if (!open) {
+      // An open list re-reads its rows: a blank that just became a prompt
+      // must leave it, and must not stay the highlight.
+      if (open) filter(input.value);
+      else {
         input.value = currentText();
         showPick();
       }
