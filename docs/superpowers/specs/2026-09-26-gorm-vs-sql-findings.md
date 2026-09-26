@@ -170,7 +170,9 @@ read. It costs the scan boilerplate GORM removes — the 12–16% above —
 and it has no model diff: every migration is hand-written, and owner
 scoping is the app's own discipline rather than `scope`'s. `rastrillo
 migration generate` and `migration check` both load the app's GORM
-`Models`, so a plain-SQL app leaves them out of `make ci`; `migrate`'s
+`Models`, so a plain-SQL app leaves them out: the scaffold runs
+`migration-check` twice, in `make ci` and as its own runner step
+`.amadan/ci.d/40-migration-check`, and both go; `migrate`'s
 own checksum refusal (an applied migration whose SQL changed) still
 guards the ledger at boot.
 

@@ -122,7 +122,8 @@ one-connection writer (db.Open's DSN) and readers;
 package, import only `make gorm-free` ones — no `db`, `scope`,
 `gormlite`. Explicit transactions and plans, smaller and faster. You
 write the scans, every migration (generate and `check` need GORM
-`Models`: drop `check` from `make ci`) and every owned query's
+`Models`: drop `migration-check` from `make ci` and
+`.amadan/ci.d/40-migration-check`) and every owned query's
 `WHERE user_id = ?`. CRUD-heavy, small team: (a). Money, fulfilment,
 transaction-critical: (b). Switching is per package; schema and ledger
 are the same.
