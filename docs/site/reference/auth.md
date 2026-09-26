@@ -26,14 +26,15 @@ Build one at boot.
 
 ```go
 type Config struct {
-	DB           *sql.DB
-	Origin       string
-	InstanceKey  string
-	Mailer       mail.Sender
-	Authorize    func(address string) bool
-	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
-	SigninPath   string
-	SignedInPath string
+	DB               *sql.DB
+	Origin           string
+	InstanceKey      string
+	Mailer           mail.Sender
+	Authorize        func(address string) bool
+	SecondFactor     func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
+	SigninPath       string
+	SignedInPath     string
+	TrustedProxyHops int
 }
 ```
 
@@ -59,6 +60,12 @@ and admin bootstrap are your policy layered on this hook.
 `SecondFactor` is the same seam `password` has.
 `DefaultSessionTTL` is the TTL used when the config does not override
 it.
+
+`TrustedProxyHops` is how many proxies you run in front of the app, and
+decides which address the per-IP sign-in limit counts. At 0, the
+default, it counts the connection's address, so behind a proxy every
+visitor shares one limit. On CARLOS, set it to 1 so each visitor gets
+their own. See [clientip](/docs/reference/clientip).
 
 ## Schema
 
