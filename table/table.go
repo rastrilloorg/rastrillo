@@ -33,13 +33,20 @@
 package table
 
 import (
+	"bytes"
 	"encoding/csv"
+	"errors"
+	"fmt"
 	"mime"
 	"net/http"
 	"strconv"
 
 	"amadan.net/rastrillo/rastrillo/xlsx"
 )
+
+// ErrTooBigForXLSX is what Serve returns, having written nothing, for a
+// table past Excel's limits.
+var ErrTooBigForXLSX = errors.New("table: too big for an XLSX workbook")
 
 // The two formats Serve writes. Anything else a caller passes — it is
 // usually a query parameter — is served as CSV.
@@ -87,12 +94,32 @@ type Export struct {
 }
 
 // Serve writes e as an attachment in format: XLSX when format is XLSX,
-// CSV otherwise. Headers are set and the status is 200 before the first
-// byte, so an error returned here (a client that went away) can only be
-// logged, never answered.
+// CSV otherwise.
+//
+// A table too big for a workbook (Excel's column, row or cell-length
+// limits) is refused before anything is written, so the caller can
+// still answer — offer CSV, say — and check it with
+// errors.Is(err, ErrTooBigForXLSX). Any other error comes after the
+// response has started, from a client that went away, and can only be
+// logged.
 func Serve(w http.ResponseWriter, format string, e Export) error {
 	if format != XLSX {
 		format = CSV
+	}
+	var workbook bytes.Buffer
+	if format == XLSX {
+		// Built whole before the headers go out: a zip is written in one
+		// piece at the end anyway, and building it first is what lets a
+		// refusal still be answered.
+		sheet := e.Sheet
+		if sheet == "" {
+			sheet = e.Filename
+		}
+		// Never guarded: inline strings are never formulas, and a guard
+		// here would only corrupt the values.
+		if err := xlsx.Write(&workbook, sheet, append([][]string{e.Header}, e.Rows...)); err != nil {
+			return fmt.Errorf("%w: %w", ErrTooBigForXLSX, err)
+		}
 	}
 	// mime.FormatMediaType quotes the name and, for a name that is not
 	// plain ASCII, switches to RFC 2231's filename*= form, so a download
@@ -100,13 +127,8 @@ func Serve(w http.ResponseWriter, format string, e Export) error {
 	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": e.Filename + "." + format}))
 	if format == XLSX {
 		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-		sheet := e.Sheet
-		if sheet == "" {
-			sheet = e.Filename
-		}
-		// Never guarded: inline strings are never formulas, and a guard
-		// here would only corrupt the values.
-		return xlsx.Write(w, sheet, append([][]string{e.Header}, e.Rows...))
+		_, err := workbook.WriteTo(w)
+		return err
 	}
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	cw := csv.NewWriter(w)

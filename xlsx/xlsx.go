@@ -45,6 +45,17 @@ const (
 	// maxPartBytes caps a single decompressed XML part — a zip-bomb guard,
 	// far above any legitimate import.
 	maxPartBytes = 50 << 20
+	// maxUnpackedBytes caps what a whole read decompresses, across every
+	// part. The per-part cap alone let a 2 KB file list one 1 MiB sheet
+	// a hundred times and have the reader unpack and parse it a hundred
+	// times over.
+	maxUnpackedBytes = 200 << 20
+	// maxCellChars is Excel's own limit on one cell's text, in UTF-16
+	// units: a longer value is truncated or "repaired" when opened.
+	maxCellChars = 32767
+	// maxSheetNameChars is Excel's tab-name limit, also in UTF-16 units:
+	// twenty emoji are twenty runes and forty units.
+	maxSheetNameChars = 31
 	// maxCells caps the cells read, counting the empty slots a row is
 	// padded with as well as the cells a file names: a single cell at
 	// XFD1 costs 16,384 slots, and counting only the cell would let a
@@ -119,6 +130,13 @@ func WriteSheets(w io.Writer, sheets []Sheet) error {
 			for c := len(row) - 1; c >= maxColumns; c-- {
 				if row[c] != "" {
 					return fmt.Errorf("xlsx: sheet %q row %d has a value in column %d; a sheet holds at most %d columns", sh.Name, r+1, c+1, maxColumns)
+				}
+			}
+			for c, v := range row {
+				// UTF-16 units never exceed UTF-8 bytes, so only a long
+				// value is worth counting.
+				if len(v) > maxCellChars && utf16Len(v) > maxCellChars {
+					return fmt.Errorf("xlsx: sheet %q cell %s%d has %d characters; a cell holds at most %d", sh.Name, columnName(c), r+1, utf16Len(v), maxCellChars)
 				}
 			}
 		}
@@ -204,15 +222,15 @@ var sheetInvalid = strings.NewReplacer(
 	"[", " ", "]", " ", ":", " ", "*", " ", "?", " ", "/", " ", `\`, " ")
 
 // SheetName makes one tab name Excel will open: the reserved characters
-// replaced, the 31-character cap applied by RUNE so a multi-byte name is not
-// cut mid-character, and never empty.
+// replaced, the 31-character cap applied in UTF-16 units (Excel's count)
+// without splitting a character, and never empty.
 func SheetName(name string) string {
 	name = strings.TrimSpace(sheetInvalid.Replace(name))
 	name = strings.Trim(name, "'")
-	if r := []rune(name); len(r) > 31 {
+	if utf16Len(name) > maxSheetNameChars {
 		// Cutting can expose an apostrophe or a space at the new end,
 		// which Excel refuses just as it would have at the old one.
-		name = strings.TrimSpace(strings.Trim(strings.TrimSpace(string(r[:31])), "'"))
+		name = strings.TrimSpace(strings.Trim(strings.TrimSpace(cutUTF16(name, maxSheetNameChars)), "'"))
 	}
 	if name == "" {
 		name = "Sheet"
@@ -232,11 +250,7 @@ func sheetNames(sheets []Sheet) []string {
 		name := SheetName(sh.Name)
 		for n := 2; taken[strings.ToLower(name)]; n++ {
 			suffix := " " + strconv.Itoa(n)
-			trimmed := []rune(SheetName(sh.Name))
-			if len(trimmed)+len([]rune(suffix)) > 31 {
-				trimmed = trimmed[:31-len([]rune(suffix))]
-			}
-			name = strings.TrimSpace(string(trimmed)) + suffix
+			name = strings.TrimSpace(cutUTF16(SheetName(sh.Name), maxSheetNameChars-len(suffix))) + suffix
 		}
 		taken[strings.ToLower(name)] = true
 		out[i] = name
@@ -274,6 +288,7 @@ func ReadSheets(data []byte) ([]Sheet, error) {
 	for _, f := range zr.File {
 		parts[f.Name] = f
 	}
+	unpacked := 0
 	read := func(name string) ([]byte, error) {
 		f, ok := parts[name]
 		if !ok {
@@ -290,6 +305,9 @@ func ReadSheets(data []byte) ([]Sheet, error) {
 		}
 		if len(content) > maxPartBytes {
 			return nil, errors.New("xlsx: part too large")
+		}
+		if unpacked += len(content); unpacked > maxUnpackedBytes {
+			return nil, errors.New("xlsx: workbook too large")
 		}
 		return content, nil
 	}
@@ -465,9 +483,16 @@ func parseSheet(raw []byte, shared []string, budget *readBudget) ([][]string, er
 		row[col] = value
 		return nil
 	}
+	// The part must be a worksheet: an empty part, a bare XML
+	// declaration or some other document would otherwise read as an
+	// empty sheet, a damaged import that reports success.
+	root := false
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {
+			if !root {
+				return nil, errors.New("xlsx: sheet part is not a worksheet")
+			}
 			return rows, nil
 		}
 		if err != nil {
@@ -475,6 +500,12 @@ func parseSheet(raw []byte, shared []string, budget *readBudget) ([][]string, er
 		}
 		switch el := token.(type) {
 		case xml.StartElement:
+			if !root {
+				if el.Name.Local != "worksheet" {
+					return nil, fmt.Errorf("xlsx: sheet part is <%s>, not a worksheet", el.Name.Local)
+				}
+				root = true
+			}
 			switch el.Name.Local {
 			case "sheetData":
 				inData = true
@@ -728,4 +759,26 @@ func decodeText(s string) string {
 		b.WriteByte(s[i])
 	}
 	return b.String()
+}
+
+// utf16Len is s's length in UTF-16 units, which is how Excel counts
+// characters in a cell or a tab name.
+func utf16Len(s string) int {
+	n := 0
+	for _, r := range s {
+		n += utf16.RuneLen(r)
+	}
+	return n
+}
+
+// cutUTF16 is the longest prefix of s at most n UTF-16 units long,
+// never splitting a character.
+func cutUTF16(s string, n int) string {
+	used := 0
+	for i, r := range s {
+		if used += utf16.RuneLen(r); used > n {
+			return s[:i]
+		}
+	}
+	return s
 }

@@ -3,6 +3,7 @@ package table
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"mime"
 	"net/http/httptest"
 	"testing"
@@ -149,7 +150,14 @@ func TestServeCSVShape(t *testing.T) {
 func TestServeRefusesAnXLSXPastExcelsLimits(t *testing.T) {
 	wide := make([]string, 16385)
 	wide[16384] = "too far"
-	if err := Serve(httptest.NewRecorder(), XLSX, Export{Filename: "t", Header: wide}); err == nil {
-		t.Fatal("Serve wrote an XLSX with a value past the last column")
+	rec := httptest.NewRecorder()
+	err := Serve(rec, XLSX, Export{Filename: "t", Header: wide})
+	if !errors.Is(err, ErrTooBigForXLSX) {
+		t.Fatalf("Serve = %v, want ErrTooBigForXLSX", err)
+	}
+	// Refused before anything was written, so the caller can still
+	// answer the request.
+	if len(rec.Header()) != 0 || rec.Body.Len() != 0 {
+		t.Fatalf("Serve wrote headers %v and %d bytes before refusing", rec.Header(), rec.Body.Len())
 	}
 }

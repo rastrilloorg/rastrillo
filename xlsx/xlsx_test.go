@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func TestWriteReadRoundTrip(t *testing.T) {
@@ -292,6 +293,13 @@ func workbook(t *testing.T, rows, shared, sharedTarget string) []byte {
 // memory.
 func workbookSheets(t *testing.T, tabs int, rows, shared, sharedTarget string) []byte {
 	t.Helper()
+	return workbookParts(t, tabs, `<worksheet><sheetData>`+rows+`</sheetData></worksheet>`, shared, sharedTarget)
+}
+
+// workbookParts is workbookSheets with the worksheet part given whole,
+// for a test about what that part is.
+func workbookParts(t *testing.T, tabs int, sheetPart, shared, sharedTarget string) []byte {
+	t.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	add := func(name, content string) {
@@ -316,7 +324,7 @@ func workbookSheets(t *testing.T, tabs int, rows, shared, sharedTarget string) [
 	if shared != "" {
 		add("xl/sharedStrings.xml", `<sst>`+shared+`</sst>`)
 	}
-	add("xl/worksheets/sheet1.xml", `<worksheet><sheetData>`+rows+`</sheetData></worksheet>`)
+	add("xl/worksheets/sheet1.xml", sheetPart)
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -528,5 +536,68 @@ func TestWriteRefusesPastExcelsLimits(t *testing.T) {
 	}
 	if err := Write(io.Discard, "S", make([][]string, maxRows+1)); err == nil {
 		t.Error("more rows than a sheet holds were written")
+	}
+}
+
+// What a read decompresses is budgeted across the workbook: one 1 MiB
+// sheet listed two hundred times is a 2 KB file and 200 MiB of work.
+func TestReadBudgetsUnpackedBytesAcrossTheWorkbook(t *testing.T) {
+	comment := "<!--" + strings.Repeat("x", 1<<20) + "-->"
+	if _, err := ReadSheets(workbookSheets(t, 1, comment, "", "")); err != nil {
+		t.Fatalf("one 1 MiB sheet: %v", err)
+	}
+	if _, err := ReadSheets(workbookSheets(t, 201, comment, "", "")); err == nil {
+		t.Fatal("a 1 MiB sheet unpacked 201 times was read")
+	}
+}
+
+// A sheet part that is not a worksheet is a damaged file, not an empty
+// sheet.
+func TestReadRefusesAPartThatIsNotAWorksheet(t *testing.T) {
+	for name, part := range map[string]string{
+		"empty":            "",
+		"declaration only": `<?xml version="1.0"?>`,
+		"another document": `<html>not a worksheet</html>`,
+	} {
+		if _, err := Read(workbookParts(t, 1, part, "", "")); err == nil {
+			t.Errorf("%s: read as an empty sheet", name)
+		}
+	}
+	if got, err := Read(workbookParts(t, 1, `<?xml version="1.0"?><worksheet/>`, "", "")); err != nil || len(got) != 0 {
+		t.Fatalf("an empty worksheet: %q, %v", got, err)
+	}
+}
+
+// Excel counts a tab name in UTF-16 units: twenty emoji are twenty
+// runes but forty units, over the 31 limit.
+func TestSheetNameCountsUTF16Units(t *testing.T) {
+	name := SheetName(strings.Repeat("😀", 20))
+	if n := utf16Len(name); n > 31 || n == 0 {
+		t.Fatalf("SheetName kept %d UTF-16 units: %q", n, name)
+	}
+	if !utf8.ValidString(name) {
+		t.Fatalf("SheetName split a character: %q", name)
+	}
+	names := sheetNames([]Sheet{{Name: strings.Repeat("😀", 20)}, {Name: strings.Repeat("😀", 20)}})
+	for _, n := range names {
+		if utf16Len(n) > 31 || !utf8.ValidString(n) {
+			t.Fatalf("a de-duplicated name is %d units or split: %q", utf16Len(n), n)
+		}
+	}
+	if names[0] == names[1] {
+		t.Fatalf("two tabs share a name: %q", names)
+	}
+}
+
+// A cell holds at most 32,767 UTF-16 units; Write refuses more rather
+// than hand out a file Excel truncates or repairs.
+func TestWriteRefusesACellPastExcelsLength(t *testing.T) {
+	for _, v := range []string{strings.Repeat("a", 32768), strings.Repeat("😀", 16384)} {
+		if err := Write(io.Discard, "S", [][]string{{v}}); err == nil {
+			t.Errorf("a %d-unit cell was written", utf16Len(v))
+		}
+	}
+	if err := Write(io.Discard, "S", [][]string{{strings.Repeat("a", 32767)}}); err != nil {
+		t.Errorf("a cell at the limit: %v", err)
 	}
 }
