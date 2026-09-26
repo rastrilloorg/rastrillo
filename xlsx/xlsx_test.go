@@ -277,3 +277,122 @@ func TestWriteSheetsRefusesAnEmptyWorkbook(t *testing.T) {
 		t.Errorf("wrote a workbook with no sheets")
 	}
 }
+
+// workbook is a one-sheet file with the given sheetData rows and, when
+// shared is not empty, a sharedStrings part holding it. sharedTarget
+// lets a test point the relationship at a part that is not there.
+func workbook(t *testing.T, rows, shared, sharedTarget string) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	add := func(name, content string) {
+		f, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("xl/workbook.xml", `<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>`)
+	rels := `<Relationships><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>`
+	if sharedTarget != "" {
+		rels += `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="` + sharedTarget + `"/>`
+	}
+	add("xl/_rels/workbook.xml.rels", rels+`</Relationships>`)
+	if shared != "" {
+		add("xl/sharedStrings.xml", `<sst>`+shared+`</sst>`)
+	}
+	add("xl/worksheets/sheet1.xml", `<worksheet><sheetData>`+rows+`</sheetData></worksheet>`)
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+// A reference names a column, and a row is padded out to it. One cell
+// at ZZZZZZ1 used to ask for 321 million slots: a file of a few hundred
+// bytes that could exhaust an importer's memory. Past Excel's last
+// column is refused, and padding counts toward the cell budget.
+func TestReadRefusesReferencesPastTheLastColumn(t *testing.T) {
+	for _, ref := range []string{"ZZZZZZ1", "XFE1", strings.Repeat("Z", 40) + "1"} {
+		_, err := Read(workbook(t, `<row r="1"><c r="`+ref+`" t="inlineStr"><is><t>x</t></is></c></row>`, "", ""))
+		if err == nil {
+			t.Errorf("a cell at %s was read", ref)
+		}
+	}
+	got, err := Read(workbook(t, `<row r="1"><c r="XFD1" t="inlineStr"><is><t>last</t></is></c></row>`, "", ""))
+	if err != nil || len(got[0]) != 16384 || got[0][16383] != "last" {
+		t.Fatalf("the last real column: %v, %d cells", err, len(got[0]))
+	}
+}
+
+func TestReadCountsPaddingTowardTheCellBudget(t *testing.T) {
+	var rows strings.Builder
+	// 70 rows of one cell at XFD: 70 * 16384 slots is past the budget,
+	// though the file names only 70 cells.
+	for i := 1; i <= 70; i++ {
+		fmt.Fprintf(&rows, `<row r="%d"><c r="XFD%d" t="inlineStr"><is><t>x</t></is></c></row>`, i, i)
+	}
+	if _, err := Read(workbook(t, rows.String(), "", "")); err == nil {
+		t.Fatal("a sparse file padded past the cell budget was read")
+	}
+}
+
+// A workbook that declares shared strings and cannot supply them is
+// damaged; reading on would turn every text cell into "".
+func TestReadFailsWhenDeclaredSharedStringsAreMissing(t *testing.T) {
+	_, err := Read(workbook(t, `<row r="1"><c r="A1" t="s"><v>0</v></c></row>`, "", "sharedStrings.xml"))
+	if err == nil {
+		t.Fatal("a missing sharedStrings part read as success")
+	}
+}
+
+// Inline strings can be rich text, and shared strings can carry a
+// phonetic guide that is not part of the value.
+func TestReadRichInlineTextAndSkipsPhoneticGuides(t *testing.T) {
+	got, err := Read(workbook(t,
+		`<row r="1"><c r="A1" t="inlineStr"><is><r><t>Zo</t></r><r><t>ë rich</t></r></is></c><c r="B1" t="s"><v>0</v></c></row>`,
+		`<si><t>東京</t><rPh sb="0" eb="2"><t>とうきょう</t></rPh></si>`, "sharedStrings.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Zoë rich", "東京"}; !reflect.DeepEqual(got[0], want) {
+		t.Fatalf("got %q, want %q", got[0], want)
+	}
+}
+
+// _xHHHH_ is spreadsheet text's own escape. A value that merely
+// contains the spelling must come back as written, and a control
+// character XML cannot carry must survive the trip too.
+func TestTextEscapesRoundTrip(t *testing.T) {
+	values := []string{"_x0041_", "_x0041_x0042_", "a_b", "_x005F_", "bell\x01ring", "tab\tand\nnewline", "_x12G4_"}
+	var buf bytes.Buffer
+	if err := Write(&buf, "S", [][]string{values}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Read(buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got[0], values) {
+		t.Fatalf("round trip:\n got %q\nwant %q", got[0], values)
+	}
+	// And what Excel itself writes: a carriage return as _x000D_.
+	got, err = Read(workbook(t, `<row r="1"><c r="A1" t="inlineStr"><is><t>a_x000D_b</t></is></c></row>`, "", ""))
+	if err != nil || got[0][0] != "a\rb" {
+		t.Fatalf("Excel's _x000D_ read as %q (%v)", got[0][0], err)
+	}
+}
+
+// Cutting a name to 31 characters can expose an apostrophe at the new
+// end, which Excel refuses as it would at the old one.
+func TestSheetNameTrimsAfterCutting(t *testing.T) {
+	got := SheetName(strings.Repeat("a", 30) + "'b")
+	if strings.HasSuffix(got, "'") || got == "" || len([]rune(got)) > 31 {
+		t.Fatalf("SheetName = %q", got)
+	}
+	if got := SheetName(strings.Repeat("'", 40)); got != "Sheet" {
+		t.Fatalf("a name of apostrophes = %q, want Sheet", got)
+	}
+}

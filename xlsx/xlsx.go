@@ -43,8 +43,16 @@ const (
 	// maxPartBytes caps a single decompressed XML part — a zip-bomb guard,
 	// far above any legitimate import.
 	maxPartBytes = 50 << 20
-	// maxCells caps total cells read, bounding memory on hostile input.
+	// maxCells caps the cells read, counting the empty slots a row is
+	// padded with as well as the cells a file names: a single cell at
+	// XFD1 costs 16,384 slots, and counting only the cell would let a
+	// tiny file allocate as much as its references can reach.
 	maxCells = 1 << 20
+	// maxColumns is Excel's own limit (XFD). A reference past it is not
+	// a spreadsheet anyone made, and following it would size a row by
+	// a number the file chose: ZZZZZZ1 alone asked for 321 million
+	// slots before this cap.
+	maxColumns = 16384
 )
 
 // Sheet is one tab in a workbook: a name and its rows of strings.
@@ -135,7 +143,7 @@ func sheetXML(rows [][]string) string {
 				continue
 			}
 			fmt.Fprintf(&sb, `<c r="%s%d" t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>`,
-				columnName(c), r+1, xmlEscape(value))
+				columnName(c), r+1, xmlEscape(encodeText(value)))
 		}
 		sb.WriteString(`</row>`)
 	}
@@ -156,7 +164,9 @@ func SheetName(name string) string {
 	name = strings.TrimSpace(sheetInvalid.Replace(name))
 	name = strings.Trim(name, "'")
 	if r := []rune(name); len(r) > 31 {
-		name = strings.TrimSpace(string(r[:31]))
+		// Cutting can expose an apostrophe or a space at the new end,
+		// which Excel refuses just as it would have at the old one.
+		name = strings.TrimSpace(strings.Trim(strings.TrimSpace(string(r[:31])), "'"))
 	}
 	if name == "" {
 		name = "Sheet"
@@ -243,10 +253,15 @@ func ReadSheets(data []byte) ([]Sheet, error) {
 	}
 	var shared []string
 	if sharedPath != "" {
-		if raw, err := read(sharedPath); err == nil {
-			if shared, err = parseSharedStrings(raw); err != nil {
-				return nil, err
-			}
+		// A workbook that declares shared strings and cannot supply
+		// them is damaged: reading on would turn every text cell into
+		// "" and report success, an import that looks fine and is not.
+		raw, err := read(sharedPath)
+		if err != nil {
+			return nil, err
+		}
+		if shared, err = parseSharedStrings(raw); err != nil {
+			return nil, err
 		}
 	}
 	out := make([]Sheet, 0, len(paths))
@@ -346,8 +361,18 @@ func parseSharedStrings(raw []byte) ([]string, error) {
 		switch el := token.(type) {
 		case xml.StartElement:
 			if el.Name.Local == "si" {
+				if len(out) >= maxCells {
+					return nil, errors.New("xlsx: too many shared strings")
+				}
 				depth = 1
 				current.Reset()
+			} else if depth > 0 && el.Name.Local == "rPh" {
+				// A phonetic guide (the reading over 東京) is not part
+				// of the value; collecting its <t> would import
+				// 東京とうきょう.
+				if err := decoder.Skip(); err != nil {
+					return nil, err
+				}
 			} else if depth > 0 && el.Name.Local == "t" {
 				var text string
 				if err := decoder.DecodeElement(&text, &el); err != nil {
@@ -357,7 +382,7 @@ func parseSharedStrings(raw []byte) ([]string, error) {
 			}
 		case xml.EndElement:
 			if el.Name.Local == "si" && depth > 0 {
-				out = append(out, current.String())
+				out = append(out, decodeText(current.String()))
 				depth = 0
 			}
 		}
@@ -369,14 +394,21 @@ func parseSharedStrings(raw []byte) ([]string, error) {
 func parseSheet(raw []byte, shared []string) ([][]string, error) {
 	decoder := xml.NewDecoder(bytes.NewReader(raw))
 	var rows [][]string
-	cells := 0
+	slots := 0 // cells named plus the empty slots padding them in
 	inData := false
 	var row []string
-	appendCell := func(col int, value string) {
-		for len(row) <= col {
-			row = append(row, "")
+	appendCell := func(col int, value string) error {
+		if col >= maxColumns {
+			return errors.New("xlsx: cell reference past the last column")
+		}
+		if grow := col + 1 - len(row); grow > 0 {
+			if slots += grow; slots > maxCells {
+				return errors.New("xlsx: too many cells")
+			}
+			row = append(row, make([]string, grow)...)
 		}
 		row[col] = value
+		return nil
 	}
 	for {
 		token, err := decoder.Token()
@@ -399,9 +431,6 @@ func parseSheet(raw []byte, shared []string) ([][]string, error) {
 				if !inData {
 					continue
 				}
-				if cells++; cells > maxCells {
-					return nil, errors.New("xlsx: too many cells")
-				}
 				var ref, typ string
 				for _, attr := range el.Attr {
 					switch attr.Name.Local {
@@ -411,20 +440,32 @@ func parseSheet(raw []byte, shared []string) ([][]string, error) {
 						typ = attr.Value
 					}
 				}
+				// An inline string is either plain text or rich-text runs,
+				// each with its own <t>; phonetic guides (rPh) are left
+				// out, as they are not part of the value.
 				var cell struct {
 					V  string `xml:"v"`
 					Is struct {
 						Text []string `xml:"t"`
+						Runs []struct {
+							Text []string `xml:"t"`
+						} `xml:"r"`
 					} `xml:"is"`
 				}
 				if err := decoder.DecodeElement(&cell, &el); err != nil {
 					return nil, err
 				}
+				inline := strings.Join(cell.Is.Text, "")
+				for _, run := range cell.Is.Runs {
+					inline += strings.Join(run.Text, "")
+				}
 				col := columnIndex(ref)
 				if col < 0 {
 					col = len(row)
 				}
-				appendCell(col, cellValue(typ, cell.V, strings.Join(cell.Is.Text, ""), shared))
+				if err := appendCell(col, cellValue(typ, cell.V, inline, shared)); err != nil {
+					return nil, err
+				}
 			}
 		case xml.EndElement:
 			if el.Name.Local == "row" && inData {
@@ -449,7 +490,7 @@ func cellValue(typ, v, inline string, shared []string) string {
 		}
 		return shared[index]
 	case "inlineStr":
-		return inline
+		return decodeText(inline)
 	case "b":
 		if strings.TrimSpace(v) == "1" {
 			return "TRUE"
@@ -457,7 +498,7 @@ func cellValue(typ, v, inline string, shared []string) string {
 		return "FALSE"
 	case "str", "":
 		if typ == "str" {
-			return v
+			return decodeText(v)
 		}
 		// A typeless cell is numeric: render canonically, no trailing zeros.
 		// Dates surface as their serial numbers, because a date is a number
@@ -497,6 +538,12 @@ func columnIndex(ref string) int {
 		if r >= 'A' && r <= 'Z' {
 			col = col*26 + int(r-'A') + 1
 			seen = true
+			if col > maxColumns {
+				// Past the last column already; keep counting and a
+				// long enough reference overflows into a valid-looking
+				// index.
+				return maxColumns
+			}
 		} else {
 			break
 		}
@@ -511,4 +558,64 @@ func xmlEscape(s string) string {
 	var buf bytes.Buffer
 	_ = xml.EscapeText(&buf, []byte(s))
 	return buf.String()
+}
+
+// Spreadsheet text has an escape of its own on top of XML's: _xHHHH_ is
+// the character U+HHHH. Excel writes a control character that XML cannot
+// carry that way (_x0001_), and reads any _xHHHH_ it finds as one, so a
+// value that merely contains the spelling must have its underscore
+// escaped as _x005F_ or it comes back as a different string.
+
+// encodeText escapes value for a spreadsheet text cell: each underscore
+// that starts an _xHHHH_ spelling becomes _x005F_, and each control
+// character XML cannot carry becomes _x00HH_ (xml.EscapeText would put
+// U+FFFD in its place, losing it). Every underscore is checked, not
+// every match, because the closing underscore of one spelling can open
+// the next: _x0041_x0042_ needs both escaped to survive.
+func encodeText(value string) string {
+	var b strings.Builder
+	for i := 0; i < len(value); i++ {
+		c := value[i]
+		switch {
+		case c == '_' && isEscapeAt(value, i):
+			b.WriteString("_x005F_")
+		case c < 0x20 && c != '\t' && c != '\n' && c != '\r':
+			fmt.Fprintf(&b, "_x%04X_", c)
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
+}
+
+// isEscapeAt reports whether s has the _xHHHH_ spelling starting at i.
+func isEscapeAt(s string, i int) bool {
+	if i+7 > len(s) || s[i] != '_' || s[i+1] != 'x' || s[i+6] != '_' {
+		return false
+	}
+	for _, h := range s[i+2 : i+6] {
+		if !strings.ContainsRune("0123456789abcdefABCDEF", h) {
+			return false
+		}
+	}
+	return true
+}
+
+// decodeText undoes encodeText, and Excel's own escapes with it, left to
+// right as Excel reads them.
+func decodeText(s string) string {
+	if !strings.Contains(s, "_x") {
+		return s
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		if isEscapeAt(s, i) {
+			n, _ := strconv.ParseUint(s[i+2:i+6], 16, 32)
+			b.WriteRune(rune(n))
+			i += 6
+			continue
+		}
+		b.WriteByte(s[i])
+	}
+	return b.String()
 }
