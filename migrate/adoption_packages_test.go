@@ -11,6 +11,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/eventlog"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
 	"amadan.net/rastrillo/rastrillo/passkey"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -314,7 +315,7 @@ func TestWholeAppAdoptsItsComposedBootSchema(t *testing.T) {
 	// writes for these models on a fresh app — generated rather than
 	// transcribed, so it cannot drift from what AutoMigrate builds
 	// below.
-	changes, err := migrate.Generate(ctx, nil, []any{&appNote{}})
+	changes, err := modeldiff.Generate(ctx, nil, []any{&appNote{}})
 	if err != nil {
 		t.Fatal(err)
 	}

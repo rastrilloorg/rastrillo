@@ -24,6 +24,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/migrate/dump"
+	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
 )
 
 func runMigration(args []string) error {
@@ -279,7 +280,7 @@ func migrationGenerate(args []string) error {
 // checked first, ahead of CREATE TABLE, precisely because a rebuild's
 // own synthetic CREATE TABLE ...__temp would otherwise win the naive
 // first-match and mislabel a dropped column as a created table.
-func describe(changes []migrate.Change) string {
+func describe(changes []modeldiff.Change) string {
 	for _, c := range changes {
 		if strings.Contains(strings.ToUpper(c.SQL), "RENAME TO") {
 			return "drop_column_" + renamedTable(c.SQL)

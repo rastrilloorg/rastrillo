@@ -19,8 +19,14 @@ none is offered instead of offered and untrustworthy.
 ## Apply
 
 ```go
-func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error)
+func Apply(ctx context.Context, d WriterSource, s *Set) (Result, error)
+
+type WriterSource interface{ Writer() *sql.DB }
+
+func Pool(w *sql.DB) WriterSource
 ```
+
+`d` is anything with a `Writer() *sql.DB` method. `*db.DB` has one, so a Rastrillo app passes it as before. An app that opens SQLite itself passes `migrate.Pool(writer)`, where `writer` is its pool capped at one open connection.
 
 Runs every migration the ledger does not already record, in order, each
 in its own `BEGIN IMMEDIATE` transaction with its ledger row written
@@ -71,17 +77,25 @@ lets every subsystem number from 0001.
 type Migration struct {
 	ID  string
 	SQL string
-	Fn  func(*gorm.DB) error
+	Fn  func(ctx context.Context, tx Tx) error
+}
+
+type Tx interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 ```
 
 Exactly one of `SQL` or `Fn` is set. `SQL` is the default and the only
 thing `rastrillo migration generate` emits.
 
-`Fn` is the escape hatch for a change SQL cannot express. It runs on the
-same pinned connection inside the same transaction as its ledger row, so
-a failure rolls its writes back too — `Apply` builds it a `*gorm.DB`
-backed by that one connection rather than your pool.
+`Fn` is the escape hatch for a change SQL cannot express. It gets `tx`: the same pinned connection, inside the same transaction as its ledger row, so a failure rolls its writes back too.
+
+`Tx` has no `BeginTx`. The migration is already inside a transaction, and SQLite refuses to start another.
+
+To write the migration with GORM, wrap it in `gormfn.Fn` from `migrate/gormfn`: `Fn: gormfn.Fn(func(g *gorm.DB) error { ... })`. It runs on the same connection and transaction.
 
 Do not reference your live model structs from a Go migration. A model
 changes over time and would silently change the meaning of a migration
@@ -102,15 +116,14 @@ is safe. Changing what it does is not: add a new migration.
 ## Generating and diffing
 
 ```go
-func Generate(ctx context.Context, ms []Migration, models []any) ([]Change, error)
+// package modeldiff
+func Generate(ctx context.Context, ms []migrate.Migration, models []any) ([]Change, error)
+
+// package migrate
 func SchemaSQL(ctx context.Context, ms []Migration) (string, error)
 ```
 
-`Generate` is what `rastrillo migration generate` and
-`rastrillo migration check` both run. It replays the migrations into an
-in-memory database, compares the result against your models, and returns
-the `Change` list that would close the gap. A `Change` carries its `SQL`
-and whether it is `Destructive`.
+`Generate` lives in `migrate/modeldiff`, because it is the one part of migration that needs GORM. It is what `rastrillo migration generate` and `rastrillo migration check` both run. It replays the migrations into an in-memory database, compares the result against your models, and returns the `Change` list that would close the gap. A `Change` carries its `SQL` and whether it is `Destructive`.
 
 `SchemaSQL` returns the schema the migrations produce, without a
 database.

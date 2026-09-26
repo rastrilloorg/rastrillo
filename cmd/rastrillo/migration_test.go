@@ -12,6 +12,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and
@@ -59,7 +60,7 @@ func touchDB(t *testing.T, path string) string {
 // a fixture app, so these run even under -short. ---
 
 func TestDescribeNamesCreateTable(t *testing.T) {
-	changes := []migrate.Change{{SQL: "CREATE TABLE `notes` (`id` integer,`title` text,PRIMARY KEY (`id`))"}}
+	changes := []modeldiff.Change{{SQL: "CREATE TABLE `notes` (`id` integer,`title` text,PRIMARY KEY (`id`))"}}
 	if got := describe(changes); got != "create_notes" {
 		t.Errorf("describe = %q, want create_notes", got)
 	}
@@ -70,7 +71,7 @@ func TestDescribeNamesCreateTable(t *testing.T) {
 // (gorm.io/gorm/migrator/migrator.go AddColumn) — so a matcher
 // grepping for "ADD COLUMN" never fires on real output.
 func TestDescribeNamesAddColumnWithoutTheWordColumn(t *testing.T) {
-	changes := []migrate.Change{{SQL: "ALTER TABLE `notes` ADD `archived` numeric"}}
+	changes := []modeldiff.Change{{SQL: "ALTER TABLE `notes` ADD `archived` numeric"}}
 	if got := describe(changes); got != "alter_notes" {
 		t.Errorf("describe = %q, want alter_notes", got)
 	}
@@ -81,7 +82,7 @@ func TestDescribeNamesAddColumnWithoutTheWordColumn(t *testing.T) {
 // TABLE notes, ALTER TABLE notes__temp RENAME TO notes. A matcher that
 // returns on the first CREATE TABLE would mislabel this "create_notes__temp".
 func TestDescribeNamesDropColumnRebuildByItsFinalRename(t *testing.T) {
-	changes := []migrate.Change{
+	changes := []modeldiff.Change{
 		{SQL: "CREATE TABLE `notes__temp` (`id` integer,PRIMARY KEY (`id`))", Destructive: true},
 		{SQL: "INSERT INTO `notes__temp`(id) SELECT id FROM `notes`", Destructive: true},
 		{SQL: "DROP TABLE `notes`", Destructive: true},
@@ -93,7 +94,7 @@ func TestDescribeNamesDropColumnRebuildByItsFinalRename(t *testing.T) {
 }
 
 func TestDescribeNamesWholeTableDrop(t *testing.T) {
-	changes := []migrate.Change{{SQL: "DROP TABLE IF EXISTS `notes`", Destructive: true}}
+	changes := []modeldiff.Change{{SQL: "DROP TABLE IF EXISTS `notes`", Destructive: true}}
 	if got := describe(changes); got != "drop_notes" {
 		t.Errorf("describe = %q, want drop_notes", got)
 	}
@@ -144,7 +145,7 @@ func (NoteWithArchived) TableName() string { return "notes" }
 // considers "in sync".
 func genesisSQL(t *testing.T, models ...any) string {
 	t.Helper()
-	changes, err := migrate.Generate(context.Background(), nil, models)
+	changes, err := modeldiff.Generate(context.Background(), nil, models)
 	if err != nil {
 		t.Fatalf("computing genesis SQL: %v", err)
 	}

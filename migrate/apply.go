@@ -9,15 +9,29 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-
 	gosqlite "modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
-
-	"amadan.net/rastrillo/rastrillo/db"
-	"amadan.net/rastrillo/rastrillo/gormlite"
 )
+
+// WriterSource is anything that can hand Apply the app's single-writer
+// pool. *db.DB satisfies it, so every existing Apply call compiles
+// unchanged; an app that manages its own *sql.DB passes Pool(w).
+//
+// An interface rather than *db.DB because db.DB carries a *gorm.DB,
+// and requiring it here is what made every package with a schema drag
+// GORM into apps that do not use it.
+type WriterSource interface {
+	Writer() *sql.DB
+}
+
+// Pool adapts a bare *sql.DB for Apply. It must be the app's writer —
+// capped at one open connection, as SQLite allows one writer — because
+// Apply pins that connection for the whole run.
+func Pool(w *sql.DB) WriterSource { return pool{w} }
+
+type pool struct{ w *sql.DB }
+
+func (p pool) Writer() *sql.DB { return p.w }
 
 // LedgerDDL is exported so `rastrillo migration baseline` can create
 // the ledger table without duplicating its shape.
@@ -57,7 +71,7 @@ type Result struct {
 // is per-connection state and SQLite's twelve-step table rebuild
 // requires toggling it outside the transaction, so a pooled
 // connection would be a correctness bug, not just a slow path.
-func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error) {
+func Apply(ctx context.Context, d WriterSource, s *Set) (Result, error) {
 	var res Result
 	conn, err := d.Writer().Conn(ctx)
 	if err != nil {
@@ -103,34 +117,6 @@ func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error) {
 		}
 	}
 
-	// g is backed by the pinned connection itself, not the app's
-	// writer pool — building it on d.G's pool would deadlock, because
-	// that pool has exactly one connection (SQLite allows one writer)
-	// and conn already holds it for this whole run. Running Fn through
-	// this g instead means a Go migration executes inside the same
-	// BEGIN IMMEDIATE transaction as its ledger row, so a failure
-	// rolls both back together, same as a SQL migration.
-	//
-	// SkipDefaultTransaction is required, not an optimisation: without
-	// it GORM wraps every Create/Update/Delete in its own
-	// BeginTransaction, and *sql.Conn satisfies gorm.TxBeginner, so
-	// that issues a real nested BEGIN on a connection already inside
-	// BEGIN IMMEDIATE — SQLite refuses it ("cannot start a
-	// transaction within a transaction"). The run is already in a
-	// transaction, so GORM's per-statement one is redundant even when
-	// it would work.
-	g, err := gorm.Open(gormlite.Dialector{Conn: conn}, &gorm.Config{
-		Logger:                 logger.Default.LogMode(logger.Silent),
-		SkipDefaultTransaction: true,
-	})
-	if err != nil {
-		return res, fmt.Errorf("migrate: open pinned gorm.DB: %w", err)
-	}
-	// Binds g to the boot deadline the caller gave Apply, so a Go
-	// migration's own GORM calls inherit it instead of running against
-	// context.Background() (gorm.Open's default) regardless of ctx.
-	g = g.WithContext(ctx)
-
 	for _, m := range migrations {
 		sum, ok := applied[m.ID]
 		if ok {
@@ -142,7 +128,7 @@ func Apply(ctx context.Context, d *db.DB, s *Set) (Result, error) {
 			res.Skipped++
 			continue
 		}
-		didApply, err := runOne(ctx, conn, g, m)
+		didApply, err := runOne(ctx, conn, m)
 		if err != nil {
 			return res, fmt.Errorf("migrate: %s: %w", m.ID, err)
 		}
@@ -232,7 +218,7 @@ func isDuplicateLedgerRow(err error) bool {
 // transaction and reports whether this call was the one that applied
 // it. false, nil means it was skipped because another instance
 // already applied it — not an error; Apply counts that as Skipped.
-func runOne(ctx context.Context, conn *sql.Conn, g *gorm.DB, m Migration) (applied bool, err error) {
+func runOne(ctx context.Context, conn *sql.Conn, m Migration) (applied bool, err error) {
 	rebuild := m.SQL != "" && needsRebuild(m.SQL)
 	if rebuild {
 		// Per-connection, and it must be outside the transaction:
@@ -293,7 +279,11 @@ func runOne(ctx context.Context, conn *sql.Conn, g *gorm.DB, m Migration) (appli
 
 	switch {
 	case m.Fn != nil:
-		if err := m.Fn(g); err != nil {
+		// conn itself, never the app's writer pool: that pool has
+		// exactly one connection (SQLite allows one writer) and this
+		// run already holds it, so a Fn that asked the pool would
+		// deadlock until the boot deadline.
+		if err := m.Fn(ctx, conn); err != nil {
 			return false, err
 		}
 	default:
