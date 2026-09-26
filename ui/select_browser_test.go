@@ -815,6 +815,9 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 		PostedNow  string `json:"postedNow"`
 		Picked     string `json:"picked"`
 		PostedPick string `json:"postedPick"`
+		SameBoxes  int    `json:"sameTaskBoxes"`
+		SameShown  string `json:"sameTaskShown"`
+		SameErrors int    `json:"sameTaskErrors"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -848,6 +851,21 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 		out.picked = input.value;
 		out.postedPick = posted();
+		// Changed and replaced in the same task: a handover, and no error.
+		let errors = 0;
+		window.addEventListener('error', () => errors++);
+		const again = document.createElement('select');
+		again.id = 'colour';
+		again.name = 'colour';
+		again.setAttribute('data-rst-select', '');
+		again.innerHTML = '<option value="teal" selected>Teal</option><option value="navy">Navy</option>';
+		const current = document.querySelector('#colour');
+		current.innerHTML = '';
+		current.replaceWith(again);
+		await frame();
+		out.sameTaskBoxes = document.querySelectorAll('#colour-host [rst-combo]').length;
+		out.sameTaskShown = (document.querySelector('#colour-combo') || {}).value || '';
+		out.sameTaskErrors = errors;
 		return out;
 	`, &got)
 	if got.Boxes != 1 {
@@ -858,6 +876,9 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 	}
 	if got.LabelFor != "colour-combo" {
 		t.Error("the label does not name the new box")
+	}
+	if got.SameBoxes != 1 || got.SameShown != "Teal" || got.SameErrors != 0 {
+		t.Errorf("options changed and select replaced in one task: %d boxes showing %q, %d errors; want 1 box showing Teal and none", got.SameBoxes, got.SameShown, got.SameErrors)
 	}
 	if got.Picked != "Red" || got.PostedPick != "red" {
 		t.Errorf("picking Red on the new box shows %q and posts %q, want Red and red", got.Picked, got.PostedPick)
@@ -877,10 +898,20 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		Picked        string `json:"picked"`
 		BoxesAfterTwo int    `json:"boxesAfterTwo"`
 		StillHidden   bool   `json:"stillHidden"`
+		LiveListeners int    `json:"liveListeners"`
+		Recorded      int    `json:"recorded"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
 		const select = document.querySelector('#flavour');
+		// Record every listener a box puts on the select from here on, so a
+		// retired box's can be counted.
+		const listeners = [];
+		const add = select.addEventListener;
+		select.addEventListener = function (type, fn, opt) {
+			listeners.push({ type, signal: opt && opt.signal });
+			return add.call(this, type, fn, opt);
+		};
 		let input = document.querySelector('#flavour-combo');
 		input.focus();
 		input.value = 'b';
@@ -903,10 +934,15 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		await frame();
 		out.boxesAfterTwo = document.querySelectorAll('#flavour-host [rst-combo]').length;
 		out.stillHidden = select.classList.contains('rst-sr-only') && select.dataset.rstEnhanced === 'true';
+		out.liveListeners = listeners.filter((l) => !(l.signal && l.signal.aborted)).length;
+		out.recorded = listeners.length;
 		return out;
 	`, &got)
 	if got.Boxes != 1 {
 		t.Errorf("after the options were rebuilt the host holds %d boxes, want 1", got.Boxes)
+	}
+	if got.Recorded < 6 || got.LiveListeners != got.Recorded/2 {
+		t.Errorf("after two rebuilds %d of the %d listeners boxes put on the select are live, want only the current box's %d: a retired box still answers the select's events", got.LiveListeners, got.Recorded, got.Recorded/2)
 	}
 	if got.BoxesAfterTwo != 1 || !got.StillHidden {
 		t.Errorf("after a second change the host holds %d boxes and the select is enhanced-and-hidden %v, want 1 and true: an earlier box was still listening", got.BoxesAfterTwo, got.StillHidden)

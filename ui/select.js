@@ -826,13 +826,17 @@
 
     // A write from outside (reset, autofill, a sibling script) dispatches
     // "change", and the display follows. choose()'s own lands as a no-op.
+    // Listeners this box puts on the select, which outlives it: removed in
+    // one go when the box steps aside, or every rebuild would leave one
+    // more set answering the select's events for a box no longer there.
+    const mine = new AbortController();
     native.addEventListener("change", () => {
       showText();
       showPick();
       markSelected();
       input.setCustomValidity("");
       settleValidity();
-    });
+    }, { signal: mine.signal });
 
     // A REQUIRED select still validates — it is still what the form posts —
     // but it is out of sight and aria-hidden, so the browser's "please pick
@@ -848,7 +852,7 @@
       input.removeAttribute("aria-invalid");
       input.setCustomValidity("");
     };
-    native.addEventListener("invalid", () => input.setAttribute("aria-invalid", "true"));
+    native.addEventListener("invalid", () => input.setAttribute("aria-invalid", "true"), { signal: mine.signal });
     // "true", not an empty value: an ARIA boolean is a string.
     const settleRequired = () => {
       if (native.required) input.setAttribute("aria-required", "true");
@@ -887,6 +891,7 @@
     let gone = false;
     const stepAside = () => {
       gone = true;
+      mine.abort();
       flips.disconnect();
       options.disconnect();
       swapped.disconnect();
@@ -907,6 +912,13 @@
     // their focus and their words.
     const options = new MutationObserver((records) => {
       if (!records.some((r) => r.target !== native || r.type !== "attributes")) return;
+      // Changed and then moved or replaced in the same task: that is a
+      // handover, not a rebuild (this observer runs first).
+      if (native.parentNode !== wrap.parentNode) {
+        stepAside();
+        scan();
+        return;
+      }
       const focused = document.activeElement === input;
       const typed = showingPick ? null : input.value;
       stepAside();
@@ -937,7 +949,7 @@
         input.setCustomValidity(native.validationMessage);
         input.reportValidity();
       }
-    });
+    }, { signal: mine.signal });
     input.addEventListener("input", () => input.setCustomValidity(""));
     input.addEventListener("blur", () => {
       if (gone) return;
