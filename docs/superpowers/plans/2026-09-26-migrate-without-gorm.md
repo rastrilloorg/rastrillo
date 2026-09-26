@@ -58,7 +58,7 @@
 - [ ] **Step 1: Rewrite the Fn tests in apply_test.go against the new type** — `0002_seed` becomes `Fn: func(ctx context.Context, tx migrate.Tx) error { _, err := tx.ExecContext(ctx, "INSERT INTO t (n) VALUES (1)"); return err }`; the failing-Fn rollback test returns `errors.New("boom")` after an insert and asserts neither the row nor the ledger entry exists; add `TestApplyAcceptsABareSQLDB` calling `migrate.Apply(ctx, migrate.Pool(sqldb), set)` on a `sql.Open("sqlite", ...)` pool capped at one connection.
 - [ ] **Step 2: Run `go test ./migrate/` — expect compile failure** (Tx, Pool undefined).
 - [ ] **Step 3: Implement** — in runOne, `case m.Fn != nil: if err := m.Fn(ctx, conn); err != nil { return false, err }`; delete the `gorm.Open` block and the `g` parameter; `Apply` signature takes `WriterSource`; `type pool struct{ w *sql.DB }; func (p pool) Writer() *sql.DB { return p.w }`.
-- [ ] **Step 4: `go test ./migrate/` passes** (the GORM-specific tests are moved in Task 2; delete them here in the same commit only after Task 2's copies exist — so Tasks 1 and 2 share one commit).
+- [ ] **Step 4: `go test ./migrate/` passes** (Tasks 1–3 share one commit: secondfactor stops compiling the moment Fn changes type).
 
 ### Task 2: `migrate/gormfn` adapter
 

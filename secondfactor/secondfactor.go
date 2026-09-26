@@ -36,6 +36,7 @@
 package secondfactor
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"errors"
@@ -43,8 +44,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"gorm.io/gorm"
 
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -93,21 +92,22 @@ var Schema = migrate.MustFromFS(migrationFS, "secondfactor").Add(migrate.Migrati
 // that never had them (or a fresh one where passkey's schema comes
 // later in the merge) is left alone. SQL cannot express "if this
 // table exists", which is why this one is Go.
-func adoptPasskeyTables(tx *gorm.DB) error {
+func adoptPasskeyTables(ctx context.Context, tx migrate.Tx) error {
 	var n int
-	if err := tx.Raw(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'passkey_recovery_codes'`).Scan(&n).Error; err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'passkey_recovery_codes'`).Scan(&n); err != nil {
 		return err
 	}
 	if n > 0 {
-		if err := tx.Exec(`INSERT OR IGNORE INTO secondfactor_recovery_codes (code_hash, subject, created_at)
-			SELECT code_hash, subject, created_at FROM passkey_recovery_codes`).Error; err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO secondfactor_recovery_codes (code_hash, subject, created_at)
+			SELECT code_hash, subject, created_at FROM passkey_recovery_codes`); err != nil {
 			return err
 		}
-		if err := tx.Exec(`DROP TABLE passkey_recovery_codes`).Error; err != nil {
+		if _, err := tx.ExecContext(ctx, `DROP TABLE passkey_recovery_codes`); err != nil {
 			return err
 		}
 	}
-	return tx.Exec(`DROP TABLE IF EXISTS passkey_pending`).Error
+	_, err := tx.ExecContext(ctx, `DROP TABLE IF EXISTS passkey_pending`)
+	return err
 }
 
 // Factor is what a second factor looks like to the Gate: it can say

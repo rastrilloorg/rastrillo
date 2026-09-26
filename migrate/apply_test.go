@@ -2,13 +2,12 @@ package migrate
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-
-	"gorm.io/gorm"
 
 	"amadan.net/rastrillo/rastrillo/db"
 )
@@ -58,15 +57,16 @@ func TestApplyRunsGoMigrations(t *testing.T) {
 	d := openDB(t)
 	s := set("notes",
 		Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY, n INTEGER);"},
-		Migration{ID: "0002_seed", Fn: func(g *gorm.DB) error {
-			return g.Exec("INSERT INTO notes (id, n) VALUES (1, 42)").Error
+		Migration{ID: "0002_seed", Fn: func(ctx context.Context, tx Tx) error {
+			_, err := tx.ExecContext(ctx, "INSERT INTO notes (id, n) VALUES (1, 42)")
+			return err
 		}},
 	)
 	if _, err := Apply(context.Background(), d, s); err != nil {
 		t.Fatal(err)
 	}
 	var n int
-	if err := d.G.Raw("SELECT n FROM notes WHERE id = 1").Scan(&n).Error; err != nil {
+	if err := d.Writer().QueryRow("SELECT n FROM notes WHERE id = 1").Scan(&n); err != nil {
 		t.Fatal(err)
 	}
 	if n != 42 {
@@ -81,20 +81,17 @@ func TestApplyRunsGoMigrations(t *testing.T) {
 // whole run, and Fn asking the same pool for a connection to do its
 // own write would deadlock forever.
 //
-// This cannot be enforced by passing Apply a bounded context: GORM
-// sets Statement.Context to context.Background() at Open time, and a
-// migration's Fn calls the *gorm.DB it's given directly (e.g.
-// g.Exec(...)) without threading a context through, so a blocked pool
-// wait inside Fn never observes the caller's deadline regardless of
-// what ctx Apply was given. So this asserts on wall-clock return
-// instead, by racing Apply against a timer in a separate goroutine —
-// a regression here fails fast instead of hanging the suite.
+// It asserts on wall-clock return rather than a bounded ctx, by racing
+// Apply against a timer in a separate goroutine, so a regression fails
+// fast instead of hanging the suite. migrate/gormfn carries the same
+// test for a GORM-bodied Fn, where the ctx is not threaded at all.
 func TestApplyFnMigrationCompletesWithinTimeout(t *testing.T) {
 	d := openDB(t)
 	s := set("notes",
 		Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY, n INTEGER);"},
-		Migration{ID: "0002_seed", Fn: func(g *gorm.DB) error {
-			return g.Exec("INSERT INTO notes (id, n) VALUES (1, 42)").Error
+		Migration{ID: "0002_seed", Fn: func(ctx context.Context, tx Tx) error {
+			_, err := tx.ExecContext(ctx, "INSERT INTO notes (id, n) VALUES (1, 42)")
+			return err
 		}},
 	)
 	done := make(chan error, 1)
@@ -112,35 +109,62 @@ func TestApplyFnMigrationCompletesWithinTimeout(t *testing.T) {
 	}
 }
 
-// TestApplyFnMigrationUsesGormCreate guards against a regression to
-// GORM's default per-statement transaction: without
-// SkipDefaultTransaction, GORM wraps Create/Update/Delete in their own
-// BeginTransaction, and *sql.Conn satisfies gorm.TxBeginner, so that
-// issues a real nested BEGIN on a connection already inside this
-// migration's BEGIN IMMEDIATE — which SQLite refuses. Exec/Raw don't
-// go through that path, which is why a Fn using only g.Exec wouldn't
-// have caught this.
-func TestApplyFnMigrationUsesGormCreate(t *testing.T) {
+// TestApplyRollsBackAFailingGoMigration pins the property the Tx
+// shape exists for: a Go migration's writes and its ledger row share
+// one transaction, so a Fn that writes and then fails leaves neither
+// behind, and the next boot runs it again from the start.
+func TestApplyRollsBackAFailingGoMigration(t *testing.T) {
 	d := openDB(t)
-	type note struct {
-		ID int `gorm:"primaryKey;column:id"`
-		N  int `gorm:"column:n"`
-	}
 	s := set("notes",
 		Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY, n INTEGER);"},
-		Migration{ID: "0002_seed", Fn: func(g *gorm.DB) error {
-			return g.Table("notes").Create(&note{ID: 1, N: 42}).Error
+		Migration{ID: "0002_half", Fn: func(ctx context.Context, tx Tx) error {
+			if _, err := tx.ExecContext(ctx, "INSERT INTO notes (id, n) VALUES (1, 42)"); err != nil {
+				return err
+			}
+			return errors.New("boom")
 		}},
 	)
-	if _, err := Apply(context.Background(), d, s); err != nil {
+	if _, err := Apply(context.Background(), d, s); err == nil {
+		t.Fatal("want the Fn's error")
+	}
+	var rows, ledger int
+	if err := d.Writer().QueryRow("SELECT COUNT(*) FROM notes").Scan(&rows); err != nil {
 		t.Fatal(err)
+	}
+	if err := d.Writer().QueryRow("SELECT COUNT(*) FROM rastrillo_migrations WHERE id = 'notes/0002_half'").Scan(&ledger); err != nil {
+		t.Fatal(err)
+	}
+	if rows != 0 || ledger != 0 {
+		t.Fatalf("after a failed Fn: %d note rows, %d ledger rows; want 0 and 0", rows, ledger)
+	}
+}
+
+// TestApplyAcceptsABareSQLDB is the raw-SQL app's path: no db.DB, no
+// GORM, just the app's own single-writer pool through Pool.
+func TestApplyAcceptsABareSQLDB(t *testing.T) {
+	w, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "raw.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.SetMaxOpenConns(1)
+	t.Cleanup(func() { w.Close() })
+	s := set("notes",
+		Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY, n INTEGER);"},
+		Migration{ID: "0002_seed", Fn: func(ctx context.Context, tx Tx) error {
+			_, err := tx.ExecContext(ctx, "INSERT INTO notes (id, n) VALUES (1, 7)")
+			return err
+		}},
+	)
+	res, err := Apply(context.Background(), Pool(w), s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Applied) != 2 {
+		t.Fatalf("Applied = %v, want both migrations", res.Applied)
 	}
 	var n int
-	if err := d.G.Raw("SELECT n FROM notes WHERE id = 1").Scan(&n).Error; err != nil {
-		t.Fatal(err)
-	}
-	if n != 42 {
-		t.Fatalf("n = %d, want 42", n)
+	if err := w.QueryRow("SELECT n FROM notes WHERE id = 1").Scan(&n); err != nil || n != 7 {
+		t.Fatalf("n = %d, err = %v; want 7", n, err)
 	}
 }
 
@@ -172,7 +196,7 @@ func TestRunOneSkipsWhenLedgerRowAppearsInsideTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	applied, err := runOne(ctx, conn, nil, m)
+	applied, err := runOne(ctx, conn, m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +249,7 @@ func TestApplyRollsBackCleanlyWhenContextIsCancelledDuringTheMigration(t *testin
 	ctx, cancel := context.WithCancel(context.Background())
 	s := set("notes",
 		Migration{ID: "0001_init", SQL: "CREATE TABLE notes (id INTEGER PRIMARY KEY);"},
-		Migration{ID: "0002_bad", Fn: func(g *gorm.DB) error {
+		Migration{ID: "0002_bad", Fn: func(context.Context, Tx) error {
 			cancel()
 			return errors.New("boom")
 		}},

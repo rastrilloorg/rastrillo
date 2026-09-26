@@ -14,7 +14,9 @@
 package migrate
 
 import (
+	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"io/fs"
@@ -22,9 +24,28 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"gorm.io/gorm"
 )
+
+// Tx is what a Go migration is handed: the one pinned connection Apply
+// runs on, already inside the BEGIN IMMEDIATE that will also write the
+// migration's ledger row. *sql.Conn satisfies it, and so does
+// gorm.ConnPool's shape, which is how migrate/gormfn builds a *gorm.DB
+// on top of it.
+//
+// There is deliberately no BeginTx. A migration that opened its own
+// transaction would be nesting inside Apply's, which SQLite refuses
+// ("cannot start a transaction within a transaction"); leaving the
+// method off makes that a compile error instead of a failed boot.
+//
+// It is an interface rather than *sql.Conn so a raw-SQL app is not
+// handed Raw or Close — either would let a migration hand the app's
+// only writer connection back to the pool in a state Apply cannot see.
+type Tx interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
 
 // Migration is one step. Exactly one of SQL or Fn is set: SQL is the
 // default and the only thing `rastrillo migration generate` emits; Fn
@@ -46,10 +67,11 @@ type Migration struct {
 	// reading "-- rastrillo: post-adoption" near the top.
 	PostAdoption bool
 	// Fn runs on the same pinned connection, inside the same
-	// BEGIN IMMEDIATE transaction, as its own ledger row — Apply
-	// builds it a *gorm.DB backed by that one *sql.Conn rather than
-	// the app's pool, so a failure rolls Fn's writes back with the
-	// ledger row, same as a SQL migration.
+	// BEGIN IMMEDIATE transaction, as its own ledger row, so a failure
+	// rolls Fn's writes back with the ledger row, same as a SQL
+	// migration. A migration written against GORM wraps its body in
+	// migrate/gormfn.Fn; this package links no ORM, so an app that
+	// uses raw SQL can adopt the framework's subsystems without one.
 	//
 	// That transaction is also the limit of what Fn can do: it cannot
 	// perform SQLite's twelve-step table rebuild. A rebuild has to
@@ -66,7 +88,7 @@ type Migration struct {
 	// has any) can cross; the identity is also all the ledger ever
 	// records, since Stamp and Apply both key on ID and checksum the
 	// SQL, never the function itself.
-	Fn func(*gorm.DB) error `json:"-"`
+	Fn func(ctx context.Context, tx Tx) error `json:"-"`
 }
 
 // Set is an ordered list of migrations sharing one namespace.
