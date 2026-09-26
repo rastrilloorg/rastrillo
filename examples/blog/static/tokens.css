@@ -1508,6 +1508,24 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    it names a run of rows without competing with them. */
 .rst-combo__rows, [rst-combo-rows] { list-style: none; margin: 0; padding: 0; }
 .rst-select__group, [rst-select-group] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; padding-block: 0.4rem 0.2rem; padding-inline: 0.65rem; text-transform: uppercase; }
+/* The rest of the combobox's furniture. A divider the page drew between
+   two options (an <hr>, pinned rows above the rest) and the row saying
+   nothing matches are never stops: select.js leaves both out of the
+   keyboard order, and the divider hides while a search re-ranks. */
+.rst-combo__sep, [rst-combo-sep] { border-top: 1px solid var(--rst-line); list-style: none; margin-block: 0.25rem; }
+.rst-combo__empty, [rst-combo-empty] { color: var(--rst-text-faint); font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
+/* An option with a description reads as one line: the name, then the
+   description quieter — the brackets the native option carries are for a
+   reader without JavaScript, and colour does that job here. */
+.rst-combo__desc, [rst-combo-desc] { color: var(--rst-text-faint); margin-inline-start: 0.5em; }
+/* A decorative glyph (a country's flag) before a row, and before the
+   closed box once that row is picked. aria-hidden everywhere; the text
+   still says which option it is. The box makes room only while there is
+   a glyph to show. */
+.rst-combo__option > .rst-combo__lead, [rst-combo-option] > [rst-combo-lead] { margin-inline-end: 0.5em; }
+.rst-combo > .rst-combo__lead, [rst-combo] > [rst-combo-lead] { align-items: center; display: flex; inset-block: 0; inset-inline-start: 0.65rem; pointer-events: none; position: absolute; }
+.rst-combo > .rst-combo__lead[hidden], [rst-combo] > [rst-combo-lead][hidden] { display: none; }
+.rst-combo.rst-combo__has-lead > .rst-input, [rst-combo][rst-combo-has-lead] > [rst-input] { padding-inline-start: 2.2rem; }
 
 /* The date fields' combobox, built by datetime.js on any input carrying
    data-rst-date or data-rst-time. Same shape as .rst-combo above, plus
