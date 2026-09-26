@@ -37,6 +37,7 @@ var referencePages = map[string]string{
 	"sessions":     "reference/sessions",
 	"password":     "reference/password",
 	"auth":         "reference/auth",
+	"clientip":     "reference/clientip",
 	"passkey":      "reference/passkey",
 	"secondfactor": "reference/secondfactor",
 	"totp":         "reference/totp",

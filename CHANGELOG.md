@@ -10,6 +10,15 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — `rastrillo/clientip`, and a sign-in limit per visitor behind a proxy
+
+`clientip.From` returns the address a request came from, trusting only the last
+`hops` elements of `X-Forwarded-For`: the ones your own proxies added.
+`auth.Config.TrustedProxyHops` uses it for the per-IP sign-in limit. It
+defaults to 0, which keeps today's behaviour: behind the CARLOS edge, every
+visitor shares one limit. Set it to 1 on CARLOS to give each visitor their own.
+See [clientip](/docs/reference/clientip).
+
 ### Added — `rastrillo/dbtest`, a migrated database per test
 
 `dbtest.FromSet` migrates one template per test binary, and `Open` or `Path`

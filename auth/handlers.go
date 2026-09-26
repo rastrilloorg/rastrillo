@@ -3,12 +3,12 @@ package auth
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"time"
 
 	"github.com/keymaildev/signin"
 
+	"amadan.net/rastrillo/rastrillo/clientip"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -39,7 +39,7 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		force = signin.MethodMagicLink
 	}
 
-	next, err := a.flow.Begin(r.Context(), address, clientIP(r), force)
+	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.cfg.TrustedProxyHops), force)
 	switch {
 	case errors.Is(err, signin.ErrRateLimited):
 		a.redirect(w, r, a.cfg.SigninPath+"?err=rate")
@@ -263,16 +263,4 @@ func From(r *http.Request) (Identity, bool) {
 
 func (a *Auth) redirect(w http.ResponseWriter, r *http.Request, to string) {
 	http.Redirect(w, r, to, http.StatusSeeOther)
-}
-
-// clientIP is the per-IP rate-limit key: the connection's remote host.
-// Behind the platform edge every connection shares the edge's address,
-// collapsing the per-IP budget into a global one — a conservative
-// failure (limits bite sooner, never later).
-func clientIP(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return host
 }

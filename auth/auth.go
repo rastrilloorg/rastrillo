@@ -147,6 +147,18 @@ type Config struct {
 	// can gate.
 	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 
+	// TrustedProxyHops is how many proxies you run in front of the app,
+	// which decides the address the per-IP sign-in budget counts:
+	// clientip.From reads that many elements from the right of
+	// X-Forwarded-For. Zero — the default — ignores the header and
+	// counts the connection's peer. Behind a proxy that means every
+	// visitor shares the proxy's budget: limits bite sooner, never
+	// later. On CARLOS, set it to 1 (the edge) so each visitor gets
+	// their own. Never set it higher than the proxies really there:
+	// one too many trusts an element the client wrote, and a forged
+	// address per request is an unlimited budget.
+	TrustedProxyHops int
+
 	// SigninPath is the app's sign-in page, the target of outcome
 	// redirects. Default "/signin".
 	SigninPath string
