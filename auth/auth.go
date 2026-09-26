@@ -55,6 +55,8 @@ import (
 
 	"github.com/keymaildev/signin"
 
+	"amadan.net/rastrillo/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/clientip"
 	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -150,14 +152,17 @@ type Config struct {
 	// TrustedProxyHops is how many proxies you run in front of the app,
 	// which decides the address the per-IP sign-in budget counts:
 	// clientip.From reads that many elements from the right of
-	// X-Forwarded-For. Zero — the default — ignores the header and
-	// counts the connection's peer. Behind a proxy that means every
-	// visitor shares the proxy's budget: limits bite sooner, never
-	// later. On CARLOS, set it to 1 (the edge) so each visitor gets
-	// their own. Never set it higher than the proxies really there:
-	// one too many trusts an element the client wrote, and a forged
-	// address per request is an unlimited budget.
-	TrustedProxyHops int
+	// X-Forwarded-For. Nil — the default — means 1 when the app runs on
+	// CARLOS (carlos.Running), whose edge adds exactly one element (the
+	// visitor), and 0 anywhere else: ignore the header and count the
+	// connection's peer, which behind a proxy of your own means every
+	// visitor shares the proxy's budget — limits bite sooner, never
+	// later. A value you set always wins, 0 included: a pointer, because
+	// an explicit 0 must be told apart from unset. Never set it higher
+	// than the proxies really there: one too many trusts an element the
+	// client wrote, and a forged address per request is an unlimited
+	// budget.
+	TrustedProxyHops *int
 
 	// SigninPath is the app's sign-in page, the target of outcome
 	// redirects. Default "/signin".
@@ -185,6 +190,9 @@ type Auth struct {
 	cfg      Config
 	flow     *signin.Flow
 	sessions *sessions.Sessions
+	// hops is Config.TrustedProxyHops resolved once, at New: the
+	// environment is read at boot, not per request.
+	hops int
 }
 
 // ErrEmptyInstanceKey means Config.InstanceKey was empty — see the
@@ -237,7 +245,7 @@ func New(cfg Config) (*Auth, error) {
 		return nil, err
 	}
 
-	a := &Auth{cfg: cfg, sessions: sess}
+	a := &Auth{cfg: cfg, sessions: sess, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running())}
 	a.flow = &signin.Flow{
 		Classifier: &signin.Classifier{},
 		Keymail: func(server string) *signin.Keymail {
@@ -296,3 +304,16 @@ func NewToken() (token, hash string, err error) { return sessions.NewToken() }
 // HashToken is the storage hash of a session token: SHA-256, hex —
 // a thin alias over the sessions core.
 func HashToken(token string) string { return sessions.HashToken(token) }
+
+// trustedHops resolves Config.TrustedProxyHops: an explicit value wins;
+// unset is the CARLOS edge's one hop there, and none anywhere else.
+func trustedHops(set *int, onCarlos bool) int {
+	switch {
+	case set != nil:
+		return *set
+	case onCarlos:
+		return clientip.DefaultHops
+	default:
+		return 0
+	}
+}

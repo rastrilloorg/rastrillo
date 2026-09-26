@@ -34,7 +34,7 @@ type Config struct {
 	SecondFactor     func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 	SigninPath       string
 	SignedInPath     string
-	TrustedProxyHops int
+	TrustedProxyHops *int
 }
 ```
 
@@ -62,10 +62,11 @@ and admin bootstrap are your policy layered on this hook.
 it.
 
 `TrustedProxyHops` is how many proxies you run in front of the app, and
-decides which address the per-IP sign-in limit counts. At 0, the
-default, it counts the connection's address, so behind a proxy every
-visitor shares one limit. On CARLOS, set it to 1 so each visitor gets
-their own. See [clientip](/docs/reference/clientip).
+decides which address the per-IP sign-in limit counts. Leave it unset
+and it is 1 on CARLOS, whose edge adds the visitor's address, and 0
+anywhere else, where the limit counts the connection's address. A value
+you set always wins, 0 included. See
+[clientip](/docs/reference/clientip).
 
 ## Schema
 
