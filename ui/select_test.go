@@ -117,6 +117,34 @@ func TestLeavingTheBoxCommitsOnlyWhatASearchCanMean(t *testing.T) {
 	}
 }
 
+// Two rows that are both an exact hit settle nothing: the brackets are
+// glosses, so "Springfield" names "Springfield (IL)" and
+// "Springfield (MA)" equally, and leaving the box must not pick one.
+func TestLeavingTheBoxNeverPicksBetweenTwoExactHits(t *testing.T) {
+	t.Parallel()
+	opts := []rankOption{
+		{Value: "IL", Name: "Springfield (IL)", Text: "Springfield (IL)"},
+		{Value: "MA", Name: "Springfield (MA)", Text: "Springfield (MA)"},
+		{Value: "SH", Name: "Shelbyville", Text: "Shelbyville"},
+	}
+	in, err := json.Marshal(map[string]any{"options": opts, "queries": []string{"springfield", "shelbyville"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Settled map[string]string `json:"settled"`
+	}
+	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"select_node.mjs"}, Stdin: in}), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Settled["springfield"] != "" {
+		t.Errorf("leaving after \"springfield\" picked %q between two exact hits, want nothing", got.Settled["springfield"])
+	}
+	if got.Settled["shelbyville"] != "SH" {
+		t.Errorf("leaving after \"shelbyville\" picked %q, want SH: a lone exact hit still settles", got.Settled["shelbyville"])
+	}
+}
+
 // Someone types a country's name in their own language, its ISO code, or
 // the calling code with or without its "+", and the country they meant is
 // the first row — the one Enter takes. Substring matching alone got most

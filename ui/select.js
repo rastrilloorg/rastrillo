@@ -128,7 +128,8 @@
   //   - on three or more characters, the best row settles when it is the ONLY
   //     row that good: an exact hit ("germany"), or a name that starts with
   //     the query when nothing else does ("ger" is Germany; Algeria and Niger
-  //     only contain it). "ind" settles nothing: India and Indonesia tie.
+  //     only contain it). "ind" settles nothing: India and Indonesia tie, and
+  //     neither does an exact hit two rows share.
   // Two letters alone never settle: "ge" is Georgia's code and the start of
   // Germany, and a wrong calling code under a phone number is worse than an
   // unpicked box the form then asks about.
@@ -140,7 +141,8 @@
     const r0 = rank(hits[0], query);
     if (r0 === 0 && /^\d+$/.test(bare) && hits[0].first) return hits[0];
     if (bare.length < 3 || /^\d+$/.test(bare)) return null;
-    if (r0 === 0) return hits[0];
+    // Only the one row that good: two exact hits ("Springfield (IL)" and
+    // "(MA)") mean nothing, like two prefix hits.
     return r0 < rank(hits[1], query) ? hits[0] : null;
   };
 
@@ -484,10 +486,8 @@
         const hitRow = new Set(hits.map((o) => o.li));
         let ref = list.firstChild;
         for (const o of hits) {
-          // Never past the empty row, which sits before the page's extras:
-          // a grouped hit is not a child of the list, so without the
-          // boundary it would be appended after the extras, out of step
-          // with the keyboard order.
+          // Never past the empty row (before the extras): a grouped hit is
+          // not a list child, and would land after the extras.
           while (ref && ref !== empty && ref !== o.li && !hitRow.has(ref)) ref = ref.nextSibling;
           if (ref === o.li) {
             ref = ref.nextSibling;

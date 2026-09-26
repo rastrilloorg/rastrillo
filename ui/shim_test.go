@@ -318,7 +318,7 @@ func TestSelectContract(t *testing.T) {
 	// per optgroup, and a filter that hides a heading when its rows all
 	// go. That is the trade, and it is a decision, not a drift.
 	//
-	// Raised again, to 35KB (measured 35,116 bytes), by the convergence
+	// Raised again, to 35KB (measured 35,672 bytes), by the convergence
 	// with Tito Go's searchselect (2026-09-26): ranking that puts the row
 	// someone meant first (accents folded, ISO and calling codes as
 	// terms), prompts that are never picks, a list that keeps pace with
