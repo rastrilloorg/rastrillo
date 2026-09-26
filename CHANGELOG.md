@@ -10,6 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — `rastrillo/nodetest`, running Node from a Go test
+
+`nodetest.Run` runs a Node script and fails the test with its full output if
+the script fails. With no `node` on your PATH the test skips, unless
+`RASTRILLO_TEST_REQUIRE_NODE` is set, when it fails. Rastrillo's `make ci` now
+sets it, so running `make ci` needs Node. See
+[nodetest](/docs/reference/nodetest).
+
 ### Added — `rastrillo/clientip`, and a sign-in limit per visitor behind a proxy
 
 `clientip.From` returns the address a request came from, trusting only the last

@@ -234,6 +234,11 @@
           "blurb": "Parse decimal amounts into signed `int64` minor units with `money`. The package uses only the Go standard library."
         },
         {
+          "slug": "reference/nodetest",
+          "label": "nodetest",
+          "blurb": "Run a Node script from a Go test, and fail on CI when node is missing."
+        },
+        {
           "slug": "reference/passkey",
           "label": "passkey",
           "blurb": "Step-up and sign-in WebAuthn, the Gate, and recovery codes."
