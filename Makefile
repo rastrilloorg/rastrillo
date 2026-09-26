@@ -38,9 +38,12 @@ ci: gofmt money root chromedp-graph gorm-free race \
 # _testmain.go and cgo files there. gofmt -l . then failed the next run on
 # files nobody wrote. git ls-files -co --exclude-standard is every tracked
 # file plus every new one not ignored, which is exactly "ours".
+# NUL-delimited so a path with a space is one argument rather than two
+# missing files, and a gofmt error (a file that does not parse) fails
+# the target instead of vanishing into stderr.
 gofmt:
-	@out=$$(git ls-files -co --exclude-standard -- '*.go' | xargs gofmt -l); if [ -n "$$out" ]; then \
-		echo "gofmt needed on:"; echo "$$out"; exit 1; fi
+	@out=$$(git ls-files -z -co --exclude-standard -- '*.go' | xargs -0 gofmt -l) || exit 1; \
+	if [ -n "$$out" ]; then echo "gofmt needed on:"; echo "$$out"; exit 1; fi
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
