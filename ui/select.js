@@ -230,6 +230,10 @@
         blank: o.value === "",
         index: i,
         group: g,
+        // The native option itself, read live: an app that removes or
+        // reorders options after enhancement moves every index, and a
+        // cached one would submit a different option from the row chosen.
+        el: o,
         li: null,
       };
     });
@@ -361,10 +365,11 @@
     let active = null;
     let extras = 0;
 
+    const picked = () => opts.find((o) => o.el && o.el.selected) || null;
     // A prompt is not an answer, so the closed box shows nothing for it and
     // its placeholder says what is wanted.
     const currentText = () => {
-      const o = opts[native.selectedIndex];
+      const o = picked();
       return o && !o.prompt ? o.short || o.name : "";
     };
     // Whether the box shows the pick or words somebody typed: an open
@@ -377,7 +382,7 @@
     };
     const query = () => (showingPick ? "" : input.value);
     const showPick = () => {
-      const o = opts[native.selectedIndex];
+      const o = picked();
       lead.textContent = (o && o.lead) || "";
       lead.hidden = !lead.textContent;
       wrap.toggleAttribute("rst-combo-has-lead", !lead.hidden);
@@ -392,7 +397,7 @@
     let steered = false;
     const settledPick = () => {
       if (!open || !active || active.run) return null;
-      if (steered) return active.index === native.selectedIndex ? null : active;
+      if (steered) return active.el.selected ? null : active;
       if (input.value === currentText()) return null;
       const pick = settle(lastHits, input.value);
       return pick && pick === (lastHits.length === 1 ? pick : active) ? pick : null;
@@ -407,7 +412,7 @@
     // prompt (a bare Enter would "answer" with the question).
     const firstReal = () => visible().find((o) => !o.run && !o.prompt) || null;
     const unanswered = () => {
-      const sel = opts[native.selectedIndex];
+      const sel = picked();
       return !!(sel && sel.prompt);
     };
     // The row an idle list highlights: the pick on an answered box, nothing
@@ -417,7 +422,7 @@
     // way however it got there.
     const opening = () => {
       if (unanswered()) return null;
-      const sel = opts[native.selectedIndex];
+      const sel = picked();
       return sel && !sel.li.hidden && !sel.disabled ? sel : firstReal();
     };
     // The rows the arrows, Home and End step through: what is on screen,
@@ -442,7 +447,7 @@
     // says somebody answered the question.
     const markSelected = () => {
       for (const o of opts) {
-        const v = o.index === native.selectedIndex && !o.prompt ? "true" : "false";
+        const v = o.el && o.el.selected && !o.prompt ? "true" : "false";
         if (o.li.getAttribute("aria-selected") !== v) o.li.setAttribute("aria-selected", v);
       }
     };
@@ -484,7 +489,7 @@
       // lists its blank, and a marked prompt drops out once something is
       // typed. An optional select's "No answer" is a real answer.
       const answerable = (o) =>
-        !o.blank || offered(native.options[o.index].value, o.marked, native.required, searching, o.disabled);
+        !o.blank || offered(o.el.value, o.marked, native.required, searching, o.disabled);
       const hits = order(own.filter(answerable), query);
       lastHits = hits.filter((o) => !o.disabled);
       const hit = new Set(hits);
@@ -576,6 +581,11 @@
       pending = false;
       cancelAnimationFrame(frame);
       frame = 0;
+      // A search closed is a search over: the next one, even with the same
+      // words, starts unsteered, or leaving would commit a row somebody
+      // arrowed to in a search they cancelled.
+      steered = false;
+      lastQuery = null;
       if (active) active.li.classList.remove("is-active");
       if (revert) {
         showText();
@@ -591,7 +601,12 @@
         o.run();
         return;
       }
-      native.selectedIndex = o.index;
+      // A row whose option the page has since removed selects nothing.
+      if (!native.contains(o.el)) {
+        closeList(true);
+        return;
+      }
+      o.el.selected = true;
       // Mirror onto the real control, so a listener the app attached to the
       // select still fires.
       native.dispatchEvent(new Event("change", { bubbles: true }));
@@ -735,7 +750,7 @@
         list.appendChild(li);
         // index -1, so markSelected can never call one selected.
         opts.push({ text: row.label, name: row.label, desc: row.meta || "", short: "", lead: "",
-          terms: [], first: false, disabled: false, index: -1, group: null, li, run: row.run });
+          terms: [], first: false, disabled: false, index: -1, group: null, el: null, li, run: row.run });
       }
       shown = opts;
       if (open) filter(query());
@@ -779,7 +794,7 @@
       settleRequired();
       settleValidity();
       for (const o of opts) {
-        if (!o.run) o.prompt = isPrompt(native.options[o.index].value, o.marked, native.required, native.options[o.index].disabled);
+        if (!o.run) o.prompt = isPrompt(o.el.value, o.marked, native.required, o.el.disabled);
       }
       markSelected();
       // An open list re-reads its rows: a blank that just became a prompt

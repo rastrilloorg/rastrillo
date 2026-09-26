@@ -266,7 +266,7 @@ func TestSelectUsesItsPromptRules(t *testing.T) {
 	src := string(SelectJS())
 	for _, want := range []string{
 		"prompt: isPrompt(o.value, d.rstPrompt !== undefined, native.required, o.disabled),",
-		"offered(native.options[o.index].value, o.marked, native.required, searching, o.disabled)",
+		"offered(o.el.value, o.marked, native.required, searching, o.disabled)",
 		// Up from nothing highlighted goes to the last row.
 		"setActive((active ? v[Math.max(v.indexOf(active) - 1, 0)] : v[v.length - 1]) || null);",
 		// An unanswered question opens with nothing highlighted, so a bare
@@ -284,7 +284,7 @@ func TestSelectUsesItsPromptRules(t *testing.T) {
 		"if (open) {\n            e.preventDefault();\n            tookEnter = true;\n            if (active) choose(active);",
 		// A select that stops being required re-derives its prompts and
 		// re-marks the selection.
-		"if (!o.run) o.prompt = isPrompt(native.options[o.index].value, o.marked, native.required, native.options[o.index].disabled);\n      }\n      markSelected();",
+		"if (!o.run) o.prompt = isPrompt(o.el.value, o.marked, native.required, o.el.disabled);\n      }\n      markSelected();",
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("select.js no longer calls %q", want)

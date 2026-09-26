@@ -530,6 +530,8 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		AfterRemove      string `json:"afterRemove"`
 		AfterRemoveInDOM bool   `json:"afterRemoveInDOM"`
 		BorrowedCleared  bool   `json:"borrowedCleared"`
+		AfterRemoval     string `json:"afterRemovalValue"`
+		AfterCancel      string `json:"afterCancelValue"`
 		BorrowedDisabled bool   `json:"borrowedClearedDisabled"`
 		AriaRequired     string `json:"ariaRequired"`
 		OpenFlipListed   bool   `json:"openFlipListed"`
@@ -601,6 +603,36 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		const id = input.getAttribute('aria-activedescendant') || '';
 		out.afterRemove = id;
 		out.afterRemoveInDOM = id === '' || !!document.getElementById(id);
+		key('Escape');
+
+		// An option the app removes after enhancement moves every index:
+		// the row chosen is still the option submitted.
+		const small = select.querySelector('option[value="s"]');
+		small.remove();
+		input.focus();
+		input.click();
+		await frame();
+		const medium = [...document.querySelectorAll('#size-listbox [rst-combo-option]')].find((li) => li.textContent === 'Medium');
+		medium.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+		out.afterRemovalValue = select.value;
+		select.insertBefore(small, select.querySelector('option[value="m"]'));
+		select.value = '';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
+
+		// A cancelled search takes its steering with it: type, arrow,
+		// Escape, type the same again, leave — nothing is committed.
+		input.focus();
+		input.click();
+		await frame();
+		const typeSize = (v) => { input.value = v; input.dispatchEvent(new Event('input', { bubbles: true })); };
+		typeSize('m');
+		await frame();
+		key('ArrowDown');
+		key('Escape');
+		typeSize('m');
+		await frame();
+		key('Tab');
+		out.afterCancelValue = select.value;
 		key('Escape');
 
 		// A borrowed "please pick one" goes the moment the select stops
@@ -679,6 +711,12 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if !got.AfterRemoveInDOM {
 		t.Errorf("after the page took its extra rows away the highlight still names %q, a row that is gone", got.AfterRemove)
+	}
+	if got.AfterRemoval != "m" {
+		t.Errorf("after the app removed an option, choosing the Medium row submitted %q, want m: a cached index picked another option", got.AfterRemoval)
+	}
+	if got.AfterCancel != "" {
+		t.Errorf("a search typed, arrowed, cancelled and typed again committed %q on leaving, want nothing: the cancelled search's steering survived", got.AfterCancel)
 	}
 	if !got.BorrowedCleared {
 		t.Error("the box kept the select's borrowed message after the select stopped being required: the form would still refuse to submit")
