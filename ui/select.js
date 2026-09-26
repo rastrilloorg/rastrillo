@@ -748,10 +748,10 @@
     // the moment it is shown and gives it straight back: left on the box, it
     // would keep the form refusing after the select stopped being required.
     const settleValidity = () => {
-      if (!native.validity.valid) return;
-      // Valid now (a sibling script dropped required, or disabled it):
-      // the borrowed message goes too, or it would keep the form
-      // refusing to submit for a select that no longer objects.
+      if (!native.validity.valid && native.willValidate) return;
+      // Valid now, or no longer validated at all (a sibling script
+      // dropped required, or disabled it): the borrowed message goes too,
+      // or it would keep the form refusing a select that no longer objects.
       input.removeAttribute("aria-invalid");
       input.setCustomValidity("");
     };

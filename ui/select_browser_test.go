@@ -530,6 +530,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		AfterRemove      string `json:"afterRemove"`
 		AfterRemoveInDOM bool   `json:"afterRemoveInDOM"`
 		BorrowedCleared  bool   `json:"borrowedCleared"`
+		BorrowedDisabled bool   `json:"borrowedClearedDisabled"`
 		AriaRequired     string `json:"ariaRequired"`
 		OpenFlipListed   bool   `json:"openFlipListed"`
 		OpenFlipActive   string `json:"openFlipActive"`
@@ -595,6 +596,16 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		select.required = false;
 		await frame();
 		out.borrowedCleared = input.validity.valid;
+		// And when it is disabled instead: a disabled select is never
+		// validated, whatever its validity says.
+		select.required = true;
+		input.setCustomValidity(select.validationMessage || 'Please pick one');
+		select.disabled = true;
+		await frame();
+		out.borrowedClearedDisabled = input.validity.valid;
+		select.disabled = false;
+		select.required = false;
+		await frame();
 
 		// Grouped hits under a search sit above the page's extra rows, in
 		// the order the keys walk them.
@@ -627,6 +638,9 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if got.RequiredShown != "" || got.RequiredSelected != "false" {
 		t.Errorf("made required, the blank shows %q and reads aria-selected=%q, want empty and false: the observer did not re-derive the prompt", got.RequiredShown, got.RequiredSelected)
+	}
+	if !got.BorrowedDisabled {
+		t.Error("the box kept the select's borrowed message after the select was disabled: a disabled field would still block the form")
 	}
 	if got.AriaRequired != "true" {
 		t.Errorf("the box of a required select reads aria-required=%q, want \"true\": an ARIA boolean is a string", got.AriaRequired)
