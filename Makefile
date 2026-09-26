@@ -32,8 +32,14 @@ ci: gofmt money root chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
+# The repo's own Go files, not everything under the checkout: GOTMPDIR is
+# .build/tmp, and a go command killed mid-build (a Ctrl-C, or a runner
+# cancelling a job a newer push superseded) leaves its generated
+# _testmain.go and cgo files there. gofmt -l . then failed the next run on
+# files nobody wrote. git ls-files -co --exclude-standard is every tracked
+# file plus every new one not ignored, which is exactly "ours".
 gofmt:
-	@out=$$(gofmt -l .); if [ -n "$$out" ]; then \
+	@out=$$(git ls-files -co --exclude-standard -- '*.go' | xargs gofmt -l); if [ -n "$$out" ]; then \
 		echo "gofmt needed on:"; echo "$$out"; exit 1; fi
 
 money:
