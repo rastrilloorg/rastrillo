@@ -29,6 +29,12 @@ returned cleanup when you are done.
 exported so a test can open a database with the right pragma order
 instead of an approximation of it.
 
+## A database per test
+
+Give each test its own database with [`dbtest`](/docs/reference/dbtest).
+It migrates once and copies the file for each test, which is much faster
+than migrating every time.
+
 ## make ci
 
 ```sh
