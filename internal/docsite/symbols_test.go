@@ -295,6 +295,8 @@ func receiverName(recv *ast.FieldList) string {
 var coveredElsewhere = map[string]string{
 	"webauthn/authtest": "reference/webauthn",
 	"migrate/dump":      "reference/migrate",
+	"migrate/gormfn":    "reference/migrate",
+	"migrate/modeldiff": "reference/migrate",
 }
 
 // TestEveryPackageHasAReferencePage is the other half of the
