@@ -10,6 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — `rastrillo/table` and `rastrillo/xlsx`, for spreadsheet exports
+
+`table.Serve` sends one table as a CSV or XLSX download. Every CSV cell goes
+through `table.Guard`, so a cell that starts with `=` or another formula
+character opens as text, not as a formula. `xlsx` reads and writes workbooks of
+plain strings with the standard library alone. See
+[table](/docs/reference/table) and [xlsx](/docs/reference/xlsx).
+
 ### Added — `rastrillo/background`, and `Options.Background`
 
 `background.Group` keeps track of work your app starts and nobody waits for:

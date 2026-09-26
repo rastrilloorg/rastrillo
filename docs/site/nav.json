@@ -279,6 +279,11 @@
           "blurb": "Session rows, cookies, the three middlewares, and SafeReturn."
         },
         {
+          "slug": "reference/table",
+          "label": "table",
+          "blurb": "One table as a CSV or XLSX download, safe from CSV formula injection."
+        },
+        {
           "slug": "reference/tools",
           "label": "tools",
           "blurb": "Schemas, dispatch through your own mux, and the three refusals."
@@ -312,6 +317,11 @@
           "slug": "reference/webauthn",
           "label": "webauthn",
           "blurb": "The two ceremonies, the six refusals, and what is deliberately not checked."
+        },
+        {
+          "slug": "reference/xlsx",
+          "label": "xlsx",
+          "blurb": "Read and write .xlsx workbooks of strings, with the standard library alone."
         }
       ]
     }

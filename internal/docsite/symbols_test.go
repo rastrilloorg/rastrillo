@@ -26,6 +26,8 @@ import (
 var referencePages = map[string]string{
 	"assertion":    "reference/assertion",
 	"scope":        "reference/scope",
+	"table":        "reference/table",
+	"xlsx":         "reference/xlsx",
 	"db":           "reference/db",
 	"dbtest":       "reference/dbtest",
 	"migrate":      "reference/migrate",
