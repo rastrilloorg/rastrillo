@@ -92,11 +92,7 @@
 
 ### Task 5: the dependency fence
 
-**Files:** Create `migrate/nogorm_test.go`.
-
-- [ ] **Step 1: Write the test** — run `go list -deps` (via `exec.Command("go", "list", "-deps", pkgs...)`, with `GOFLAGS=-mod=mod`) over `./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth ./password ./passkey ./totp ./secondfactor ./vault ./money ./csrf ./mail ./carlos`; fail naming any line with prefix `gorm.io/`. Comment: a raw-SQL app imports these to avoid a second persistence layer, and one stray import puts it back invisibly.
-- [ ] **Step 2: Watch it fail** — temporarily add `_ "gorm.io/gorm"` to `pow/store.go`; run; expect FAIL naming pow. Remove it.
-- [ ] **Step 3:** Pass. Commit `migrate: fence the raw-SQL packages against GORM`.
+Done as a Makefile target, `gorm-free`, beside the existing `chromedp-graph` fence (that is this repo's precedent, rather than a Go test shelling out to `go list`), with `.amadan/ci.d/35-gorm-free`. `money` is a nested module, so it is not in the list. Watched fail three ways: a `_ "gorm.io/gorm"` import in `pow/store.go` (fails, naming the gorm packages), a listed path that does not resolve (fails — the first draft piped `go list` into `grep` and passed silently on exactly that), and restored (passes).
 
 ### Task 6: changelog, SKILL.md, gate
 

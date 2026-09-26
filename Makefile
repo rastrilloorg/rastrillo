@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser \
+.PHONY: ci gofmt root chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -28,7 +28,7 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt money root chromedp-graph race \
+ci: gofmt money root chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
@@ -49,6 +49,24 @@ root:
 chromedp-graph:
 	@if go list -deps ./... | grep -i chromedp; then \
 		echo "go list -deps ./... pulls chromedp - the README's promise is broken"; \
+		exit 1; \
+	fi
+
+# The packages an app adopts to get a subsystem - its schema, its
+# handlers - must not link GORM: an app that keeps its data in raw SQL
+# (Tito Go is the first) would otherwise take on a second persistence
+# layer to use pow or sessions. migrate is where GORM used to leak in;
+# gormfn and modeldiff are the two places it is allowed to live.
+GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
+            ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
+            ./mail ./carlos ./crypto ./flash ./form
+# go list runs on its own line so its failure fails the target: piped
+# straight into grep, a path that stopped resolving printed nothing and
+# the fence passed without checking anything.
+gorm-free:
+	@deps=$$(go list -deps $(GORM_FREE)) || exit 1; \
+	if echo "$$deps" | grep '^gorm.io/'; then \
+		echo "a GORM-free package now links GORM (see GORM_FREE in the Makefile)"; \
 		exit 1; \
 	fi
 
