@@ -23,6 +23,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf16"
 )
 
 // IsZip reports whether data starts with the local-file zip signature —
@@ -265,12 +267,16 @@ func ReadSheets(data []byte) ([]Sheet, error) {
 		}
 	}
 	out := make([]Sheet, 0, len(paths))
+	// One cell budget for the whole workbook, not one per sheet: a
+	// workbook may list the same sparse sheet any number of times, and
+	// every sheet read stays in memory until the caller is done.
+	budget := maxCells
 	for _, sp := range paths {
 		raw, err := read(sp.path)
 		if err != nil {
 			return nil, err
 		}
-		rows, err := parseSheet(raw, shared)
+		rows, err := parseSheet(raw, shared, &budget)
 		if err != nil {
 			return nil, err
 		}
@@ -391,10 +397,9 @@ func parseSharedStrings(raw []byte) ([]string, error) {
 
 // parseSheet streams sheetData into rows. Cell references place values;
 // missing cells inside a row read as ""; trailing empties are trimmed.
-func parseSheet(raw []byte, shared []string) ([][]string, error) {
+func parseSheet(raw []byte, shared []string, budget *int) ([][]string, error) {
 	decoder := xml.NewDecoder(bytes.NewReader(raw))
 	var rows [][]string
-	slots := 0 // cells named plus the empty slots padding them in
 	inData := false
 	var row []string
 	appendCell := func(col int, value string) error {
@@ -402,7 +407,7 @@ func parseSheet(raw []byte, shared []string) ([][]string, error) {
 			return errors.New("xlsx: cell reference past the last column")
 		}
 		if grow := col + 1 - len(row); grow > 0 {
-			if slots += grow; slots > maxCells {
+			if *budget -= grow; *budget < 0 {
 				return errors.New("xlsx: too many cells")
 			}
 			row = append(row, make([]string, grow)...)
@@ -455,15 +460,27 @@ func parseSheet(raw []byte, shared []string) ([][]string, error) {
 				if err := decoder.DecodeElement(&cell, &el); err != nil {
 					return nil, err
 				}
-				inline := strings.Join(cell.Is.Text, "")
+				// A Builder, not +=: a cell of forty thousand one-letter
+				// runs is a small file, and repeated concatenation made
+				// it hundreds of megabytes of copying.
+				var inline strings.Builder
+				for _, t := range cell.Is.Text {
+					inline.WriteString(t)
+				}
 				for _, run := range cell.Is.Runs {
-					inline += strings.Join(run.Text, "")
+					for _, t := range run.Text {
+						inline.WriteString(t)
+					}
 				}
 				col := columnIndex(ref)
 				if col < 0 {
 					col = len(row)
 				}
-				if err := appendCell(col, cellValue(typ, cell.V, inline, shared)); err != nil {
+				value, err := cellValue(typ, cell.V, inline.String(), shared)
+				if err != nil {
+					return nil, err
+				}
+				if err := appendCell(col, value); err != nil {
 					return nil, err
 				}
 			}
@@ -481,35 +498,38 @@ func parseSheet(raw []byte, shared []string) ([][]string, error) {
 	}
 }
 
-func cellValue(typ, v, inline string, shared []string) string {
+// cellValue is one cell's text. A shared-string reference that does not
+// resolve is an error, not "": a populated row read as empty is an
+// import that looks fine and is not.
+func cellValue(typ, v, inline string, shared []string) (string, error) {
 	switch typ {
 	case "s":
 		index, err := strconv.Atoi(strings.TrimSpace(v))
 		if err != nil || index < 0 || index >= len(shared) {
-			return ""
+			return "", fmt.Errorf("xlsx: shared string %q does not exist", v)
 		}
-		return shared[index]
+		return shared[index], nil
 	case "inlineStr":
-		return decodeText(inline)
+		return decodeText(inline), nil
 	case "b":
 		if strings.TrimSpace(v) == "1" {
-			return "TRUE"
+			return "TRUE", nil
 		}
-		return "FALSE"
+		return "FALSE", nil
 	case "str", "":
 		if typ == "str" {
-			return decodeText(v)
+			return decodeText(v), nil
 		}
 		// A typeless cell is numeric: render canonically, no trailing zeros.
 		// Dates surface as their serial numbers, because a date is a number
 		// with a style this reader does not read. Unparseable values pass
 		// through as-is.
 		if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err == nil {
-			return strconv.FormatFloat(f, 'f', -1, 64)
+			return strconv.FormatFloat(f, 'f', -1, 64), nil
 		}
-		return v
+		return v, nil
 	default:
-		return v
+		return v, nil
 	}
 }
 
@@ -611,8 +631,19 @@ func decodeText(s string) string {
 	for i := 0; i < len(s); i++ {
 		if isEscapeAt(s, i) {
 			n, _ := strconv.ParseUint(s[i+2:i+6], 16, 32)
-			b.WriteRune(rune(n))
+			r := rune(n)
 			i += 6
+			// Excel writes a character outside the BMP as two escaped
+			// UTF-16 halves (_xD83D__xDE00_ for 😀); decoded one at a
+			// time each half is U+FFFD.
+			if utf16.IsSurrogate(r) && isEscapeAt(s, i+1) {
+				lo, _ := strconv.ParseUint(s[i+3:i+7], 16, 32)
+				if pair := utf16.DecodeRune(r, rune(lo)); pair != unicode.ReplacementChar {
+					r = pair
+					i += 7
+				}
+			}
+			b.WriteRune(r)
 			continue
 		}
 		b.WriteByte(s[i])

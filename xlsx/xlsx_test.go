@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -283,6 +284,14 @@ func TestWriteSheetsRefusesAnEmptyWorkbook(t *testing.T) {
 // lets a test point the relationship at a part that is not there.
 func workbook(t *testing.T, rows, shared, sharedTarget string) []byte {
 	t.Helper()
+	return workbookSheets(t, 1, rows, shared, sharedTarget)
+}
+
+// workbookSheets lists the same worksheet part `tabs` times, which is
+// legal and is how one small file can ask for many sheets' worth of
+// memory.
+func workbookSheets(t *testing.T, tabs int, rows, shared, sharedTarget string) []byte {
+	t.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	add := func(name, content string) {
@@ -294,7 +303,11 @@ func workbook(t *testing.T, rows, shared, sharedTarget string) []byte {
 			t.Fatal(err)
 		}
 	}
-	add("xl/workbook.xml", `<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>`)
+	var sheets strings.Builder
+	for i := 1; i <= tabs; i++ {
+		fmt.Fprintf(&sheets, `<sheet name="S%d" sheetId="%d" r:id="rId1"/>`, i, i)
+	}
+	add("xl/workbook.xml", `<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>`+sheets.String()+`</sheets></workbook>`)
 	rels := `<Relationships><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>`
 	if sharedTarget != "" {
 		rels += `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="` + sharedTarget + `"/>`
@@ -394,5 +407,65 @@ func TestSheetNameTrimsAfterCutting(t *testing.T) {
 	}
 	if got := SheetName(strings.Repeat("'", 40)); got != "Sheet" {
 		t.Fatalf("a name of apostrophes = %q, want Sheet", got)
+	}
+}
+
+// The cell budget is the workbook's, not each sheet's: a file may list
+// one sparse sheet many times, and every sheet read stays in memory.
+func TestCellBudgetCoversTheWholeWorkbook(t *testing.T) {
+	var rows strings.Builder
+	for i := 1; i <= 40; i++ { // 40 * 16384 slots: under the cap once, over it twice
+		fmt.Fprintf(&rows, `<row r="%d"><c r="XFD%d" t="inlineStr"><is><t>x</t></is></c></row>`, i, i)
+	}
+	if _, err := ReadSheets(workbookSheets(t, 1, rows.String(), "", "")); err != nil {
+		t.Fatalf("one sheet under the budget: %v", err)
+	}
+	if _, err := ReadSheets(workbookSheets(t, 2, rows.String(), "", "")); err == nil {
+		t.Fatal("the same sheet listed twice went past the workbook's budget")
+	}
+}
+
+// A cell of many rich-text runs is read in linear time. Repeated
+// string concatenation turned forty thousand one-letter runs, a small
+// file, into hundreds of megabytes of copying.
+func TestManyRichTextRunsReadLinearly(t *testing.T) {
+	var runs strings.Builder
+	for i := 0; i < 40000; i++ {
+		runs.WriteString(`<r><t>a</t></r>`)
+	}
+	file := workbook(t, `<row r="1"><c r="A1" t="inlineStr"><is>`+runs.String()+`</is></c></row>`, "", "")
+	var before, after runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&before)
+	got, err := Read(file)
+	runtime.ReadMemStats(&after)
+	if err != nil || len(got[0][0]) != 40000 {
+		t.Fatalf("read %d letters: %v", len(got[0][0]), err)
+	}
+	if mb := (after.TotalAlloc - before.TotalAlloc) >> 20; mb > 200 {
+		t.Fatalf("reading one cell allocated %d MB", mb)
+	}
+}
+
+// A shared-string reference that does not resolve fails the read: a
+// populated row that reads as empty is an import that looks fine.
+func TestUnresolvedSharedStringIsAnError(t *testing.T) {
+	for name, file := range map[string][]byte{
+		"out of range":          workbook(t, `<row r="1"><c r="A1" t="s"><v>5</v></c></row>`, `<si><t>only</t></si>`, "sharedStrings.xml"),
+		"malformed":             workbook(t, `<row r="1"><c r="A1" t="s"><v>x</v></c></row>`, `<si><t>only</t></si>`, "sharedStrings.xml"),
+		"no shared part at all": workbook(t, `<row r="1"><c r="A1" t="s"><v>0</v></c></row>`, "", ""),
+	} {
+		if _, err := Read(file); err == nil {
+			t.Errorf("%s: read as success", name)
+		}
+	}
+}
+
+// Excel writes a character outside the BMP as two escaped UTF-16
+// halves; they decode together.
+func TestEscapedSurrogatePairsDecodeTogether(t *testing.T) {
+	got, err := Read(workbook(t, `<row r="1"><c r="A1" t="inlineStr"><is><t>hi _xD83D__xDE00_!</t></is></c></row>`, "", ""))
+	if err != nil || got[0][0] != "hi 😀!" {
+		t.Fatalf("read %q (%v)", got[0][0], err)
 	}
 }
