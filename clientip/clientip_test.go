@@ -16,6 +16,7 @@ func TestFromTrustsOnlyTheTrailingHops(t *testing.T) {
 		name   string
 		hops   int
 		xff    string
+		fields []string // X-Forwarded-For as separate header fields
 		remote string
 		want   string
 	}{
@@ -79,6 +80,24 @@ func TestFromTrustsOnlyTheTrailingHops(t *testing.T) {
 			want:   "192.0.2.8",
 		},
 		{
+			// A proxy that appends a FIELD of its own, rather than
+			// extending the existing line, leaves the client's forged
+			// field first. Only reading every field in order finds the
+			// element the proxy wrote.
+			name:   "a proxy's element in a field of its own",
+			hops:   1,
+			fields: []string{"198.51.100.123", "203.0.113.9"},
+			remote: "127.0.0.1:9999",
+			want:   "203.0.113.9",
+		},
+		{
+			name:   "hops counted across fields",
+			hops:   2,
+			fields: []string{"1.1.1.1, 203.0.113.9", "10.0.0.1"},
+			remote: "127.0.0.1:9999",
+			want:   "203.0.113.9",
+		},
+		{
 			// Zero hops is "nothing is in front of me": every element is the
 			// client's invention, however plausible it looks.
 			name:   "zero hops ignores the header entirely",
@@ -102,6 +121,9 @@ func TestFromTrustsOnlyTheTrailingHops(t *testing.T) {
 			r.RemoteAddr = tc.remote
 			if tc.xff != "" {
 				r.Header.Set("X-Forwarded-For", tc.xff)
+			}
+			for _, f := range tc.fields {
+				r.Header.Add("X-Forwarded-For", f)
 			}
 			if got := From(r, tc.hops); got != tc.want {
 				t.Errorf("From = %q, want %q (hops=%d, xff=%q, remote=%q)", got, tc.want, tc.hops, tc.xff, tc.remote)

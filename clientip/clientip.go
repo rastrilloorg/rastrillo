@@ -59,7 +59,13 @@ const DefaultHops = 1
 // is, so every such request shares one bucket.
 func From(r *http.Request, hops int) string {
 	if hops > 0 {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// Every field, not Header.Get's first: a proxy may append its
+		// element as a field of its own rather than onto the existing
+		// line, and then the first field is entirely the client's.
+		// Joined in order, separate fields and one comma-separated
+		// field are the same list (RFC 9110 5.3), which is how the
+		// CARLOS edge reads them too.
+		if xff := strings.Join(r.Header.Values("X-Forwarded-For"), ","); xff != "" {
 			parts := strings.Split(xff, ",")
 			if len(parts) >= hops {
 				if ip := strings.TrimSpace(parts[len(parts)-hops]); ip != "" {
