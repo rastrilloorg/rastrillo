@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
@@ -178,6 +179,9 @@ func drive(t *testing.T, script string, out any) {
 	defer cancel()
 	var raw string
 	if err := chromedp.Run(ctx,
+		// A page in a background tab gets no focus events from focus(),
+		// so a handler that reacts to focus could not be observed at all.
+		emulation.SetFocusEmulationEnabled(true),
 		chromedp.Navigate(rig.Origin+"/"),
 		chromedp.WaitVisible(`#tz-combo`, chromedp.ByQuery),
 		chromedp.Evaluate(`(async () => JSON.stringify(await (async () => {`+script+`})()))()`, &raw, awaitPromise),
