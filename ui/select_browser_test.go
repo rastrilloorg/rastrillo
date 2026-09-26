@@ -127,6 +127,13 @@ func convergedPage(t *testing.T) http.Handler {
 		`<option value="" selected>None</option><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option>` +
 		`</select>`)
 
+	// A grouped select, for the extra rows a page adds under a search.
+	body.WriteString(`<label rst-field-label for="dept">Department</label>` +
+		`<select rst-input id="dept" name="dept" data-rst-select>` +
+		`<optgroup label="Sales"><option value="acc">Accounts</option><option value="ret">Retail</option></optgroup>` +
+		`<optgroup label="Support"><option value="asi">Assistance</option><option value="bil">Billing</option></optgroup>` +
+		`</select>`)
+
 	body.WriteString(`<button type="submit" id="go">Save</button></form></body></html>`)
 	page := body.String()
 
@@ -522,6 +529,9 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		ExtraActive      string `json:"extraActive"`
 		AfterRemove      string `json:"afterRemove"`
 		AfterRemoveInDOM bool   `json:"afterRemoveInDOM"`
+		BorrowedCleared  bool   `json:"borrowedCleared"`
+		ScreenOrder      string `json:"screenOrder"`
+		KeyOrder         string `json:"keyOrder"`
 	}
 	drive(t, `
 		const input = document.querySelector('#size-combo');
@@ -558,6 +568,42 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		out.afterRemove = id;
 		out.afterRemoveInDOM = id === '' || !!document.getElementById(id);
 		key('Escape');
+
+		// A borrowed "please pick one" goes the moment the select stops
+		// objecting, even while the box keeps focus.
+		select.required = true;
+		select.value = '';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
+		select.required = true;
+		input.setCustomValidity(select.validationMessage || 'Please pick one');
+		select.required = false;
+		await frame();
+		out.borrowedCleared = input.validity.valid;
+
+		// Grouped hits under a search sit above the page's extra rows, in
+		// the order the keys walk them.
+		const dInput = document.querySelector('#dept-combo');
+		const dWrap = dInput.closest('[rst-combo]');
+		const dList = document.querySelector('#dept-listbox');
+		dInput.focus();
+		dInput.click();
+		await frame();
+		dWrap.rstExtras([{ label: 'Other', run: () => {} }]);
+		dInput.value = 'a';
+		dInput.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		out.screenOrder = [...dList.querySelectorAll('[rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
+		const walked = [];
+		const dkey = (k) => dInput.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+		dkey('Home');
+		for (let i = 0; i < 6; i++) {
+			const a = dInput.getAttribute('aria-activedescendant');
+			const t = a ? document.getElementById(a).textContent : '';
+			if (!walked.includes(t)) walked.push(t);
+			dkey('ArrowDown');
+		}
+		out.keyOrder = walked.join('|');
+		dkey('Escape');
 		return out;
 	`, &got)
 	if got.OptionalShown != "None" || got.OptionalSelected != "true" {
@@ -574,5 +620,11 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if !got.AfterRemoveInDOM {
 		t.Errorf("after the page took its extra rows away the highlight still names %q, a row that is gone", got.AfterRemove)
+	}
+	if !got.BorrowedCleared {
+		t.Error("the box kept the select's borrowed message after the select stopped being required: the form would still refuse to submit")
+	}
+	if got.ScreenOrder == "" || got.ScreenOrder != got.KeyOrder || !strings.HasSuffix(got.ScreenOrder, "|Other") {
+		t.Errorf("a grouped search shows %q but the keys walk %q: the matches must sit above the page's extra row, in the keys' order", got.ScreenOrder, got.KeyOrder)
 	}
 }

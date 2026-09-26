@@ -484,7 +484,11 @@
         const hitRow = new Set(hits.map((o) => o.li));
         let ref = list.firstChild;
         for (const o of hits) {
-          while (ref && ref !== o.li && !hitRow.has(ref)) ref = ref.nextSibling;
+          // Never past the empty row, which sits before the page's extras:
+          // a grouped hit is not a child of the list, so without the
+          // boundary it would be appended after the extras, out of step
+          // with the keyboard order.
+          while (ref && ref !== empty && ref !== o.li && !hitRow.has(ref)) ref = ref.nextSibling;
           if (ref === o.li) {
             ref = ref.nextSibling;
           } else {
@@ -738,7 +742,12 @@
     // the moment it is shown and gives it straight back: left on the box, it
     // would keep the form refusing after the select stopped being required.
     const settleValidity = () => {
-      if (native.validity.valid) input.removeAttribute("aria-invalid");
+      if (!native.validity.valid) return;
+      // Valid now (a sibling script dropped required, or disabled it):
+      // the borrowed message goes too, or it would keep the form
+      // refusing to submit for a select that no longer objects.
+      input.removeAttribute("aria-invalid");
+      input.setCustomValidity("");
     };
     native.addEventListener("invalid", () => input.setAttribute("aria-invalid", "true"));
     const settleRequired = () => input.toggleAttribute("aria-required", native.required);
