@@ -225,6 +225,15 @@ var sheetInvalid = strings.NewReplacer(
 // replaced, the 31-character cap applied in UTF-16 units (Excel's count)
 // without splitting a character, and never empty.
 func SheetName(name string) string {
+	// Characters XML cannot carry become spaces here, before names are
+	// compared for uniqueness: serialised, each would be U+FFFD, and
+	// "A\x00" and "A\x01" would arrive as one tab name twice.
+	name = strings.Map(func(r rune) rune {
+		if xmlForbidden(r) {
+			return ' '
+		}
+		return r
+	}, name)
 	name = strings.TrimSpace(sheetInvalid.Replace(name))
 	name = strings.Trim(name, "'")
 	if utf16Len(name) > maxSheetNameChars {
@@ -704,18 +713,24 @@ func xmlEscape(s string) string {
 // the next: _x0041_x0042_ needs both escaped to survive.
 func encodeText(value string) string {
 	var b strings.Builder
-	for i := 0; i < len(value); i++ {
-		c := value[i]
+	for i, r := range value {
 		switch {
-		case c == '_' && isEscapeAt(value, i):
+		case r == '_' && isEscapeAt(value, i):
 			b.WriteString("_x005F_")
-		case c < 0x20 && c != '\t' && c != '\n' && c != '\r':
-			fmt.Fprintf(&b, "_x%04X_", c)
+		case xmlForbidden(r):
+			fmt.Fprintf(&b, "_x%04X_", r)
 		default:
-			b.WriteByte(c)
+			b.WriteRune(r)
 		}
 	}
 	return b.String()
+}
+
+// xmlForbidden reports whether XML 1.0 cannot carry r at all: the C0
+// controls other than tab, newline and carriage return, and U+FFFE and
+// U+FFFF. xml.EscapeText replaces each with U+FFFD, which loses it.
+func xmlForbidden(r rune) bool {
+	return (r < 0x20 && r != '\t' && r != '\n' && r != '\r') || r == 0xFFFE || r == 0xFFFF
 }
 
 // isEscapeAt reports whether s has the _xHHHH_ spelling starting at i.

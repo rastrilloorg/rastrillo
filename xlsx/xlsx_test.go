@@ -387,7 +387,7 @@ func TestReadRichInlineTextAndSkipsPhoneticGuides(t *testing.T) {
 // contains the spelling must come back as written, and a control
 // character XML cannot carry must survive the trip too.
 func TestTextEscapesRoundTrip(t *testing.T) {
-	values := []string{"_x0041_", "_x0041_x0042_", "a_b", "_x005F_", "bell\x01ring", "tab\tand\nnewline", "_x12G4_"}
+	values := []string{"_x0041_", "_x0041_x0042_", "a_b", "_x005F_", "bell\x01ring", "tab\tand\nnewline", "_x12G4_", "non\uFFFEchar\uFFFF"}
 	var buf bytes.Buffer
 	if err := Write(&buf, "S", [][]string{values}); err != nil {
 		t.Fatal(err)
@@ -599,5 +599,14 @@ func TestWriteRefusesACellPastExcelsLength(t *testing.T) {
 	}
 	if err := Write(io.Discard, "S", [][]string{{strings.Repeat("a", 32767)}}); err != nil {
 		t.Errorf("a cell at the limit: %v", err)
+	}
+}
+
+// Tab names that differ only in characters XML cannot carry would be
+// written as one name twice; they are normalised before de-duplication.
+func TestSheetNamesDeduplicateAfterNormalising(t *testing.T) {
+	names := sheetNames([]Sheet{{Name: "A\x00"}, {Name: "A\x01"}})
+	if names[0] == names[1] || strings.ContainsAny(names[0]+names[1], "\x00\x01\uFFFD") {
+		t.Fatalf("names = %q", names)
 	}
 }
