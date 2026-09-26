@@ -38,8 +38,33 @@ type Group struct {
 	// leaves on the Group's word alone, even when its own context is
 	// never cancelled (a test teardown that forgot to).
 	done   chan struct{}
-	timers map[*time.Timer]struct{}
+	timers map[*Timer]struct{}
 	wg     sync.WaitGroup
+}
+
+// Timer is an armed After. Cancel it with its own Stop, never the
+// time.Timer's: that also drops it from the Group, where a timer
+// cancelled behind the Group's back would sit until the Group stops,
+// holding its callback and everything the callback captured. An app
+// that re-arms a debounce on every request would otherwise grow the
+// map by one entry a request.
+type Timer struct {
+	g *Group
+	t *time.Timer
+}
+
+// Stop cancels the timer and reports whether that stopped it from
+// firing, as time.Timer.Stop does. Stop on a nil Timer (what After
+// returns on a stopped Group) is a no-op returning false, so a caller
+// holding one need not nil-check it.
+func (t *Timer) Stop() bool {
+	if t == nil {
+		return false
+	}
+	t.g.mu.Lock()
+	delete(t.g.timers, t)
+	t.g.mu.Unlock()
+	return t.t.Stop()
 }
 
 // Done is closed when Stop is called. Created on first ask, so a Group
@@ -80,19 +105,19 @@ func (g *Group) Go(fn func()) bool {
 
 // After is time.AfterFunc with a way back: the timer is held so Stop
 // can disarm it, and fn, once it fires, is waited for exactly as Go's
-// work is. It returns nil after Stop; a caller that keeps the timer
-// nil-checks it before stopping it, so nil simply means nothing armed.
-func (g *Group) After(d time.Duration, fn func()) *time.Timer {
+// work is. It returns nil after Stop, which simply means nothing is
+// armed; Timer.Stop is safe to call on it.
+func (g *Group) After(d time.Duration, fn func()) *Timer {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.stopped {
 		return nil
 	}
 	if g.timers == nil {
-		g.timers = map[*time.Timer]struct{}{}
+		g.timers = map[*Timer]struct{}{}
 	}
-	var t *time.Timer
-	t = time.AfterFunc(d, func() {
+	t := &Timer{g: g}
+	t.t = time.AfterFunc(d, func() {
 		g.mu.Lock()
 		delete(g.timers, t)
 		if g.stopped {
@@ -154,7 +179,7 @@ func (g *Group) Stop() {
 		g.stopped = true
 		close(g.doneLocked())
 		for t := range g.timers {
-			t.Stop()
+			t.t.Stop()
 		}
 		clear(g.timers)
 	}

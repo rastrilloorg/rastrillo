@@ -39,6 +39,7 @@ var referencePages = map[string]string{
 	"password":     "reference/password",
 	"auth":         "reference/auth",
 	"clientip":     "reference/clientip",
+	"background":   "reference/background",
 	"passkey":      "reference/passkey",
 	"secondfactor": "reference/secondfactor",
 	"totp":         "reference/totp",
@@ -327,6 +328,12 @@ func TestEveryPackageHasAReferencePage(t *testing.T) {
 		if d.IsDir() {
 			base := d.Name()
 			if strings.HasPrefix(base, ".") && rel != "." {
+				return filepath.SkipDir
+			}
+			// The go command never treats testdata, or a directory
+			// starting with _, as a package: fixtures live there, and
+			// nothing can import them to need a page.
+			if base == "testdata" || strings.HasPrefix(base, "_") {
 				return filepath.SkipDir
 			}
 			if skip[strings.SplitN(rel, "/", 2)[0]] && rel != "." {

@@ -30,8 +30,12 @@ func TestStopDisarmsAnArmedFuse(t *testing.T) {
 
 	// And the kicks that land after the stop: a late request must not
 	// reopen work the teardown has already accounted for.
-	if tm := g.After(time.Millisecond, func() { ran.Add(1) }); tm != nil {
+	tm := g.After(time.Millisecond, func() { ran.Add(1) })
+	if tm != nil {
 		t.Error("After armed a timer on a stopped Group")
+	}
+	if tm.Stop() {
+		t.Error("Stop on the nil Timer a stopped Group returns claimed to stop something")
 	}
 	if g.Go(func() { ran.Add(1) }) {
 		t.Error("Go started work on a stopped Group")
@@ -180,5 +184,24 @@ func TestUntracked(t *testing.T) {
 	}
 	if len(got) != 3 {
 		t.Errorf("without the allow list Untracked found %d offences, want serve.go's too:\n%s", len(got), strings.Join(got, "\n"))
+	}
+}
+
+// A timer cancelled on its own is forgotten by the Group at once, not
+// when the Group stops. Otherwise a debounce re-armed on every request
+// grows the Group by one timer, and one captured closure, per request.
+func TestCancelledTimerIsForgotten(t *testing.T) {
+	var g Group
+	defer g.Stop()
+	for i := 0; i < 1000; i++ {
+		if !g.After(time.Hour, func() {}).Stop() {
+			t.Fatal("Stop on an armed timer reported it had already fired")
+		}
+	}
+	g.mu.Lock()
+	n := len(g.timers)
+	g.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("the Group still holds %d cancelled timers", n)
 	}
 }
