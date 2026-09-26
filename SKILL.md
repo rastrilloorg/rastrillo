@@ -1,14 +1,14 @@
 ---
 name: rastrillo
-description: "Build a multi-user CARLOS app: GORM models, chi routes, sessions, owner-scoped queries."
+description: "Build a multi-user CARLOS app: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
 
-CARLOS middle layer, not full-stack: you write GORM models, `net/http`
-handlers on a chi router and `html/template` pages; it supplies the
-database opener, session store, identity plugins, CSRF, owner scoping,
-form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
+CARLOS middle layer, not full-stack: you write GORM models (or plain
+SQL, §2), `net/http` handlers on a chi router and `html/template`
+pages; it supplies the database opener, session store, identity
+plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
 published module (Go excludes nested modules from a zip), so read it
 there, never in your checkout. Rare traps get one sentence plus a page:
@@ -104,6 +104,29 @@ code; twelve ship translated. **Any locale you add must translate the
 docs/site/localization.md
 
 ## 2. Data
+
+**Pick the data layer before the first model; both are supported.**
+(a) **GORM**, the scaffold's default: `db.Open`, models,
+`rastrillo migration generate`, `migrate/gormfn` Go migrations, `scope`
+(§3). About 12–16% less CRUD code. Costs ~2× read time (1.7–1.9× the
+allocations), +4.8 MB of binary, a hidden `BEGIN`/`COMMIT` around every
+standalone write, and silent traps: `Updates(struct)` skips zero fields
+(always `Select`, §4); int64 `CreatedAt`/`UpdatedAt` get the wall clock;
+`Session` shares its parent's statement; a `d.G` statement inside a
+transaction deadlocks (§3); `Model(&T{ID: 0})` refuses the update.
+Upserts, `RETURNING` and locking writes need escape hatches.
+(b) **Plain `database/sql`**, as Tito Go does: open your own
+one-connection writer (db.Open's DSN) and readers;
+`migrate.Apply(ctx, migrate.Pool(writer), set)`; Go migrations take
+`migrate.Tx`; tests copy `dbtest.FromSet(set)`; besides the root
+package, import only `make gorm-free` ones — no `db`, `scope`,
+`gormlite`. Explicit transactions and plans, smaller and faster. You
+write the scans, every migration (generate and `check` need GORM
+`Models`: drop `check` from `make ci`) and every owned query's
+`WHERE user_id = ?`. CRUD-heavy, small team: (a). Money, fulfilment,
+transaction-critical: (b). Switching is per package; schema and ledger
+are the same.
+docs/superpowers/specs/2026-09-26-gorm-vs-sql-findings.md
 
 Models are plain GORM structs — no base type, no embedding. Owner
 column `UserID int64` tagged `gorm:"index"` is what `scope.Owned`
