@@ -193,3 +193,13 @@ opposite: a 5xx is the agent's registry having a bad moment and is
 worth retrying, a 4xx is a permanent complaint about this exact request
 and retrying it is a loop. `Body` is the agent's own message, which is
 usually the only place the real reason is written down.
+
+## Running
+
+```go
+func Running() bool
+```
+
+`Running` reports whether the app was started by CARLOS. Rastrillo uses
+it for defaults that are only right on the platform, such as trusting
+the edge's `X-Forwarded-For`.

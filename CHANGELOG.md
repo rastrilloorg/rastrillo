@@ -40,9 +40,10 @@ sets it, so running `make ci` needs Node. See
 
 `clientip.From` returns the address a request came from, trusting only the last
 `hops` elements of `X-Forwarded-For`: the ones your own proxies added.
-`auth.Config.TrustedProxyHops` uses it for the per-IP sign-in limit. It
-defaults to 0, which keeps today's behaviour: behind the CARLOS edge, every
-visitor shares one limit. Set it to 1 on CARLOS to give each visitor their own.
+`auth.Config.TrustedProxyHops` uses it for the per-IP sign-in limit. Leave it
+unset and it is 1 on CARLOS, so each visitor behind the edge gets their own
+limit, and 0 anywhere else, which keeps today's behaviour. A value you set
+always wins. `carlos.Running` reports whether the app was started by CARLOS.
 See [clientip](/docs/reference/clientip).
 
 ### Added — `rastrillo/dbtest`, a migrated database per test
