@@ -10,6 +10,13 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — `rastrillo/dbtest`, a migrated database per test
+
+`dbtest.FromSet` migrates one template per test binary, and `Open` or `Path`
+gives each test its own copy. A test then pays for a file copy instead of the
+whole schema: Tito Go measured 207ms per test before and 2.5ms after. It does
+not need GORM. See [dbtest](/docs/reference/dbtest).
+
 ### Changed — a Go migration takes the pinned connection, not a `*gorm.DB`
 
 `migrate.Migration.Fn` is now `func(ctx context.Context, tx migrate.Tx) error`.

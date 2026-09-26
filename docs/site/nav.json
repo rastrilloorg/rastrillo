@@ -174,6 +174,11 @@
           "blurb": "One SQLite file as two pools, and the pragma order that has to be right."
         },
         {
+          "slug": "reference/dbtest",
+          "label": "dbtest",
+          "blurb": "A migrated database for every test, copied from a template built once."
+        },
+        {
           "slug": "reference/eventlog",
           "label": "eventlog",
           "blurb": "Append-only streams, a pure fold, and the deterministic merge order."

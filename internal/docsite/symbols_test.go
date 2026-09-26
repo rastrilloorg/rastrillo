@@ -27,6 +27,7 @@ var referencePages = map[string]string{
 	"assertion":    "reference/assertion",
 	"scope":        "reference/scope",
 	"db":           "reference/db",
+	"dbtest":       "reference/dbtest",
 	"migrate":      "reference/migrate",
 	"view":         "reference/view",
 	"form":         "reference/form",
