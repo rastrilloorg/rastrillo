@@ -3,11 +3,11 @@ package keyring
 import (
 	"bytes"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
 // TestJSEmbedded pins the embed wiring: the twin travels with the
@@ -35,10 +35,8 @@ func TestJSEmbedded(t *testing.T) {
 // compatibility contract, but a Go toolchain without node still gets
 // a green, honest build.
 func TestJSTwin(t *testing.T) {
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node not on PATH; JS twin not exercised")
-	}
+	// Before the fixture is built: no node means none of it is needed.
+	nodetest.Node(t)
 
 	dir := t.TempDir()
 	jsDir := filepath.Join(dir, "js")
@@ -69,10 +67,5 @@ func TestJSTwin(t *testing.T) {
 	copyFile(filepath.Join(jsDir, "golden.test.mjs"), filepath.Join("js", "golden.test.mjs"))
 	copyFile(filepath.Join(tdDir, "golden.json"), filepath.Join("testdata", "golden.json"))
 
-	cmd := exec.Command(node, "--test", "golden.test.mjs")
-	cmd.Dir = jsDir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("node --test golden.test.mjs failed: %v\n%s", err, out)
-	}
+	nodetest.Run(t, nodetest.Cmd{Dir: jsDir, Args: []string{"--test", "golden.test.mjs"}})
 }

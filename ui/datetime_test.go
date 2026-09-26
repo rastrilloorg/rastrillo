@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
 // fixturesComplete flipped true the day every shipped locale got a
@@ -73,15 +73,12 @@ func localeOf(fixture string) string {
 // locale.
 //
 // Node is not a build dependency of this framework, so its absence
-// skips — LOUDLY, with the command that would have run, because a
-// silent skip on a CI image without node would retire this suite
-// without anybody deciding to.
+// skips — naming the test, and failing instead under
+// RASTRILLO_TEST_REQUIRE_NODE (nodetest), because a silent skip on a
+// CI image without node would retire this suite without anybody
+// deciding to.
 func TestDatetimeParserFixtures(t *testing.T) {
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node is not on PATH, so datetime.js's parser is unverified here: " +
-			"install Node and rerun `go test ./ui/` to exercise ui/datetime_node.mjs")
-	}
+	nodetest.Node(t)
 
 	fixtures, err := filepath.Glob(filepath.Join("testdata", "datetime", "*.json"))
 	if err != nil {
@@ -97,17 +94,15 @@ func TestDatetimeParserFixtures(t *testing.T) {
 	for _, fixture := range fixtures {
 		name := strings.TrimSuffix(filepath.Base(fixture), ".json")
 		t.Run(name, func(t *testing.T) {
-			cmd := exec.Command(node, "datetime_node.mjs", fixture)
-			cmd.Stdin = bytes.NewReader(vocabStdin(t, localeOf(fixture)))
-			// The fixtures are wall-clock: a runner in a zone with a
-			// summer-time jump inside a fixture's span would move an
-			// expectation for reasons that have nothing to do with the
-			// parser. UTC has no such jump.
-			cmd.Env = append(os.Environ(), "TZ=UTC")
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				t.Fatalf("%s\n%v", out, err)
-			}
+			out := nodetest.Run(t, nodetest.Cmd{
+				Args:  []string{"datetime_node.mjs", fixture},
+				Stdin: vocabStdin(t, localeOf(fixture)),
+				// The fixtures are wall-clock: a runner in a zone with a
+				// summer-time jump inside a fixture's span would move an
+				// expectation for reasons that have nothing to do with the
+				// parser. UTC has no such jump.
+				Env: []string{"TZ=UTC"},
+			})
 			t.Log(strings.TrimSpace(string(out)))
 		})
 	}
@@ -131,18 +126,11 @@ func TestDatetimeParserFixtures(t *testing.T) {
 // names the languages on the FAIL line, which is what lands in the
 // t.Fatalf below.
 func TestDatetimeReadsItsOwnDisplayBack(t *testing.T) {
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node is not on PATH, so datetime.js's read-back is unverified here: " +
-			"install Node and rerun `go test ./ui/` to exercise ui/datetime_node.mjs --round-trip")
-	}
-	cmd := exec.Command(node, "datetime_node.mjs", "--round-trip")
-	cmd.Stdin = bytes.NewReader(vocabStdin(t, "en"))
-	cmd.Env = append(os.Environ(), "TZ=UTC")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("%s\n%v", out, err)
-	}
+	out := nodetest.Run(t, nodetest.Cmd{
+		Args:  []string{"datetime_node.mjs", "--round-trip"},
+		Stdin: vocabStdin(t, "en"),
+		Env:   []string{"TZ=UTC"},
+	})
 	t.Log(strings.TrimSpace(string(out)))
 }
 
@@ -171,17 +159,10 @@ func TestDatetimeReadsItsOwnDisplayBack(t *testing.T) {
 // cannot catch it, and the invariants hold in every zone by
 // construction.
 func TestCalendarGridHoldsInEveryLocale(t *testing.T) {
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node is not on PATH, so calendar.js's grid is unverified here: " +
-			"install Node and rerun `go test ./ui/` to exercise ui/datetime_node.mjs --calendar")
-	}
-	cmd := exec.Command(node, "datetime_node.mjs", "--calendar")
-	cmd.Stdin = bytes.NewReader(vocabStdin(t, "en"))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("%s\n%v", out, err)
-	}
+	out := nodetest.Run(t, nodetest.Cmd{
+		Args:  []string{"datetime_node.mjs", "--calendar"},
+		Stdin: vocabStdin(t, "en"),
+	})
 	t.Log(strings.TrimSpace(string(out)))
 }
 

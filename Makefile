@@ -49,10 +49,15 @@ gofmt:
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
 
+# RASTRILLO_TEST_REQUIRE_NODE turns every nodetest skip into a failure
+# here: on a laptop without Node a skip is honest, but a gate that lost
+# node would otherwise go green having checked none of the JavaScript
+# twins. Override with RASTRILLO_TEST_REQUIRE_NODE= to run without it.
+RASTRILLO_TEST_REQUIRE_NODE ?= 1
 root:
 	go build ./...
 	go vet ./...
-	go test ./... -count=1
+	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) go test ./... -count=1
 
 # The README promises chromedp stays out of the ordinary build graph.
 # This is that sentence, executable.
@@ -69,7 +74,7 @@ chromedp-graph:
 # gormfn and modeldiff are the two places it is allowed to live.
 GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
-            ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip
+            ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.
