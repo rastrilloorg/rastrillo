@@ -809,15 +809,16 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 	t.Parallel()
 	var got struct {
-		Boxes      int    `json:"boxes"`
-		Shown      string `json:"shown"`
-		LabelFor   string `json:"labelFor"`
-		PostedNow  string `json:"postedNow"`
-		Picked     string `json:"picked"`
-		PostedPick string `json:"postedPick"`
-		SameBoxes  int    `json:"sameTaskBoxes"`
-		SameShown  string `json:"sameTaskShown"`
-		SameErrors int    `json:"sameTaskErrors"`
+		Boxes        int    `json:"boxes"`
+		Shown        string `json:"shown"`
+		LabelFor     string `json:"labelFor"`
+		PostedNow    string `json:"postedNow"`
+		Picked       string `json:"picked"`
+		PostedPick   string `json:"postedPick"`
+		SameBoxes    int    `json:"sameTaskBoxes"`
+		SameShown    string `json:"sameTaskShown"`
+		SameErrors   int    `json:"sameTaskErrors"`
+		BothLabelled bool   `json:"bothLabelled"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -851,6 +852,19 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 		out.picked = input.value;
 		out.postedPick = posted();
+		// Two selects replaced in one task: each new box is named by its label.
+		const swapIn = (id, opts) => {
+			const n = document.createElement('select');
+			n.id = id;
+			n.name = id;
+			n.setAttribute('data-rst-select', '');
+			n.innerHTML = opts;
+			document.querySelector('#' + id).replaceWith(n);
+		};
+		swapIn('colour', '<option value="red">Red</option><option value="blue">Blue</option>');
+		swapIn('flavour', '<option value="fig">Fig</option><option value="lime">Lime</option>');
+		await frame();
+		out.bothLabelled = !!document.querySelector('label[for="colour-combo"]') && !!document.querySelector('label[for="flavour-combo"]');
 		// Changed and replaced in the same task: a handover, and no error.
 		let errors = 0;
 		window.addEventListener('error', () => errors++);
@@ -877,6 +891,9 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 	if got.LabelFor != "colour-combo" {
 		t.Error("the label does not name the new box")
 	}
+	if !got.BothLabelled {
+		t.Error("two selects replaced in one task: a new box is left without its label, which an old box handed back to the hidden select")
+	}
 	if got.SameBoxes != 1 || got.SameShown != "Teal" || got.SameErrors != 0 {
 		t.Errorf("options changed and select replaced in one task: %d boxes showing %q, %d errors; want 1 box showing Teal and none", got.SameBoxes, got.SameShown, got.SameErrors)
 	}
@@ -900,6 +917,7 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		StillHidden   bool   `json:"stillHidden"`
 		LiveListeners int    `json:"liveListeners"`
 		Recorded      int    `json:"recorded"`
+		ExtraKept     bool   `json:"extraKept"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -917,6 +935,7 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		input.value = 'b';
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		await frame();
+		input.closest('[rst-combo]').rstExtras([{ label: 'Other', run: () => {} }]);
 		select.innerHTML = '<option value="blueberry">Blueberry</option><option value="blackberry">Blackberry</option><option value="kiwi">Kiwi</option>';
 		await frame();
 		const out = {};
@@ -925,6 +944,8 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		out.focused = document.activeElement === input;
 		out.typed = input.value;
 		out.rows = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
+		out.extraKept = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]')].some((li) => li.textContent === 'Other');
+		input.closest('[rst-combo]').rstExtras([]);
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 		out.picked = select.value;
 		// A second change: only the current box may answer it. An old box
@@ -950,8 +971,11 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 	if !got.Focused || got.Typed != "b" {
 		t.Errorf("after the rebuild the box has focus %v and reads %q, want true and \"b\": the person lost their place", got.Focused, got.Typed)
 	}
-	if got.Rows != "Blueberry|Blackberry" {
-		t.Errorf("after the rebuild \"b\" shows %q, want Blueberry|Blackberry: the rows are not the options the select now holds", got.Rows)
+	if !got.ExtraKept {
+		t.Error("the page's extra row was lost when the options were rebuilt")
+	}
+	if got.Rows != "Blueberry|Blackberry|Other" {
+		t.Errorf("after the rebuild \"b\" shows %q, want Blueberry|Blackberry|Other: the rows are not the options the select now holds (and the page's extra)", got.Rows)
 	}
 	if got.Picked != "blueberry" {
 		t.Errorf("Enter after the rebuild picked %q, want blueberry", got.Picked)

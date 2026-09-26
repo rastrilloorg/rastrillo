@@ -796,7 +796,10 @@
     // Rows the page adds after the select's own, replacing whatever it added
     // last: suggestions for what to do with the typed text. Each is
     // {label, meta, run}; an empty list takes them all away.
+    // The rows last handed over, so a rebuild can hand them to the new box.
+    let given = [];
     wrap.rstExtras = (rows) => {
+      given = rows || [];
       for (let i = opts.length - 1; i >= 0; i--) {
         if (!opts[i].run) break;
         opts[i].li.remove();
@@ -916,14 +919,16 @@
       // handover, not a rebuild (this observer runs first).
       if (native.parentNode !== wrap.parentNode) {
         stepAside();
-        scan();
+        queueMicrotask(scan);
         return;
       }
       const focused = document.activeElement === input;
       const typed = showingPick ? null : input.value;
       stepAside();
       const next = combo(native);
-      if (!focused || !next) return;
+      if (!next) return;
+      if (given.length) next.closest("[rst-combo]").rstExtras(given);
+      if (!focused) return;
       next.focus();
       if (typed !== null) {
         next.value = typed;
@@ -940,7 +945,10 @@
     const swapped = new MutationObserver(() => {
       if (native.parentNode === wrap.parentNode) return;
       stepAside();
-      scan();
+      // After every observer has run: two selects replaced in one task
+      // each retire their box first, so no new box is built while an old
+      // one still holds its label.
+      queueMicrotask(scan);
     });
     if (wrap.parentNode) swapped.observe(wrap.parentNode, { childList: true });
     native.addEventListener("focus", () => {
