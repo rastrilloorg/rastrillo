@@ -50,7 +50,7 @@ func TestBudgetMeasuresFirstByteSeparatelyFromTotal(t *testing.T) {
 	opts := Options{Budget: DefaultBudget, ColdBudget: DefaultColdBudget, Logger: slog.New(logs), Screen: defaultScreen}
 	r := httptest.NewRequest("GET", "/orders/RXS1?token=secret", nil)
 	r.Pattern = "GET /orders/{id}"
-	w, r2 := c.begin(httptest.NewRecorder(), r, opts)
+	w, r2 := c.begin(httptest.NewRecorder(), r, opts, 0)
 	w.start = w.start.Add(-200 * time.Millisecond)
 	Label(r2, "acme")
 	w.WriteHeader(201)
@@ -77,7 +77,7 @@ func TestStreamingDoesNotTurnFastFirstByteIntoBudgetFailure(t *testing.T) {
 	var c Recorder
 	warm(&c)
 	rec := httptest.NewRecorder()
-	w, r2 := c.begin(rec, httptest.NewRequest("GET", "/", nil), Options{Budget: DefaultBudget, Screen: defaultScreen})
+	w, r2 := c.begin(rec, httptest.NewRequest("GET", "/", nil), Options{Budget: DefaultBudget, Screen: defaultScreen}, 0)
 	if err := w.FlushError(); err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestColdStartIsItsOwnNumber(t *testing.T) {
 func TestWritesHaveNoBudget(t *testing.T) {
 	var c Recorder
 	warm(&c)
-	w, r2 := c.begin(httptest.NewRecorder(), httptest.NewRequest("POST", "/", nil), Options{Budget: DefaultBudget, Screen: defaultScreen})
+	w, r2 := c.begin(httptest.NewRecorder(), httptest.NewRequest("POST", "/", nil), Options{Budget: DefaultBudget, Screen: defaultScreen}, 0)
 	w.start = w.start.Add(-time.Second)
 	w.WriteHeader(303)
 	w.finish(r2)
@@ -147,7 +147,7 @@ func TestPanicIsRecordedAndRethrown(t *testing.T) {
 func TestInformationalAndImplicitResponses(t *testing.T) {
 	var c Recorder
 	warm(&c)
-	w, r2 := c.begin(httptest.NewRecorder(), httptest.NewRequest("POST", "/", nil), Options{Screen: defaultScreen})
+	w, r2 := c.begin(httptest.NewRecorder(), httptest.NewRequest("POST", "/", nil), Options{Screen: defaultScreen}, 0)
 	w.WriteHeader(103)
 	if w.committed {
 		t.Fatal("103 committed the final response")
@@ -330,7 +330,7 @@ func TestHijackDoesNotWriteAfterTakingConnection(t *testing.T) {
 	defer b.Close()
 	var c Recorder
 	rec := httptest.NewRecorder()
-	w, r2 := c.begin(hijackWriter{rec, a}, httptest.NewRequest("GET", "/ws", nil), Options{Screen: defaultScreen})
+	w, r2 := c.begin(hijackWriter{rec, a}, httptest.NewRequest("GET", "/ws", nil), Options{Screen: defaultScreen}, 0)
 	conn, _, err := w.Hijack()
 	if err != nil || conn != a {
 		t.Fatalf("%v %v", conn, err)
@@ -350,5 +350,61 @@ func BenchmarkRequestRecording(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		h.ServeHTTP(httptest.NewRecorder(), r)
+	}
+}
+
+// ServeMux answers a CONNECT that needs a trailing slash with a
+// redirect whose Pattern is the concrete path, token and all. It is
+// never a screen name.
+func TestConnectRedirectIsNeverNamed(t *testing.T) {
+	var c Recorder
+	mux := http.NewServeMux()
+	mux.HandleFunc("/orders/{token}/", func(w http.ResponseWriter, r *http.Request) {})
+	h := Middleware(&c, Options{Logger: slog.New(&countingHandler{})})(mux)
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("CONNECT", "/orders/secret-token", nil))
+	if s := c.Snapshot()[0]; s.Screen != "unmatched" {
+		t.Fatalf("a CONNECT redirect was named %q", s.Screen)
+	}
+}
+
+// The boot time is Started to when the middleware was built, which is
+// when the app finished starting. Time the process then sat idle waiting
+// for its first request is not boot.
+func TestStartupExcludesIdleTime(t *testing.T) {
+	var c Recorder
+	h := Middleware(&c, Options{Started: time.Now().Add(-100 * time.Millisecond)})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	time.Sleep(400 * time.Millisecond) // idle, after start-up finished
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
+	s := c.Snapshot()[0]
+	if s.Startup < 100 || s.Startup > 300 {
+		t.Fatalf("startup = %vms, want the ~100ms boot, not the idle wait after it", s.Startup)
+	}
+}
+
+// Middleware that copies the request between perf and the mux hides the
+// pattern it matched; perf says so once instead of grouping every route
+// as "unmatched" in silence.
+func TestALostRoutePatternIsReportedOnce(t *testing.T) {
+	var c Recorder
+	logs := &countingHandler{}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /notes/{id}", func(w http.ResponseWriter, r *http.Request) {})
+	type key struct{}
+	copying := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), key{}, 1)))
+	})
+	h := Middleware(&c, Options{Logger: slog.New(logs)})(copying)
+	for i := 0; i < 3; i++ {
+		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/notes/7", nil))
+	}
+	if logs.n != 1 || !strings.Contains(logs.lines.String(), "route pattern never reached") {
+		t.Fatalf("%d warnings: %s", logs.n, logs.lines.String())
+	}
+	// A 404 matched no route, so it hides nothing and says nothing.
+	var c2 Recorder
+	logs2 := &countingHandler{}
+	Middleware(&c2, Options{Logger: slog.New(logs2)})(mux).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/nowhere", nil))
+	if logs2.n != 0 {
+		t.Fatalf("a 404 was reported as a lost route: %s", logs2.lines.String())
 	}
 }

@@ -88,12 +88,18 @@ type Options struct {
 	// DefaultBudget. ColdBudget is the same for the first request the
 	// process serves; zero means DefaultColdBudget.
 	Budget, ColdBudget time.Duration
-	// Started is when the process started, for the cold request's
-	// startup span. Zero reports no startup span (the request is still
-	// held to ColdBudget).
+	// Started is when the process started. The boot time the cold
+	// request reports is from Started to the moment Middleware is
+	// called, which is when the app has finished starting (its routes
+	// are built, its database open); measuring to the first request
+	// instead would count however long the process then sat idle. Zero
+	// reports no startup span (the request is still held to
+	// ColdBudget).
 	Started time.Time
 	// Logger receives the over-budget warnings. Nil is slog.Default().
 	Logger *slog.Logger
+
+	screenIsDefault bool
 }
 
 // Recorder is the ring of recent samples. The zero value is ready; one
@@ -103,6 +109,12 @@ type Recorder struct {
 	samples []Sample
 	next    int
 	served  bool
+
+	// lostRoute is the one warning that a request was served but its
+	// route pattern never reached the middleware: something between it
+	// and the mux copied the request. Once, because it is a wiring
+	// mistake, not an event.
+	lostRoute sync.Once
 
 	// Over-budget logging is throttled twice: once a minute per
 	// screen, and 120 lines a minute in all. A slow dependency makes
@@ -241,6 +253,11 @@ func Middleware(c *Recorder, opts Options) func(http.Handler) http.Handler {
 	}
 	if opts.Screen == nil {
 		opts.Screen = defaultScreen
+		opts.screenIsDefault = true
+	}
+	var boot time.Duration
+	if !opts.Started.IsZero() {
+		boot = time.Since(opts.Started)
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +265,7 @@ func Middleware(c *Recorder, opts Options) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			q, r2 := c.begin(w, r, opts)
+			q, r2 := c.begin(w, r, opts, boot)
 			defer q.finish(r2)
 			next.ServeHTTP(q, r2)
 		})
@@ -261,7 +278,11 @@ func defaultSkip(r *http.Request) bool {
 }
 
 func defaultScreen(r *http.Request) string {
-	if r.Pattern != "" {
+	// A CONNECT is the one request ServeMux answers with a redirect
+	// whose Pattern is the concrete destination path rather than a
+	// registered pattern — /orders/secret/, token and all. No page an
+	// app serves is a CONNECT, so it is never named.
+	if r.Pattern != "" && r.Method != http.MethodConnect {
 		return r.Pattern
 	}
 	return "unmatched"
@@ -283,7 +304,7 @@ type request struct {
 	startup   time.Duration
 }
 
-func (c *Recorder) begin(w http.ResponseWriter, r *http.Request, opts Options) (*request, *http.Request) {
+func (c *Recorder) begin(w http.ResponseWriter, r *http.Request, opts Options, boot time.Duration) (*request, *http.Request) {
 	s := Sample{At: time.Now().UTC(), Method: method(r.Method)}
 	c.mu.Lock()
 	s.Cold = !c.served
@@ -297,8 +318,8 @@ func (c *Recorder) begin(w http.ResponseWriter, r *http.Request, opts Options) (
 		s.Budget = ms(budget)
 	}
 	q := &request{ResponseWriter: w, recorder: c, opts: &opts, start: time.Now(), sample: s}
-	if s.Cold && !opts.Started.IsZero() {
-		q.startup = q.start.Sub(opts.Started)
+	if s.Cold {
+		q.startup = boot
 	}
 	return q, r.WithContext(context.WithValue(r.Context(), contextKey{}, q))
 }
@@ -455,6 +476,13 @@ func (w *request) finish(r *http.Request) {
 	}
 	w.mu.Lock()
 	w.sample.Screen = w.opts.Screen(r)
+	// A request that was served — not a 404 or 405, which match no
+	// route — yet reached here with no pattern had its pattern set on a
+	// copy: middleware between this and the mux called r.WithContext.
+	// Every route would then read as one "unmatched" group, so say so,
+	// once, rather than let the numbers mislead quietly.
+	lost := w.opts.screenIsDefault && r.Pattern == "" &&
+		w.sample.Status != http.StatusNotFound && w.sample.Status != http.StatusMethodNotAllowed
 	w.sample.Total = ms(time.Since(w.start))
 	first := w.sample.TTFB
 	if w.sample.Cold {
@@ -473,6 +501,12 @@ func (w *request) finish(r *http.Request) {
 		s.Spans = spans
 	}
 	w.mu.Unlock()
+	if lost {
+		w.recorder.lostRoute.Do(func() {
+			w.opts.Logger.Warn("perf: a request was served but its route pattern never reached perf.Middleware; " +
+				"mount it last in Options.Wrap, directly around the mux, or every route groups as \"unmatched\"")
+		})
+	}
 	w.recorder.add(s, w.opts.Logger)
 	if p != nil {
 		panic(p)
