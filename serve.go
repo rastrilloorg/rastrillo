@@ -32,6 +32,7 @@ import (
 	"syscall"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/carlos"
 
 	_ "modernc.org/sqlite"
@@ -181,6 +182,18 @@ type Options struct {
 	// gen/locales/en.toml, so the two cannot drift). Nil is legal — an
 	// app with no manifest resources has nothing to layer.
 	BaseCatalog Catalog
+
+	// Background is the app's background work — whatever it started
+	// through the Group's Go, After or Loop. On the way out it is
+	// stopped after the server has drained its requests and BEFORE the
+	// database closes: new work is refused, armed timers are disarmed,
+	// and work already running is waited for. The other order is the
+	// bug this exists for: a send or a sweep still running when the
+	// handle closes fails with "sql: database is closed", and can fail
+	// the very write that records it happened. Handler's close func
+	// does the same, so a test harness tears down in the same order.
+	// Nil means the app tracks nothing.
+	Background *background.Group
 
 	// Logger defaults to slog.Default() if nil.
 	Logger *slog.Logger
@@ -347,8 +360,8 @@ func Serve(opts Options) error {
 // signal handling: it opens the database (if configured), applies
 // migrations, resolves the Mux/Router choice, and assembles the full
 // serving handler — framework endpoints, Wrap, locales and all. The
-// returned close func releases the database handle (a no-op without
-// one).
+// returned close func stops Options.Background and then releases the
+// database handle (each a no-op without one).
 //
 // Exported for test harnesses: before this seam, every app's harness
 // hand-duplicated /healthz, /api/version and the DSN pragma ordering
@@ -369,9 +382,17 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 			return nil, closeNothing, fmt.Errorf("rastrillo: open database: %w", err)
 		}
 	}
-	closeDB := closeNothing
-	if db != nil {
-		closeDB = db.Close
+	// One close func for every exit, the error paths included: a Router
+	// may already have started background work on db by the time
+	// buildHandler fails.
+	closeDB := func() error {
+		if opts.Background != nil {
+			opts.Background.Stop()
+		}
+		if db != nil {
+			return db.Close()
+		}
+		return nil
 	}
 
 	opts.Mux, err = buildMux(opts, db)

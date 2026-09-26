@@ -74,7 +74,7 @@ chromedp-graph:
 # gormfn and modeldiff are the two places it is allowed to live.
 GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
-            ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest
+            ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.

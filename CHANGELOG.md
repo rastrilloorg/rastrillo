@@ -10,6 +10,16 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — `rastrillo/background`, and `Options.Background`
+
+`background.Group` keeps track of work your app starts and nobody waits for:
+`Go`, `After` and `Loop`. `Stop` refuses new work, cancels pending timers and
+waits for running work. Set `Options.Background` and `Serve` stops the group
+before it closes the database, so a send still in flight does not fail with
+"sql: database is closed". `background.Untracked` finds any `go` statement or
+`time.AfterFunc` that bypasses the group. See
+[background](/docs/reference/background).
+
 ### Added — `rastrillo/nodetest`, running Node from a Go test
 
 `nodetest.Run` runs a Node script and fails the test with its full output if

@@ -149,6 +149,11 @@
           "blurb": "The magic-link plugin: its handlers, its admission hook, and its email subject."
         },
         {
+          "slug": "reference/background",
+          "label": "background",
+          "blurb": "Keep track of work nobody waits for, and stop it before the database closes."
+        },
+        {
           "slug": "reference/blobs",
           "label": "blobs",
           "blurb": "Content-addressed bytes over S3, a directory, or a table."
