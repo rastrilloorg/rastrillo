@@ -1526,6 +1526,9 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-combo > .rst-combo__lead, [rst-combo] > [rst-combo-lead] { align-items: center; display: flex; inset-block: 0; inset-inline-start: 0.65rem; pointer-events: none; position: absolute; }
 .rst-combo > .rst-combo__lead[hidden], [rst-combo] > [rst-combo-lead][hidden] { display: none; }
 .rst-combo.rst-combo__has-lead > .rst-input, [rst-combo][rst-combo-has-lead] > [rst-input] { padding-inline-start: 2.2rem; }
+/* The list opens upward when there is no room below it (select.js
+   measures the visual viewport, which a phone's keyboard shrinks). */
+.rst-combo.rst-combo__up > .rst-combo__list, [rst-combo][rst-combo-up] > [rst-combo-list] { bottom: 100%; margin-bottom: 4px; margin-top: 0; top: auto; }
 
 /* The date fields' combobox, built by datetime.js on any input carrying
    data-rst-date or data-rst-time. Same shape as .rst-combo above, plus

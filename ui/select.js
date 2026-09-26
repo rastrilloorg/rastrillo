@@ -139,16 +139,18 @@
     const q = fold(query);
     const bare = q.replace(/^\+/, "");
     const r0 = rank(hits[0], query);
-    // An exact hit settles only as the single best row: no other exact
-    // hit, or exactly one of them marked first (the country that owns a
-    // shared calling code). "Springfield (IL)" and "(MA)" settle nothing.
-    const exact = () => {
-      const ties = hits.filter((h) => rank(h, query) === 0);
-      return ties.length === 1 || ties.filter((h) => h.first).length === 1 ? hits[0] : null;
-    };
-    if (r0 === 0 && /^\d+$/.test(bare)) return hits[0].first ? exact() : null;
+    if (r0 === 0 && /^\d+$/.test(bare) && hits[0].first) return hits[0];
     if (bare.length < 3 || /^\d+$/.test(bare)) return null;
-    if (r0 === 0) return exact();
+    // An exact hit settles only when it is the single best row: nothing else
+    // is exact, or of the exact ties it alone is marked first. Two places
+    // named alike ("springfield" is exactly both "Springfield (IL)" and
+    // "Springfield (MA)", the bracket being a gloss) are two answers, and
+    // leaving the box commits neither. Kept byte for byte with Tito Go's.
+    if (r0 === 0) {
+      const ties = hits.filter((o) => ranked(o, q) === 0);
+      if (ties.length === 1) return hits[0];
+      return hits[0].first && ties.filter((o) => o.first).length === 1 ? hits[0] : null;
+    }
     return r0 < rank(hits[1], query) ? hits[0] : null;
   };
 
@@ -354,6 +356,7 @@
     wrap.append(lead, input, said, list, status);
     // Drop [rst-input] too: its width:100% would otherwise leave the hidden
     // select a full-width box held out of sight by clip-path alone.
+    const inputAttr = native.getAttribute("rst-input");
     native.removeAttribute("rst-input");
     native.classList.add("rst-sr-only");
     native.setAttribute("tabindex", "-1");
@@ -433,6 +436,51 @@
     // less a prompt, which is still there to tap.
     const steps = () => visible().filter((o) => !o.prompt);
 
+    // Everything that reads layout — where the box sits, how much room is
+    // above and below it, scrolling the highlight into view — happens at
+    // most once a frame, in one callback. A keystroke that searched twice
+    // in a frame used to force layout twice, on a long form with several
+    // boxes, on a phone: the "slow typing" was reflow.
+    let layout = 0;
+    let placeDue = false;
+    let scrollTo = null;
+    let scrollTop = false;
+    const onLayout = () => {
+      layout = 0;
+      if (!open) return;
+      if (placeDue) place();
+      placeDue = false;
+      if (scrollTop) list.scrollTop = 0;
+      else if (scrollTo && !scrollTo.li.hidden) scrollTo.li.scrollIntoView({ block: "nearest" });
+      scrollTo = null;
+      scrollTop = false;
+    };
+    const soon = () => {
+      if (!layout) layout = requestAnimationFrame(onLayout);
+    };
+    // The list opens UPWARD when there is not room for it below and there is
+    // more above, measured against the visual viewport, which shrinks when a
+    // phone's keyboard is up: a box near the bottom of a sheet or an iframe
+    // otherwise opens its list under the keyboard. Only placement flips; the
+    // keyboard order and every ARIA state stay as they are.
+    const place = () => {
+      const vv = window.visualViewport;
+      const top = vv ? vv.offsetTop : 0;
+      const bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const box = wrap.getBoundingClientRect();
+      const below = bottom - box.bottom;
+      const above = box.top - top;
+      const want = list.scrollHeight + 8;
+      const up = below < want && above > below;
+      wrap.toggleAttribute("rst-combo-up", up);
+      // And it fits the side it opens on. Set through the CSSOM, which a
+      // content-security policy with no inline styles still allows.
+      list.style.maxBlockSize = Math.max(Math.min(up ? above : below, 15 * 16) - 8, 64) + "px";
+    };
+    const replace = () => {
+      placeDue = true;
+      soon();
+    };
     const setActive = (o, atTop) => {
       // Only the row losing the highlight and the row gaining it are touched.
       if (active && active !== o) active.li.classList.remove("is-active");
@@ -440,8 +488,9 @@
       active = o || null;
       if (o) {
         input.setAttribute("aria-activedescendant", o.li.id);
-        if (atTop && visible()[0] === o) list.scrollTop = 0;
-        else o.li.scrollIntoView({ block: "nearest" });
+        scrollTop = !!(atTop && visible()[0] === o);
+        scrollTo = o;
+        soon();
       } else {
         input.removeAttribute("aria-activedescendant");
       }
@@ -567,6 +616,12 @@
       open = true;
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
+      replace();
+      window.addEventListener("resize", replace);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", replace);
+        window.visualViewport.addEventListener("scroll", replace);
+      }
       if (showAll) filter("");
       markSelected();
       setActive(opening());
@@ -576,6 +631,11 @@
       if (!open) return;
       open = false;
       list.hidden = true;
+      window.removeEventListener("resize", replace);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", replace);
+        window.visualViewport.removeEventListener("scroll", replace);
+      }
       input.setAttribute("aria-expanded", "false");
       input.removeAttribute("aria-activedescendant");
       // Typing not yet searched dies with the list, and so does the frame
@@ -586,9 +646,12 @@
       cancelAnimationFrame(frame);
       frame = 0;
       // A search closed is a search over: the next one, even with the same
-      // words, starts unsteered, or leaving would commit a row somebody
-      // arrowed to in a search they cancelled.
-      steered = false;
+      // words, is a new query, so it re-ranks (Enter takes its best match,
+      // not a row the old one left highlighted) and clears steering, or
+      // leaving would commit a row somebody arrowed to in a search they
+      // cancelled. Every way back into the list runs filter, so this one
+      // reset carries both; a separate `steered = false` here could never
+      // be observed, and a line no test can see go wrong is not kept.
       lastQuery = null;
       if (active) active.li.classList.remove("is-active");
       if (revert) {
@@ -723,6 +786,7 @@
     // Leaving the box after typing takes the settled row, as Tab does: on a
     // phone there is no Tab. With nothing typed, leaving only leaves.
     wrap.addEventListener("focusout", (e) => {
+      if (gone) return;
       if (wrap.contains(e.relatedTarget)) return;
       flush();
       if (settledPick()) choose(settledPick());
@@ -794,7 +858,7 @@
     // A sibling script may stop the select being required (or start it)
     // without touching it otherwise. That changes which blanks are prompts,
     // and so what the box shows and which row is selected.
-    new MutationObserver(() => {
+    const flips = new MutationObserver(() => {
       settleRequired();
       settleValidity();
       for (const o of opts) {
@@ -810,7 +874,63 @@
         showText();
         showPick();
       }
-    }).observe(native, { attributes: true, attributeFilter: ["required", "disabled"] });
+    });
+    flips.observe(native, { attributes: true, attributeFilter: ["required", "disabled"] });
+
+    // Stepping aside: the box gives the page its select back as it found
+    // it. Used when the page changes the options (the box is rebuilt from
+    // what is there now) and when it replaces the select outright (the box
+    // goes, and whatever took the select's place is enhanced afresh). Every
+    // observer is disconnected first, so nothing of the old box reacts to
+    // the new one's work; and `gone` quiets its focus handlers, which a
+    // browser may fire as the box leaves the page.
+    let gone = false;
+    const stepAside = () => {
+      gone = true;
+      flips.disconnect();
+      options.disconnect();
+      swapped.disconnect();
+      closeList(false);
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(layout);
+      native.classList.remove("rst-sr-only");
+      native.removeAttribute("tabindex");
+      native.removeAttribute("aria-hidden");
+      if (inputAttr !== null) native.setAttribute("rst-input", inputAttr);
+      delete native.dataset.rstEnhanced;
+      if (label) label.htmlFor = native.id;
+      wrap.remove();
+    };
+    // The page changed the options themselves (rebuilt a list, retitled a
+    // row): every row must be an option the select really has, so the box
+    // is built again from what is there now. Somebody mid-search keeps
+    // their focus and their words.
+    const options = new MutationObserver((records) => {
+      if (!records.some((r) => r.target !== native || r.type !== "attributes")) return;
+      const focused = document.activeElement === input;
+      const typed = showingPick ? null : input.value;
+      stepAside();
+      const next = combo(native);
+      if (!focused || !next) return;
+      next.focus();
+      if (typed !== null) {
+        next.value = typed;
+        next.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+    options.observe(native, { childList: true, subtree: true, characterData: true, attributes: true,
+      attributeFilter: ["value", "label", "disabled", "data-rst-prompt"] });
+    // The page replaced the select itself (a question flow swapping its
+    // answer control): this box would speak for an element no longer in
+    // the form, showing one pick while the form posts another. It steps
+    // aside, and the element that took the select's place is enhanced if
+    // it asks to be.
+    const swapped = new MutationObserver(() => {
+      if (native.parentNode === wrap.parentNode) return;
+      stepAside();
+      scan();
+    });
+    if (wrap.parentNode) swapped.observe(wrap.parentNode, { childList: true });
     native.addEventListener("focus", () => {
       input.focus();
       if (!native.validity.valid) {
@@ -820,9 +940,11 @@
     });
     input.addEventListener("input", () => input.setCustomValidity(""));
     input.addEventListener("blur", () => {
+      if (gone) return;
       input.setCustomValidity("");
       settleValidity();
     });
+    return input;
   }
 
   // Idempotent, so re-scanning is safe. A select arriving later inside a
