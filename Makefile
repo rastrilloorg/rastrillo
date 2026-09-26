@@ -49,10 +49,15 @@ gofmt:
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
 
+# RASTRILLO_TEST_REQUIRE_NODE turns every nodetest skip into a failure
+# here: on a laptop without Node a skip is honest, but a gate that lost
+# node would otherwise go green having checked none of the JavaScript
+# twins. Override with RASTRILLO_TEST_REQUIRE_NODE= to run without it.
+RASTRILLO_TEST_REQUIRE_NODE ?= 1
 root:
 	go build ./...
 	go vet ./...
-	go test ./... -count=1
+	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) go test ./... -count=1
 
 # The README promises chromedp stays out of the ordinary build graph.
 # This is that sentence, executable.

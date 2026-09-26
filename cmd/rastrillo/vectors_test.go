@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
 // fixtureGenvectorsSrc is a stand-in generator with no rastrillo
@@ -103,11 +105,7 @@ test("no", () => { throw new Error("JS engine disagrees"); });
 // crypto/js_test.go posture, for the legs where a skip stays honest.
 func needsNode(t *testing.T) string {
 	t.Helper()
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node not on PATH; JS leg not exercised")
-	}
-	return node
+	return nodetest.Node(t)
 }
 
 func TestVectorsCheckFailsWithoutACommittedFile(t *testing.T) {
