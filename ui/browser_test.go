@@ -59,6 +59,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -181,7 +182,11 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// combobox is a broken one.
 		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
 		chromedp.SendKeys(`input[role="combobox"]`, "Option 12", chromedp.ByQuery), at("typed-filter"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &optionsShown),
+		// A burst of keystrokes inside one frame is searched once more
+		// before that frame is drawn (select.js coalesces), so the count is
+		// read after a frame, as a person would see it.
+		chromedp.Evaluate(`new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); })`, nil, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([hidden])').length`, &optionsShown),
 		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &filterText),
 		// Synchronise on observable state rather than assuming a keystroke
 		// landed: under load the arrow key can arrive before the filtered
@@ -189,7 +194,7 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// silent no-op the next step would inherit. Waiting for the
 		// highlight turns that into a fast, legible failure at the exact
 		// step that did not happen.
-		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("list-drawn"),
+		chromedp.WaitVisible(`[role="option"]:not([hidden])`, chromedp.ByQuery), at("list-drawn"),
 		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, while
 		// SendKeys focuses its target first and then delivers the same
 		// CDP key events, so the key lands where the user's would. It
@@ -579,7 +584,7 @@ func TestEnterCommitsWithoutSubmittingTheForm(t *testing.T) {
 				chromedp.Evaluate(spy, nil),
 				chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, tc.typed, chromedp.ByQuery),
-				chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery),
+				chromedp.WaitVisible(`[role="option"]:not([hidden])`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery),
 				chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery),
@@ -647,7 +652,7 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 			`<script defer src="/select.js"></script></head><body>` +
 			`<form method="post" action="/submit">` +
 			`<label rst-field-label for="city">City</label>` +
-			`<select rst-input id="city" name="city" data-rst-select` +
+			`<select rst-input id="city" name="city" required data-rst-select` +
 			` data-rst-select-filter="Type to filter"` +
 			` data-rst-select-results="{n} results"` +
 			` data-rst-select-result-one="1 result">` +
@@ -687,8 +692,8 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 //
 //   - the mirror flattens native.options, so the headings the author
 //     wrote to make a long list readable silently vanish;
-//   - a group whose options all filter out keeps its heading, leaving a
-//     heading over nothing;
+//   - a search leaves the headings up over rows it has re-ranked, or
+//     clearing it leaves a lifted row outside its own group;
 //   - the headings join the keyboard order, so arrowing down lands on a
 //     heading and Enter commits the wrong option — or nothing;
 //   - the opt-out is read as a truthy attribute (it is present, after
@@ -712,6 +717,7 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		narrowedGroups, narrowedOptions       int
 		narrowedHeadings                      string
 		activeText, nativeValue, carrierShape string
+		restored                              string
 	)
 
 	reached := "start"
@@ -769,40 +775,52 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 			return s.querySelectorAll('optgroup').length + "/" + s.options.length;
 		})()`, &carrierShape),
 
-		// Open it: focus draws the unfiltered list.
+		// Open it: focus draws the unfiltered list. The select is required,
+		// so its blank ("Choose a city") is a prompt and never a row.
 		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
-		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]').length === 5`),
+		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]:not([hidden])').length === 5`),
 		at("list-drawn"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &openGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &openOptions),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([hidden])').length`, &openGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([hidden])').length`, &openOptions),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`, &groupLabels),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([hidden]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
 		// A heading is furniture, never a pick.
 		chromedp.Evaluate(`document.querySelectorAll('[rst-select-group][role="option"]').length`, &headingsAreOptions),
 
-		// Filter to "a": Galway in one group, Madrid and Barcelona in the
-		// other. Both groups survive, so the keyboard has a boundary to
-		// cross.
-		chromedp.SendKeys(`input[role="combobox"]`, "a", chromedp.ByQuery), at("typed-a"),
-		until("the list narrows to three", `document.querySelectorAll('[role="option"]').length === 3`),
-		at("narrowed-to-three"),
-		// Two arrows: the second lands on the first option of the SECOND
-		// group. If the headings were in the keyboard order it would land
-		// on the "Spain" heading instead.
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down-1"),
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down-2"),
+		// Four arrows from nothing highlighted (an unanswered question
+		// opens with nothing): Dublin, Cork, Galway, then Madrid, the first
+		// row of the SECOND group. Were the headings in the keyboard order,
+		// the fourth would land on the "Spain" heading instead.
+		chromedp.SendKeys(`input[role="combobox"]`, strings.Repeat(string(kb.ArrowDown), 4), chromedp.ByQuery), at("arrow-down-4"),
 		until("a row is highlighted", `document.querySelectorAll('[role="option"].is-active').length === 1`),
 		at("row-highlighted"),
 		chromedp.Evaluate(`document.querySelector('[role="option"].is-active')?.textContent ?? ''`, &activeText),
 
-		// Extend the filter to "ad": only Madrid matches, so the Ireland
-		// group empties — and must take its heading with it.
-		chromedp.SendKeys(`input[role="combobox"]`, "d", chromedp.ByQuery), at("typed-d"),
-		until("the list narrows to one", `document.querySelectorAll('[role="option"]').length === 1`),
+		// Filter to "ad": only Madrid matches. A search ranks across groups,
+		// so the headings step aside and the one row stands alone.
+		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad"),
+		until("the list narrows to one", `document.querySelectorAll('[role="option"]:not([hidden])').length === 1`),
 		at("narrowed-to-one"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &narrowedGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &narrowedOptions),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([hidden])').length`, &narrowedGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([hidden])').length`, &narrowedOptions),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([hidden]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+
+		// Clear it: every row is back in its own group, in its own place,
+		// under its own heading.
+		chromedp.Evaluate(`(function () {
+			var input = document.querySelector('input[role="combobox"]');
+			input.value = '';
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+			return true;
+		})()`, nil), at("cleared"),
+		until("the list is whole again", `document.querySelectorAll('[role="option"]:not([hidden])').length === 5`),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([hidden])')).map(function (g) {
+			return g.getAttribute('aria-label') + ':' + Array.from(g.querySelectorAll('[role="option"]')).map(function (o) { return o.textContent }).join('|');
+		}).join(';')`, &restored),
+
+		// Filter again, to the one row, and take it.
+		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad-again"),
+		until("the one row is highlighted", `(document.querySelector('[role="option"].is-active')?.textContent ?? '') === 'Madrid'`),
 
 		// The sole match commits on Enter, and mirrors onto the carrier.
 		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
@@ -844,17 +862,20 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 	if headingsAreOptions != 0 {
 		t.Errorf("%d group headings carry role=option; a heading is furniture, not a pick", headingsAreOptions)
 	}
-	// Two arrows from nothing highlighted lands on the second match,
-	// which lives in the second group. A heading in the keyboard order
-	// would leave "Galway" here (or nothing highlighted at all).
+	// Four arrows from nothing highlighted land on the first row of the
+	// second group. A heading in the keyboard order would leave the
+	// highlight on "Spain" (or on "Galway", a step short).
 	if activeText != "Madrid" {
-		t.Errorf("two ArrowDowns highlighted %q, want %q: the keyboard order is not skipping the group headings", activeText, "Madrid")
+		t.Errorf("four ArrowDowns highlighted %q, want %q: the keyboard order is not skipping the group headings", activeText, "Madrid")
 	}
-	if narrowedGroups != 1 || narrowedOptions != 1 {
-		t.Errorf("filtering to one match left %d groups and %d options, want 1 and 1", narrowedGroups, narrowedOptions)
+	if narrowedGroups != 0 || narrowedOptions != 1 {
+		t.Errorf("filtering to one match left %d groups and %d options showing, want 0 and 1: a search steps the headings aside", narrowedGroups, narrowedOptions)
 	}
-	if narrowedHeadings != "Spain" {
-		t.Errorf("after filtering the headings read %q, want %q: an emptied group kept its heading", narrowedHeadings, "Spain")
+	if narrowedHeadings != "" {
+		t.Errorf("while searching the visible headings read %q, want none: a heading over re-ranked rows is a lie about what is under it", narrowedHeadings)
+	}
+	if want := "Ireland:Dublin|Cork|Galway;Spain:Madrid|Barcelona"; restored != want {
+		t.Errorf("after clearing the search the groups read %q, want %q: a row a search lifted did not go back into its own group", restored, want)
 	}
 	if nativeValue != "mad" {
 		t.Errorf("the carrier holds %q, want %q — the pick inside a group did not mirror back", nativeValue, "mad")

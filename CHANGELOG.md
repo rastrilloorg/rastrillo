@@ -10,6 +10,17 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed — `select.js` ranks what you type; re-vendor it
+
+The searchable select now puts the row someone meant first, treats a required
+select's blank as a prompt rather than an answer, and keeps pace with fast
+typing. `<option>` can carry `data-rst-terms`, `data-rst-first`,
+`data-rst-name`, `data-rst-desc`, `data-rst-short`, `data-rst-lead` and
+`data-rst-prompt`, and an `<hr>` draws a divider; all are optional. Run
+`rastrillo doctor --fix` to take the new `select.js`. If you added a locale of
+your own, give it `rastrillo.ui.select_no_matches`, or `generate --check`
+fails. See [Templates](/docs/templates).
+
 ### Added — `rastrillo/table` and `rastrillo/xlsx`, for spreadsheet exports
 
 `table.Serve` sends one table as a CSV or XLSX download. Every CSV cell goes

@@ -290,8 +290,10 @@ func TestSelectContract(t *testing.T) {
 		}
 	}
 	// The whole point: the native control survives enhancement, because
-	// it is what the form submits.
-	for _, bad := range []string{".remove()", "removeChild", "outerHTML ="} {
+	// it is what the form submits. The one thing select.js does remove is
+	// a row it drew itself (a page's extra suggestions, replaced), so the
+	// fence is on the native select and the markup around it.
+	for _, bad := range []string{"native.remove()", "removeChild(native", "outerHTML =", "innerHTML ="} {
 		if strings.Contains(js, bad) {
 			t.Errorf("select.js destroys DOM (%q); the native select must survive", bad)
 		}
@@ -316,10 +318,21 @@ func TestSelectContract(t *testing.T) {
 	// per optgroup, and a filter that hides a heading when its rows all
 	// go. That is the trade, and it is a decision, not a drift.
 	//
-	// The cap is still the point: this file exists apart from the shim
-	// so the app owner who now owns it can read the whole thing in one
-	// sitting. Past 12KB, split something out instead.
-	if n := len(SelectJS()); n > 12*1024 {
+	// Raised again, to 37KB (measured 36,296 bytes), by the convergence
+	// with Tito Go's searchselect (2026-09-26): ranking that puts the row
+	// someone meant first (accents folded, ISO and calling codes as
+	// terms), prompts that are never picks, a list that keeps pace with
+	// fast typing by moving only what a search shows, settle-on-leave,
+	// dividers, compact boxes and borrowed validity. Splitting the pure
+	// ranking into its own file was tried and rejected: importing it makes
+	// this an ES module, which every app's classic <script defer> tag and
+	// the design system's srcdoc previews would have to change for, and an
+	// app that re-vendored without editing its layout would lose the
+	// enhancement silently. Most of the growth is the why-comments, which
+	// are what let the app owner who now owns it read it in one sitting.
+	// The headroom is about what the old 12KB ceiling had: room for a fix
+	// and its why, not for a feature.
+	if n := len(SelectJS()); n > 37*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
