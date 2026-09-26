@@ -745,7 +745,7 @@ func fieldSelectStates() []sample {
 			State: "Hand-written, with optgroups",
 			Note:  "Options here is a flat list, so grouped choices are markup the app writes. select.js renders the groups rather than dropping them; a hand-written select can also refuse the enhancement outright with data-rst-select=\"false\".",
 			Raw: `<div rst-field><label rst-field-label for="sel_grouped">Region</label>
-<select rst-input id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}">
+<select rst-input id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}" data-rst-select-no-matches="{{T "rastrillo.ui.select_no_matches"}}">
 <optgroup label="Europe"><option value="dublin" selected>Dublin</option><option value="lisbon">Lisbon</option><option value="warsaw">Warsaw</option></optgroup>
 <optgroup label="Americas"><option value="montreal">Montréal</option><option value="lima">Lima</option><option value="austin">Austin</option></optgroup>
 <optgroup label="Asia"><option value="osaka">Osaka</option><option value="hanoi">Hanoi</option><option value="dhaka">Dhaka</option></optgroup>

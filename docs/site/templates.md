@@ -527,8 +527,29 @@ any size.
 `Options` is flat here, so `<optgroup>` is a hand-written-markup thing —
 and `select.js` renders those groups rather than flattening them: each
 optgroup becomes a `role="group"` with its label as the group's
-accessible name, and loose options sit at the top level. A group
-filtered down to nothing takes its heading with it.
+accessible name, and loose options sit at the top level. While someone
+searches, the best matches come first and the group headings step aside;
+clear the search and every row is back in its group.
+
+A search puts the row someone meant first. Accents don't matter, so
+`osterreich` finds Österreich; the start of a name beats the middle of
+one, and an exact match beats both. Leaving the box after a search takes
+the one row it can only mean. Two letters never do.
+
+An `<option>` can say more, all optional. `data-rst-terms` lists more
+words the search matches, such as an ISO code or a calling code.
+`data-rst-first` puts it first when an exact search matches several.
+`data-rst-name` and `data-rst-desc` split a label into a name and a
+quieter description. `data-rst-short` is what the closed box shows once
+it is picked (`+44`). `data-rst-lead` is a decorative glyph such as a
+flag, drawn before the row and the box. An `<hr>` between two options
+draws a divider in the list, hidden while searching.
+
+A blank that asks rather than answers is a prompt: the blank of a
+`required` select, a disabled blank, or one marked `data-rst-prompt`.
+The box never shows a prompt as the pick, and a required select never
+lists its blank. With nothing picked yet, the list opens with nothing
+highlighted, so pressing Enter can't answer the question for someone.
 
 A hand-written select opts out from the markup side with
 `data-rst-select="false"`, which is never enhanced whatever its size.
