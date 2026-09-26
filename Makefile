@@ -32,9 +32,19 @@ ci: gofmt money root chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
+# The repo's own Go files, not everything under the checkout: GOTMPDIR is
+# .build/tmp, and a go command killed mid-build (a Ctrl-C, or a runner
+# cancelling a job a newer push superseded) leaves its generated
+# _testmain.go and cgo files there. gofmt -l . walked into them and failed
+# the next run on files nobody wrote. Dot-directories are pruned, the same
+# rule ./... applies. It is a walk of the working tree rather than a git
+# listing, so an unstaged deletion is simply absent instead of a missing
+# path. NUL-delimited so a path with a space stays one argument, and a
+# gofmt error (a file that does not parse) fails the target instead of
+# vanishing into stderr.
 gofmt:
-	@out=$$(gofmt -l .); if [ -n "$$out" ]; then \
-		echo "gofmt needed on:"; echo "$$out"; exit 1; fi
+	@out=$$(find . -name '.?*' -type d -prune -o -name '*.go' -type f -print0 | xargs -0 gofmt -l) || exit 1; \
+	if [ -n "$$out" ]; then echo "gofmt needed on:"; echo "$$out"; exit 1; fi
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
