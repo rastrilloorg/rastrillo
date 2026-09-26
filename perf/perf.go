@@ -89,12 +89,13 @@ type Options struct {
 	// process serves; zero means DefaultColdBudget.
 	Budget, ColdBudget time.Duration
 	// Started is when the process started. The boot time the cold
-	// request reports is from Started to the moment Middleware is
-	// called, which is when the app has finished starting (its routes
-	// are built, its database open); measuring to the first request
-	// instead would count however long the process then sat idle. Zero
-	// reports no startup span (the request is still held to
-	// ColdBudget).
+	// request reports is from Started to the moment the middleware is
+	// applied to the app's handler — under Options.Wrap, after the
+	// database is open, migrations have run and the routes are built,
+	// which is when the app has finished starting. Measuring to the
+	// first request instead would count however long the process then
+	// sat idle. Zero reports no startup span (the request is still held
+	// to ColdBudget).
 	Started time.Time
 	// Logger receives the over-budget warnings. Nil is slog.Default().
 	Logger *slog.Logger
@@ -255,11 +256,14 @@ func Middleware(c *Recorder, opts Options) func(http.Handler) http.Handler {
 		opts.Screen = defaultScreen
 		opts.screenIsDefault = true
 	}
-	var boot time.Duration
-	if !opts.Started.IsZero() {
-		boot = time.Since(opts.Started)
-	}
 	return func(next http.Handler) http.Handler {
+		// Here, not when Middleware was called: Wrap applies this to a
+		// handler the framework has only just finished building, and
+		// that building is the start-up being measured.
+		var boot time.Duration
+		if !opts.Started.IsZero() {
+			boot = time.Since(opts.Started)
+		}
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if opts.Skip(r) {
 				next.ServeHTTP(w, r)
@@ -321,7 +325,15 @@ func (c *Recorder) begin(w http.ResponseWriter, r *http.Request, opts Options, b
 	if s.Cold {
 		q.startup = boot
 	}
-	return q, r.WithContext(context.WithValue(r.Context(), contextKey{}, q))
+	r2 := r.WithContext(context.WithValue(r.Context(), contextKey{}, q))
+	// A mux outside this one — the framework's own, under Options.Wrap —
+	// has already set Pattern (to "/"). Cleared on this copy, so the
+	// pattern read back is the app mux's or nothing: an inherited "/"
+	// would group every route as "/" when middleware between here and
+	// the app mux copies the request, and the lost-route warning could
+	// never fire.
+	r2.Pattern = ""
+	return q, r2
 }
 
 // method folds anything that is not a standard method into OTHER, so a

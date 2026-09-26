@@ -40,6 +40,10 @@ func (h *countingHandler) WithGroup(string) slog.Handler      { return h }
 
 func warm(c *Recorder) { c.served = true }
 
+// quiet is a logger for tests whose handler is not a mux, where the
+// lost-route warning is true and beside the point.
+func quiet() *slog.Logger { return slog.New(&countingHandler{}) }
+
 // The budget is judged on the first byte; Total runs on to the end of
 // the handler. A 200ms first byte on a GET is over a 150ms budget, and
 // a second of work after it must not move the first-byte number.
@@ -49,8 +53,8 @@ func TestBudgetMeasuresFirstByteSeparatelyFromTotal(t *testing.T) {
 	logs := &countingHandler{}
 	opts := Options{Budget: DefaultBudget, ColdBudget: DefaultColdBudget, Logger: slog.New(logs), Screen: defaultScreen}
 	r := httptest.NewRequest("GET", "/orders/RXS1?token=secret", nil)
-	r.Pattern = "GET /orders/{id}"
 	w, r2 := c.begin(httptest.NewRecorder(), r, opts, 0)
+	r2.Pattern = "GET /orders/{id}" // what the mux sets on the request it is handed
 	w.start = w.start.Add(-200 * time.Millisecond)
 	Label(r2, "acme")
 	w.WriteHeader(201)
@@ -93,7 +97,7 @@ func TestStreamingDoesNotTurnFastFirstByteIntoBudgetFailure(t *testing.T) {
 // its header carries the startup time. The second is warm again.
 func TestColdStartIsItsOwnNumber(t *testing.T) {
 	var c Recorder
-	h := Middleware(&c, Options{Started: time.Now().Add(-600 * time.Millisecond)})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := Middleware(&c, Options{Started: time.Now().Add(-600 * time.Millisecond), Logger: quiet()})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}))
 	var headers []string
@@ -130,7 +134,7 @@ func TestWritesHaveNoBudget(t *testing.T) {
 
 func TestPanicIsRecordedAndRethrown(t *testing.T) {
 	var c Recorder
-	h := Middleware(&c, Options{})(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }))
+	h := Middleware(&c, Options{Logger: quiet()})(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }))
 	func() {
 		defer func() {
 			if recover() != "boom" {
@@ -162,7 +166,7 @@ func TestInformationalAndImplicitResponses(t *testing.T) {
 func TestImplicitWritePreservesContentTypeDetection(t *testing.T) {
 	var c Recorder
 	rec := httptest.NewRecorder()
-	h := Middleware(&c, Options{})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := Middleware(&c, Options{Logger: quiet()})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("plain body"))
 	}))
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
@@ -250,7 +254,7 @@ func TestScreenIsThePatternNeverThePath(t *testing.T) {
 	var c Recorder
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /orders/{token}", func(w http.ResponseWriter, r *http.Request) {})
-	h := Middleware(&c, Options{})(mux)
+	h := Middleware(&c, Options{Logger: quiet()})(mux)
 	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/orders/secret-token-abcdef", nil))
 	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/nowhere/secret-token-abcdef", nil))
 	ss := c.Snapshot()
@@ -269,7 +273,7 @@ func TestScreenIsThePatternNeverThePath(t *testing.T) {
 func TestServerTimingCarriesSpans(t *testing.T) {
 	var c Recorder
 	warm(&c)
-	h := Middleware(&c, Options{})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := Middleware(&c, Options{Logger: quiet()})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < 3; i++ {
 			end := Span(r, "db")
 			time.Sleep(2 * time.Millisecond)
@@ -299,7 +303,7 @@ func TestServerTimingCarriesSpans(t *testing.T) {
 // middleware makes Span and Label no-ops.
 func TestSkipAndUnmeasured(t *testing.T) {
 	var c Recorder
-	h := Middleware(&c, Options{})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	h := Middleware(&c, Options{Logger: quiet()})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	for _, p := range []string{"/healthz", "/api/version", "/static/app.css"} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest("GET", p, nil))
@@ -372,7 +376,7 @@ func TestConnectRedirectIsNeverNamed(t *testing.T) {
 // for its first request is not boot.
 func TestStartupExcludesIdleTime(t *testing.T) {
 	var c Recorder
-	h := Middleware(&c, Options{Started: time.Now().Add(-100 * time.Millisecond)})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	h := Middleware(&c, Options{Started: time.Now().Add(-100 * time.Millisecond), Logger: quiet()})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	time.Sleep(400 * time.Millisecond) // idle, after start-up finished
 	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 	s := c.Snapshot()[0]
