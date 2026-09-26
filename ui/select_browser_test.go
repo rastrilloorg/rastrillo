@@ -918,6 +918,9 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		LiveListeners int    `json:"liveListeners"`
 		Recorded      int    `json:"recorded"`
 		ExtraKept     bool   `json:"extraKept"`
+		RebuildInputs int    `json:"rebuildInputs"`
+		StayedClosed  bool   `json:"stayedClosed"`
+		KeptFocus     bool   `json:"keptFocus"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -936,6 +939,10 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		await frame();
 		input.closest('[rst-combo]').rstExtras([{ label: 'Other', run: () => {} }]);
+		// A rebuild restores the search quietly: an input event would let a
+		// page that refreshes options on input loop forever.
+		let inputs = 0;
+		document.addEventListener('input', () => inputs++, true);
 		select.innerHTML = '<option value="blueberry">Blueberry</option><option value="blackberry">Blackberry</option><option value="kiwi">Kiwi</option>';
 		await frame();
 		const out = {};
@@ -945,14 +952,19 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		out.typed = input.value;
 		out.rows = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
 		out.extraKept = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]')].some((li) => li.textContent === 'Other');
+		out.rebuildInputs = inputs;
 		input.closest('[rst-combo]').rstExtras([]);
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 		out.picked = select.value;
 		// A second change: only the current box may answer it. An old box
 		// still listening would step aside again and hand the select back
 		// half-restored, visible and unenhanced.
+		// Enter closed the list and focus stayed: a rebuild now must not
+		// reopen it (and take the next Enter from the form).
 		select.append(new Option('Lime', 'lime'));
 		await frame();
+		out.stayedClosed = document.querySelector('#flavour-combo').getAttribute('aria-expanded') === 'false';
+		out.keptFocus = document.activeElement === document.querySelector('#flavour-combo');
 		out.boxesAfterTwo = document.querySelectorAll('#flavour-host [rst-combo]').length;
 		out.stillHidden = select.classList.contains('rst-sr-only') && select.dataset.rstEnhanced === 'true';
 		out.liveListeners = listeners.filter((l) => !(l.signal && l.signal.aborted)).length;
@@ -970,6 +982,12 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 	}
 	if !got.Focused || got.Typed != "b" {
 		t.Errorf("after the rebuild the box has focus %v and reads %q, want true and \"b\": the person lost their place", got.Focused, got.Typed)
+	}
+	if got.RebuildInputs != 0 {
+		t.Errorf("rebuilding fired %d input events, want 0: a page refreshing options on input would loop", got.RebuildInputs)
+	}
+	if !got.StayedClosed || !got.KeptFocus {
+		t.Errorf("a rebuild after a pick left the list closed=%v and focus kept=%v, want both: a closed list stays closed", got.StayedClosed, got.KeptFocus)
 	}
 	if !got.ExtraKept {
 		t.Error("the page's extra row was lost when the options were rebuilt")

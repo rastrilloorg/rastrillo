@@ -333,7 +333,7 @@ func TestSelectContract(t *testing.T) {
 	// The headroom is about what the old 12KB ceiling had: room for a fix
 	// and its why, not for a feature.
 	//
-	// Then to 44KB (measured 44,192 bytes) by the alignment with Tito's
+	// Then to 44KB (measured 44,738 bytes) by the alignment with Tito's
 	// final searchselect (titogo 9d21ce1): the box steps aside when a page
 	// replaces the select outright, and rebuilds itself when a page changes
 	// the options — without both it showed one pick while the form posted
