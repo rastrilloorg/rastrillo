@@ -10,6 +10,27 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed — a Go migration takes the pinned connection, not a `*gorm.DB`
+
+`migrate.Migration.Fn` is now `func(ctx context.Context, tx migrate.Tx) error`.
+`tx` is the same pinned connection, inside the same transaction as the
+migration's ledger row, so a failure still rolls both back. A migration written
+against GORM keeps its body and wraps it:
+
+```go
+Fn: gormfn.Fn(func(g *gorm.DB) error { ... }),   // amadan.net/rastrillo/rastrillo/migrate/gormfn
+```
+
+`migrate.Generate` and `migrate.Change` move to `migrate/modeldiff`; the CLI is
+their only caller. `migrate.Apply` now takes anything with a `Writer() *sql.DB`
+method. `*db.DB` has one, so existing calls compile unchanged, and an app that
+opens its own SQLite passes `migrate.Pool(writer)`.
+
+The point of the change: `migrate`, and with it `pow`, `sessions`, `blobs`,
+`jobs`, `eventlog`, `auth`, `password`, `passkey`, `totp`, `secondfactor` and
+`vault`, no longer link GORM. An app that keeps its data in plain SQL can use
+them without taking on an ORM. `make gorm-free` keeps it that way.
+
 ### Changed — `passkey.Config.ConfirmPath` and `Handlers.Gate` are gone; the half-session moved
 
 The pending half-session between a first factor and a passkey, and the
