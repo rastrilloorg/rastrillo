@@ -532,6 +532,10 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		BorrowedCleared  bool   `json:"borrowedCleared"`
 		AfterRemoval     string `json:"afterRemovalValue"`
 		AfterCancel      string `json:"afterCancelValue"`
+		RemovedShown     string `json:"removedSelectedShown"`
+		RemovedValue     string `json:"removedSelectedValue"`
+		NoneActive       string `json:"noneActive"`
+		NoneIndex        int    `json:"noneIndex"`
 		BorrowedDisabled bool   `json:"borrowedClearedDisabled"`
 		AriaRequired     string `json:"ariaRequired"`
 		OpenFlipListed   bool   `json:"openFlipListed"`
@@ -616,6 +620,33 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		medium.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
 		out.afterRemovalValue = select.value;
 		select.insertBefore(small, select.querySelector('option[value="m"]'));
+		select.value = '';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
+
+		// The SELECTED option removed: the next pick is what the box shows.
+		select.value = 's';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
+		const small2 = select.querySelector('option[value="s"]');
+		small2.remove();
+		input.focus();
+		input.click();
+		await frame();
+		const large = [...document.querySelectorAll('#size-listbox [rst-combo-option]')].find((li) => li.textContent === 'Large');
+		large.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+		out.removedSelectedShown = input.value;
+		out.removedSelectedValue = select.value;
+		select.insertBefore(small2, select.querySelector('option[value="m"]'));
+
+		// Nothing selected at all is unanswered: nothing is highlighted, and
+		// a bare Enter answers nothing.
+		select.selectedIndex = -1;
+		input.focus();
+		input.click();
+		await frame();
+		out.noneActive = input.getAttribute('aria-activedescendant') || '';
+		key('Enter');
+		out.noneIndex = select.selectedIndex;
+		key('Escape');
 		select.value = '';
 		select.dispatchEvent(new Event('change', { bubbles: true }));
 
@@ -714,6 +745,12 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if got.AfterRemoval != "m" {
 		t.Errorf("after the app removed an option, choosing the Medium row submitted %q, want m: a cached index picked another option", got.AfterRemoval)
+	}
+	if got.RemovedShown != "Large" || got.RemovedValue != "l" {
+		t.Errorf("after the selected option was removed, choosing Large shows %q and submits %q, want Large and l: a detached option still read as selected", got.RemovedShown, got.RemovedValue)
+	}
+	if got.NoneActive != "" || got.NoneIndex != -1 {
+		t.Errorf("with nothing selected the list opened on %q and Enter left selectedIndex %d, want nothing highlighted and -1: no selection is unanswered", got.NoneActive, got.NoneIndex)
 	}
 	if got.AfterCancel != "" {
 		t.Errorf("a search typed, arrowed, cancelled and typed again committed %q on leaving, want nothing: the cancelled search's steering survived", got.AfterCancel)

@@ -365,7 +365,10 @@
     let active = null;
     let extras = 0;
 
-    const picked = () => opts.find((o) => o.el && o.el.selected) || null;
+    // The selection as the select itself reports it: an option removed after
+    // enhancement keeps `selected` set, so it is never asked directly.
+    const selectedEl = () => native.options[native.selectedIndex] || null;
+    const picked = () => opts.find((o) => o.el && o.el === selectedEl()) || null;
     // A prompt is not an answer, so the closed box shows nothing for it and
     // its placeholder says what is wanted.
     const currentText = () => {
@@ -397,7 +400,7 @@
     let steered = false;
     const settledPick = () => {
       if (!open || !active || active.run) return null;
-      if (steered) return active.el.selected ? null : active;
+      if (steered) return active.el === selectedEl() ? null : active;
       if (input.value === currentText()) return null;
       const pick = settle(lastHits, input.value);
       return pick && pick === (lastHits.length === 1 ? pick : active) ? pick : null;
@@ -413,7 +416,8 @@
     const firstReal = () => visible().find((o) => !o.run && !o.prompt) || null;
     const unanswered = () => {
       const sel = picked();
-      return !!(sel && sel.prompt);
+      // Nothing selected at all (selectedIndex -1) is unanswered too.
+      return !sel || sel.prompt;
     };
     // The row an idle list highlights: the pick on an answered box, nothing
     // on an unanswered one — highlighting the first row would let a bare
@@ -447,7 +451,7 @@
     // says somebody answered the question.
     const markSelected = () => {
       for (const o of opts) {
-        const v = o.el && o.el.selected && !o.prompt ? "true" : "false";
+        const v = o.el && o.el === selectedEl() && !o.prompt ? "true" : "false";
         if (o.li.getAttribute("aria-selected") !== v) o.li.setAttribute("aria-selected", v);
       }
     };
