@@ -21,6 +21,8 @@ type Export struct {
 }
 
 func Serve(w http.ResponseWriter, format string, e Export) error
+
+var ErrTooBigForXLSX = errors.New("table: too big for an XLSX workbook")
 ```
 
 ```go
@@ -36,9 +38,11 @@ workbook; anything else, including a value taken straight from a query
 string, gives CSV. The file is named `Filename` plus the extension, and
 the workbook's tab is `Sheet`, or `Filename` if that is empty.
 
-The response starts before the first row is written, so an error from
-`Serve` means the client went away. Log it; there is no one left to
-answer.
+If the table is too big for a workbook (more than 16,384 columns or
+1,048,576 rows, or over 32,767 characters in one cell), `Serve` writes
+nothing and returns `ErrTooBigForXLSX`, so you can still answer, for
+example by offering CSV. Any other error means the client went away: log
+it.
 
 ## Formula injection
 
