@@ -367,6 +367,15 @@
       const o = opts[native.selectedIndex];
       return o && !o.prompt ? o.short || o.name : "";
     };
+    // Whether the box shows the pick or words somebody typed: an open
+    // list refreshed from outside (a required flip, new extras) searches
+    // for the typed words, never for the pick's own text.
+    let showingPick = true;
+    const showText = () => {
+      input.value = currentText();
+      showingPick = true;
+    };
+    const query = () => (showingPick ? "" : input.value);
     const showPick = () => {
       const o = opts[native.selectedIndex];
       lead.textContent = (o && o.lead) || "";
@@ -374,7 +383,7 @@
       wrap.toggleAttribute("rst-combo-has-lead", !lead.hidden);
       said.textContent = o && o.short ? [o.name, o.desc].filter(Boolean).join(" ") : "";
     };
-    input.value = currentText();
+    showText();
     showPick();
 
     // The row that LEAVING the box after typing takes (Tab, or a tap
@@ -569,7 +578,7 @@
       frame = 0;
       if (active) active.li.classList.remove("is-active");
       if (revert) {
-        input.value = currentText();
+        showText();
         showPick();
       }
     };
@@ -586,7 +595,7 @@
       // Mirror onto the real control, so a listener the app attached to the
       // select still fires.
       native.dispatchEvent(new Event("change", { bubbles: true }));
-      input.value = currentText();
+      showText();
       showPick();
       markSelected();
       closeList(false);
@@ -600,6 +609,7 @@
     });
     input.addEventListener("click", () => openList(true));
     input.addEventListener("input", () => {
+      showingPick = false;
       // Once somebody types, the box holds their words, not the pick.
       lead.hidden = true;
       wrap.removeAttribute("rst-combo-has-lead");
@@ -728,13 +738,13 @@
           terms: [], first: false, disabled: false, index: -1, group: null, li, run: row.run });
       }
       shown = opts;
-      if (open) filter(input.value);
+      if (open) filter(query());
     };
 
     // A write from outside (reset, autofill, a sibling script) dispatches
     // "change", and the display follows. choose()'s own lands as a no-op.
     native.addEventListener("change", () => {
-      input.value = currentText();
+      showText();
       showPick();
       markSelected();
       input.setCustomValidity("");
@@ -774,9 +784,11 @@
       markSelected();
       // An open list re-reads its rows: a blank that just became a prompt
       // must leave it, and must not stay the highlight.
-      if (open) filter(input.value);
-      else {
-        input.value = currentText();
+      if (open) {
+        if (showingPick) showText();
+        filter(query());
+      } else {
+        showText();
         showPick();
       }
     }).observe(native, { attributes: true, attributeFilter: ["required", "disabled"] });

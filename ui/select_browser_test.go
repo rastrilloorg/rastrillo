@@ -534,6 +534,9 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		AriaRequired     string `json:"ariaRequired"`
 		OpenFlipListed   bool   `json:"openFlipListed"`
 		OpenFlipActive   string `json:"openFlipActive"`
+		OpenFlipShown    int    `json:"openFlipShown"`
+		OpenFlipText     string `json:"openFlipText"`
+		IdleExtrasShown  int    `json:"idleExtrasShown"`
 		ScreenOrder      string `json:"screenOrder"`
 		KeyOrder         string `json:"keyOrder"`
 	}
@@ -567,6 +570,20 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		await frame();
 		out.openFlipListed = !blank.hidden;
 		out.openFlipActive = input.getAttribute('aria-activedescendant') || '';
+		// Idle (nothing typed), the refresh is not a search for the pick's
+		// own text: every real choice stays, and the box drops "None".
+		out.openFlipShown = document.querySelectorAll('#size-listbox [rst-combo-option]:not([hidden])').length;
+		out.openFlipText = input.value;
+		key('Escape');
+		select.required = false;
+		await frame();
+		// And extras handed over while the box shows the pick hide nothing.
+		input.focus();
+		input.click();
+		await frame();
+		input.closest('[rst-combo]').rstExtras([{ label: 'Something else', run: () => {} }]);
+		out.idleExtrasShown = document.querySelectorAll('#size-listbox [rst-combo-option]:not([hidden])').length;
+		input.closest('[rst-combo]').rstExtras([]);
 		key('Escape');
 		select.required = false;
 		await frame();
@@ -647,6 +664,12 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if got.OpenFlipListed || got.OpenFlipActive == "size-listbox-0" {
 		t.Errorf("made required with the list open, the blank is still listed (%v) or highlighted (%q): the open list did not re-read its prompts", got.OpenFlipListed, got.OpenFlipActive)
+	}
+	if got.OpenFlipShown != 3 || got.OpenFlipText != "" {
+		t.Errorf("made required with the list open and nothing typed, %d rows show and the box reads %q, want the 3 real choices and an empty box: the refresh searched for the old pick's text", got.OpenFlipShown, got.OpenFlipText)
+	}
+	if got.IdleExtrasShown != 5 {
+		t.Errorf("extras handed to an idle open list left %d rows showing, want 5 (the 4 options and the extra)", got.IdleExtrasShown)
 	}
 	if got.BackShown != "None" {
 		t.Errorf("made optional again, the box shows %q, want \"None\"", got.BackShown)
