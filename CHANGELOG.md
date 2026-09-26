@@ -10,6 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — `rastrillo/perf`, request timing and budgets
+
+`perf.Middleware` adds a `Server-Timing` header to every response, and logs a
+warning when a GET takes longer than its budget to reach its first byte: 150ms,
+or 500ms for the first request after start-up. `perf.Span` times the parts of a
+request, and a `Recorder` keeps recent requests for per-route p50 and p95.
+Mount it in `Options.Wrap`. See [perf](/docs/reference/perf).
+
 ### Changed — `select.js` ranks what you type; re-vendor it
 
 The searchable select now puts the row someone meant first, treats a required

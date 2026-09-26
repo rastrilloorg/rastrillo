@@ -254,6 +254,11 @@
           "blurb": "The email-and-password plugin: config, handlers, hashing, rate limit."
         },
         {
+          "slug": "reference/perf",
+          "label": "perf",
+          "blurb": "Server-Timing, time budgets and per-route percentiles, as middleware."
+        },
+        {
           "slug": "reference/pow",
           "label": "pow",
           "blurb": "The front door for a public form: bound proof of work, sealed challenge, honeypot."
