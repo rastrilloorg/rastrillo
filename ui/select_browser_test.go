@@ -1235,11 +1235,15 @@ func TestSelectTypingIsCheap(t *testing.T) {
 		// And every attribute written inside the box to the value it already
 		// had: still a mutation the page's stylesheet is asked about.
 		out.noops = [];
-		const same = new MutationObserver(() => {});
+		// Records delivered to the callback (a search run in the frame) are
+		// kept for drain, not dropped.
+		const pendingRecords = [];
+		const same = new MutationObserver((m) => { if (counting) pendingRecords.push(...m); });
 		same.observe(tzWrap, { attributes: true, attributeOldValue: true, subtree: true });
 		const drain = () => {
 			const by = new Map();
-			for (const r of same.takeRecords()) {
+			const recs = [...pendingRecords.splice(0), ...same.takeRecords()];
+			for (const r of recs) {
 				if (!counting) continue;
 				const k = r.target;
 				if (!by.has(k)) by.set(k, new Map());
