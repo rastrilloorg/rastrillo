@@ -178,12 +178,20 @@ time.
 ### A button that changes something says so
 
 Every submit button in every form gets a loading state on its way out:
-`aria-busy="true"`, a spinner before the label, and — a tick later, once
-the submission is under way — `disabled`. `rastrillo.js` does it by
+`aria-busy="true"`, a spinner in place of the label, and — a tick later,
+once the submission is under way — `disabled`. `rastrillo.js` does it by
 default, with no attribute to remember. A button that only *reveals*
 something gets nothing: a disclosure, a dropdown, a tab is not doing
 work, and dressing it as though it were is a lie the reader has to learn
 to ignore.
+
+The button keeps its width while it works, so nothing beside it moves,
+and its label is still there for a screen reader to announce. A button
+with a `data-busy-label` shows those words beside the spinner instead.
+For someone who has asked for reduced motion, or who uses forced
+colours, the label stays and the spinner sits beside it: a spinner that
+does not turn, or one drawn over repainted text, is too easy to miss on
+its own.
 
 Only the button that was clicked. The others in the same form keep their
 `name` and their `value`, so a Save / Save-draft pair still tells your
@@ -195,7 +203,7 @@ at the same place and are all refused while the first submission is out.
 |---|---|---|
 | `data-busy="false"` | the `<form>` | the whole form opts out |
 | `data-busy="false"` | one submit button | that button opts out; the form is still guarded |
-| `data-busy-label="Saving…"` | either | replaces the button's text while it works |
+| `data-busy-label="Saving…"` | either | shows this text beside the spinner, in place of the label |
 
 Three things the rule deliberately does not do. It does not touch a form
 whose `target` sends the result somewhere else — that page is not going

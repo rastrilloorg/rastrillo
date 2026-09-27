@@ -52,12 +52,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/accessibility"
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
@@ -1674,6 +1677,30 @@ func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
 
 // ── The busy rule ────────────────────────────────────────────────────
 
+// swapStateJS reads the busy button whose spinner replaces its label.
+// "Ink" is what paints: a transparent text fill, a zero opacity, or a
+// transparent ring all read as none. Width is read on its own, because
+// only the default leg expects it unchanged.
+const swapStateJS = `(function () {
+  var b = document.getElementById("swapgo");
+  var icon = document.getElementById("swapicon");
+  var spin = b.querySelector("[rst-spin]");
+  var cs = getComputedStyle(b);
+  var clear = "rgba(0, 0, 0, 0)";
+  var sc = spin && getComputedStyle(spin);
+  var br = b.getBoundingClientRect();
+  var sr = spin && spin.getBoundingClientRect();
+  var centred = !!spin &&
+    Math.abs((sr.left + sr.width / 2) - (br.left + br.width / 2)) < 1 &&
+    Math.abs((sr.top + sr.height / 2) - (br.top + br.height / 2)) < 1;
+  return [
+    "label-ink:" + (cs.webkitTextFillColor === clear ? "none" : "shown"),
+    "icon-ink:" + (parseFloat(getComputedStyle(icon).opacity) === 0 ? "none" : "shown"),
+    "spin-ink:" + (sc && sc.borderTopColor !== clear && spin.offsetWidth > 6 ? "shown" : "none"),
+    "spin-centred:" + centred,
+  ].join(" ");
+})()`
+
 // busyStateJS reads the whole busy state of the two-button form in one
 // round trip: the attributes, the swapped label, the untouched sibling,
 // and — the part an attribute check would miss — whether the spinner is
@@ -1945,6 +1972,22 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`<div rst-form-foot>`+
 			`<button id="extgo" rst-btn="primary" type="submit" form="ext" name="action" value="ext" data-busy-label="Sending…">Save</button>`+
 			`</div>`+
+			// A submit with no busy label: the spinner takes the
+			// label's place rather than joining it. The icon is there
+			// because an element child, unlike the text, is not hidden
+			// by the text fill — it needs its own rule.
+			// In a form-foot, like #save, so the button is sized by its
+			// content: a stretched one keeps its width whatever the
+			// spinner does, and the width check would pin nothing.
+			`<form id="swap" rst-form method="post" action="/submit"><div rst-form-foot>`+
+			`<button id="swapgo" rst-btn="primary" type="submit" name="action" value="swap">`+
+			`<span id="swapicon" aria-hidden="true">+</span>Publish</button>`+
+			`</div></form>`+
+			// aria-busy is ordinary ARIA an app may set on its own fetch
+			// button, with no shim and no spinner. Keying the swap on
+			// aria-busy alone would blank this button's label and put
+			// nothing in its place.
+			`<button id="authored" rst-btn type="button" aria-busy="true">Refresh</button>`+
 			// The form that really navigates, for the back-button leg.
 			`<form id="nav" rst-form method="post" action="/go">`+
 			`<button id="navgo" rst-btn="primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
@@ -2210,6 +2253,58 @@ func TestBusyButtonDrive(t *testing.T) {
 		t.Errorf("after the re-entrancy attempts the state is\n  %q\nwant it unchanged:\n  %q", afterSecond, wantBusy)
 	}
 
+	// ── 4a. The spinner takes the label's place ─────────────────────
+	//
+	// With no data-busy-label there are no words to show while it works,
+	// so the label gives way to a centred spinner. Bug classes, each of
+	// which still "works": the spinner joins the label and the button
+	// grows, reflowing everything beside it mid-click; the label is hidden
+	// with the spinner, so it inherits the transparent ink and the button
+	// shows nothing at all; the label is hidden from the accessibility
+	// tree too, so a screen reader announces an unnamed busy button.
+	var idleWidth, busyWidth float64
+	var swap string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &idleWidth), at("measured-swap"),
+		chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap"),
+		chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened"),
+		chromedp.Evaluate(swapStateJS, &swap),
+		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &busyWidth),
+	))
+	if got := took(t, payloads, "swap"); got != "action=swap" {
+		t.Errorf("the swapping form sent %q, want %q", got, "action=swap")
+	}
+	const wantSwap = "label-ink:none icon-ink:none spin-ink:shown spin-centred:true"
+	if swap != wantSwap {
+		t.Errorf("a busy button with no busy label reads\n  %q\nwant\n  %q", swap, wantSwap)
+	}
+	if math.Abs(busyWidth-idleWidth) > 0.5 {
+		t.Errorf("the busy button is %.1fpx wide, %.1fpx idle — the spinner must take the label's place, not add to it", busyWidth, idleWidth)
+	}
+	// The name is read from the accessibility tree, not textContent:
+	// textContent ignores CSS and aria-hidden, so it would still say
+	// Publish with the label hidden from a screen reader.
+	if name := axName(ctx, t, "#swapgo"); name != "Publish" {
+		t.Errorf("the busy button's accessible name is %q, want %q — unpainting the label must not take it away from a screen reader", name, "Publish")
+	}
+	var authoredInk string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`getComputedStyle(document.getElementById("authored")).webkitTextFillColor`, &authoredInk),
+	))
+	if authoredInk == "rgba(0, 0, 0, 0)" {
+		t.Errorf("a button an app marked aria-busy, with no spinner in it, has transparent label ink — it renders blank")
+	}
+	// And the other side of the same selector: a busy label is words
+	// the author asked to be read, so it stays inked.
+	var saveInk string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`getComputedStyle(document.getElementById("save")).webkitTextFillColor`, &saveInk),
+	))
+	if saveInk == "rgba(0, 0, 0, 0)" {
+		t.Errorf("the button with data-busy-label has transparent label ink — its busy label must stay visible")
+	}
+	rig.Screen("body", "a busy button whose spinner replaces the label")
+
 	// ── 4b. Back ──────────────────────────────────────────────────────
 	//
 	// The back/forward cache restores a document exactly as it was left,
@@ -2370,6 +2465,41 @@ func TestBusyButtonDrive(t *testing.T) {
 		"draft:- draft-off:false draft-value:draft"
 	if reduced != wantReduced {
 		t.Errorf("under prefers-reduced-motion the busy state is\n  %q\nwant\n  %q", reduced, wantReduced)
+	}
+
+	// ── 5b. The swap stands down where a lone ring fails ──────────────
+	//
+	// Two readers for whom a spinner alone is the wrong trade, so the
+	// label stays and the ring sits beside it as it used to:
+	//
+	//   - reduced motion: the ring stops turning and is dimmed, and a
+	//     pale, still, open ring on its own reads as a stray "C";
+	//   - forced colours: the engine repaints the text fill, so the
+	//     "hidden" label paints anyway and a centred ring lands on top
+	//     of it. The computed fill still reads transparent there, which
+	//     is why this leg asserts position and not only ink.
+	for _, media := range []struct {
+		name, value string
+	}{{"prefers-reduced-motion", "reduce"}, {"forced-colors", "active"}} {
+		var state, pos string
+		fail(chromedp.Run(ctx,
+			chromedp.ActionFunc(func(c context.Context) error {
+				return emulation.SetEmulatedMedia().
+					WithFeatures([]*emulation.MediaFeature{{Name: media.name, Value: media.value}}).
+					Do(c)
+			}), at("emulated-"+media.name),
+			chromedp.Navigate(rig.Origin+"/"), at("navigated-"+media.name),
+			chromedp.WaitVisible(`#swapgo`, chromedp.ByQuery), at("page-visible-"+media.name),
+			chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap-"+media.name),
+			chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened-"+media.name),
+			chromedp.Evaluate(swapStateJS, &state),
+			chromedp.Evaluate(`getComputedStyle(document.querySelector("#swapgo > [rst-spin]")).position`, &pos),
+		))
+		took(t, payloads, media.name)
+		const want = "label-ink:shown icon-ink:shown spin-ink:shown spin-centred:false"
+		if state != want || pos != "static" {
+			t.Errorf("under %s: %s the busy button reads %q with the spinner %s, want %q with it static beside the label", media.name, media.value, state, pos, want)
+		}
 	}
 
 	// ── 6. Scriptless ─────────────────────────────────────────────────
@@ -2885,4 +3015,34 @@ func TestTimeFieldOpensAClockRatherThanACalendar(t *testing.T) {
 	default:
 		t.Fatal("the form never reached the server")
 	}
+}
+
+// axName is an element's accessible name as the browser computes it for
+// assistive technology — the only reading that sees CSS and aria-hidden.
+// GetPartialAXTree rather than GetFullAXTree: the full tree carries an
+// ignored-reason the vendored cdproto cannot unmarshal.
+func axName(ctx context.Context, t *testing.T, sel string) string {
+	t.Helper()
+	var nodes []*cdp.Node
+	if err := chromedp.Run(ctx, chromedp.Nodes(sel, &nodes, chromedp.ByQuery)); err != nil || len(nodes) == 0 {
+		t.Fatalf("axName: no node for %s: %v", sel, err)
+	}
+	var name string
+	err := chromedp.Run(ctx, chromedp.ActionFunc(func(c context.Context) error {
+		ax, err := accessibility.GetPartialAXTree().WithBackendNodeID(nodes[0].BackendNodeID).WithFetchRelatives(false).Do(c)
+		if err != nil {
+			return err
+		}
+		if len(ax) > 0 && ax[0].Name != nil {
+			var v string
+			if json.Unmarshal(ax[0].Name.Value, &v) == nil {
+				name = v
+			}
+		}
+		return nil
+	}))
+	if err != nil {
+		t.Fatalf("axName(%s): %v", sel, err)
+	}
+	return name
 }

@@ -1232,6 +1232,59 @@ func TestTokensCSSIsSelfContained(t *testing.T) {
 	}
 }
 
+// A var() naming a token nobody declares resolves to the property's
+// initial value with no error anywhere — the date picker's muted text
+// shipped as full-strength body colour that way, through a misspelt
+// --rst-muted. So every fallback-less reference in tokens.css must be
+// declared by tokens.css itself or by every theme; a reference that
+// carries a fallback is an app-settable hook (--rst-cols) and is fine
+// undeclared.
+func TestEveryTokenReferenceIsDeclared(t *testing.T) {
+	decl := regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:`)
+	ref := regexp.MustCompile(`var\((--rst-[a-z0-9-]+)\s*\)`)
+	// Comments out first: a "--rst-x:" in prose would otherwise count as
+	// a declaration, and these files are mostly prose.
+	comment := regexp.MustCompile(`(?s)/\*.*?\*/`)
+	strip := func(b []byte) string { return comment.ReplaceAllString(string(b), "") }
+	tokens := strip(TokensCSS())
+	declared := map[string]bool{}
+	for _, m := range decl.FindAllStringSubmatch(tokens, -1) {
+		declared[m[1]] = true
+	}
+	inEvery := map[string]int{}
+	for _, name := range ThemeNames() {
+		theme, _ := ThemeCSS(name)
+		seen := map[string]bool{}
+		for _, m := range decl.FindAllStringSubmatch(strip(theme), -1) {
+			if !seen[m[1]] {
+				seen[m[1]] = true
+				inEvery[m[1]]++
+			}
+		}
+	}
+	for tok, n := range inEvery {
+		if n == len(ThemeNames()) {
+			declared[tok] = true
+		}
+	}
+	// A theme derives tokens from tokens (--rst-header-rule mixes the
+	// accent), so its references are held to the same bar.
+	sources := map[string]string{"tokens.css": tokens}
+	for _, name := range ThemeNames() {
+		theme, _ := ThemeCSS(name)
+		sources["themes/"+name+".css"] = strip(theme)
+	}
+	for file, css := range sources {
+		reported := map[string]bool{}
+		for _, m := range ref.FindAllStringSubmatch(css, -1) {
+			if !declared[m[1]] && !reported[m[1]] {
+				reported[m[1]] = true
+				t.Errorf("%s uses var(%s), which neither tokens.css nor every theme declares", file, m[1])
+			}
+		}
+	}
+}
+
 // Every interactive element renders with a real accessible name
 // (spec §10). Checked here rather than per-partial so a new partial
 // cannot quietly opt out.

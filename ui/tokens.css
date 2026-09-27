@@ -330,6 +330,48 @@ body {
   align-self: center;
   flex: none;
 }
+/* With no busy label there are no words to show while it works, so the
+   spinner takes the label's place instead of joining it: joining widens
+   the button mid-click and shoves whatever sits beside it. The shim
+   marks a button that HAS a busy label with data-idle-label, which is
+   what the :not() keys on — those words were asked for, so they stay.
+
+   :has(> spinner) because aria-busy is ordinary ARIA an app may set on
+   its own fetch button with no shim and no spinner; keyed on aria-busy
+   alone, that button would lose its label and show nothing at all.
+
+   The label is unpainted, never removed: aria-busy plus the untouched
+   text is what a screen reader announces. -webkit-text-fill-color
+   rather than color, because the ring is drawn in currentColor — a
+   transparent color would take the spinner with it. Element children
+   (an icon) are not reached by the text fill and take opacity 0, which
+   unlike visibility keeps them in the accessibility tree.
+
+   The media query stands the swap down for two readers a lone ring
+   fails. Under reduced motion the ring is still and dimmed, and on its
+   own reads as a stray "C". Under forced colours the engine repaints
+   the text fill, so the label paints anyway and a centred ring would
+   land on top of it. Both keep the older spinner-beside-label look. */
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .rst-btn[aria-busy="true"]:not([data-idle-label]):has(> .rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]):has(> [rst-spin]) {
+    -webkit-text-fill-color: transparent;
+  }
+  .rst-btn[aria-busy="true"]:not([data-idle-label]):has(> .rst-spin) > :not(.rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]):has(> [rst-spin]) > :not([rst-spin]) {
+    opacity: 0;
+  }
+  .rst-btn[aria-busy="true"]:not([data-idle-label]) > .rst-spin, [rst-btn][aria-busy="true"]:not([data-idle-label]) > [rst-spin] {
+    inset: 0;
+    margin: auto;
+    position: absolute;
+  }
+  /* The spinner's containing block. Zero specificity, so an app's own
+     position: fixed or sticky on a floating Save still wins — either
+     of those contains the spinner just as well, and losing it would
+     drop the button back into the page flow mid-click. */
+  :where(.rst-btn[aria-busy="true"]:not([data-idle-label])), :where([rst-btn][aria-busy="true"]:not([data-idle-label])) {
+    position: relative;
+  }
+}
 
 /* ── page-header ──────────────────────────────────────────────────── */
 .rst-page-header, [rst-page-header] {
@@ -1548,19 +1590,19 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    against one font size. .rst-dtp__input's padding-inline-end is the
    room this reserves inside the control, so text never runs under it,
    with a value or without one. */
-.rst-dtp__pick, [rst-dtp-pick] { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block: 0; inset-inline-end: 0.35rem; justify-content: center; margin-block: auto; padding: 0; position: absolute; }
+.rst-dtp__pick, [rst-dtp-pick] { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-text-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block: 0; inset-inline-end: 0.35rem; justify-content: center; margin-block: auto; padding: 0; position: absolute; }
 .rst-dtp__pick:hover, [rst-dtp-pick]:hover { color: var(--rst-text); }
 .rst-dtp__pick svg, [rst-dtp-pick] svg { block-size: 1rem; inline-size: 1rem; }
 .rst-dtp__list, [rst-dtp-list] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-block-start: 4px; max-block-size: 17rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 40; }
 .rst-dtp__row, [rst-dtp-row] { align-items: baseline; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: flex; font-size: var(--rst-fs-sm); gap: 0.5rem; justify-content: space-between; padding: 0.4rem 0.65rem; }
 .rst-dtp__row:hover, [rst-dtp-row]:hover, .rst-dtp__row.is-active, [rst-dtp-row].is-active { background: var(--rst-accent-soft); }
 .rst-dtp__row--set .rst-dtp__label, [rst-dtp-row~="set"] [rst-dtp-label] { font-weight: 600; }
-.rst-dtp__quick .rst-dtp__set, [rst-dtp-quick] [rst-dtp-set] { color: var(--rst-muted); }
+.rst-dtp__quick .rst-dtp__set, [rst-dtp-quick] [rst-dtp-set] { color: var(--rst-text-muted); }
 /* The committed value is marked in the accessibility tree by
    aria-selected; this is the matching visual, never the only signal. */
 .rst-dtp__row[aria-selected="true"] .rst-dtp__label, [rst-dtp-row][aria-selected="true"] [rst-dtp-label] { font-weight: 600; }
-.rst-dtp__set, [rst-dtp-set] { flex: none; font-size: var(--rst-fs-xs); color: var(--rst-muted); }
-.rst-dtp__hint, [rst-dtp-hint] { color: var(--rst-muted); font-size: var(--rst-fs-xs); padding: 0.35rem 0.65rem 0.15rem; }
+.rst-dtp__set, [rst-dtp-set] { flex: none; font-size: var(--rst-fs-xs); color: var(--rst-text-muted); }
+.rst-dtp__hint, [rst-dtp-hint] { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); padding: 0.35rem 0.65rem 0.15rem; }
 
 /* The popup opens above the field where there is no room below it —
    datetime.js measures and sets .is-above, because a panel hanging off
@@ -1590,7 +1632,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-cal, [rst-cal] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inline-size: 18rem; inset-inline-start: 0; margin-block-start: 4px; padding: var(--rst-sp-2); position: absolute; top: 100%; z-index: 40; }
 .rst-cal__head, [rst-cal-head] { align-items: center; display: flex; gap: var(--rst-sp-1); justify-content: space-between; padding-block-end: var(--rst-sp-2); }
 .rst-cal__title, [rst-cal-title] { flex: 1; font-size: var(--rst-fs-sm); font-weight: 600; text-align: center; }
-.rst-cal__nav, [rst-cal-nav] { align-items: center; background: none; block-size: 1.75rem; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-muted); cursor: pointer; display: flex; inline-size: 1.75rem; justify-content: center; padding: 0; }
+.rst-cal__nav, [rst-cal-nav] { align-items: center; background: none; block-size: 1.75rem; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); cursor: pointer; display: flex; inline-size: 1.75rem; justify-content: center; padding: 0; }
 .rst-cal__nav:hover:not(:disabled), [rst-cal-nav]:hover:not(:disabled) { background: var(--rst-accent-soft); color: var(--rst-text); }
 /* A month with nothing pickable in it — past the field's min, or past
    its max. Dimmed and inert rather than removed, so the header keeps
@@ -1603,7 +1645,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    panel's own direction rather than a second rule. */
 [rst-cal-nav~="next"] svg, .rst-cal__nav--next svg { transform: scaleX(-1); }
 .rst-cal__grid, [rst-cal-grid] { border-collapse: collapse; inline-size: 100%; table-layout: fixed; }
-.rst-cal__grid th, [rst-cal-grid] th { color: var(--rst-muted); font-size: var(--rst-fs-xs); font-weight: 500; padding-block: var(--rst-sp-1); text-align: center; }
+.rst-cal__grid th, [rst-cal-grid] th { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); font-weight: 500; padding-block: var(--rst-sp-1); text-align: center; }
 .rst-cal__day, [rst-cal-day] { border-radius: var(--rst-radius-sm); cursor: pointer; font-size: var(--rst-fs-sm); font-variant-numeric: tabular-nums; line-height: 2.15; text-align: center; }
 .rst-cal__day:hover, [rst-cal-day]:hover { background: var(--rst-accent-soft); }
 /* The days either side of the month. Still pickable — reaching for the

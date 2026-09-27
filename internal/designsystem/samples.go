@@ -477,14 +477,18 @@ func families() []family {
 						// second state is Raw rather than data, because
 						// it is not a state the partial can be asked
 						// for: it is what rastrillo.js writes over the
-						// first one the moment the form goes out.
+						// first one the moment the form goes out. It
+						// is the default — no data-busy-label — so the
+						// spinner stands in for the label. Showing
+						// the data-busy-label variant here instead
+						// would picture the exception as the rule.
 						{State: "Idle — the button before anything happens", Data: map[string]any{
 							"Submit": "Publish", "CancelHref": "/posts", "CancelLabel": "Back to posts",
 						}, Note: "A button that CHANGES something gets a loading state; a button that only reveals something, e.g. a disclosure, a dropdown, a tab, does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into."},
 						{State: "Working — what rastrillo.js writes on the way out",
 							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
 							Raw: `<div rst-form-foot>
-<button rst-btn="primary lg" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span rst-spin aria-hidden="true"></span>Publishing…</button>
+<button rst-btn="primary lg" type="submit" aria-busy="true" disabled><span rst-spin aria-hidden="true"></span>Publish</button>
 <a rst-btn="lg" href="/posts">Back to posts</a>
 </div>`,
 						},

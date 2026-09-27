@@ -335,10 +335,11 @@ element for the fetched fragment, repeating while the fragment still
 carries `data-poll` (ui's `job-status` partial drops it once done); the
 partial's `PushURL` (= `EventsPath`) emits `data-poll-push` and the
 shim rides SSE, falling back to polling. Every submit button gets a
-spinner, `aria-busy` and a double-submit guard by DEFAULT;
-`data-busy="false"` (form or button) opts out, `data-busy-label`
-retitles. Manners, not idempotency — the server still refuses the
-second write.
+spinner in place of its label (beside it under reduced motion or
+forced colours), `aria-busy` and a double-submit guard by
+DEFAULT, cleared on back; `data-busy="false"` (form or button) opts
+out, `data-busy-label` shows words beside the spinner. Manners, not
+idempotency — the server still refuses the second write.
 
 Hibernation means a `time.Ticker` is not a scheduler. Declare recurring
 work outside the app (`carlos schedule set -name sync -every 6h -path
