@@ -336,23 +336,41 @@ body {
    marks a button that HAS a busy label with data-idle-label, which is
    what the :not() keys on — those words were asked for, so they stay.
 
+   :has(> spinner) because aria-busy is ordinary ARIA an app may set on
+   its own fetch button with no shim and no spinner; keyed on aria-busy
+   alone, that button would lose its label and show nothing at all.
+
    The label is unpainted, never removed: aria-busy plus the untouched
    text is what a screen reader announces. -webkit-text-fill-color
    rather than color, because the ring is drawn in currentColor — a
    transparent color would take the spinner with it. Element children
    (an icon) are not reached by the text fill and take opacity 0, which
-   unlike visibility keeps them in the accessibility tree. */
-.rst-btn[aria-busy="true"]:not([data-idle-label]), [rst-btn][aria-busy="true"]:not([data-idle-label]) {
-  -webkit-text-fill-color: transparent;
-  position: relative;
-}
-.rst-btn[aria-busy="true"]:not([data-idle-label]) > :not(.rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]) > :not([rst-spin]) {
-  opacity: 0;
-}
-.rst-btn[aria-busy="true"]:not([data-idle-label]) > .rst-spin, [rst-btn][aria-busy="true"]:not([data-idle-label]) > [rst-spin] {
-  inset: 0;
-  margin: auto;
-  position: absolute;
+   unlike visibility keeps them in the accessibility tree.
+
+   The media query stands the swap down for two readers a lone ring
+   fails. Under reduced motion the ring is still and dimmed, and on its
+   own reads as a stray "C". Under forced colours the engine repaints
+   the text fill, so the label paints anyway and a centred ring would
+   land on top of it. Both keep the older spinner-beside-label look. */
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .rst-btn[aria-busy="true"]:not([data-idle-label]):has(> .rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]):has(> [rst-spin]) {
+    -webkit-text-fill-color: transparent;
+  }
+  .rst-btn[aria-busy="true"]:not([data-idle-label]):has(> .rst-spin) > :not(.rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]):has(> [rst-spin]) > :not([rst-spin]) {
+    opacity: 0;
+  }
+  .rst-btn[aria-busy="true"]:not([data-idle-label]) > .rst-spin, [rst-btn][aria-busy="true"]:not([data-idle-label]) > [rst-spin] {
+    inset: 0;
+    margin: auto;
+    position: absolute;
+  }
+  /* The spinner's containing block. Zero specificity, so an app's own
+     position: fixed or sticky on a floating Save still wins — either
+     of those contains the spinner just as well, and losing it would
+     drop the button back into the page flow mid-click. */
+  :where(.rst-btn[aria-busy="true"]:not([data-idle-label])), :where([rst-btn][aria-busy="true"]:not([data-idle-label])) {
+    position: relative;
+  }
 }
 
 /* ── page-header ──────────────────────────────────────────────────── */

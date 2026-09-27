@@ -1242,7 +1242,11 @@ func TestTokensCSSIsSelfContained(t *testing.T) {
 func TestEveryTokenReferenceIsDeclared(t *testing.T) {
 	decl := regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:`)
 	ref := regexp.MustCompile(`var\((--rst-[a-z0-9-]+)\s*\)`)
-	tokens := string(TokensCSS())
+	// Comments out first: a "--rst-x:" in prose would otherwise count as
+	// a declaration, and these files are mostly prose.
+	comment := regexp.MustCompile(`(?s)/\*.*?\*/`)
+	strip := func(b []byte) string { return comment.ReplaceAllString(string(b), "") }
+	tokens := strip(TokensCSS())
 	declared := map[string]bool{}
 	for _, m := range decl.FindAllStringSubmatch(tokens, -1) {
 		declared[m[1]] = true
@@ -1251,7 +1255,7 @@ func TestEveryTokenReferenceIsDeclared(t *testing.T) {
 	for _, name := range ThemeNames() {
 		theme, _ := ThemeCSS(name)
 		seen := map[string]bool{}
-		for _, m := range decl.FindAllStringSubmatch(string(theme), -1) {
+		for _, m := range decl.FindAllStringSubmatch(strip(theme), -1) {
 			if !seen[m[1]] {
 				seen[m[1]] = true
 				inEvery[m[1]]++
@@ -1263,11 +1267,20 @@ func TestEveryTokenReferenceIsDeclared(t *testing.T) {
 			declared[tok] = true
 		}
 	}
-	reported := map[string]bool{}
-	for _, m := range ref.FindAllStringSubmatch(tokens, -1) {
-		if !declared[m[1]] && !reported[m[1]] {
-			reported[m[1]] = true
-			t.Errorf("tokens.css uses var(%s), which neither tokens.css nor every theme declares", m[1])
+	// A theme derives tokens from tokens (--rst-header-rule mixes the
+	// accent), so its references are held to the same bar.
+	sources := map[string]string{"tokens.css": tokens}
+	for _, name := range ThemeNames() {
+		theme, _ := ThemeCSS(name)
+		sources["themes/"+name+".css"] = strip(theme)
+	}
+	for file, css := range sources {
+		reported := map[string]bool{}
+		for _, m := range ref.FindAllStringSubmatch(css, -1) {
+			if !declared[m[1]] && !reported[m[1]] {
+				reported[m[1]] = true
+				t.Errorf("%s uses var(%s), which neither tokens.css nor every theme declares", file, m[1])
+			}
 		}
 	}
 }
