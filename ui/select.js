@@ -469,8 +469,16 @@
     // keyboard order and every ARIA state stay as they are.
     const place = () => {
       const vv = window.visualViewport;
-      const top = vv ? vv.offsetTop : 0;
-      const bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      let top = vv ? vv.offsetTop : 0;
+      let bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      // A scrolling panel around the box (a modal's body, a sheet) clips
+      // the list too: room outside it is no room at all.
+      for (let a = wrap.parentElement; a && a !== document.body; a = a.parentElement) {
+        if (!/auto|scroll|hidden|clip/.test(getComputedStyle(a).overflowY)) continue;
+        const r = a.getBoundingClientRect();
+        top = Math.max(top, r.top);
+        bottom = Math.min(bottom, r.bottom);
+      }
       const box = wrap.getBoundingClientRect();
       const below = bottom - box.bottom;
       const above = box.top - top;
@@ -482,6 +490,10 @@
       list.style.maxBlockSize = Math.max(Math.min(up ? above : below, 15 * 16) - 8, 64) + "px";
     };
     const replace = () => {
+      // A box taken off the page with its whole fragment hears no mutation
+      // and may get no blur; the first event after drops the page-wide
+      // listeners that would otherwise keep it alive.
+      if (!wrap.isConnected) return closeList(false);
       placeDue = true;
       soon();
     };

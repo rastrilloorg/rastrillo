@@ -1036,17 +1036,19 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 	t.Parallel()
 	var got struct {
-		BottomUp       bool    `json:"bottomUp"`
-		BottomListTop  float64 `json:"bottomListTop"`
-		BottomListEnd  float64 `json:"bottomListEnd"`
-		BottomBoxTop   float64 `json:"bottomBoxTop"`
-		TopUp          bool    `json:"topUp"`
-		TopListTop     float64 `json:"topListTop"`
-		TopBoxEnd      float64 `json:"topBoxEnd"`
-		MovedUp        bool    `json:"movedUp"`
-		ScrolledDown   bool    `json:"scrolledDown"`
-		FirstDownUp    string  `json:"firstDownUp"`
-		FirstDownBelow string  `json:"firstDownBelow"`
+		BottomUp         bool    `json:"bottomUp"`
+		BottomListTop    float64 `json:"bottomListTop"`
+		BottomListEnd    float64 `json:"bottomListEnd"`
+		BottomBoxTop     float64 `json:"bottomBoxTop"`
+		TopUp            bool    `json:"topUp"`
+		TopListTop       float64 `json:"topListTop"`
+		TopBoxEnd        float64 `json:"topBoxEnd"`
+		MovedUp          bool    `json:"movedUp"`
+		ScrolledDown     bool    `json:"scrolledDown"`
+		PanelUp          bool    `json:"panelUp"`
+		DroppedOnRemoval int     `json:"droppedOnRemoval"`
+		FirstDownUp      string  `json:"firstDownUp"`
+		FirstDownBelow   string  `json:"firstDownBelow"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -1106,6 +1108,32 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 		out.movedUp = wrap.hasAttribute('rst-combo-up');
 		key('Escape');
 		wrap.removeAttribute('style');
+		// Near the top of a scrolling panel that sits low on the screen:
+		// the room above the box is outside the panel, so it opens down.
+		const panel = document.createElement('div');
+		panel.style.cssText = 'position:fixed;left:10px;width:320px;height:200px;overflow-y:auto;top:' + (window.innerHeight - 220) + 'px';
+		wrap.parentNode.insertBefore(panel, wrap);
+		panel.append(wrap, document.querySelector('#tz'));
+		input.focus();
+		input.click();
+		await frame();
+		await frame();
+		out.panelUp = wrap.hasAttribute('rst-combo-up');
+		key('Escape');
+		// And a box removed with its fragment while open lets go of the
+		// page-wide listeners at the next event.
+		let dropped = 0;
+		const rm = window.removeEventListener;
+		window.removeEventListener = function (type, ...a) { if (type === 'resize') dropped++; return rm.call(this, type, ...a); };
+		// Opened without focus (a synthetic click gives none), so removal
+		// fires no blur here, as on a browser that never does.
+		input.blur();
+		input.click();
+		await frame();
+		panel.remove();
+		window.dispatchEvent(new Event('resize'));
+		window.removeEventListener = rm;
+		out.droppedOnRemoval = dropped;
 		return out;
 	`, &got)
 	if !got.BottomUp || got.BottomListTop < 0 || got.BottomListEnd > got.BottomBoxTop+1 {
@@ -1113,6 +1141,12 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 	}
 	if got.TopUp || got.TopListTop < got.TopBoxEnd-1 {
 		t.Errorf("at the top of the viewport the list opened up=%v starting at %.0f with the box ending at %.0f, want downward, below the box", got.TopUp, got.TopListTop, got.TopBoxEnd)
+	}
+	if got.PanelUp {
+		t.Error("near the top of a low scrolling panel the list opened upward, into the part of the panel that is clipped")
+	}
+	if got.DroppedOnRemoval == 0 {
+		t.Error("a box removed with its fragment while open kept its page-wide resize listener")
 	}
 	if !got.ScrolledDown {
 		t.Error("moved to the top while open and a panel scrolled, the list still opened upward: a scrolling ancestor must re-place it")
