@@ -1235,6 +1235,13 @@ func TestSelectTypingIsCheap(t *testing.T) {
 		count(Element.prototype, 'scrollIntoView');
 		const st = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
 		Object.defineProperty(Element.prototype, 'scrollTop', { configurable: true, get() { return st.get.call(this); }, set(v) { reads++; st.set.call(this, v); } });
+		// With a told band and a floor in play, typing still reads layout at
+		// most once a frame: placement is not redone per keystroke.
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: { top: 0, bottom: window.innerHeight - 10 } }));
+		const bar = document.createElement('div');
+		bar.setAttribute('data-rst-select-floor', '');
+		bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:8px';
+		document.body.append(bar);
 		const input = document.querySelector('#tz-combo');
 		input.focus();
 		input.click();
@@ -1461,5 +1468,142 @@ func TestSelectScanEvent(t *testing.T) {
 	}
 	if got.PageBoxesNow != got.PageBoxes+3 {
 		t.Errorf("the page went from %d boxes to %d after three added selects, want %d: something was enhanced twice", got.PageBoxes, got.PageBoxesNow, got.PageBoxes+3)
+	}
+}
+
+// Which way the list opens, and how tall, under Tito Go #3146's rule: up
+// only when the list does not fit below and there is more room above;
+// held to the room on its side, never past it. The room is the frame's
+// own viewport, cut to a band a host tells it (rst:select-viewport), and
+// to the top of any bar marked data-rst-select-floor below the box.
+func TestSelectPlacement(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		FrameDown     bool    `json:"frameDown"`
+		FrameUp       bool    `json:"frameUp"`
+		FrameBack     bool    `json:"frameBack"`
+		FloorUp       bool    `json:"floorUp"`
+		FloorRoom     float64 `json:"floorRoom"`
+		FloorMax      float64 `json:"floorMax"`
+		AboveFloorMax float64 `json:"aboveFloorMax"`
+		ThreeUp       bool    `json:"threeUp"`
+		ThreeMax      float64 `json:"threeMax"`
+		ThreeRoom     float64 `json:"threeRoom"`
+		ClampUp       bool    `json:"clampUp"`
+		ClampMax      float64 `json:"clampMax"`
+		ClampRoom     float64 `json:"clampRoom"`
+		ClampTop      float64 `json:"clampTop"`
+		BandTop       float64 `json:"bandTop"`
+		TieUp         bool    `json:"tieUp"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const out = {};
+
+		// A framed page: its own viewport is 600px tall and the box sits in
+		// the middle, so the list opens down. The host then says only the
+		// top of the frame is on screen (a keyboard over the rest): the
+		// open list is re-placed upward on receipt. Null goes back.
+		const iframe = document.createElement('iframe');
+		iframe.style.cssText = 'position:fixed;left:0;top:0;width:400px;height:600px;border:0';
+		iframe.src = '/';
+		await new Promise((r) => { iframe.onload = r; document.body.append(iframe); });
+		const fw = iframe.contentWindow, fd = iframe.contentDocument;
+		await new Promise((r) => fw.requestAnimationFrame(() => fw.setTimeout(r, 0)));
+		const ffr = () => new Promise((r) => fw.requestAnimationFrame(() => fw.setTimeout(r, 0)));
+		const fin = fd.querySelector('#tz-combo');
+		const fwrap = fin.closest('[rst-combo]');
+		fwrap.style.cssText = 'position:fixed;left:10px;width:300px;top:250px';
+		fin.focus();
+		fin.click();
+		await ffr(); await ffr();
+		out.frameDown = !fwrap.hasAttribute('rst-combo-up');
+		const fbox = fwrap.getBoundingClientRect();
+		fd.dispatchEvent(new fw.CustomEvent('rst:select-viewport', { detail: { top: 0, bottom: fbox.bottom + 40 } }));
+		await ffr(); await ffr();
+		out.frameUp = fwrap.hasAttribute('rst-combo-up');
+		fd.dispatchEvent(new fw.CustomEvent('rst:select-viewport', { detail: null }));
+		await ffr(); await ffr();
+		out.frameBack = !fwrap.hasAttribute('rst-combo-up');
+		iframe.remove();
+
+		const input = document.querySelector('#tz-combo');
+		const wrap = input.closest('[rst-combo]');
+		const list = document.querySelector('#tz-listbox');
+		const open = async () => { input.blur(); input.focus(); input.click(); await frame(); await frame(); };
+		const close = () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+		// The height the list actually takes on screen, padding and borders
+		// in: what has to fit the room.
+		const max = () => list.getBoundingClientRect().height;
+		const at = (top) => { wrap.style.cssText = 'position:fixed;left:10px;width:300px;top:' + top + 'px'; };
+
+		// A floor 60px under a box near the top of the screen: the room
+		// below is what is above the bar.
+		at(10);
+		const bar = document.createElement('div');
+		bar.setAttribute('data-rst-select-floor', '');
+		const boxBottom = () => wrap.getBoundingClientRect().bottom;
+		bar.style.cssText = 'position:fixed;left:0;right:0;height:40px;top:' + (boxBottom() + 60) + 'px';
+		document.body.append(bar);
+		await open();
+		out.floorUp = wrap.hasAttribute('rst-combo-up');
+		out.floorRoom = bar.getBoundingClientRect().top - boxBottom();
+		out.floorMax = max();
+		close();
+		// The same bar ABOVE the box is ignored.
+		bar.style.top = '0px';
+		bar.style.height = '5px';
+		at(40);
+		await open();
+		out.aboveFloorMax = max();
+		close();
+		bar.remove();
+
+		// Neither side fits the list: it takes the bigger side (above,
+		// 100px) and is held to it.
+		const h = wrap.getBoundingClientRect().height;
+		at(200);
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: { top: 100, bottom: 200 + h + 80 } }));
+		await open();
+		out.threeUp = wrap.hasAttribute('rst-combo-up');
+		out.threeMax = max();
+		out.threeRoom = 100;
+		close();
+		// Neither side has room for three rows: the bigger side, clamped to
+		// it, and never past the band.
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: { top: 200 - 46, bottom: 200 + h + 30 } }));
+		await open();
+		out.clampUp = wrap.hasAttribute('rst-combo-up');
+		out.clampMax = max();
+		out.clampRoom = 46;
+		out.clampTop = list.getBoundingClientRect().top;
+		out.bandTop = 200 - 46;
+		close();
+		// A tie goes down.
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: { top: 200 - 50, bottom: 200 + h + 50 } }));
+		await open();
+		out.tieUp = wrap.hasAttribute('rst-combo-up');
+		close();
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: null }));
+		wrap.removeAttribute('style');
+		return out;
+	`, &got)
+	if !got.FrameDown || !got.FrameUp || !got.FrameBack {
+		t.Errorf("in a frame: down %v, then told a short band up %v, then null down %v; want all true", got.FrameDown, got.FrameUp, got.FrameBack)
+	}
+	if got.FloorUp || got.FloorMax > got.FloorRoom || got.FloorMax < got.FloorRoom-12 {
+		t.Errorf("a floor %.0fpx below the box: up=%v height %.0fpx, want down and held to the room above the bar", got.FloorRoom, got.FloorUp, got.FloorMax)
+	}
+	if got.AboveFloorMax < 200 {
+		t.Errorf("a floor above the box cut the room below to %.0fpx: it should be ignored", got.AboveFloorMax)
+	}
+	if !got.ThreeUp || got.ThreeMax > got.ThreeRoom || got.ThreeMax < got.ThreeRoom-12 {
+		t.Errorf("100px above and 80px below: up=%v height %.0fpx, want up, held to the room above", got.ThreeUp, got.ThreeMax)
+	}
+	if !got.ClampUp || got.ClampMax > got.ClampRoom || got.ClampTop < got.BandTop-1 {
+		t.Errorf("46px above and 30px below: up=%v height %.0fpx, top %.0f vs band %.0f; want up, clamped to the room, never past the band", got.ClampUp, got.ClampMax, got.ClampTop, got.BandTop)
+	}
+	if got.TieUp {
+		t.Error("equal room above and below opened upward: a tie goes down")
 	}
 }

@@ -178,6 +178,19 @@
   }
   if (typeof document === "undefined") return;
 
+  // The band of this document the reader can actually see, when a host
+  // says so: {top, bottom} in this document's viewport coordinates (the
+  // space getBoundingClientRect reports in). Inside an iframe the frame's
+  // own visual viewport never shrinks for the top page's keyboard, so a
+  // host that can see the top page tells the frame; null forgets it. The
+  // latest word wins. Registered before any box opens, so an open box
+  // re-placing on the same event reads the new band.
+  let told = null;
+  document.addEventListener("rst:select-viewport", (e) => {
+    const d = e.detail;
+    told = d && isFinite(d.top) && isFinite(d.bottom) ? { top: +d.top, bottom: +d.bottom } : null;
+  });
+
   const ACTS = new Set(["ArrowDown", "ArrowUp", "Home", "End", "Enter", "Tab"]);
 
   const el = (tag, attr) => {
@@ -472,36 +485,63 @@
     // ARIA. The same rule as Tito Go's searchselect. Worked out when the list opens and when the room
     // changes — never on a keystroke: the room is the same whatever is
     // typed, and a keystroke's one layout read is the highlight's.
+    // Measured with nothing of ours on the list — once per open, and again
+    // after a window resize, which may be text made bigger: its stylesheet
+    // height and its gap off the box.
     let preferred = 0;
+    let gap = 0;
+    let chrome = 0; // padding and borders outside a content-box max-height
     let scrollers = [];
+    let floors = [];
     const place = () => {
       if (!preferred) {
+        // Read with nothing of ours in the way: an upward list has no top
+        // margin, and the gap would read as 0.
+        wrap.removeAttribute("rst-combo-up");
         list.style.maxBlockSize = "";
-        preferred = parseFloat(getComputedStyle(list).maxBlockSize) || 240;
+        const cs = getComputedStyle(list);
+        preferred = parseFloat(cs.maxBlockSize) || 240;
+        gap = parseFloat(cs.marginTop) || 0;
+        chrome = cs.boxSizing === "border-box" ? 0 : ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
       }
       const vv = window.visualViewport;
       let top = vv ? vv.offsetTop : 0;
       let bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      if (told) {
+        top = Math.max(top, told.top);
+        bottom = Math.min(bottom, told.bottom);
+      }
       for (const a of scrollers) {
         const r = a.getBoundingClientRect();
         top = Math.max(top, r.top);
         bottom = Math.min(bottom, r.bottom);
       }
       const box = wrap.getBoundingClientRect();
-      const below = bottom - box.bottom - 4;
-      const above = box.top - top - 4;
-      const up = below < preferred && above > below;
-      // Set through the CSSOM, which a policy with no inline styles still
-      // allows; both written only when they change.
-      const h = Math.max(0, Math.floor(Math.min(preferred, up ? above : below))) + "px";
+      // A bar pinned below the box (data-rst-select-floor: a sticky save
+      // bar) is not room, or the list would cover the button that moves the
+      // reader on. The highest such bar wins; one above the box is ignored.
+      for (const f of floors) {
+        const r = f.getBoundingClientRect();
+        if (r.height && r.top >= box.bottom - 1) bottom = Math.min(bottom, r.top);
+      }
+      const below = bottom - box.bottom - gap;
+      const above = box.top - top - gap;
+      // Up only when the list's own height does not fit below and there is
+      // more room above; a tie goes down. The side chosen is always the
+      // bigger when neither fits, so a list is never shorter than three
+      // rows while its side has room for them; with less it is clamped to
+      // the room, never pushed past the edge (Tito Go #3146, the same rule).
+      const up = below < preferred + chrome && above > below;
+      const h = Math.floor(Math.max(0, Math.min(preferred + chrome, up ? above : below) - chrome)) + "px";
       if (list.style.maxBlockSize !== h) list.style.maxBlockSize = h;
       if (up !== wrap.hasAttribute("rst-combo-up")) wrap.toggleAttribute("rst-combo-up", up);
     };
-    const replace = () => {
+    const replace = (e) => {
       // A box taken off the page with its whole fragment hears no mutation
       // and may get no blur; the first event after drops the page-wide
       // listeners that would otherwise keep it alive.
       if (!wrap.isConnected) return closeList(false);
+      if (e && e.type === "resize" && e.currentTarget === window) preferred = 0;
       placeDue = true;
       soon();
     };
@@ -654,8 +694,11 @@
       for (let a = wrap.parentElement; a && a !== document.body; a = a.parentElement) {
         if (/auto|scroll|hidden|clip/.test(getComputedStyle(a).overflowY)) scrollers.push(a);
       }
+      floors = [...document.querySelectorAll("[data-rst-select-floor]")];
+      preferred = 0;
       replace();
       window.addEventListener("resize", replace);
+      document.addEventListener("rst:select-viewport", replace);
       document.addEventListener("scroll", scrolled, true);
       if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", replace);
@@ -671,6 +714,7 @@
       open = false;
       list.hidden = true;
       window.removeEventListener("resize", replace);
+      document.removeEventListener("rst:select-viewport", replace);
       document.removeEventListener("scroll", scrolled, true);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener("resize", replace);
