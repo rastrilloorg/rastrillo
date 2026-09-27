@@ -925,6 +925,8 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		RebuildInputs int    `json:"rebuildInputs"`
 		StayedClosed  bool   `json:"stayedClosed"`
 		KeptFocus     bool   `json:"keptFocus"`
+		Caret         int    `json:"caret"`
+		StillOn       string `json:"stillOn"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -939,9 +941,11 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		};
 		let input = document.querySelector('#flavour-combo');
 		input.focus();
-		input.value = 'b';
+		input.value = 'bl';
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		await frame();
+		// The caret mid-word, as when somebody goes back to correct a letter.
+		input.setSelectionRange(1, 1);
 		input.closest('[rst-combo]').rstExtras([{ label: 'Other', run: () => {} }]);
 		// A rebuild restores the search quietly: an input event would let a
 		// page that refreshes options on input loop forever.
@@ -954,10 +958,19 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		input = document.querySelector('#flavour-combo');
 		out.focused = document.activeElement === input;
 		out.typed = input.value;
+		out.caret = input.selectionStart;
 		out.rows = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
 		out.extraKept = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]')].some((li) => li.textContent === 'Other');
 		out.rebuildInputs = inputs;
 		input.closest('[rst-combo]').rstExtras([]);
+		// Arrow to the second row, then the page changes the options again:
+		// the row somebody is on is still the one Enter takes.
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+		select.append(new Option('Bilberry', 'bilberry'));
+		await frame();
+		input = document.querySelector('#flavour-combo');
+		const on = input.getAttribute('aria-activedescendant');
+		out.stillOn = on ? document.getElementById(on).textContent : '';
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 		out.picked = select.value;
 		// A second change: only the current box may answer it. An old box
@@ -978,14 +991,20 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 	if got.Boxes != 1 {
 		t.Errorf("after the options were rebuilt the host holds %d boxes, want 1", got.Boxes)
 	}
-	if got.Recorded < 6 || got.LiveListeners != got.Recorded/2 {
-		t.Errorf("after two rebuilds %d of the %d listeners boxes put on the select are live, want only the current box's %d: a retired box still answers the select's events", got.LiveListeners, got.Recorded, got.Recorded/2)
+	if got.Recorded < 9 || got.LiveListeners != 3 {
+		t.Errorf("after three rebuilds %d of the %d listeners boxes put on the select are live, want only the current box's 3: a retired box still answers the select's events", got.LiveListeners, got.Recorded)
+	}
+	if got.Caret != 1 {
+		t.Errorf("after the rebuild the caret is at %d, want 1: it jumped to the end of the words being corrected", got.Caret)
+	}
+	if got.StillOn != "Blackberry" {
+		t.Errorf("after arrowing to Blackberry and a rebuild, %q is highlighted, want Blackberry: Enter would take another row", got.StillOn)
 	}
 	if got.BoxesAfterTwo != 1 || !got.StillHidden {
 		t.Errorf("after a second change the host holds %d boxes and the select is enhanced-and-hidden %v, want 1 and true: an earlier box was still listening", got.BoxesAfterTwo, got.StillHidden)
 	}
-	if !got.Focused || got.Typed != "b" {
-		t.Errorf("after the rebuild the box has focus %v and reads %q, want true and \"b\": the person lost their place", got.Focused, got.Typed)
+	if !got.Focused || got.Typed != "bl" {
+		t.Errorf("after the rebuild the box has focus %v and reads %q, want true and \"bl\": the person lost their place", got.Focused, got.Typed)
 	}
 	if got.RebuildInputs != 0 {
 		t.Errorf("rebuilding fired %d input events, want 0: a page refreshing options on input would loop", got.RebuildInputs)
@@ -997,10 +1016,10 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		t.Error("the page's extra row was lost when the options were rebuilt")
 	}
 	if got.Rows != "Blueberry|Blackberry|Other" {
-		t.Errorf("after the rebuild \"b\" shows %q, want Blueberry|Blackberry|Other: the rows are not the options the select now holds (and the page's extra)", got.Rows)
+		t.Errorf("after the rebuild \"bl\" shows %q, want Blueberry|Blackberry|Other: the rows are not the options the select now holds (and the page's extra)", got.Rows)
 	}
-	if got.Picked != "blueberry" {
-		t.Errorf("Enter after the rebuild picked %q, want blueberry", got.Picked)
+	if got.Picked != "blackberry" {
+		t.Errorf("Enter after the rebuilds picked %q, want blackberry", got.Picked)
 	}
 }
 
@@ -1019,6 +1038,7 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 		TopListTop     float64 `json:"topListTop"`
 		TopBoxEnd      float64 `json:"topBoxEnd"`
 		MovedUp        bool    `json:"movedUp"`
+		ScrolledDown   bool    `json:"scrolledDown"`
 		FirstDownUp    string  `json:"firstDownUp"`
 		FirstDownBelow string  `json:"firstDownBelow"`
 	}
@@ -1059,6 +1079,19 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 		out.topBoxEnd = input.getBoundingClientRect().bottom;
 		key('ArrowDown');
 		out.firstDownBelow = input.getAttribute('aria-activedescendant') || '';
+		// Moved to the top while open: a scroll in any panel re-places it.
+		key('Escape');
+		pin('bottom');
+		input.blur();
+		input.focus();
+		input.click();
+		await frame();
+		await frame();
+		pin('top');
+		document.querySelector('form').dispatchEvent(new Event('scroll'));
+		await frame();
+		await frame();
+		out.scrolledDown = !wrap.hasAttribute('rst-combo-up');
 		// Moved to the bottom while open: a resize re-places it.
 		pin('bottom');
 		window.dispatchEvent(new Event('resize'));
@@ -1074,6 +1107,9 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 	}
 	if got.TopUp || got.TopListTop < got.TopBoxEnd-1 {
 		t.Errorf("at the top of the viewport the list opened up=%v starting at %.0f with the box ending at %.0f, want downward, below the box", got.TopUp, got.TopListTop, got.TopBoxEnd)
+	}
+	if !got.ScrolledDown {
+		t.Error("moved to the top while open and a panel scrolled, the list still opened upward: a scrolling ancestor must re-place it")
 	}
 	if !got.MovedUp {
 		t.Error("moved to the bottom while open and resized, the list was not re-placed upward")

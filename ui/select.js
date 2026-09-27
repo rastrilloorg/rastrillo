@@ -485,6 +485,11 @@
       placeDue = true;
       soon();
     };
+    // A panel or sheet around the box scrolling moves it as surely as the
+    // window does; the list's own scrolling does not.
+    const scrolled = (e) => {
+      if (e.target !== list) replace();
+    };
     const setActive = (o, atTop) => {
       // Only the row losing the highlight and the row gaining it are touched.
       if (active && active !== o) active.li.classList.remove("is-active");
@@ -622,6 +627,7 @@
       input.setAttribute("aria-expanded", "true");
       replace();
       window.addEventListener("resize", replace);
+      document.addEventListener("scroll", scrolled, true);
       if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", replace);
         window.visualViewport.addEventListener("scroll", replace);
@@ -636,6 +642,7 @@
       open = false;
       list.hidden = true;
       window.removeEventListener("resize", replace);
+      document.removeEventListener("scroll", scrolled, true);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener("resize", replace);
         window.visualViewport.removeEventListener("scroll", replace);
@@ -928,7 +935,13 @@
         queueMicrotask(scan);
         return;
       }
-      const resume = { focused: document.activeElement === input, open, typed: showingPick ? null : input.value };
+      const resume = {
+        focused: document.activeElement === input, open, typed: showingPick ? null : input.value,
+        // The row somebody is on, by its option, and whether they arrowed
+        // there: Enter and Tab must still mean that row after the rebuild.
+        at: active && active.el, steered,
+        caret: [input.selectionStart, input.selectionEnd, input.selectionDirection],
+      };
       stepAside();
       const next = combo(native, resume);
       if (next && given.length) next.closest("[rst-combo]").rstExtras(given);
@@ -974,6 +987,12 @@
           lead.hidden = true;
           wrap.removeAttribute("rst-combo-has-lead");
           filter(resume.typed);
+          input.setSelectionRange(...resume.caret);
+        }
+        const was = resume.at && opts.find((o) => o.el === resume.at && !o.li.hidden);
+        if (was) {
+          setActive(was);
+          steered = resume.steered;
         }
       }
     }
