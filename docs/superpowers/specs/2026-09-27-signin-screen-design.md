@@ -1,7 +1,7 @@
 # A shipped sign-in screen, and a browser that remembers how you got in
 
 Status: design approved in conversation 2026-09-27, section by section;
-revised after three rounds of adversarial review (see "Review log"),
+revised after four rounds of adversarial review (see "Review log"),
 with the operator's decisions on the opt-in, provider trust, the
 one-tap's labels and the advisory.
 
@@ -310,15 +310,22 @@ but only `exp` is trusted. Open refuses a wrong `o`, `now ≥ exp`,
 
 **The honest surprise.** The remembered-Keymail one-tap is labelled
 **Continue to Keymail** (Decisions), but `Begin` classifies afresh
-(K/flow.go:146-151): the server may no longer answer, or
-`KeymailServers` may now exclude it (§1.4), and either way the flow
-sends a magic link. So that one-tap posts a hidden `expect=keymail`,
-`Begin` records it in the attempt's `x` when a link goes out instead,
-and the bound Sent page says so in one line — "Keymail didn't answer
-this time, so we emailed you a link." — before the usual text. `expect`
-changes only this browser's own Sent wording: `Begin` never reads it to
-choose a path, and the outcome it describes (link rather than keymail)
-is already visible to the visitor. The reverse surprise needs no
+(K/flow.go:146-151): the server may no longer answer, it may answer
+"not keymail", `KeymailServers` may now exclude it (§1.4), or an
+admission wrapper may refuse the address and answer with
+`AnswerAsSent`, and in every case the visitor is told a link went out.
+So that one-tap posts a hidden `expect=keymail`, `Begin` (and
+`AnswerAsSent`) records it in the attempt's `x` when the answer is a
+link, and the bound Sent page says so in one line — "We sent you a
+sign-in link this time." — before the usual text. The line states the
+outcome, never a cause: the screen cannot tell which of those reasons
+applied, `AnswerAsSent` contacts no server at all, and "Keymail didn't
+answer" would be false for most of them (round 4, finding 28). The
+wording is identical for `Begin` and `AnswerAsSent`, so it reveals
+nothing an admission wrapper hides. `expect` changes only this
+browser's own Sent wording: `Begin` never reads it to choose a path,
+and the outcome it describes (link rather than keymail) is already
+visible to the visitor. The reverse surprise needs no
 wording: a remembered magic-link visitor whose address now classifies
 as keymail lands on the Continue page, which already says "Taking you
 to Keymail". With `SigninScreen` off, `expect` is ignored.
@@ -704,8 +711,8 @@ Every state has one `<h1>` and a matching title from `signin-title`:
     says so (§1.3 "The honest surprise"); when a link was promised and
     Keymail answers, the Continue page says where it is going.
   **Use a different email** posts to `ForgetPath`.
-- **Sent.** "Check your email"; if `SentInstead`, first "Keymail didn't
-  answer this time, so we emailed you a link."; then "We sent a link to
+- **Sent.** "Check your email"; if `SentInstead`, first "We sent you a
+  sign-in link this time." (the outcome, not a cause, §1.3); then "We sent a link to
   ‹SentTo›" if bound, else "We sent a link to your inbox"; "the link
   works once and expires"; **Use a different email** (posts to
   `ForgetPath`).
@@ -846,12 +853,19 @@ pre-check that would address them is out of scope.
   for another origin, expired (payload `exp`, with the cookie still
   sent), `iat` in the future, over its cap, unknown version prefix,
   unknown field.
-- **Screen off is today:** with `SigninScreen` off (and `Remember` nil,
-  true and false alike), `Begin`'s every answer — keymail 303 to the
-  authorize URL, `?sent=1`, each error — and `Callback`'s and `admit`'s
-  responses are byte for byte today's, with no `Set-Cookie` beyond
-  today's pending and session cookies; passkey discovery with the jar
-  wired sets no cookie beyond the session's.
+- **Screen off is today:** with `SigninScreen` off and `KeymailServers`
+  unset (and `Remember` nil, true and false alike), `Begin`'s every
+  answer — keymail 303 to the authorize URL, `?sent=1`, each error —
+  and `Callback`'s and `admit`'s responses are byte for byte today's,
+  with no `Set-Cookie` beyond the cookies today's flow writes on that
+  path: the pending cookie, the session cookie, and on a path a
+  `SecondFactor` hook holds, the second-factor cookie
+  (`__Host-rastrillo_secondfactor`, secondfactor/secondfactor.go:
+  196-205). Passkey discovery with the jar wired sets no cookie beyond
+  the session's on the completed path and the second-factor cookie on
+  the held path (`Gate.Hold`, passkey/passkey.go:434-450).
+  `KeymailServers` is excluded because it is a deliberate change that
+  applies in both modes (§1.4).
 - **Continuation:** screen on: 303 to `?continue=<id>`; forged `?continue=https://evil`
   and a wrong id yield Ask/Expired; a missing or different pending
   cookie yields Expired; replay after expiry yields Expired; a URL
@@ -892,7 +906,9 @@ pre-check that would address them is out of scope.
 - **Honest surprise:** a remembered-Keymail one-tap whose address now
   classifies as not keymail (the server stops answering; or an
   allowlist that excludes it) gets a link and a Sent page with the
-  "Keymail didn't answer" line; the same address typed into Ask, with no
+  "We sent you a sign-in link this time" line, and an admission wrapper
+  refusing the same one-tap with `AnswerAsSent` gives the identical
+  line; the same address typed into Ask, with no
   `expect`, gets the ordinary Sent page; `expect` never changes which
   path `Begin` takes.
 - **Remembered and the attempt's end** (screen on): written on keymail
@@ -1014,7 +1030,7 @@ below, all fixed in this revision. No Blockers, so no round 3.
 ### Round 3 (Astra, 2026-09-27) — not ready; no Blockers, 1 Important, 2 Minor
 
 Re-verdict: 3, 5, 12, 13 and 18–24 resolved; 15 and 17 partly resolved,
-their remaining gap being finding 26. All fixed below; no round 4.
+their remaining gap being finding 26. All fixed below.
 
 | # | Finding | Resolution |
 |---|---|---|
@@ -1039,3 +1055,13 @@ Operator decisions after round 3:
   wording (§1.3, §2, §5).
 - **The runtime advisory** in place of a doctor check is accepted
   (Decisions).
+
+### Round 4 (Astra, 2026-09-27) — ready for an implementation plan; 2 Minor
+
+Re-verdict: 25, 26 and 27 resolved. Two Minor corrections, both applied
+here.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 28 | Minor: `expect=keymail` cannot establish why Keymail was not used; "Keymail didn't answer" is false for an allowlist refusal, a negative classification, `force=1`, and `AnswerAsSent` (which contacts nothing) | The Sent line states the outcome only — "We sent you a sign-in link this time." — identical for `Begin` and `AnswerAsSent` (§1.3, §2, §5) |
+| 29 | Minor: "Screen off is today" allowed only pending and session cookies, but today's `admit` and discovery can hold for a second factor and write `__Host-rastrillo_secondfactor` | The test compares against the cookies today's flow writes on each path, held paths included, and qualifies unchanged behaviour as "with `KeymailServers` unset" (§5) |
