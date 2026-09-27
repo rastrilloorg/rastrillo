@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
@@ -134,6 +135,17 @@ func convergedPage(t *testing.T) http.Handler {
 		`<optgroup label="Support"><option value="asi">Assistance</option><option value="bil">Billing</option></optgroup>` +
 		`</select>`)
 
+	// A select the page replaces outright, and one whose options it
+	// rebuilds, each in a host of its own.
+	body.WriteString(`<label rst-field-label for="colour">Colour</label><div id="colour-host">` +
+		`<select rst-input id="colour" name="colour" data-rst-select>` +
+		`<option value="red">Red</option><option value="green">Green</option><option value="blue">Blue</option>` +
+		`</select></div>`)
+	body.WriteString(`<label rst-field-label for="flavour">Flavour</label><div id="flavour-host">` +
+		`<select rst-input id="flavour" name="flavour" data-rst-select>` +
+		`<option value="apple">Apple</option><option value="banana">Banana</option><option value="cherry">Cherry</option>` +
+		`</select></div>`)
+
 	body.WriteString(`<button type="submit" id="go">Save</button></form></body></html>`)
 	page := body.String()
 
@@ -167,6 +179,9 @@ func drive(t *testing.T, script string, out any) {
 	defer cancel()
 	var raw string
 	if err := chromedp.Run(ctx,
+		// A page in a background tab gets no focus events from focus(),
+		// so a handler that reacts to focus could not be observed at all.
+		emulation.SetFocusEmulationEnabled(true),
 		chromedp.Navigate(rig.Origin+"/"),
 		chromedp.WaitVisible(`#tz-combo`, chromedp.ByQuery),
 		chromedp.Evaluate(`(async () => JSON.stringify(await (async () => {`+script+`})()))()`, &raw, awaitPromise),
@@ -532,6 +547,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		BorrowedCleared  bool   `json:"borrowedCleared"`
 		AfterRemoval     string `json:"afterRemovalValue"`
 		AfterCancel      string `json:"afterCancelValue"`
+		Requery          string `json:"requeryValue"`
 		RemovedShown     string `json:"removedSelectedShown"`
 		RemovedValue     string `json:"removedSelectedValue"`
 		NoneActive       string `json:"noneActive"`
@@ -547,7 +563,9 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		KeyOrder         string `json:"keyOrder"`
 	}
 	drive(t, `
-		const input = document.querySelector('#size-combo');
+		let input = document.querySelector('#size-combo');
+		// Changing the options rebuilds the box, so the drive re-reads it.
+		const again = async () => { await frame(); input = document.querySelector('#size-combo'); };
 		const select = document.querySelector('#size');
 		const blank = document.querySelector('#size-listbox-0');
 		const frame = () => `+afterFrame+`;
@@ -613,6 +631,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		// the row chosen is still the option submitted.
 		const small = select.querySelector('option[value="s"]');
 		small.remove();
+		await again();
 		input.focus();
 		input.click();
 		await frame();
@@ -620,6 +639,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		medium.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
 		out.afterRemovalValue = select.value;
 		select.insertBefore(small, select.querySelector('option[value="m"]'));
+		await again();
 		select.value = '';
 		select.dispatchEvent(new Event('change', { bubbles: true }));
 
@@ -628,6 +648,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		select.dispatchEvent(new Event('change', { bubbles: true }));
 		const small2 = select.querySelector('option[value="s"]');
 		small2.remove();
+		await again();
 		input.focus();
 		input.click();
 		await frame();
@@ -636,6 +657,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		out.removedSelectedShown = input.value;
 		out.removedSelectedValue = select.value;
 		select.insertBefore(small2, select.querySelector('option[value="m"]'));
+		await again();
 
 		// Nothing selected at all is unanswered: nothing is highlighted, and
 		// a bare Enter answers nothing.
@@ -665,6 +687,24 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		key('Tab');
 		out.afterCancelValue = select.value;
 		key('Escape');
+
+		// And the same words after a cancelled search are a NEW search: it
+		// re-ranks, so Enter takes its best match, not the pick the old one
+		// left highlighted. Large is picked; "a" ranks Small first.
+		select.value = 'l';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
+		input.focus();
+		input.click();
+		await frame();
+		typeSize('a');
+		await frame();
+		key('Escape');
+		typeSize('a');
+		await frame();
+		key('Enter');
+		out.requeryValue = select.value;
+		select.value = '';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
 
 		// A borrowed "please pick one" goes the moment the select stops
 		// objecting, even while the box keeps focus.
@@ -752,6 +792,9 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	if got.NoneActive != "" || got.NoneIndex != -1 {
 		t.Errorf("with nothing selected the list opened on %q and Enter left selectedIndex %d, want nothing highlighted and -1: no selection is unanswered", got.NoneActive, got.NoneIndex)
 	}
+	if got.Requery != "s" {
+		t.Errorf("\"a\" typed again after a cancelled \"a\" and Enter picked %q, want s (Small, its best match): the cancelled search's query survived, so it did not re-rank", got.Requery)
+	}
 	if got.AfterCancel != "" {
 		t.Errorf("a search typed, arrowed, cancelled and typed again committed %q on leaving, want nothing: the cancelled search's steering survived", got.AfterCancel)
 	}
@@ -760,5 +803,558 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 	}
 	if got.ScreenOrder == "" || got.ScreenOrder != got.KeyOrder || !strings.HasSuffix(got.ScreenOrder, "|Other") {
 		t.Errorf("a grouped search shows %q but the keys walk %q: the matches must sit above the page's extra row, in the keys' order", got.ScreenOrder, got.KeyOrder)
+	}
+}
+
+// A page may replace a whole <select> (a question flow swapping its
+// answer control). The box that spoke for the old one steps aside and the
+// new one is enhanced afresh: before, Tito Go's box kept driving the
+// detached select, showing "Green" while the form posted "Blue".
+func TestSelectStepsAsideWhenReplaced(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		Boxes        int    `json:"boxes"`
+		Shown        string `json:"shown"`
+		LabelFor     string `json:"labelFor"`
+		PostedNow    string `json:"postedNow"`
+		Picked       string `json:"picked"`
+		PostedPick   string `json:"postedPick"`
+		SameBoxes    int    `json:"sameTaskBoxes"`
+		SameShown    string `json:"sameTaskShown"`
+		SameErrors   int    `json:"sameTaskErrors"`
+		BothLabelled bool   `json:"bothLabelled"`
+		CloneBoxes   int    `json:"cloneBoxes"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const form = document.querySelector('form');
+		const posted = () => new FormData(form).get('colour');
+		// Pick Green through the box, then the page swaps the select for
+		// one that holds Blue.
+		let input = document.querySelector('#colour-combo');
+		input.focus();
+		input.value = 'green';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		input.blur();
+		const fresh = document.createElement('select');
+		fresh.id = 'colour';
+		fresh.name = 'colour';
+		fresh.setAttribute('rst-input', '');
+		fresh.setAttribute('data-rst-select', '');
+		fresh.innerHTML = '<option value="red">Red</option><option value="green">Green</option><option value="blue" selected>Blue</option>';
+		document.querySelector('#colour').replaceWith(fresh);
+		await frame();
+		const out = {};
+		out.boxes = document.querySelectorAll('#colour-host [rst-combo]').length;
+		input = document.querySelector('#colour-combo');
+		out.shown = input ? input.value : '';
+		out.labelFor = document.querySelector('label[for="colour-combo"]') ? 'colour-combo' : '';
+		out.postedNow = posted();
+		input.focus();
+		input.value = 'red';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		out.picked = input.value;
+		out.postedPick = posted();
+		// Two selects replaced in one task: each new box is named by its label.
+		const swapIn = (id, opts) => {
+			const n = document.createElement('select');
+			n.id = id;
+			n.name = id;
+			n.setAttribute('data-rst-select', '');
+			n.innerHTML = opts;
+			document.querySelector('#' + id).replaceWith(n);
+		};
+		swapIn('colour', '<option value="red">Red</option><option value="blue">Blue</option>');
+		swapIn('flavour', '<option value="fig">Fig</option><option value="lime">Lime</option>');
+		await frame();
+		out.bothLabelled = !!document.querySelector('label[for="colour-combo"]') && !!document.querySelector('label[for="flavour-combo"]');
+		// Changed and replaced in the same task: a handover, and no error.
+		let errors = 0;
+		window.addEventListener('error', () => errors++);
+		const again = document.createElement('select');
+		again.id = 'colour';
+		again.name = 'colour';
+		again.setAttribute('data-rst-select', '');
+		again.innerHTML = '<option value="teal" selected>Teal</option><option value="navy">Navy</option>';
+		const current = document.querySelector('#colour');
+		current.innerHTML = '';
+		current.replaceWith(again);
+		await frame();
+		out.sameTaskBoxes = document.querySelectorAll('#colour-host [rst-combo]').length;
+		out.sameTaskShown = (document.querySelector('#colour-combo') || {}).value || '';
+		// Replaced with a clone of itself, which copies the enhancement
+		// marker: the clone is still enhanced.
+		const orig = document.querySelector('#colour');
+		orig.replaceWith(orig.cloneNode(true));
+		await frame();
+		out.cloneBoxes = document.querySelectorAll('#colour-host [rst-combo]').length;
+		// Options changed and the whole host cleared in one task: nothing
+		// is left to enhance, and nothing throws.
+		const last = document.querySelector('#colour');
+		last.append(new Option('Grey', 'grey'));
+		document.querySelector('#colour-host').innerHTML = '';
+		await frame();
+		out.sameTaskErrors = errors;
+		return out;
+	`, &got)
+	if got.Boxes != 1 {
+		t.Errorf("after the select was replaced its host holds %d boxes, want 1: the old box did not step aside, or the new select was not enhanced", got.Boxes)
+	}
+	if got.Shown != "Blue" || got.PostedNow != "blue" {
+		t.Errorf("the box shows %q while the form posts %q, want Blue and blue: the box speaks for a select no longer in the form", got.Shown, got.PostedNow)
+	}
+	if got.LabelFor != "colour-combo" {
+		t.Error("the label does not name the new box")
+	}
+	if got.CloneBoxes != 1 {
+		t.Errorf("a select replaced with its own clone left %d boxes, want 1: the clone's copied marker was trusted", got.CloneBoxes)
+	}
+	if !got.BothLabelled {
+		t.Error("two selects replaced in one task: a new box is left without its label, which an old box handed back to the hidden select")
+	}
+	if got.SameBoxes != 1 || got.SameShown != "Teal" || got.SameErrors != 0 {
+		t.Errorf("options changed and select replaced in one task: %d boxes showing %q, %d errors; want 1 box showing Teal and none", got.SameBoxes, got.SameShown, got.SameErrors)
+	}
+	if got.Picked != "Red" || got.PostedPick != "red" {
+		t.Errorf("picking Red on the new box shows %q and posts %q, want Red and red", got.Picked, got.PostedPick)
+	}
+}
+
+// A page may rebuild a select's options while somebody is searching it.
+// The box is rebuilt from what the select now holds — every row an option
+// it really has — and the person keeps their focus and their words.
+func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		Boxes         int    `json:"boxes"`
+		Focused       bool   `json:"focused"`
+		Typed         string `json:"typed"`
+		Rows          string `json:"rows"`
+		Picked        string `json:"picked"`
+		BoxesAfterTwo int    `json:"boxesAfterTwo"`
+		StillHidden   bool   `json:"stillHidden"`
+		LiveListeners int    `json:"liveListeners"`
+		Recorded      int    `json:"recorded"`
+		ExtraKept     bool   `json:"extraKept"`
+		RebuildInputs int    `json:"rebuildInputs"`
+		StayedClosed  bool   `json:"stayedClosed"`
+		KeptFocus     bool   `json:"keptFocus"`
+		Caret         int    `json:"caret"`
+		StillOn       string `json:"stillOn"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const select = document.querySelector('#flavour');
+		// Record every listener a box puts on the select from here on, so a
+		// retired box's can be counted.
+		const listeners = [];
+		const add = select.addEventListener;
+		select.addEventListener = function (type, fn, opt) {
+			listeners.push({ type, signal: opt && opt.signal });
+			return add.call(this, type, fn, opt);
+		};
+		let input = document.querySelector('#flavour-combo');
+		input.focus();
+		input.value = 'bl';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		// The caret mid-word, as when somebody goes back to correct a letter.
+		input.setSelectionRange(1, 1);
+		input.closest('[rst-combo]').rstExtras([{ label: 'Other', run: () => {} }]);
+		// A rebuild restores the search quietly: an input event would let a
+		// page that refreshes options on input loop forever.
+		let inputs = 0;
+		document.addEventListener('input', () => inputs++, true);
+		select.innerHTML = '<option value="blueberry">Blueberry</option><option value="blackberry">Blackberry</option><option value="kiwi">Kiwi</option>';
+		await frame();
+		const out = {};
+		out.boxes = document.querySelectorAll('#flavour-host [rst-combo]').length;
+		input = document.querySelector('#flavour-combo');
+		out.focused = document.activeElement === input;
+		out.typed = input.value;
+		out.caret = input.selectionStart;
+		out.rows = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
+		out.extraKept = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]')].some((li) => li.textContent === 'Other');
+		out.rebuildInputs = inputs;
+		input.closest('[rst-combo]').rstExtras([]);
+		// Arrow to the second row, then the page changes the options again:
+		// the row somebody is on is still the one Enter takes.
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+		select.append(new Option('Bilberry', 'bilberry'));
+		await frame();
+		input = document.querySelector('#flavour-combo');
+		const on = input.getAttribute('aria-activedescendant');
+		out.stillOn = on ? document.getElementById(on).textContent : '';
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		out.picked = select.value;
+		// A second change: only the current box may answer it. An old box
+		// still listening would step aside again and hand the select back
+		// half-restored, visible and unenhanced.
+		// Enter closed the list and focus stayed: a rebuild now must not
+		// reopen it (and take the next Enter from the form).
+		select.append(new Option('Lime', 'lime'));
+		await frame();
+		out.stayedClosed = document.querySelector('#flavour-combo').getAttribute('aria-expanded') === 'false';
+		out.keptFocus = document.activeElement === document.querySelector('#flavour-combo');
+		out.boxesAfterTwo = document.querySelectorAll('#flavour-host [rst-combo]').length;
+		out.stillHidden = select.classList.contains('rst-sr-only') && select.dataset.rstEnhanced === 'true';
+		out.liveListeners = listeners.filter((l) => !(l.signal && l.signal.aborted)).length;
+		out.recorded = listeners.length;
+		return out;
+	`, &got)
+	if got.Boxes != 1 {
+		t.Errorf("after the options were rebuilt the host holds %d boxes, want 1", got.Boxes)
+	}
+	if got.Recorded < 9 || got.LiveListeners != 3 {
+		t.Errorf("after three rebuilds %d of the %d listeners boxes put on the select are live, want only the current box's 3: a retired box still answers the select's events", got.LiveListeners, got.Recorded)
+	}
+	if got.Caret != 1 {
+		t.Errorf("after the rebuild the caret is at %d, want 1: it jumped to the end of the words being corrected", got.Caret)
+	}
+	if got.StillOn != "Blackberry" {
+		t.Errorf("after arrowing to Blackberry and a rebuild, %q is highlighted, want Blackberry: Enter would take another row", got.StillOn)
+	}
+	if got.BoxesAfterTwo != 1 || !got.StillHidden {
+		t.Errorf("after a second change the host holds %d boxes and the select is enhanced-and-hidden %v, want 1 and true: an earlier box was still listening", got.BoxesAfterTwo, got.StillHidden)
+	}
+	if !got.Focused || got.Typed != "bl" {
+		t.Errorf("after the rebuild the box has focus %v and reads %q, want true and \"bl\": the person lost their place", got.Focused, got.Typed)
+	}
+	if got.RebuildInputs != 0 {
+		t.Errorf("rebuilding fired %d input events, want 0: a page refreshing options on input would loop", got.RebuildInputs)
+	}
+	if !got.StayedClosed || !got.KeptFocus {
+		t.Errorf("a rebuild after a pick left the list closed=%v and focus kept=%v, want both: a closed list stays closed", got.StayedClosed, got.KeptFocus)
+	}
+	if !got.ExtraKept {
+		t.Error("the page's extra row was lost when the options were rebuilt")
+	}
+	if got.Rows != "Blueberry|Blackberry|Other" {
+		t.Errorf("after the rebuild \"bl\" shows %q, want Blueberry|Blackberry|Other: the rows are not the options the select now holds (and the page's extra)", got.Rows)
+	}
+	if got.Picked != "blackberry" {
+		t.Errorf("Enter after the rebuilds picked %q, want blackberry", got.Picked)
+	}
+}
+
+// Near the bottom of the viewport the list opens UPWARD and fits above
+// the box; near the top it opens below. It is re-placed when the viewport
+// changes while open (a phone's keyboard shrinking the visual viewport,
+// or a resize), and the keyboard order is the same either way.
+func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		BottomUp         bool    `json:"bottomUp"`
+		BottomListTop    float64 `json:"bottomListTop"`
+		BottomListEnd    float64 `json:"bottomListEnd"`
+		BottomBoxTop     float64 `json:"bottomBoxTop"`
+		TopUp            bool    `json:"topUp"`
+		TopListTop       float64 `json:"topListTop"`
+		TopBoxEnd        float64 `json:"topBoxEnd"`
+		MovedUp          bool    `json:"movedUp"`
+		ScrolledDown     bool    `json:"scrolledDown"`
+		PanelUp          bool    `json:"panelUp"`
+		NarrowUp         bool    `json:"narrowUp"`
+		BroadUp          bool    `json:"broadUp"`
+		DroppedOnRemoval int     `json:"droppedOnRemoval"`
+		FirstDownUp      string  `json:"firstDownUp"`
+		FirstDownBelow   string  `json:"firstDownBelow"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const input = document.querySelector('#tz-combo');
+		const wrap = input.closest('[rst-combo]');
+		const list = document.querySelector('#tz-listbox');
+		const key = (k) => input.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+		const pin = (edge) => {
+			wrap.style.position = 'fixed';
+			wrap.style.left = '10px';
+			wrap.style.width = '300px';
+			wrap.style.top = edge === 'top' ? '10px' : '';
+			wrap.style.bottom = edge === 'bottom' ? '10px' : '';
+		};
+		const out = {};
+		pin('bottom');
+		input.focus();
+		input.click();
+		await frame();
+		await frame();
+		out.bottomUp = wrap.hasAttribute('rst-combo-up');
+		out.bottomListTop = list.getBoundingClientRect().top;
+		out.bottomListEnd = list.getBoundingClientRect().bottom;
+		out.bottomBoxTop = input.getBoundingClientRect().top;
+		key('ArrowDown');
+		out.firstDownUp = input.getAttribute('aria-activedescendant') || '';
+		key('Escape');
+		input.blur();
+		pin('top');
+		input.focus();
+		input.click();
+		await frame();
+		await frame();
+		out.topUp = wrap.hasAttribute('rst-combo-up');
+		out.topListTop = list.getBoundingClientRect().top;
+		out.topBoxEnd = input.getBoundingClientRect().bottom;
+		key('ArrowDown');
+		out.firstDownBelow = input.getAttribute('aria-activedescendant') || '';
+		// Moved to the top while open: a scroll in any panel re-places it.
+		key('Escape');
+		pin('bottom');
+		input.blur();
+		input.focus();
+		input.click();
+		await frame();
+		await frame();
+		pin('top');
+		document.querySelector('form').dispatchEvent(new Event('scroll'));
+		await frame();
+		await frame();
+		out.scrolledDown = !wrap.hasAttribute('rst-combo-up');
+		// Moved to the bottom while open: a resize re-places it.
+		pin('bottom');
+		window.dispatchEvent(new Event('resize'));
+		await frame();
+		await frame();
+		out.movedUp = wrap.hasAttribute('rst-combo-up');
+		key('Escape');
+		// Opened low with a search that fits below, then broadened: the
+		// list needs the room above now.
+		input.blur();
+		wrap.style.cssText = 'position:fixed;left:10px;width:300px;top:' + (window.innerHeight - 130) + 'px';
+		input.focus();
+		input.value = 'Europe/Lond';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		await frame();
+		out.narrowUp = wrap.hasAttribute('rst-combo-up');
+		input.value = '';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		await frame();
+		out.broadUp = wrap.hasAttribute('rst-combo-up');
+		key('Escape');
+		wrap.removeAttribute('style');
+		// Near the top of a scrolling panel that sits low on the screen:
+		// the room above the box is outside the panel, so it opens down.
+		const panel = document.createElement('div');
+		panel.style.cssText = 'position:fixed;left:10px;width:320px;height:200px;overflow-y:auto;top:' + (window.innerHeight - 220) + 'px';
+		wrap.parentNode.insertBefore(panel, wrap);
+		panel.append(wrap, document.querySelector('#tz'));
+		input.focus();
+		input.click();
+		await frame();
+		await frame();
+		out.panelUp = wrap.hasAttribute('rst-combo-up');
+		key('Escape');
+		// And a box removed with its fragment while open lets go of the
+		// page-wide listeners at the next event.
+		let dropped = 0;
+		const rm = window.removeEventListener;
+		window.removeEventListener = function (type, ...a) { if (type === 'resize') dropped++; return rm.call(this, type, ...a); };
+		// Opened without focus (a synthetic click gives none), so removal
+		// fires no blur here, as on a browser that never does.
+		input.blur();
+		input.click();
+		await frame();
+		panel.remove();
+		window.dispatchEvent(new Event('resize'));
+		window.removeEventListener = rm;
+		out.droppedOnRemoval = dropped;
+		return out;
+	`, &got)
+	if !got.BottomUp || got.BottomListTop < 0 || got.BottomListEnd > got.BottomBoxTop+1 {
+		t.Errorf("at the bottom of the viewport the list opened up=%v spanning %.0f..%.0f with the box at %.0f, want upward, above the box and inside the viewport", got.BottomUp, got.BottomListTop, got.BottomListEnd, got.BottomBoxTop)
+	}
+	if got.TopUp || got.TopListTop < got.TopBoxEnd-1 {
+		t.Errorf("at the top of the viewport the list opened up=%v starting at %.0f with the box ending at %.0f, want downward, below the box", got.TopUp, got.TopListTop, got.TopBoxEnd)
+	}
+	if got.NarrowUp || !got.BroadUp {
+		t.Errorf("low on the screen, one match opened up=%v and clearing the search left up=%v, want down then up: a broader search must re-place the list", got.NarrowUp, got.BroadUp)
+	}
+	if got.PanelUp {
+		t.Error("near the top of a low scrolling panel the list opened upward, into the part of the panel that is clipped")
+	}
+	if got.DroppedOnRemoval == 0 {
+		t.Error("a box removed with its fragment while open kept its page-wide resize listener")
+	}
+	if !got.ScrolledDown {
+		t.Error("moved to the top while open and a panel scrolled, the list still opened upward: a scrolling ancestor must re-place it")
+	}
+	if !got.MovedUp {
+		t.Error("moved to the bottom while open and resized, the list was not re-placed upward")
+	}
+	if got.FirstDownUp == "" || got.FirstDownUp != got.FirstDownBelow {
+		t.Errorf("ArrowDown highlighted %q opening up and %q opening down, want the same row: only placement flips", got.FirstDownUp, got.FirstDownBelow)
+	}
+}
+
+// Typing never rebuilds a box (its own writes must not look like the page
+// changing the options), and reads layout at most once a frame: on a long
+// form with several boxes, forced reflow per keystroke was what made
+// typing slow on a phone.
+func TestSelectTypingIsCheap(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		Rebuilds int   `json:"rebuilds"`
+		PerFrame []int `json:"perFrame"`
+		Searched bool  `json:"searched"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const out = { rebuilds: 0, perFrame: [] };
+		const hosts = new MutationObserver((m) => {
+			for (const r of m) for (const n of r.addedNodes) if (n.nodeType === 1 && n.hasAttribute('rst-combo')) out.rebuilds++;
+		});
+		hosts.observe(document.body, { childList: true, subtree: true });
+		let reads = 0;
+		const count = (proto, name) => {
+			const was = proto[name];
+			proto[name] = function (...a) { reads++; return was.apply(this, a); };
+		};
+		count(Element.prototype, 'getBoundingClientRect');
+		count(Element.prototype, 'scrollIntoView');
+		const st = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+		Object.defineProperty(Element.prototype, 'scrollTop', { configurable: true, get() { return st.get.call(this); }, set(v) { reads++; st.set.call(this, v); } });
+		const input = document.querySelector('#tz-combo');
+		input.focus();
+		input.click();
+		await frame();
+		const type = (v) => { input.value = v; input.dispatchEvent(new Event('input', { bubbles: true })); };
+		for (const [a, b] of [['E', 'Eu'], ['Eur', 'Euro'], ['Europ', 'Europe'], ['Europe/', 'Europe/L']]) {
+			reads = 0;
+			// Two keystrokes inside one frame, as a phone keyboard sends
+			// them: each a new query, each searched (one at once, one in the
+			// frame).
+			type(a);
+			type(b);
+			await frame();
+			out.perFrame.push(reads);
+		}
+		out.searched = document.querySelectorAll('#tz-listbox [rst-combo-option]:not([hidden])').length < 70;
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+		hosts.disconnect();
+		Object.defineProperty(Element.prototype, 'scrollTop', st);
+		return out;
+	`, &got)
+	if got.Rebuilds != 0 {
+		t.Errorf("typing rebuilt a box %d times, want 0: the box's own writes were taken for the page changing its options", got.Rebuilds)
+	}
+	if !got.Searched {
+		t.Fatal("typing did not narrow the list: the layout fence below would prove nothing")
+	}
+	for i, n := range got.PerFrame {
+		if n > 1 {
+			t.Errorf("frame %d of typing read layout %d times, want at most 1", i, n)
+		}
+	}
+}
+
+// A rebuild in the middle of something: typing not yet searched, an Enter
+// whose character has not arrived, a highlighted extra row, a highlighted
+// row the page just disabled, a box whose pick is selected for replacing.
+// Each must come through the rebuild meaning what it meant before it.
+func TestSelectRebuildKeepsWhatIsInFlight(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		FlushKept     string `json:"flushKept"`
+		EnterGuarded  bool   `json:"enterGuarded"`
+		ExtraOn       string `json:"extraOn"`
+		DisabledOn    string `json:"disabledOn"`
+		PickSelection string `json:"pickSelection"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const select = document.querySelector('#flavour');
+		const box = () => document.querySelector('#flavour-combo');
+		const type = (v) => { const i = box(); i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); };
+		const key = (k) => { const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }); box().dispatchEvent(e); return e; };
+		const on = () => { const a = box().getAttribute('aria-activedescendant'); return a ? document.getElementById(a).textContent : ''; };
+		const out = {};
+		select.innerHTML = '<option value="blueberry">Blueberry</option><option value="blackberry">Blackberry</option><option value="kiwi">Kiwi</option>';
+		await frame();
+
+		// "ber", an arrow to its second row, then "berry" in the same frame —
+		// not yet searched — and an options change in the same task. "berry" ties every row, so leaving settles nothing;
+		// the old search's arrowed row must not ride through.
+		box().focus();
+		box().click();
+		await frame();
+		const before = select.value;
+		type('ber');
+		key('ArrowDown');
+		type('berry');
+		select.append(new Option('Bilberry', 'bilberry'));
+		await frame();
+		key('Tab');
+		out.flushKept = select.value === before ? '' : select.value;
+		key('Escape');
+
+		// Enter picks a row; the page's change handler then rebuilds the
+		// options; the Enter's character arrives on the new box and must not
+		// submit the form.
+		select.addEventListener('change', () => select.append(new Option('Fig', 'fig')), { once: true });
+		box().focus();
+		box().click();
+		await frame();
+		type('kiwi');
+		await frame();
+		key('Enter');
+		await Promise.resolve();
+		const kp = new KeyboardEvent('keypress', { key: 'Enter', bubbles: true, cancelable: true });
+		box().dispatchEvent(kp);
+		out.enterGuarded = kp.defaultPrevented;
+		box().dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+
+		// The highlight on one of the page's extra rows survives a rebuild.
+		box().focus();
+		box().click();
+		await frame();
+		box().closest('[rst-combo]').rstExtras([{ label: 'Other', run: () => {} }]);
+		key('End');
+		select.append(new Option('Lime', 'lime'));
+		await frame();
+		out.extraOn = on();
+		box().closest('[rst-combo]').rstExtras([]);
+		key('Escape');
+
+		// A highlighted row the page disables is not restored as the highlight.
+		box().focus();
+		box().click();
+		await frame();
+		type('kiwi');
+		await frame();
+		select.querySelector('option[value="kiwi"]').disabled = true;
+		await frame();
+		out.disabledOn = on();
+		key('Escape');
+		select.querySelector('option[value="kiwi"]').disabled = false;
+		await frame();
+
+		// Focusing an answered box selects its pick, so the first keystroke
+		// replaces it; a rebuild keeps that.
+		box().blur();
+		box().focus();
+		const len = box().value.length;
+		select.append(new Option('Plum', 'plum'));
+		await frame();
+		out.pickSelection = box().selectionStart + '..' + box().selectionEnd + '/' + len;
+		return out;
+	`, &got)
+	if got.FlushKept != "" {
+		t.Errorf("leaving after \"berry\" committed %q: the rebuild restored the arrowed row of a search the typing had already replaced", got.FlushKept)
+	}
+	if !got.EnterGuarded {
+		t.Error("an Enter that picked a row, whose change handler rebuilt the box, went on to submit the form")
+	}
+	if got.ExtraOn != "Other" {
+		t.Errorf("a highlighted extra row came through a rebuild as %q, want Other: Enter would do something else", got.ExtraOn)
+	}
+	if got.DisabledOn == "Kiwi" {
+		t.Error("a row the page disabled was restored as the highlight")
+	}
+	if !strings.HasPrefix(got.PickSelection, "0..") || strings.Split(strings.TrimPrefix(got.PickSelection, "0.."), "/")[0] != strings.Split(got.PickSelection, "/")[1] {
+		t.Errorf("a focused answered box reads selection %s after a rebuild, want its whole pick selected", got.PickSelection)
 	}
 }
