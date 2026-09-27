@@ -341,7 +341,12 @@ func TestSelectContract(t *testing.T) {
 	// room below, with layout read once a frame. Measured 48,035 bytes after
 	// rows moved from the hidden attribute to inline display (titogo
 	// #3145); comments were trimmed to stay inside rather than raise it.
-	if n := len(SelectJS()); n > 47*1024 {
+	//
+	// Then to 48KB (measured 48,433 bytes) by rst:select-scan, the one way
+	// a page that adds content after load gets its selects enhanced (Tito's
+	// modal forms need it). The header was trimmed first; the ranking
+	// comments were not, because they are kept in step with Tito's.
+	if n := len(SelectJS()); n > 48*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {

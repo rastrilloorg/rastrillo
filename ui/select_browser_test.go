@@ -1386,3 +1386,61 @@ func TestSelectRebuildKeepsWhatIsInFlight(t *testing.T) {
 		t.Errorf("a focused answered box reads selection %s after a rebuild, want its whole pick selected", got.PickSelection)
 	}
 }
+
+// A select added after load stays native until the page asks with
+// rst:select-scan. Asked, the new select is enhanced once; asked again,
+// nothing is enhanced twice; and a select outside the root it names is
+// left alone.
+func TestSelectScanEvent(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		Unasked      int `json:"unasked"`
+		Asked        int `json:"asked"`
+		AskedTwice   int `json:"askedTwice"`
+		OutsideRoot  int `json:"outsideRoot"`
+		WholeDoc     int `json:"wholeDoc"`
+		PageBoxes    int `json:"pageBoxes"`
+		PageBoxesNow int `json:"pageBoxesNow"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const boxes = (el) => el.querySelectorAll('[rst-combo]').length;
+		const add = () => {
+			const host = document.createElement('div');
+			host.innerHTML = '<select data-rst-select name="late"><option value="a">A</option><option value="b">B</option></select>';
+			document.querySelector('form').append(host);
+			return host;
+		};
+		const out = { pageBoxes: boxes(document) };
+		const one = add();
+		await frame();
+		out.unasked = boxes(one);
+		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: one } }));
+		out.asked = boxes(one);
+		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: one } }));
+		out.askedTwice = boxes(one);
+		const other = add();
+		const third = add();
+		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: third } }));
+		out.outsideRoot = boxes(other);
+		document.dispatchEvent(new CustomEvent('rst:select-scan'));
+		out.wholeDoc = boxes(other);
+		out.pageBoxesNow = boxes(document);
+		return out;
+	`, &got)
+	if got.Unasked != 0 {
+		t.Errorf("a select added after load was enhanced %d times without being asked, want 0: added content stays native by default", got.Unasked)
+	}
+	if got.Asked != 1 || got.AskedTwice != 1 {
+		t.Errorf("asked once the new select has %d boxes, asked twice %d, want 1 and 1", got.Asked, got.AskedTwice)
+	}
+	if got.OutsideRoot != 0 {
+		t.Errorf("a select outside the named root was enhanced (%d boxes), want 0", got.OutsideRoot)
+	}
+	if got.WholeDoc != 1 {
+		t.Errorf("a scan with no root left the other added select with %d boxes, want 1", got.WholeDoc)
+	}
+	if got.PageBoxesNow != got.PageBoxes+3 {
+		t.Errorf("the page went from %d boxes to %d after three added selects, want %d: something was enhanced twice", got.PageBoxes, got.PageBoxesNow, got.PageBoxes+3)
+	}
+}
