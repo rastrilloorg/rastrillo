@@ -1,18 +1,13 @@
-/* select.js — the searchable-select enhancement. A sibling of
-   rastrillo.js, following the same rules: first-party, dependency-free,
-   and inert by default. Only a <select> that opts in with
-   data-rst-select gets behaviour, and what it enhances works with
-   scripts disabled, because the thing it enhances is a real <select>
-   that never leaves the page.
+/* select.js — the searchable-select enhancement, rastrillo.js's sibling
+   on the same rules: first-party, dependency-free, inert by default. Only
+   a <select> opting in with data-rst-select is enhanced, and it stays a
+   real <select> in the page, so everything works with scripts off.
 
-   Two halves in one file. The PURE half — folding and ranking a query,
-   what leaving the box commits, which blanks are prompts — has no DOM
-   and no state, and is exported to Node behind a guard a browser never
-   takes, so ui/select_node.mjs can pin the ranking without a browser
-   (datetime.js's arrangement). Everything that touches a page stays
-   behind the `document` guard. App-owned from the moment it is
-   scaffolded. Converged with Tito Go's searchselect, whose country
-   picker is where most of the rules below were learned.
+   The PURE half (ranking a query, what leaving the box commits, which
+   blanks are prompts) has no DOM or state and is exported to Node behind
+   a guard, so ui/select_node.mjs pins it without a browser. The rest sits
+   behind the `document` guard. App-owned once scaffolded. Converged with
+   Tito Go's searchselect, whose country picker taught most of it.
 
    Vocabulary, on the <select>:
      data-rst-select                 mirror a filterable ARIA 1.2 combobox
@@ -40,10 +35,11 @@
    across groups and hides their headings, and clearing it puts every
    row back in its own group.
 
-   ui/partials/field-select.html emits the select's strings from the
-   framework's base catalog (rastrillo.ui.select_*), on attributes,
-   because this markup is built in the browser where the catalog is out
-   of reach. */
+   Content added after load is enhanced when the page dispatches
+   rst:select-scan on document ({detail: {root}} to look only there).
+
+   field-select.html emits the strings from the base catalog
+   (rastrillo.ui.select_*) on attributes: the browser has no catalog. */
 (function () {
   "use strict";
 
@@ -969,7 +965,7 @@
       // handover, not a rebuild (this observer runs first).
       if (!native.isConnected || native.parentNode !== wrap.parentNode) {
         stepAside();
-        queueMicrotask(scan);
+        queueMicrotask(() => scan());
         return;
       }
       // Typing not yet searched is searched first, or the words and the
@@ -1000,7 +996,7 @@
       // After every observer has run: two selects replaced in one task
       // each retire their box first, so no new box is built while an old
       // one still holds its label.
-      queueMicrotask(scan);
+      queueMicrotask(() => scan());
     });
     if (wrap.parentNode) swapped.observe(wrap.parentNode, { childList: true });
     native.addEventListener("focus", () => {
@@ -1045,8 +1041,13 @@
 
   // Idempotent, so re-scanning is safe. A select arriving later inside a
   // polled fragment stays native — correct, not enhanced.
-  function scan() {
-    document.querySelectorAll("select[data-rst-select]").forEach((s) => {
+  // Enhances every data-rst-select under root not already enhanced (the
+  // WeakSet in combo), so calling it again is harmless.
+  function scan(root) {
+    const within = root && root.querySelectorAll ? root : document;
+    const found = [...within.querySelectorAll("select[data-rst-select]")];
+    if (within.matches && within.matches("select[data-rst-select]")) found.push(within);
+    found.forEach((s) => {
       // data-rst-select="false" is the markup-side opt-out; to CSS the
       // attribute is simply present, so it is checked here.
       if (s.dataset.rstSelect !== "false" && !s.multiple) combo(s);
@@ -1054,8 +1055,14 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scan);
+    document.addEventListener("DOMContentLoaded", () => scan());
   } else {
     scan();
   }
+  // Added content (a modal fetched in, a polled fragment) stays native
+  // until the page asks; running this file again instead would
+  // double-enhance everything already there.
+  // A microtask later, so a box the page replaced in the same task has
+  // retired first and handed back its label.
+  document.addEventListener("rst:select-scan", (e) => queueMicrotask(() => scan(e.detail && e.detail.root)));
 })();
