@@ -347,7 +347,7 @@ func TestSelectContract(t *testing.T) {
 	// modal forms need it). The header was trimmed first; the ranking
 	// comments were not, because they are kept in step with Tito's.
 	//
-	// Then to 50KB (measured 51,090 bytes) by placement in frames: a band a
+	// Then to 50KB (measured 51,096 bytes) by placement in frames: a band a
 	// host tells the frame (rst:select-viewport), floors under sticky bars
 	// (data-rst-select-floor), the list's padding and borders counted
 	// against the room, and the gap re-read — Tito Go #3146's rule, which
