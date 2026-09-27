@@ -1179,3 +1179,111 @@ func TestSelectTypingIsCheap(t *testing.T) {
 		}
 	}
 }
+
+// A rebuild in the middle of something: typing not yet searched, an Enter
+// whose character has not arrived, a highlighted extra row, a highlighted
+// row the page just disabled, a box whose pick is selected for replacing.
+// Each must come through the rebuild meaning what it meant before it.
+func TestSelectRebuildKeepsWhatIsInFlight(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		FlushKept     string `json:"flushKept"`
+		EnterGuarded  bool   `json:"enterGuarded"`
+		ExtraOn       string `json:"extraOn"`
+		DisabledOn    string `json:"disabledOn"`
+		PickSelection string `json:"pickSelection"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const select = document.querySelector('#flavour');
+		const box = () => document.querySelector('#flavour-combo');
+		const type = (v) => { const i = box(); i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); };
+		const key = (k) => { const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }); box().dispatchEvent(e); return e; };
+		const on = () => { const a = box().getAttribute('aria-activedescendant'); return a ? document.getElementById(a).textContent : ''; };
+		const out = {};
+		select.innerHTML = '<option value="blueberry">Blueberry</option><option value="blackberry">Blackberry</option><option value="kiwi">Kiwi</option>';
+		await frame();
+
+		// "ber", an arrow to its second row, then "berry" in the same frame —
+		// not yet searched — and an options change in the same task. "berry" ties every row, so leaving settles nothing;
+		// the old search's arrowed row must not ride through.
+		box().focus();
+		box().click();
+		await frame();
+		const before = select.value;
+		type('ber');
+		key('ArrowDown');
+		type('berry');
+		select.append(new Option('Bilberry', 'bilberry'));
+		await frame();
+		key('Tab');
+		out.flushKept = select.value === before ? '' : select.value;
+		key('Escape');
+
+		// Enter picks a row; the page's change handler then rebuilds the
+		// options; the Enter's character arrives on the new box and must not
+		// submit the form.
+		select.addEventListener('change', () => select.append(new Option('Fig', 'fig')), { once: true });
+		box().focus();
+		box().click();
+		await frame();
+		type('kiwi');
+		await frame();
+		key('Enter');
+		await Promise.resolve();
+		const kp = new KeyboardEvent('keypress', { key: 'Enter', bubbles: true, cancelable: true });
+		box().dispatchEvent(kp);
+		out.enterGuarded = kp.defaultPrevented;
+		box().dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+
+		// The highlight on one of the page's extra rows survives a rebuild.
+		box().focus();
+		box().click();
+		await frame();
+		box().closest('[rst-combo]').rstExtras([{ label: 'Other', run: () => {} }]);
+		key('End');
+		select.append(new Option('Lime', 'lime'));
+		await frame();
+		out.extraOn = on();
+		box().closest('[rst-combo]').rstExtras([]);
+		key('Escape');
+
+		// A highlighted row the page disables is not restored as the highlight.
+		box().focus();
+		box().click();
+		await frame();
+		type('kiwi');
+		await frame();
+		select.querySelector('option[value="kiwi"]').disabled = true;
+		await frame();
+		out.disabledOn = on();
+		key('Escape');
+		select.querySelector('option[value="kiwi"]').disabled = false;
+		await frame();
+
+		// Focusing an answered box selects its pick, so the first keystroke
+		// replaces it; a rebuild keeps that.
+		box().blur();
+		box().focus();
+		const len = box().value.length;
+		select.append(new Option('Plum', 'plum'));
+		await frame();
+		out.pickSelection = box().selectionStart + '..' + box().selectionEnd + '/' + len;
+		return out;
+	`, &got)
+	if got.FlushKept != "" {
+		t.Errorf("leaving after \"berry\" committed %q: the rebuild restored the arrowed row of a search the typing had already replaced", got.FlushKept)
+	}
+	if !got.EnterGuarded {
+		t.Error("an Enter that picked a row, whose change handler rebuilt the box, went on to submit the form")
+	}
+	if got.ExtraOn != "Other" {
+		t.Errorf("a highlighted extra row came through a rebuild as %q, want Other: Enter would do something else", got.ExtraOn)
+	}
+	if got.DisabledOn == "Kiwi" {
+		t.Error("a row the page disabled was restored as the highlight")
+	}
+	if !strings.HasPrefix(got.PickSelection, "0..") || strings.Split(strings.TrimPrefix(got.PickSelection, "0.."), "/")[0] != strings.Split(got.PickSelection, "/")[1] {
+		t.Errorf("a focused answered box reads selection %s after a rebuild, want its whole pick selected", got.PickSelection)
+	}
+}

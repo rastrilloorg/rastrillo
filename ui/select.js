@@ -935,16 +935,20 @@
         queueMicrotask(scan);
         return;
       }
+      // Typing not yet searched is searched first, or the words and the
+      // highlight below would describe two different searches.
+      flush();
       const resume = {
         focused: document.activeElement === input, open, typed: showingPick ? null : input.value,
-        // The row somebody is on, by its option, and whether they arrowed
-        // there: Enter and Tab must still mean that row after the rebuild.
-        at: active && active.el, steered,
+        // The row somebody is on — by its option, or by its place among the
+        // page's extras — and whether they arrowed there: Enter and Tab must
+        // still mean that row after the rebuild.
+        at: active && active.el, extra: active && active.run ? opts.filter((o) => o.run).indexOf(active) : -1,
+        steered, given, tookEnter,
         caret: [input.selectionStart, input.selectionEnd, input.selectionDirection],
       };
       stepAside();
-      const next = combo(native, resume);
-      if (next && given.length) next.closest("[rst-combo]").rstExtras(given);
+      combo(native, resume);
     });
     options.observe(native, { childList: true, subtree: true, characterData: true, attributes: true,
       attributeFilter: ["value", "label", "disabled", "data-rst-prompt"] });
@@ -979,6 +983,8 @@
       resuming = true;
       if (resume.focused) input.focus();
       resuming = false;
+      tookEnter = resume.tookEnter;
+      if (resume.given.length) wrap.rstExtras(resume.given);
       if (resume.open) {
         openList(resume.typed === null);
         if (resume.typed !== null) {
@@ -987,14 +993,15 @@
           lead.hidden = true;
           wrap.removeAttribute("rst-combo-has-lead");
           filter(resume.typed);
-          input.setSelectionRange(...resume.caret);
         }
-        const was = resume.at && opts.find((o) => o.el === resume.at && !o.li.hidden);
+        const was = resume.extra >= 0 ? opts.filter((o) => o.run)[resume.extra]
+          : resume.at && opts.find((o) => o.el === resume.at && !o.li.hidden && !o.disabled);
         if (was) {
           setActive(was);
           steered = resume.steered;
         }
       }
+      if (resume.focused) input.setSelectionRange(...resume.caret);
     }
     return input;
   }
