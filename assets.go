@@ -155,8 +155,16 @@ func (a *Assets) Handler() http.Handler {
 
 // serveFile writes name's content with the given Cache-Control,
 // reporting whether name resolved to a servable file. ServeContent
-// picks the Content-Type from the name's extension and handles ranges;
-// there is no ETag — the URL is the validator.
+// picks the Content-Type from the name's extension and handles ranges.
+//
+// Every answer carries the content's fingerprint as a strong ETag, so
+// the no-cache answers — a bare name, a legacy ?v= link, a stale hash
+// — revalidate to a 304 instead of downloading the file again on every
+// page view; ServeContent answers If-None-Match from it. The value is
+// the same 16-hex hash Path puts in the URL, computed from the bytes
+// being written, so the validator can never describe different bytes
+// from the ones it arrived with. Tito Go's theme assets carry the same
+// ETag for the same content.
 func (a *Assets) serveFile(w http.ResponseWriter, r *http.Request, name, cacheControl string) bool {
 	info, err := fs.Stat(a.fsys, name)
 	if err != nil || info.IsDir() {
@@ -166,7 +174,9 @@ func (a *Assets) serveFile(w http.ResponseWriter, r *http.Request, name, cacheCo
 	if err != nil {
 		return false
 	}
+	sum := sha256.Sum256(b)
 	w.Header().Set("Cache-Control", cacheControl)
+	w.Header().Set("ETag", `"`+hex.EncodeToString(sum[:])[:assetHashLen]+`"`)
 	http.ServeContent(w, r, name, info.ModTime(), bytes.NewReader(b))
 	return true
 }
