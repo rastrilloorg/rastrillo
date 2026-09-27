@@ -883,6 +883,12 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 		await frame();
 		out.sameTaskBoxes = document.querySelectorAll('#colour-host [rst-combo]').length;
 		out.sameTaskShown = (document.querySelector('#colour-combo') || {}).value || '';
+		// Options changed and the whole host cleared in one task: nothing
+		// is left to enhance, and nothing throws.
+		const last = document.querySelector('#colour');
+		last.append(new Option('Grey', 'grey'));
+		document.querySelector('#colour-host').innerHTML = '';
+		await frame();
 		out.sameTaskErrors = errors;
 		return out;
 	`, &got)

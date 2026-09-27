@@ -930,7 +930,7 @@
       if (!records.some((r) => r.target !== native || r.type !== "attributes")) return;
       // Changed and then moved or replaced in the same task: that is a
       // handover, not a rebuild (this observer runs first).
-      if (native.parentNode !== wrap.parentNode) {
+      if (!native.isConnected || native.parentNode !== wrap.parentNode) {
         stepAside();
         queueMicrotask(scan);
         return;
@@ -958,7 +958,7 @@
     // aside, and the element that took the select's place is enhanced if
     // it asks to be.
     const swapped = new MutationObserver(() => {
-      if (native.parentNode === wrap.parentNode) return;
+      if (native.isConnected && native.parentNode === wrap.parentNode) return;
       stepAside();
       // After every observer has run: two selects replaced in one task
       // each retire their box first, so no new box is built while an old
