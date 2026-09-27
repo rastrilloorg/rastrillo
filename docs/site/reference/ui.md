@@ -463,6 +463,25 @@ A select added after the page loads stays native until you ask: dispatch
 inside what you added, and `select.js` enhances every `data-rst-select`
 there it has not enhanced already.
 
+The list opens downward unless there is not room for it below and there
+is more room above. It never goes past the edge of what the reader can
+see: if neither side has room for the whole list, it takes the bigger
+side and fits itself to it.
+
+Mark a bar that stays pinned below your form, such as a sticky save bar,
+with `data-rst-select-floor`. The list then treats the top of the bar as
+the bottom of the screen, so it never opens over the bar's buttons.
+
+Inside an iframe, `select.js` sees only its own frame, so it cannot tell
+when the page around it hides part of the frame, for example behind a
+phone's on-screen keyboard. A host that can see the whole page can tell
+it: dispatch `rst:select-viewport` on the frame's `document` with
+`{detail: {top, bottom}}`, the part of the frame the reader can see, in
+the frame's own pixels. Dispatch it again whenever that changes. Send
+`{detail: null}` to go back to the frame's own view. Without it, a list
+in a frame can open under a keyboard or a bar that belongs to the page
+outside.
+
 `CalendarJS` is the month grid those fields open when you press their
 calendar button — a real `<table>` with real column headers under a
 `role="grid"`, so it is a calendar to a screen reader and not a wall of

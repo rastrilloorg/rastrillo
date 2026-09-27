@@ -346,7 +346,13 @@ func TestSelectContract(t *testing.T) {
 	// a page that adds content after load gets its selects enhanced (Tito's
 	// modal forms need it). The header was trimmed first; the ranking
 	// comments were not, because they are kept in step with Tito's.
-	if n := len(SelectJS()); n > 48*1024 {
+	//
+	// Then to 50KB (measured 51,096 bytes) by placement in frames: a band a
+	// host tells the frame (rst:select-viewport), floors under sticky bars
+	// (data-rst-select-floor), the list's padding and borders counted
+	// against the room, and the gap re-read — Tito Go #3146's rule, which
+	// the checkout widget's iPhone keyboard needed.
+	if n := len(SelectJS()); n > 50*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
