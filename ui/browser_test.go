@@ -186,7 +186,7 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// before that frame is drawn (select.js coalesces), so the count is
 		// read after a frame, as a person would see it.
 		chromedp.Evaluate(`new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); })`, nil, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([hidden])').length`, &optionsShown),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &optionsShown),
 		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &filterText),
 		// Synchronise on observable state rather than assuming a keystroke
 		// landed: under load the arrow key can arrive before the filtered
@@ -194,7 +194,7 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// silent no-op the next step would inherit. Waiting for the
 		// highlight turns that into a fast, legible failure at the exact
 		// step that did not happen.
-		chromedp.WaitVisible(`[role="option"]:not([hidden])`, chromedp.ByQuery), at("list-drawn"),
+		chromedp.WaitVisible(`[role="option"]:not([style*="none"])`, chromedp.ByQuery), at("list-drawn"),
 		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, while
 		// SendKeys focuses its target first and then delivers the same
 		// CDP key events, so the key lands where the user's would. It
@@ -584,7 +584,7 @@ func TestEnterCommitsWithoutSubmittingTheForm(t *testing.T) {
 				chromedp.Evaluate(spy, nil),
 				chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, tc.typed, chromedp.ByQuery),
-				chromedp.WaitVisible(`[role="option"]:not([hidden])`, chromedp.ByQuery),
+				chromedp.WaitVisible(`[role="option"]:not([style*="none"])`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery),
 				chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery),
@@ -778,12 +778,12 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		// Open it: focus draws the unfiltered list. The select is required,
 		// so its blank ("Choose a city") is a prompt and never a row.
 		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
-		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]:not([hidden])').length === 5`),
+		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 5`),
 		at("list-drawn"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([hidden])').length`, &openGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([hidden])').length`, &openOptions),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([style*="none"])').length`, &openGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &openOptions),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`, &groupLabels),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([hidden]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
 		// A heading is furniture, never a pick.
 		chromedp.Evaluate(`document.querySelectorAll('[rst-select-group][role="option"]').length`, &headingsAreOptions),
 
@@ -799,11 +799,11 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		// Filter to "ad": only Madrid matches. A search ranks across groups,
 		// so the headings step aside and the one row stands alone.
 		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad"),
-		until("the list narrows to one", `document.querySelectorAll('[role="option"]:not([hidden])').length === 1`),
+		until("the list narrows to one", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 1`),
 		at("narrowed-to-one"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([hidden])').length`, &narrowedGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([hidden])').length`, &narrowedOptions),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([hidden]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([style*="none"])').length`, &narrowedGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &narrowedOptions),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
 
 		// Clear it: every row is back in its own group, in its own place,
 		// under its own heading.
@@ -813,8 +813,8 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 			input.dispatchEvent(new Event('input', { bubbles: true }));
 			return true;
 		})()`, nil), at("cleared"),
-		until("the list is whole again", `document.querySelectorAll('[role="option"]:not([hidden])').length === 5`),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([hidden])')).map(function (g) {
+		until("the list is whole again", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 5`),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"])')).map(function (g) {
 			return g.getAttribute('aria-label') + ':' + Array.from(g.querySelectorAll('[role="option"]')).map(function (o) { return o.textContent }).join('|');
 		}).join(';')`, &restored),
 

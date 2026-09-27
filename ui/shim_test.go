@@ -333,12 +333,14 @@ func TestSelectContract(t *testing.T) {
 	// The headroom is about what the old 12KB ceiling had: room for a fix
 	// and its why, not for a feature.
 	//
-	// Then to 47KB (measured 47,295 bytes) by the alignment with Tito's
-	// final searchselect (titogo 9d21ce1): the box steps aside when a page
-	// replaces the select outright, and rebuilds itself when a page changes
-	// the options — without both it showed one pick while the form posted
-	// another — and, from Paul's iPhone, the list opens upward when the
-	// keyboard leaves no room below, with layout read once a frame.
+	// Then to 47KB by the alignment with Tito's final searchselect (titogo
+	// 9d21ce1): the box steps aside when a page replaces the select
+	// outright, and rebuilds itself when a page changes the options —
+	// without both it showed one pick while the form posted another — and,
+	// from Paul's iPhone, the list opens upward when the keyboard leaves no
+	// room below, with layout read once a frame. Measured 48,035 bytes after
+	// rows moved from the hidden attribute to inline display (titogo
+	// #3145); comments were trimmed to stay inside rather than raise it.
 	if n := len(SelectJS()); n > 47*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}

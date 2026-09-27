@@ -223,7 +223,7 @@ func TestSelectKeepsPaceWithTyping(t *testing.T) {
 		await frame();
 		const seen = [];
 		const mo = new MutationObserver((m) => seen.push(...m));
-		mo.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
+		mo.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'], attributeOldValue: true });
 
 		let searched = 0;
 		const searches = new MutationObserver((m) => { searched += m.length; });
@@ -258,22 +258,22 @@ func TestSelectKeepsPaceWithTyping(t *testing.T) {
 				if (r.type === 'childList') {
 					for (const n of r.addedNodes) {
 						out.moves++;
-						if (n.hidden) out.hiddenMoved.push(word.slice(0, i) + ': ' + (n.id || n.tagName));
+						if (n.style.display === 'none') out.hiddenMoved.push(word.slice(0, i) + ': ' + (n.id || n.tagName));
 					}
 				} else {
 					if (!writes.has(r.target)) writes.set(r.target, []);
-					writes.get(r.target).push(r.oldValue !== null);
+					writes.get(r.target).push((r.oldValue || '').includes('none'));
 				}
 			}
 			for (const [el, olds] of writes) {
 				olds.forEach((was, j) => {
-					const now = j + 1 < olds.length ? olds[j + 1] : el.hidden;
+					const now = j + 1 < olds.length ? olds[j + 1] : el.style.display === 'none';
 					if (was === now) out.noopWrites.push(word.slice(0, i) + ': ' + (el.id || el.tagName));
 				});
 			}
 		}
 		mo.disconnect();
-		out.shown = list.querySelectorAll('[rst-combo-option]:not([hidden])').length;
+		out.shown = list.querySelectorAll('[rst-combo-option]:not([style*="none"])').length;
 
 		type('');
 		await frame();
@@ -343,20 +343,20 @@ func TestSelectKeepsItsDividerAndPrompt(t *testing.T) {
 		input.click();
 		await frame();
 		const s0 = seq();
-		out.promptIdle = !blank.hidden;
+		out.promptIdle = blank.style.display !== 'none';
 		for (const q of ['a', 'i', 'united k']) {
 			type(q);
 			await frame();
-			if (q === 'a') out.sepSearching = !sep.hidden;
+			if (q === 'a') out.sepSearching = sep.style.display !== 'none';
 		}
 		type('');
 		await frame();
 		out.order = seq();
 		out.restored = out.order.join() === s0.join();
-		out.sepAfter = !sep.hidden;
+		out.sepAfter = sep.style.display !== 'none';
 		type('choose');
 		await frame();
-		out.promptTyped = !blank.hidden;
+		out.promptTyped = blank.style.display !== 'none';
 		type('ger');
 		await frame();
 		type('');
@@ -372,7 +372,7 @@ func TestSelectKeepsItsDividerAndPrompt(t *testing.T) {
 		type('germ');
 		const act = input.getAttribute('aria-activedescendant');
 		out.activeAfter = act ? select.options[Number(act.split('-listbox-')[1])].value : '';
-		const top = list.querySelector('[rst-combo-option]:not([hidden])');
+		const top = list.querySelector('[rst-combo-option]:not([style*="none"])');
 		out.topAfter = top ? select.options[Number(top.id.split('-listbox-')[1])].value : '';
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 		return out;
@@ -445,7 +445,7 @@ func TestSelectPromptClearsToItsPlaceholder(t *testing.T) {
 		input.click();
 		await frame();
 		const prompt = document.querySelector('#cc-listbox-0');
-		out.promptRow = !prompt.hidden;
+		out.promptRow = prompt.style.display !== 'none';
 		out.openActive = act();
 		out.promptSelected = prompt.getAttribute('aria-selected');
 		key('ArrowDown');
@@ -592,11 +592,11 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		await frame();
 		select.required = true;
 		await frame();
-		out.openFlipListed = !blank.hidden;
+		out.openFlipListed = blank.style.display !== 'none';
 		out.openFlipActive = input.getAttribute('aria-activedescendant') || '';
 		// Idle (nothing typed), the refresh is not a search for the pick's
 		// own text: every real choice stays, and the box drops "None".
-		out.openFlipShown = document.querySelectorAll('#size-listbox [rst-combo-option]:not([hidden])').length;
+		out.openFlipShown = document.querySelectorAll('#size-listbox [rst-combo-option]:not([style*="none"])').length;
 		out.openFlipText = input.value;
 		key('Escape');
 		select.required = false;
@@ -606,7 +606,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		input.click();
 		await frame();
 		input.closest('[rst-combo]').rstExtras([{ label: 'Something else', run: () => {} }]);
-		out.idleExtrasShown = document.querySelectorAll('#size-listbox [rst-combo-option]:not([hidden])').length;
+		out.idleExtrasShown = document.querySelectorAll('#size-listbox [rst-combo-option]:not([style*="none"])').length;
 		input.closest('[rst-combo]').rstExtras([]);
 		key('Escape');
 		select.required = false;
@@ -739,7 +739,7 @@ func TestSelectFollowsRequiredAndExtras(t *testing.T) {
 		dInput.value = 'a';
 		dInput.dispatchEvent(new Event('input', { bubbles: true }));
 		await frame();
-		out.screenOrder = [...dList.querySelectorAll('[rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
+		out.screenOrder = [...dList.querySelectorAll('[rst-combo-option]:not([style*="none"])')].map((li) => li.textContent).join('|');
 		const walked = [];
 		const dkey = (k) => dInput.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 		dkey('Home');
@@ -975,7 +975,7 @@ func TestSelectRebuildsWhenItsOptionsChange(t *testing.T) {
 		out.focused = document.activeElement === input;
 		out.typed = input.value;
 		out.caret = input.selectionStart;
-		out.rows = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]:not([hidden])')].map((li) => li.textContent).join('|');
+		out.rows = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]:not([style*="none"])')].map((li) => li.textContent).join('|');
 		out.extraKept = [...document.querySelectorAll('#flavour-listbox [rst-combo-option]')].some((li) => li.textContent === 'Other');
 		out.rebuildInputs = inputs;
 		input.closest('[rst-combo]').rstExtras([]);
@@ -1119,8 +1119,8 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 		await frame();
 		out.movedUp = wrap.hasAttribute('rst-combo-up');
 		key('Escape');
-		// Opened low with a search that fits below, then broadened: the
-		// list needs the room above now.
+		// Opened low with one match, then cleared: the list's own height
+		// does not fit below either way, so it opens up either way.
 		input.blur();
 		wrap.style.cssText = 'position:fixed;left:10px;width:300px;top:' + (window.innerHeight - 130) + 'px';
 		input.focus();
@@ -1170,8 +1170,10 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 	if got.TopUp || got.TopListTop < got.TopBoxEnd-1 {
 		t.Errorf("at the top of the viewport the list opened up=%v starting at %.0f with the box ending at %.0f, want downward, below the box", got.TopUp, got.TopListTop, got.TopBoxEnd)
 	}
-	if got.NarrowUp || !got.BroadUp {
-		t.Errorf("low on the screen, one match opened up=%v and clearing the search left up=%v, want down then up: a broader search must re-place the list", got.NarrowUp, got.BroadUp)
+	// Placement is decided by the room against the list's own height, not
+	// by how many rows a search shows, so typing never re-places it.
+	if !got.NarrowUp || !got.BroadUp {
+		t.Errorf("low on the screen, one match opened up=%v and clearing the search left up=%v, want up both times: the room, not the search, decides", got.NarrowUp, got.BroadUp)
 	}
 	if got.PanelUp {
 		t.Error("near the top of a low scrolling panel the list opened upward, into the part of the panel that is clipped")
@@ -1197,9 +1199,11 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 func TestSelectTypingIsCheap(t *testing.T) {
 	t.Parallel()
 	var got struct {
-		Rebuilds int   `json:"rebuilds"`
-		PerFrame []int `json:"perFrame"`
-		Searched bool  `json:"searched"`
+		Rebuilds     int      `json:"rebuilds"`
+		HiddenWrites int      `json:"hiddenWrites"`
+		Outside      []string `json:"outside"`
+		PerFrame     []int    `json:"perFrame"`
+		Searched     bool     `json:"searched"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -1208,6 +1212,20 @@ func TestSelectTypingIsCheap(t *testing.T) {
 			for (const r of m) for (const n of r.addedNodes) if (n.nodeType === 1 && n.hasAttribute('rst-combo')) out.rebuilds++;
 		});
 		hosts.observe(document.body, { childList: true, subtree: true });
+		// Every attribute written anywhere while typing: a page whose
+		// stylesheet has [hidden] inside a :has() pays for each one.
+		const tzWrap = document.querySelector('#tz-combo').closest('[rst-combo]');
+		out.hiddenWrites = 0;
+		out.outside = [];
+		let counting = false;
+		const attrs = new MutationObserver((m) => {
+			if (!counting) return;
+			for (const r of m) {
+				if (r.attributeName === 'hidden') out.hiddenWrites++;
+				if (!tzWrap.contains(r.target)) out.outside.push((r.target.id || r.target.tagName) + '@' + (r.attributeName || r.type));
+			}
+		});
+		attrs.observe(document.documentElement, { attributes: true, childList: true, characterData: true, subtree: true });
 		let reads = 0;
 		const count = (proto, name) => {
 			const was = proto[name];
@@ -1222,6 +1240,7 @@ func TestSelectTypingIsCheap(t *testing.T) {
 		input.click();
 		await frame();
 		const type = (v) => { input.value = v; input.dispatchEvent(new Event('input', { bubbles: true })); };
+		counting = true;
 		for (const [a, b] of [['E', 'Eu'], ['Eur', 'Euro'], ['Europ', 'Europe'], ['Europe/', 'Europe/L']]) {
 			reads = 0;
 			// Two keystrokes inside one frame, as a phone keyboard sends
@@ -1232,12 +1251,21 @@ func TestSelectTypingIsCheap(t *testing.T) {
 			await frame();
 			out.perFrame.push(reads);
 		}
-		out.searched = document.querySelectorAll('#tz-listbox [rst-combo-option]:not([hidden])').length < 70;
+		attrs.takeRecords();
+		counting = false;
+		attrs.disconnect();
+		out.searched = document.querySelectorAll('#tz-listbox [rst-combo-option]:not([style*="none"])').length < 70;
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 		hosts.disconnect();
 		Object.defineProperty(Element.prototype, 'scrollTop', st);
 		return out;
 	`, &got)
+	if got.HiddenWrites != 0 {
+		t.Errorf("typing wrote the hidden attribute %d times, want 0: a page with [hidden] in a :has() pays for every write", got.HiddenWrites)
+	}
+	if len(got.Outside) != 0 {
+		t.Errorf("typing mutated %d things outside the combobox (first: %s), want none", len(got.Outside), got.Outside[0])
+	}
 	if got.Rebuilds != 0 {
 		t.Errorf("typing rebuilt a box %d times, want 0: the box's own writes were taken for the page changing its options", got.Rebuilds)
 	}
