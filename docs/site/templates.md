@@ -188,6 +188,10 @@ to ignore.
 The button keeps its width while it works, so nothing beside it moves,
 and its label is still there for a screen reader to announce. A button
 with a `data-busy-label` shows those words beside the spinner instead.
+For someone who has asked for reduced motion, or who uses forced
+colours, the label stays and the spinner sits beside it: a spinner that
+does not turn, or one drawn over repainted text, is too easy to miss on
+its own.
 
 Only the button that was clicked. The others in the same form keep their
 `name` and their `value`, so a Save / Save-draft pair still tells your

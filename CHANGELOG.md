@@ -16,7 +16,9 @@ While a form is sending, its submit button now shows a spinner in place
 of its label, instead of a spinner before it. The button keeps its
 width, so nothing next to it moves, and a screen reader still reads the
 label. A button with `data-busy-label` still shows its busy text beside
-the spinner.
+the spinner. With reduced motion or forced colours turned on, the label
+stays and the spinner sits beside it, as before. A button your own
+script marks `aria-busy` without the spinner keeps its label.
 
 The date picker's and calendar's muted text asked for a colour token
 that does not exist, so it drew in full-strength text colour. It now
