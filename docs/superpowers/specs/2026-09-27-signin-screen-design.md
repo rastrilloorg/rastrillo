@@ -1,8 +1,9 @@
 # A shipped sign-in screen, and a browser that remembers how you got in
 
 Status: design approved in conversation 2026-09-27, section by section;
-revised after two rounds of adversarial review (see "Review log"),
-with the operator's decisions on compatibility and provider trust.
+revised after three rounds of adversarial review (see "Review log"),
+with the operator's decisions on the opt-in, provider trust, the
+one-tap's labels and the advisory.
 
 Part F of the design-system iteration (A landed as
 `busy-spinner-replaces-label`; B is `gallery-usability`; C, D, E and G
@@ -59,29 +60,44 @@ Taken with the operator.
   illustration, plus one generated, token-coloured default so no app
   ships a blank page. More patterns, a seeded choice between them, and
   illustration guidance are Part D.
-- **Compatibility (round 1, finding 1): the continuation is opt-in.**
-  `auth.Config.ContinueOnSigninPage bool`, default false. Off, `Begin`
-  and `Callback` behave exactly as today: the keymail branch 303s
-  straight to the authorize URL (auth/handlers.go:56-62), neither new
-  cookie (§1.3) is written, the outcome URLs are unchanged. On, the keymail
-  branch 303s to the sign-in page, which continues (§1.3). The partial's
-  documentation says to turn it on. Nothing that exists today breaks.
-- **How a forgotten switch is caught.** The operator asked for
-  `rastrillo doctor` to flag an app that uses the partial without the
-  switch, if that can be done soundly. It cannot: doctor reads files,
-  and while it could find `{{template "signin"` in templates (a
-  template action's name is a constant), the switch is a Go expression
-  — `ContinueOnSigninPage: cfg.Continue`, a helper, a struct built
-  elsewhere — so doctor would call a correctly wired app broken. The
-  doctor part is dropped. In its place an advisory, not a detector:
-  `SigninState` is the partial's only data source, and the first time
-  it is called with the switch off it logs one warning, worded as a
-  condition rather than a diagnosis — "ContinueOnSigninPage is off: under
-  the default CSP, with no continuation of your own, a keymail address
-  cannot leave the sign-in form". It cannot know whether the app widened
-  `form-action` or wraps `Begin` as fichas does
-  (F/auth_navigation.go:30-72), so it never says the app is misconfigured,
-  and it fires once per process, not per request.
+- **One opt-in for the screen (round 1, finding 1; operator, after
+  round 3).** `auth.Config.SigninScreen bool` means "this app renders
+  the shipped sign-in screen", and it turns on everything the screen
+  needs from `auth`: the continuation and its cookies (§1.3), the
+  attempt cookie, remembering (§1.5) and `AnswerAsSent`'s parity (§1.3).
+  Default false. Off, an app sees no change at all: `Begin` and
+  `Callback` behave exactly as today — the keymail branch 303s straight
+  to the authorize URL (auth/handlers.go:56-62), the outcome URLs are
+  unchanged — and no attempt, continuation or last-signin cookie is
+  written, read or deleted. The partial's documentation says to turn
+  it on. `Remember *bool` stays only as an override that turns
+  remembering off while the screen is on (a shared kiosk); with the
+  screen off it has no effect. (Replaces round 2's
+  `ContinueOnSigninPage`, which gated the continuation alone and left
+  remembering on by default for every app, including apps that never
+  render the screen.)
+- **How a forgotten switch is caught: a runtime advisory, not a doctor
+  check (accepted by the operator after round 3).** A doctor check
+  cannot be sound: doctor reads files, and while it could find
+  `{{template "signin"` in templates (a template action's name is a
+  constant), the switch is a Go expression — `SigninScreen:
+  cfg.Screen`, a helper, a struct built elsewhere — so doctor would call
+  a correctly wired app broken. Instead, `SigninState` is the partial's
+  only data source, and the first time it is called with the switch off
+  it logs one warning, worded as a condition rather than a diagnosis —
+  "SigninScreen is off: under the default CSP, with no continuation of
+  your own, a keymail address cannot leave the sign-in form, and nothing
+  is remembered". It cannot know whether the app widened `form-action`
+  or wraps `Begin` as fichas does (F/auth_navigation.go:30-72), so it
+  never says the app is misconfigured, and it fires once per process,
+  not per request.
+- **The one-tap names the remembered method (operator, after round 3).**
+  **Continue to Keymail** when the remembered method is keymail,
+  **Continue as ‹address›** for a magic link, **Sign in with your
+  passkey** for a passkey. This overrides round 2's resolution of
+  finding 22 (one neutral **Continue**). The label can be wrong, because
+  `Begin` classifies afresh (K/flow.go:146-151); when it is, the screen
+  says so rather than hiding it (§1.3 "The honest surprise", §2).
 - **Provider trust (round 1, finding 5): any delegated keymail server
   by default; an optional allowlist.** That is keymail's protocol: the
   classifier follows the address's own `_keymail` DNS delegation
@@ -102,8 +118,10 @@ Taken with the operator.
 ### 1.1 Configuration added to `auth.Config`
 
 ```go
-// ContinueOnSigninPage: see Decisions. Default false.
-ContinueOnSigninPage bool
+// SigninScreen: this app renders the shipped sign-in screen. Turns on
+// the continuation, the attempt and continuation cookies, remembering
+// and AnswerAsSent's parity. Default false: exactly today's behaviour.
+SigninScreen bool
 
 // KeymailServers: see Decisions and §1.4. Empty means any delegated
 // server.
@@ -117,7 +135,10 @@ KeymailServers []string
 BeginPath  string
 ForgetPath string
 
-// Remember: see §1.5. Nil means on.
+// Remember: see §1.5. Only an off switch: with SigninScreen on, a
+// pointer to false turns remembering off (and deletes what was
+// remembered); nil or true leaves it on. With SigninScreen off it has
+// no effect — nothing is remembered.
 Remember *bool
 ```
 
@@ -135,8 +156,12 @@ func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
 ```
 
 `SigninState` reads the query and four cookies (attempt, continuation,
-pending, remembered) and returns plain data. It writes nothing, and it consults
-nothing else: no database, no classifier, no `Authorize`, no mailer.
+pending, remembered) and returns plain data. It writes nothing, and it
+consults nothing else: no database, no classifier, no `Authorize`, no
+mailer. With `SigninScreen` off it reads only the query (the
+outcome URLs are today's), logs the advisory once (Decisions), and
+marks nothing for deletion — so an app that never turned the screen on
+gets no cookie traffic from these helpers either.
 `PrepareSigninResponse` is the only writer, and the app calls it before
 rendering any state:
 
@@ -162,6 +187,7 @@ type SigninState struct {
     Problem     SigninProblem // None, Rate, Address, Expired, Keymail, Generic, Reauth
     Address     string        // prefill for the email field: this attempt's address, else the remembered one; never the query
     SentTo      string        // Sent only: the address this attempt's link went to; "" unless bound (below)
+    SentInstead bool          // Sent only, bound as SentTo: a link went where the one-tap promised Keymail (§1.3)
     Remembered  *Remembered   // nil when nothing valid is remembered or remembering is off
     ContinueURL string        // Continue only; from the continuation cookie, never the query
     BeginPath   string        // Config.BeginPath
@@ -208,11 +234,12 @@ from `Remembered.Address`, else empty. `SentTo` is set only when the
 attempt cookie is valid, its kind is `link`, and its id equals the
 query's `attempt` value; otherwise Sent says "your inbox". Sent never
 shows the remembered address: it is not evidence of where this link
-went.
+went. `SentInstead` is read from the same bound attempt (its `x` field)
+and is false whenever `SentTo` is empty.
 
 ### 1.3 The attempt and continuation cookies
 
-With the switch on, `Begin` writes up to two cookies beside the
+With `SigninScreen` on, `Begin` writes up to two cookies beside the
 existing pending cookie. Both use the existing `cookieName` rule
 (auth/auth.go:274-279; unprefixed on a plain-http origin) and
 `setCookie`'s attributes (:287-293: `Path=/`, HttpOnly, SameSite=Lax,
@@ -255,6 +282,7 @@ but only `exp` is trusted. Open refuses a wrong `o`, `now ≥ exp`,
 | `iat`, `exp` | Unix seconds; cap 15 min (the link TTL) |
 | `k` | `link` or `problem` or `keymail` |
 | `a` | the submitted address, trimmed, only if ≤ 254 bytes with no control bytes; else empty |
+| `x` | `link` only: true when the form carried `expect=keymail` (the remembered-Keymail one-tap) and a link was sent instead |
 
 | Continuation field | Meaning |
 |---|---|
@@ -265,13 +293,14 @@ but only `exp` is trusted. Open refuses a wrong `o`, `now ≥ exp`,
 | `st` | base64url SHA-256 of the URL's `state` |
 | `ph` | base64url SHA-256 of the pending cookie's value, written in the same response |
 
-**Begin, switch on:**
+**Begin, `SigninScreen` on:**
 
 - Rate, bad address, other error: attempt kind `problem`; redirect as
   today (`?err=rate`, `?err=address`, `?err=1`).
-- Magic link: attempt kind `link`; redirect to
-  `SigninPath?sent=1&attempt=<attempt id>`. `sent=1` is unchanged, so a
-  page that reads only it still works.
+- Magic link: attempt kind `link`, with `x` set if the form carried
+  `expect=keymail`; redirect to `SigninPath?sent=1&attempt=<attempt
+  id>`. `sent=1` is unchanged, so a page that reads only it still
+  works.
 - Keymail: validate `next.Redirect` with the predicate (§1.4). If it
   fails — which a correct library never produces — log, set no cookies,
   redirect `?err=1`. Otherwise set the pending cookie as today, the
@@ -279,12 +308,32 @@ but only `exp` is trusted. Open refuses a wrong `o`, `now ≥ exp`,
   `SigninPath?continue=<continuation id>`. Same-origin, so `form-action
   'self'` allows it.
 
+**The honest surprise.** The remembered-Keymail one-tap is labelled
+**Continue to Keymail** (Decisions), but `Begin` classifies afresh
+(K/flow.go:146-151): the server may no longer answer, or
+`KeymailServers` may now exclude it (§1.4), and either way the flow
+sends a magic link. So that one-tap posts a hidden `expect=keymail`,
+`Begin` records it in the attempt's `x` when a link goes out instead,
+and the bound Sent page says so in one line — "Keymail didn't answer
+this time, so we emailed you a link." — before the usual text. `expect`
+changes only this browser's own Sent wording: `Begin` never reads it to
+choose a path, and the outcome it describes (link rather than keymail)
+is already visible to the visitor. The reverse surprise needs no
+wording: a remembered magic-link visitor whose address now classifies
+as keymail lands on the Continue page, which already says "Taking you
+to Keymail". With `SigninScreen` off, `expect` is ignored.
+
 **`AnswerAsSent(w, r)`** is `Begin`'s magic-link answer without the
 magic link, for an admission wrapper that refuses an address before
 `Begin` can classify it (fichas' `beginGuard`, F/auth.go:91-116). It
+follows the switch exactly as `Begin` does. With `SigninScreen` off it
+is today's answer: the same-origin check, then a plain 303 to
+`SigninPath?sent=1` (auth/handlers.go:64) and no cookie at all — which
+is what `Begin` gives an admitted address in that mode. With it on, it
 does what `Begin` does up to the flow — the same-origin check, the
 address read with `r.FormValue` — then writes the same attempt cookie
-(kind `link`, the address) and the same redirect, and sends nothing.
+(kind `link`, the address, `x` from `expect` as `Begin` would) and the
+same `?sent=1&attempt=<id>` redirect, and sends nothing.
 Without it, a wrapper that answers plain `?sent=1` gives a refused
 address no attempt cookie, no `attempt=` and a "your inbox" Sent page,
 while an admitted one gets all three: a membership oracle on the first
@@ -301,10 +350,10 @@ nothing without this browser's cookie. The `ph` binding means a
 continuation dies with its pending cookie: once `Callback` has consumed
 pending, going back to the continuation page gives Expired.
 
-**Callback, switch on.** Today it clears pending the moment it reads it,
+**Callback, `SigninScreen` on.** Today it clears pending the moment it reads it,
 then lets the library find a state mismatch (auth/handlers.go:74-86) —
-so tab A's late callback destroys tab B's newer attempt. With the switch
-on, between reading pending and clearing it:
+so tab A's late callback destroys tab B's newer attempt. With the
+screen on, between reading pending and clearing it:
 
 - If the continuation cookie opens, its `ph` equals the hash of the
   pending cookie just read, and the SHA-256 of the callback's `state`
@@ -317,13 +366,15 @@ on, between reading pending and clearing it:
   (K/pending.go:85) still bounds it.
 - Otherwise — no continuation cookie, or one whose `ph` does not match
   (left over from an earlier attempt, or from a `Begin` run with the
-  switch off) — exactly today's path: clear pending and continuation,
+  screen off) — exactly today's path: clear pending and continuation,
   complete, admit.
 
 The attempt cookie plays no part in the callback, so a later magic-link
 or problem submission neither blocks a keymail callback nor removes its
-protection. `admit` deletes the attempt cookie once a first factor is
-verified (before `Authorize`), since the attempt is over either way.
+protection. Once a first factor is verified — by `admit` for keymail
+and magic links, by passkey discovery for a passkey — the attempt is
+over, and the attempt cookie is deleted through one shared seam,
+`lastsignin.Jar.EndAttempt` (§1.5).
 
 **What the cookies guarantee, and what they do not.** Supersession is
 "the last cookie pair the browser installed", not "the last attempt
@@ -416,30 +467,39 @@ or down to plain http. Consequences:
   which also empties them.
 
 The predicate's host check is a third line. The allowlist applies with
-the switch off too: it is policy about which servers are trusted, not
+`SigninScreen` off too: it is policy about which servers are trusted, not
 about how the browser gets there. Without a list, auth leaves both
 clients exactly as today. (Rejected: calling `Flow.Begin` again with
 `force` after an unlisted keymail answer — it spends each rate budget
 twice and can fail on the second spend.)
 
-### 1.5 The remembered method: one shared component
+### 1.5 The remembered method and the attempt's end: one shared component
 
-A new leaf package, `rastrillo/lastsignin`, owns the cookie, so `auth`
-and `passkey` write it the same way and `passkey` never needs
+A new leaf package, `rastrillo/lastsignin`, owns the remembered cookie
+and the one seam every sign-in path calls when an attempt ends, so
+`auth` and `passkey` do both the same way and `passkey` never needs
 `InstanceKey` or `auth`'s keymail dependency:
 
 ```go
-func New(Config) (*Jar, error) // Config{Origin, InstanceKey string; Disabled bool; Now func() time.Time}
-func (j *Jar) Write(w http.ResponseWriter, rec Record)      // Disabled: deletes the cookie instead
-func (j *Jar) Read(r *http.Request) (Record, ReadResult)    // Absent | Valid | Invalid; Disabled: never Valid
-func (j *Jar) Clear(w http.ResponseWriter)
+type Mode int // Off | Forgetting | On
+func New(Config) (*Jar, error) // Config{Origin, InstanceKey, AttemptCookie string; Mode Mode; Now func() time.Time}
+func (j *Jar) EndAttempt(w http.ResponseWriter)          // deletes the attempt cookie; Off: nothing
+func (j *Jar) Remember(w http.ResponseWriter, rec Record) // On: writes; Forgetting: deletes the cookie; Off: nothing
+func (j *Jar) Read(r *http.Request) (Record, ReadResult) // Absent | Valid | Invalid; never Valid unless On
+func (j *Jar) Clear(w http.ResponseWriter)                // Forget's delete; Off: nothing
 type Record struct{ Method, Address string }
 ```
 
+- **The mode comes from the one switch.** `auth.New` builds the one jar:
+  `Off` when `SigninScreen` is off (whatever `Remember` says), else
+  `Forgetting` when `Remember` points at false, else `On`. `Off` writes,
+  reads and deletes nothing — no Set-Cookie header at all — which is
+  what "an app that does not adopt the screen sees no change" requires.
 - The jar derives its own key: `crypto.Derive([]byte(InstanceKey),
-  "rastrillo/lastsignin/v1")`. `auth.New` builds the one jar from its
-  own `InstanceKey`, `Origin` and `Remember`, and exposes it as
-  `a.RememberJar()`. The app hands that to `passkey.Config.Remember`
+  "rastrillo/lastsignin/v1")`. `AttemptCookie` is the attempt cookie's
+  resolved name (§1.3), which `auth` passes in so the jar can delete it
+  without knowing its format. `auth` exposes the jar as
+  `a.RememberJar()`; the app hands that to `passkey.Config.Remember`
   (new field, `*lastsignin.Jar`). The partial's docs show the wiring.
 - Cookie `__Host-rastrillo_last_signin` (the `cookieName` rule),
   HttpOnly, SameSite=Lax, `Path=/`, Secure from Origin, Max-Age 400
@@ -449,35 +509,45 @@ type Record struct{ Method, Address string }
   method, a keymail or magiclink record without a valid address (≤ 254
   bytes, one `@`, no control bytes), and a passkey record with one.
   Every sign-in rewrites it, so the 400 days run from the latest one.
-- **Written by `auth.admit`** after `Authorize` admits and `SubjectFor`
-  succeeds, before the `SecondFactor` hook: `{id.Method, id.Address}` —
-  the address, not the subject. Before the hook because nothing later
-  knows the address (`secondfactor.Gate.Complete` holds only the
-  subject, secondfactor/secondfactor.go:290-303). So a sign-in held for
-  a second factor is remembered, and so is one whose second factor then
-  fails or whose session insert fails: the record says which door this
-  browser used and proved, nothing more. Not written when `Authorize`
+- **`auth.admit`** calls `EndAttempt` as soon as it holds a verified
+  identity (before `Authorize`: the attempt is over either way), then
+  `Remember({id.Method, id.Address})` after `Authorize` admits and
+  `SubjectFor` succeeds, before the `SecondFactor` hook — the address,
+  not the subject. Before the hook because nothing later knows the
+  address (`secondfactor.Gate.Complete` holds only the subject,
+  secondfactor/secondfactor.go:290-303). So a sign-in held for a second
+  factor is remembered, and so is one whose second factor then fails or
+  whose session insert fails: the record says which door this browser
+  used and proved, nothing more. Nothing is remembered when `Authorize`
   refuses or `SubjectFor` errors.
-- **Written by `passkey.DiscoverFinish`** when its `Remember` is set,
-  after its `Authorize` check (passkey/passkey.go:428-431) and before
-  `Gate.Hold` or `Sessions.SignIn` — so on the held path too:
-  `{"passkey", ""}`. **The address is cleared.** Discovery knows a
-  subject, not an address, and `SubjectFor` may make subjects opaque
-  (auth/auth.go:110-139); keeping the old address would label Bob's
-  passkey sign-in with Alice's address. A failed assertion writes
-  nothing. `passkey` without a jar writes nothing, and the docs say what
-  that costs: a previously remembered address stays on the screen after
-  a passkey sign-in.
+- **`passkey.DiscoverFinish`**, when its `Remember` is set, calls
+  `EndAttempt` once the assertion verifies (passkey/passkey.go:424-427),
+  then `Remember({"passkey", ""})` after its `Authorize` check (:428-431)
+  and before `Gate.Hold` or `Sessions.SignIn` — so both run on the held
+  path and the completed path alike; `heldResponse` passes headers
+  through (:465-470). **The address is cleared twice over.** The
+  remembered record carries none: discovery knows a subject, not an
+  address, and `SubjectFor` may make subjects opaque (auth/auth.go:
+  110-139), so keeping the old address would label Bob's passkey sign-in
+  with Alice's. And the attempt cookie goes too, because `SigninState`
+  prefers the attempt's address for the prefill (§1.2): without
+  `EndAttempt`, Alice's typed address would reappear in the email
+  fallback beside Bob's passkey door until it expired (round 3, finding
+  25). A failed assertion ends and writes nothing. `passkey` without a
+  jar does neither, and the docs say what that costs: a previously
+  typed or remembered address stays on the screen after a passkey
+  sign-in.
 - Survives `Signout`.
-- **`Remember = false`:** `Write` deletes any existing cookie, `Read`
-  reports nothing valid, `SigninState` marks a present cookie for
-  `PrepareSigninResponse` to delete. So switching it off also forgets
-  what was remembered before.
+- **`Remember = false`** (screen on): `Remember` deletes any existing
+  cookie, `Read` reports nothing valid, `SigninState` marks a present
+  cookie for `PrepareSigninResponse` to delete. So switching it off
+  also forgets what was remembered before. With the screen off,
+  `Remember` has no effect: nothing is remembered to begin with.
 - **`auth.Forget`**, mounted by the app at `ForgetPath`: refuses any
   method but POST (405) — a state change on GET would be prefetchable —
   and refuses a cross-origin submission with `a.sameOrigin`
-  (auth/csrf.go:12-14), as `Begin` does. It clears the remembered and
-  attempt cookies and 303s to `SigninPath`. "Use a different email" is a
+  (auth/csrf.go:12-14), as `Begin` does. It calls `Clear` and
+  `EndAttempt` and 303s to `SigninPath`. "Use a different email" is a
   button in a small form posting there.
 - **What it is never evidence of.** The remembered cookie supplies no
   identity, admission, freshness or second-factor proof. Nothing reads
@@ -544,13 +614,19 @@ it through `rastrillo doctor --fix`. The protocol:
    enhancer posts `{id: credentialId, clientDataJSON, authenticatorData,
    signature}` to `finish` and never sends `prf`.
 4. **Success.** `{"ok": true, "to"}`, with or without `"pending"` (the
-   held path, passkey/passkey.go:450): navigate to `to` only if it has
-   no control character or `\` and `new URL(to, location.href).origin
-   === location.origin`; else to `/`. A prefix test is not enough:
-   `"/\t/evil.example/x"` starts with `/`, not `//`, and still parses to
-   another host, because URL parsing strips tabs and newlines. The
-   server's `SafeReturn` already refuses those (sessions/sessions.go:
-   461-469); this is the second line.
+   held path, passkey/passkey.go:450): navigate to `to` only if both
+   hold, else to `/`:
+   - it is a local absolute path — starts with exactly one `/` (so not
+     `//` and no scheme), no `\`, no control character. This is the
+     rule `sessions.SafeReturn` enforces (sessions/sessions.go:461-469)
+     and `rastrillo.js` already has as `localPath` (ui/rastrillo.js:
+     66-69); the enhancer reuses that function rather than writing a
+     second one. A same-origin *absolute URL* is refused too: the server
+     never sends one, so accepting it would only widen the contract.
+   - and `new URL(to, location.href).origin === location.origin`. The
+     prefix rule alone already refuses `"/\t/evil.example/x"` by its
+     control character; the parsed-origin check is the second line, for
+     whatever a future edit to the prefix rule lets through.
 5. **Failure.** `authenticate` throws "no passkey was offered" when the
    person dismissed the prompt or had none — deliberately
    indistinguishable (webauthn.mjs:101, :131-135). That shows the
@@ -609,23 +685,30 @@ Every state has one `<h1>` and a matching title from `signin-title`:
   **Continue**, posting to `BeginPath`. With a passkey door, **Sign in
   with a passkey** below it. No help text about who may sign in (see
   "Enumeration" below).
-- **Returning.** Keymail or magiclink: one primary button, **Continue**,
-  posting to `BeginPath` with the remembered address as a hidden field;
-  the address shows beneath in `<p id="rst-signin-remembered">…<bdi>…
-  </bdi></p>` ("as ‹address›"), and the button has
-  `aria-describedby="rst-signin-remembered"`, so a screen reader hears
-  the address with the action. The label is the Ask form's own
-  **Continue**, not "Continue with Keymail" or "Email me a link": the
-  one-tap re-runs `Begin`, which classifies afresh (K/flow.go:146-151),
-  so the method used last time does not decide the method this time — a
-  label that promised it would be the misleading button "Why" describes
-  (round 2, finding 22). The remembered method matters for one thing on
-  this screen: passkey or email. **Use a different email** posts to
-  `ForgetPath`. Passkey: the passkey door and the Ask form together
-  (§1.6 step 6).
-- **Sent.** "Check your email", then "We sent a link to ‹SentTo›" if
-  bound, else "We sent a link to your inbox"; "the link works once and
-  expires"; **Use a different email** (posts to `ForgetPath`).
+- **Returning.** The one-tap names the remembered method (Decisions):
+  - Keymail: **Continue to Keymail**, posting to `BeginPath` with the
+    remembered address and `expect=keymail` as hidden fields. The
+    address shows beneath in `<p id="rst-signin-remembered">…<bdi>…
+    </bdi></p>` ("as ‹address›"), and the button has
+    `aria-describedby="rst-signin-remembered"`, so a screen reader hears
+    the address with the action.
+  - Magic link: **Continue as ‹address›**, the address in a `<bdi>`
+    inside the label, posting the remembered address as a hidden field.
+    The label already carries the address, so there is no separate line
+    and no `aria-describedby`.
+  - Passkey: **Sign in with your passkey** — the passkey door, with the
+    Ask form beside it (§1.6 step 6).
+  - Both email one-taps re-run `Begin`, which classifies afresh
+    (K/flow.go:146-151), so the label can promise a method the flow no
+    longer takes. When Keymail was promised and a link went out, Sent
+    says so (§1.3 "The honest surprise"); when a link was promised and
+    Keymail answers, the Continue page says where it is going.
+  **Use a different email** posts to `ForgetPath`.
+- **Sent.** "Check your email"; if `SentInstead`, first "Keymail didn't
+  answer this time, so we emailed you a link."; then "We sent a link to
+  ‹SentTo›" if bound, else "We sent a link to your inbox"; "the link
+  works once and expires"; **Use a different email** (posts to
+  `ForgetPath`).
 - **Continue.** Redirect-only content: the heading, "Taking you to
   Keymail to confirm it's you.", the zero-delay meta refresh, and a
   **Continue to Keymail** link to the same URL. No form (§1.2), no other
@@ -647,7 +730,7 @@ wins.
 |---|---|---|
 | Address problem | the email field, whose error it describes | focus: label, invalid, description |
 | Rate, Expired, Keymail, Generic | the callout (`tabindex="-1"`) | focus: the callout's text |
-| Reauth, Returning keymail/magiclink | the **Continue** one-tap | focus; the info callout is read in order |
+| Reauth, Returning keymail/magiclink | the one-tap (**Continue to Keymail** or **Continue as ‹address›**) | focus: the label, and for Keymail the address it describes; the info callout is read in order |
 | Reauth, Ask; Ask | the email field | focus; the info callout, if any, is read in order |
 | Returning passkey, Sent, Continue | nothing | the new title |
 
@@ -709,14 +792,15 @@ pre-check that would address them is out of scope.
 
 - Gallery Screens rebuilt on the real partial and shell: the
   hand-written sign-in screens become states of `signin` rendered in a
-  `stage` frame (Ask, Returning ×3, Sent bound and unbound, Continue,
+  `stage` frame (Ask, Returning ×3, Sent bound, unbound and with the Keymail-surprise line, Continue,
   Address and Keymail problems). Continue uses `Preview`. The password
   screen stays as copyable markup with its warning, now explicitly
   "not shipped"; the dead `/signin/other` and `/signin/reset` links go.
 - `docs/site/magic-links.md`: "The sign-in page stays yours" becomes
   "Use the shipped screen, or your own", with the wiring (both config
   paths, `SigninState` + `PrepareSigninResponse`, the `stage` page set,
-  `RememberJar` into passkey), the switch, the allowlist and the trust
+  `RememberJar` into passkey), `SigninScreen` and what it turns on,
+  `Remember` as the kiosk off-switch, the allowlist and the trust
   argument from "Decisions", and for an app with an admission wrapper,
   `AnswerAsSent` and why a plain `?sent=1` is an oracle. The outcome
   table gains `err=1`,
@@ -724,19 +808,22 @@ pre-check that would address them is out of scope.
 - `docs/site/passkeys.md`: fix the stale "A passkey never signs anybody
   in from nothing", list `discover` among the routes, document
   `Config.Remember`.
-- SKILL.md (:287-295): keymail apps set `ContinueOnSigninPage`; widening
-  `form-action` is only for a hand-built page with the switch off. The
+- SKILL.md (:287-295): an app on the shipped screen sets
+  `SigninScreen`; widening `form-action` is only for a hand-built page
+  with the screen off. The
   "only listed servers work" sentence becomes `KeymailServers`. Within
   the byte budget by trimming, per AGENTS.md.
 - CHANGELOG: Added (`signin`/`signin-title` partials, `stage` shell,
   `stageArt`, `SigninState`, `PrepareSigninResponse`, `Forget`,
   `AnswerAsSent`, the `field` partial's `QuietError`, the `callout`
   partial's `ID` and `Focus`,
-  `ContinueOnSigninPage`, `KeymailServers`, `BeginPath`, `ForgetPath`,
-  `Remember`, `lastsignin`, `passkey.Config.Remember`). Changed: auth
-  now writes the remembered cookie by default — set `Remember` to false
-  to stop it and delete existing ones. Nothing else changes for an app
-  that leaves the switch off.
+  `SigninScreen`, `KeymailServers`, `BeginPath`, `ForgetPath`,
+  `Remember`, `lastsignin`, `passkey.Config.Remember`). Changed:
+  nothing for an app that leaves `SigninScreen` off — no new cookie,
+  and `Begin`/`Callback` as before; `KeymailServers`, if set, applies
+  either way. Turning the screen on turns on the continuation and
+  remembering together; `Remember: &false` keeps the screen and stops
+  remembering.
 - fichas adopts it in its own repo as a follow-up branch; not this
   branch.
 
@@ -747,8 +834,11 @@ pre-check that would address them is out of scope.
   from the query; `SentTo` only when bound, never the remembered
   address. Sent consults nothing: built with an `Authorize` that fails
   the test if called, a closed `*sql.DB` and a classifier transport that
-  fails the test, `?sent=1` still yields Sent. The one-time warning
-  fires with the switch off and never with it on.
+  fails the test, `?sent=1` still yields Sent. `SentInstead` only on a
+  bound attempt with `x`. The one-time warning fires with
+  `SigninScreen` off (and names it) and never with it on; with it off,
+  valid attempt, continuation and remembered cookies on the request are
+  ignored and none is marked for deletion.
 - **PrepareSigninResponse:** no-store on every state; no-referrer on
   Continue and on no other state; deletes exactly the cookies marked.
 - **Envelopes** (attempt and continuation each): round trip; refused
@@ -756,9 +846,13 @@ pre-check that would address them is out of scope.
   for another origin, expired (payload `exp`, with the cookie still
   sent), `iat` in the future, over its cap, unknown version prefix,
   unknown field.
-- **Continuation:** switch off, `Begin`'s keymail answer is today's 303
-  to the authorize URL, byte for byte, and neither new cookie is set.
-  Switch on: 303 to `?continue=<id>`; forged `?continue=https://evil`
+- **Screen off is today:** with `SigninScreen` off (and `Remember` nil,
+  true and false alike), `Begin`'s every answer — keymail 303 to the
+  authorize URL, `?sent=1`, each error — and `Callback`'s and `admit`'s
+  responses are byte for byte today's, with no `Set-Cookie` beyond
+  today's pending and session cookies; passkey discovery with the jar
+  wired sets no cookie beyond the session's.
+- **Continuation:** screen on: 303 to `?continue=<id>`; forged `?continue=https://evil`
   and a wrong id yield Ask/Expired; a missing or different pending
   cookie yields Expired; replay after expiry yields Expired; a URL
   failing the predicate is refused at `Begin` (no cookies set) and at
@@ -772,7 +866,7 @@ pre-check that would address them is out of scope.
   pending in place (the attempt cookie changing kind does not remove the
   protection), and B completes. A continuation cookie whose `ph` does
   not match the pending cookie (left from an earlier attempt, or a
-  switch-off `Begin` in between) does not block the current callback. A
+  screen-off `Begin` in between) does not block the current callback. A
   third-party callback URL leaves the pending cookie in place.
 - **Predicate:** table-driven — each rule in §1.4 violated once,
   including a duplicated parameter, an extra parameter, `prompt=none`,
@@ -787,26 +881,42 @@ pre-check that would address them is out of scope.
   exchange: `?force=1&err=keymail`, and the unlisted host receives no
   request); a pending cookie for a server removed from the list ends at
   the exchange the same way; both clients keep their timeouts.
-- **AnswerAsSent:** a wrapper that refuses with it and one that passes
-  to `Begin` for a magic link give the same status, the same
-  `Set-Cookie` names and attributes, the same redirect shape and the
-  same rendered Sent page (with the address), for the same input;
-  `AnswerAsSent` sends no mail and consults no classifier.
-- **Remembered:** written on keymail and magiclink admit with the
-  address (not the subject), including when SecondFactor then holds;
-  not when `Authorize` refuses or `SubjectFor` errors; passkey discover
-  writes `{passkey, ""}` over a remembered address, on the minted and
-  the held path, and nothing on a failed assertion; survives Signout;
-  `Forget` clears both cookies, refuses GET and cross-origin;
-  `Remember=false` deletes an existing cookie on the next sign-in and on
-  the next sign-in page, and never reads one; a bad, expired or
+- **AnswerAsSent,** in both modes: a wrapper that refuses with it and
+  one that passes to `Begin` for a magic link give the same status, the
+  same `Set-Cookie` names and attributes, the same redirect shape and
+  the same rendered Sent page, for the same input — with the screen
+  off, plain `?sent=1`, no cookie and "your inbox"; with it on,
+  `?sent=1&attempt=<id>`, the attempt cookie and the address, and with
+  `expect=keymail` the same `SentInstead` line. `AnswerAsSent` sends no
+  mail and consults no classifier.
+- **Honest surprise:** a remembered-Keymail one-tap whose address now
+  classifies as not keymail (the server stops answering; or an
+  allowlist that excludes it) gets a link and a Sent page with the
+  "Keymail didn't answer" line; the same address typed into Ask, with no
+  `expect`, gets the ordinary Sent page; `expect` never changes which
+  path `Begin` takes.
+- **Remembered and the attempt's end** (screen on): written on keymail
+  and magiclink admit with the address (not the subject), including when
+  SecondFactor then holds; not when `Authorize` refuses or `SubjectFor`
+  errors; the attempt cookie deleted on every verified first factor.
+  Passkey discovery with an existing attempt address *and* a remembered
+  email address: afterwards the attempt cookie is gone and the record is
+  `{passkey, ""}`, on the minted and the held path, and the next
+  sign-in page's `Address` is empty; a failed assertion changes
+  neither cookie. Survives Signout; `Forget` clears both cookies,
+  refuses GET and cross-origin; `Remember=false` deletes an existing
+  cookie on the next sign-in and on the next sign-in page, and never
+  reads one; a bad, expired or
   wrong-origin cookie is ignored and cleared; a request carrying only a
   valid remembered cookie is refused by `RequireSession`.
 - **Partial:** renders every step × problem × remembered method with
   fixtures; the heading/title table; autofocus exactly per the §2
   matrix, one element at most; no `role="alert"` anywhere in the
-  rendered screen; the one-tap's label is **Continue** for both email
-  methods and its `aria-describedby`; the Keymail problem posts `force=1`;
+  rendered screen; the one-tap reads **Continue to Keymail** with
+  `aria-describedby` naming the address line and a hidden
+  `expect=keymail`, **Continue as ‹address›** (in `<bdi>`) with no
+  `expect` and no describedby, and **Sign in with your passkey** for a
+  passkey; the Keymail problem posts `force=1`;
   Continue has no `<form>`; `Preview` emits no `http-equiv`; no inline
   styles (`TestPartialsAndLayoutsEmitNoInlineStyles` covers the new
   partials and shell); every control named; class/attribute twins;
@@ -835,7 +945,9 @@ pre-check that would address them is out of scope.
   the button, which was never `disabled`; a second click while busy
   starts no second ceremony. The navigation check (a node test, the way
   select.js is tested, ui/select_test.go:94) refuses `//evil`, `/\t/evil`, `/\n/evil`,
-  `/\\evil` and an absolute URL, and accepts a same-origin path.
+  `/\\evil`, a cross-origin absolute URL and a same-origin absolute
+  URL (the local-path rule, §1.6 step 4), and accepts `/`, `/home` and
+  `/confirm?x=1`.
 - **By hand before merge,** recorded in the branch description: the
   continuation in Firefox and Safari (Safari enforces `form-action`
   across intermediate GETs, F/auth_navigation.go:13-18); VoiceOver and
@@ -865,7 +977,7 @@ pre-check that would address them is out of scope.
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 | Blocker: custom sign-in pages stop completing keymail | Opt-in `ContinueOnSigninPage`, default off; off is today's behaviour exactly. Doctor check found unsound and replaced by a one-time runtime warning (Decisions) |
+| 1 | Blocker: custom sign-in pages stop completing keymail | Opt-in `ContinueOnSigninPage`, default off; off is today's behaviour exactly. Doctor check found unsound and replaced by a one-time runtime warning (Decisions). After round 3 the operator folded this into the single `SigninScreen` switch |
 | 2 | Blocker: continuation expiry unenforceable | Versioned `v1.` envelopes with authenticated `iat`/`exp`, origin and ids; the continuation also carries state and pending hashes (§1.3) |
 | 3 | Two tabs continue the wrong attempt; stale callback destroys the newer one | Id-bound `?continue=`; pending-hash binding; Callback leaves the attempt the installed pair describes intact on a state mismatch (§1.3). Reworked in round 2 (#19, #20) |
 | 4 | URL validation weaker than fichas' | Full predicate, stricter than fichas', from the building config; checked before sealing and before rendering (§1.4) |
@@ -895,6 +1007,35 @@ below, all fixed in this revision. No Blockers, so no round 3.
 | 19 | Important: stale-callback protection lost after a link or problem attempt; guard not bound to the pending cookie it protects | Split into an attempt cookie (screen) and a continuation cookie (the pending cookie's sidecar); the guard applies only when the sidecar's `ph` matches the pending cookie (§1.3) |
 | 20 | Important: "newest supersedes" and "single-use" overstate cookies | Stated as "the last installed pair"; in-flight deletion limit and the real replay boundary (pending expiry + provider's single-use code) written down; tests per response order (§1.3, §5) |
 | 21 | Minor: `/`-prefix navigation check passes `/\t/evil` | Parse against `location.href` and compare origins; refuse control characters and `\` (§1.6) |
-| 22 | Important: remembered-method labels promise a method `Begin` re-decides | One-tap label is **Continue** for both email methods; the address is its description (§2) |
+| 22 | Important: remembered-method labels promise a method `Begin` re-decides | One-tap label is **Continue** for both email methods; the address is its description (§2). **Overridden by the operator after round 3**: see below |
 | 23 | Important: focus rules conflict (`field`'s `role="alert"`, Reauth, disabled busy button) | One focus matrix with Reauth precedence; `field` `QuietError`; `callout` `ID`/`Focus`; passkey busy via `aria-busy`/`aria-disabled`, never `disabled`; autofocus described as a request (§1.6, §2) |
 | 24 | Minor: runtime warning is not a sound detector | Reworded as a conditional advisory that never calls the app misconfigured (Decisions) |
+
+### Round 3 (Astra, 2026-09-27) — not ready; no Blockers, 1 Important, 2 Minor
+
+Re-verdict: 3, 5, 12, 13 and 18–24 resolved; 15 and 17 partly resolved,
+their remaining gap being finding 26. All fixed below; no round 4.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 25 | Important: passkey discovery leaves an earlier attempt's typed address in the prefill | `lastsignin.Jar.EndAttempt` is the one seam every sign-in path calls on a verified first factor; passkey discovery calls it before hold or session, so held and completed paths both clear it; test with an existing attempt address (§1.5, §5) |
+| 26 | Minor: `AnswerAsSent` switch-off behaviour unstated | It follows the switch as `Begin` does: off, plain `?sent=1` and no cookie; on, attempt-cookie parity. Parity tests in both modes (§1.3, §5) |
+| 27 | Minor: navigation predicate and test disagree on absolute URLs | Keep the local-absolute-path rule (`localPath`, ui/rastrillo.js:66-69; `SafeReturn`) and the parsed-origin check; a same-origin absolute URL is refused, and the test says so (§1.6, §5) |
+
+Operator decisions after round 3:
+
+- **One switch.** `ContinueOnSigninPage` is replaced by `SigninScreen`,
+  which turns on the continuation and remembering together; off means
+  no new cookie of any kind and today's `Begin`/`Callback`. `Remember`
+  is only an off-switch while the screen is on. This also withdraws
+  round 2's "auth writes the remembered cookie by default", which
+  changed apps that never render the screen (Decisions, §1.1, §1.5,
+  §4, §5).
+- **The one-tap names the method** — **Continue to Keymail**,
+  **Continue as ‹address›**, **Sign in with your passkey** — overriding
+  the resolution of finding 22. The honesty the finding asked for moves
+  to the outcome: a Keymail one-tap that ends in a link says so on the
+  Sent page, through a hidden `expect=keymail` that changes only the
+  wording (§1.3, §2, §5).
+- **The runtime advisory** in place of a doctor check is accepted
+  (Decisions).
