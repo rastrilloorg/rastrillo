@@ -1679,6 +1679,31 @@ func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
 // and — the part an attribute check would miss — whether the spinner is
 // really on screen and really turning, out of the computed style rather
 // than out of the markup.
+// swapStateJS reads the busy button whose spinner replaces its label.
+// "Ink" is what paints: a transparent text fill, a zero opacity, or a
+// transparent ring all read as none.
+const swapStateJS = `(function () {
+  var b = document.getElementById("swapgo");
+  var icon = document.getElementById("swapicon");
+  var spin = b.querySelector("[rst-spin]");
+  var cs = getComputedStyle(b);
+  var clear = "rgba(0, 0, 0, 0)";
+  var sc = spin && getComputedStyle(spin);
+  var br = b.getBoundingClientRect();
+  var sr = spin && spin.getBoundingClientRect();
+  var centred = !!spin &&
+    Math.abs((sr.left + sr.width / 2) - (br.left + br.width / 2)) < 1 &&
+    Math.abs((sr.top + sr.height / 2) - (br.top + br.height / 2)) < 1;
+  return [
+    "width:" + br.width.toFixed(1),
+    "name:" + b.textContent.trim(),
+    "label-ink:" + (cs.webkitTextFillColor === clear ? "none" : "shown"),
+    "icon-ink:" + (parseFloat(getComputedStyle(icon).opacity) === 0 ? "none" : "shown"),
+    "spin-ink:" + (sc && sc.borderTopColor !== clear && spin.offsetWidth > 6 ? "shown" : "none"),
+    "spin-centred:" + centred,
+  ].join(" ");
+})()`
+
 const busyStateJS = `(function () {
   var f = document.getElementById("two");
   var s = document.getElementById("save");
@@ -1945,6 +1970,17 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`<div rst-form-foot>`+
 			`<button id="extgo" rst-btn="primary" type="submit" form="ext" name="action" value="ext" data-busy-label="Sending…">Save</button>`+
 			`</div>`+
+			// A submit with no busy label: the spinner takes the
+			// label's place rather than joining it. The icon is there
+			// because an element child, unlike the text, is not hidden
+			// by the text fill — it needs its own rule.
+			// In a form-foot, like #save, so the button is sized by its
+			// content: a stretched one keeps its width whatever the
+			// spinner does, and the width check would pin nothing.
+			`<form id="swap" rst-form method="post" action="/submit"><div rst-form-foot>`+
+			`<button id="swapgo" rst-btn="primary" type="submit" name="action" value="swap">`+
+			`<span id="swapicon" aria-hidden="true">+</span>Publish</button>`+
+			`</div></form>`+
 			// The form that really navigates, for the back-button leg.
 			`<form id="nav" rst-form method="post" action="/go">`+
 			`<button id="navgo" rst-btn="primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
@@ -2209,6 +2245,41 @@ func TestBusyButtonDrive(t *testing.T) {
 	if afterSecond != wantBusy {
 		t.Errorf("after the re-entrancy attempts the state is\n  %q\nwant it unchanged:\n  %q", afterSecond, wantBusy)
 	}
+
+	// ── 4a. The spinner takes the label's place ─────────────────────
+	//
+	// With no data-busy-label there are no words to show while it works,
+	// so the label gives way to a centred spinner. Bug classes, each of
+	// which still "works": the spinner joins the label and the button
+	// grows, reflowing everything beside it mid-click; the label is hidden
+	// with the spinner, so it inherits the transparent ink and the button
+	// shows nothing at all; the label is hidden from the accessibility
+	// tree too, so a screen reader announces an unnamed busy button.
+	var swapWidth float64
+	var swap string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &swapWidth), at("measured-swap"),
+		chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap"),
+		chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened"),
+		chromedp.Evaluate(swapStateJS, &swap),
+	))
+	if got := took(t, payloads, "swap"); got != "action=swap" {
+		t.Errorf("the swapping form sent %q, want %q", got, "action=swap")
+	}
+	wantSwap := fmt.Sprintf("width:%.1f name:+Publish label-ink:none icon-ink:none spin-ink:shown spin-centred:true", swapWidth)
+	if swap != wantSwap {
+		t.Errorf("a busy button with no busy label reads\n  %q\nwant\n  %q", swap, wantSwap)
+	}
+	// And the other side of the same selector: a busy label is words
+	// the author asked to be read, so it stays inked.
+	var saveInk string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`getComputedStyle(document.getElementById("save")).webkitTextFillColor`, &saveInk),
+	))
+	if saveInk == "rgba(0, 0, 0, 0)" {
+		t.Errorf("the button with data-busy-label has transparent label ink — its busy label must stay visible")
+	}
+	rig.Screen("body", "a busy button whose spinner replaces the label")
 
 	// ── 4b. Back ──────────────────────────────────────────────────────
 	//
