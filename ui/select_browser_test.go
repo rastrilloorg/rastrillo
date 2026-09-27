@@ -823,6 +823,7 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 		SameShown    string `json:"sameTaskShown"`
 		SameErrors   int    `json:"sameTaskErrors"`
 		BothLabelled bool   `json:"bothLabelled"`
+		CloneBoxes   int    `json:"cloneBoxes"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -883,6 +884,12 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 		await frame();
 		out.sameTaskBoxes = document.querySelectorAll('#colour-host [rst-combo]').length;
 		out.sameTaskShown = (document.querySelector('#colour-combo') || {}).value || '';
+		// Replaced with a clone of itself, which copies the enhancement
+		// marker: the clone is still enhanced.
+		const orig = document.querySelector('#colour');
+		orig.replaceWith(orig.cloneNode(true));
+		await frame();
+		out.cloneBoxes = document.querySelectorAll('#colour-host [rst-combo]').length;
 		// Options changed and the whole host cleared in one task: nothing
 		// is left to enhance, and nothing throws.
 		const last = document.querySelector('#colour');
@@ -900,6 +907,9 @@ func TestSelectStepsAsideWhenReplaced(t *testing.T) {
 	}
 	if got.LabelFor != "colour-combo" {
 		t.Error("the label does not name the new box")
+	}
+	if got.CloneBoxes != 1 {
+		t.Errorf("a select replaced with its own clone left %d boxes, want 1: the clone's copied marker was trusted", got.CloneBoxes)
 	}
 	if !got.BothLabelled {
 		t.Error("two selects replaced in one task: a new box is left without its label, which an old box handed back to the hidden select")
@@ -1046,6 +1056,8 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 		MovedUp          bool    `json:"movedUp"`
 		ScrolledDown     bool    `json:"scrolledDown"`
 		PanelUp          bool    `json:"panelUp"`
+		NarrowUp         bool    `json:"narrowUp"`
+		BroadUp          bool    `json:"broadUp"`
 		DroppedOnRemoval int     `json:"droppedOnRemoval"`
 		FirstDownUp      string  `json:"firstDownUp"`
 		FirstDownBelow   string  `json:"firstDownBelow"`
@@ -1107,6 +1119,22 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 		await frame();
 		out.movedUp = wrap.hasAttribute('rst-combo-up');
 		key('Escape');
+		// Opened low with a search that fits below, then broadened: the
+		// list needs the room above now.
+		input.blur();
+		wrap.style.cssText = 'position:fixed;left:10px;width:300px;top:' + (window.innerHeight - 130) + 'px';
+		input.focus();
+		input.value = 'Europe/Lond';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		await frame();
+		out.narrowUp = wrap.hasAttribute('rst-combo-up');
+		input.value = '';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		await frame();
+		out.broadUp = wrap.hasAttribute('rst-combo-up');
+		key('Escape');
 		wrap.removeAttribute('style');
 		// Near the top of a scrolling panel that sits low on the screen:
 		// the room above the box is outside the panel, so it opens down.
@@ -1141,6 +1169,9 @@ func TestSelectOpensUpWhenThereIsNoRoomBelow(t *testing.T) {
 	}
 	if got.TopUp || got.TopListTop < got.TopBoxEnd-1 {
 		t.Errorf("at the top of the viewport the list opened up=%v starting at %.0f with the box ending at %.0f, want downward, below the box", got.TopUp, got.TopListTop, got.TopBoxEnd)
+	}
+	if got.NarrowUp || !got.BroadUp {
+		t.Errorf("low on the screen, one match opened up=%v and clearing the search left up=%v, want down then up: a broader search must re-place the list", got.NarrowUp, got.BroadUp)
 	}
 	if got.PanelUp {
 		t.Error("near the top of a low scrolling panel the list opened upward, into the part of the panel that is clipped")

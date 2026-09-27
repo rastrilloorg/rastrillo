@@ -200,8 +200,13 @@
   // {focused, open, typed}. It is restored quietly — no input event for a
   // page to answer by changing the options again, and no reopening a list
   // somebody had closed.
+  const enhanced = new WeakSet();
   function combo(native, resume) {
-    if (native.dataset.rstEnhanced) return; // idempotent: safe to re-scan
+    // Idempotent, by a live record rather than the attribute: a page that
+    // replaces a select with a clone of it copies data-rst-enhanced too,
+    // and a clone trusted on that would never be enhanced at all.
+    if (enhanced.has(native)) return;
+    enhanced.add(native);
     native.dataset.rstEnhanced = "true";
 
     const id = native.id || "rst-select-" + Math.random().toString(36).slice(2);
@@ -538,6 +543,7 @@
     let frame = 0;
     let lastQuery = null;
     let lastHits = [];
+    let lastFound = 0;
     // Rows a search has lifted to the top of the list, out of their own
     // place. Only these ever go back when the search is cleared.
     const lifted = new Set();
@@ -602,6 +608,11 @@
       for (const { box } of boxes.values()) show(box, !searching);
       for (const o of extra) show(o.li, true);
       const found = hits.filter((o) => !o.disabled).length;
+      // A broader search needs more room than the side the list opened on
+      // may have; a narrower one never does, so typing on (the common
+      // case) measures nothing.
+      if (open && found > lastFound) replace();
+      lastFound = found;
       show(empty, !found);
       const text = found === 1 ? oneFmt : manyFmt.replace("{n}", String(found));
       if (status.textContent !== text) status.textContent = text;
@@ -931,6 +942,7 @@
       native.removeAttribute("aria-hidden");
       if (inputAttr !== null) native.setAttribute("rst-input", inputAttr);
       delete native.dataset.rstEnhanced;
+      enhanced.delete(native);
       if (label) label.htmlFor = native.id;
       wrap.remove();
     };
