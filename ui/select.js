@@ -178,12 +178,10 @@
   }
   if (typeof document === "undefined") return;
 
-  // The band of this document the reader can actually see, when a host
-  // says so: {top, bottom} in this document's viewport coordinates (the
-  // space getBoundingClientRect reports in). Inside an iframe the frame's
-  // own visual viewport never shrinks for the top page's keyboard, so a
-  // host that can see the top page tells the frame; null forgets it. The
-  // latest word wins. Registered before any box opens, so an open box
+  // The band of this document the reader can see, when a host says so:
+  // {top, bottom} in viewport coordinates. A frame's visual viewport never
+  // shrinks for the top page's keyboard, so a host that can see it tells
+  // the frame; null forgets it. Registered before any box opens, so a box
   // re-placing on the same event reads the new band.
   let told = null;
   document.addEventListener("rst:select-viewport", (e) => {
@@ -409,7 +407,7 @@
       const o = picked();
       lead.textContent = (o && o.lead) || "";
       lead.hidden = !lead.textContent;
-      wrap.toggleAttribute("rst-combo-has-lead", !lead.hidden);
+      if (wrap.hasAttribute("rst-combo-has-lead") === lead.hidden) wrap.toggleAttribute("rst-combo-has-lead", !lead.hidden);
       said.textContent = o && o.short ? [o.name, o.desc].filter(Boolean).join(" ") : "";
     };
     showText();
@@ -497,7 +495,7 @@
       if (!preferred) {
         // Read with nothing of ours in the way: an upward list has no top
         // margin, and the gap would read as 0.
-        wrap.removeAttribute("rst-combo-up");
+        if (wrap.hasAttribute("rst-combo-up")) wrap.removeAttribute("rst-combo-up");
         list.style.maxBlockSize = "";
         const cs = getComputedStyle(list);
         preferred = parseFloat(cs.maxBlockSize) || 240;
@@ -517,20 +515,17 @@
         bottom = Math.min(bottom, r.bottom);
       }
       const box = wrap.getBoundingClientRect();
-      // A bar pinned below the box (data-rst-select-floor: a sticky save
-      // bar) is not room, or the list would cover the button that moves the
-      // reader on. The highest such bar wins; one above the box is ignored.
+      // A bar pinned below the box (data-rst-select-floor) is not room;
+      // the highest wins, one above the box is ignored.
       for (const f of floors) {
         const r = f.getBoundingClientRect();
         if (r.height && r.top >= box.bottom - 1) bottom = Math.min(bottom, r.top);
       }
       const below = bottom - box.bottom - gap;
       const above = box.top - top - gap;
-      // Up only when the list's own height does not fit below and there is
-      // more room above; a tie goes down. The side chosen is always the
-      // bigger when neither fits, so a list is never shorter than three
-      // rows while its side has room for them; with less it is clamped to
-      // the room, never pushed past the edge (Tito Go #3146, the same rule).
+      // Up only when the list does not fit below and there is more room
+      // above; a tie goes down. Neither fitting, the bigger side wins and
+      // the list is clamped to it, never past the edge (Tito Go #3146).
       const up = below < preferred + chrome && above > below;
       const h = Math.floor(Math.max(0, Math.min(preferred + chrome, up ? above : below) - chrome)) + "px";
       if (list.style.maxBlockSize !== h) list.style.maxBlockSize = h;
@@ -552,15 +547,17 @@
     };
     const setActive = (o, atTop) => {
       // Only the row losing the highlight and the row gaining it are touched.
+      // Every write here is guarded: rewriting an attribute to the value it
+      // has is still a mutation the page's stylesheet is asked about.
       if (active && active !== o) active.li.classList.remove("is-active");
-      if (o) o.li.classList.add("is-active");
+      if (o && !o.li.classList.contains("is-active")) o.li.classList.add("is-active");
       active = o || null;
       if (o) {
-        input.setAttribute("aria-activedescendant", o.li.id);
+        if (input.getAttribute("aria-activedescendant") !== o.li.id) input.setAttribute("aria-activedescendant", o.li.id);
         scrollTop = !!(atTop && visible()[0] === o);
         scrollTo = o;
         soon();
-      } else {
+      } else if (input.hasAttribute("aria-activedescendant")) {
         input.removeAttribute("aria-activedescendant");
       }
     };

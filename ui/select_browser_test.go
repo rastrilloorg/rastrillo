@@ -225,15 +225,20 @@ func TestSelectKeepsPaceWithTyping(t *testing.T) {
 		const mo = new MutationObserver((m) => seen.push(...m));
 		mo.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'], attributeOldValue: true });
 
-		let searched = 0;
-		const searches = new MutationObserver((m) => { searched += m.length; });
-		searches.observe(input, { attributes: true, attributeFilter: ['aria-activedescendant'] });
-		for (const v of ['D', 'Du', 'Dub', 'Dubl']) type(v);
-		out.syncSearches = searches.takeRecords().length;
-		await frame();
-		out.frameSearches = searched + searches.takeRecords().length;
-		searches.disconnect();
+		// A search shows itself as rows shown and hidden. Four inputs in one
+		// task: the first is searched at once (rows change now) and the rest
+		// once, in the frame (rows change again then). Had every input been
+		// searched at once, the frame would have nothing left to do. Counted
+		// as batches, since the highlight is no longer rewritten when it does
+		// not move.
 		mo.takeRecords();
+		type('D');
+		out.syncSearches = mo.takeRecords().length ? 1 : 0;
+		for (const v of ['Du', 'Dub', 'Dubl']) type(v);
+		out.syncSearches += mo.takeRecords().length ? 1 : 0;
+		await frame();
+		out.frameSearches = (seen.length + mo.takeRecords().length) ? 1 : 0;
+		seen.length = 0;
 
 		type('Dubl');
 		type('Lond');
@@ -1202,6 +1207,7 @@ func TestSelectTypingIsCheap(t *testing.T) {
 		Rebuilds     int      `json:"rebuilds"`
 		HiddenWrites int      `json:"hiddenWrites"`
 		Outside      []string `json:"outside"`
+		Noops        []string `json:"noops"`
 		PerFrame     []int    `json:"perFrame"`
 		Searched     bool     `json:"searched"`
 	}
@@ -1226,6 +1232,26 @@ func TestSelectTypingIsCheap(t *testing.T) {
 			}
 		});
 		attrs.observe(document.documentElement, { attributes: true, childList: true, characterData: true, subtree: true });
+		// And every attribute written inside the box to the value it already
+		// had: still a mutation the page's stylesheet is asked about.
+		out.noops = [];
+		const same = new MutationObserver(() => {});
+		same.observe(tzWrap, { attributes: true, attributeOldValue: true, subtree: true });
+		const drain = () => {
+			const by = new Map();
+			for (const r of same.takeRecords()) {
+				if (!counting) continue;
+				const k = r.target;
+				if (!by.has(k)) by.set(k, new Map());
+				const m = by.get(k);
+				if (!m.has(r.attributeName)) m.set(r.attributeName, []);
+				m.get(r.attributeName).push(r.oldValue);
+			}
+			for (const [el, m] of by) for (const [name, olds] of m) olds.forEach((was, j) => {
+				const now = j + 1 < olds.length ? olds[j + 1] : el.getAttribute(name);
+				if (was === now) out.noops.push((el.id || el.tagName) + '@' + name);
+			});
+		};
 		let reads = 0;
 		const count = (proto, name) => {
 			const was = proto[name];
@@ -1254,8 +1280,11 @@ func TestSelectTypingIsCheap(t *testing.T) {
 			// them: each a new query, each searched (one at once, one in the
 			// frame).
 			type(a);
+			drain();
 			type(b);
+			drain();
 			await frame();
+			drain();
 			out.perFrame.push(reads);
 		}
 		attrs.takeRecords();
@@ -1269,6 +1298,9 @@ func TestSelectTypingIsCheap(t *testing.T) {
 	`, &got)
 	if got.HiddenWrites != 0 {
 		t.Errorf("typing wrote the hidden attribute %d times, want 0: a page with [hidden] in a :has() pays for every write", got.HiddenWrites)
+	}
+	if len(got.Noops) != 0 {
+		t.Errorf("typing rewrote %d attributes inside the box to the value they had (first: %s), want 0", len(got.Noops), got.Noops[0])
 	}
 	if len(got.Outside) != 0 {
 		t.Errorf("typing mutated %d things outside the combobox (first: %s), want none", len(got.Outside), got.Outside[0])
