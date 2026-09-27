@@ -1062,5 +1062,7 @@
   // Added content (a modal fetched in, a polled fragment) stays native
   // until the page asks; running this file again instead would
   // double-enhance everything already there.
-  document.addEventListener("rst:select-scan", (e) => scan(e.detail && e.detail.root));
+  // A microtask later, so a box the page replaced in the same task has
+  // retired first and handed back its label.
+  document.addEventListener("rst:select-scan", (e) => queueMicrotask(() => scan(e.detail && e.detail.root)));
 })();

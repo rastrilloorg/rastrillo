@@ -342,7 +342,7 @@ func TestSelectContract(t *testing.T) {
 	// rows moved from the hidden attribute to inline display (titogo
 	// #3145); comments were trimmed to stay inside rather than raise it.
 	//
-	// Then to 48KB (measured 48,433 bytes) by rst:select-scan, the one way
+	// Then to 48KB (measured 48,573 bytes) by rst:select-scan, the one way
 	// a page that adds content after load gets its selects enhanced (Tito's
 	// modal forms need it). The header was trimmed first; the ranking
 	// comments were not, because they are kept in step with Tito's.

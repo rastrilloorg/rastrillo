@@ -1394,13 +1394,14 @@ func TestSelectRebuildKeepsWhatIsInFlight(t *testing.T) {
 func TestSelectScanEvent(t *testing.T) {
 	t.Parallel()
 	var got struct {
-		Unasked      int `json:"unasked"`
-		Asked        int `json:"asked"`
-		AskedTwice   int `json:"askedTwice"`
-		OutsideRoot  int `json:"outsideRoot"`
-		WholeDoc     int `json:"wholeDoc"`
-		PageBoxes    int `json:"pageBoxes"`
-		PageBoxesNow int `json:"pageBoxesNow"`
+		Unasked          int  `json:"unasked"`
+		Asked            int  `json:"asked"`
+		AskedTwice       int  `json:"askedTwice"`
+		OutsideRoot      int  `json:"outsideRoot"`
+		WholeDoc         int  `json:"wholeDoc"`
+		PageBoxes        int  `json:"pageBoxes"`
+		PageBoxesNow     int  `json:"pageBoxesNow"`
+		ReplacedLabelled bool `json:"replacedLabelled"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -1415,17 +1416,32 @@ func TestSelectScanEvent(t *testing.T) {
 		const one = add();
 		await frame();
 		out.unasked = boxes(one);
-		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: one } }));
+		const ask = async (root) => {
+			document.dispatchEvent(new CustomEvent('rst:select-scan', root ? { detail: { root } } : {}));
+			await Promise.resolve();
+		};
+		await ask(one);
 		out.asked = boxes(one);
-		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: one } }));
+		await ask(one);
 		out.askedTwice = boxes(one);
 		const other = add();
 		const third = add();
-		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: third } }));
+		await ask(third);
 		out.outsideRoot = boxes(other);
-		document.dispatchEvent(new CustomEvent('rst:select-scan'));
+		await ask();
 		out.wholeDoc = boxes(other);
 		out.pageBoxesNow = boxes(document);
+		// Replaced and asked for in the same task: the new box is named by
+		// the label, which the old box has handed back by then.
+		const fresh = document.createElement('select');
+		fresh.id = 'colour';
+		fresh.name = 'colour';
+		fresh.setAttribute('data-rst-select', '');
+		fresh.innerHTML = '<option value="red">Red</option><option value="blue">Blue</option>';
+		document.querySelector('#colour').replaceWith(fresh);
+		await ask(document.querySelector('#colour-host'));
+		await frame();
+		out.replacedLabelled = !!document.querySelector('label[for="colour-combo"]');
 		return out;
 	`, &got)
 	if got.Unasked != 0 {
@@ -1439,6 +1455,9 @@ func TestSelectScanEvent(t *testing.T) {
 	}
 	if got.WholeDoc != 1 {
 		t.Errorf("a scan with no root left the other added select with %d boxes, want 1", got.WholeDoc)
+	}
+	if !got.ReplacedLabelled {
+		t.Error("a select replaced and scanned for in the same task: the new box lost its label to the old box's teardown")
 	}
 	if got.PageBoxesNow != got.PageBoxes+3 {
 		t.Errorf("the page went from %d boxes to %d after three added selects, want %d: something was enhanced twice", got.PageBoxes, got.PageBoxesNow, got.PageBoxes+3)
