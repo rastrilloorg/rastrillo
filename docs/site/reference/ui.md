@@ -458,6 +458,11 @@ from the request's catalog.
 Its on-screen labels have English fallbacks, the same way `select.js`
 does, for a field that reaches it without the attributes.
 
+A select added after the page loads stays native until you ask: dispatch
+`rst:select-scan` on `document`, with `{detail: {root}}` to look only
+inside what you added, and `select.js` enhances every `data-rst-select`
+there it has not enhanced already.
+
 `CalendarJS` is the month grid those fields open when you press their
 calendar button — a real `<table>` with real column headers under a
 `role="grid"`, so it is a calendar to a screen reader and not a wall of
