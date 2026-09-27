@@ -357,7 +357,7 @@
       home(o).appendChild(li);
     }
     const empty = el("li", "rst-combo-empty");
-    empty.hidden = true;
+    empty.style.display = "none";
     empty.textContent = say("no-matches", "No matches");
     list.appendChild(empty);
 
@@ -421,7 +421,8 @@
     // The rows in the order they are on screen: best match first while
     // searching, the select's own order otherwise; the page's extras last.
     let shown = opts;
-    const visible = () => shown.filter((o) => !o.li.hidden && !o.disabled);
+    const isShown = (e) => e.style.display !== "none";
+    const visible = () => shown.filter((o) => isShown(o.li) && !o.disabled);
     // What a list falls back to highlighting: one of the select's own
     // answers — never a row the page added (it owns Enter), and never a
     // prompt (a bare Enter would "answer" with the question).
@@ -439,7 +440,7 @@
     const opening = () => {
       if (unanswered()) return null;
       const sel = picked();
-      return sel && !sel.li.hidden && !sel.disabled ? sel : firstReal();
+      return sel && isShown(sel.li) && !sel.disabled ? sel : firstReal();
     };
     // The rows the arrows, Home and End step through: what is on screen,
     // less a prompt, which is still there to tap.
@@ -460,39 +461,45 @@
       if (placeDue) place();
       placeDue = false;
       if (scrollTop) list.scrollTop = 0;
-      else if (scrollTo && !scrollTo.li.hidden) scrollTo.li.scrollIntoView({ block: "nearest" });
+      else if (scrollTo && isShown(scrollTo.li)) scrollTo.li.scrollIntoView({ block: "nearest" });
       scrollTo = null;
       scrollTop = false;
     };
     const soon = () => {
       if (!layout) layout = requestAnimationFrame(onLayout);
     };
-    // The list opens UPWARD when there is not room for it below and there is
-    // more above, measured against the visual viewport, which shrinks when a
-    // phone's keyboard is up: a box near the bottom of a sheet or an iframe
-    // otherwise opens its list under the keyboard. Only placement flips; the
-    // keyboard order and every ARIA state stay as they are.
+    // Down, unless the room below cannot hold the list's own height (its
+    // stylesheet max-height) and there is more room above; then up, so a box
+    // at the foot of a sheet does not open under a phone's keyboard. Held to
+    // the room on its side. Room is the visual viewport, cut to every
+    // ancestor that scrolls. Only placement flips, never keyboard order or
+    // ARIA. The same rule as Tito Go's searchselect. Worked out when the list opens and when the room
+    // changes — never on a keystroke: the room is the same whatever is
+    // typed, and a keystroke's one layout read is the highlight's.
+    let preferred = 0;
+    let scrollers = [];
     const place = () => {
+      if (!preferred) {
+        list.style.maxBlockSize = "";
+        preferred = parseFloat(getComputedStyle(list).maxBlockSize) || 240;
+      }
       const vv = window.visualViewport;
       let top = vv ? vv.offsetTop : 0;
       let bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-      // A scrolling panel around the box (a modal's body, a sheet) clips
-      // the list too: room outside it is no room at all.
-      for (let a = wrap.parentElement; a && a !== document.body; a = a.parentElement) {
-        if (!/auto|scroll|hidden|clip/.test(getComputedStyle(a).overflowY)) continue;
+      for (const a of scrollers) {
         const r = a.getBoundingClientRect();
         top = Math.max(top, r.top);
         bottom = Math.min(bottom, r.bottom);
       }
       const box = wrap.getBoundingClientRect();
-      const below = bottom - box.bottom;
-      const above = box.top - top;
-      const want = list.scrollHeight + 8;
-      const up = below < want && above > below;
-      wrap.toggleAttribute("rst-combo-up", up);
-      // And it fits the side it opens on. Set through the CSSOM, which a
-      // content-security policy with no inline styles still allows.
-      list.style.maxBlockSize = Math.max(Math.min(up ? above : below, 15 * 16) - 8, 64) + "px";
+      const below = bottom - box.bottom - 4;
+      const above = box.top - top - 4;
+      const up = below < preferred && above > below;
+      // Set through the CSSOM, which a policy with no inline styles still
+      // allows; both written only when they change.
+      const h = Math.max(0, Math.floor(Math.min(preferred, up ? above : below))) + "px";
+      if (list.style.maxBlockSize !== h) list.style.maxBlockSize = h;
+      if (up !== wrap.hasAttribute("rst-combo-up")) wrap.toggleAttribute("rst-combo-up", up);
     };
     const replace = () => {
       // A box taken off the page with its whole fragment hears no mutation
@@ -543,7 +550,6 @@
     let frame = 0;
     let lastQuery = null;
     let lastHits = [];
-    let lastFound = 0;
     // Rows a search has lifted to the top of the list, out of their own
     // place. Only these ever go back when the search is cleared.
     const lifted = new Set();
@@ -556,10 +562,13 @@
       if (next && !next.run) return next.group ? boxes.get(next.group).box : next.sep || next.li;
       return empty;
     };
-    // A hidden state is written only when it changes: writing the same
-    // value still invalidates the element's style.
+    // A row's shown state, written only when it changes, as an inline
+    // `display`, never the `hidden` attribute: a page with [hidden] inside a
+    // :has() makes each such write a style invalidation WebKit works out on
+    // the spot, and one keystroke hides hundreds of rows (3 to 6 seconds on
+    // an iPhone, on Tito's checkout). No page's CSS asks about inline style.
     const show = (e, on) => {
-      if (e.hidden === on) e.hidden = !on;
+      if (isShown(e) !== on) e.style.display = on ? "" : "none";
     };
     const filter = (query) => {
       pending = false;
@@ -608,11 +617,6 @@
       for (const { box } of boxes.values()) show(box, !searching);
       for (const o of extra) show(o.li, true);
       const found = hits.filter((o) => !o.disabled).length;
-      // A broader search needs more room than the side the list opened on
-      // may have; a narrower one never does, so typing on (the common
-      // case) measures nothing.
-      if (open && found > lastFound) replace();
-      lastFound = found;
       show(empty, !found);
       const text = found === 1 ? oneFmt : manyFmt.replace("{n}", String(found));
       if (status.textContent !== text) status.textContent = text;
@@ -623,7 +627,7 @@
       if (requeried) steered = false;
       lastQuery = query;
       if (!searching && !steered && (requeried || unanswered())) setActive(opening());
-      else if ((searching && requeried) || !active || !shown.includes(active) || active.li.hidden || active.disabled) {
+      else if ((searching && requeried) || !active || !shown.includes(active) || !isShown(active.li) || active.disabled) {
         setActive(firstReal(), true);
       }
     };
@@ -648,6 +652,12 @@
       open = true;
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
+      // The ancestors that scroll, read once a list opens: which they are
+      // does not change while it is open.
+      scrollers = [];
+      for (let a = wrap.parentElement; a && a !== document.body; a = a.parentElement) {
+        if (/auto|scroll|hidden|clip/.test(getComputedStyle(a).overflowY)) scrollers.push(a);
+      }
       replace();
       window.addEventListener("resize", replace);
       document.addEventListener("scroll", scrolled, true);
@@ -729,8 +739,11 @@
     input.addEventListener("input", () => {
       showingPick = false;
       // Once somebody types, the box holds their words, not the pick.
-      lead.hidden = true;
-      wrap.removeAttribute("rst-combo-has-lead");
+      // Written once, not per keystroke (see show, below).
+      if (!lead.hidden) {
+        lead.hidden = true;
+        wrap.removeAttribute("rst-combo-has-lead");
+      }
       openList(false);
       searchTyping();
     });
@@ -1019,7 +1032,7 @@
           filter(resume.typed);
         }
         const was = resume.extra >= 0 ? opts.filter((o) => o.run)[resume.extra]
-          : resume.at && opts.find((o) => o.el === resume.at && !o.li.hidden && !o.disabled);
+          : resume.at && opts.find((o) => o.el === resume.at && isShown(o.li) && !o.disabled);
         if (was) {
           setActive(was);
           steered = resume.steered;
