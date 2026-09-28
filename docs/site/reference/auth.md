@@ -146,3 +146,24 @@ cannot cash one later.
 
 <!-- docs:ignore Auth.AnswerAsSent screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
 <!-- docs:ignore Auth.RememberJar screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore Auth.SigninState screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore Auth.PrepareSigninResponse screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore Auth.Forget screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore SigninState screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore SigninState.Door screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore SigninState.Focus screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore SigninStep screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore StepAsk screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore StepReturning screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore StepSent screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore StepContinue screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore SigninProblem screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemNone screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemRate screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemAddress screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemExpired screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemKeymail screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemGeneric screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore ProblemReauth screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore Remembered screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore PasskeyDoor screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->

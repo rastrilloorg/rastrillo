@@ -24,6 +24,12 @@
 // emailed; ?err=rate|address|expired|keymail; ?force=1 — offer the
 // plain-email escape hatch after a failed keymail approval).
 //
+// The shipped sign-in screen (ui's signin partial) is opt-in:
+// Config.SigninScreen. With it on, SigninState reads what the page
+// shows, PrepareSigninResponse writes the headers and cookie deletions
+// that go with it, Forget is "Use a different email", and the page
+// renders the rest. With it off nothing about Begin or Callback changes.
+//
 // The decision tree: every submitted address is classified; a claimed
 // keymail inbox gets the keymail-OAuth ceremony (the upgrade), and
 // every other address — and every classification failure, which fails
