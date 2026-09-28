@@ -11,7 +11,14 @@
 // rule tested directly, not only through safeNext's origin check. This
 // file sits beside signin.mjs so `go test` finds it by path; it is
 // never embedded.
-import { ceremony, safeNext, localPath } from "./signin.mjs";
+//
+// The scenarios below stub `post` directly, bypassing postJSON
+// entirely, so they cannot see a regression in postJSON's own response
+// handling — its `!res.ok` check or its `res.json()` parsing. The
+// fetchScenarios section further down stubs `globalThis.fetch` instead
+// and drives ceremony with the real postJSON, so those two lines are
+// actually exercised.
+import { ceremony, safeNext, localPath, postJSON } from "./signin.mjs";
 
 const answer = (body) => async () => body;
 const fail = (err) => async () => { throw err; };
@@ -61,4 +68,41 @@ for (const [name, sc] of Object.entries(scenarios)) {
   out.outcomes[name] = await ceremony({ post, authenticate: sc.auth, begin: "/begin", finish: "/finish", rpId: "app.test", loc });
   out.finishKeys[name] = sent ? Object.keys(sent).sort() : null;
 }
+
+// fetchScenarios: real postJSON, real Response objects, only
+// globalThis.fetch replaced. Each responds by URL ("/begin" or
+// "/finish"), so postJSON's own !res.ok check and res.json() parsing
+// run for real instead of being bypassed by a stub `post`.
+const fetchScenarios = {
+  "finish 500 with a plausible-looking ok:true body": {
+    "/begin": () => new Response(JSON.stringify({ challenge: "c" }), { status: 200 }),
+    "/finish": () => new Response(JSON.stringify({ ok: true, to: "/x" }), { status: 500 }),
+  },
+  "finish 200 with a non-JSON body": {
+    "/begin": () => new Response(JSON.stringify({ challenge: "c" }), { status: 200 }),
+    "/finish": () => new Response("not json", { status: 200 }),
+  },
+  "begin returns HTML": {
+    "/begin": () => new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } }),
+    "/finish": () => new Response(JSON.stringify({ ok: true, to: "/x" }), { status: 200 }),
+  },
+  "fetch rejects with a TypeError on finish": {
+    "/begin": () => new Response(JSON.stringify({ challenge: "c" }), { status: 200 }),
+    "/finish": () => { throw new TypeError("Failed to fetch"); },
+  },
+  "a good path end to end": {
+    "/begin": () => new Response(JSON.stringify({ challenge: "c" }), { status: 200 }),
+    "/finish": () => new Response(JSON.stringify({ ok: true, to: "/home" }), { status: 200 }),
+  },
+};
+
+out.fetchOutcomes = {};
+for (const [name, responses] of Object.entries(fetchScenarios)) {
+  globalThis.fetch = async (url) => responses[url]();
+  out.fetchOutcomes[name] = await ceremony({
+    post: postJSON, authenticate: async () => assertion(),
+    begin: "/begin", finish: "/finish", rpId: "app.test", loc,
+  });
+}
+
 process.stdout.write(JSON.stringify(out));

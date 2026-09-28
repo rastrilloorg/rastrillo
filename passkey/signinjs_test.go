@@ -16,29 +16,30 @@ type outcome struct {
 	Message  string `json:"message,omitempty"`
 }
 
-func runSigninJS(t *testing.T, destinations []any) (map[string]outcome, map[string][]string, []string, []bool) {
+func runSigninJS(t *testing.T, destinations []any) (map[string]outcome, map[string][]string, []string, []bool, map[string]outcome) {
 	t.Helper()
 	in, err := json.Marshal(map[string]any{"origin": "https://app.test", "destinations": destinations})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var got struct {
-		Outcomes     map[string]outcome  `json:"outcomes"`
-		FinishKeys   map[string][]string `json:"finishKeys"`
-		Destinations []string            `json:"destinations"`
-		LocalPaths   []bool              `json:"localPaths"`
+		Outcomes      map[string]outcome  `json:"outcomes"`
+		FinishKeys    map[string][]string `json:"finishKeys"`
+		Destinations  []string            `json:"destinations"`
+		LocalPaths    []bool              `json:"localPaths"`
+		FetchOutcomes map[string]outcome  `json:"fetchOutcomes"`
 	}
 	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"js/signin_node.mjs"}, Stdin: in}), &got); err != nil {
 		t.Fatal(err)
 	}
-	return got.Outcomes, got.FinishKeys, got.Destinations, got.LocalPaths
+	return got.Outcomes, got.FinishKeys, got.Destinations, got.LocalPaths, got.FetchOutcomes
 }
 
 // Every branch a real ceremony can end in. The rule the table holds: the
 // page navigates only when finish answered ok:true, and then only to a
 // safe destination; everything else is a message and focus stays put.
 func TestThePasskeyDoorNavigatesOnlyAfterASuccess(t *testing.T) {
-	outcomes, keys, _, _ := runSigninJS(t, nil)
+	outcomes, keys, _, _, _ := runSigninJS(t, nil)
 	want := map[string]outcome{
 		"signed in, local destination":    {Navigate: "/home"},
 		"held for a second factor":        {Navigate: "/signin/confirm"},
@@ -75,7 +76,7 @@ func TestThePasskeyDoorNavigatesOnlyToALocalPath(t *testing.T) {
 		nil, 42, "",
 	}
 	want := []string{"/", "/", "/", "/", "/", "/", "/", "/home", "/confirm?x=1", "/", "/", "/"}
-	if _, _, got, _ := runSigninJS(t, cases); !reflect.DeepEqual(got, want) {
+	if _, _, got, _, _ := runSigninJS(t, cases); !reflect.DeepEqual(got, want) {
 		t.Fatalf("safeNext:\n got %q\nwant %q", got, want)
 	}
 }
@@ -92,8 +93,28 @@ func TestLocalPathIsExportedAndRejectsSchemesAndControlCharacters(t *testing.T) 
 		nil, 42, "",
 	}
 	want := []bool{false, false, false, false, false, false, true, true, true, false, false, false}
-	if _, _, _, got := runSigninJS(t, cases); !reflect.DeepEqual(got, want) {
+	if _, _, _, got, _ := runSigninJS(t, cases); !reflect.DeepEqual(got, want) {
 		t.Fatalf("localPath:\n got %v\nwant %v", got, want)
+	}
+}
+
+// The scenarios above stub `post` directly, so they never call
+// postJSON and cannot catch a regression there — deleting its
+// `!res.ok` check, or making a parse failure fall back to something
+// plausible instead of failing, would leave them green. This drives
+// ceremony with the real postJSON and a stubbed globalThis.fetch, so
+// postJSON's own response handling runs for real.
+func TestPostJSONsOwnResponseHandlingIsExercised(t *testing.T) {
+	_, _, _, _, got := runSigninJS(t, nil)
+	want := map[string]outcome{
+		"finish 500 with a plausible-looking ok:true body": {Message: "failed"},
+		"finish 200 with a non-JSON body":                  {Message: "failed"},
+		"begin returns HTML":                               {Message: "failed"},
+		"fetch rejects with a TypeError on finish":         {Message: "failed"},
+		"a good path end to end":                           {Navigate: "/home"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fetchOutcomes:\n got %v\nwant %v", got, want)
 	}
 }
 
