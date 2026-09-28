@@ -94,8 +94,17 @@ func WithT(t func(key string, args ...any) string) Option {
 // goes: the app's own ClearHref if it passed one, otherwise the same
 // screen with q dropped and every other carried pair kept.
 //
+// opt reads an optional key off a partial's data — a dict or a Go
+// struct — and gives nil when it is absent: the one way a shipped
+// partial reads a key added after struct callers existed, because a
+// template reading .Key off a struct without that field is an Execute
+// error. Tbdi is Tf for a sentence that carries text a visitor typed:
+// the catalog string is HTML-escaped and each {name} becomes its value,
+// escaped and isolated in <bdi> so an address in a right-to-left script
+// cannot reorder the sentence around it.
+//
 // An app is free to add its own entries on top; it must not drop these
-// nine, or the shipped partials stop parsing.
+// eleven, or the shipped partials stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -110,6 +119,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"dict": dict, "list": list, "menuGroup": menuGroup, "searchClear": searchClear,
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 		"dateWords": dateWords(c.t),
+		"opt":       opt, "Tbdi": tbdi(c.t),
 	}
 }
 
@@ -368,6 +378,55 @@ func optPairs(data any, key string) [][2]string {
 		pairs = append(pairs, [2]string{name.String(), value.String()})
 	}
 	return pairs
+}
+
+// opt is optKey for templates: the value, or nil for an absent key, an
+// absent or unexported field, or a nil.
+func opt(data any, key string) any {
+	v := optKey(data, key)
+	if !v.IsValid() || !v.CanInterface() {
+		return nil
+	}
+	return v.Interface()
+}
+
+// tbdi returns the {{Tbdi}} helper bound to one translator, like T and
+// dateWords. It walks the catalog string once, left to right, so a
+// value that itself contains {name} — an address a visitor typed — is
+// printed rather than substituted into, which sequential ReplaceAll
+// calls would do. The result is template.HTML because it carries <bdi>;
+// every piece of text in it has been escaped here.
+func tbdi(t func(key string, args ...any) string) func(key string, args ...any) template.HTML {
+	return func(key string, args ...any) template.HTML {
+		vals := map[string]string{}
+		for i := 0; i+1 < len(args); i += 2 {
+			if name, ok := args[i].(string); ok {
+				vals[name] = fmt.Sprint(args[i+1])
+			}
+		}
+		src := t(key)
+		var b strings.Builder
+		for {
+			open := strings.IndexByte(src, '{')
+			if open < 0 {
+				b.WriteString(template.HTMLEscapeString(src))
+				break
+			}
+			end := strings.IndexByte(src[open:], '}')
+			if end < 0 {
+				b.WriteString(template.HTMLEscapeString(src))
+				break
+			}
+			b.WriteString(template.HTMLEscapeString(src[:open]))
+			if v, ok := vals[src[open+1:open+end]]; ok {
+				b.WriteString("<bdi>" + template.HTMLEscapeString(v) + "</bdi>")
+			} else {
+				b.WriteString(template.HTMLEscapeString(src[open : open+end+1]))
+			}
+			src = src[open+end+1:]
+		}
+		return template.HTML(b.String())
+	}
 }
 
 // searchQueryName is the name list-bar-search gives its input, and

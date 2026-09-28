@@ -3387,3 +3387,54 @@ func TestPartialsAndLayoutsEmitNoInlineStyles(t *testing.T) {
 		}
 	}
 }
+
+func TestFieldQuietErrorDropsOnlyTheAlertRole(t *testing.T) {
+	quiet := render(t, "field", map[string]any{"ID": "f1", "Name": "n", "Label": "L", "Error": "bad", "QuietError": true})
+	if strings.Contains(quiet, `role="alert"`) {
+		t.Errorf("QuietError still emits role=alert: %s", quiet)
+	}
+	for _, want := range []string{`aria-invalid="true"`, `aria-describedby="f1-error"`, `id="f1-error"`} {
+		if !strings.Contains(quiet, want) {
+			t.Errorf("QuietError lost %s: %s", want, quiet)
+		}
+	}
+}
+
+func TestCalloutIDAndFocus(t *testing.T) {
+	got := render(t, "callout", map[string]any{"Body": "b", "ID": "c1", "Focus": true})
+	if !strings.Contains(got, `id="c1"`) || !strings.Contains(got, `tabindex="-1" autofocus`) {
+		t.Errorf("ID/Focus not emitted: %s", got)
+	}
+	plain := render(t, "callout", map[string]any{"Body": "b"})
+	if strings.Contains(plain, "id=") || strings.Contains(plain, "tabindex") || strings.Contains(plain, "autofocus") {
+		t.Errorf("a plain callout grew attributes: %s", plain)
+	}
+}
+
+// A struct caller written before QuietError, ID and Focus existed must
+// still render: reading those keys inline would make its screen a 500.
+func TestFieldAndCalloutStillTakeAnOlderStruct(t *testing.T) {
+	type field struct {
+		ID, Name, Label, Type, Value, Placeholder, Autocomplete, Maxlength, Min, Max, Pattern, Hint, Help, Error string
+		Required, Short, Primary, Autofocus                                                                      bool
+	}
+	type callout struct {
+		Body, Title, Tone string
+		Alert             bool
+	}
+	if got := render(t, "field", field{ID: "f", Name: "n", Label: "L", Error: "bad"}); !strings.Contains(got, `role="alert"`) {
+		t.Errorf("an older struct lost the default alert role: %s", got)
+	}
+	if got := render(t, "callout", callout{Body: "b"}); strings.Contains(got, "tabindex") {
+		t.Errorf("an older struct grew a tabindex: %s", got)
+	}
+}
+
+// A button's own display rule would otherwise beat the user agent's
+// [hidden] rule, and the passkey door would show before its script
+// decided it can work.
+func TestHiddenButtonsStayHidden(t *testing.T) {
+	if !strings.Contains(string(TokensCSS()), `.rst-btn[hidden], [rst-btn][hidden] { display: none; }`) {
+		t.Fatal("tokens.css does not keep a [hidden] button hidden")
+	}
+}

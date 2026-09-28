@@ -297,6 +297,12 @@ body {
   width: 100%;
 }
 
+/* The UA's [hidden] { display: none } loses to the display this file
+   gives every button, so a button marked hidden would show anyway. The
+   sign-in screen's passkey door ships hidden and is revealed only where
+   a ceremony can work; without this it would show everywhere. */
+.rst-btn[hidden], [rst-btn][hidden] { display: none; }
+
 /* busy — the loading state rastrillo.js gives every submit button on
    its way out, and the one state of a button that is not a variant:
    any .rst-btn can wear it. The spinner is a real child element
