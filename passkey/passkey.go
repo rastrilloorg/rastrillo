@@ -45,6 +45,12 @@
 // say) and AuthTime now. Recovery codes live there too, for the
 // account whose only passkey is lost. *Handlers is a
 // secondfactor.Factor: register it with Gate.Add.
+//
+// # The sign-in screen
+//
+// On auth's shipped sign-in screen the discover pair is the passkey
+// door. Set Config.Remember to auth's RememberJar so a passkey sign-in
+// ends the screen's attempt and is remembered like the other ways in.
 package passkey
 
 import (
@@ -59,6 +65,7 @@ import (
 	"net/url"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -141,6 +148,18 @@ type Config struct {
 	// the account's own security activity. It runs before the response
 	// is written and must not write one itself.
 	Refused func(r *http.Request, err error)
+
+	// Remember is the sign-in screen's jar (auth's RememberJar). With it,
+	// a verified discover assertion ends the screen's sign-in attempt —
+	// so an address typed before the passkey was used stops prefilling
+	// the form — and records "passkey" as this browser's way in, with no
+	// address: discovery knows a subject, not an address, and keeping
+	// the old address would label one person's passkey sign-in with
+	// another's name. Nil does neither, and a previously typed or
+	// remembered address stays on the screen after a passkey sign-in.
+	// An auth with SigninScreen off hands out an inert jar, so wiring
+	// this is always safe.
+	Remember *lastsignin.Jar
 
 	Logger *slog.Logger
 }
@@ -425,9 +444,20 @@ func (h *Handlers) DiscoverFinish(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// The first factor is proved, so the screen's attempt is over
+	// whether or not the subject is admitted — the same rule auth's
+	// admit follows, through the same seam.
+	if h.cfg.Remember != nil {
+		h.cfg.Remember.EndAttempt(w)
+	}
 	if h.cfg.Authorize != nil && !h.cfg.Authorize(subject) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "not admitted"})
 		return
+	}
+	// Before Hold or SignIn, so the held path and the completed path are
+	// remembered alike; heldResponse passes Set-Cookie through.
+	if h.cfg.Remember != nil {
+		h.cfg.Remember.Remember(w, lastsignin.Record{Method: lastsignin.MethodPasskey})
 	}
 	sess := sessions.Session{Subject: subject, Method: methodFor(a), AuthTime: time.Now()}
 	to := sessions.SafeReturn(r, h.cfg.SignedInPath)
