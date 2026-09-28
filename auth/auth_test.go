@@ -17,6 +17,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -35,7 +36,9 @@ func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { d.Close() })
-	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema)); err != nil {
+	// secondfactor.Schema as well: the screen's tests hold sign-ins at a
+	// real secondfactor.Gate, whose half-session table must exist.
+	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, secondfactor.Schema)); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
 	m := &captureMailer{}

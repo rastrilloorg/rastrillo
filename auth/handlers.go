@@ -9,6 +9,7 @@ import (
 	"github.com/keymaildev/signin"
 
 	"amadan.net/rastrillo/rastrillo/clientip"
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -28,6 +29,13 @@ import (
 // distinguishing would be an enumeration oracle on an unauthenticated
 // endpoint), ?err=rate (over budget), ?err=address (unparseable), or a
 // 303 to the keymail authorize URL with the pending cookie set.
+//
+// With Config.SigninScreen on, every answer also records this attempt
+// for the screen (the attempt cookie), a sent link lands on
+// ?sent=1&attempt=<id> so the Sent page can name the address, and an
+// expect=keymail field — which only the remembered-Keymail one-tap
+// sends — marks a link that went out where Keymail was promised. expect
+// never chooses a path.
 func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
@@ -42,13 +50,16 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.hops), force)
 	switch {
 	case errors.Is(err, signin.ErrRateLimited):
+		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.cfg.SigninPath+"?err=rate")
 		return
 	case errors.Is(err, signin.ErrBadAddress):
+		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.cfg.SigninPath+"?err=address")
 		return
 	case err != nil:
 		a.cfg.Logger.Error("rastrillo/auth: begin sign-in", "err", err)
+		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
 		return
 	}
@@ -61,7 +72,26 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		a.redirect(w, r, next.Redirect)
 		return
 	}
-	a.redirect(w, r, a.cfg.SigninPath+"?sent=1")
+	a.answerSent(w, r, address)
+}
+
+// AnswerAsSent is Begin's magic-link answer without the magic link, for
+// an admission wrapper that refuses an address before Begin can
+// classify it. A wrapper that answered a refusal with a plain ?sent=1
+// would give a refused address no attempt cookie and no attempt= while
+// an admitted one got both: a membership oracle on the first try. This
+// answers exactly as Begin does for a sent link, down to the cookie,
+// and sends nothing. With SigninScreen off that is today's plain
+// ?sent=1 and no cookie.
+//
+// It does not hide what classification and the per-address rate limit
+// reveal; docs/site/magic-links.md says what does.
+func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
+	if !a.sameOrigin(r) {
+		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
+		return
+	}
+	a.answerSent(w, r, r.FormValue("address"))
 }
 
 // Callback is GET /auth/callback: the keymail OAuth return. The pending
@@ -128,6 +158,11 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 // SecondFactor hook (which may trade it for a pending half-session
 // and take over the response), and otherwise mints it.
 func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
+	// A first factor has verified, so this browser's attempt is over
+	// whether or not the address is admitted. Left behind, it would keep
+	// prefilling the form with an address already proved (round 3,
+	// finding 25).
+	a.jar.EndAttempt(w)
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
@@ -145,6 +180,13 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		}
 		subject = s
 	}
+	// The address, never the subject: SubjectFor may make subjects
+	// opaque, and the screen shows this address back. Before the
+	// SecondFactor hook because nothing after it knows the address —
+	// Gate.Complete holds only the subject — so a sign-in held for a
+	// second factor is remembered too. The record says which door this
+	// browser used, never that the person got in.
+	a.jar.Remember(w, lastsignin.Record{Method: string(id.Method), Address: id.Address})
 	sess := sessions.Session{
 		Subject:  subject,
 		Method:   string(id.Method),

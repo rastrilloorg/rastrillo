@@ -144,3 +144,5 @@ remembered browser — the ones still in their inbox are a credential
 nobody needs, and an app calls this at every sign-in so a stolen inbox
 cannot cash one later.
 
+<!-- docs:ignore Auth.AnswerAsSent screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
+<!-- docs:ignore Auth.RememberJar screen API; this page's screen section is copy-reviewed docs, written whole in Task 14 -->
