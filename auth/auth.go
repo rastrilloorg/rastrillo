@@ -210,6 +210,20 @@ type Config struct {
 	// be told apart from unset.
 	Remember *bool
 
+	// KeymailServers, when set, is the closed set of keymail servers
+	// (host or host:port, compared case-insensitively) this app will
+	// classify against or exchange a code with. Empty means any server
+	// an address's own _keymail delegation names — which is keymail's
+	// protocol: the domain's owner chooses its server, the same party
+	// that controls its MX and could receive a magic link anyway, and a
+	// server cannot vouch for anyone else's address because Callback
+	// compares the address it returns with the one the flow started for.
+	// An address whose server is not listed gets a magic link and its
+	// server is never contacted. Copied at New; changing it means a
+	// restart, which also empties the classifier's caches. It applies
+	// whether or not SigninScreen is on.
+	KeymailServers []string
+
 	Logger *slog.Logger
 }
 
@@ -233,6 +247,14 @@ type Auth struct {
 	// now is the clock the screen's cookies are sealed and judged by.
 	// time.Now outside tests.
 	now func() time.Time
+	// servers is KeymailServers as a set, nil for "any server"; guard
+	// enforces it on both clients, and the authorize-URL predicate
+	// checks it again.
+	servers map[string]bool
+	guard   *hostGuard
+	// exchangeHTTP is the token-exchange client: nil — the library's own
+	// default — unless KeymailServers asked for a guard.
+	exchangeHTTP *http.Client
 }
 
 // ErrEmptyInstanceKey means Config.InstanceKey was empty — see the
@@ -307,10 +329,26 @@ func New(cfg Config) (*Auth, error) {
 		return nil, err
 	}
 	a.jar = jar
+
+	servers, err := keymailServers(cfg.KeymailServers)
+	if err != nil {
+		return nil, err
+	}
+	a.servers = servers
+	classifier := &signin.Classifier{}
+	if servers != nil {
+		a.guard = &hostGuard{allow: servers}
+		classifier.HTTP = &http.Client{Transport: a.guard, Timeout: classifyTimeout}
+		a.exchangeHTTP = &http.Client{Transport: a.guard, Timeout: exchangeTimeout}
+	}
+
 	a.flow = &signin.Flow{
-		Classifier: &signin.Classifier{},
+		Classifier: classifier,
 		Keymail: func(server string) *signin.Keymail {
-			return &signin.Keymail{Base: "https://" + server, Origin: cfg.Origin}
+			return &signin.Keymail{
+				Base: "https://" + server, Origin: cfg.Origin,
+				RedirectPath: callbackPath, HTTP: a.exchangeHTTP,
+			}
 		},
 		Links:    &linkStore{db: cfg.DB},
 		Mailer:   cfg.Mailer,

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -29,7 +30,12 @@ func (m *captureMailer) Send(_ context.Context, to, subject, body string) error 
 	return nil
 }
 
-func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
+// newTestAuthDB is a migrated database for a test that calls New itself
+// — the part of newTestAuth's setup that doesn't touch Config, factored
+// out so a test building its own Config (a bad KeymailServers entry,
+// say) doesn't repeat the schema list and risk it drifting from
+// newTestAuth's.
+func newTestAuthDB(t *testing.T) *sql.DB {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "auth.db"), nil)
 	if err != nil {
@@ -41,9 +47,14 @@ func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
 	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, secondfactor.Schema)); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
+	return d.Writer()
+}
+
+func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
+	t.Helper()
 	m := &captureMailer{}
 	cfg := Config{
-		DB:          d.Writer(),
+		DB:          newTestAuthDB(t),
 		Origin:      "http://app.test",
 		InstanceKey: "test-instance-key",
 		Mailer:      m,
