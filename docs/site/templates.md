@@ -53,15 +53,16 @@ a partial's built-in strings resolve in the request's locale. See
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      error-page       field-time          meter
-badge         field            form-error          notice
-bulk-bar      field-check      form-foot           page-header
-callout       field-date       job-status          pagination
-choice-field  field-daterange  list-bar            person
-confirm-form  field-datetime   list-bar-search     seg-tabs
-detail-list   field-select     list-row-action     stat
-dropdown      field-text       list-search-submit  status-pill
-empty-state   field-textarea   locale-menu
+back-nav      field            form-foot           pagination
+badge         field-check      job-status          person
+bulk-bar      field-date       list-bar            seg-tabs
+callout       field-daterange  list-bar-search     signin
+choice-field  field-datetime   list-row-action     signin-title
+confirm-form  field-select     list-search-submit  stat
+detail-list   field-text       locale-menu         status-pill
+dropdown      field-textarea   meter
+empty-state   field-time       notice
+error-page    form-error       page-header
 ```
 
 `locale-menu` is the language switcher; see

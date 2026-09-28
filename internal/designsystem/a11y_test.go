@@ -328,7 +328,7 @@ func a11yTargets() []a11yTarget {
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
-		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: five forms in five frames, and the only page in the tree carrying a password field, an autocomplete token and a warning callout above the thing it warns about"},
+		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: the shipped signin partial in ten stage frames and two hand-written screens, and the only page in the tree carrying a password field, an autocomplete token and a warning callout above the thing it warns about"},
 		{"day/en shells", page("day", "en", "shells"), "the five page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
 		// palette itself and the display vocabulary painted in it.

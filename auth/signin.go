@@ -90,9 +90,15 @@ type Remembered struct {
 // passkey.Config.LegacyRPID, if any.
 type PasskeyDoor struct {
 	BeginPath, FinishPath string
-	ModuleURL             string
-	ScriptURL             string
-	LegacyRPID            string
+	// ModuleURL must be an absolute path ("/static/webauthn.mjs"), not a
+	// relative one. The door's script import()s it, and import() resolves
+	// "./x.mjs" against the importing module's own URL, not the page's,
+	// and refuses "static/x.mjs" as a bare specifier: either way the
+	// import fails and the button stays hidden on every page, with no
+	// error anyone sees.
+	ModuleURL  string
+	ScriptURL  string
+	LegacyRPID string
 }
 
 // advisoryOnce makes the screen-off advisory fire once per process, as

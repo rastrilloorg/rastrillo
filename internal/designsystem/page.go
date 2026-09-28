@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/internal/iconsets"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
@@ -181,8 +182,10 @@ type pageView struct {
 	Assets assetsView
 
 	// Screens is the Screens page: whole compositions rather than
-	// components. See screenViews.
-	Screens []screenView
+	// components, and ScreenPartials the partials it documents. See
+	// buildScreens and screenPartials.
+	Screens        []screenView
+	ScreenPartials []screenPartialView
 
 	// Formats is the Dates, numbers and names page. See buildFormats.
 	Formats []formatView
@@ -663,6 +666,9 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	if err := parseRawSamples(tmpl); err != nil {
 		return nil, err
 	}
+	if _, err := tmpl.Parse(screenFrame); err != nil {
+		return nil, fmt.Errorf("parsing the screen frame: %w", err)
+	}
 
 	colours, err := themePalette(theme)
 	if err != nil {
@@ -688,19 +694,20 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	localeName := rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"]
 	base := pageView{
 		Theme: theme, Locale: locale, Dir: rastrillo.Dir(locale),
-		LocaleName: localeName,
-		Mount:      mount,
-		Sub:        subhead(locale, theme, localeName),
-		Schemes:    schemeButtons(locale),
-		Colours:    localiseGroups(locale, colours),
-		Structure:  localiseGroups(locale, structure),
-		Families:   families,
-		Idioms:     idioms,
-		Formats:    buildFormats(mount, theme, locale),
-		Screens:    screens,
-		Shells:     shellViews(mount, theme, locale),
-		Icons:      buildIcons(locale),
-		Assets:     buildAssets(mount, theme, locale),
+		LocaleName:     localeName,
+		Mount:          mount,
+		Sub:            subhead(locale, theme, localeName),
+		Schemes:        schemeButtons(locale),
+		Colours:        localiseGroups(locale, colours),
+		Structure:      localiseGroups(locale, structure),
+		Families:       families,
+		Idioms:         idioms,
+		Formats:        buildFormats(mount, theme, locale),
+		Screens:        screens,
+		ScreenPartials: screenPartialViews(),
+		Shells:         shellViews(mount, theme, locale),
+		Icons:          buildIcons(locale),
+		Assets:         buildAssets(mount, theme, locale),
 	}
 
 	out := make(map[string][]byte, len(pageKinds()))
@@ -988,6 +995,11 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 		out = append(out, view)
 	}
 
+	// The Screens page is a page too, and it documents the sign-in
+	// partials; see screenPartials.
+	for _, name := range screenPartials {
+		claimed[name] = true
+	}
 	defined, err := partialNames()
 	if err != nil {
 		return nil, err
@@ -1296,13 +1308,22 @@ var previewHeights = map[string]int{
 	"format-ratios": 320,
 	"format-output": 260,
 
-	// The sign-in screens. A form in a card is taller than a component:
-	// a heading, a field or two, a button and a way out.
-	"screen-signin-link":     300,
-	"screen-signin-sent":     220,
-	"screen-signin-passkey":  230,
-	"screen-signin-social":   290,
-	"screen-signin-password": 420,
+	// The sign-in screens. A stage frame is at least as tall as the
+	// window it is drawn in (100dvh), so each height here is the card
+	// plus the stage's margin around it; the browser gate
+	// TestPreviewFrameHeightsFitTheirContent is what holds them to it.
+	"screen-signin-ask":               460,
+	"screen-signin-returning-keymail": 420,
+	"screen-signin-returning-link":    400,
+	"screen-signin-returning-passkey": 520,
+	"screen-signin-sent":              400,
+	"screen-signin-sent-unbound":      400,
+	"screen-signin-sent-instead":      440,
+	"screen-signin-continue":          400,
+	"screen-signin-problem-address":   480,
+	"screen-signin-problem-keymail":   520,
+	"screen-signin-social":            290,
+	"screen-signin-password":          420,
 
 	"demo-app":      780,
 	"shell-column":  780,
@@ -1387,12 +1408,13 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	b.WriteString(`<link rel="stylesheet" href="` + mount + `/tokens.css">` + "\n")
 	b.WriteString(`<link rel="stylesheet" href="` + mount + `/theme-` + theme + `.css">` + "\n")
 	// A component sample gets breathing room; a whole-page sample —
-	// a shell frame, the modal's backdrop — fills the frame, because
-	// insetting a page inside a page is not what any of them look
-	// like. The shells' rail is block-size: 100dvh, so padding under
-	// one is also a scrollbar that can never be got rid of.
+	// a shell frame, the modal's backdrop, a stage frame — fills the
+	// frame, because insetting a page inside a page is not what any of
+	// them look like. The shells' rail and the stage are 100dvh tall,
+	// so padding under one is also a scrollbar that can never be got
+	// rid of.
 	b.WriteString("<style>body { padding: 1rem; }\n")
-	b.WriteString("body:has(> [rst-shell-topbar], > [rst-shell-sidebar], > [rst-backdrop]) { padding: 0; }</style>\n")
+	b.WriteString("body:has(> [rst-shell-topbar], > [rst-shell-sidebar], > [rst-backdrop], > [rst-stage]) { padding: 0; }</style>\n")
 	for _, s := range srcdocScripts {
 		for _, hook := range s.hooks {
 			if strings.Contains(body, hook) {
@@ -1648,6 +1670,10 @@ type shellData struct {
 	Index   string
 	Locales []localeLink
 	Account template.HTML
+	// Signin is the stage demo's card: the plain Ask state, with no
+	// problem, nothing remembered and no passkey door, because the demo
+	// is about the shell and the card is only what it frames.
+	Signin auth.SigninState
 }
 
 // accountMarkup is the one block whose shape differs between the
@@ -1689,7 +1715,14 @@ func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 	if _, err := tmpl.Parse(string(src)); err != nil {
 		return nil, fmt.Errorf("parsing the %s shell: %w", shell, err)
 	}
-	if _, err := tmpl.Parse(shellTemplate); err != nil {
+	overrides := shellTemplate
+	if shell == "stage" {
+		// stage has no chrome to fill and one card to show; the chrome
+		// shells' content would put a Posts list in the middle of a
+		// sign-in frame.
+		overrides = stageShellTemplate
+	}
+	if _, err := tmpl.Parse(shellCommon + overrides); err != nil {
 		return nil, fmt.Errorf("parsing the shell overrides: %w", err)
 	}
 	var buf strings.Builder
@@ -1702,6 +1735,7 @@ func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 		Index:   indexHref(mount, theme, locale),
 		Locales: localeLinks(mount, theme, locale, "index.html"),
 		Account: accountMarkup[shell],
+		Signin:  auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
 	})
 	if err != nil {
 		return nil, err
@@ -2482,9 +2516,10 @@ const shellsBody = `{{define "ds-body-shells"}}
 {{end}}
 {{end}}`
 
-// shellTemplate fills every block the shells leave open. The blocks a
-// given shell does not declare are simply never executed, so one
-// override set covers them all.
+// shellCommon fills the blocks every shell declares, the stage
+// included: the document's language, direction and title, and head.
+// It is prepended to whichever override set a shell gets, so the two
+// sets cannot drift on the blocks they share.
 //
 // head is the newest of them and the reason it exists: this demo is a
 // real page a reader can open in a tab of its own, and a reader who
@@ -2494,11 +2529,18 @@ const shellsBody = `{{define "ds-body-shells"}}
 // doing the same job it does on the gallery. It is also the honest
 // answer to "what is the head block FOR": an app's favicon, an app's
 // stylesheet, an app's one script that has to run early.
-const shellTemplate = `
+const shellCommon = `
 {{define "head"}}<script src="{{.Mount}}/gallery.js"></script>{{end}}
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
+`
+
+// shellTemplate fills the rest of the blocks the chrome shells leave
+// open. The blocks a given shell does not declare are simply never
+// executed, so one override set covers all four of them; stage has its
+// own, below.
+const shellTemplate = `
 {{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
 {{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
@@ -2516,6 +2558,17 @@ const shellTemplate = `
 </div>
 <p rst-count-line>Displaying <strong>1–2</strong> of <strong>412</strong></p>
 {{end}}
+`
+
+// stageShellTemplate fills the stage shell's blocks for its demo: the
+// sign-in card in its Ask state, and a foot with the way back, in the
+// <footer rst-stage-foot> the shell's foot block documents — a bare
+// link there would sit outside every landmark and miss the foot's
+// styling. The backdrop block is left alone, so the demo shows the
+// default art.
+const stageShellTemplate = `
+{{define "foot"}}<footer rst-stage-foot><a href="{{.Index}}">{{P "Back to the design system"}}</a></footer>{{end}}
+{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" (dict "Name" "Harbour") "Preview" true)}}{{end}}
 `
 
 // modalTemplate is the modal demo page: the sample's structure with

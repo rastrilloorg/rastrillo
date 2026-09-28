@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/auth"
 )
 
 // parseAll builds the template tree exactly the way an app is documented
@@ -1077,6 +1078,14 @@ func allPartials() []struct {
 			"Start": map[string]any{"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30"},
 			"End":   map[string]any{"Name": "ends_at", "Label": "Ends", "Error": "The end comes before the start."},
 		}},
+		{"signin", map[string]any{
+			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
+			"Brand": map[string]any{
+				"Name": "Harbour", "Pitch": "Moorings and berths, booked in a minute.",
+				"Mark": template.HTML(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/></svg>`),
+			},
+		}},
+		{"signin-title", map[string]any{"State": auth.SigninState{Step: auth.StepSent}, "Brand": map[string]any{"Name": "Harbour"}}},
 	}
 }
 
@@ -1178,14 +1187,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
+		"signin", "signin-title",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 34 {
-		t.Fatalf("the shipped set is 34 partials, this list has %d", len(want))
+	if len(want) != 36 {
+		t.Fatalf("the shipped set is 36 partials, this list has %d", len(want))
 	}
 }
 

@@ -1939,6 +1939,38 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: var(--rst-sp-4); max-block-size: calc(100dvh - 2 * var(--rst-sp-4)); overflow-y: auto; position: sticky; }
 }
 
+/* ── rst-signin: the shipped sign-in card (partials/signin.html) ─────
+   Brand at the start and the way in at the end, side by side from 48rem
+   and stacked below it, so a phone reads the brand and then the door.
+   The card paints its own surface and border because it usually sits
+   on the stage shell's backdrop: whatever picture an app puts there,
+   the controls stay on a known ground and their contrast is the
+   theme's, not the picture's. The border is --rst-line-strong because
+   it is the card's only edge against that picture, and
+   ui/contrast_test.go holds it to 3:1 against the default art.
+   overflow-wrap on the door is for the one long string it shows back —
+   an address, which has no spaces to break at and would otherwise push
+   a 320px screen sideways. */
+.rst-signin, [rst-signin] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); box-shadow: var(--rst-shadow-pop); box-sizing: border-box; display: grid; gap: var(--rst-sp-5); inline-size: 100%; max-inline-size: 56rem; padding: var(--rst-sp-5); }
+@media (min-width: 48rem) {
+  .rst-signin, [rst-signin] { align-items: center; gap: var(--rst-sp-6); grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: var(--rst-sp-6); }
+}
+.rst-signin__brand, [rst-signin-brand] { display: flex; flex-direction: column; gap: var(--rst-sp-2); min-inline-size: 0; }
+.rst-signin__mark, [rst-signin-mark] { block-size: 3rem; inline-size: 3rem; }
+.rst-signin__mark > *, [rst-signin-mark] > * { block-size: 100%; display: block; inline-size: 100%; }
+.rst-signin__name, [rst-signin-name] { font-size: var(--rst-fs-lg); font-weight: 600; margin: 0; }
+.rst-signin__pitch, [rst-signin-pitch] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__door, [rst-signin-door] { display: flex; flex-direction: column; gap: var(--rst-sp-4); min-inline-size: 0; overflow-wrap: anywhere; }
+.rst-signin__door h1, [rst-signin-door] h1 { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin: 0; }
+.rst-signin__door > p, [rst-signin-door] > p { margin: 0; }
+/* The door spaces its children with gap; a callout's and a field's own
+   block margins would double it. */
+.rst-signin__door > .rst-callout, [rst-signin-door] > [rst-callout] { margin: 0; }
+.rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
+.rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
+.rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
+
 /* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
    One card centred on a full-page backdrop. [rst-stage] is <body> in
    the shell and a plain wrapper in the design-system gallery's frames,

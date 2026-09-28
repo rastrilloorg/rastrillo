@@ -396,6 +396,12 @@ func mixSRGB(t *testing.T, a, b string, p float64) string {
 // circles pile up: the worst case, never better than it. If this fails,
 // lower the art's percentage in tokens.css; never the floor.
 func TestTheSigninCardStandsOutFromTheStageArt(t *testing.T) {
+	// What follows measures --rst-line-strong. Hold the card to it, or a
+	// later edit to the card's border leaves this passing about a colour
+	// nothing paints.
+	if !regexp.MustCompile(`\[rst-signin\] \{[^}]*border: 1px solid var\(--rst-line-strong\)`).Match(TokensCSS()) {
+		t.Fatal("tokens.css no longer borders [rst-signin] with 1px solid var(--rst-line-strong), the colour this test measures")
+	}
 	for _, theme := range ThemeNames() {
 		for _, scheme := range []string{"light", "dark"} {
 			tok := themeTokens(t, theme)[scheme]

@@ -1,0 +1,485 @@
+package ui
+
+import (
+	"html"
+	"html/template"
+	"regexp"
+	"strings"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/auth"
+)
+
+const keymailURL = "https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&code_challenge=cccc&code_challenge_method=S256&redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&scope=identify&state=ssss"
+
+// The module URLs are absolute paths on purpose: the door's script
+// import()s ModuleURL, which resolves against the script's own URL, so
+// a relative one would name a file beside the script and not the page.
+var signinDoor = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs"}
+
+func signinData(st auth.SigninState) map[string]any {
+	if st.BeginPath == "" {
+		st.BeginPath = "/signin"
+	}
+	if st.ForgetPath == "" {
+		st.ForgetPath = "/signin/forget"
+	}
+	return map[string]any{"State": st, "Brand": map[string]any{"Name": "Harbour"}}
+}
+
+func remembered(method, address string) *auth.Remembered {
+	return &auth.Remembered{Method: method, Address: address}
+}
+
+// signinStates is every step × problem × remembered method the screen
+// can be in, named, with the element focus must start on (§2's matrix):
+// "field", "callout", "onetap" or "".
+func signinStates() []struct {
+	name  string
+	st    auth.SigninState
+	focus string
+} {
+	kay := remembered("keymail", "kay@example.org")
+	return []struct {
+		name  string
+		st    auth.SigninState
+		focus string
+	}{
+		{"ask", auth.SigninState{Step: auth.StepAsk}, "field"},
+		{"ask with a passkey door", auth.SigninState{Step: auth.StepAsk, Passkey: signinDoor}, "field"},
+		{"returning keymail", auth.SigninState{Step: auth.StepReturning, Remembered: kay, Address: "kay@example.org"}, "onetap"},
+		{"returning magic link", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("magiclink", "ada@example.com")}, "onetap"},
+		{"returning passkey", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", ""), Passkey: signinDoor}, ""},
+		{"returning passkey, no door", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", "")}, "field"},
+		{"sent, bound", auth.SigninState{Step: auth.StepSent, SentTo: "ada@example.com"}, ""},
+		{"sent, unbound", auth.SigninState{Step: auth.StepSent}, ""},
+		{"sent instead of keymail", auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}, ""},
+		{"continue", auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}, ""},
+		{"rate", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemRate, Address: "ada@example.com"}, "callout"},
+		{"address", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: "ada@example"}, "field"},
+		{"expired", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemExpired}, "callout"},
+		{"keymail", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemKeymail, Address: "kay@example.org"}, "callout"},
+		{"generic", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemGeneric}, "callout"},
+		{"reauth, ask", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemReauth}, "field"},
+		{"reauth, returning keymail", auth.SigninState{Step: auth.StepReturning, Problem: auth.ProblemReauth, Remembered: kay}, "onetap"},
+	}
+}
+
+var (
+	h1Pattern        = regexp.MustCompile(`(?s)<h1 id="rst-signin-heading">(.*?)</h1>`)
+	autofocusPattern = regexp.MustCompile(`<[a-z]+\b[^>]*\sautofocus[\s>][^>]*>?`)
+	tagText          = regexp.MustCompile(`<[^>]*>`)
+	forgetForm       = regexp.MustCompile(`<form rst-signin-form method="post" action="/signin/forget">`)
+)
+
+func text(s string) string {
+	return strings.TrimSpace(html.UnescapeString(tagText.ReplaceAllString(s, "")))
+}
+
+func TestSigninHeadingAndTitleFollowTheState(t *testing.T) {
+	name := "Harbour"
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		m := h1Pattern.FindAllStringSubmatch(out, -1)
+		if len(m) != 1 {
+			t.Errorf("%s: %d <h1>s, want exactly one", c.name, len(m))
+			continue
+		}
+		var heading, title string
+		switch {
+		case c.st.Step == auth.StepSent:
+			heading, title = defaultT("rastrillo.ui.signin_sent_heading"), defaultTf("rastrillo.ui.signin_sent_title", "name", name)
+		case c.st.Step == auth.StepContinue:
+			heading, title = defaultT("rastrillo.ui.signin_continue_heading"), defaultTf("rastrillo.ui.signin_continue_title", "name", name)
+		case c.st.Problem != auth.ProblemNone && c.st.Problem != auth.ProblemReauth:
+			heading, title = defaultTf("rastrillo.ui.signin_heading", "name", name), defaultTf("rastrillo.ui.signin_problem_title", "name", name)
+		default:
+			heading, title = defaultTf("rastrillo.ui.signin_heading", "name", name), defaultTf("rastrillo.ui.signin_title", "name", name)
+		}
+		if got := text(m[0][1]); got != heading {
+			t.Errorf("%s: <h1> %q, want %q", c.name, got, heading)
+		}
+		if got := text(render(t, "signin-title", signinData(c.st))); got != title {
+			t.Errorf("%s: title %q, want %q", c.name, got, title)
+		}
+	}
+}
+
+func TestSigninFocusFollowsTheMatrix(t *testing.T) {
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		tags := autofocusPattern.FindAllString(out, -1)
+		if len(tags) > 1 {
+			t.Errorf("%s: %d autofocus attributes; at most one element may ask for focus", c.name, len(tags))
+			continue
+		}
+		var got string
+		if len(tags) == 1 {
+			switch tag := tags[0]; {
+			case strings.Contains(tag, `id="rst-signin-email"`):
+				got = "field"
+			case strings.Contains(tag, `id="rst-signin-problem"`) && strings.Contains(tag, `tabindex="-1"`):
+				got = "callout"
+			case strings.HasPrefix(tag, "<button"):
+				got = "onetap"
+			default:
+				got = "unexpected " + tag
+			}
+		}
+		if got != c.focus {
+			t.Errorf("%s: focus starts on %q, want %q", c.name, got, c.focus)
+		}
+	}
+}
+
+// A message present at load that focus lands on is announced by the
+// focus; role="alert" would race it (§2). The only live region on the
+// screen is the passkey message.
+func TestSigninNeverUsesRoleAlert(t *testing.T) {
+	for _, c := range signinStates() {
+		if out := render(t, "signin", signinData(c.st)); strings.Contains(out, `role="alert"`) {
+			t.Errorf("%s renders role=alert", c.name)
+		}
+	}
+}
+
+// "Use a different email" is the way out of every door that remembered
+// or kept an address — the three one-taps and Sent — and nowhere else:
+// on Ask the field is already the different email, and Continue has no
+// controls but its link.
+func TestUseADifferentEmailIsOnEveryRememberedDoor(t *testing.T) {
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		want := 0
+		switch c.st.Door() {
+		case "keymail", "link", "passkey", "sent":
+			want = 1
+		}
+		if got := len(forgetForm.FindAllString(out, -1)); got != want {
+			t.Errorf("%s (door %s): %d forget forms, want %d", c.name, c.st.Door(), got, want)
+		}
+		if want == 1 && !strings.Contains(out, html.EscapeString(defaultT("rastrillo.ui.signin_different"))) {
+			t.Errorf("%s: the forget form is not labelled Use a different email", c.name)
+		}
+	}
+}
+
+func TestTheOneTapNamesTheRememberedMethod(t *testing.T) {
+	byName := map[string]auth.SigninState{}
+	for _, c := range signinStates() {
+		byName[c.name] = c.st
+	}
+	km := render(t, "signin", signinData(byName["returning keymail"]))
+	for _, want := range []string{
+		`<input type="hidden" name="address" value="kay@example.org">`,
+		`<input type="hidden" name="expect" value="keymail">`,
+		`aria-describedby="rst-signin-remembered"`,
+		`id="rst-signin-remembered"`,
+		`<bdi>kay@example.org</bdi>`,
+		html.EscapeString(defaultT("rastrillo.ui.signin_to_keymail")),
+	} {
+		if !strings.Contains(km, want) {
+			t.Errorf("keymail one-tap lacks %s:\n%s", want, km)
+		}
+	}
+
+	ml := render(t, "signin", signinData(byName["returning magic link"]))
+	button := regexp.MustCompile(`(?s)<button rst-btn="primary block" type="submit"[^>]*>(.*?)</button>`).FindStringSubmatch(ml)
+	if button == nil || !strings.Contains(button[1], "<bdi>ada@example.com</bdi>") || strings.Contains(button[0], "aria-describedby") {
+		t.Errorf("the magic-link one-tap must carry the address in its label and nothing else: %v", button)
+	}
+	if strings.Contains(ml, `name="expect"`) {
+		t.Error("the magic-link one-tap posts expect; only the Keymail one does")
+	}
+
+	pk := render(t, "signin", signinData(byName["returning passkey"]))
+	if !strings.Contains(pk, "data-rst-passkey ") || !strings.Contains(pk, html.EscapeString(defaultT("rastrillo.ui.signin_passkey_remembered"))) {
+		t.Errorf("the passkey door is missing or mislabelled:\n%s", pk)
+	}
+	if !strings.Contains(pk, `id="rst-signin-email"`) {
+		t.Error("the passkey door is on its own; the email form must be beside it (§1.6 step 6)")
+	}
+	// A remembered passkey is the primary way in, so its button comes
+	// first; on Ask the email form is, and the passkey follows it.
+	if b, f := strings.Index(pk, "data-rst-passkey "), strings.Index(pk, `id="rst-signin-email"`); b > f {
+		t.Errorf("a remembered passkey's button comes after the email form:\n%s", pk)
+	}
+	ask := render(t, "signin", signinData(byName["ask with a passkey door"]))
+	if b, f := strings.Index(ask, "data-rst-passkey "), strings.Index(ask, `id="rst-signin-email"`); b < 0 || b < f {
+		t.Errorf("on Ask the passkey button must follow the email form:\n%s", ask)
+	}
+}
+
+// Review Focus 2.
+func TestAReturningPasskeyWithNoDoorAsksForAnAddress(t *testing.T) {
+	st := auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", "")}
+	out := render(t, "signin", signinData(st))
+	if strings.Contains(out, "data-rst-passkey") || !strings.Contains(out, `id="rst-signin-email"`) {
+		t.Fatalf("a remembered passkey with no door wired must be the email form:\n%s", out)
+	}
+	tags := autofocusPattern.FindAllString(out, -1)
+	if len(tags) != 1 || !strings.Contains(tags[0], `id="rst-signin-email"`) {
+		t.Errorf("focus must start on the email field, the only way in on this page: %v", tags)
+	}
+}
+
+func TestTheKeymailProblemOffersTheEscapeHatch(t *testing.T) {
+	for _, address := range []string{"kay@example.org", ""} {
+		out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemKeymail, Address: address}))
+		if !strings.Contains(out, `<input type="hidden" name="force" value="1">`) ||
+			!strings.Contains(out, html.EscapeString(defaultT("rastrillo.ui.signin_send_link_instead"))) {
+			t.Errorf("address %q: no escape hatch:\n%s", address, out)
+		}
+	}
+	// The escape hatch appears on the Keymail problem only: anywhere else
+	// force=1 would skip classification for an address nobody tried.
+	for _, c := range signinStates() {
+		if c.st.Problem == auth.ProblemKeymail {
+			continue
+		}
+		if out := render(t, "signin", signinData(c.st)); strings.Contains(out, `name="force"`) {
+			t.Errorf("%s posts force=1", c.name)
+		}
+	}
+}
+
+func TestContinueIsANavigationNotAForm(t *testing.T) {
+	st := auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}
+	out := render(t, "signin", signinData(st))
+	if strings.Contains(out, "<form") {
+		t.Error("Continue renders a form; it has no controls but its link")
+	}
+	meta := regexp.MustCompile(`<meta http-equiv="refresh" content="0;url=([^"]*)">`).FindStringSubmatch(out)
+	link := regexp.MustCompile(`<a rst-btn="primary block" href="([^"]*)">`).FindStringSubmatch(out)
+	if meta == nil || html.UnescapeString(meta[1]) != keymailURL {
+		t.Errorf("meta refresh %v, want a zero-delay refresh to the continuation", meta)
+	}
+	if link == nil || html.UnescapeString(link[1]) != keymailURL {
+		t.Errorf("fallback link %v, want the same URL", link)
+	}
+
+	data := signinData(st)
+	data["Preview"] = true
+	preview := render(t, "signin", data)
+	if strings.Contains(preview, "http-equiv") || !strings.Contains(preview, `href="#"`) || strings.Contains(preview, "keymail.test") {
+		t.Errorf("a Preview must not navigate anywhere:\n%s", preview)
+	}
+}
+
+// ContinueURL is data, and html/template's attribute escaping is what
+// keeps it inside its attribute. A URL carrying a quote — which the
+// authorize-URL predicate refuses, but the partial must not rely on
+// that — stays one attribute value in both places it lands.
+func TestContinueURLCannotLeaveItsAttribute(t *testing.T) {
+	hostile := `https://keymail.test/a" onload="alert(1)`
+	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepContinue, ContinueURL: hostile}))
+	// Each tag must carry exactly the attributes the partial wrote; a
+	// quote that escaped would have added one.
+	meta := regexp.MustCompile(`<meta http-equiv="refresh" content="([^"]*)">`).FindStringSubmatch(out)
+	if meta == nil || html.UnescapeString(meta[1]) != "0;url="+hostile {
+		t.Errorf("the meta refresh is not one attribute holding the URL as given: %v\n%s", meta, out)
+	}
+	if !regexp.MustCompile(`<a rst-btn="primary block" href="[^"]*">`).MatchString(out) {
+		t.Errorf("the fallback link gained an attribute:\n%s", out)
+	}
+}
+
+func TestSentNamesOnlyABoundAddress(t *testing.T) {
+	bound := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "ada@example.com"}))
+	if !strings.Contains(bound, "<bdi>ada@example.com</bdi>") {
+		t.Errorf("bound Sent does not name the address:\n%s", bound)
+	}
+	unbound := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent}))
+	if strings.Contains(unbound, "@") || !strings.Contains(unbound, html.EscapeString(defaultT("rastrillo.ui.signin_sent_inbox"))) {
+		t.Errorf("unbound Sent must say your inbox and no address:\n%s", unbound)
+	}
+	instead := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}))
+	i, j := strings.Index(instead, html.EscapeString(defaultT("rastrillo.ui.signin_sent_instead"))), strings.Index(instead, "<bdi>kay@example.org</bdi>")
+	if i < 0 || j < 0 || i > j {
+		t.Errorf("the one-time line must come first, before where the link went:\n%s", instead)
+	}
+}
+
+// Review Focus 1. What a visitor typed reaches the page in four places:
+// the field's prefill, the Sent line, and the two email one-taps. In
+// each it must arrive escaped, whole, exactly as typed — a {name} in it
+// printed rather than substituted into — and, where it sits in running
+// text, inside a <bdi> so a right-to-left address cannot reorder the
+// sentence around it.
+func TestSigninEscapesWhatAVisitorTyped(t *testing.T) {
+	hostile := `"><script>alert(1)</script>{address}{name}مرحبا@example.com`
+	hostile += strings.Repeat("a", 300-len(hostile))
+	if len(hostile) != 300 {
+		t.Fatalf("the hostile address is %d bytes, want 300", len(hostile))
+	}
+	isolated := "<bdi>" + htmlEscapeText(hostile) + "</bdi>"
+	valueAttr := regexp.MustCompile(`<input\b[^>]*\sname="address"[^>]*\svalue="([^"]*)"`)
+	for _, c := range []struct {
+		name string
+		st   auth.SigninState
+		// bdi is how many times the address appears as running text; 0
+		// where it is only a field's value.
+		bdi int
+	}{
+		{"a prefill", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: hostile}, 0},
+		{"a Sent address", auth.SigninState{Step: auth.StepSent, SentTo: hostile}, 1},
+		{"a Keymail one-tap", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("keymail", hostile)}, 1},
+		{"a link one-tap", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("magiclink", hostile)}, 1},
+	} {
+		out := render(t, "signin", signinData(c.st))
+		if strings.Contains(out, "<script") {
+			t.Errorf("%s: markup a visitor typed reached the page:\n%s", c.name, out)
+		}
+		if got := strings.Count(out, isolated); got != c.bdi {
+			t.Errorf("%s: the address appears %d times escaped, whole and isolated in <bdi>, want %d:\n%s", c.name, got, c.bdi, out)
+		}
+		if c.bdi > 0 && strings.Count(out, "<bdi>") != c.bdi {
+			t.Errorf("%s: %d <bdi>s; the {address} a visitor typed was substituted into:\n%s", c.name, strings.Count(out, "<bdi>"), out)
+		}
+		if c.st.Step != auth.StepSent {
+			m := valueAttr.FindStringSubmatch(out)
+			if m == nil || html.UnescapeString(m[1]) != hostile {
+				t.Errorf("%s: the address field's value does not round-trip to what was typed: %v", c.name, m)
+			}
+		}
+	}
+	rtl := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "مرحبا@example.com"}))
+	if !strings.Contains(rtl, "<bdi>مرحبا@example.com</bdi>") {
+		t.Errorf("an RTL address is not isolated:\n%s", rtl)
+	}
+}
+
+// htmlEscapeText is how Tbdi escapes a value: template.HTMLEscapeString's
+// five replacements, spelled out so the test does not call the code it
+// is checking.
+func htmlEscapeText(s string) string {
+	return strings.NewReplacer(`&`, "&amp;", `'`, "&#39;", `<`, "&lt;", `>`, "&gt;", `"`, "&#34;").Replace(s)
+}
+
+func TestThePasskeyButtonWaitsForItsScript(t *testing.T) {
+	st := auth.SigninState{Step: auth.StepAsk, Passkey: &auth.PasskeyDoor{BeginPath: "/b", FinishPath: "/f", ModuleURL: "/m.mjs", ScriptURL: "/door.mjs", LegacyRPID: "old.example"}}
+	out := render(t, "signin", signinData(st))
+	for _, want := range []string{
+		" hidden", `data-rst-passkey-begin="/b"`, `data-rst-passkey-finish="/f"`, `data-rst-passkey-module="/m.mjs"`,
+		`<script type="module" src="/door.mjs"></script>`,
+		`data-rst-passkey-legacy-rpid="old.example"`, `aria-describedby="rst-signin-passkey-msg"`,
+		`id="rst-signin-passkey-msg"`, `aria-live="polite"`,
+		`data-rst-passkey-cancelled="` + html.EscapeString(defaultT("rastrillo.ui.signin_passkey_cancelled")) + `"`,
+		`data-rst-passkey-failed="` + html.EscapeString(defaultT("rastrillo.ui.signin_passkey_failed")) + `"`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the passkey door lacks %s:\n%s", want, out)
+		}
+	}
+	data := signinData(st)
+	data["Preview"] = true
+	if preview := render(t, "signin", data); strings.Contains(preview, " hidden") || strings.Contains(preview, "data-rst-passkey") || strings.Contains(preview, "<script") {
+		t.Errorf("a Preview shows the door as the enhanced page would, loading nothing and with nothing for a script to find:\n%s", preview)
+	}
+}
+
+// The door's script is the one request the screen adds, and only a page
+// that renders the door makes it: an email-only screen, a Sent or
+// Continue page, a one-tap for keymail or a link, and every Preview
+// load nothing. ui's shells never name it either.
+func TestOnlyAPasskeyDoorLoadsItsScript(t *testing.T) {
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		n := strings.Count(out, "<script")
+		door := c.st.Passkey != nil && (c.st.Door() == "ask" || c.st.Door() == "passkey")
+		switch {
+		case door && (n != 1 || !strings.Contains(out, `<script type="module" src="/static/passkey-signin.mjs"></script>`)):
+			t.Errorf("%s renders a passkey door and %d scripts; want exactly its module", c.name, n)
+		case !door && n != 0:
+			t.Errorf("%s renders no passkey door but loads %d scripts", c.name, n)
+		}
+		data := signinData(c.st)
+		data["Preview"] = true
+		if strings.Contains(render(t, "signin", data), "<script") {
+			t.Errorf("%s: a Preview loads a script", c.name)
+		}
+	}
+	for _, name := range LayoutNames() {
+		src, _ := Layout(name)
+		if strings.Contains(string(src), "passkey") {
+			t.Errorf("layouts/%s.html names the passkey door; only the partial may load it", name)
+		}
+	}
+}
+
+func TestSigninControlsAreNamedAndIDsUnique(t *testing.T) {
+	inputs := regexp.MustCompile(`<input\b[^>]*>`)
+	buttons := regexp.MustCompile(`(?s)<button\b[^>]*>(.*?)</button>`)
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		for _, in := range inputs.FindAllString(out, -1) {
+			if strings.Contains(in, `type="hidden"`) {
+				continue
+			}
+			id := regexp.MustCompile(`id="([^"]*)"`).FindStringSubmatch(in)
+			if id == nil || !strings.Contains(out, `for="`+id[1]+`"`) {
+				t.Errorf("%s: an input with no label: %s", c.name, in)
+			}
+		}
+		for _, b := range buttons.FindAllStringSubmatch(out, -1) {
+			if text(b[1]) == "" {
+				t.Errorf("%s: a button with no text: %s", c.name, b[0])
+			}
+		}
+		seen := map[string]bool{}
+		for _, m := range idAttr.FindAllStringSubmatch(out, -1) {
+			if seen[m[1]] {
+				t.Errorf("%s: id %q twice", c.name, m[1])
+			}
+			seen[m[1]] = true
+		}
+	}
+}
+
+func TestSigninClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, c := range signinStates() {
+		for name := range rstVocabulary(render(t, "signin", signinData(c.st))) {
+			// The Reauth callout's tone. info is the callout's own default
+			// look, painted by [rst-callout] itself, so no rule names it
+			// and none should: the callout partial writes it on every
+			// callout that sets no tone.
+			if name == "rst-tone~=info" {
+				continue
+			}
+			if !qualifiedOnly[name] && !tokensStyle(css, name) {
+				t.Errorf("%s: tokens.css has no selector for %q", c.name, name)
+			}
+		}
+	}
+}
+
+func TestSigninTakesABrandStruct(t *testing.T) {
+	type brand struct{ Name string }
+	out := render(t, "signin", map[string]any{"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin"}, "Brand": brand{Name: "Harbour"}})
+	if !strings.Contains(out, "Harbour") {
+		t.Fatalf("a Brand struct with only Name must render:\n%s", out)
+	}
+}
+
+// Pitch and Mark are optional, and a caller's Mark is its own markup —
+// an <img> or inline SVG — so it lands as written, in the mark slot.
+func TestSigninRendersTheBrandsOptionalParts(t *testing.T) {
+	mark := `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/></svg>`
+	data := signinData(auth.SigninState{Step: auth.StepAsk})
+	data["Brand"] = map[string]any{"Name": "Harbour", "Pitch": "Moorings & berths", "Mark": template.HTML(mark)}
+	out := render(t, "signin", data)
+	for _, want := range []string{
+		`<div rst-signin-mark>` + mark + `</div>`,
+		`<p rst-signin-name>Harbour</p>`,
+		`<p rst-signin-pitch>Moorings &amp; berths</p>`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the brand column lacks %s:\n%s", want, out)
+		}
+	}
+	bare := render(t, "signin", signinData(auth.SigninState{Step: auth.StepAsk}))
+	if strings.Contains(bare, "rst-signin-mark") || strings.Contains(bare, "rst-signin-pitch") {
+		t.Errorf("a Brand with no Mark or Pitch leaves empty slots:\n%s", bare)
+	}
+}
