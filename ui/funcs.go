@@ -103,8 +103,11 @@ func WithT(t func(key string, args ...any) string) Option {
 // escaped and isolated in <bdi> so an address in a right-to-left script
 // cannot reorder the sentence around it.
 //
+// stageArt draws the stage shell's default backdrop from a seed (see
+// its own comment).
+//
 // An app is free to add its own entries on top; it must not drop these
-// eleven, or the shipped partials stop parsing.
+// twelve, or the shipped partials and shells stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -120,6 +123,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 		"dateWords": dateWords(c.t),
 		"opt":       opt, "Tbdi": tbdi(c.t),
+		"stageArt": stageArt,
 	}
 }
 

@@ -1939,6 +1939,41 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: var(--rst-sp-4); max-block-size: calc(100dvh - 2 * var(--rst-sp-4)); overflow-y: auto; position: sticky; }
 }
 
+/* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
+   One card centred on a full-page backdrop. [rst-stage] is <body> in
+   the shell and a plain wrapper in the design-system gallery's frames,
+   so nothing here assumes which element carries it. The scene is
+   absolutely positioned inside it rather than fixed, so a page taller
+   than the window scrolls the picture with it instead of sliding the
+   card over a still image. The page column stacks its children and
+   centres each one, rather than laying them in a row: the card is
+   usually alone, but a line of text above or below it must not end up
+   beside it. inline-size: 100% because [rst-page]'s auto margins make
+   a grid item shrink to its content, and a card sized in percent would
+   shrink with it. */
+.rst-stage, [rst-stage] { box-sizing: border-box; display: grid; grid-template-rows: 1fr auto; isolation: isolate; min-block-size: 100dvh; position: relative; }
+.rst-stage > .rst-page, [rst-stage] > [rst-page] { align-items: center; align-self: center; display: flex; flex-direction: column; inline-size: 100%; position: relative; z-index: 1; }
+.rst-stage__scene, [rst-stage-scene] { inset: 0; overflow: hidden; pointer-events: none; position: absolute; z-index: 0; }
+.rst-stage__scene > *, [rst-stage-scene] > * { block-size: 100%; display: block; inline-size: 100%; object-fit: cover; }
+.rst-stage__foot, [rst-stage-foot] { color: var(--rst-text-muted); padding: var(--rst-sp-4); position: relative; text-align: center; z-index: 1; }
+/* The art's two colours: the line colour and a little accent, each
+   mixed into the page background, faint enough that the sign-in card's
+   border still clears 3:1 against them in every theme and scheme —
+   ui/contrast_test.go reads these two color-mix() calls and checks
+   exactly that. Lower the percentages rather than loosen the test.
+   non-scaling-stroke keeps the lines fine on a wide screen, where the
+   viewBox is scaled up to cover it. */
+.rst-stage-art__lines, [rst-stage-art-lines] { fill: none; stroke: color-mix(in srgb, var(--rst-line) 70%, var(--rst-bg)); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.rst-stage-art__glow, [rst-stage-art-glow] { fill: color-mix(in srgb, var(--rst-accent) 8%, var(--rst-bg)); fill-opacity: 0.2; }
+/* Forced colours would paint the lines in the system's text colour at
+   full strength, and a printout does not need a picture of waves. */
+@media (forced-colors: active) {
+  .rst-stage-art, [rst-stage-art] { display: none; }
+}
+@media print {
+  .rst-stage-art, [rst-stage-art] { display: none; }
+}
+
 /* error page — one centred column, whatever shell it lands in: the
    status as a quiet label above the sentence, one or two ways out, and
    the reference last, where an operator asked to quote it will find it.

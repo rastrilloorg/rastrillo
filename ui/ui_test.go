@@ -2116,6 +2116,9 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// it. Order is irrelevant to the contract anyway: a block is
 		// found by name.
 		"console": {"lang", "dir", "title", "head", "brand", "account", "locale", "nav", "content", "foot"},
+		// stage has no chrome to override. backdrop is the picture
+		// behind the card, foot an optional line under it.
+		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {
@@ -2830,7 +2833,7 @@ func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 // (so a struct-vs-map decision in an app cannot break a shell), and
 // resolves every catalog key it names.
 func TestLayoutsParseAndRender(t *testing.T) {
-	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console"}) {
+	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console", "stage"}) {
 		t.Fatalf("LayoutNames = %v", got)
 	}
 	for _, name := range LayoutNames() {

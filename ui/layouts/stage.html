@@ -1,0 +1,34 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<link rel="stylesheet" href="{{asset "static/theme.css"}}">
+<script defer src="{{asset "static/rastrillo.js"}}"></script>
+{{iconAssets}}
+{{/* stage — one card centred on a full-page backdrop, for a screen that
+     stands alone: the sign-in page above all. No select.js, calendar.js
+     or datetime.js: a stage page has no enhanced fields, and each would
+     be a request in front of the one screen every visitor meets first.
+     head is the app's slot, last so its CSS wins the ties it should. */}}
+{{block "head" .}}{{end}}
+</head>
+<body rst-stage>
+<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+{{/* backdrop is the picture behind the card. The default is generated
+     from a constant seed because no block may read the page's data;
+     redefine it as {{stageArt "your-app"}} for a pattern of your own,
+     or with an image or your own SVG. aria-hidden: it is decoration. */}}
+<div rst-stage-scene aria-hidden="true">{{block "backdrop" .}}{{stageArt "rastrillo"}}{{end}}</div>
+<main rst-page id="main">
+{{template "content" .}}
+</main>
+{{/* foot is empty by default. Define it as
+     <footer rst-stage-foot>…</footer> for legal links — the element is
+     yours so an empty default leaves no empty landmark behind. */}}
+{{block "foot" .}}{{end}}
+</body>
+</html>
+{{end}}

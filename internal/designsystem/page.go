@@ -899,6 +899,7 @@ func shellViews(mount, theme, locale string) []shellView {
 		"topbar":  "Brand, navigation and an account menu across the top, with a footer under the page.",
 		"sidebar": "A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.",
 		"console": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. Below 800px one disclosure folds both. No JavaScript.",
+		"stage":   "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.",
 	}
 	out := make([]shellView, 0, len(ui.LayoutNames()))
 	for _, name := range ui.LayoutNames() {
@@ -1283,8 +1284,8 @@ var previewHeights = map[string]int{
 	"idiom-selbox":        70,
 	"idiom-shell-topbar":  250,
 	"idiom-shell-sidebar": 400,
-	// The four shell demos, which are whole pages.
-	// One height for the four, because they sit under one another and
+	// The shell demos, which are whole pages.
+	// One height for them all, because they sit under one another and
 	// the sidebar's rail is the tallest of them.
 	// The demo application, framed at the top of the Overview. Taller
 	// than the shells because it is a screen with content in it rather
@@ -1308,6 +1309,7 @@ var previewHeights = map[string]int{
 	"shell-topbar":  780,
 	"shell-sidebar": 780,
 	"shell-console": 780,
+	"shell-stage":   780,
 }
 
 // previewHeight is what an example gets when the table has nothing to
@@ -2480,9 +2482,9 @@ const shellsBody = `{{define "ds-body-shells"}}
 {{end}}
 {{end}}`
 
-// shellTemplate fills every block the four shells leave open. The
-// blocks a given shell does not declare are simply never executed, so
-// one override set covers all four.
+// shellTemplate fills every block the shells leave open. The blocks a
+// given shell does not declare are simply never executed, so one
+// override set covers them all.
 //
 // head is the newest of them and the reason it exists: this demo is a
 // real page a reader can open in a tab of its own, and a reader who
@@ -2505,7 +2507,7 @@ const shellTemplate = `
 {{define "content"}}
 {{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
 <div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></div>
-<section rst-box><p>{{P "This is the {shell} shell, one of the four ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
+<section rst-box><p>{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
 <div rst-box-head><h2>Recent</h2></div>
 <div rst-card style="--rst-cols: 2fr 110px 32px">
 <div rst-lrow="head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
@@ -2518,7 +2520,7 @@ const shellTemplate = `
 
 // modalTemplate is the modal demo page: the sample's structure with
 // real addresses. It is a hand-written document rather than one of the
-// four shells because the idiom is body-level — the backdrop wraps the
+// shells because the idiom is body-level — the backdrop wraps the
 // whole page, and no shell has a block outside its own main.
 //
 // The three deviations from ui.Styleguide()["modal"], all of them the

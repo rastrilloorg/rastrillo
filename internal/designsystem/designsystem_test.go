@@ -3197,3 +3197,15 @@ func TestEveryFrameTitleIsUniqueOnThePage(t *testing.T) {
 		}
 	}
 }
+
+// The Shells page lists every shell ui.LayoutNames returns, so a shell
+// added to ui arrives here on its own, and with nothing to say about
+// itself unless its blurb came with it: an empty paragraph under a
+// shell's name, which no other test notices.
+func TestEveryShellHasABlurb(t *testing.T) {
+	for _, v := range shellViews("", "day", "en") {
+		if v.Blurb == "" {
+			t.Errorf("the %s shell has no blurb in shellViews", v.Name)
+		}
+	}
+}
