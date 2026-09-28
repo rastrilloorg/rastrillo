@@ -202,6 +202,7 @@ type Remembered struct {
 type PasskeyDoor struct {
     BeginPath, FinishPath string // where the app mounted DiscoverBegin/DiscoverFinish
     ModuleURL             string // where the app serves webauthn.JS()
+    ScriptURL             string // where the app serves passkey.JS(), the door's own module
     LegacyRPID            string // passkey.Config.LegacyRPID, if any
 }
 ```
@@ -592,11 +593,22 @@ type Record struct{ Method, Address string }
   data-rst-passkey-cancelled="{{T …}}" data-rst-passkey-failed="{{T …}}"
   aria-describedby="rst-signin-passkey-msg">…</button>
 <p id="rst-signin-passkey-msg" rst-signin-passkey-msg aria-live="polite"></p>
+<script type="module" src="{{.Passkey.ScriptURL}}"></script>
 ```
 
-The enhancer is new code in `rastrillo.js`, which every shell already
-loads (ui/layouts/column.html:8); apps with an older vendored copy get
-it through `rastrillo doctor --fix`. The protocol:
+**Delivery (amended after the plan review).** The enhancer is its own
+ES module, `passkey/js/signin.mjs`, embedded in `passkey` and exposed as
+`passkey.JS()`; the app serves it beside `webauthn.JS()` and puts its
+URL in `State.Passkey.ScriptURL`. The partial emits the external
+`<script type="module" src>` only when it renders a passkey door, and
+never in `Preview`, so ordinary pages, email-only screens and gallery
+previews never request it. It replaces the first decision — new code in
+`rastrillo.js`, which every shell loads — because that file is at its
+16 KiB cap (`TestShimIsSmall`), whose own rule is to split past it, and
+because every page of every app would have paid for a button that
+exists on one. No CSP change: the default policy has no `script-src`,
+so scripts fall back to `default-src 'self'`, which admits a
+same-origin module; there is no inline initializer. The protocol:
 
 1. **Capability.** Reveal the button only when `PublicKeyCredential`
    exists, a dynamic `import()` of `data-rst-passkey-module` succeeds
@@ -626,9 +638,10 @@ it through `rastrillo doctor --fix`. The protocol:
    - it is a local absolute path — starts with exactly one `/` (so not
      `//` and no scheme), no `\`, no control character. This is the
      rule `sessions.SafeReturn` enforces (sessions/sessions.go:461-469)
-     and `rastrillo.js` already has as `localPath` (ui/rastrillo.js:
-     66-69); the enhancer reuses that function rather than writing a
-     second one. A same-origin *absolute URL* is refused too: the server
+     and `rastrillo.js` has as `localPath` (ui/rastrillo.js:66-69); the
+     module carries the same rule as its own exported `localPath`,
+     tested directly in Node against the cases below. A same-origin
+     *absolute URL* is refused too: the server
      never sends one, so accepting it would only widen the contract.
    - and `new URL(to, location.href).origin === location.origin`. The
      prefix rule alone already refuses `"/\t/evil.example/x"` by its
@@ -825,7 +838,7 @@ pre-check that would address them is out of scope.
   `AnswerAsSent`, the `field` partial's `QuietError`, the `callout`
   partial's `ID` and `Focus`,
   `SigninScreen`, `KeymailServers`, `BeginPath`, `ForgetPath`,
-  `Remember`, `lastsignin`, `passkey.Config.Remember`). Changed:
+  `Remember`, `lastsignin`, `passkey.Config.Remember`, `passkey.JS()`). Changed:
   nothing for an app that leaves `SigninScreen` off — no new cookie,
   and `Begin`/`Callback` as before; `KeymailServers`, if set, applies
   either way. Turning the screen on turns on the continuation and
@@ -959,8 +972,12 @@ pre-check that would address them is out of scope.
   next visit is Returning (passkey) with no address; a cancelled prompt
   shows the cancelled message in the live region with focus still on
   the button, which was never `disabled`; a second click while busy
-  starts no second ceremony. The navigation check (a node test, the way
-  select.js is tested, ui/select_test.go:94) refuses `//evil`, `/\t/evil`, `/\n/evil`,
+  starts no second ceremony; pages with no passkey door — an ordinary
+  page, an email-only screen — never request the module. The page
+  navigates only after finish answers `ok: true`: a Node drive of the
+  module's ceremony covers malformed, non-2xx and failed-network
+  answers. The navigation check (a Node test of the module's own
+  function) refuses `//evil`, `/\t/evil`, `/\n/evil`,
   `/\\evil`, a cross-origin absolute URL and a same-origin absolute
   URL (the local-path rule, §1.6 step 4), and accepts `/`, `/home` and
   `/confirm?x=1`.
@@ -1065,3 +1082,14 @@ here.
 |---|---|---|
 | 28 | Minor: `expect=keymail` cannot establish why Keymail was not used; "Keymail didn't answer" is false for an allowlist refusal, a negative classification, `force=1`, and `AnswerAsSent` (which contacts nothing) | The Sent line states the outcome only — "We sent you a sign-in link this time." — identical for `Begin` and `AnswerAsSent` (§1.3, §2, §5) |
 | 29 | Minor: "Screen off is today" allowed only pending and session cookies, but today's `admit` and discovery can hold for a second factor and write `__Host-rastrillo_secondfactor` | The test compares against the cookies today's flow writes on each path, held paths included, and qualifies unchanged behaviour as "with `KeymailServers` unset" (§5) |
+
+### Plan review (Astra, 2026-09-27) — one design change
+
+The plan review's finding 3 found the enhancer's delivery wrong for the
+code as it stands: `rastrillo.js` is 16,364 of its 16,384-byte cap and
+its size test says to split past 16 KiB, and the first plan raised the
+cap instead. Decided with the operator: the enhancer is a separate
+module, `passkey.JS()`, loaded by the partial only with a rendered
+passkey door (§1.6 "Delivery", `PasskeyDoor.ScriptURL` in §1.2, §4, §5).
+The review's other fifteen findings were about the plan, not the design,
+and are fixed there.

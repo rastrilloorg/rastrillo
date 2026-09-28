@@ -4,7 +4,7 @@
 
 **Goal:** Ship a sign-in screen — `ui`'s `signin`/`signin-title` partials in a new `stage` shell, fed by `auth.SigninState` — with a keymail continuation that keeps `form-action 'self'`, a remembered one-tap, a passkey door, and an optional keymail-server allowlist, all behind one opt-in switch that leaves apps which do not adopt it byte-for-byte unchanged.
 
-**Architecture:** `auth` stays HTML-free: it gains `SigninScreen`, sealed attempt and continuation cookies, `SigninState` (read-only) and `PrepareSigninResponse` (the only writer), `Forget` and `AnswerAsSent`. A new leaf package `lastsignin` owns the remembered cookie and the one "attempt is over" seam that `auth.admit` and `passkey.DiscoverFinish` both call. `ui` renders: new partials, a `stage` layout, a `stageArt` backdrop func, two helpers (`opt`, `Tbdi`), and a passkey enhancer in `rastrillo.js`. One shared envelope (`internal/sealedcookie`) seals all three cookies.
+**Architecture:** `auth` stays HTML-free: it gains `SigninScreen`, sealed attempt and continuation cookies, `SigninState` (read-only) and `PrepareSigninResponse` (the only writer), `Forget` and `AnswerAsSent`. A new leaf package `lastsignin` owns the remembered cookie and the one "attempt is over" seam that `auth.admit` and `passkey.DiscoverFinish` both call. `ui` renders: new partials, a `stage` layout, a `stageArt` backdrop func, two helpers (`opt`, `Tbdi`). The passkey door's script is its own module, `passkey.JS()`, which the partial loads only when it renders the door. One shared envelope (`internal/sealedcookie`) seals all three cookies.
 
 **Tech Stack:** Go 1.26, `html/template`, `github.com/keymaildev/signin` v0.1.1, `amadan.net/rastrillo/rastrillo/crypto` (HKDF + AES-256-GCM), chromedp harness (`-tags browser`), Node for the JS twin tests, axe-core (vendored) for a11y.
 
@@ -21,37 +21,37 @@
 - **No inline styles** in `ui/partials/*` or `ui/layouts/*` (`TestPartialsAndLayoutsEmitNoInlineStyles`); `stageArt`'s generated SVG carries no `style`, `<style`, colour literal or external reference.
 - **Catalogs:** the 12 files in `locales/` share one key set (`TestBaseCatalogsShareOneKeySet`); every key is `rastrillo.ui.*`.
 - **Struct callers stay working:** a new optional key read by a shipped partial goes through `opt` (Task 8), never `.Key` inline — an inline read of a field a caller's struct lacks is an Execute error (the `menuGroup` precedent, `ui/funcs.go`).
-- **`rastrillo.js` text rules:** it must never contain the substring `import ` (import followed by a space) or `https://` — `TestScriptsAreSelfContained`. Write dynamic import as `import(x)`, and keep those two strings out of comments too.
+- **`ui/rastrillo.js` is not touched.** It is at its 16 KiB cap and every page loads it; the passkey door is `passkey/js/signin.mjs` (Task 9), and it must contain no `http://`, `https://`, `eval(`, `new Function` or `innerHTML` (its own test holds that).
 - **SKILL.md:** ≤ 30,000 bytes (`skillmd_test.go`). It is LLM-facing and is not copy-reviewed, but it is reviewed like code: no inaccurate line.
 - **Screen off changes nothing:** with `SigninScreen` false and `KeymailServers` unset, `Begin`, `Callback`, `admit` and passkey discovery write exactly today's cookies and redirects, whatever `Remember` says. `auth` renders no HTML.
-- **Copy:** every user-facing English string in this plan (catalog values, gallery prose, docs, CHANGELOG) is a draft until Task 12 runs the `copy-review` skill, and none is written into a tracked file as final before then. Task 10 puts draft catalog values in `locales/en.toml` so the partial can be tested; tests reference catalog keys (`defaultT("rastrillo.ui.signin_…")`), never the English, so approved rewording breaks nothing. The gallery's prose is not written until Task 13, after the review: in `internal/designsystem` the English is also the translation key, and a word changed afterwards costs eleven redrafted translations (AGENTS.md, "User-facing copy").
+- **Copy:** no user-facing English is written into a tracked file before the operator has reviewed it (spec §2; the `copy-review` skill). Batch 1 (Task 10) is every string the screen shows and every gallery sentence about it: approved, written to `locales/en.toml`, and translated into the other eleven once; the gallery's approved strings wait in the `.gitignore`d `copy-review/result.json` for Tasks 11–12, which write them and translate them once — in `internal/designsystem` the English is also the translation key (AGENTS.md, "User-facing copy"). Batch 2 (Task 14) is the docs and the CHANGELOG. English shown in Tasks 11–14 is the draft that went to review; the approved text replaces it. Tests reference catalog keys (`defaultT("rastrillo.ui.signin_…")`), never the English.
 - **Comments** say why and name the failure prevented; a comment that restates the code is not written. **Commits:** imperative subject; body says why; last line `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Commit per task, then `git push origin signin-screen`: on amadan the branch is the PR, and its page should never lag the worktree.
 
 ## Review Focus
 
 The inputs the spec implies but no spec test names, most likely first. Each has its test in the task that owns the code.
 
-1. **Hostile or unusual text shown back to the visitor** — markup, `{placeholder}`-looking text, RTL script, a 300-byte string — in the prefill, the Sent address and the one-tap label renders escaped, isolated in `<bdi>`, never re-substituted; an over-long address is dropped from the cookie, not truncated. *Tests: Task 3 (`TestBeginWritesTheAttempt`, over-long), Task 8 (`TestTbdiEscapesAndSubstitutesOnce`), Task 10 (`TestSigninEscapesWhatAVisitorTyped`).*
-2. **A remembered passkey with no passkey door wired** (the app removed passkeys, or forgot `State.Passkey`) renders the Ask form with the email field focused — never an empty door column. *Test: Task 6 (`TestDoorAndFocusFollowTheMatrix`), Task 10 (`TestAReturningPasskeyWithNoDoorAsksForAnAddress`).*
+1. **Hostile or unusual text shown back to the visitor** — markup, `{placeholder}`-looking text, RTL script, a 300-byte string — in the prefill, the Sent address and the one-tap label renders escaped, isolated in `<bdi>`, never re-substituted; an over-long address is dropped from the cookie, not truncated. *Tests: Task 3 (`TestBeginWritesTheAttempt`, over-long), Task 8 (`TestTbdiEscapesAndSubstitutesOnce`), Task 12 (`TestSigninEscapesWhatAVisitorTyped`).*
+2. **A remembered passkey with no passkey door wired** (the app removed passkeys, or forgot `State.Passkey`) renders the Ask form with the email field focused — never an empty door column. *Test: Task 6 (`TestDoorAndFocusFollowTheMatrix`), Task 12 (`TestAReturningPasskeyWithNoDoorAsksForAnAddress`).*
 3. **A rotated `InstanceKey` or changed `Origin`**: every sealed cookie from before is ignored and cleared on the next sign-in page — no 500, no error callout, no stale one-tap. *Test: Task 6 (`TestCookiesFromAnotherKeyAreIgnoredAndCleared`).*
 4. **A keymail approval that fails** (`?force=1&err=keymail`) keeps the address the visitor typed, so the "Send me a link instead" form is prefilled. *Test: Task 6 (`TestAKeymailProblemKeepsTheAddressForTheEscapeHatch`).*
 5. **A misspelt `KeymailServers` entry** (`https://keymail.dev`, `keymail.dev/`) is refused at `New` instead of silently matching nothing and sending every keymail user a link. *Test: Task 4 (`TestKeymailServersRefusesWhatIsNotAHost`).*
 
 ## Where the code forced a choice the spec did not make
 
-Each is decided below; a reviewer who disagrees should say so before Task 8.
+Each is decided below; a reviewer who disagrees should say so before the task that owns it.
 
-- **`rastrillo.js` is full.** It is 16,364 of its 16,384-byte cap, and `TestShimIsSmall`'s own comment says to split past 16 KB. The spec (§1.6) puts the passkey door there; Task 9 does so and raises the cap to 22 KB with the reasoning written into the test. The alternative is a sibling `passkey.js` loaded by the stage shell only.
+- **The passkey door is its own module** (Task 9), not code in `rastrillo.js`, which is at its 16 KiB cap and loads on every page. The spec's §1.6 delivery decision is amended to match in the same commit as this plan.
 - **Two new template helpers.** `field`'s `QuietError` and `callout`'s `ID`/`Focus` cannot be read inline without breaking struct callers (the `menuGroup` precedent), so Task 8 adds `opt`. An address inside a translated sentence needs escaping and `<bdi>` isolation, which `Tf` cannot give, so Task 8 adds `Tbdi`. `Funcs` goes from 9 to 12 entries with `stageArt`.
-- **The gallery must claim the partials.** `buildFamilies` fails on any partial no page claims; Task 13 has the Screens page claim `signin` and `signin-title`.
-- **`Preview` also shows the passkey button** unhidden and inert, so the gallery's passkey state is visible; the spec defined `Preview` only for the Continue state.
+- **The partials and the gallery page that claims them land together** (Task 12): `buildFamilies` fails on any partial no page claims, and every partial must be marked on some page.
+- **`Preview` also shows the passkey button** unhidden and inert, loading no script, so the gallery's passkey state is visible; the spec defined `Preview` only for the Continue state.
 - **A valid attempt with an empty address** (over 254 bytes, dropped) still wins the prefill, leaving the field empty rather than falling back to the remembered address — a prefill must be what this browser last typed or nothing.
 - **A remembered passkey with no door wired** shows the Ask form (Review Focus 2).
-- **`KeymailServers` entries are validated at `New`** (Review Focus 5).
+- **`KeymailServers` entries are validated at `New`** as whole authorities (Review Focus 5).
+- **The screen-off advisory is once per process**, as the spec words it: a package-level `sync.Once`, replaceable in tests.
 - **The stage shell loads only `rastrillo.js`**, not `select.js`, `calendar.js` or `datetime.js`: a sign-in page has no enhanced fields.
 - **The art's colours** are `color-mix()` of accent into background, which the token-pair contrast gate cannot evaluate; Task 11 adds a small sRGB mixer to the test and keeps the card's border at ≥ 3:1 over the art (10% lines, 8% glow; measured worst case 3.17:1).
-- **Only the first gallery frame draws the art**, to keep the Screens page under its 128 KiB budget.
-- **Copy review is Task 12, not last**: AGENTS.md (on this branch) says gallery English is the translation key and must be reviewed before the eleven translations are drafted, so the gallery follows the review.
+- **Only the first gallery frame draws the art**, and the gallery shows ten states, to keep the Screens page under its 128 KiB budget; the full state matrix is scanned on test-only pages (Task 13).
 
 ---
 
@@ -74,10 +74,12 @@ Created:
 | `ui/layouts/stage.html` | The `stage` shell. |
 | `ui/stageart.go` (+ `_test.go`) | `stageArt(seed)`. |
 | `ui/signin_test.go` | The partial's tests. |
-| `ui/shim_node.mjs`, `ui/shim_node_test.go` | Node twin test for the passkey door's navigation guard. |
-| `docs/site/reference/lastsignin.md` | Reference page (Task 12, after copy review). |
+| `passkey/js/signin.mjs`, `passkey/js.go` | The passkey door's module and `passkey.JS()`. |
+| `passkey/js/signin_node.mjs`, `passkey/signinjs_test.go` | Node drives of the door's ceremony and destination guard. |
+| `auth/signinpage_test.go` | Rendered Sent-page parity for an admission wrapper. |
+| `docs/site/reference/lastsignin.md` | Reference page (Task 14, after copy review). |
 
-Modified: `auth/auth.go`, `auth/handlers.go`, `auth/auth_test.go` (migration set), `passkey/passkey.go`, `ui/funcs.go`, `ui/funcs_test.go`, `ui/ui.go`, `ui/ui_test.go`, `ui/contrast_test.go`, `ui/shim_test.go`, `ui/partials/field.html`, `ui/partials/callout.html`, `ui/tokens.css`, `ui/rastrillo.js`, `locales/*.toml` (12), `internal/designsystem/{screens.go,page.go,prose.go,designsystem.go,a11y_test.go}`, `Makefile` (browser + gorm-free lists), `examples/{blog,tickets}/static/tokens.css`, `docs/site/{magic-links,passkeys,templates}.md`, `docs/site/reference/{auth,passkey,ui}.md`, `docs/site/nav.json`, `SKILL.md`, `CHANGELOG.md`.
+Modified: `auth/auth.go`, `auth/handlers.go`, `auth/auth_test.go` (migration set), `passkey/passkey.go`, `ui/funcs.go`, `ui/funcs_test.go`, `ui/ui.go`, `ui/ui_test.go`, `ui/contrast_test.go`, `ui/partials/field.html`, `ui/partials/callout.html`, `ui/tokens.css`, `locales/*.toml` (12), `internal/designsystem/{screens.go,page.go,prose.go,designsystem.go,a11y_test.go}`, `Makefile` (browser + gorm-free lists), `examples/{blog,tickets}/static/tokens.css`, `docs/site/{magic-links,passkeys,templates}.md`, `docs/site/reference/{auth,passkey,ui}.md`, `docs/site/nav.json`, `SKILL.md`, `CHANGELOG.md`.
 
 ---
 ### Task 1: The sealed-cookie envelope
@@ -102,6 +104,7 @@ Modified: `auth/auth.go`, `auth/handlers.go`, `auth/auth_test.go` (migration set
 package sealedcookie
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"strings"
@@ -129,7 +132,10 @@ func TestSealThenOpenRoundTrips(t *testing.T) {
 	if !strings.HasPrefix(v, "v1.") {
 		t.Fatalf("value %q lacks the v1. prefix", v)
 	}
-	if strings.Contains(v, "ada") {
+	// Decoded, not the base64 text: random ciphertext can spell a short
+	// word by chance, but not fifteen plaintext bytes.
+	raw, _ := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(v, "v1."))
+	if bytes.Contains(raw, []byte("ada@example.com")) {
 		t.Fatal("the payload is readable in the sealed value")
 	}
 	var got payload
@@ -367,6 +373,8 @@ EOF
 package lastsignin
 
 import (
+	"bytes"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -426,7 +434,8 @@ func TestTheCookieIsHostOnlyHttpOnlyAndLastsFourHundredDays(t *testing.T) {
 		c.SameSite != http.SameSiteLaxMode || c.Path != "/" || c.MaxAge != 400*24*3600 {
 		t.Fatalf("cookie = %+v", c)
 	}
-	if strings.Contains(c.Value, "ada") {
+	raw, _ := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(c.Value, "v1."))
+	if bytes.Contains(raw, []byte("ada@example.com")) {
 		t.Fatal("the address is readable in the cookie")
 	}
 }
@@ -1118,7 +1127,7 @@ func TestBeginWritesTheAttempt(t *testing.T) {
 			c = sc
 		}
 	}
-	if c == nil || !c.HttpOnly || c.SameSite != http.SameSiteLaxMode || c.Path != "/" || c.MaxAge != 900 || strings.Contains(c.Value, "ada") {
+	if c == nil || !c.HttpOnly || c.SameSite != http.SameSiteLaxMode || c.Path != "/" || c.MaxAge != 900 {
 		t.Fatalf("attempt cookie = %+v", c)
 	}
 
@@ -1730,7 +1739,11 @@ type keymailFake struct {
 	delegate map[string]string // domain -> the host its _keymail TXT names
 	address  string            // what the token endpoint says was verified
 	redirect map[string]string // path -> Location: a server bouncing the request
-	seen     []string          // "host path" of every request that arrived
+	// status is the redirect's code: 302 by default; 307 and 308 keep
+	// the method and body, so a bounced token exchange would carry the
+	// code and verifier to wherever Location points.
+	status int
+	seen   []string // "host path" of every request that arrived
 }
 
 func newKeymailFake() *keymailFake {
@@ -1755,7 +1768,7 @@ func (f *keymailFake) RoundTrip(r *http.Request) (*http.Response, error) {
 	f.mu.Lock()
 	f.seen = append(f.seen, r.URL.Host+" "+r.URL.Path)
 	server, to := f.servers[r.URL.Host], f.redirect[r.URL.Path]
-	claimed, address := f.claimed[r.URL.Query().Get("addr")], f.address
+	claimed, address, status := f.claimed[r.URL.Query().Get("addr")], f.address, f.status
 	f.mu.Unlock()
 	if r.Body != nil {
 		r.Body.Close()
@@ -1765,8 +1778,11 @@ func (f *keymailFake) RoundTrip(r *http.Request) (*http.Response, error) {
 	case !server:
 		rec.WriteHeader(http.StatusNotFound)
 	case to != "":
+		if status == 0 {
+			status = http.StatusFound
+		}
 		rec.Header().Set("Location", to)
-		rec.WriteHeader(http.StatusFound)
+		rec.WriteHeader(status)
 	case r.URL.Path == "/.well-known/keymail":
 		rec.WriteString(`{"version":"1"}`)
 	case r.URL.Path == "/api/federation/lookup" && claimed:
@@ -1837,6 +1853,7 @@ func stateOf(t *testing.T, raw string) string {
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -1855,7 +1872,10 @@ func beginKeymail(a *Auth, b *browser, address string) *http.Response {
 }
 
 func TestKeymailServersRefusesWhatIsNotAHost(t *testing.T) {
-	for _, bad := range []string{"https://keymail.dev", "keymail.dev/", "keymail.dev/x", "", "key mail.dev", "user@keymail.dev"} {
+	for _, bad := range []string{
+		"https://keymail.dev", "keymail.dev/", "keymail.dev/x", "", "key mail.dev", "user@keymail.dev",
+		"keymail.test:banana", "keymail.test:99999", "keymail.test:0", "keymail.test:", "[::1", "keymail\x00.test", "keymail.test?x",
+	} {
 		d := newTestAuthDB(t)
 		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, KeymailServers: []string{bad}}); err == nil {
 			t.Errorf("KeymailServers %q was accepted; it can never match a host, so every keymail user would silently get a link", bad)
@@ -1912,42 +1932,63 @@ func TestAListedServerGetsTheCeremony(t *testing.T) {
 	}
 }
 
+// Both probes — the well-known document and the federation lookup —
+// and every redirect code a client follows.
 func TestAProbeCannotLeaveTheListByRedirect(t *testing.T) {
-	for name, to := range map[string]string{
-		"to an unlisted host": "https://rogue.test/.well-known/keymail",
-		"down to plain http":  "http://keymail.test/.well-known/keymail",
-	} {
-		t.Run(name, func(t *testing.T) {
-			a, _ := newTestAuth(t, listed("keymail.test"))
-			f := kayFake()
-			f.redirect["/.well-known/keymail"] = to
-			wireKeymail(a, f)
-			if loc := beginKeymail(a, newBrowser(), "kay@example.org").Header.Get("Location"); loc != "/signin?sent=1" {
-				t.Fatalf("a redirected probe → %q, want the magic link a failed probe means", loc)
+	for _, path := range []string{"/.well-known/keymail", "/api/federation/lookup"} {
+		for _, status := range []int{http.StatusFound, http.StatusTemporaryRedirect, http.StatusPermanentRedirect} {
+			for name, to := range map[string]string{
+				"to an unlisted host": "https://rogue.test" + path,
+				"down to plain http":  "http://keymail.test" + path,
+			} {
+				t.Run(fmt.Sprintf("%s %d %s", path, status, name), func(t *testing.T) {
+					a, _ := newTestAuth(t, listed("keymail.test"))
+					f := kayFake()
+					f.redirect[path], f.status = to, status
+					wireKeymail(a, f)
+					if loc := beginKeymail(a, newBrowser(), "kay@example.org").Header.Get("Location"); loc != "/signin?sent=1" {
+						t.Fatalf("a redirected probe → %q, want the magic link a failed probe means", loc)
+					}
+					if n := f.hits("rogue.test", ""); n != 0 {
+						t.Fatalf("rogue.test received %d requests", n)
+					}
+					if n := f.hits("keymail.test", path); n != 1 {
+						t.Fatalf("keymail.test%s was requested %d times, want 1: the https request, and the refused hop never arriving", path, n)
+					}
+				})
 			}
-			if n := f.hits("rogue.test", ""); n != 0 {
-				t.Fatalf("rogue.test received %d requests", n)
-			}
-			if n := f.hits("keymail.test", "/.well-known/keymail"); n != 1 {
-				t.Fatalf("keymail.test's well-known was fetched %d times, want 1 (the redirect hop refused)", n)
-			}
-		})
+		}
 	}
 }
 
+// 307 and 308 are the redirects that re-send a POST with its body: the
+// code and the PKCE verifier. Neither an unlisted host nor the listed
+// host over plain http may receive them.
 func TestAnExchangeCannotLeaveTheListByRedirect(t *testing.T) {
-	a, _ := newTestAuth(t, listed("keymail.test"))
-	f := kayFake()
-	wireKeymail(a, f)
-	b := newBrowser()
-	state := stateOf(t, beginKeymail(a, b, "kay@example.org").Header.Get("Location"))
-	f.redirect["/api/oauth/token"] = "https://rogue.test/api/oauth/token"
-	w := b.do(a.Callback, http.MethodGet, "/auth/callback?code=c&state="+state, nil)
-	if loc := w.Header().Get("Location"); loc != "/signin?force=1&err=keymail" {
-		t.Fatalf("a redirected exchange → %q, want the escape hatch", loc)
-	}
-	if n := f.hits("rogue.test", ""); n != 0 {
-		t.Fatalf("the code and verifier reached rogue.test (%d requests)", n)
+	for _, status := range []int{http.StatusFound, http.StatusTemporaryRedirect, http.StatusPermanentRedirect} {
+		for name, to := range map[string]string{
+			"to an unlisted host": "https://rogue.test/api/oauth/token",
+			"down to plain http":  "http://keymail.test/api/oauth/token",
+		} {
+			t.Run(fmt.Sprintf("%d %s", status, name), func(t *testing.T) {
+				a, _ := newTestAuth(t, listed("keymail.test"))
+				f := kayFake()
+				wireKeymail(a, f)
+				b := newBrowser()
+				state := stateOf(t, beginKeymail(a, b, "kay@example.org").Header.Get("Location"))
+				f.redirect["/api/oauth/token"], f.status = to, status
+				w := b.do(a.Callback, http.MethodGet, "/auth/callback?code=c&state="+state, nil)
+				if loc := w.Header().Get("Location"); loc != "/signin?force=1&err=keymail" {
+					t.Fatalf("a redirected exchange → %q, want the escape hatch", loc)
+				}
+				if n := f.hits("rogue.test", ""); n != 0 {
+					t.Fatalf("the code and verifier reached rogue.test (%d requests)", n)
+				}
+				if n := f.hits("keymail.test", "/api/oauth/token"); n != 1 {
+					t.Fatalf("keymail.test's token endpoint saw %d requests, want 1: the refused hop must never be sent", n)
+				}
+			})
+		}
 	}
 }
 
@@ -2005,6 +2046,8 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -2027,7 +2070,8 @@ const (
 
 // keymailServers parses Config.KeymailServers into a lowercased set; nil
 // means any delegated server. An entry that could never equal a URL's
-// host — a scheme, a path, a space, userinfo — is refused here, because
+// host — a scheme, a path, userinfo, a port that is not a port, an
+// unclosed IPv6 bracket, a control character — is refused here, because
 // accepted it would match nothing and every keymail user would quietly
 // be sent a link instead.
 func keymailServers(list []string) (map[string]bool, error) {
@@ -2037,12 +2081,34 @@ func keymailServers(list []string) (map[string]bool, error) {
 	set := make(map[string]bool, len(list))
 	for _, s := range list {
 		h := strings.ToLower(strings.TrimSpace(s))
-		if h == "" || strings.ContainsAny(h, "/?#@ \t") {
+		if !validAuthority(h) {
 			return nil, fmt.Errorf("rastrillo/auth: KeymailServers entry %q is not a host or host:port", s)
 		}
 		set[h] = true
 	}
 	return set, nil
+}
+
+// validAuthority is a host with an optional port, exactly as a URL's
+// Host carries it: parsing it as one and demanding it come back
+// unchanged is what makes "a string that can equal some URL's host"
+// the rule, rather than a list of characters someone thought of.
+func validAuthority(h string) bool {
+	if h == "" || strings.ContainsFunc(h, func(r rune) bool { return r <= ' ' || r == 0x7f }) {
+		return false
+	}
+	u, err := url.Parse("https://" + h)
+	if err != nil || u.Host != h || u.User != nil || u.Path != "" || u.RawQuery != "" ||
+		u.Fragment != "" || u.Hostname() == "" || strings.HasSuffix(h, ":") {
+		return false
+	}
+	if p := u.Port(); p != "" {
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 1 || n > 65535 {
+			return false
+		}
+	}
+	return true
 }
 
 // hostGuard is the transport under both keymail clients when
@@ -2189,10 +2255,12 @@ EOF
 package auth
 
 import (
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -2201,7 +2269,21 @@ import (
 	"github.com/keymaildev/signin"
 
 	"amadan.net/rastrillo/rastrillo/internal/sealedcookie"
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 )
+
+// flipByte tampers with a sealed value the only reliable way: decode it,
+// flip one bit of the ciphertext, re-encode. Editing the base64 text can
+// leave the decoded bytes unchanged.
+func flipByte(t *testing.T, v string) string {
+	t.Helper()
+	raw, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(v, "v1."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw[len(raw)/2] ^= 0x01
+	return "v1." + base64.RawURLEncoding.EncodeToString(raw)
+}
 
 // newKeymailScreen is the screen with kay's keymail server wired in.
 func newKeymailScreen(t *testing.T, mut func(*Config)) (*Auth, *keymailFake) {
@@ -2272,6 +2354,16 @@ func TestAuthorizeURLPredicate(t *testing.T) {
 		{"a short state", strings.Replace(good, "state="+strings.Repeat("s", 43), "state=sss", 1), false},
 		{"a state that is not base64url", strings.Replace(good, "state="+strings.Repeat("s", 43), "state="+strings.Repeat("s", 42)+"%2B", 1), false},
 		{"not a URL", "https://%zz", false},
+		{"a query that does not decode", good + "&x=%zz", false},
+		{"a query with a semicolon", good + ";x=1", false},
+		{"no state", strings.Replace(good, "state="+strings.Repeat("s", 43), "", 1), false},
+		{"an empty state", strings.Replace(good, "state="+strings.Repeat("s", 43), "state=", 1), false},
+		{"no client_id", regexp.MustCompile(`client_id=[^&]*&?`).ReplaceAllString(good, ""), false},
+		{"an empty code_challenge", strings.Replace(good, "code_challenge="+strings.Repeat("c", 43), "code_challenge=", 1), false},
+		{"a short code_challenge", strings.Replace(good, "code_challenge="+strings.Repeat("c", 43), "code_challenge="+strings.Repeat("c", 42), 1), false},
+		{"a code_challenge that is not base64url", strings.Replace(good, "code_challenge="+strings.Repeat("c", 43), "code_challenge="+strings.Repeat("c", 42)+"%2F", 1), false},
+		{"a duplicated prompt", build(a.cfg.Origin, callbackPath, true) + "&prompt=login", false},
+		{"an empty prompt", good + "&prompt=", false},
 	} {
 		if got := a.validAuthorizeURL(c.url); got != c.want {
 			t.Errorf("%s: %v, want %v (%s)", c.name, got, c.want, c.url)
@@ -2326,7 +2418,7 @@ func TestAContinuationOpensOnlyWhereItWasSealed(t *testing.T) {
 		"under the attempt's key":  seal(a.attemptKey, p),
 		"unknown version":          "v2." + strings.TrimPrefix(value, "v1."),
 		"an attempt, not this":     seal(a.continueKey, attempt{O: a.cfg.Origin, ID: "x", IAT: now, EXP: now + 60, K: attemptLink}),
-		"tampered":                 value[:len(value)-2] + "AA",
+		"tampered":                 flipByte(t, value),
 	} {
 		if st := open(v); st != cookieInvalid {
 			t.Errorf("%s: %v, want invalid", name, st)
@@ -2475,6 +2567,29 @@ func TestTwoTabsTheInstalledPairWins(t *testing.T) {
 	})
 }
 
+// A keymail sign-in with the screen on ends like a magic link does:
+// the attempt is over, the way in is remembered with the address, and
+// the continuation goes with its pending cookie — on the held path too.
+func TestAKeymailSignInIsRememberedAndEndsTheAttempt(t *testing.T) {
+	for _, held := range []bool{false, true} {
+		a, _ := newKeymailScreen(t, nil)
+		want, dest := []string{"rastrillo_attempt:clear", "rastrillo_continue:clear", "rastrillo_last_signin", "rastrillo_pending:clear", "rastrillo_session"}, "/"
+		if held {
+			a.cfg.SecondFactor = holdingGate(t, a).Hold
+			want, dest = []string{"rastrillo_attempt:clear", "rastrillo_continue:clear", "rastrillo_last_signin", "rastrillo_pending:clear", "rastrillo_secondfactor"}, "/signin/confirm"
+		}
+		b := newBrowser()
+		_, state := startKeymail(t, a, b)
+		w := callback(a, b, state)
+		if w.Header().Get("Location") != dest || !reflect.DeepEqual(setCookies(w), want) {
+			t.Fatalf("held=%v: → %q with %v, want %q with %v", held, w.Header().Get("Location"), setCookies(w), dest, want)
+		}
+		if rec, res := a.jar.Read(b.request(http.MethodGet, "/signin", nil)); res != lastsignin.Valid || rec != (lastsignin.Record{Method: "keymail", Address: "kay@example.org"}) {
+			t.Fatalf("held=%v: remembered %+v, %v", held, rec, res)
+		}
+	}
+}
+
 // TestScreenOffKeymailIsToday is TestScreenOffIsToday's keymail half.
 func TestScreenOffKeymailIsToday(t *testing.T) {
 	for _, remember := range []*bool{nil, ptr(true), ptr(false)} {
@@ -2503,6 +2618,21 @@ func TestScreenOffKeymailIsToday(t *testing.T) {
 			begin()
 			check("a callback for no attempt", callback(a, b, "forged"), "/signin?err=expired", []string{"rastrillo_pending:clear"})
 			check("the callback", callback(a, b, begin()), "/", []string{"rastrillo_pending:clear", "rastrillo_session"})
+
+			// A continuation cookie left by a screen-on configuration with
+			// the same key — describing this very pending cookie, for some
+			// other state — is not read with the screen off: the callback
+			// completes as today and the cookie is not touched.
+			state := begin()
+			on, _ := newScreenAuth(t, nil)
+			other := (&signin.Keymail{Base: "https://keymail.test", Origin: a.cfg.Origin, RedirectPath: callbackPath}).
+				AuthorizeURL(strings.Repeat("o", 43), strings.Repeat("c", 43), false)
+			_, leftover, err := on.sealContinuation(other, b.cookie("rastrillo_pending").Value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			b.jar["rastrillo_continue"] = &http.Cookie{Name: "rastrillo_continue", Value: leftover}
+			check("the callback beside a leftover continuation", callback(a, b, state), "/", []string{"rastrillo_pending:clear", "rastrillo_session"})
 			a.cfg.SecondFactor = holdingGate(t, a).Hold
 			check("the callback, held", callback(a, b, begin()), "/signin/confirm", []string{"rastrillo_pending:clear", "rastrillo_secondfactor"})
 		})
@@ -2802,11 +2932,11 @@ EOF
 
 **Files:**
 - Create: `auth/signin.go`, `auth/signinstate_test.go`
-- Modify: `auth/auth.go` (`advisory sync.Once` field on `Auth`; package doc paragraph about the screen)
+- Modify: `auth/auth.go` (package doc paragraph about the screen)
 
 **Interfaces:**
 - Consumes: `openAttempt`, `attempt`, `cookieState` (Task 3); `openContinuation`, `continuationFor`, `continueCookie` (Task 5); `a.jar` (Task 3); test helpers from Tasks 3–5.
-- Produces (spec §1.2) — the exact names Tasks 7, 10, 12, 13 use:
+- Produces (spec §1.2) — the exact names Tasks 7, 12 and 13 use:
 
 ```go
 type SigninStep string    // StepAsk "ask", StepReturning "returning", StepSent "sent", StepContinue "continue"
@@ -2826,7 +2956,7 @@ type SigninState struct {
 	// unexported: clear []string
 }
 type Remembered struct{ Method, Address string }
-type PasskeyDoor struct{ BeginPath, FinishPath, ModuleURL, LegacyRPID string }
+type PasskeyDoor struct{ BeginPath, FinishPath, ModuleURL, ScriptURL, LegacyRPID string }
 func (a *Auth) SigninState(r *http.Request) SigninState
 func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
 func (a *Auth) Forget(w http.ResponseWriter, r *http.Request)
@@ -2851,8 +2981,12 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/internal/sealedcookie"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 )
 
@@ -2991,19 +3125,33 @@ func TestSentConsultsNothing(t *testing.T) {
 	}
 }
 
+// freshAdvisory gives a test its own process-wide once, and puts the
+// real one back after: other tests in this binary call SigninState with
+// the screen off and would otherwise have spent it already.
+func freshAdvisory(t *testing.T) {
+	t.Helper()
+	saved := advisoryOnce
+	advisoryOnce = new(sync.Once)
+	t.Cleanup(func() { advisoryOnce = saved })
+}
+
 func TestTheAdvisoryFiresOnceAndOnlyWithTheScreenOff(t *testing.T) {
+	freshAdvisory(t)
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&logs, nil))
 	off, _ := newTestAuth(t, func(c *Config) { c.Logger = logger })
+	another, _ := newTestAuth(t, func(c *Config) { c.Logger = logger })
 	off.SigninState(newBrowser().request(http.MethodGet, "/signin", nil))
 	off.SigninState(newBrowser().request(http.MethodGet, "/signin", nil))
+	another.SigninState(newBrowser().request(http.MethodGet, "/signin", nil))
 	if n := strings.Count(logs.String(), "SigninScreen is off"); n != 1 {
-		t.Fatalf("the advisory logged %d times, want once per process:\n%s", n, logs.String())
+		t.Fatalf("the advisory logged %d times across two Auths, want once per process:\n%s", n, logs.String())
 	}
 	if strings.Contains(logs.String(), "misconfigured") {
 		t.Fatal("the advisory must state a condition, never call the app misconfigured: it cannot know")
 	}
 	logs.Reset()
+	freshAdvisory(t)
 	on, _ := newScreenAuth(t, func(c *Config) { c.Logger = logger })
 	on.SigninState(newBrowser().request(http.MethodGet, "/signin", nil))
 	if strings.Contains(logs.String(), "SigninScreen is off") {
@@ -3071,6 +3219,66 @@ func TestCookiesFromAnotherKeyAreIgnoredAndCleared(t *testing.T) {
 	}
 	if strings.Contains(got, "rastrillo_pending") || strings.Contains(got, "rastrillo_session") {
 		t.Errorf("PrepareSigninResponse touched a cookie it does not own: %s", got)
+	}
+}
+
+// Each way a remembered cookie can be unbelievable, through the page
+// path the app actually runs: SigninState ignores it — no Returning, no
+// prefill — and PrepareSigninResponse deletes it and nothing else.
+func TestABadRememberedCookieIsIgnoredAndCleared(t *testing.T) {
+	a, _ := newScreenAuth(t, nil)
+	now := time.Now()
+	seal := func(p any) string {
+		v, err := sealedcookie.Seal(crypto.Derive([]byte("test-instance-key"), "rastrillo/lastsignin/v1"), p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	// The jar's payload shape, restated: lastsignin keeps its own
+	// unexported, and a test that could only use the public API could
+	// not seal a well-formed record for the wrong origin or method.
+	type payload struct {
+		O   string `json:"o"`
+		M   string `json:"m"`
+		A   string `json:"a,omitempty"`
+		IAT int64  `json:"iat"`
+		EXP int64  `json:"exp"`
+	}
+	good := payload{O: a.cfg.Origin, M: "magiclink", A: "ada@example.com", IAT: now.Unix(), EXP: now.Unix() + 3600}
+	expired, wrongOrigin, future, unknown := good, good, good, good
+	expired.IAT, expired.EXP = now.Unix()-7200, now.Unix()-3600
+	wrongOrigin.O = "http://other.test"
+	future.IAT = now.Unix() + 600
+	unknown.M = "password"
+	for name, value := range map[string]string{
+		"tampered":             flipByte(t, seal(good)),
+		"expired":              seal(expired),
+		"for another origin":   seal(wrongOrigin),
+		"issued in the future": seal(future),
+		"an unknown method":    seal(unknown),
+		"not an envelope":      "remember-me",
+	} {
+		b := newBrowser()
+		b.jar["rastrillo_last_signin"] = &http.Cookie{Name: "rastrillo_last_signin", Value: value}
+		st := stateAt(a, b, "/signin")
+		if st.Step != StepAsk || st.Remembered != nil || st.Address != "" {
+			t.Errorf("%s: → %+v, want a plain Ask", name, st)
+		}
+		w := httptest.NewRecorder()
+		a.PrepareSigninResponse(w, st)
+		if got := setCookies(w); len(got) != 1 || got[0] != "rastrillo_last_signin:clear" {
+			t.Errorf("%s: Set-Cookie %v, want exactly the remembered cookie deleted", name, got)
+		}
+	}
+	// The control: a good one reads as Returning and is left alone.
+	b := newBrowser()
+	b.jar["rastrillo_last_signin"] = &http.Cookie{Name: "rastrillo_last_signin", Value: seal(good)}
+	st := stateAt(a, b, "/signin")
+	w := httptest.NewRecorder()
+	a.PrepareSigninResponse(w, st)
+	if st.Step != StepReturning || len(setCookies(w)) != 0 {
+		t.Fatalf("a good remembered cookie → %+v, Set-Cookie %v", st, setCookies(w))
 	}
 }
 
@@ -3273,6 +3481,7 @@ package auth
 import (
 	"net/http"
 	"net/url"
+	"sync"
 
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 )
@@ -3347,13 +3556,23 @@ type Remembered struct {
 	Address string
 }
 
-// PasskeyDoor is where the app mounted passkey discovery and serves
-// webauthn.JS(); LegacyRPID is passkey.Config.LegacyRPID, if any.
+// PasskeyDoor is where the app mounted passkey discovery (BeginPath,
+// FinishPath), where it serves webauthn.JS() (ModuleURL, the WebAuthn
+// helper) and passkey.JS() (ScriptURL, the door's own script, which the
+// partial loads only when it renders the door), and
+// passkey.Config.LegacyRPID, if any.
 type PasskeyDoor struct {
 	BeginPath, FinishPath string
 	ModuleURL             string
+	ScriptURL             string
 	LegacyRPID            string
 }
+
+// advisoryOnce makes the screen-off advisory fire once per process, as
+// the spec and the docs say — package-level rather than a field on Auth,
+// because a process that built two Auths would otherwise warn twice. A
+// pointer so a test can replace it with a fresh one and restore it.
+var advisoryOnce = new(sync.Once)
 
 // advisoryText is worded as a condition rather than a diagnosis on
 // purpose: auth cannot see whether the app widened form-action or wraps
@@ -3374,7 +3593,7 @@ func (a *Auth) SigninState(r *http.Request) SigninState {
 	st := SigninState{BeginPath: a.cfg.BeginPath, ForgetPath: a.cfg.ForgetPath}
 	q := r.URL.Query()
 	if !a.cfg.SigninScreen {
-		a.advisory.Do(func() { a.cfg.Logger.Warn(advisoryText) })
+		advisoryOnce.Do(func() { a.cfg.Logger.Warn(advisoryText) })
 		st.Step, st.Problem = outcome(q, false)
 		return st
 	}
@@ -3544,15 +3763,7 @@ func (s SigninState) Focus() string {
 }
 ```
 
-`auth/auth.go` — `Auth` gains, after `exchangeHTTP`:
-
-```go
-	// advisory makes the screen-off warning fire once per process, not
-	// once per page view.
-	advisory sync.Once
-```
-
-(add `"sync"` to imports) and, in the package doc before "The decision tree", a paragraph:
+`auth/auth.go` — in the package doc before "The decision tree", a paragraph:
 
 ```go
 // The shipped sign-in screen (ui's signin partial) is opt-in:
@@ -4269,58 +4480,148 @@ EOF
 ```
 
 ---
-### Task 9: `ui` — the passkey door in `rastrillo.js`
+### Task 9: `passkey` — the passkey door's own module, `passkey.JS()`
+
+The spec first put the door's script in `ui/rastrillo.js`. That file is at 16,364 of its 16,384-byte cap, and its size test says to split past 16 KiB. The door ships instead as its own ES module, embedded in `passkey` and loaded by the `signin` partial with `<script type="module" src>` only when it renders a passkey door (spec §1.6, as amended with this plan). No other page of an app ever requests it, `rastrillo.js` is untouched, and the default CSP allows it unchanged: it has no `script-src`, so scripts fall back to `default-src 'self'`, which admits a same-origin module.
 
 **Files:**
-- Modify: `ui/rastrillo.js`, `ui/shim_test.go` (`TestShimContract`, `TestShimIsSmall`)
-- Create: `ui/shim_node.mjs`, `ui/shim_node_test.go`
+- Create: `passkey/js/signin.mjs`, `passkey/js.go`, `passkey/js/signin_node.mjs`, `passkey/signinjs_test.go`
 
 **Interfaces:**
-- Consumes: the markup Task 10's partial writes — `<button data-rst-passkey hidden data-rst-passkey-begin data-rst-passkey-finish data-rst-passkey-module [data-rst-passkey-legacy-rpid] data-rst-passkey-cancelled data-rst-passkey-failed aria-describedby="rst-signin-passkey-msg">` and `<p id="rst-signin-passkey-msg" aria-live="polite">`; `webauthn.mjs`'s `available()` and `authenticate({challenge, rpId, legacyRpId})` → `{credentialId, clientDataJSON, authenticatorData, signature}` (webauthn/js/webauthn.mjs:34-36, 96-117); passkey discover endpoints: begin → `{"challenge"}`, finish ← `{id, clientDataJSON, authenticatorData, signature}` → `{"ok": true, "to", ["pending"]}` (passkey/passkey.go:424-455).
-- Produces: in Node, `require("./rastrillo.js")` exports `{ localPath, safeNext }`; `safeNext(to, loc) string` where `loc` is `{href, origin}`.
+- Consumes: the markup Task 12's partial writes — `<button data-rst-passkey hidden data-rst-passkey-begin data-rst-passkey-finish data-rst-passkey-module [data-rst-passkey-legacy-rpid] data-rst-passkey-cancelled data-rst-passkey-failed aria-describedby="rst-signin-passkey-msg">`, `<p id="rst-signin-passkey-msg" aria-live="polite">`, then `<script type="module" src="<ScriptURL>">`; `webauthn.mjs`'s `available()` and `authenticate({challenge, rpId, legacyRpId})` → `{credentialId, clientDataJSON, authenticatorData, signature, prf}` (webauthn/js/webauthn.mjs:34-36, 96-117); discover begin → `{"challenge"}`, finish ← `{id, clientDataJSON, authenticatorData, signature}` → `{"ok": true, "to", ["pending"]}` (passkey/passkey.go:424-455).
+- Produces: `func passkey.JS() []byte`; the module's exports `localPath(to)`, `safeNext(to, loc) string`, `postJSON(url, body)`, `ceremony({post, authenticate, begin, finish, rpId, legacyRpId, loc}) → Promise<{navigate} | {message: "cancelled"|"failed"}>`. Apps serve `JS()` with a JavaScript content type at the URL they put in `auth.PasskeyDoor.ScriptURL` (Task 6's field).
 
 - [ ] **Step 1: Write the failing tests**
 
-`ui/shim_node.mjs`:
+`passkey/js/signin_node.mjs`:
 
 ```js
-// shim_node — drives rastrillo.js's two navigation guards in plain
-// Node: localPath, the rule the poller's Rastrillo-Location and the
-// passkey door share, and safeNext, the passkey door's destination
-// check. Everything that touches a page sits behind rastrillo.js's own
+// signin_node — drives signin.mjs's ceremony and destination guard in
+// plain Node, with the network and the authenticator replaced. Nothing
+// here touches a page: signin.mjs keeps every DOM step behind its own
 // `document` guard, which Node never passes.
 //
-// ui/shim_node_test.go is the only caller: it pipes {origin, cases} on
-// stdin and reads back where each "to" would send the page. This file
-// lives beside rastrillo.js so `go test` finds it by name; it is never
-// embedded.
-import shim from "./rastrillo.js";
+// passkey/signinjs_test.go is the only caller. It pipes {origin,
+// destinations} on stdin and reads back each scenario's outcome, the
+// keys each scenario's finish request carried, and where each
+// destination would send the page. This file sits beside signin.mjs so
+// `go test` finds it by path; it is never embedded.
+import { ceremony, safeNext } from "./signin.mjs";
+
+const answer = (body) => async () => body;
+const fail = (err) => async () => { throw err; };
+const assertion = () => ({
+  credentialId: "id", clientDataJSON: "cd", authenticatorData: "ad", signature: "sig",
+  prf: new Uint8Array([1, 2, 3]),
+});
+
+const scenarios = {
+  "signed in, local destination": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer({ ok: true, to: "/home" }) },
+  "held for a second factor": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer({ ok: true, to: "/signin/confirm", pending: true }) },
+  "signed in, destination off-site": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer({ ok: true, to: "//evil.example/x" }) },
+  "signed in, no destination": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer({ ok: true }) },
+  "finish says ok false": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer({ ok: false, to: "/home" }) },
+  "finish has no ok": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer({ to: "/home" }) },
+  "finish answers null": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: answer(null) },
+  "begin not 2xx": { begin: fail(new Error("status 500")), auth: answer(assertion()), finish: answer({ ok: true, to: "/" }) },
+  "begin without a challenge": { begin: answer({}), auth: answer(assertion()), finish: answer({ ok: true, to: "/" }) },
+  "finish not 2xx": { begin: answer({ challenge: "c" }), auth: answer(assertion()), finish: fail(new Error("status 400")) },
+  "the network is down": { begin: fail(new TypeError("Failed to fetch")), auth: answer(assertion()), finish: answer({ ok: true, to: "/" }) },
+  "dismissed, or no passkey": { begin: answer({ challenge: "c" }), auth: fail(new Error("no passkey was offered")), finish: answer({ ok: true, to: "/" }) },
+  "the authenticator failed": { begin: answer({ challenge: "c" }), auth: fail(new Error("NotReadableError")), finish: answer({ ok: true, to: "/" }) },
+};
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
-const { origin, cases } = JSON.parse(raw);
+const { origin, destinations } = JSON.parse(raw);
 const loc = { href: origin + "/signin", origin };
-process.stdout.write(JSON.stringify(cases.map((to) => shim.safeNext(to, loc))));
+const out = { outcomes: {}, finishKeys: {}, destinations: destinations.map((to) => safeNext(to, loc)) };
+for (const [name, sc] of Object.entries(scenarios)) {
+  let sent = null;
+  const post = (url, body) => {
+    if (url === "/finish") {
+      sent = body;
+      return sc.finish();
+    }
+    return sc.begin();
+  };
+  out.outcomes[name] = await ceremony({ post, authenticate: sc.auth, begin: "/begin", finish: "/finish", rpId: "app.test", loc });
+  out.finishKeys[name] = sent ? Object.keys(sent).sort() : null;
+}
+process.stdout.write(JSON.stringify(out));
 ```
 
-`ui/shim_node_test.go`:
+`passkey/signinjs_test.go`:
 
 ```go
-package ui
+package passkey_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"os"
+	"reflect"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/nodetest"
+	"amadan.net/rastrillo/rastrillo/passkey"
 )
 
-// TestThePasskeyDoorNavigatesOnlyToALocalPath is §1.6 step 4 in the
-// engine that runs it: the server's "to" is followed only when it is a
-// local absolute path by sessions.SafeReturn's rule AND resolves to
-// this origin. A same-origin absolute URL is refused as well — the
-// server never sends one, so accepting it would only widen what a bad
-// response could do.
+type outcome struct {
+	Navigate string `json:"navigate,omitempty"`
+	Message  string `json:"message,omitempty"`
+}
+
+func runSigninJS(t *testing.T, destinations []any) (map[string]outcome, map[string][]string, []string) {
+	t.Helper()
+	in, err := json.Marshal(map[string]any{"origin": "https://app.test", "destinations": destinations})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Outcomes     map[string]outcome  `json:"outcomes"`
+		FinishKeys   map[string][]string `json:"finishKeys"`
+		Destinations []string            `json:"destinations"`
+	}
+	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"js/signin_node.mjs"}, Stdin: in}), &got); err != nil {
+		t.Fatal(err)
+	}
+	return got.Outcomes, got.FinishKeys, got.Destinations
+}
+
+// Every branch a real ceremony can end in. The rule the table holds: the
+// page navigates only when finish answered ok:true, and then only to a
+// safe destination; everything else is a message and focus stays put.
+func TestThePasskeyDoorNavigatesOnlyAfterASuccess(t *testing.T) {
+	outcomes, keys, _ := runSigninJS(t, nil)
+	want := map[string]outcome{
+		"signed in, local destination":    {Navigate: "/home"},
+		"held for a second factor":        {Navigate: "/signin/confirm"},
+		"signed in, destination off-site": {Navigate: "/"},
+		"signed in, no destination":       {Navigate: "/"},
+		"finish says ok false":            {Message: "failed"},
+		"finish has no ok":                {Message: "failed"},
+		"finish answers null":             {Message: "failed"},
+		"begin not 2xx":                   {Message: "failed"},
+		"begin without a challenge":       {Message: "failed"},
+		"finish not 2xx":                  {Message: "failed"},
+		"the network is down":             {Message: "failed"},
+		"dismissed, or no passkey":        {Message: "cancelled"},
+		"the authenticator failed":        {Message: "failed"},
+	}
+	if !reflect.DeepEqual(outcomes, want) {
+		t.Fatalf("outcomes:\n got %v\nwant %v", outcomes, want)
+	}
+	if got := keys["signed in, local destination"]; !reflect.DeepEqual(got, []string{"authenticatorData", "clientDataJSON", "id", "signature"}) {
+		t.Fatalf("finish carried %v; it sends the assertion as id and never the PRF output, which is a client-side secret", got)
+	}
+}
+
+// §1.6 step 4: the server's "to" is followed only when it is a local
+// absolute path by sessions.SafeReturn's rule AND resolves to this
+// origin. A same-origin absolute URL is refused too: the server never
+// sends one. ui/rastrillo.js keeps its own copy of the local-path rule
+// for Rastrillo-Location; its contract test pins that copy's text.
 func TestThePasskeyDoorNavigatesOnlyToALocalPath(t *testing.T) {
 	cases := []any{
 		"//evil.example/x", "/\t/evil.example", "/\n/evil.example", "/\\evil.example",
@@ -4328,816 +4629,362 @@ func TestThePasskeyDoorNavigatesOnlyToALocalPath(t *testing.T) {
 		"/", "/home", "/confirm?x=1",
 		nil, 42, "",
 	}
-	want := []string{
-		"/", "/", "/", "/",
-		"/", "/",
-		"/", "/home", "/confirm?x=1",
-		"/", "/", "/",
+	want := []string{"/", "/", "/", "/", "/", "/", "/", "/home", "/confirm?x=1", "/", "/", "/"}
+	if _, _, got := runSigninJS(t, cases); !reflect.DeepEqual(got, want) {
+		t.Fatalf("safeNext:\n got %q\nwant %q", got, want)
 	}
-	in, err := json.Marshal(map[string]any{"origin": "https://app.test", "cases": cases})
+}
+
+func TestJSIsTheModuleAndSelfContained(t *testing.T) {
+	file, err := os.ReadFile("js/signin.mjs")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []string
-	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"shim_node.mjs"}, Stdin: in}), &got); err != nil {
-		t.Fatal(err)
+	if !bytes.Equal(passkey.JS(), file) {
+		t.Fatal("passkey.JS() is not js/signin.mjs")
 	}
-	if len(got) != len(want) {
-		t.Fatalf("got %d answers for %d cases", len(got), len(want))
+	for _, bad := range []string{"http://", "https://", "eval(", "new Function", "innerHTML"} {
+		if bytes.Contains(file, []byte(bad)) {
+			t.Errorf("signin.mjs contains %q; it must run under the default CSP and write only text", bad)
+		}
 	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("safeNext(%#v) = %q, want %q", cases[i], got[i], want[i])
+	for _, want := range []string{"export function ceremony", "export function safeNext", `typeof document !== "undefined"`, "aria-disabled", "pageshow"} {
+		if !bytes.Contains(file, []byte(want)) {
+			t.Errorf("signin.mjs lacks %q", want)
 		}
 	}
 }
 ```
 
-In `ui/shim_test.go`, `TestShimContract`'s `want` list gains (with a comment line above them):
-
-```go
-		// The passkey door: its hook, the busy marks that never use
-		// disabled, the destination guard, and the module's one message
-		// for "dismissed or none", which chooses the gentler words.
-		"data-rst-passkey", "aria-disabled", "safeNext", "no passkey was offered",
-```
-
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./ui/ -count=1 -run 'PasskeyDoor|ShimContract'`
-Expected: FAIL — node reports `shim.safeNext is not a function` (rastrillo.js exports nothing yet), and the contract test reports the four missing strings.
+Run: `RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./passkey/ -count=1 -run 'PasskeyDoor|JSIsTheModule'`
+Expected: FAIL to compile — `undefined: passkey.JS`.
 
-- [ ] **Step 3: Implement the door**
+- [ ] **Step 3: Write the module and its accessor**
 
-`ui/rastrillo.js` — in the opening comment's vocabulary list, after the `data-busy-label` entry:
-
-```
-     data-rst-passkey      on a hidden <button>: the sign-in screen's
-                           passkey door, which ui's signin partial
-                           writes. Revealed only where a passkey
-                           ceremony can run; see the section below
-```
-
-After `localPath`:
+`passkey/js/signin.mjs`:
 
 ```js
-  // safeNext is where a passkey sign-in may send the page: the server's
-  // "to" only when it is a local path by the rule above AND resolves to
-  // this origin, and "/" otherwise. The server never sends an absolute
-  // URL, so accepting even a same-origin one would only widen what a
-  // bad response could do; the parsed-origin check is the second line,
-  // for whatever a future edit to localPath lets through.
-  function safeNext(to, loc) {
-    if (typeof to !== "string" || !localPath(to)) return "/";
-    try {
-      return new URL(to, loc.href).origin === loc.origin ? to : "/";
-    } catch (e) {
-      return "/";
+// signin.mjs — the sign-in screen's passkey door. ui's signin partial
+// loads it with <script type="module"> only when it renders a passkey
+// door, so no other page of an app ever requests it. The app serves it
+// from passkey.JS() at the URL it gives auth.PasskeyDoor.ScriptURL.
+//
+// The door ships hidden. It is revealed only where a ceremony can run —
+// PublicKeyCredential exists, the app's webauthn module loads, and the
+// module says credentials are available — because a passkey button that
+// cannot work is a dead end on the one screen that must never have one.
+// The email form beside it works with or without any of this.
+//
+// Busy is drawn as rastrillo.js's busy rule draws it (aria-busy and an
+// rst-spin child, which tokens.css keys the spinner on) plus
+// aria-disabled, and never with disabled: a disabled button drops
+// focus, and a failure is announced to someone whose focus has to still
+// be on the button to try again.
+
+// localPath is sessions.SafeReturn's rule: exactly one leading "/", no
+// backslash, no control character — browsers strip tab/CR/LF before
+// parsing, so "/\t/evil.example" would otherwise resolve off-site.
+export function localPath(to) {
+  return typeof to === "string" && to.charAt(0) === "/" && to.charAt(1) !== "/" &&
+    to.indexOf("\\") === -1 && !/[\u0000-\u001f\u007f]/.test(to);
+}
+
+// safeNext is where a successful sign-in may send the page: the
+// server's "to" when it is a local path AND parses to this origin, "/"
+// otherwise. The server never sends an absolute URL, so accepting even
+// a same-origin one would only widen what a bad answer could do; the
+// parsed-origin check is the second line, for whatever a future edit to
+// localPath lets through.
+export function safeNext(to, loc) {
+  if (!localPath(to)) return "/";
+  try {
+    return new URL(to, loc.href).origin === loc.origin ? to : "/";
+  } catch (e) {
+    return "/";
+  }
+}
+
+// postJSON is a same-origin POST, so csrf.Protect sees
+// Sec-Fetch-Site: same-origin. A non-2xx answer is an error, never a
+// body to act on.
+export async function postJSON(url, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  if (!res.ok) throw new Error("status " + res.status);
+  return res.json();
+}
+
+// ceremony runs one passkey sign-in with its effects passed in, so Node
+// can drive every branch. It never throws: it resolves to {navigate} —
+// only when finish answered ok:true — or to {message}, "cancelled" or
+// "failed". A failed answer must never navigate as if it had worked.
+export async function ceremony({ post, authenticate, begin, finish, rpId, legacyRpId, loc }) {
+  let a;
+  try {
+    const b = await post(begin, {});
+    if (!b || typeof b.challenge !== "string") return { message: "failed" };
+    a = await authenticate({ challenge: b.challenge, rpId, legacyRpId });
+  } catch (err) {
+    // "no passkey was offered" is webauthn.mjs's one message for a
+    // dismissed prompt and for no passkey at all — the same on purpose,
+    // so a site cannot probe for credentials — and it gets the gentler
+    // words.
+    return { message: err && err.message === "no passkey was offered" ? "cancelled" : "failed" };
+  }
+  try {
+    // authenticate() names the credential credentialId; the server reads
+    // it as id. prf is never sent: it is a client-side secret.
+    const done = await post(finish, {
+      id: a.credentialId,
+      clientDataJSON: a.clientDataJSON,
+      authenticatorData: a.authenticatorData,
+      signature: a.signature,
+    });
+    if (!done || done.ok !== true) return { message: "failed" };
+    return { navigate: safeNext(done.to, loc) };
+  } catch (err) {
+    return { message: "failed" };
+  }
+}
+
+function busy(btn, on) {
+  let spin = btn.querySelector("[rst-spin]");
+  if (!on) {
+    btn.removeAttribute("aria-busy");
+    btn.removeAttribute("aria-disabled");
+    if (spin) spin.remove();
+    return;
+  }
+  btn.setAttribute("aria-busy", "true");
+  btn.setAttribute("aria-disabled", "true");
+  if (!spin) {
+    spin = document.createElement("span");
+    spin.setAttribute("rst-spin", "");
+    spin.setAttribute("aria-hidden", "true");
+    btn.insertBefore(spin, btn.firstChild);
+  }
+}
+
+function door(btn) {
+  if (!window.PublicKeyCredential) return;
+  const msg = document.getElementById(btn.getAttribute("aria-describedby") || "");
+  let mod = null;
+  import(btn.getAttribute("data-rst-passkey-module")).then((m) => {
+    if (m && m.available && m.available()) {
+      mod = m;
+      btn.hidden = false; // revealing never moves focus
     }
-  }
-
-  // Node has no document. ui/shim_node.mjs loads this file to test the
-  // two guards above; everything after this point touches a page.
-  if (typeof module !== "undefined" && module && module.exports) {
-    module.exports = { localPath: localPath, safeNext: safeNext };
-  }
-  if (typeof document === "undefined") return;
-```
-
-Before `function scan() {`:
-
-```js
-  // ── The passkey door ─────────────────────────────────────────────
-  //
-  // The sign-in screen's passkey button, which ui's signin partial
-  // writes hidden. It is revealed only where a ceremony can actually
-  // run — PublicKeyCredential exists, the app's webauthn module loads,
-  // and the module says credentials are available — because a passkey
-  // button that cannot work is a dead end on the one screen that must
-  // never have one. The email form beside it works with or without any
-  // of this. Revealing never moves focus.
-  //
-  // Busy is drawn as the busy rule draws it (aria-busy and an rst-spin
-  // child) plus aria-disabled, and never with disabled: a disabled
-  // button drops focus, and when the ceremony fails the message is
-  // announced to someone whose focus has to still be on the button to
-  // try again.
-  function passkeyBusy(btn, on) {
-    var spin = btn.querySelector("[rst-spin]");
-    if (!on) {
-      btn.removeAttribute("aria-busy");
-      btn.removeAttribute("aria-disabled");
-      if (spin) spin.remove();
+  }, () => {});
+  btn.addEventListener("click", async () => {
+    // A second click while one ceremony runs would start another, and
+    // the first one's answer would land on a page that has moved on.
+    if (!mod || btn.getAttribute("aria-busy") === "true") return;
+    busy(btn, true);
+    if (msg) msg.textContent = "";
+    const out = await ceremony({
+      post: postJSON,
+      authenticate: mod.authenticate,
+      begin: btn.getAttribute("data-rst-passkey-begin"),
+      finish: btn.getAttribute("data-rst-passkey-finish"),
+      rpId: location.hostname,
+      legacyRpId: btn.getAttribute("data-rst-passkey-legacy-rpid") || undefined,
+      loc: location,
+    });
+    if (out.navigate) {
+      location.assign(out.navigate);
       return;
     }
-    btn.setAttribute("aria-busy", "true");
-    btn.setAttribute("aria-disabled", "true");
-    if (!spin) {
-      spin = document.createElement("span");
-      spin.setAttribute("rst-spin", "");
-      spin.setAttribute("aria-hidden", "true");
-      btn.insertBefore(spin, btn.firstChild);
-    }
-  }
-
-  // Same origin, so csrf.Protect sees Sec-Fetch-Site: same-origin.
-  function postJSON(url, body) {
-    return fetch(url, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body || {})
-    }).then(function (res) {
-      if (!res.ok) throw new Error("status " + res.status);
-      return res.json();
-    });
-  }
-
-  function passkeyDoor(btn) {
-    if (!window.PublicKeyCredential) return;
-    var msg = document.getElementById(btn.getAttribute("aria-describedby") || "");
-    var mod = null;
-    import(btn.getAttribute("data-rst-passkey-module")).then(function (m) {
-      if (m && m.available && m.available()) {
-        mod = m;
-        btn.hidden = false;
-      }
-    }, function () {});
-    btn.addEventListener("click", function () {
-      // A second click while one ceremony runs would start another,
-      // and the first one's answer would then land on a page that has
-      // moved on.
-      if (!mod || btn.getAttribute("aria-busy") === "true") return;
-      passkeyBusy(btn, true);
-      if (msg) msg.textContent = "";
-      postJSON(btn.getAttribute("data-rst-passkey-begin")).then(function (begin) {
-        return mod.authenticate({
-          challenge: begin.challenge,
-          rpId: location.hostname,
-          legacyRpId: btn.getAttribute("data-rst-passkey-legacy-rpid") || undefined
-        });
-      }).then(function (a) {
-        // authenticate() names the credential credentialId; the server
-        // reads it as id. prf is never sent: by the module's own
-        // contract it is a client-side secret.
-        return postJSON(btn.getAttribute("data-rst-passkey-finish"), {
-          id: a.credentialId,
-          clientDataJSON: a.clientDataJSON,
-          authenticatorData: a.authenticatorData,
-          signature: a.signature
-        });
-      }).then(function (done) {
-        window.location.assign(safeNext(done && done.ok ? done.to : null, window.location));
-      }).catch(function (err) {
-        passkeyBusy(btn, false);
-        // "no passkey was offered" is the module's one message for a
-        // dismissed prompt and for no passkey at all — the same on
-        // purpose, so a site cannot probe for credentials — and it gets
-        // the gentler words. Anything else is a failure.
-        var which = err && err.message === "no passkey was offered" ? "cancelled" : "failed";
-        if (msg) msg.textContent = btn.getAttribute("data-rst-passkey-" + which) || "";
-      });
-    });
-  }
-```
-
-`scan()` becomes:
-
-```js
-  function scan() {
-    document.querySelectorAll("[data-poll]").forEach(poll);
-    document.querySelectorAll("[data-rst-passkey]").forEach(passkeyDoor);
-  }
-```
-
-and the `pageshow` handler hands a stranded passkey button back too:
-
-```js
-  window.addEventListener("pageshow", function (e) {
-    if (!e.persisted) return;
-    document.querySelectorAll("form[aria-busy]").forEach(busyOff);
-    // A passkey sign-in navigates away mid-busy; back restores the page
-    // exactly as it was left, spinner and all.
-    document.querySelectorAll("[data-rst-passkey][aria-busy]").forEach(function (b) { passkeyBusy(b, false); });
+    busy(btn, false);
+    if (msg) msg.textContent = btn.getAttribute("data-rst-passkey-" + out.message) || "";
   });
+}
+
+// A module runs after the document is parsed, so the door is already
+// there. Node has no document and stops here.
+if (typeof document !== "undefined") {
+  document.querySelectorAll("[data-rst-passkey]").forEach(door);
+  // A sign-in navigates away mid-busy; the back-forward cache restores
+  // the page exactly as it was left, spinner and all.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) document.querySelectorAll("[data-rst-passkey][aria-busy]").forEach((b) => busy(b, false));
+  });
+}
 ```
 
-Check the two text rules before running anything: `grep -n 'import \|https://' ui/rastrillo.js` must print nothing.
-
-In `ui/shim_test.go`, keep the whole history comment above `TestShimIsSmall` — it is the record of every raise — and replace its closing paragraph ("The cap is still the point … Past 16KB, split something out instead.") with:
+`passkey/js.go`:
 
 ```go
-// The cap is still the point, and what it protects is the CODE: an app
-// owner owns this file from the moment it is scaffolded and has to be
-// able to read the whole thing in one sitting.
-//
-// 16KB → 22KB, by the sign-in screen's passkey door, against this
-// comment's own advice to split past 16KB. The sign-in spec puts the
-// door here (docs/superpowers/specs/2026-09-27-signin-screen-design.md
-// §1.6) because it must work wherever an app renders the signin
-// partial, and this is the one script every shell already loads; a
-// sibling file would need a tag in every shell, a vendoring entry, a
-// doctor rule and a gallery hook, for one button on one page. Past
-// 22KB, split the door out rather than raising this again.
-```
+package passkey
 
-Append one more comment line under it with the measured arithmetic, in the form the earlier raises use: `wc -c ui/rastrillo.js` on `main` and on this branch, and how many of the added bytes are code (count the lines Task 9 added outside comments) — for example `//	16,364 → 19,900 bytes: 3,536 added, 1,610 of them code.` with your real numbers.
+import _ "embed"
 
-and the test body's limit:
+//go:embed js/signin.mjs
+var signinJS []byte
 
-```go
-	if n := len(ShimJS()); n > 22*1024 {
+// JS is the sign-in screen's passkey door: an ES module that reveals
+// the signin partial's passkey button where a ceremony can run, runs
+// the discover pair, and navigates only after a successful answer.
+// Serve it with a JavaScript content type at the URL you set as
+// auth.PasskeyDoor.ScriptURL, beside webauthn.JS(). The partial loads
+// it only on a page that shows the passkey door.
+func JS() []byte { return signinJS }
 ```
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./ui/ -count=1`
-Expected: PASS — including `TestScriptsAreSelfContained`, `TestShimContract` (`dismissMenus` still appears exactly three times) and `TestBusyRuleIsTheDefault`.
+Run: `RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./passkey/ -count=1 -v -run 'PasskeyDoor|JSIsTheModule'`
+Expected: PASS, three tests. `git diff --stat ui/rastrillo.js` prints nothing: the shim is untouched.
 
 - [ ] **Step 5: Run the gate and commit**
 
 Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./... -count=1`
 
 ```bash
-git add ui/rastrillo.js ui/shim_test.go ui/shim_node.mjs ui/shim_node_test.go
+git add passkey/js passkey/js.go passkey/signinjs_test.go
 git commit -F - <<'EOF'
-ui: the passkey door in rastrillo.js, and a Node test of where it goes
+passkey: the sign-in screen's passkey door as its own module
 
-The door ships hidden and is revealed only where a ceremony can run,
-because a passkey button that cannot work is a dead end on the one
-screen that must have none. Busy never uses disabled: focus has to stay
-on the button so the failure message is heard where the retry is. A
-second click while busy starts nothing.
+rastrillo.js is at its size cap, and every page of every app loads it;
+the passkey door exists on one page. As an embedded module the signin
+partial loads only when it renders the door, it costs no other page a
+byte, needs no CSP change, and leaves the shim alone.
 
-The destination is the server's "to" only when it is a local path by
-SafeReturn's rule and parses to this origin; the Node test pins the
-cases a browser strips control characters from.
-
-The shim's ceiling rises to 22 KiB: a sibling script would need a tag in
-every shell and a vendoring entry for a one-page feature.
+The ceremony takes its network and authenticator as arguments, so Node
+drives every ending: the page navigates only when finish answers
+ok:true and only to a local path on this origin; a failed, malformed or
+unreachable answer is a message with focus left on the button.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
+git push origin signin-screen
 ```
 
 ---
-### Task 10: `ui` — the `signin` and `signin-title` partials, their strings and their CSS
+
+### Task 10: Copy review, batch 1 — the screen's strings and the gallery's
+
+The spec (§2) and the copy-review skill both say the operator reviews user-facing English before it is written into any file. This batch is every string the screen shows and every sentence the gallery will say about it; batch 2 (Task 14) is the docs and the CHANGELOG. The catalog strings are written here, approved, and translated once. The gallery's are written by Tasks 11 and 12 from the approved text — in `internal/designsystem` the English is also the translation key, so it must be final before its eleven translations are drafted (AGENTS.md, "User-facing copy").
 
 **Files:**
-- Create: `ui/partials/signin.html`, `ui/signin_test.go`
-- Modify: `locales/*.toml` (all 12), `ui/tokens.css`, `ui/ui_test.go` (`allPartials`, `TestAllPartialsAreDefined`)
-- Re-copy: `examples/blog/static/tokens.css`, `examples/tickets/static/tokens.css`
+- Create (untracked, `.gitignore`d): `copy-review/strings.json`, and the skill's `copy-review/result.json`
+- Modify: `locales/*.toml` (all 12)
 
 **Interfaces:**
-- Consumes: `auth.SigninState`, `Door()`, `Focus()`, `auth.Step*`, `auth.Problem*`, `auth.Remembered`, `auth.PasskeyDoor` (Task 6); `opt`, `Tbdi`, `field`'s `QuietError`, `callout`'s `ID`/`Focus` (Task 8); the `data-rst-passkey-*` contract (Task 9).
-- Produces:
-  - `{{template "signin" (dict "State" <auth.SigninState> "Brand" <dict|struct with Name, optional Pitch, Mark> ["Preview" true])}}` and `{{template "signin-title" (dict "State" … "Brand" …)}}`.
-  - Element ids the browser drive (Task 14) and the gallery rely on: `rst-signin-heading`, `rst-signin-email`, `rst-signin-problem`, `rst-signin-remembered`, `rst-signin-passkey-msg`.
-  - Attributes: `rst-signin`, `rst-signin-brand`, `rst-signin-mark`, `rst-signin-name`, `rst-signin-pitch`, `rst-signin-door`, `rst-signin-form`, `rst-signin-remembered`, `rst-signin-passkey-msg`.
-  - Catalog keys (all `rastrillo.ui.`): `signin_title`, `signin_problem_title`, `signin_sent_title`, `signin_continue_title`, `signin_heading`, `signin_sent_heading`, `signin_continue_heading`, `signin_continue_body`, `signin_email`, `signin_submit`, `signin_send_link_instead`, `signin_passkey`, `signin_passkey_remembered`, `signin_passkey_cancelled`, `signin_passkey_failed`, `signin_to_keymail`, `signin_remembered_as`, `signin_continue_as`, `signin_different`, `signin_sent_instead`, `signin_sent_to`, `signin_sent_inbox`, `signin_sent_once`, `signin_problem_rate`, `signin_problem_address`, `signin_problem_expired`, `signin_problem_keymail`, `signin_problem_generic`, `signin_problem_reauth`.
+- Consumes: the catalog keys Task 12's partial uses and the gallery strings Tasks 11–12 write (listed in the index below).
+- Produces: the 29 `rastrillo.ui.signin_*` keys in all 12 catalogs, approved in English and translated; `copy-review/result.json` holding the approved `gallery.*` strings, which Tasks 11 and 12 read. Leave `copy-review/` in place until Task 12 deletes it.
 
-- [ ] **Step 1: Add the strings (drafts until Task 12)**
+- [ ] **Step 1: Write the string index**
 
-Append to `locales/en.toml` — the spec's draft wording (§2), with round 4's correction on `signin_sent_instead`:
+Write `copy-review/strings.json` exactly as below, then validate it: `python3 -m json.tool copy-review/strings.json > /dev/null` prints nothing.
 
-```toml
-rastrillo.ui.signin_title = "Sign in — {name}"
-rastrillo.ui.signin_problem_title = "Problem: sign in — {name}"
-rastrillo.ui.signin_sent_title = "Check your email — {name}"
-rastrillo.ui.signin_continue_title = "Taking you to Keymail — {name}"
-rastrillo.ui.signin_heading = "Sign in to {name}"
-rastrillo.ui.signin_sent_heading = "Check your email"
-rastrillo.ui.signin_continue_heading = "Taking you to Keymail"
-rastrillo.ui.signin_continue_body = "Taking you to Keymail to confirm it's you."
-rastrillo.ui.signin_email = "Email"
-rastrillo.ui.signin_submit = "Continue"
-rastrillo.ui.signin_send_link_instead = "Send me a link instead"
-rastrillo.ui.signin_passkey = "Sign in with a passkey"
-rastrillo.ui.signin_passkey_remembered = "Sign in with your passkey"
-rastrillo.ui.signin_passkey_cancelled = "No passkey was used. Try again, or use your email."
-rastrillo.ui.signin_passkey_failed = "That didn't work. Try again, or use your email."
-rastrillo.ui.signin_to_keymail = "Continue to Keymail"
-rastrillo.ui.signin_remembered_as = "as {address}"
-rastrillo.ui.signin_continue_as = "Continue as {address}"
-rastrillo.ui.signin_different = "Use a different email"
-rastrillo.ui.signin_sent_instead = "We sent you a sign-in link this time."
-rastrillo.ui.signin_sent_to = "We sent a link to {address}."
-rastrillo.ui.signin_sent_inbox = "We sent a link to your inbox."
-rastrillo.ui.signin_sent_once = "The link works once and expires soon."
-rastrillo.ui.signin_problem_rate = "Too many tries. Try again in a few minutes."
-rastrillo.ui.signin_problem_address = "That doesn't look like an email address."
-rastrillo.ui.signin_problem_expired = "That link has expired or was already used. Send a new one."
-rastrillo.ui.signin_problem_keymail = "Keymail couldn't confirm it's you."
-rastrillo.ui.signin_problem_generic = "Something went wrong. Try again."
-rastrillo.ui.signin_problem_reauth = "Sign in again to continue."
+```json
+[
+  {"id": "rastrillo.ui.signin_heading", "section": "Sign-in screen: asking", "label": "Heading", "text": "Sign in to {name}", "context": "The heading on the sign-in card when it asks for an email address, and above any problem message. {name} is the app's name.", "notes": "Keep {name}."},
+  {"id": "rastrillo.ui.signin_title", "section": "Sign-in screen: asking", "label": "Browser tab title", "text": "Sign in — {name}", "context": "The browser tab's title on the same page. A screen reader announces it when the page opens.", "notes": "Keep {name}."},
+  {"id": "rastrillo.ui.signin_problem_title", "section": "Sign-in screen: asking", "label": "Tab title when something went wrong", "text": "Problem: sign in — {name}", "context": "The tab title when the page is showing a problem (too many tries, a used link, and so on), so someone listening hears there is a problem before the page content.", "notes": "Keep {name}."},
+  {"id": "rastrillo.ui.signin_email", "section": "Sign-in screen: asking", "label": "Email field label", "text": "Email", "context": "The label on the one field the sign-in card asks for."},
+  {"id": "rastrillo.ui.signin_submit", "section": "Sign-in screen: asking", "label": "Main button", "text": "Continue", "context": "The button under the email field. It cannot say what happens next, because that depends on the address: most people get a link by email, some go to Keymail."},
+  {"id": "rastrillo.ui.signin_passkey", "section": "Sign-in screen: asking", "label": "Passkey button", "text": "Sign in with a passkey", "context": "A second button under the email form, shown only in apps with passkeys and only on devices that can use them."},
+  {"id": "rastrillo.ui.signin_passkey_cancelled", "section": "Sign-in screen: asking", "label": "Passkey not used", "text": "No passkey was used. Try again, or use your email.", "context": "Appears under the passkey button when the person closed the passkey prompt, or had no passkey for this site. The browser does not say which, on purpose, so the words cannot either."},
+  {"id": "rastrillo.ui.signin_passkey_failed", "section": "Sign-in screen: asking", "label": "Passkey failed", "text": "That didn't work. Try again, or use your email.", "context": "Appears under the passkey button when the passkey sign-in failed for any other reason."},
+  {"id": "rastrillo.ui.signin_problem_rate", "section": "Sign-in screen: problems", "label": "Too many tries", "text": "Too many tries. Try again in a few minutes.", "context": "A message above the email form after too many sign-in attempts in a short time."},
+  {"id": "rastrillo.ui.signin_problem_address", "section": "Sign-in screen: problems", "label": "Not an address", "text": "That doesn't look like an email address.", "context": "An error under the email field, which still holds what they typed, when it is not an address."},
+  {"id": "rastrillo.ui.signin_problem_expired", "section": "Sign-in screen: problems", "label": "Link used or expired", "text": "That link has expired or was already used. Send a new one.", "context": "Above the email form when someone opened a sign-in link that no longer works. Links work once and last 15 minutes."},
+  {"id": "rastrillo.ui.signin_problem_keymail", "section": "Sign-in screen: problems", "label": "Keymail could not confirm", "text": "Keymail couldn't confirm it's you.", "context": "Above the email form after the Keymail step failed. The button under the form changes to the next string, so they can get a link instead."},
+  {"id": "rastrillo.ui.signin_send_link_instead", "section": "Sign-in screen: problems", "label": "Button after a Keymail failure", "text": "Send me a link instead", "context": "Replaces the main button only after Keymail could not confirm the person, and sends an email link without trying Keymail again."},
+  {"id": "rastrillo.ui.signin_problem_generic", "section": "Sign-in screen: problems", "label": "Something else went wrong", "text": "Something went wrong. Try again.", "context": "Above the email form when sign-in failed for a reason the page cannot name, such as the mail server being down."},
+  {"id": "rastrillo.ui.signin_problem_reauth", "section": "Sign-in screen: problems", "label": "Sign in again", "text": "Sign in again to continue.", "context": "Not an error. Shown when the person is signed in but the page they asked for needs a fresh sign-in first, such as changing account settings."},
+  {"id": "rastrillo.ui.signin_to_keymail", "section": "Sign-in screen: coming back", "label": "One-tap for a Keymail user", "text": "Continue to Keymail", "context": "The one button offered to someone whose last sign-in on this browser was through Keymail. Their address is shown under it (next string). Also the link on the page that moves on to Keymail by itself."},
+  {"id": "rastrillo.ui.signin_remembered_as", "section": "Sign-in screen: coming back", "label": "Whose Keymail", "text": "as {address}", "context": "The line under Continue to Keymail, naming the remembered address, so the button reads as Continue to Keymail, as ada@example.com.", "notes": "Keep {address}. It is shown isolated, so a right-to-left address cannot reorder the sentence."},
+  {"id": "rastrillo.ui.signin_continue_as", "section": "Sign-in screen: coming back", "label": "One-tap for an email-link user", "text": "Continue as {address}", "context": "The one button offered to someone whose last sign-in on this browser was an email link. One tap sends them a new link.", "notes": "Keep {address}."},
+  {"id": "rastrillo.ui.signin_passkey_remembered", "section": "Sign-in screen: coming back", "label": "One-tap for a passkey user", "text": "Sign in with your passkey", "context": "The passkey button, first on the card, for someone whose last sign-in on this browser was a passkey. The email form stays underneath."},
+  {"id": "rastrillo.ui.signin_different", "section": "Sign-in screen: coming back", "label": "Forget me", "text": "Use a different email", "context": "Under a one-tap, and on the page after a link was sent. It forgets the remembered address on this browser and shows the empty form."},
+  {"id": "rastrillo.ui.signin_sent_heading", "section": "Sign-in screen: link sent", "label": "Heading", "text": "Check your email", "context": "The heading after a sign-in link was emailed."},
+  {"id": "rastrillo.ui.signin_sent_title", "section": "Sign-in screen: link sent", "label": "Tab title", "text": "Check your email — {name}", "context": "The tab title on the same page.", "notes": "Keep {name}."},
+  {"id": "rastrillo.ui.signin_sent_instead", "section": "Sign-in screen: link sent", "label": "A link instead of Keymail", "text": "We sent you a sign-in link this time.", "context": "The first line on that page only when the person tapped Continue to Keymail and got an email link instead. The page cannot know why (the server may be down, or the app may not trust it), so the line says what happened, not why."},
+  {"id": "rastrillo.ui.signin_sent_to", "section": "Sign-in screen: link sent", "label": "Where the link went", "text": "We sent a link to {address}.", "context": "Names the address the link went to, so a typo can be noticed now rather than after waiting for an email that will not come. Followed by the next string in the same paragraph.", "notes": "Keep {address}."},
+  {"id": "rastrillo.ui.signin_sent_inbox", "section": "Sign-in screen: link sent", "label": "Where the link went, unknown address", "text": "We sent a link to your inbox.", "context": "Used instead of the previous string when this browser did not send the address itself, for example a link opened in another browser. The page never guesses an address."},
+  {"id": "rastrillo.ui.signin_sent_once", "section": "Sign-in screen: link sent", "label": "How the link works", "text": "The link works once and expires soon.", "context": "Follows the previous line in the same paragraph. Links last 15 minutes."},
+  {"id": "rastrillo.ui.signin_continue_heading", "section": "Sign-in screen: going to Keymail", "label": "Heading", "text": "Taking you to Keymail", "context": "The heading on a page that moves on to Keymail by itself, straight away, after someone entered an address that uses Keymail."},
+  {"id": "rastrillo.ui.signin_continue_title", "section": "Sign-in screen: going to Keymail", "label": "Tab title", "text": "Taking you to Keymail — {name}", "context": "The tab title on the same page.", "notes": "Keep {name}."},
+  {"id": "rastrillo.ui.signin_continue_body", "section": "Sign-in screen: going to Keymail", "label": "Body", "text": "Taking you to Keymail to confirm it's you.", "context": "The one sentence on that page, above a link that does the same thing in case the page does not move on."},
+  {"id": "gallery.screens.lead", "section": "Design-system gallery: Screens page", "label": "Page lead", "text": "The sign-in screens are the shipped signin partial, shown in its states. The last two are examples to copy.", "context": "The first line of the gallery's Screens page, for developers. Most screens are now the real component; the last two (a password screen and third-party buttons) are markup to copy.", "notes": "signin is a code name; keep it."},
+  {"id": "gallery.screens.ask.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "Asking for an address", "context": "Name of the first sign-in screen shown: the empty form."},
+  {"id": "gallery.screens.returning-keymail.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "Coming back with Keymail", "context": "Name of the screen offered to someone whose last sign-in here was Keymail."},
+  {"id": "gallery.screens.returning-keymail.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The browser remembers how it got in last time. One tap sends the remembered address, which is checked again from scratch.", "context": "The note under that screen, for developers deciding whether the remembered one-tap is safe."},
+  {"id": "gallery.screens.returning-link.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "Coming back with an email link", "context": "Name of the screen for someone whose last sign-in here was an email link."},
+  {"id": "gallery.screens.returning-link.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The address is on the button, so there is nothing to type.", "context": "The note under that screen."},
+  {"id": "gallery.screens.sent-unbound.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "After the link is sent, in another browser", "context": "Name of the link-sent screen when this browser did not send the address."},
+  {"id": "gallery.screens.sent-unbound.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "When this browser did not send the address, the page does not guess it.", "context": "The note under that screen."},
+  {"id": "gallery.screens.sent-instead.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "When Keymail was offered and a link went out", "context": "Name of the link-sent screen after a Continue to Keymail tap ended in an email link."},
+  {"id": "gallery.screens.sent-instead.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "One line says a link was sent this time. It does not guess why.", "context": "The note under that screen."},
+  {"id": "gallery.screens.continue.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "On the way to Keymail", "context": "Name of the page that moves on to Keymail by itself."},
+  {"id": "gallery.screens.continue.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The page moves on by itself, with a link in case it does not.", "context": "The note under that screen."},
+  {"id": "gallery.screens.problem-address.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "An address that does not look right", "context": "Name of the screen showing the not-an-address error."},
+  {"id": "gallery.screens.problem-address.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The message belongs to the field, and that is where focus starts.", "context": "The note under that screen, for developers who care about screen readers."},
+  {"id": "gallery.screens.problem-keymail.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "When Keymail could not confirm it", "context": "Name of the screen after a failed Keymail step."},
+  {"id": "gallery.screens.problem-keymail.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The button changes to send a link instead, so nobody is stuck.", "context": "The note under that screen."},
+  {"id": "gallery.screens.password.warning", "section": "Design-system gallery: Screens page", "label": "Password warning", "text": "Rastrillo does not ship this screen. People reuse passwords, they leak, and you inherit the job of storing them safely. Use a link in your email plus a passkey, or passkeys on their own. The markup is here because some products still need it.", "context": "A warning box above the example password screen, under the title We do not recommend passwords."},
+  {"id": "gallery.shells.stage.blurb", "section": "Design-system gallery: Shells page", "label": "Stage shell note", "text": "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.", "context": "The note beside the new stage page frame on the gallery's Shells page."},
+  {"id": "gallery.shells.demo.sentence", "section": "Design-system gallery: Shells page", "label": "Shell demo paragraph", "text": "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials.", "context": "The paragraph in the middle of each full-page shell demo. It used to say one of the four; there are five now.", "notes": "Keep {shell}, ui.Layout and tokens.css."}
+]
 ```
 
-Append the same 29 lines, English values unchanged, to each of the other eleven catalogs (`ga`, `zh-Hans`, `es`, `hi`, `pt`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar`), preceded by this exact comment line so Task 12 can find and replace every one:
+- [ ] **Step 2: Run the review**
 
-```toml
-# signin-screen: English until copy review — Task 12 of docs/superpowers/plans/2026-09-27-signin-screen.md translates these.
-```
+Invoke the `copy-review` skill (Skill tool, `skill: "copy-review"`) and follow it exactly: launch `serve.sh copy-review/strings.json` with the Bash sandbox off (inside the sandbox it exits 3), give the operator the one URL it prints, and poll for `copy-review/result.json`. On `"action": "reroll"`, rewrite as the skill says — the operator's edited strings carried over unchanged, their demonstrated edits applied to the rest — and relaunch. Loop until `"action": "approve"`.
 
-Run: `GOFLAGS=-mod=mod go test . -count=1 -run 'BaseCatalog'`
-Expected: PASS (the key set matches in all 12; values are non-empty).
+- [ ] **Step 3: Write the approved English**
 
-- [ ] **Step 2: Write the failing tests**
+Append to `locales/en.toml` one line per `rastrillo.ui.signin_*` id, in the index's order, `key = "<approved text>"`, byte for byte — no fixed typos, no changed capitalisation. If a string would break (a lost `{name}` or `{address}`), stop and ask the operator; never repair it silently.
 
-`ui/signin_test.go`:
+- [ ] **Step 4: Translate, once**
 
-```go
-package ui
+Not reviewed — the operator reviews the source language only. Append the same 29 keys to each of `ga`, `zh-Hans`, `es`, `hi`, `pt`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar`, each value your translation of the approved English, keeping every `{name}`/`{address}` and the file's register (its header says how it was drafted). "Keymail" is a product name and stays as written.
 
-import (
-	"html"
-	"regexp"
-	"strings"
-	"testing"
+- [ ] **Step 5: Run the catalog gates**
 
-	"amadan.net/rastrillo/rastrillo/auth"
-)
+Run: `GOFLAGS=-mod=mod go test . -count=1 -run 'BaseCatalog|IsBaseKey'`
+Expected: PASS — one key set in all twelve, none empty.
 
-const keymailURL = "https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&code_challenge=cccc&code_challenge_method=S256&redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&scope=identify&state=ssss"
-
-var signinDoor = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs"}
-
-func signinData(st auth.SigninState) map[string]any {
-	if st.BeginPath == "" {
-		st.BeginPath = "/signin"
-	}
-	if st.ForgetPath == "" {
-		st.ForgetPath = "/signin/forget"
-	}
-	return map[string]any{"State": st, "Brand": map[string]any{"Name": "Harbour"}}
-}
-
-func remembered(method, address string) *auth.Remembered {
-	return &auth.Remembered{Method: method, Address: address}
-}
-
-// signinStates is every step × problem × remembered method the screen
-// can be in, named, with the element focus must start on (§2's matrix):
-// "field", "callout", "onetap" or "".
-func signinStates() []struct {
-	name  string
-	st    auth.SigninState
-	focus string
-} {
-	kay := remembered("keymail", "kay@example.org")
-	return []struct {
-		name  string
-		st    auth.SigninState
-		focus string
-	}{
-		{"ask", auth.SigninState{Step: auth.StepAsk}, "field"},
-		{"ask with a passkey door", auth.SigninState{Step: auth.StepAsk, Passkey: signinDoor}, "field"},
-		{"returning keymail", auth.SigninState{Step: auth.StepReturning, Remembered: kay, Address: "kay@example.org"}, "onetap"},
-		{"returning magic link", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("magiclink", "ada@example.com")}, "onetap"},
-		{"returning passkey", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", ""), Passkey: signinDoor}, ""},
-		{"returning passkey, no door", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", "")}, "field"},
-		{"sent, bound", auth.SigninState{Step: auth.StepSent, SentTo: "ada@example.com"}, ""},
-		{"sent, unbound", auth.SigninState{Step: auth.StepSent}, ""},
-		{"sent instead of keymail", auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}, ""},
-		{"continue", auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}, ""},
-		{"rate", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemRate, Address: "ada@example.com"}, "callout"},
-		{"address", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: "ada@example"}, "field"},
-		{"expired", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemExpired}, "callout"},
-		{"keymail", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemKeymail, Address: "kay@example.org"}, "callout"},
-		{"generic", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemGeneric}, "callout"},
-		{"reauth, ask", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemReauth}, "field"},
-		{"reauth, returning keymail", auth.SigninState{Step: auth.StepReturning, Problem: auth.ProblemReauth, Remembered: kay}, "onetap"},
-	}
-}
-
-var (
-	h1Pattern        = regexp.MustCompile(`(?s)<h1 id="rst-signin-heading">(.*?)</h1>`)
-	autofocusPattern = regexp.MustCompile(`<[a-z]+\b[^>]*\sautofocus[\s>][^>]*>?`)
-	tagText          = regexp.MustCompile(`<[^>]*>`)
-)
-
-func text(s string) string { return strings.TrimSpace(html.UnescapeString(tagText.ReplaceAllString(s, ""))) }
-
-func TestSigninHeadingAndTitleFollowTheState(t *testing.T) {
-	name := "Harbour"
-	for _, c := range signinStates() {
-		out := render(t, "signin", signinData(c.st))
-		m := h1Pattern.FindAllStringSubmatch(out, -1)
-		if len(m) != 1 {
-			t.Errorf("%s: %d <h1>s, want exactly one", c.name, len(m))
-			continue
-		}
-		var heading, title string
-		switch {
-		case c.st.Step == auth.StepSent:
-			heading, title = defaultT("rastrillo.ui.signin_sent_heading"), defaultTf("rastrillo.ui.signin_sent_title", "name", name)
-		case c.st.Step == auth.StepContinue:
-			heading, title = defaultT("rastrillo.ui.signin_continue_heading"), defaultTf("rastrillo.ui.signin_continue_title", "name", name)
-		case c.st.Problem != auth.ProblemNone && c.st.Problem != auth.ProblemReauth:
-			heading, title = defaultTf("rastrillo.ui.signin_heading", "name", name), defaultTf("rastrillo.ui.signin_problem_title", "name", name)
-		default:
-			heading, title = defaultTf("rastrillo.ui.signin_heading", "name", name), defaultTf("rastrillo.ui.signin_title", "name", name)
-		}
-		if got := text(m[0][1]); got != heading {
-			t.Errorf("%s: <h1> %q, want %q", c.name, got, heading)
-		}
-		if got := text(render(t, "signin-title", signinData(c.st))); got != title {
-			t.Errorf("%s: title %q, want %q", c.name, got, title)
-		}
-	}
-}
-
-func TestSigninFocusFollowsTheMatrix(t *testing.T) {
-	for _, c := range signinStates() {
-		out := render(t, "signin", signinData(c.st))
-		tags := autofocusPattern.FindAllString(out, -1)
-		if len(tags) > 1 {
-			t.Errorf("%s: %d autofocus attributes; at most one element may ask for focus", c.name, len(tags))
-			continue
-		}
-		var got string
-		if len(tags) == 1 {
-			switch tag := tags[0]; {
-			case strings.Contains(tag, `id="rst-signin-email"`):
-				got = "field"
-			case strings.Contains(tag, `id="rst-signin-problem"`) && strings.Contains(tag, `tabindex="-1"`):
-				got = "callout"
-			case strings.HasPrefix(tag, "<button"):
-				got = "onetap"
-			default:
-				got = "unexpected " + tag
-			}
-		}
-		if got != c.focus {
-			t.Errorf("%s: focus starts on %q, want %q", c.name, got, c.focus)
-		}
-	}
-}
-
-// A message present at load that focus lands on is announced by the
-// focus; role="alert" would race it (§2). The only live region on the
-// screen is the passkey message.
-func TestSigninNeverUsesRoleAlert(t *testing.T) {
-	for _, c := range signinStates() {
-		if out := render(t, "signin", signinData(c.st)); strings.Contains(out, `role="alert"`) {
-			t.Errorf("%s renders role=alert", c.name)
-		}
-	}
-}
-
-func TestTheOneTapNamesTheRememberedMethod(t *testing.T) {
-	byName := map[string]auth.SigninState{}
-	for _, c := range signinStates() {
-		byName[c.name] = c.st
-	}
-	km := render(t, "signin", signinData(byName["returning keymail"]))
-	for _, want := range []string{
-		`<input type="hidden" name="address" value="kay@example.org">`,
-		`<input type="hidden" name="expect" value="keymail">`,
-		`aria-describedby="rst-signin-remembered"`,
-		`id="rst-signin-remembered"`,
-		`<bdi>kay@example.org</bdi>`,
-		html.EscapeString(defaultT("rastrillo.ui.signin_to_keymail")),
-	} {
-		if !strings.Contains(km, want) {
-			t.Errorf("keymail one-tap lacks %s:\n%s", want, km)
-		}
-	}
-
-	ml := render(t, "signin", signinData(byName["returning magic link"]))
-	button := regexp.MustCompile(`(?s)<button rst-btn="primary block" type="submit"[^>]*>(.*?)</button>`).FindStringSubmatch(ml)
-	if button == nil || !strings.Contains(button[1], "<bdi>ada@example.com</bdi>") || strings.Contains(button[0], "aria-describedby") {
-		t.Errorf("the magic-link one-tap must carry the address in its label and nothing else: %v", button)
-	}
-	if strings.Contains(ml, `name="expect"`) {
-		t.Error("the magic-link one-tap posts expect; only the Keymail one does")
-	}
-
-	pk := render(t, "signin", signinData(byName["returning passkey"]))
-	if !strings.Contains(pk, "data-rst-passkey ") || !strings.Contains(pk, html.EscapeString(defaultT("rastrillo.ui.signin_passkey_remembered"))) {
-		t.Errorf("the passkey door is missing or mislabelled:\n%s", pk)
-	}
-	if !strings.Contains(pk, `id="rst-signin-email"`) {
-		t.Error("the passkey door is on its own; the email form must be beside it (§1.6 step 6)")
-	}
-}
-
-// Review Focus 2.
-func TestAReturningPasskeyWithNoDoorAsksForAnAddress(t *testing.T) {
-	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", "")}))
-	if strings.Contains(out, "data-rst-passkey") || !strings.Contains(out, `id="rst-signin-email"`) {
-		t.Fatalf("a remembered passkey with no door wired must be the email form:\n%s", out)
-	}
-}
-
-func TestTheKeymailProblemOffersTheEscapeHatch(t *testing.T) {
-	for _, address := range []string{"kay@example.org", ""} {
-		out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemKeymail, Address: address}))
-		if !strings.Contains(out, `<input type="hidden" name="force" value="1">`) ||
-			!strings.Contains(out, html.EscapeString(defaultT("rastrillo.ui.signin_send_link_instead"))) {
-			t.Errorf("address %q: no escape hatch:\n%s", address, out)
-		}
-	}
-}
-
-func TestContinueIsANavigationNotAForm(t *testing.T) {
-	st := auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}
-	out := render(t, "signin", signinData(st))
-	if strings.Contains(out, "<form") {
-		t.Error("Continue renders a form; it has no controls but its link")
-	}
-	meta := regexp.MustCompile(`<meta http-equiv="refresh" content="0;url=([^"]*)">`).FindStringSubmatch(out)
-	link := regexp.MustCompile(`<a rst-btn="primary block" href="([^"]*)">`).FindStringSubmatch(out)
-	if meta == nil || html.UnescapeString(meta[1]) != keymailURL {
-		t.Errorf("meta refresh %v, want a zero-delay refresh to the continuation", meta)
-	}
-	if link == nil || html.UnescapeString(link[1]) != keymailURL {
-		t.Errorf("fallback link %v, want the same URL", link)
-	}
-
-	data := signinData(st)
-	data["Preview"] = true
-	preview := render(t, "signin", data)
-	if strings.Contains(preview, "http-equiv") || !strings.Contains(preview, `href="#"`) || strings.Contains(preview, "keymail.test") {
-		t.Errorf("a Preview must not navigate anywhere:\n%s", preview)
-	}
-}
-
-func TestSentNamesOnlyABoundAddress(t *testing.T) {
-	bound := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "ada@example.com"}))
-	if !strings.Contains(bound, "<bdi>ada@example.com</bdi>") {
-		t.Errorf("bound Sent does not name the address:\n%s", bound)
-	}
-	unbound := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent}))
-	if strings.Contains(unbound, "@") || !strings.Contains(unbound, html.EscapeString(defaultT("rastrillo.ui.signin_sent_inbox"))) {
-		t.Errorf("unbound Sent must say your inbox and no address:\n%s", unbound)
-	}
-	instead := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}))
-	i, j := strings.Index(instead, html.EscapeString(defaultT("rastrillo.ui.signin_sent_instead"))), strings.Index(instead, "<bdi>kay@example.org</bdi>")
-	if i < 0 || j < 0 || i > j {
-		t.Errorf("the one-time line must come first, before where the link went:\n%s", instead)
-	}
-}
-
-// Review Focus 1.
-func TestSigninEscapesWhatAVisitorTyped(t *testing.T) {
-	hostile := `"><script>alert(1)</script>{address}`
-	for name, st := range map[string]auth.SigninState{
-		"a prefill":      {Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: hostile},
-		"a Sent address": {Step: auth.StepSent, SentTo: hostile},
-		"a one-tap":      {Step: auth.StepReturning, Remembered: remembered("magiclink", hostile)},
-	} {
-		out := render(t, "signin", signinData(st))
-		if strings.Contains(out, "<script>") {
-			t.Errorf("%s: markup a visitor typed reached the page:\n%s", name, out)
-		}
-	}
-	rtl := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "مرحبا@example.com"}))
-	if !strings.Contains(rtl, "<bdi>مرحبا@example.com</bdi>") {
-		t.Errorf("an RTL address is not isolated:\n%s", rtl)
-	}
-}
-
-func TestThePasskeyButtonWaitsForItsScript(t *testing.T) {
-	st := auth.SigninState{Step: auth.StepAsk, Passkey: &auth.PasskeyDoor{BeginPath: "/b", FinishPath: "/f", ModuleURL: "/m.mjs", LegacyRPID: "old.example"}}
-	out := render(t, "signin", signinData(st))
-	for _, want := range []string{
-		" hidden", `data-rst-passkey-begin="/b"`, `data-rst-passkey-finish="/f"`, `data-rst-passkey-module="/m.mjs"`,
-		`data-rst-passkey-legacy-rpid="old.example"`, `aria-describedby="rst-signin-passkey-msg"`,
-		`id="rst-signin-passkey-msg"`, `aria-live="polite"`,
-		`data-rst-passkey-cancelled="` + html.EscapeString(defaultT("rastrillo.ui.signin_passkey_cancelled")) + `"`,
-	} {
-		if !strings.Contains(out, want) {
-			t.Errorf("the passkey door lacks %s:\n%s", want, out)
-		}
-	}
-	data := signinData(st)
-	data["Preview"] = true
-	if preview := render(t, "signin", data); strings.Contains(preview, " hidden") || strings.Contains(preview, "data-rst-passkey") {
-		t.Errorf("a Preview shows the door as the enhanced page would, with nothing for a script to find:\n%s", preview)
-	}
-}
-
-func TestSigninControlsAreNamedAndIDsUnique(t *testing.T) {
-	inputs := regexp.MustCompile(`<input\b[^>]*>`)
-	buttons := regexp.MustCompile(`(?s)<button\b[^>]*>(.*?)</button>`)
-	for _, c := range signinStates() {
-		out := render(t, "signin", signinData(c.st))
-		for _, in := range inputs.FindAllString(out, -1) {
-			if strings.Contains(in, `type="hidden"`) {
-				continue
-			}
-			id := regexp.MustCompile(`id="([^"]*)"`).FindStringSubmatch(in)
-			if id == nil || !strings.Contains(out, `for="`+id[1]+`"`) {
-				t.Errorf("%s: an input with no label: %s", c.name, in)
-			}
-		}
-		for _, b := range buttons.FindAllStringSubmatch(out, -1) {
-			if text(b[1]) == "" {
-				t.Errorf("%s: a button with no text: %s", c.name, b[0])
-			}
-		}
-		seen := map[string]bool{}
-		for _, m := range idAttr.FindAllStringSubmatch(out, -1) {
-			if seen[m[1]] {
-				t.Errorf("%s: id %q twice", c.name, m[1])
-			}
-			seen[m[1]] = true
-		}
-	}
-}
-
-func TestSigninClassesAreStyled(t *testing.T) {
-	css := string(TokensCSS())
-	for _, c := range signinStates() {
-		for name := range rstVocabulary(render(t, "signin", signinData(c.st))) {
-			if !qualifiedOnly[name] && !tokensStyle(css, name) {
-				t.Errorf("%s: tokens.css has no selector for %q", c.name, name)
-			}
-		}
-	}
-}
-
-func TestSigninTakesABrandStruct(t *testing.T) {
-	type brand struct{ Name string }
-	out := render(t, "signin", map[string]any{"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin"}, "Brand": brand{Name: "Harbour"}})
-	if !strings.Contains(out, "Harbour") {
-		t.Fatalf("a Brand struct with only Name must render:\n%s", out)
-	}
-}
-```
-
-In `ui/ui_test.go`: add to `allPartials()` (at the end of the slice):
-
-```go
-		{"signin", map[string]any{
-			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
-			"Brand": map[string]any{
-				"Name": "Harbour", "Pitch": "Moorings and berths, booked in a minute.",
-				"Mark": template.HTML(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/></svg>`),
-			},
-		}},
-		{"signin-title", map[string]any{"State": auth.SigninState{Step: auth.StepSent}, "Brand": map[string]any{"Name": "Harbour"}}},
-```
-
-(import `"amadan.net/rastrillo/rastrillo/auth"`), and in `TestAllPartialsAreDefined` append `"signin", "signin-title"` to `want` and change the count check to 36 ("the shipped set is 36 partials").
-
-- [ ] **Step 3: Run the tests to verify they fail**
-
-Run: `GOFLAGS=-mod=mod go test ./ui/ -count=1 -run 'Signin|OneTap|Passkey|Keymail|Continue|Sent|AllPartials'`
-Expected: FAIL — `html/template: no such template "signin"`.
-
-- [ ] **Step 4: Write the partials**
-
-`ui/partials/signin.html`:
-
-```html
-{{/* signin — the shipped sign-in screen: one card, brand at the start
-     and the way in at the end. Everything it shows comes from
-     auth.SigninState; the page calls auth's PrepareSigninResponse
-     before rendering it. Put it in the stage shell (ui.Layout("stage"))
-     or any other.
-
-     The auth side must have Config.SigninScreen on: that is what writes
-     the cookies this screen reads, keeps a keymail sign-in on the page
-     under the default CSP, and remembers the way in.
-
-     Keys:
-       State    auth.SigninState, required
-       Brand    required: Name (string); optional Pitch (string, one
-                line) and Mark (template.HTML — an <img> or inline SVG
-                the app owns)
-       Preview  bool, optional — gallery use only: no meta refresh, the
-                Continue link goes to #, and the passkey door shows as
-                the enhanced page would, with nothing for a script to find
-
-     No role="alert" anywhere: every message present at load is where
-     focus starts (State.Focus), and a live alert would race the focus
-     announcement. The only live region is the passkey message. */}}
-{{define "signin"}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}<section rst-signin aria-labelledby="rst-signin-heading">
-<div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
-<div rst-signin-door>
-{{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
-     is, the page's layout owns <head>, and this is how fichas runs in
-     production. A document navigating is not the form's redirect chain,
-     so form-action 'self' never sees it. */}}{{if not $preview}}<meta http-equiv="refresh" content="0;url={{$s.ContinueURL}}">{{end}}
-<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_continue_heading"}}</h1>
-<p>{{T "rastrillo.ui.signin_continue_body"}}</p>
-<a rst-btn="primary block" href="{{if $preview}}#{{else}}{{$s.ContinueURL}}{{end}}">{{T "rastrillo.ui.signin_to_keymail"}}</a>
-{{else if eq $door "sent"}}<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_sent_heading"}}</h1>
-{{if $s.SentInstead}}<p>{{T "rastrillo.ui.signin_sent_instead"}}</p>
-{{end}}<p>{{if $s.SentTo}}{{Tbdi "rastrillo.ui.signin_sent_to" "address" $s.SentTo}}{{else}}{{T "rastrillo.ui.signin_sent_inbox"}}{{end}} {{T "rastrillo.ui.signin_sent_once"}}</p>
-<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
-{{else}}<h1 id="rst-signin-heading">{{Tf "rastrillo.ui.signin_heading" "name" $name}}</h1>
-{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "ID" "rst-signin-problem" "Tone" $tone "Body" (T (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (eq $focus "callout"))}}
-{{end}}{{if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
-<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
-<input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}>{{T "rastrillo.ui.signin_to_keymail"}}</button>
-<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
-</form>
-{{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
-<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
-<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}>{{Tbdi "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</button>
-</form>
-{{else}}{{/* The ask door, and the passkey door with the email form beside it
-     (the email form is always on the screen where a passkey door is:
-     a passkey is never the only way in). The passkey button is written
-     once, in whichever slot this door puts it: first for a remembered
-     passkey, after the form otherwise. */}}{{$pkSlot := "after"}}{{if eq $door "passkey"}}{{$pkSlot = "before"}}{{end}}{{$fieldErr := ""}}{{if eq $s.Problem "address"}}{{$fieldErr = T "rastrillo.ui.signin_problem_address"}}{{end}}{{range list "before" "form" "after"}}{{if eq . "form"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
-{{template "field" (dict "ID" "rst-signin-email" "Name" "address" "Label" (T "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" "email" "Required" true "Value" $s.Address "Autofocus" (eq $focus "field") "Error" $fieldErr "QuietError" true)}}
-{{if eq $s.Problem "keymail"}}<input type="hidden" name="force" value="1">
-{{end}}<button rst-btn="primary block" type="submit">{{if eq $s.Problem "keymail"}}{{T "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T "rastrillo.ui.signin_submit"}}{{end}}</button>
-</form>
-{{else if and $s.Passkey (eq . $pkSlot)}}<button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
-<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
-{{end}}{{end}}{{end}}{{if ne $door "ask"}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
-{{end}}{{end}}</div>
-</section>{{end}}
-{{/* signin-title — the document title for the same state, for the
-     page's {{define "title"}}: every state has one heading and a title
-     that says the same thing, so a screen-reader user who lands on the
-     page hears where they are. Keys: State, Brand (as signin). */}}
-{{define "signin-title"}}{{$s := .State}}{{$n := .Brand.Name}}{{if eq $s.Step "sent"}}{{Tf "rastrillo.ui.signin_sent_title" "name" $n}}{{else if eq $s.Step "continue"}}{{Tf "rastrillo.ui.signin_continue_title" "name" $n}}{{else if and $s.Problem (ne $s.Problem "reauth")}}{{Tf "rastrillo.ui.signin_problem_title" "name" $n}}{{else}}{{Tf "rastrillo.ui.signin_title" "name" $n}}{{end}}{{end}}
-```
-
-Note the `ne $door "ask"` clause: the "Use a different email" form appears on the keymail, link and passkey doors (the Sent door has its own above) and never on Ask.
-
-- [ ] **Step 5: Style the card**
-
-`ui/tokens.css` — a new section after the callout rules (after the `[rst-callout][rst-tone~="negative"] > [rst-callout-ic]` line):
-
-```css
-/* ── rst-signin: the shipped sign-in card (partials/signin.html) ─────
-   Brand at the start and the way in at the end, side by side from 48rem
-   and stacked below it, so a phone reads the brand and then the door.
-   The card paints its own surface and border because it usually sits
-   on the stage shell's backdrop: whatever picture an app puts there,
-   the controls stay on a known ground and their contrast is the
-   theme's, not the picture's. overflow-wrap on the door is for the one
-   long string it shows back — an address, which has no spaces to break
-   at and would otherwise push a 320px screen sideways. */
-.rst-signin, [rst-signin] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); box-shadow: var(--rst-shadow-pop); box-sizing: border-box; display: grid; gap: var(--rst-sp-5); inline-size: 100%; max-inline-size: 56rem; padding: var(--rst-sp-5); }
-@media (min-width: 48rem) {
-  .rst-signin, [rst-signin] { align-items: center; gap: var(--rst-sp-6); grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: var(--rst-sp-6); }
-}
-.rst-signin__brand, [rst-signin-brand] { display: flex; flex-direction: column; gap: var(--rst-sp-2); min-inline-size: 0; }
-.rst-signin__mark, [rst-signin-mark] { block-size: 3rem; inline-size: 3rem; }
-.rst-signin__mark > *, [rst-signin-mark] > * { block-size: 100%; display: block; inline-size: 100%; }
-.rst-signin__name, [rst-signin-name] { font-size: var(--rst-fs-lg); font-weight: 600; margin: 0; }
-.rst-signin__pitch, [rst-signin-pitch] { color: var(--rst-text-muted); margin: 0; }
-.rst-signin__door, [rst-signin-door] { display: flex; flex-direction: column; gap: var(--rst-sp-4); min-inline-size: 0; overflow-wrap: anywhere; }
-.rst-signin__door h1, [rst-signin-door] h1 { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin: 0; }
-.rst-signin__door > p, [rst-signin-door] > p { margin: 0; }
-/* The door spaces its children with gap; a callout's and a field's own
-   block margins would double it. */
-.rst-signin__door > .rst-callout, [rst-signin-door] > [rst-callout] { margin: 0; }
-.rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
-.rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
-.rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }
-.rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
-```
-
-Re-copy: `cp ui/tokens.css examples/blog/static/tokens.css && cp ui/tokens.css examples/tickets/static/tokens.css`.
-
-- [ ] **Step 6: Run the tests to verify they pass**
-
-Run: `GOFLAGS=-mod=mod go test ./ui/ . -count=1 && (cd examples/blog && GOFLAGS=-mod=mod go test ./...) && (cd examples/tickets && GOFLAGS=-mod=mod go test ./...)`
-Expected: PASS — the new tests, `TestRenderedPartialsAreSelfContained`, `TestRenderEverythingSmoke` (balanced tags, unique ids across all fixtures), the twin tests, `TestPartialsAndLayoutsEmitNoInlineStyles`, and the base-catalog tests. If `TestRenderEverythingSmoke` reports an unbalanced tag, the fixture is the Ask state; fix the partial, not the test.
-
-- [ ] **Step 7: Run the gate and commit**
+- [ ] **Step 6: Run the gate and commit**
 
 Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && GOFLAGS=-mod=mod go test ./... -count=1`
 
 ```bash
-git add ui locales examples/blog/static/tokens.css examples/tickets/static/tokens.css
+git add locales
 git commit -F - <<'EOF'
-ui: the signin and signin-title partials
+Catalogs: the sign-in screen's strings, as approved in copy review
 
-Every app needs a sign-in screen on its first day and until now had to
-improvise one; fichas' is a data-entry form with a sign-in title and a
-button that names the wrong action. This renders every state
-SigninState can be in: Ask, the three remembered one-taps, Sent bound
-or unbound, the Keymail continuation, and each problem, with focus
-starting where §2's matrix says and no role="alert" to race it.
-
-The strings are the spec's drafts, in English in all twelve catalogs
-under a marker comment; copy review and the translations come later in
-this branch. Tests read catalog keys, never the English.
+Every string the shipped sign-in screen shows went through the
+operator's copy review before being written, as the spec requires; the
+approved English is applied verbatim and the eleven translations are
+drafted once, from it. Nothing renders these keys yet — the partial
+lands next — so they change no page today.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
+git push origin signin-screen
 ```
 
 ---
+
 ### Task 11: `ui` — the `stage` shell and the `stageArt` backdrop
 
 **Files:**
 - Create: `ui/layouts/stage.html`, `ui/stageart.go`, `ui/stageart_test.go`
 - Modify: `ui/ui.go` (`layoutNames`, the package doc's shell paragraph, `Layout`'s doc), `ui/funcs.go` (register `stageArt`; doc), `ui/funcs_test.go` (11 → 12), `ui/ui_test.go` (`TestLayoutsParseAndRender`, `TestTheShellsKeepTheirOverridableBlockNames`), `ui/contrast_test.go` (the card edge over the art), `ui/tokens.css`
+- Modify (gallery): `internal/designsystem/page.go` (the stage blurb, `shell-stage`'s height, the shell demo's "one of the four" sentence), `internal/designsystem/prose.go`
 - Re-copy: `examples/blog/static/tokens.css`, `examples/tickets/static/tokens.css`
 
 **Interfaces:**
-- Consumes: `fnv1a64(s string) uint64` (ui/colour.go:949), `parseHex`, `hexOf`, `ContrastRatio`, `themeTokens` (ui/contrast_test.go:154).
+- Consumes: the approved `gallery.shells.stage.blurb` and `gallery.shells.demo.sentence` in `copy-review/result.json` (Task 10); `fnv1a64(s string) uint64` (ui/colour.go:949), `parseHex`, `hexOf`, `ContrastRatio`, `themeTokens` (ui/contrast_test.go:154).
 - Produces:
   - Template func `stageArt(seed string) template.HTML` — `<svg rst-stage-art aria-hidden="true" focusable="false" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g rst-stage-art-glow>…</g><g rst-stage-art-lines transform="rotate(…)">…</g></svg>`.
   - `ui.LayoutNames()` → `["column", "topbar", "sidebar", "console", "stage"]`; `ui.Layout("stage")`.
@@ -5467,16 +5314,47 @@ Re-copy: `cp ui/tokens.css examples/blog/static/tokens.css && cp ui/tokens.css e
 Run: `GOFLAGS=-mod=mod go test ./ui/ -count=1 && (cd examples/blog && GOFLAGS=-mod=mod go test ./...) && (cd examples/tickets && GOFLAGS=-mod=mod go test ./...)`
 Expected: PASS — including `TestEveryEmbeddedThemeAndLayoutIsNamed`, `TestLayoutClassesAreStyled`, `TestEveryShellLeavesTheAppASlotInTheHead`, `TestPartialsAndLayoutsEmitNoInlineStyles`, the twin tests and `TestTokensCSSHasNoColourLiterals`. If `TestTheSigninCardStandsOutFromTheStageArt` fails for a theme, lower that part's percentage in the rule and re-copy; the measured worst case at 10% lines / 8% glow across day, plain and signal is 3.17:1.
 
-- [ ] **Step 7: Check the gallery still builds**
+- [ ] **Step 7: Give the gallery its fifth shell**
 
-`internal/designsystem` renders every shell in `ui.LayoutNames()`, so `stage` joins its Shells page and gets a demo at `shells/stage.html` built from the generic chrome-shell overrides. Run `GOFLAGS=-mod=mod go test ./internal/designsystem/ -count=1`. Expected: PASS. The stage section has no blurb yet and its demo frames the generic Posts content: both are gallery prose, which waits for the copy review (Task 12) and lands in Task 13 with the stage demo's sign-in card. If anything fails here, read it before touching the gallery; this task should not need to.
+`internal/designsystem` renders every shell in `ui.LayoutNames()`, so `stage` joins its Shells page now, and its words have to arrive with it: a shell with no blurb, and a demo sentence that still says "one of the four", would be this task shipping a wrong page. Use the approved text from `copy-review/result.json` (Task 10) for `gallery.shells.stage.blurb` and `gallery.shells.demo.sentence`, byte for byte; the drafts are shown here.
+
+In `internal/designsystem/page.go`: add `"shell-stage": 780,` to `previewHeights` beside the other shells (Task 13's browser run measures it); add to `shellViews`' `blurbs` map
+
+```go
+		"stage":   "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.",
+```
+
+and change `shellTemplate`'s sentence to `{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}`. Until Task 12 gives it the sign-in card, the stage demo frames the same generic content as the others, which that sentence describes truthfully.
+
+In `internal/designsystem/prose.go`: delete the row keyed by the old sentence (`This is the {shell} shell, one of the four ui.Layout ships. …`) — `TestEveryProseKeyIsTranslated` fails on a stale row — and add one row for each of the two approved strings, with all eleven translations, in the register the file's header sets, identifiers untranslated and `{shell}` kept. The shape (each `…` is your translation of the key into that language):
+
+```go
+	`One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.`: {
+		`ga`:      `…`,
+		`zh-Hans`: `…`,
+		`es`:      `…`,
+		`hi`:      `…`,
+		`pt`:      `…`,
+		`bn`:      `…`,
+		`ru`:      `…`,
+		`ja`:      `…`,
+		`yue`:     `…`,
+		`vi`:      `…`,
+		`ar`:      `…`,
+	},
+```
+
+In `internal/designsystem/designsystem.go`'s package comment, "a full-page demo of each of the four shells" becomes "…of each of the five shells".
+
+Run: `GOFLAGS=-mod=mod go test ./internal/designsystem/ -count=1`
+Expected: PASS — `TestEveryProseKeyIsTranslated` (no missing, no stale row), `TestNoEnglishProseReachesATranslatedPage`, `TestTreeShapeIsComplete` (`shells/stage.html` in every theme × locale), `TestEveryPageIsAWholeLocalisedDocument`.
 
 - [ ] **Step 8: Run the gate and commit**
 
 Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && GOFLAGS=-mod=mod go test ./... -count=1`
 
 ```bash
-git add ui examples/blog/static/tokens.css examples/tickets/static/tokens.css
+git add ui internal/designsystem examples/blog/static/tokens.css examples/tickets/static/tokens.css
 git commit -F - <<'EOF'
 ui: the stage shell and its generated backdrop
 
@@ -5489,356 +5367,404 @@ tokens.css; a test holds the card's border at 3:1 against it in every
 theme and scheme, because the art mixes accent into the background
 that border was measured against.
 
+The gallery's Shells page gains the stage with its copy-reviewed blurb,
+and its shell demos stop saying there are four.
+
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
 ```
 
 ---
-### Task 12: Copy review, then the words: catalog strings, docs, CHANGELOG, SKILL.md, translations
+### Task 12: The `signin` partials, their CSS, and the gallery's Screens page built on them
 
-Every English string a person reads — the 29 catalog values, the gallery's new prose, the docs, the CHANGELOG — goes to the operator in one review before it is final. Task 10 wrote the catalog drafts so the partial could be tested; this task replaces them with approved text, translates them once, and writes the docs and CHANGELOG for the first time. The gallery's strings are reviewed here too but written by Task 13, because in `internal/designsystem` the English is the translation key and writing it before the review would mean drafting eleven translations twice. SKILL.md is read by an LLM, not a person, so it is not in the review; it is written here too because it describes the same feature.
+One task, because the gallery refuses a partial no page claims (`buildFamilies`, internal/designsystem/page.go:990-1014) and requires every partial's marker on some page (`TestEveryPartialAppearsAcrossThePages`): the partials and the page that documents them have to land together for the gate to stay green.
 
 **Files:**
-- Create (untracked, `.gitignore`d): `copy-review/strings.json`; `docs/site/reference/lastsignin.md`
-- Modify: `locales/*.toml` (12), `docs/site/magic-links.md`, `docs/site/passkeys.md`, `docs/site/templates.md`, `docs/site/reference/{auth,passkey,ui}.md`, `docs/site/nav.json`, `CHANGELOG.md`, `SKILL.md`
+- Create: `ui/partials/signin.html`, `ui/signin_test.go`, `auth/signinpage_test.go`
+- Modify: `ui/tokens.css`, `ui/ui_test.go` (`allPartials`, `TestAllPartialsAreDefined`), `internal/designsystem/screens.go` (the docs table and `buildScreens`), `internal/designsystem/page.go` (`renderGallery` parses the frame; `buildFamilies`' orphan sweep; `previewHeights`; `srcdoc`'s padding rule; `renderShell` + `shellData` + a stage override template), `internal/designsystem/prose.go`, `internal/designsystem/designsystem_test.go`
+- Re-copy: `examples/blog/static/tokens.css`, `examples/tickets/static/tokens.css`
 
 **Interfaces:**
-- Consumes: the catalog keys (Task 10) and the API names from Tasks 2–11 the docs describe.
-- Produces: the approved `gallery.*` strings, left in `copy-review/result.json` for Task 13. The tests read catalog keys, never English, so approved rewording breaks no test.
+- Consumes: `auth.SigninState`, `Door()`, `Focus()`, `auth.Step*`, `auth.Problem*`, `auth.Remembered`, `auth.PasskeyDoor` with `ScriptURL` (Task 6); `opt`, `Tbdi`, `field`'s `QuietError`, `callout`'s `ID`/`Focus` (Task 8); the door markup contract of `passkey/js/signin.mjs` (Task 9); the `rastrillo.ui.signin_*` keys (Task 10); the approved `gallery.screens.*` strings in `copy-review/result.json` (Task 10); `stageArt`, the `rst-stage` CSS, `ui.Layout("stage")` (Task 11); existing `newPreview`, `previewTitle`, `marker`, `proseIn`, `anchorID`, `galleryFuncs`, `renderShell`, `shellData`.
+- Produces:
+  - `{{template "signin" (dict "State" <auth.SigninState> "Brand" <dict|struct with Name, optional Pitch, Mark> ["Preview" true])}}` and `{{template "signin-title" (dict "State" … "Brand" …)}}`.
+  - Element ids the browser drive (Task 13) and the gallery rely on: `rst-signin-heading`, `rst-signin-email`, `rst-signin-problem`, `rst-signin-remembered`, `rst-signin-passkey-msg`.
+  - Attributes: `rst-signin`, `rst-signin-brand`, `rst-signin-mark`, `rst-signin-name`, `rst-signin-pitch`, `rst-signin-door`, `rst-signin-form`, `rst-signin-remembered`, `rst-signin-passkey-msg`.
+  - The screen frame template `ds-screen-stage` and `var screenPartials = []string{"signin", "signin-title"}` in `internal/designsystem`; screen keys `signin-ask`, `signin-returning-keymail`, `signin-returning-link`, `signin-returning-passkey`, `signin-sent`, `signin-sent-unbound`, `signin-sent-instead`, `signin-continue`, `signin-problem-address`, `signin-problem-keymail`, `signin-social`, `signin-password` (anchor ids `screen-<key>`), used by Task 13.
 
-- [ ] **Step 1: Write the string index**
+**Gallery English below is the draft that went to review.** Wherever `copy-review/result.json` holds an approved `text` for the matching `gallery.screens.*` id that differs, write the approved text, byte for byte: in `internal/designsystem` the English is the prose key, so what you write in Go is also what `prose.go` is keyed by. The ids map as: `gallery.screens.lead` → `screensBody`'s lead; `gallery.screens.<key>.name`/`.blurb` → the `screenDoc` with `Key: "signin-<key>"`; `gallery.screens.password.warning` → the password screen's `WarningBody`.
 
-Write `copy-review/strings.json` exactly as below. Each `id` names where the approved text goes (the table in Step 4). Order is the order a reader meets them.
+- [ ] **Step 1: Write the partial's failing tests**
 
-```json
-[
-  {"id": "rastrillo.ui.signin_heading", "section": "Sign-in screen: asking", "label": "Heading", "text": "Sign in to {name}", "context": "The heading on the sign-in card when it asks for an email address, and above any problem message. {name} is the app's name.", "notes": "Keep {name}."},
-  {"id": "rastrillo.ui.signin_title", "section": "Sign-in screen: asking", "label": "Browser tab title", "text": "Sign in — {name}", "context": "The browser tab's title on the same page. A screen reader announces it when the page opens.", "notes": "Keep {name}."},
-  {"id": "rastrillo.ui.signin_problem_title", "section": "Sign-in screen: asking", "label": "Tab title when something went wrong", "text": "Problem: sign in — {name}", "context": "The tab title when the page is showing a problem (too many tries, a used link, and so on), so someone listening hears there is a problem before the page content.", "notes": "Keep {name}."},
-  {"id": "rastrillo.ui.signin_email", "section": "Sign-in screen: asking", "label": "Email field label", "text": "Email", "context": "The label on the one field the sign-in card asks for."},
-  {"id": "rastrillo.ui.signin_submit", "section": "Sign-in screen: asking", "label": "Main button", "text": "Continue", "context": "The button under the email field. It cannot say what happens next, because that depends on the address: most people get a link by email, some go to Keymail."},
-  {"id": "rastrillo.ui.signin_passkey", "section": "Sign-in screen: asking", "label": "Passkey button", "text": "Sign in with a passkey", "context": "A second button under the email form, shown only in apps with passkeys and only on devices that can use them."},
-  {"id": "rastrillo.ui.signin_passkey_cancelled", "section": "Sign-in screen: asking", "label": "Passkey not used", "text": "No passkey was used. Try again, or use your email.", "context": "Appears under the passkey button when the person closed the passkey prompt, or had no passkey for this site. The browser does not say which, on purpose, so the words cannot either."},
-  {"id": "rastrillo.ui.signin_passkey_failed", "section": "Sign-in screen: asking", "label": "Passkey failed", "text": "That didn't work. Try again, or use your email.", "context": "Appears under the passkey button when the passkey sign-in failed for any other reason."},
-  {"id": "rastrillo.ui.signin_problem_rate", "section": "Sign-in screen: problems", "label": "Too many tries", "text": "Too many tries. Try again in a few minutes.", "context": "A message above the email form after too many sign-in attempts in a short time."},
-  {"id": "rastrillo.ui.signin_problem_address", "section": "Sign-in screen: problems", "label": "Not an address", "text": "That doesn't look like an email address.", "context": "An error under the email field, which still holds what they typed, when it is not an address."},
-  {"id": "rastrillo.ui.signin_problem_expired", "section": "Sign-in screen: problems", "label": "Link used or expired", "text": "That link has expired or was already used. Send a new one.", "context": "Above the email form when someone opened a sign-in link that no longer works. Links work once and last 15 minutes."},
-  {"id": "rastrillo.ui.signin_problem_keymail", "section": "Sign-in screen: problems", "label": "Keymail could not confirm", "text": "Keymail couldn't confirm it's you.", "context": "Above the email form after the Keymail step failed. The button under the form changes to the next string, so they can get a link instead."},
-  {"id": "rastrillo.ui.signin_send_link_instead", "section": "Sign-in screen: problems", "label": "Button after a Keymail failure", "text": "Send me a link instead", "context": "Replaces the main button only after Keymail could not confirm the person, and sends an email link without trying Keymail again."},
-  {"id": "rastrillo.ui.signin_problem_generic", "section": "Sign-in screen: problems", "label": "Something else went wrong", "text": "Something went wrong. Try again.", "context": "Above the email form when sign-in failed for a reason the page cannot name, such as the mail server being down."},
-  {"id": "rastrillo.ui.signin_problem_reauth", "section": "Sign-in screen: problems", "label": "Sign in again", "text": "Sign in again to continue.", "context": "Not an error. Shown when the person is signed in but the page they asked for needs a fresh sign-in first, such as changing account settings."},
-  {"id": "rastrillo.ui.signin_to_keymail", "section": "Sign-in screen: coming back", "label": "One-tap for a Keymail user", "text": "Continue to Keymail", "context": "The one button offered to someone whose last sign-in on this browser was through Keymail. Their address is shown under it (next string). Also the link on the page that moves on to Keymail by itself."},
-  {"id": "rastrillo.ui.signin_remembered_as", "section": "Sign-in screen: coming back", "label": "Whose Keymail", "text": "as {address}", "context": "The line under Continue to Keymail, naming the remembered address, so the button reads as Continue to Keymail, as ada@example.com.", "notes": "Keep {address}. It is shown isolated, so a right-to-left address cannot reorder the sentence."},
-  {"id": "rastrillo.ui.signin_continue_as", "section": "Sign-in screen: coming back", "label": "One-tap for an email-link user", "text": "Continue as {address}", "context": "The one button offered to someone whose last sign-in on this browser was an email link. One tap sends them a new link.", "notes": "Keep {address}."},
-  {"id": "rastrillo.ui.signin_passkey_remembered", "section": "Sign-in screen: coming back", "label": "One-tap for a passkey user", "text": "Sign in with your passkey", "context": "The passkey button, first on the card, for someone whose last sign-in on this browser was a passkey. The email form stays underneath."},
-  {"id": "rastrillo.ui.signin_different", "section": "Sign-in screen: coming back", "label": "Forget me", "text": "Use a different email", "context": "Under a one-tap, and on the page after a link was sent. It forgets the remembered address on this browser and shows the empty form."},
-  {"id": "rastrillo.ui.signin_sent_heading", "section": "Sign-in screen: link sent", "label": "Heading", "text": "Check your email", "context": "The heading after a sign-in link was emailed."},
-  {"id": "rastrillo.ui.signin_sent_title", "section": "Sign-in screen: link sent", "label": "Tab title", "text": "Check your email — {name}", "context": "The tab title on the same page.", "notes": "Keep {name}."},
-  {"id": "rastrillo.ui.signin_sent_instead", "section": "Sign-in screen: link sent", "label": "A link instead of Keymail", "text": "We sent you a sign-in link this time.", "context": "The first line on that page only when the person tapped Continue to Keymail and got an email link instead. The page cannot know why (the server may be down, or the app may not trust it), so the line says what happened, not why."},
-  {"id": "rastrillo.ui.signin_sent_to", "section": "Sign-in screen: link sent", "label": "Where the link went", "text": "We sent a link to {address}.", "context": "Names the address the link went to, so a typo can be noticed now rather than after waiting for an email that will not come. Followed by the next string in the same paragraph.", "notes": "Keep {address}."},
-  {"id": "rastrillo.ui.signin_sent_inbox", "section": "Sign-in screen: link sent", "label": "Where the link went, unknown address", "text": "We sent a link to your inbox.", "context": "Used instead of the previous string when this browser did not send the address itself, for example a link opened in another browser. The page never guesses an address."},
-  {"id": "rastrillo.ui.signin_sent_once", "section": "Sign-in screen: link sent", "label": "How the link works", "text": "The link works once and expires soon.", "context": "Follows the previous line in the same paragraph. Links last 15 minutes."},
-  {"id": "rastrillo.ui.signin_continue_heading", "section": "Sign-in screen: going to Keymail", "label": "Heading", "text": "Taking you to Keymail", "context": "The heading on a page that moves on to Keymail by itself, straight away, after someone entered an address that uses Keymail."},
-  {"id": "rastrillo.ui.signin_continue_title", "section": "Sign-in screen: going to Keymail", "label": "Tab title", "text": "Taking you to Keymail — {name}", "context": "The tab title on the same page.", "notes": "Keep {name}."},
-  {"id": "rastrillo.ui.signin_continue_body", "section": "Sign-in screen: going to Keymail", "label": "Body", "text": "Taking you to Keymail to confirm it's you.", "context": "The one sentence on that page, above a link that does the same thing in case the page does not move on."},
+`ui/signin_test.go`:
 
-  {"id": "gallery.screens.lead", "section": "Design-system gallery: Screens page", "label": "Page lead", "text": "The sign-in screens are the shipped signin partial, shown in its states. The last two are examples to copy.", "context": "The first line of the gallery's Screens page, for developers. Most screens are now the real component; the last two (a password screen and third-party buttons) are markup to copy.", "notes": "signin is a code name; keep it."},
-  {"id": "gallery.screens.ask.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "Asking for an address", "context": "Name of the first sign-in screen shown: the empty form."},
-  {"id": "gallery.screens.returning-keymail.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "Coming back with Keymail", "context": "Name of the screen offered to someone whose last sign-in here was Keymail."},
-  {"id": "gallery.screens.returning-keymail.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The browser remembers how it got in last time. One tap sends the remembered address, which is checked again from scratch.", "context": "The note under that screen, for developers deciding whether the remembered one-tap is safe."},
-  {"id": "gallery.screens.returning-link.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "Coming back with an email link", "context": "Name of the screen for someone whose last sign-in here was an email link."},
-  {"id": "gallery.screens.returning-link.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The address is on the button, so there is nothing to type.", "context": "The note under that screen."},
-  {"id": "gallery.screens.sent-unbound.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "After the link is sent, in another browser", "context": "Name of the link-sent screen when this browser did not send the address."},
-  {"id": "gallery.screens.sent-unbound.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "When this browser did not send the address, the page does not guess it.", "context": "The note under that screen."},
-  {"id": "gallery.screens.sent-instead.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "When Keymail was offered and a link went out", "context": "Name of the link-sent screen after a Continue to Keymail tap ended in an email link."},
-  {"id": "gallery.screens.sent-instead.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "One line says a link was sent this time. It does not guess why.", "context": "The note under that screen."},
-  {"id": "gallery.screens.continue.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "On the way to Keymail", "context": "Name of the page that moves on to Keymail by itself."},
-  {"id": "gallery.screens.continue.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The page moves on by itself, with a link in case it does not.", "context": "The note under that screen."},
-  {"id": "gallery.screens.problem-address.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "An address that does not look right", "context": "Name of the screen showing the not-an-address error."},
-  {"id": "gallery.screens.problem-address.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The message belongs to the field, and that is where focus starts.", "context": "The note under that screen, for developers who care about screen readers."},
-  {"id": "gallery.screens.problem-keymail.name", "section": "Design-system gallery: Screens page", "label": "Screen name", "text": "When Keymail could not confirm it", "context": "Name of the screen after a failed Keymail step."},
-  {"id": "gallery.screens.problem-keymail.blurb", "section": "Design-system gallery: Screens page", "label": "Screen note", "text": "The button changes to send a link instead, so nobody is stuck.", "context": "The note under that screen."},
-  {"id": "gallery.screens.password.warning", "section": "Design-system gallery: Screens page", "label": "Password warning", "text": "Rastrillo does not ship this screen. People reuse passwords, they leak, and you inherit the job of storing them safely. Use a link in your email plus a passkey, or passkeys on their own. The markup is here because some products still need it.", "context": "A warning box above the example password screen, under the title We do not recommend passwords."},
-  {"id": "gallery.shells.stage.blurb", "section": "Design-system gallery: Shells page", "label": "Stage shell note", "text": "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.", "context": "The note beside the new stage page frame on the gallery's Shells page."},
-  {"id": "gallery.shells.demo.sentence", "section": "Design-system gallery: Shells page", "label": "Shell demo paragraph", "text": "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials.", "context": "The paragraph in the middle of each full-page shell demo. It used to say one of the four; there are five now.", "notes": "Keep {shell}, ui.Layout and tokens.css."},
-
-  {"id": "docs/site/magic-links.md#intro", "section": "Docs: Magic links", "label": "Opening paragraph, second sentence", "text": "It is the framework's turnkey option: you get the whole flow — link minting, single-use redemption, rate limiting, sessions, CSRF — and a sign-in screen to use as it is or replace with your own.", "context": "The second paragraph of the Magic links guide. It used to end and you keep your own sign-in page, which is no longer the only option."},
-  {"id": "docs/site/magic-links.md#screen-heading", "section": "Docs: Magic links", "label": "Section heading", "text": "Use the shipped screen, or your own", "context": "Heading of the section that replaces The sign-in page stays yours. Other pages link to it by its slug.", "notes": "If reworded, the link targets #use-the-shipped-screen-or-your-own in reference/auth.md, reference/ui.md and the CHANGELOG change with it."},
-  {"id": "docs/site/magic-links.md#screen-what", "section": "Docs: Magic links", "label": "What the screen is", "text": "Turn on `SigninScreen` and render ui's `signin` partial, and your app has a sign-in page on its first day: one field for an address, the right thing happening next whether that address gets a link or Keymail, and a one-tap for someone coming back.", "context": "First paragraph of the section, before a code sample showing the configuration and the page handler.", "notes": "Markdown; keep the backticked names."},
-  {"id": "docs/site/magic-links.md#screen-turns-on", "section": "Docs: Magic links", "label": "What the switch turns on", "text": "`SigninScreen` turns on everything the screen needs from `auth`, together: a short-lived cookie that remembers what was typed, so the page can refill the field after a problem and name the address a link went to; a keymail sign-in that stays on your page instead of leaving the form, so the default CSP's `form-action 'self'` needs no widening; and a cookie that remembers which way this browser got in last. Leave it off and nothing changes: no new cookie, and `Begin` and `Callback` answer exactly as before.", "context": "After the code sample. Developers deciding whether to turn it on need to know what they are agreeing to.", "notes": "Markdown."},
-  {"id": "docs/site/magic-links.md#screen-remember", "section": "Docs: Magic links", "label": "Turning remembering off", "text": "Set `Remember` to a pointer to `false` to keep the screen and stop remembering — for a kiosk or a shared computer. It also deletes anything remembered before. The remembered cookie is a hint for the screen and nothing else: it signs nobody in, and a one-tap is checked from scratch like a typed address.", "context": "Next paragraph.", "notes": "Markdown."},
-  {"id": "docs/site/magic-links.md#screen-passkeys", "section": "Docs: Magic links", "label": "With passkeys", "text": "If you use passkeys, pass `a.RememberJar()` as `passkey.Config.Remember`. A passkey sign-in then clears an address typed earlier in the same browser, and the next visit offers the passkey first.", "context": "Next paragraph.", "notes": "Markdown."},
-  {"id": "docs/site/magic-links.md#screen-stage", "section": "Docs: Magic links", "label": "The stage shell", "text": "The `stage` shell is made for this page: one card over a generated backdrop. Redefine its `backdrop` block for a pattern or a picture of your own.", "context": "Last paragraph before the table of outcome addresses.", "notes": "Markdown."},
-  {"id": "docs/site/magic-links.md#outcomes-lead", "section": "Docs: Magic links", "label": "Outcome table lead", "text": "`Begin` and the completion handlers report outcomes by redirecting to `Config.SigninPath`. The shipped screen reads these for you; a page of your own renders them:", "context": "Introduces the table of query strings the sign-in page receives.", "notes": "Markdown."},
-  {"id": "docs/site/magic-links.md#outcomes-table", "section": "Docs: Magic links", "label": "Outcome table", "text": "| Query | Meaning |\n|---|---|\n| `?sent=1` | a link was emailed — or the address was refused; the page cannot tell which |\n| `?sent=1&attempt=<id>` | the same, with the screen on: the id lets the page name the address |\n| `?continue=<id>` | a keymail sign-in is under way; the screen moves on by itself |\n| `?err=rate` | rate limited |\n| `?err=address` | the address was rejected |\n| `?err=expired` | the link had expired or was already used |\n| `?err=1` | something else went wrong |\n| `?reauth=1` | a fresh sign-in is needed to continue |", "context": "The table itself. Only the Meaning column is prose.", "notes": "Markdown table; keep the first column exactly."},
-  {"id": "docs/site/magic-links.md#wrapper-heading", "section": "Docs: Magic links", "label": "Sub-heading", "text": "An admission check in front of Begin", "context": "A sub-heading in the same section, for apps that refuse non-members before any mail goes out. reference/auth.md links to it by slug.", "notes": "If reworded, update the #an-admission-check-in-front-of-begin link in reference/auth.md."},
-  {"id": "docs/site/magic-links.md#wrapper", "section": "Docs: Magic links", "label": "Admission checks", "text": "If you put an admission check in front of `Begin` — refusing addresses that are not members before any mail goes out — answer a refusal with `a.AnswerAsSent(w, r)`, not a redirect of your own. With the screen on, a sent link leaves a cookie and an `attempt=` behind; a plain `?sent=1` for a refusal would look different on the very first try, and anyone could learn who is a member. `AnswerAsSent` answers exactly as a sent link does and sends nothing. It does not hide what the per-address rate limit and keymail classification reveal; an admission check before classification would, and that is separate work.", "context": "The paragraph under that sub-heading. Written for the developer of an invite-only app.", "notes": "Markdown."},
-  {"id": "docs/site/magic-links.md#keymail-servers", "section": "Docs: Magic links", "label": "Which keymail servers are trusted", "text": "By default any keymail server an address's own domain names is trusted. That is keymail's design: whoever controls a domain chooses its server, the same person who controls its mail and could receive a link anyway, and a server cannot vouch for anyone else's address, because the address it returns must match the one that was typed. To trust a closed set instead, list them in `KeymailServers` (host or host:port). An address whose server is not listed gets an ordinary link, and its server is never contacted — not to check the address, and not to finish a sign-in. The list applies with the screen on or off.", "context": "A new last paragraph of the Aside: the keymail upgrade section.", "notes": "Markdown."},
-
-  {"id": "docs/site/passkeys.md#allowed-1", "section": "Docs: Passkeys", "label": "What a passkey may do, first paragraph", "text": "A passkey can sign someone in on its own, through the discover endpoints. A passkey that checked the person with a PIN, a fingerprint or a face has already proved who they are and what they hold, and asking for an emailed link as well adds work and no safety.", "context": "Replaces A passkey never signs anybody in from nothing, which stopped being true when discovery shipped."},
-  {"id": "docs/site/passkeys.md#allowed-2", "section": "Docs: Passkeys", "label": "What a passkey may do, second paragraph", "text": "It also refreshes an existing session at step-up, and completes a sign-in whose first factor already checked out. A passkey that only found somebody present, without checking who, is the weaker proof: where the account has another factor, discover holds the sign-in for it.", "context": "Replaces the paragraph that followed."},
-  {"id": "docs/site/passkeys.md#remember", "section": "Docs: Passkeys", "label": "On the sign-in screen", "text": "On `auth`'s shipped sign-in screen, the discover pair is the passkey button. Set `Config.Remember` to `auth`'s `RememberJar()`: a passkey sign-in then clears any address typed earlier in the same browser, and the next visit offers the passkey first. Without it, an address someone typed before using their passkey stays in the form.", "context": "A new paragraph after the list of endpoints in Wiring it.", "notes": "Markdown."},
-
-  {"id": "docs/site/templates.md#funcs", "section": "Docs: Templates", "label": "Template functions list", "text": "`ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.", "context": "The first line under Template functions.", "notes": "Markdown."},
-  {"id": "docs/site/templates.md#blocks", "section": "Docs: Templates", "label": "Shell blocks", "text": "The blocks are `title`, `lang`, `dir` and `head` in all five shells, plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and `console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in `stage`. None of them reads a field off the data, so a shell renders whether your handler passes a struct, a `dict`-built map or nil — a shell can never break because a page's view model changed shape.", "context": "Replaces the paragraph that lists the shells' blocks for four shells.", "notes": "Markdown."},
-  {"id": "docs/site/templates.md#stage", "section": "Docs: Templates", "label": "The stage shell", "text": "`stage` has no chrome. It centres one card — the sign-in screen, usually — over a full-page backdrop, drawn by `{{stageArt \"rastrillo\"}}` unless you redefine `backdrop`: `{{define \"backdrop\"}}{{stageArt \"your-app\"}}{{end}}` draws a pattern of your own from any word, and an `<img>` or your own SVG replaces it outright. Its attributes are `rst-stage`, `rst-stage-scene`, `rst-stage-art` and `rst-stage-foot`, and it carries `rst-skip` like the others.", "context": "A new paragraph after the one listing the chrome attributes (which ends with the skip link that all shells carry).", "notes": "Markdown; keep the template code exactly."},
-
-  {"id": "docs/site/reference/auth.md#screen-config", "section": "Docs: auth reference", "label": "The screen's settings", "text": "`SigninScreen` turns on the shipped sign-in screen's side of `auth`: the attempt and continuation cookies, the keymail continuation, and remembering the way in. Off, nothing about `Begin` or `Callback` changes. `BeginPath` and `ForgetPath` (default `/signin` and `/signin/forget`) are where you mounted `Begin` and `Forget`, for the screen's forms. `Remember` set to `false` keeps the screen and stops remembering.", "context": "After the Config code block, before the InstanceKey paragraph.", "notes": "Markdown."},
-  {"id": "docs/site/reference/auth.md#keymail-servers", "section": "Docs: auth reference", "label": "KeymailServers", "text": "`KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).", "context": "After the TrustedProxyHops paragraph.", "notes": "Markdown."},
-  {"id": "docs/site/reference/auth.md#handlers", "section": "Docs: auth reference", "label": "What the handlers report", "text": "These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and — with `SigninScreen` on — `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself.", "context": "Replaces The sign-in page stays yours paragraph under The handlers.", "notes": "Markdown."},
-  {"id": "docs/site/reference/auth.md#screen-heading", "section": "Docs: auth reference", "label": "Section heading", "text": "The sign-in screen", "context": "A new section heading after The handlers."},
-  {"id": "docs/site/reference/auth.md#state", "section": "Docs: auth reference", "label": "SigninState and PrepareSigninResponse", "text": "`SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process.", "context": "After a code block of the new signatures.", "notes": "Markdown."},
-  {"id": "docs/site/reference/auth.md#forget", "section": "Docs: auth reference", "label": "Forget, AnswerAsSent, RememberJar", "text": "`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin` — see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.", "context": "Last paragraph of that section.", "notes": "Markdown."},
-  {"id": "docs/site/reference/passkey.md#remember", "section": "Docs: passkey reference", "label": "Config.Remember", "text": "`Config.Remember` takes `auth`'s `RememberJar()`. With it, a verified discover assertion ends the sign-in screen's attempt and remembers passkey as this browser's way in, with no address.", "context": "A new last paragraph of Discover: the passkey as the front door.", "notes": "Markdown."},
-  {"id": "docs/site/reference/ui.md#funcs", "section": "Docs: ui reference", "label": "Funcs list and the three new ones", "text": "Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.\n\n`opt` reads an optional key off a partial's data, whether it is a map or a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a sentence that shows back something a visitor typed: each value is escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's backdrop from a word; the same word always draws the same picture.", "context": "Replaces the one-line list under Funcs.", "notes": "Markdown; two paragraphs."},
-  {"id": "docs/site/reference/ui.md#shells", "section": "Docs: ui reference", "label": "The stage shell", "text": "`stage` is one card centred over a full-page backdrop, for a page that stands alone — the sign-in screen above all. Its blocks are `title`, `lang`, `dir`, `head`, `backdrop` and `foot`.", "context": "A new paragraph in the Shells section, after the one describing the other four. That section's first words become The five shipped page frames.", "notes": "Markdown."},
-  {"id": "docs/site/reference/ui.md#signin", "section": "Docs: ui reference", "label": "The signin partial", "text": "`signin` renders the whole sign-in card from an `auth.SigninState`, and `signin-title` the matching tab title. Pass `Brand` with a `Name`, and optionally a one-line `Pitch` and a `Mark` (an `<img>` or inline SVG as `template.HTML`). Every string comes from the base catalogs under `rastrillo.ui.signin_*`, in all twelve languages. The passkey button needs this version's `rastrillo.js`; an older copy leaves it hidden, and the email form works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).", "context": "A new section, The sign-in screen, before Styleguide.", "notes": "Markdown."},
-  {"id": "docs/site/reference/lastsignin.md#lead", "section": "Docs: lastsignin reference (new page)", "label": "Lead", "text": "Remembers, in one browser, which way it last used to sign in — keymail, an emailed link or a passkey — and the address for the first two, so the sign-in screen can offer a one-tap. It is a hint for the screen and nothing more: it signs nobody in, and a one-tap is checked from scratch.", "context": "The opening paragraph of a new reference page for a small package developers rarely call directly."},
-  {"id": "docs/site/reference/lastsignin.md#usually", "section": "Docs: lastsignin reference (new page)", "label": "You rarely build one", "text": "You rarely build one yourself. `auth.New` builds the jar from its own configuration, and `auth.RememberJar` hands it to `passkey.Config.Remember`.", "context": "Second paragraph, before the API listing.", "notes": "Markdown."},
-  {"id": "docs/site/reference/lastsignin.md#modes", "section": "Docs: lastsignin reference (new page)", "label": "Modes", "text": "`Off` writes, reads and deletes nothing — an app without the shipped screen sees no cookie at all. `Forgetting` deletes what was remembered and never reads it. `On` remembers. `EndAttempt` deletes the screen's attempt cookie; every sign-in path calls it once a first factor checks out.", "context": "After the API listing.", "notes": "Markdown."},
-  {"id": "docs/site/reference/lastsignin.md#cookie", "section": "Docs: lastsignin reference (new page)", "label": "The cookie", "text": "The cookie is sealed, HttpOnly, and lasts 400 days, the longest browsers allow; each sign-in renews it. Signing out does not delete it.", "context": "Last paragraph."},
-  {"id": "docs/site/nav.json#lastsignin", "section": "Docs: lastsignin reference (new page)", "label": "Docs index blurb", "text": "The sign-in screen's memory of how this browser got in last, and the seam that ends a sign-in attempt.", "context": "The one-line description of the new page on the docs index."},
-
-  {"id": "CHANGELOG.md#added-heading", "section": "CHANGELOG", "label": "Entry heading", "text": "Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css` and `rastrillo.js`", "context": "A new entry at the top of Unreleased. Headings in this file start with Added, Changed or Fixed and name the one thing to do if there is one.", "notes": "Written after ### ."},
-  {"id": "CHANGELOG.md#added-1", "section": "CHANGELOG", "label": "What it is", "text": "`ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it — an emailed link, or Keymail — and offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.", "context": "First paragraph of the entry.", "notes": "Markdown."},
-  {"id": "CHANGELOG.md#added-2", "section": "CHANGELOG", "label": "How to use it", "text": "Turn it on with `auth.Config.SigninScreen`, render the page from `auth.SigninState` and `PrepareSigninResponse`, and mount `auth.Forget`. With it on, a keymail sign-in stays on your page, so the default CSP's `form-action 'self'` needs no widening. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).", "context": "Second paragraph.", "notes": "Markdown."},
-  {"id": "CHANGELOG.md#added-3", "section": "CHANGELOG", "label": "Everything else new", "text": "Also new: `auth.AnswerAsSent`, for an admission check in front of `Begin`; `auth.Config.KeymailServers`, to trust only the keymail servers you list; `BeginPath`, `ForgetPath` and `Remember` on `auth.Config`; `passkey.Config.Remember`; the `lastsignin` package; `QuietError` on the `field` partial; `ID` and `Focus` on the `callout` partial; and the `opt` and `Tbdi` template functions.", "context": "Third paragraph: the full list, for someone scanning for a name.", "notes": "Markdown."},
-  {"id": "CHANGELOG.md#added-4", "section": "CHANGELOG", "label": "What changes for existing apps", "text": "An app that leaves `SigninScreen` off sees no change: no new cookie, and `Begin` and `Callback` answer as before. `KeymailServers`, if you set it, applies either way. Turning the screen on turns on the keymail continuation and remembering together; set `Remember` to false to keep the screen and stop remembering.", "context": "Fourth paragraph. The file's rule: anything that could change an app's behaviour is said plainly.", "notes": "Markdown."},
-  {"id": "CHANGELOG.md#added-5", "section": "CHANGELOG", "label": "Re-vendoring", "text": "The passkey button and the screen's styles are in `rastrillo.js` and `tokens.css`, which your app has its own copies of. Run `rastrillo doctor --fix` to take the new ones.", "context": "Last paragraph, the action the heading promises.", "notes": "Markdown."}
-]
-```
-
-Validate it: `python3 -m json.tool copy-review/strings.json > /dev/null` — no output means valid.
-
-- [ ] **Step 2: Run the review**
-
-Invoke the `copy-review` skill (Skill tool, `skill: "copy-review"`) and follow it exactly: launch `serve.sh copy-review/strings.json` with the Bash sandbox off (it exits 3 inside the sandbox), give the operator the one URL it prints, and poll for `copy-review/result.json`. On `"action": "reroll"`, rewrite as the skill says — carrying the operator's edited strings over unchanged and applying their demonstrated edits to the rest — and relaunch. Loop until `"action": "approve"`. Do not write any of these strings into a tracked file before then.
-
-- [ ] **Step 3: Apply the approved strings, verbatim**
-
-For every entry in `result.json`, the approved `text` goes where its `id` says, byte for byte — no fixed typos, no changed capitalisation. If a string would break markup (an unbalanced backtick, a lost `{name}`), stop and ask the operator; never repair it silently.
-
-| `id` | Destination |
-|---|---|
-| `rastrillo.ui.signin_*` | the value of that key in `locales/en.toml` |
-| `gallery.*` | nothing yet: Task 13 writes them from `copy-review/result.json`, so leave that file where it is |
-| `docs/site/magic-links.md#intro` | replaces the paragraph beginning "It is the framework's turnkey option" |
-| `docs/site/magic-links.md#screen-*`, `#outcomes-*`, `#wrapper*` | the new section, in this order, replacing the whole `### The sign-in page stays yours` section: `### <#screen-heading>`, `#screen-what`, the two code blocks in Step 4, `#screen-turns-on`, `#screen-remember`, `#screen-passkeys`, `#screen-stage`, `#outcomes-lead`, `#outcomes-table`, `#### <#wrapper-heading>`, `#wrapper` |
-| `docs/site/magic-links.md#keymail-servers` | a new last paragraph of `## Aside: the keymail upgrade` |
-| `docs/site/passkeys.md#allowed-1`, `#allowed-2` | replace the two paragraphs under `## What a passkey is allowed to do` |
-| `docs/site/passkeys.md#remember` | after the endpoint list in `## Wiring it`, which gains the two discover lines in Step 4 |
-| `docs/site/templates.md#funcs` | replaces line 24–25's sentence |
-| `docs/site/templates.md#blocks` | replaces the paragraph beginning "The blocks are `title`, `lang`, `dir` and `head` in all four shells" |
-| `docs/site/templates.md#stage` | a new paragraph after the one ending "like every other idiom here." (the chrome-attributes paragraph), whose "which all four shells carry — `column` included" becomes "which all five shells carry — `column` and `stage` included" |
-| `docs/site/reference/auth.md#…` | as each entry's context says; the Config block and signatures are in Step 4 |
-| `docs/site/reference/passkey.md#remember` | new last paragraph of `## Discover: the passkey as the front door` |
-| `docs/site/reference/ui.md#funcs` | replaces the "Registers `dict`, …" line under `## Funcs` |
-| `docs/site/reference/ui.md#shells` | a new paragraph in `## Shells`; "The four shipped page frames" becomes "The five shipped page frames" and "in all four" becomes "in all five" |
-| `docs/site/reference/ui.md#signin` | a new `## The sign-in screen` section before `## Styleguide` |
-| `docs/site/reference/lastsignin.md#…` | the new page, laid out in Step 4 |
-| `docs/site/nav.json#lastsignin` | the `blurb` of the new nav entry in Step 4 |
-| `CHANGELOG.md#…` | a new entry at the top of `## Unreleased`: `### <#added-heading>` then `#added-1` … `#added-5` as paragraphs |
-
-If an approved docs heading differs from the draft, change every link that targets its slug (the table's notes name them).
-
-- [ ] **Step 4: Write the code blocks and structure around the approved prose**
-
-These are code, not copy, and go in exactly as written.
-
-`docs/site/magic-links.md`, after `#screen-what`:
-
-````markdown
 ```go
-a, err := auth.New(auth.Config{
-	DB:           writer,
-	Origin:       origin,
-	InstanceKey:  instanceKey,
-	Mailer:       mailer,
-	SigninScreen: true,
-})
+package ui
 
-r.Get("/signin", func(w http.ResponseWriter, r *http.Request) {
-	st := a.SigninState(r)
-	st.Passkey = &auth.PasskeyDoor{ // only if you mounted passkey discovery
-		BeginPath:  "/passkey/discover/begin",
-		FinishPath: "/passkey/discover/finish",
-		ModuleURL:  assets.Path("static/webauthn.mjs"),
+import (
+	"html"
+	"regexp"
+	"strings"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/auth"
+)
+
+const keymailURL = "https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&code_challenge=cccc&code_challenge_method=S256&redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&scope=identify&state=ssss"
+
+var signinDoor = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs"}
+
+func signinData(st auth.SigninState) map[string]any {
+	if st.BeginPath == "" {
+		st.BeginPath = "/signin"
 	}
-	a.PrepareSigninResponse(w, st)
-	render(w, "signin", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}})
-})
-r.Post("/signin/forget", a.Forget)
-```
-
-`templates/signin.html`, in a page set built on the `stage` shell instead of `layout.html`:
-
-```html
-{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}
-{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}
-```
-
-```go
-stage, _ := ui.Layout("stage")
-t := template.Must(template.New("layout").
-	Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
-	Funcs(template.FuncMap{"asset": assets.Path}).
-	ParseFS(ui.Templates(), "*.html"))
-t = template.Must(t.Parse(string(stage)))
-pages["signin"] = template.Must(t.ParseFS(appFS, "templates/signin.html"))
-```
-````
-
-`docs/site/passkeys.md` — the endpoint list in `## Wiring it` gains:
-
-```text
-POST /passkey/discover/begin    -> {"challenge": ...}
-POST /passkey/discover/finish   <- authenticate()'s result -> {"to": ...}
-```
-
-`docs/site/reference/auth.md` — the `Config` block gains, after `TrustedProxyHops *int`:
-
-```go
-	SigninScreen     bool
-	BeginPath        string
-	ForgetPath       string
-	Remember         *bool
-	KeymailServers   []string
-```
-
-the handler table gains `POST /signin/forget -> Auth.Forget`, and the new `## <#screen-heading>` section opens with:
-
-```go
-func (a *Auth) SigninState(r *http.Request) SigninState
-func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
-func (a *Auth) Forget(w http.ResponseWriter, r *http.Request)
-func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request)
-func (a *Auth) RememberJar() *lastsignin.Jar
-```
-
-`docs/site/reference/lastsignin.md`:
-
-````markdown
-# 🤖 lastsignin
-
-`amadan.net/rastrillo/rastrillo/lastsignin`
-
-<#lead>
-
-<#usually>
-
-```go
-func New(cfg Config) (*Jar, error)
-type Config struct {
-	Origin, InstanceKey, AttemptCookie string
-	Mode                               Mode // Off, Forgetting, On
-	Now                                func() time.Time
+	if st.ForgetPath == "" {
+		st.ForgetPath = "/signin/forget"
+	}
+	return map[string]any{"State": st, "Brand": map[string]any{"Name": "Harbour"}}
 }
-func (j *Jar) Remember(w http.ResponseWriter, rec Record)
-func (j *Jar) Read(r *http.Request) (Record, ReadResult) // Absent, Valid, Invalid
-func (j *Jar) Clear(w http.ResponseWriter)
-func (j *Jar) EndAttempt(w http.ResponseWriter)
-type Record struct{ Method, Address string }
+
+func remembered(method, address string) *auth.Remembered {
+	return &auth.Remembered{Method: method, Address: address}
+}
+
+// signinStates is every step × problem × remembered method the screen
+// can be in, named, with the element focus must start on (§2's matrix):
+// "field", "callout", "onetap" or "".
+func signinStates() []struct {
+	name  string
+	st    auth.SigninState
+	focus string
+} {
+	kay := remembered("keymail", "kay@example.org")
+	return []struct {
+		name  string
+		st    auth.SigninState
+		focus string
+	}{
+		{"ask", auth.SigninState{Step: auth.StepAsk}, "field"},
+		{"ask with a passkey door", auth.SigninState{Step: auth.StepAsk, Passkey: signinDoor}, "field"},
+		{"returning keymail", auth.SigninState{Step: auth.StepReturning, Remembered: kay, Address: "kay@example.org"}, "onetap"},
+		{"returning magic link", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("magiclink", "ada@example.com")}, "onetap"},
+		{"returning passkey", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", ""), Passkey: signinDoor}, ""},
+		{"returning passkey, no door", auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", "")}, "field"},
+		{"sent, bound", auth.SigninState{Step: auth.StepSent, SentTo: "ada@example.com"}, ""},
+		{"sent, unbound", auth.SigninState{Step: auth.StepSent}, ""},
+		{"sent instead of keymail", auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}, ""},
+		{"continue", auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}, ""},
+		{"rate", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemRate, Address: "ada@example.com"}, "callout"},
+		{"address", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: "ada@example"}, "field"},
+		{"expired", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemExpired}, "callout"},
+		{"keymail", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemKeymail, Address: "kay@example.org"}, "callout"},
+		{"generic", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemGeneric}, "callout"},
+		{"reauth, ask", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemReauth}, "field"},
+		{"reauth, returning keymail", auth.SigninState{Step: auth.StepReturning, Problem: auth.ProblemReauth, Remembered: kay}, "onetap"},
+	}
+}
+
+var (
+	h1Pattern        = regexp.MustCompile(`(?s)<h1 id="rst-signin-heading">(.*?)</h1>`)
+	autofocusPattern = regexp.MustCompile(`<[a-z]+\b[^>]*\sautofocus[\s>][^>]*>?`)
+	tagText          = regexp.MustCompile(`<[^>]*>`)
+)
+
+func text(s string) string { return strings.TrimSpace(html.UnescapeString(tagText.ReplaceAllString(s, ""))) }
+
+func TestSigninHeadingAndTitleFollowTheState(t *testing.T) {
+	name := "Harbour"
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		m := h1Pattern.FindAllStringSubmatch(out, -1)
+		if len(m) != 1 {
+			t.Errorf("%s: %d <h1>s, want exactly one", c.name, len(m))
+			continue
+		}
+		var heading, title string
+		switch {
+		case c.st.Step == auth.StepSent:
+			heading, title = defaultT("rastrillo.ui.signin_sent_heading"), defaultTf("rastrillo.ui.signin_sent_title", "name", name)
+		case c.st.Step == auth.StepContinue:
+			heading, title = defaultT("rastrillo.ui.signin_continue_heading"), defaultTf("rastrillo.ui.signin_continue_title", "name", name)
+		case c.st.Problem != auth.ProblemNone && c.st.Problem != auth.ProblemReauth:
+			heading, title = defaultTf("rastrillo.ui.signin_heading", "name", name), defaultTf("rastrillo.ui.signin_problem_title", "name", name)
+		default:
+			heading, title = defaultTf("rastrillo.ui.signin_heading", "name", name), defaultTf("rastrillo.ui.signin_title", "name", name)
+		}
+		if got := text(m[0][1]); got != heading {
+			t.Errorf("%s: <h1> %q, want %q", c.name, got, heading)
+		}
+		if got := text(render(t, "signin-title", signinData(c.st))); got != title {
+			t.Errorf("%s: title %q, want %q", c.name, got, title)
+		}
+	}
+}
+
+func TestSigninFocusFollowsTheMatrix(t *testing.T) {
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		tags := autofocusPattern.FindAllString(out, -1)
+		if len(tags) > 1 {
+			t.Errorf("%s: %d autofocus attributes; at most one element may ask for focus", c.name, len(tags))
+			continue
+		}
+		var got string
+		if len(tags) == 1 {
+			switch tag := tags[0]; {
+			case strings.Contains(tag, `id="rst-signin-email"`):
+				got = "field"
+			case strings.Contains(tag, `id="rst-signin-problem"`) && strings.Contains(tag, `tabindex="-1"`):
+				got = "callout"
+			case strings.HasPrefix(tag, "<button"):
+				got = "onetap"
+			default:
+				got = "unexpected " + tag
+			}
+		}
+		if got != c.focus {
+			t.Errorf("%s: focus starts on %q, want %q", c.name, got, c.focus)
+		}
+	}
+}
+
+// A message present at load that focus lands on is announced by the
+// focus; role="alert" would race it (§2). The only live region on the
+// screen is the passkey message.
+func TestSigninNeverUsesRoleAlert(t *testing.T) {
+	for _, c := range signinStates() {
+		if out := render(t, "signin", signinData(c.st)); strings.Contains(out, `role="alert"`) {
+			t.Errorf("%s renders role=alert", c.name)
+		}
+	}
+}
+
+func TestTheOneTapNamesTheRememberedMethod(t *testing.T) {
+	byName := map[string]auth.SigninState{}
+	for _, c := range signinStates() {
+		byName[c.name] = c.st
+	}
+	km := render(t, "signin", signinData(byName["returning keymail"]))
+	for _, want := range []string{
+		`<input type="hidden" name="address" value="kay@example.org">`,
+		`<input type="hidden" name="expect" value="keymail">`,
+		`aria-describedby="rst-signin-remembered"`,
+		`id="rst-signin-remembered"`,
+		`<bdi>kay@example.org</bdi>`,
+		html.EscapeString(defaultT("rastrillo.ui.signin_to_keymail")),
+	} {
+		if !strings.Contains(km, want) {
+			t.Errorf("keymail one-tap lacks %s:\n%s", want, km)
+		}
+	}
+
+	ml := render(t, "signin", signinData(byName["returning magic link"]))
+	button := regexp.MustCompile(`(?s)<button rst-btn="primary block" type="submit"[^>]*>(.*?)</button>`).FindStringSubmatch(ml)
+	if button == nil || !strings.Contains(button[1], "<bdi>ada@example.com</bdi>") || strings.Contains(button[0], "aria-describedby") {
+		t.Errorf("the magic-link one-tap must carry the address in its label and nothing else: %v", button)
+	}
+	if strings.Contains(ml, `name="expect"`) {
+		t.Error("the magic-link one-tap posts expect; only the Keymail one does")
+	}
+
+	pk := render(t, "signin", signinData(byName["returning passkey"]))
+	if !strings.Contains(pk, "data-rst-passkey ") || !strings.Contains(pk, html.EscapeString(defaultT("rastrillo.ui.signin_passkey_remembered"))) {
+		t.Errorf("the passkey door is missing or mislabelled:\n%s", pk)
+	}
+	if !strings.Contains(pk, `id="rst-signin-email"`) {
+		t.Error("the passkey door is on its own; the email form must be beside it (§1.6 step 6)")
+	}
+}
+
+// Review Focus 2.
+func TestAReturningPasskeyWithNoDoorAsksForAnAddress(t *testing.T) {
+	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepReturning, Remembered: remembered("passkey", "")}))
+	if strings.Contains(out, "data-rst-passkey") || !strings.Contains(out, `id="rst-signin-email"`) {
+		t.Fatalf("a remembered passkey with no door wired must be the email form:\n%s", out)
+	}
+}
+
+func TestTheKeymailProblemOffersTheEscapeHatch(t *testing.T) {
+	for _, address := range []string{"kay@example.org", ""} {
+		out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemKeymail, Address: address}))
+		if !strings.Contains(out, `<input type="hidden" name="force" value="1">`) ||
+			!strings.Contains(out, html.EscapeString(defaultT("rastrillo.ui.signin_send_link_instead"))) {
+			t.Errorf("address %q: no escape hatch:\n%s", address, out)
+		}
+	}
+}
+
+func TestContinueIsANavigationNotAForm(t *testing.T) {
+	st := auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}
+	out := render(t, "signin", signinData(st))
+	if strings.Contains(out, "<form") {
+		t.Error("Continue renders a form; it has no controls but its link")
+	}
+	meta := regexp.MustCompile(`<meta http-equiv="refresh" content="0;url=([^"]*)">`).FindStringSubmatch(out)
+	link := regexp.MustCompile(`<a rst-btn="primary block" href="([^"]*)">`).FindStringSubmatch(out)
+	if meta == nil || html.UnescapeString(meta[1]) != keymailURL {
+		t.Errorf("meta refresh %v, want a zero-delay refresh to the continuation", meta)
+	}
+	if link == nil || html.UnescapeString(link[1]) != keymailURL {
+		t.Errorf("fallback link %v, want the same URL", link)
+	}
+
+	data := signinData(st)
+	data["Preview"] = true
+	preview := render(t, "signin", data)
+	if strings.Contains(preview, "http-equiv") || !strings.Contains(preview, `href="#"`) || strings.Contains(preview, "keymail.test") {
+		t.Errorf("a Preview must not navigate anywhere:\n%s", preview)
+	}
+}
+
+func TestSentNamesOnlyABoundAddress(t *testing.T) {
+	bound := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "ada@example.com"}))
+	if !strings.Contains(bound, "<bdi>ada@example.com</bdi>") {
+		t.Errorf("bound Sent does not name the address:\n%s", bound)
+	}
+	unbound := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent}))
+	if strings.Contains(unbound, "@") || !strings.Contains(unbound, html.EscapeString(defaultT("rastrillo.ui.signin_sent_inbox"))) {
+		t.Errorf("unbound Sent must say your inbox and no address:\n%s", unbound)
+	}
+	instead := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}))
+	i, j := strings.Index(instead, html.EscapeString(defaultT("rastrillo.ui.signin_sent_instead"))), strings.Index(instead, "<bdi>kay@example.org</bdi>")
+	if i < 0 || j < 0 || i > j {
+		t.Errorf("the one-time line must come first, before where the link went:\n%s", instead)
+	}
+}
+
+// Review Focus 1.
+func TestSigninEscapesWhatAVisitorTyped(t *testing.T) {
+	hostile := `"><script>alert(1)</script>{address}`
+	for name, st := range map[string]auth.SigninState{
+		"a prefill":      {Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: hostile},
+		"a Sent address": {Step: auth.StepSent, SentTo: hostile},
+		"a one-tap":      {Step: auth.StepReturning, Remembered: remembered("magiclink", hostile)},
+	} {
+		out := render(t, "signin", signinData(st))
+		if strings.Contains(out, "<script>") {
+			t.Errorf("%s: markup a visitor typed reached the page:\n%s", name, out)
+		}
+	}
+	rtl := render(t, "signin", signinData(auth.SigninState{Step: auth.StepSent, SentTo: "مرحبا@example.com"}))
+	if !strings.Contains(rtl, "<bdi>مرحبا@example.com</bdi>") {
+		t.Errorf("an RTL address is not isolated:\n%s", rtl)
+	}
+}
+
+func TestThePasskeyButtonWaitsForItsScript(t *testing.T) {
+	st := auth.SigninState{Step: auth.StepAsk, Passkey: &auth.PasskeyDoor{BeginPath: "/b", FinishPath: "/f", ModuleURL: "/m.mjs", ScriptURL: "/door.mjs", LegacyRPID: "old.example"}}
+	out := render(t, "signin", signinData(st))
+	for _, want := range []string{
+		" hidden", `data-rst-passkey-begin="/b"`, `data-rst-passkey-finish="/f"`, `data-rst-passkey-module="/m.mjs"`,
+		`<script type="module" src="/door.mjs"></script>`,
+		`data-rst-passkey-legacy-rpid="old.example"`, `aria-describedby="rst-signin-passkey-msg"`,
+		`id="rst-signin-passkey-msg"`, `aria-live="polite"`,
+		`data-rst-passkey-cancelled="` + html.EscapeString(defaultT("rastrillo.ui.signin_passkey_cancelled")) + `"`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the passkey door lacks %s:\n%s", want, out)
+		}
+	}
+	data := signinData(st)
+	data["Preview"] = true
+	if preview := render(t, "signin", data); strings.Contains(preview, " hidden") || strings.Contains(preview, "data-rst-passkey") || strings.Contains(preview, "<script") {
+		t.Errorf("a Preview shows the door as the enhanced page would, loading nothing and with nothing for a script to find:\n%s", preview)
+	}
+}
+
+// The door's script is the one request the screen adds, and only a page
+// that renders the door makes it: an email-only screen, a Sent or
+// Continue page, a one-tap for keymail or a link, and every Preview
+// load nothing. ui's shells never name it either.
+func TestOnlyAPasskeyDoorLoadsItsScript(t *testing.T) {
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		n := strings.Count(out, "<script")
+		door := c.st.Passkey != nil && (c.st.Door() == "ask" || c.st.Door() == "passkey")
+		switch {
+		case door && (n != 1 || !strings.Contains(out, `<script type="module" src="/static/passkey-signin.mjs"></script>`)):
+			t.Errorf("%s renders a passkey door and %d scripts; want exactly its module", c.name, n)
+		case !door && n != 0:
+			t.Errorf("%s renders no passkey door but loads %d scripts", c.name, n)
+		}
+		data := signinData(c.st)
+		data["Preview"] = true
+		if strings.Contains(render(t, "signin", data), "<script") {
+			t.Errorf("%s: a Preview loads a script", c.name)
+		}
+	}
+	for _, name := range LayoutNames() {
+		src, _ := Layout(name)
+		if strings.Contains(string(src), "passkey") {
+			t.Errorf("layouts/%s.html names the passkey door; only the partial may load it", name)
+		}
+	}
+}
+
+func TestSigninControlsAreNamedAndIDsUnique(t *testing.T) {
+	inputs := regexp.MustCompile(`<input\b[^>]*>`)
+	buttons := regexp.MustCompile(`(?s)<button\b[^>]*>(.*?)</button>`)
+	for _, c := range signinStates() {
+		out := render(t, "signin", signinData(c.st))
+		for _, in := range inputs.FindAllString(out, -1) {
+			if strings.Contains(in, `type="hidden"`) {
+				continue
+			}
+			id := regexp.MustCompile(`id="([^"]*)"`).FindStringSubmatch(in)
+			if id == nil || !strings.Contains(out, `for="`+id[1]+`"`) {
+				t.Errorf("%s: an input with no label: %s", c.name, in)
+			}
+		}
+		for _, b := range buttons.FindAllStringSubmatch(out, -1) {
+			if text(b[1]) == "" {
+				t.Errorf("%s: a button with no text: %s", c.name, b[0])
+			}
+		}
+		seen := map[string]bool{}
+		for _, m := range idAttr.FindAllStringSubmatch(out, -1) {
+			if seen[m[1]] {
+				t.Errorf("%s: id %q twice", c.name, m[1])
+			}
+			seen[m[1]] = true
+		}
+	}
+}
+
+func TestSigninClassesAreStyled(t *testing.T) {
+	css := string(TokensCSS())
+	for _, c := range signinStates() {
+		for name := range rstVocabulary(render(t, "signin", signinData(c.st))) {
+			if !qualifiedOnly[name] && !tokensStyle(css, name) {
+				t.Errorf("%s: tokens.css has no selector for %q", c.name, name)
+			}
+		}
+	}
+}
+
+func TestSigninTakesABrandStruct(t *testing.T) {
+	type brand struct{ Name string }
+	out := render(t, "signin", map[string]any{"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin"}, "Brand": brand{Name: "Harbour"}})
+	if !strings.Contains(out, "Harbour") {
+		t.Fatalf("a Brand struct with only Name must render:\n%s", out)
+	}
+}
 ```
 
-<#modes>
+In `ui/ui_test.go`: add to `allPartials()` (at the end of the slice):
 
-<#cookie>
-````
-
-where each `<#…>` is that entry's approved text.
-
-`docs/site/nav.json` — after the `reference/keyring` entry:
-
-```json
-        {
-          "slug": "reference/lastsignin",
-          "label": "lastsignin",
-          "blurb": "<nav.json#lastsignin>"
-        },
+```go
+		{"signin", map[string]any{
+			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
+			"Brand": map[string]any{
+				"Name": "Harbour", "Pitch": "Moorings and berths, booked in a minute.",
+				"Mark": template.HTML(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/></svg>`),
+			},
+		}},
+		{"signin-title", map[string]any{"State": auth.SigninState{Step: auth.StepSent}, "Brand": map[string]any{"Name": "Harbour"}}},
 ```
 
-- [ ] **Step 5: Translate**
+(import `"amadan.net/rastrillo/rastrillo/auth"`), and in `TestAllPartialsAreDefined` append `"signin", "signin-title"` to `want` and change the count check to 36 ("the shipped set is 36 partials").
 
-Not reviewed — the operator reviews the source language only; translate the approved English yourself as a best guess.
-
-1. **Catalogs.** In each of the eleven non-English files, delete the `# signin-screen: English until copy review …` comment line and replace the 29 English values under it with translations of the approved `locales/en.toml` values, keeping every key, every `{name}`/`{address}`, and the file's register (its header says how it was drafted). Then `grep -rn "English until copy review" locales/` must print nothing.
-
-- [ ] **Step 6: SKILL.md (not reviewed; LLM-facing)**
-
-Line 32: `--shell=column|topbar|sidebar|console` becomes `--shell=column|topbar|sidebar|console|stage`.
-
-Replace the `**CSP:**` paragraph (lines 287–295) with:
-
-```markdown
-**Sign-in screen:** set `auth.Config.SigninScreen: true` and render
-`{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:
-`signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
-set `st.Passkey` if passkey discovery is mounted — then
-`a.PrepareSigninResponse(w, st)` before rendering. Mount
-`POST /signin/forget` → `a.Forget`; wire
-`passkey.Config.Remember: a.RememberJar()`. An admission check in front
-of `Begin` answers refusals with `a.AnswerAsSent(w, r)`, never its own
-`?sent=1`.
-
-**CSP:** `form-action 'self'` covers a form's whole redirect chain, so
-`Begin`'s 303 to a keymail server is refused. With `SigninScreen` on,
-keymail continues on your own page and `form-action` stays `'self'`.
-Only a hand-built sign-in page with the screen off restates
-`Options.CSP` (it replaces the policy wholesale) with the keymail
-origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
-'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self'
-data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
-https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
-servers are trusted; other addresses get a link.
-```
-
-Then `grep -n "four shells\|dateWords" SKILL.md` and bring any hit in line with this branch (five shells; the helper list ending `opt`, `Tbdi`, `stageArt`). Check the budget: `wc -c SKILL.md` must stay ≤ 30000; if it does not, trim genuinely redundant prose elsewhere in the file rather than cutting a fact (AGENTS.md).
-
-- [ ] **Step 7: Run everything the words touch**
-
-Run: `GOFLAGS=-mod=mod go test . ./ui/ ./internal/designsystem/ ./internal/docsite/ -count=1`
-Expected: PASS — `TestBaseCatalogsShareOneKeySet`, `TestSkillMDStaysWithinBudget`, the CSS-floor statement test, the ui partial tests (they read keys, so reworded values change nothing), and the docsite nav tests (the new page is reachable, has a label and a blurb). Leave `copy-review/` in place; it is `.gitignore`d and Task 13 reads the gallery strings from it.
-
-- [ ] **Step 8: Run the gate and commit**
-
-Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./... -count=1`
-
-```bash
-git add locales docs/site CHANGELOG.md SKILL.md
-git commit -F - <<'EOF'
-Docs, CHANGELOG and every sign-in string, as approved in copy review
-
-The screen's English, the guides and the changelog went through the
-operator's copy review before being written, and the approved text is
-applied verbatim. The eleven translations of the catalog strings are
-machine-drafted from the approved English, once, as the catalogs' own
-headers say. The gallery's reviewed strings are applied with the
-gallery itself, so its translations are drafted once too.
-
-magic-links.md no longer says the sign-in page stays yours, passkeys.md
-no longer says a passkey never signs anybody in from nothing, and
-SKILL.md stops recommending a wider form-action for apps on the shipped
-screen, where it is no longer needed.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-EOF
-```
-
----
-
-### Task 13: The gallery — sign-in screens from the real partial; the stage shell's demo
-
-**Files:**
-- Modify: `internal/designsystem/screens.go` (rewrite of the docs table and `buildScreens`), `internal/designsystem/page.go` (`renderGallery` parses the frame; `buildFamilies`' orphan sweep; `previewHeights`; `srcdoc`'s padding rule; `renderShell` + `shellData` + a stage override template; `shellTemplate`'s sentence), `internal/designsystem/prose.go` (new rows, stale rows removed), `internal/designsystem/designsystem.go` (package comment: "four shells" → "five shells")
-- Test: the existing gates (`TestEveryPartialAppearsAcrossThePages`, `TestEveryProseKeyIsTranslated`, `TestNoEnglishProseReachesATranslatedPage`, `TestSampleLinksAndFormsAreDeadInThePreviews`, `TestEveryPageStaysUnderItsBudget`, `TestRenderIsDeterministic`, `TestEveryFrameTitleIsUniqueOnThePage`, `TestEveryExampleIsFramedDesktopMobileAndCode`) plus one new test in `internal/designsystem/designsystem_test.go`
-
-**Interfaces:**
-- Consumes: the approved `gallery.*` strings in `copy-review/result.json` (Task 12 leaves it in place for this task); `auth.SigninState`, `auth.Step*`, `auth.Problem*`, `auth.Remembered`, `auth.PasskeyDoor` (Task 6); the `signin`/`signin-title` partials and `Preview` (Task 10); `stageArt`, `ui.Layout("stage")` (Task 11); existing `newPreview`, `previewTitle`, `marker`, `proseIn`, `anchorID`, `galleryFuncs`, `renderShell`, `shellData`.
-- Produces: `var screenPartials = []string{"signin", "signin-title"}` (the Screens page's claim, read by `buildFamilies`); screen keys `signin-ask`, `signin-returning-keymail`, `signin-returning-link`, `signin-returning-passkey`, `signin-sent`, `signin-sent-unbound`, `signin-sent-instead`, `signin-continue`, `signin-problem-address`, `signin-problem-keymail`, `signin-social`, `signin-password` — anchor ids `screen-<key>`, used by Task 14's a11y scan.
-
-**The English below is the draft that went to review.** Wherever `copy-review/result.json` holds an approved `text` for the matching `gallery.*` id that differs, write the approved text instead, byte for byte: in this package the English is the prose key, so what you write in Go is also what `prose.go` is keyed by. The ids map as: `gallery.screens.lead` → `screensBody`'s lead; `gallery.screens.<key>.name`/`.blurb` → the `screenDoc` with `Key: "signin-<key>"`; `gallery.screens.password.warning` → the password screen's `WarningBody`; `gallery.shells.stage.blurb` → `blurbs["stage"]`; `gallery.shells.demo.sentence` → `shellTemplate`'s sentence.
-
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 2: Write the gallery's failing test**
 
 Append to `internal/designsystem/designsystem_test.go`:
 
@@ -5868,6 +5794,12 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 			t.Errorf("screen %s is not the signin partial in a stage frame", key)
 		}
 	}
+	// Previews load nothing: the door's module is for a live page.
+	for name, body := range files {
+		if strings.Contains(string(body), "passkey-signin.mjs") {
+			t.Errorf("%s names the passkey door's module; a Preview must not load it", name)
+		}
+	}
 	for _, gone := range []string{"/signin/other", "/signin/reset"} {
 		if strings.Contains(page, gone) {
 			t.Errorf("the Screens page still links %s, which nothing serves", gone)
@@ -5879,12 +5811,193 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [ ] **Step 3: Write the rendered-page parity test**
 
-Run: `GOFLAGS=-mod=mod go test ./internal/designsystem/ -count=1 -run TestTheSigninScreensAreThePartial`
-Expected: FAIL — `no screen signin-ask on the Screens page`, and the `/signin/other` line.
+`auth/signinpage_test.go` — the admission-wrapper parity of Task 6, carried to the rendered page (spec §5: "the same rendered Sent page"):
 
-- [ ] **Step 3: Rewrite `screens.go`'s table and builder**
+```go
+package auth
+
+import (
+	"html/template"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/ui"
+)
+
+// renderSignin is the page body and title an app renders for st.
+func renderSignin(t *testing.T, st SigninState) string {
+	t.Helper()
+	tmpl := template.Must(template.New("").Funcs(ui.Funcs()).ParseFS(ui.Templates(), "*.html"))
+	var b strings.Builder
+	data := map[string]any{"State": st, "Brand": map[string]any{"Name": "Harbour"}}
+	for _, name := range []string{"signin-title", "signin"} {
+		if err := tmpl.ExecuteTemplate(&b, name, data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return b.String()
+}
+
+// An address an admission wrapper refused with AnswerAsSent and one
+// Begin sent a link to must render byte-identical pages, in both modes
+// and with or without the Keymail one-tap's expect.
+func TestAnAdmissionWrapperRendersTheSameSentPage(t *testing.T) {
+	for _, screen := range []bool{false, true} {
+		for _, expect := range []string{"", "keymail"} {
+			t.Run("SigninScreen="+strconv.FormatBool(screen)+" expect="+expect, func(t *testing.T) {
+				a, _ := newTestAuth(t, func(c *Config) { c.SigninScreen = screen })
+				wireKeymail(a, newKeymailFake())
+				form := url.Values{"address": {"ada@example.com"}}
+				if expect != "" {
+					form.Set("expect", expect)
+				}
+				ab, rb := newBrowser(), newBrowser()
+				sent := ab.do(a.Begin, http.MethodPost, "/signin", form)
+				refused := rb.do(a.AnswerAsSent, http.MethodPost, "/signin", form)
+				pa := renderSignin(t, stateAt(a, ab, sent.Header().Get("Location")))
+				pr := renderSignin(t, stateAt(a, rb, refused.Header().Get("Location")))
+				if pa != pr {
+					t.Fatalf("a sent link and a refusal render different pages:\n sent:    %s\n refused: %s", pa, pr)
+				}
+				if screen && !strings.Contains(pa, "<bdi>ada@example.com</bdi>") {
+					t.Fatalf("screen on, the Sent page does not name the address:\n%s", pa)
+				}
+			})
+		}
+	}
+}
+```
+- [ ] **Step 4: Run the tests to verify they fail**
+
+Run: `GOFLAGS=-mod=mod go test ./ui/ ./auth/ ./internal/designsystem/ -count=1 -run 'Signin|OneTap|Passkey|Keymail|Continue|Sent|AllPartials|AdmissionWrapperRenders'`
+Expected: FAIL — `html/template: no such template "signin"`, and the gallery test's `no screen signin-ask on the Screens page`.
+
+- [ ] **Step 5: Write the partials**
+
+`ui/partials/signin.html`:
+
+```html
+{{/* signin — the shipped sign-in screen: one card, brand at the start
+     and the way in at the end. Everything it shows comes from
+     auth.SigninState; the page calls auth's PrepareSigninResponse
+     before rendering it. Put it in the stage shell (ui.Layout("stage"))
+     or any other.
+
+     The auth side must have Config.SigninScreen on: that is what writes
+     the cookies this screen reads, keeps a keymail sign-in on the page
+     under the default CSP, and remembers the way in.
+
+     Keys:
+       State    auth.SigninState, required
+       Brand    required: Name (string); optional Pitch (string, one
+                line) and Mark (template.HTML — an <img> or inline SVG
+                the app owns)
+       Preview  bool, optional — gallery use only: no meta refresh, the
+                Continue link goes to #, and the passkey door shows as
+                the enhanced page would, with nothing for a script to find
+                and no script loaded
+
+     The passkey door loads its own module, State.Passkey.ScriptURL
+     (passkey.JS(), served by the app), and only when it renders: every
+     other page of the app, and every other state of this one, requests
+     nothing.
+
+     No role="alert" anywhere: every message present at load is where
+     focus starts (State.Focus), and a live alert would race the focus
+     announcement. The only live region is the passkey message. */}}
+{{define "signin"}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
+<div rst-signin-door>
+{{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
+     is, the page's layout owns <head>, and this is how fichas runs in
+     production. A document navigating is not the form's redirect chain,
+     so form-action 'self' never sees it. */}}{{if not $preview}}<meta http-equiv="refresh" content="0;url={{$s.ContinueURL}}">{{end}}
+<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_continue_heading"}}</h1>
+<p>{{T "rastrillo.ui.signin_continue_body"}}</p>
+<a rst-btn="primary block" href="{{if $preview}}#{{else}}{{$s.ContinueURL}}{{end}}">{{T "rastrillo.ui.signin_to_keymail"}}</a>
+{{else if eq $door "sent"}}<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_sent_heading"}}</h1>
+{{if $s.SentInstead}}<p>{{T "rastrillo.ui.signin_sent_instead"}}</p>
+{{end}}<p>{{if $s.SentTo}}{{Tbdi "rastrillo.ui.signin_sent_to" "address" $s.SentTo}}{{else}}{{T "rastrillo.ui.signin_sent_inbox"}}{{end}} {{T "rastrillo.ui.signin_sent_once"}}</p>
+<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
+{{else}}<h1 id="rst-signin-heading">{{Tf "rastrillo.ui.signin_heading" "name" $name}}</h1>
+{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "ID" "rst-signin-problem" "Tone" $tone "Body" (T (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (eq $focus "callout"))}}
+{{end}}{{if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
+<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}>{{T "rastrillo.ui.signin_to_keymail"}}</button>
+<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
+</form>
+{{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
+<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
+<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}>{{Tbdi "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</button>
+</form>
+{{else}}{{/* The ask door, and the passkey door with the email form beside it
+     (the email form is always on the screen where a passkey door is:
+     a passkey is never the only way in). The passkey button is written
+     once, in whichever slot this door puts it: first for a remembered
+     passkey, after the form otherwise. */}}{{$pkSlot := "after"}}{{if eq $door "passkey"}}{{$pkSlot = "before"}}{{end}}{{$fieldErr := ""}}{{if eq $s.Problem "address"}}{{$fieldErr = T "rastrillo.ui.signin_problem_address"}}{{end}}{{range list "before" "form" "after"}}{{if eq . "form"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
+{{template "field" (dict "ID" "rst-signin-email" "Name" "address" "Label" (T "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" "email" "Required" true "Value" $s.Address "Autofocus" (eq $focus "field") "Error" $fieldErr "QuietError" true)}}
+{{if eq $s.Problem "keymail"}}<input type="hidden" name="force" value="1">
+{{end}}<button rst-btn="primary block" type="submit">{{if eq $s.Problem "keymail"}}{{T "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T "rastrillo.ui.signin_submit"}}{{end}}</button>
+</form>
+{{else if and $s.Passkey (eq . $pkSlot)}}<button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
+{{end}}{{end}}{{end}}{{end}}{{if ne $door "ask"}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
+{{end}}{{end}}</div>
+</section>{{end}}
+{{/* signin-title — the document title for the same state, for the
+     page's {{define "title"}}: every state has one heading and a title
+     that says the same thing, so a screen-reader user who lands on the
+     page hears where they are. Keys: State, Brand (as signin). */}}
+{{define "signin-title"}}{{$s := .State}}{{$n := .Brand.Name}}{{if eq $s.Step "sent"}}{{Tf "rastrillo.ui.signin_sent_title" "name" $n}}{{else if eq $s.Step "continue"}}{{Tf "rastrillo.ui.signin_continue_title" "name" $n}}{{else if and $s.Problem (ne $s.Problem "reauth")}}{{Tf "rastrillo.ui.signin_problem_title" "name" $n}}{{else}}{{Tf "rastrillo.ui.signin_title" "name" $n}}{{end}}{{end}}
+```
+
+Note the `ne $door "ask"` clause: the "Use a different email" form appears on the keymail, link and passkey doors (the Sent door has its own above) and never on Ask.
+
+- [ ] **Step 6: Style the card**
+
+`ui/tokens.css` — a new section after the callout rules (after the `[rst-callout][rst-tone~="negative"] > [rst-callout-ic]` line):
+
+```css
+/* ── rst-signin: the shipped sign-in card (partials/signin.html) ─────
+   Brand at the start and the way in at the end, side by side from 48rem
+   and stacked below it, so a phone reads the brand and then the door.
+   The card paints its own surface and border because it usually sits
+   on the stage shell's backdrop: whatever picture an app puts there,
+   the controls stay on a known ground and their contrast is the
+   theme's, not the picture's. overflow-wrap on the door is for the one
+   long string it shows back — an address, which has no spaces to break
+   at and would otherwise push a 320px screen sideways. */
+.rst-signin, [rst-signin] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); box-shadow: var(--rst-shadow-pop); box-sizing: border-box; display: grid; gap: var(--rst-sp-5); inline-size: 100%; max-inline-size: 56rem; padding: var(--rst-sp-5); }
+@media (min-width: 48rem) {
+  .rst-signin, [rst-signin] { align-items: center; gap: var(--rst-sp-6); grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: var(--rst-sp-6); }
+}
+.rst-signin__brand, [rst-signin-brand] { display: flex; flex-direction: column; gap: var(--rst-sp-2); min-inline-size: 0; }
+.rst-signin__mark, [rst-signin-mark] { block-size: 3rem; inline-size: 3rem; }
+.rst-signin__mark > *, [rst-signin-mark] > * { block-size: 100%; display: block; inline-size: 100%; }
+.rst-signin__name, [rst-signin-name] { font-size: var(--rst-fs-lg); font-weight: 600; margin: 0; }
+.rst-signin__pitch, [rst-signin-pitch] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__door, [rst-signin-door] { display: flex; flex-direction: column; gap: var(--rst-sp-4); min-inline-size: 0; overflow-wrap: anywhere; }
+.rst-signin__door h1, [rst-signin-door] h1 { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin: 0; }
+.rst-signin__door > p, [rst-signin-door] > p { margin: 0; }
+/* The door spaces its children with gap; a callout's and a field's own
+   block margins would double it. */
+.rst-signin__door > .rst-callout, [rst-signin-door] > [rst-callout] { margin: 0; }
+.rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
+.rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
+.rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
+```
+
+Re-copy: `cp ui/tokens.css examples/blog/static/tokens.css && cp ui/tokens.css examples/tickets/static/tokens.css`.
+
+- [ ] **Step 7: Rebuild `screens.go` on the partial**
 
 Replace `screenDoc`, `screenDocs` and `buildScreens` in `internal/designsystem/screens.go` (keep the file's header comment, changing its last paragraph to: "Sign-in is the first group because it is the screen every app needs on its first day. Most of it is now the shipped signin partial, rendered in its states; the two it does not ship — a password screen and third-party buttons — stay as examples to copy."), and add the import `"amadan.net/rastrillo/rastrillo/auth"`:
 
@@ -5917,7 +6030,7 @@ var screenPartials = []string{"signin", "signin-title"}
 // galleryPasskey is a passkey door for the samples. In a Preview the
 // partial shows the button as the enhanced page would and writes none
 // of these paths, so nothing here needs to exist.
-var galleryPasskey = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs"}
+var galleryPasskey = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs"}
 
 // galleryBrand is sample data, not the page's voice: it stays English on
 // every page, like every other sample's names.
@@ -6015,7 +6128,7 @@ func screenDocs() []screenDoc {
   <form rst-form method="post" action="/signin">
     <div rst-field>
       <label rst-field-label for="pw-email">Email</label>
-      <input rst-input id="pw-email" name="address" type="email" autocomplete="email" required>
+      <input rst-input id="pw-email" name="email" type="email" autocomplete="email" required>
     </div>
     <div rst-field>
       <label rst-field-label for="pw-pass">Password</label>
@@ -6082,9 +6195,9 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template) ([]scree
 
 Change `screensBody`'s lead paragraph to `{{P "The sign-in screens are the shipped signin partial, shown in its states. The last two are examples to copy."}}`.
 
-Note on the password markup: its field now posts `address`, the name `auth.Begin` reads — the old sample's `email` was one of the two bugs the spec names (§Why).
+The password example keeps `name="email"`: it posts to the password plugin, whose handler reads `email` (password/handlers.go:186). Only the dead reset link goes. `address` is the magic-link form's name, which the shipped partial now writes itself.
 
-- [ ] **Step 4: Wire the frame, the claim, the heights and the padding into `page.go`**
+- [ ] **Step 8: Wire the frame, the claim, the heights, the padding and the stage demo into `page.go`**
 
 In `renderGallery`, right after `parseRawSamples`:
 
@@ -6123,13 +6236,7 @@ In `previewHeights`, replace the five `screen-signin-*` entries with:
 	"screen-signin-password":           420,
 ```
 
-and, beside the other shells in the same map, `"shell-stage": 780,`. In `shellViews`' `blurbs` map add:
-
-```go
-		"stage":   "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.",
-```
-
-These are starting values; Task 14's browser run of `TestPreviewFrameHeightsFitTheirContent` measures them and says which to change.
+These are starting values; Task 13's browser run of `TestPreviewFrameHeightsFitTheirContent` measures them and says which to change.
 
 In `srcdoc`, the zero-padding rule becomes:
 
@@ -6178,15 +6285,14 @@ const stageShellTemplate = `
 `
 ```
 
-`shellTemplate`'s sentence changes to `{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}`, and the comment above it "fills every block the four shells leave open … one override set covers all four" becomes "…the chrome shells leave open … one override set covers all four of them; stage has its own, below". `page.go` imports `"amadan.net/rastrillo/rastrillo/auth"`. In `designsystem.go`'s package comment, "a full-page demo of each of the four shells" becomes "…of each of the five shells".
+The comment above `shellTemplate` — "fills every block the four shells leave open … one override set covers all four" — becomes "…the chrome shells leave open … one override set covers all four of them; stage has its own, below". `page.go` imports `"amadan.net/rastrillo/rastrillo/auth"`.
 
-- [ ] **Step 5: Bring `prose.go` in line**
+- [ ] **Step 9: Bring `prose.go` in line**
 
 Delete the rows whose keys the page no longer says — `TestEveryProseKeyIsTranslated` fails on a stale row:
 - `A link in your email`
 - `People reuse them, they leak, and you inherit the job of storing them safely. Use a link in your email plus a passkey, or passkeys on their own, or sign-in with an account people already have. The screen below is here because some products still need it, not because it is a good default.`
 - `The screens here are examples to copy rather than components.`
-- `This is the {shell} shell, one of the four ui.Layout ships. A screen is a column: …` (the whole old sentence)
 
 Add one row per new key, each with all eleven translations (`ga`, `zh-Hans`, `es`, `hi`, `pt`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar`) in the register the file's header sets, `{shell}` kept verbatim where present, in this shape (each `…` is your translation of the key into that language; the file's rules hold: identifiers untranslated, `{placeholders}` kept):
 
@@ -6224,53 +6330,53 @@ The keys (drafts; use the approved English):
 - `The button changes to send a link instead, so nobody is stuck.`
 - `Rastrillo does not ship this screen. People reuse passwords, they leak, and you inherit the job of storing them safely. Use a link in your email plus a passkey, or passkeys on their own. The markup is here because some products still need it.`
 - `The sign-in screens are the shipped signin partial, shown in its states. The last two are examples to copy.`
-- `This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials.`
-- `One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.`
 
 Kept and reused unchanged: `A passkey`, `After the link is sent`, `One field and one button. …`, `Repeat the address back. …`, `The fastest way in for someone who has one, …`, `Google, Apple and the rest`, `Email and password`, `If you do use passwords, …`, `We do not recommend passwords`.
 
-- [ ] **Step 6: Run the gallery's gates**
+- [ ] **Step 10: Run everything this task touches**
 
-Run: `GOFLAGS=-mod=mod go test ./internal/designsystem/ -count=1`
-Expected: PASS — the new test, and `TestEveryPartialAppearsAcrossThePages` (signin and signin-title marked once per theme × locale), `TestEveryProseKeyIsTranslated` (no missing, no stale), `TestNoEnglishProseReachesATranslatedPage`, `TestSampleLinksAndFormsAreDeadInThePreviews` (the Continue sample's link is `#`), `TestEveryPageStaysUnderItsBudget`, `TestRenderIsDeterministic`, `TestEveryFrameTitleIsUniqueOnThePage`. If the Screens page is over its 128 KiB budget, read which locale and by how much before changing anything; the frame without art is the lever, not a debt entry.
+Run: `GOFLAGS=-mod=mod go test ./ui/ ./auth/ ./internal/designsystem/ . -count=1 && (cd examples/blog && GOFLAGS=-mod=mod go test ./...) && (cd examples/tickets && GOFLAGS=-mod=mod go test ./...)`
+Expected: PASS — the new tests; `TestRenderedPartialsAreSelfContained`, `TestRenderEverythingSmoke` (balanced tags, unique ids across all fixtures; the fixture is the Ask state with no passkey door, so it loads no script), the twin tests, `TestPartialsAndLayoutsEmitNoInlineStyles`; and the gallery's `TestEveryPartialAppearsAcrossThePages` (signin and signin-title marked once per theme × locale), `TestEveryProseKeyIsTranslated` (no missing, no stale), `TestNoEnglishProseReachesATranslatedPage`, `TestSampleLinksAndFormsAreDeadInThePreviews`, `TestEveryPageStaysUnderItsBudget`, `TestRenderIsDeterministic`, `TestEveryFrameTitleIsUniqueOnThePage`. If the Screens page is over its 128 KiB budget, read which locale and by how much before changing anything; the art-free frames are the lever, not a debt entry.
 
-Then `rm -rf copy-review`: every approved string has now been applied.
+Then `rm -rf copy-review`: every batch-1 string has now been applied, and Task 14's batch 2 starts a fresh index.
 
-- [ ] **Step 7: Run the gate and commit**
+- [ ] **Step 11: Run the gate and commit**
 
-Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && GOFLAGS=-mod=mod go test ./... -count=1`
+Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./... -count=1`
 
 ```bash
-git add internal/designsystem
+git add ui auth/signinpage_test.go internal/designsystem examples/blog/static/tokens.css examples/tickets/static/tokens.css
 git commit -F - <<'EOF'
-Gallery: the sign-in screens are the shipped partial, in a stage frame
+ui: the signin partials, and the gallery's sign-in screens built on them
 
-The Screens page's sign-in markup was hand-written and had two bugs in
-it: it posted email where Begin reads address, and linked two routes
-nothing serves. It now renders the signin partial itself in each of its
-states, so the page cannot show a screen the framework does not
-produce; the Code tab shows the two template calls rather than a
-snapshot of markup the module will keep changing. The password and
-third-party screens stay as examples, the password one now saying it
-is not shipped. The page's English is the copy-reviewed text, and its
-eleven translations were drafted once, from that.
+Every app needs a sign-in screen on its first day and until now had to
+improvise one. This renders every state SigninState can be in — Ask,
+the three remembered one-taps, Sent bound or unbound, the Keymail
+continuation and each problem — with focus starting where §2's matrix
+says and no role="alert" to race it. The passkey door loads its module
+only when it renders, so no other page requests it.
 
-The stage shell's demo shows the sign-in card instead of the generic
-Posts list the chrome shells frame.
+The gallery's hand-written sign-in markup had two bugs (a field name
+the handler does not read, two links nothing serves); its Screens page
+now renders the partial itself in a stage frame, with the reviewed
+English and its translations. The partials and the page that claims
+them land together because the gallery refuses an unclaimed partial.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
+git push origin signin-screen
 ```
 
 ---
-### Task 14: The browser drives, and the gallery's accessibility coverage
+
+### Task 13: The browser drives, and accessibility on every state
 
 **Files:**
 - Create: `auth/signinscreen_browser_test.go` (`//go:build browser`)
-- Modify: `internal/designsystem/a11y_test.go` (`previewPageKinds`, `pickPreviewFrames`, `a11yTargets`, `TestA11yReflowsAt320`'s page list), `internal/designsystem/page.go` (`previewHeights`, `previewMobileHeights` — measured values), `Makefile` (browser target gains `./auth/`)
+- Modify: `internal/designsystem/a11y_test.go` (`previewPageKinds`, `pickPreviewFrames`, `a11yTargets`, `TestA11yReflowsAt320`'s page list, and a new `TestA11yScansEverySigninState`), `internal/designsystem/page.go` (`previewHeights`, `previewMobileHeights` — measured values), `Makefile` (browser target gains `./auth/`)
 
 **Interfaces:**
-- Consumes: everything from Tasks 3–13: `New`, `Config.SigninScreen`, `SigninState`, `PrepareSigninResponse`, `PasskeyDoor`, `Begin`, `Callback`, `Verify`, `Signout`, `Forget`, `RememberJar`, `validAuthorizeURL`, `kayFake`, `wireKeymail`, `captureMailer` (auth); `passkey.New/Config.Remember` and its handlers; `ui.Funcs`, `ui.Templates`, `ui.Layout("stage")`, `ui.VendoredAssets`; `webauthn.JS()`; `rastrillo.Handler`, `rastrillo.BaseCatalog`; `harness.New`, `(*Rig).Run/Screen/Context/Origin`.
+- Consumes: everything from Tasks 3–12, and `passkey.JS()` (Task 9): `New`, `Config.SigninScreen`, `SigninState`, `PrepareSigninResponse`, `PasskeyDoor`, `Begin`, `Callback`, `Verify`, `Signout`, `Forget`, `RememberJar`, `validAuthorizeURL`, `kayFake`, `wireKeymail`, `captureMailer` (auth); `passkey.New/Config.Remember` and its handlers; `ui.Funcs`, `ui.Templates`, `ui.Layout("stage")`, `ui.VendoredAssets`; `webauthn.JS()`; `rastrillo.Handler`, `rastrillo.BaseCatalog`; `harness.New`, `(*Rig).Run/Screen/Context/Origin`.
 - Produces: nothing other tasks use.
 
 - [ ] **Step 1: Write the drive**
@@ -6295,6 +6401,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -6308,6 +6415,7 @@ import (
 	"github.com/chromedp/chromedp/kb"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/harness"
 	"amadan.net/rastrillo/rastrillo/migrate"
@@ -6374,17 +6482,33 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 			mux.HandleFunc("GET /static/"+name, serveBytes(body, ct))
 		}
 		mux.HandleFunc("GET /static/webauthn.mjs", serveBytes(webauthn.JS(), "text/javascript; charset=utf-8"))
-		mux.HandleFunc("GET /signin", func(w http.ResponseWriter, r *http.Request) {
-			st := a.SigninState(r)
-			st.Passkey = &PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs"}
-			a.PrepareSigninResponse(w, st)
-			var buf bytes.Buffer
-			if err := tmpl.ExecuteTemplate(&buf, "layout", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}}); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+		mux.HandleFunc("GET /static/passkey-signin.mjs", serveBytes(passkey.JS(), "text/javascript; charset=utf-8"))
+		signinPage := func(door bool) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				st := a.SigninState(r)
+				if door {
+					st.Passkey = &PasskeyDoor{
+						BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish",
+						ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs",
+					}
+				}
+				a.PrepareSigninResponse(w, st)
+				var buf bytes.Buffer
+				if err := tmpl.ExecuteTemplate(&buf, "layout", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}}); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write(buf.Bytes())
 			}
+		}
+		mux.HandleFunc("GET /signin", signinPage(true))
+		// The same screen in an app with no passkeys: email only.
+		mux.HandleFunc("GET /signin-plain", signinPage(false))
+		// An ordinary page, to show the door's module is not everyone's.
+		mux.HandleFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.Write(buf.Bytes())
+			fmt.Fprint(w, `<!doctype html><html lang="en"><title>About</title><main><h1 id="about">About</h1></main></html>`)
 		})
 		mux.HandleFunc("POST /signin", a.Begin)
 		mux.HandleFunc("POST /signin/forget", a.Forget)
@@ -6395,11 +6519,16 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		mux.HandleFunc("POST /passkey/discover/finish", pk.DiscoverFinish)
 		mux.HandleFunc("POST /passkey/register/begin", pk.RegisterBegin)
 		mux.HandleFunc("POST /passkey/register/finish", pk.RegisterFinish)
+		// Home names who is signed in, so a drive proves where a sign-in
+		// landed and as whom, not just that some page has an h1.
 		mux.Handle("GET /{$}", a.RequireSession(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id, _ := From(r)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprint(w, `<!doctype html><html lang="en"><title>Home</title><main><h1>Signed in</h1></main></html>`)
+			fmt.Fprintf(w, `<!doctype html><html lang="en"><title>Home</title><main><h1 id="home">%s</h1></main></html>`, template.HTMLEscapeString(id.Address))
 		})))
-		h, closeAll, err := rastrillo.Handler(rastrillo.Options{Mux: mux})
+		// csrf.Protect as an app mounts it, so the drive's passkey and form
+		// POSTs pass the same check they would in production.
+		h, closeAll, err := rastrillo.Handler(rastrillo.Options{Mux: mux, Wrap: csrf.Protect(origin)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -6415,29 +6544,80 @@ func serveBytes(body []byte, contentType string) http.HandlerFunc {
 	}
 }
 
-// interceptKeymail answers the browser's own navigation to keymail.test
-// with a stand-in page and reports each URL it asked for.
-func interceptKeymail(rig *harness.Rig) <-chan string {
-	got := make(chan string, 8)
+// provider is the drive's view of everything that leaves the app: it
+// answers every request to keymail.test with a stand-in page, reports
+// only the authorize-document navigations (a provider page's own
+// favicon must not look like a second sign-in), and — while holdRefresh
+// is set — serves the continuation page without its meta refresh, so
+// the fallback link can be clicked on the real page under its real CSP.
+type provider struct {
+	authorize   chan string
+	holdRefresh atomic.Bool
+}
+
+var metaRefresh = regexp.MustCompile(`<meta http-equiv="refresh"[^>]*>`)
+
+func interceptProvider(rig *harness.Rig) *provider {
+	p := &provider{authorize: make(chan string, 8)}
 	ctx := rig.Context()
 	chromedp.ListenTarget(ctx, func(ev any) {
 		e, ok := ev.(*fetch.EventRequestPaused)
 		if !ok {
 			return
 		}
-		got <- e.Request.URL
 		// Answered from a goroutine: a CDP call made inside a listener
 		// deadlocks the event loop it is waiting on.
 		go func() {
-			c := chromedp.FromContext(ctx)
-			body := base64.StdEncoding.EncodeToString([]byte(`<!doctype html><html lang="en"><title>Keymail</title><main><h1>Keymail stand-in</h1></main></html>`))
+			ectx := cdp.WithExecutor(ctx, chromedp.FromContext(ctx).Target)
+			if strings.Contains(e.Request.URL, "/signin?continue=") {
+				if !p.holdRefresh.Load() {
+					_ = fetch.ContinueRequest(e.RequestID).Do(ectx)
+					return
+				}
+				body, err := fetch.GetResponseBody(e.RequestID).Do(ectx)
+				if err != nil {
+					_ = fetch.ContinueRequest(e.RequestID).Do(ectx)
+					return
+				}
+				_ = fetch.FulfillRequest(e.RequestID, e.ResponseStatusCode).
+					WithResponseHeaders(e.ResponseHeaders).
+					WithBody(base64.StdEncoding.EncodeToString(metaRefresh.ReplaceAll(body, nil))).Do(ectx)
+				return
+			}
+			if e.ResourceType == network.ResourceTypeDocument && strings.Contains(e.Request.URL, "/oauth/authorize") {
+				p.authorize <- e.Request.URL
+			}
+			body := base64.StdEncoding.EncodeToString([]byte(`<!doctype html><html lang="en"><title>Keymail</title><main><h1 id="provider">Keymail stand-in</h1></main></html>`))
 			_ = fetch.FulfillRequest(e.RequestID, http.StatusOK).
 				WithResponseHeaders([]*fetch.HeaderEntry{{Name: "Content-Type", Value: "text/html; charset=utf-8"}}).
-				WithBody(body).Do(cdp.WithExecutor(ctx, c.Target))
+				WithBody(body).Do(ectx)
 		}()
 	})
-	rig.Run(fetch.Enable().WithPatterns([]*fetch.RequestPattern{{URLPattern: "https://keymail.test/*"}}))
-	return got
+	rig.Run(fetch.Enable().WithPatterns([]*fetch.RequestPattern{
+		{URLPattern: "https://keymail.test/*"},
+		{URLPattern: "*/signin?continue=*", RequestStage: fetch.RequestStageResponse},
+	}))
+	return p
+}
+
+// requestsFor counts the requests the page makes whose URL path is path.
+func requestsFor(rig *harness.Rig, path string) func() int {
+	var mu sync.Mutex
+	n := 0
+	chromedp.ListenTarget(rig.Context(), func(ev any) {
+		if e, ok := ev.(*network.EventRequestWillBeSent); ok {
+			if u, err := url.Parse(e.Request.URL); err == nil && u.Path == path {
+				mu.Lock()
+				n++
+				mu.Unlock()
+			}
+		}
+	})
+	return func() int {
+		mu.Lock()
+		defer mu.Unlock()
+		return n
+	}
 }
 
 // continuations records every /signin?continue= document the browser
@@ -6476,10 +6656,10 @@ func (c *continuations) last(t *testing.T) (id, csp string) {
 	return u.Query().Get("continue"), c.seen[len(c.seen)-1][1]
 }
 
-func awaitURL(t *testing.T, ch <-chan string) string {
+func awaitURL(t *testing.T, p *provider) string {
 	t.Helper()
 	select {
-	case u := <-ch:
+	case u := <-p.authorize:
 		return u
 	case <-time.After(15 * time.Second):
 		t.Fatal("the continuation page never navigated to keymail")
@@ -6506,15 +6686,27 @@ const registerPasskey = `(async () => {
 func TestSigninScreenInTheBrowser(t *testing.T) {
 	app, build := newScreenApp(t)
 	rig := harness.New(t, build)
-	keymail := interceptKeymail(rig)
+	keymail := interceptProvider(rig)
 	conts := watchContinuations(rig)
+	moduleLoads := requestsFor(rig, "/static/passkey-signin.mjs")
 	catalog := rastrillo.BaseCatalog()
 	var s string
 	var ok bool
 
+	// Ordinary pages and an email-only sign-in screen never ask for the
+	// passkey door's module; the screen with a door does.
+	rig.Run(chromedp.Navigate(rig.Origin+"/about"), chromedp.WaitVisible("#about", chromedp.ByQuery))
+	rig.Run(chromedp.Navigate(rig.Origin+"/signin-plain"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
+	if n := moduleLoads(); n != 0 {
+		t.Fatalf("%d requests for the passkey module from pages with no passkey door", n)
+	}
+
 	// Ask: focus starts in the field, and Tab reaches Continue, then the
-	// passkey door, which scripts revealed.
+	// passkey door, which its module revealed.
 	rig.Run(chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
+	if moduleLoads() == 0 {
+		t.Fatal("the screen with a passkey door never loaded its module")
+	}
 	rig.Screen("[rst-signin]", "the Ask screen")
 	eval(rig, `document.activeElement.id`, &s)
 	if s != "rst-signin-email" {
@@ -6544,7 +6736,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	}
 
 	// The link signs Ada in; she enrols a passkey and signs out.
-	rig.Run(chromedp.Navigate(verifyLink.FindString(app.mail.body)), chromedp.WaitVisible("main h1", chromedp.ByQuery))
+	rig.Run(chromedp.Navigate(verifyLink.FindString(app.mail.body)), chromedp.WaitVisible("#home", chromedp.ByQuery))
 	var status float64
 	eval(rig, registerPasskey, &status)
 	if status != http.StatusOK {
@@ -6588,25 +6780,36 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	if !strings.Contains(csp, "form-action 'self'") || strings.Contains(csp, "keymail.test") {
 		t.Fatalf("the continuation page's CSP is %q; the point is that form-action stays 'self'", csp)
 	}
-	// The fallback link and the refresh name the same URL the browser went to.
-	rig.Run(chromedp.Navigate(rig.Origin + "/signin"))
-	eval(rig, `(async () => {
-	  const html = await (await fetch("/signin?continue=`+id+`")).text();
-	  const doc = new DOMParser().parseFromString(html, "text/html");
-	  const meta = doc.querySelector('meta[http-equiv="refresh"]').getAttribute("content").replace(/^0;url=/, "");
-	  return meta + "\n" + doc.querySelector("[rst-signin-door] a[rst-btn]").getAttribute("href");
-	})()`, &s)
-	if s != went+"\n"+went {
-		t.Fatalf("refresh and link name %q; the browser went to %q", s, went)
+	// The fallback link, clicked: the same continuation page with its
+	// refresh held back, so the link is what navigates — and it reaches
+	// the same URL the refresh did.
+	keymail.holdRefresh.Store(true)
+	rig.Run(chromedp.Navigate(rig.Origin+"/signin?continue="+id), chromedp.WaitVisible(`[rst-signin-door] a[rst-btn]`, chromedp.ByQuery))
+	rig.Screen("[rst-signin]", "the Continue screen")
+	rig.Run(chromedp.Click(`[rst-signin-door] a[rst-btn]`, chromedp.ByQuery))
+	if byLink := awaitURL(t, keymail); byLink != went {
+		t.Fatalf("the fallback link went to %q; the refresh went to %q", byLink, went)
 	}
+	keymail.holdRefresh.Store(false)
 
-	// Keymail, scripts off: the meta refresh needs none. The passkey door
-	// stays hidden.
+	// Scripts off: the passkey door stays hidden, an address still gets
+	// its Sent page, and the keymail continuation still moves on — the
+	// meta refresh needs no script.
 	rig.Run(emulation.SetScriptExecutionDisabled(true), chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
 	eval(rig, `document.querySelector("[data-rst-passkey]").hidden`, &ok)
 	if !ok {
 		t.Fatal("with scripts off the passkey door is showing")
 	}
+	rig.Run(
+		chromedp.SetValue("#rst-signin-email", "sam@example.com", chromedp.ByQuery),
+		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-signin-door] bdi`, chromedp.ByQuery),
+	)
+	eval(rig, `document.querySelector("[rst-signin-door] bdi").textContent`, &s)
+	if s != "sam@example.com" {
+		t.Fatalf("scripts off, Sent names %q", s)
+	}
+	rig.Run(chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
 	rig.Run(
 		chromedp.SetValue("#rst-signin-email", "kay@example.org", chromedp.ByQuery),
 		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
@@ -6624,7 +6827,15 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	if s != "kay@example.org" {
 		t.Fatalf("before the passkey the field holds %q, want kay's typed address", s)
 	}
-	rig.Run(chromedp.Click(`[data-rst-passkey]`, chromedp.ByQuery), chromedp.WaitVisible("main h1", chromedp.ByQuery))
+	// Wait for home itself — the sign-in page has an h1 too — and check
+	// the URL and who it says is signed in before leaving it, so the
+	// ceremony's cookies are set before the next navigation.
+	var here string
+	rig.Run(chromedp.Click(`[data-rst-passkey]`, chromedp.ByQuery), chromedp.WaitVisible("#home", chromedp.ByQuery), chromedp.Location(&here))
+	eval(rig, `document.getElementById("home").textContent`, &s)
+	if here != rig.Origin+"/" || s != "ada@example.com" {
+		t.Fatalf("the passkey sign-in landed on %q as %q, want / as ada@example.com", here, s)
+	}
 	rig.Run(chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
 	eval(rig, `document.getElementById("rst-signin-email").value + "|" + document.querySelector("[data-rst-passkey]").textContent.trim()`, &s)
 	if want := "|" + catalog["rastrillo.ui.signin_passkey_remembered"]; s != want {
@@ -6750,6 +6961,96 @@ Expected: PASS. A failure prints what was on screen; fix the code under test, no
 		struct{ name, href string }{"day/en stage shell", shellHref(mountPath, "day", "en", "stage")},
 ```
 
+**Every state, not the gallery's ten.** The Screens page shows ten states to stay under its byte budget, so `TestA11yScansEverySigninState` renders the whole matrix on pages that exist only for the scan, through the gallery's own frame template, and scans each in every theme and both schemes. Append to `internal/designsystem/a11y_test.go` (it is `//go:build browser`; add `"amadan.net/rastrillo/rastrillo/auth"` and `"strings"` to its imports if absent):
+
+```go
+// signinMatrix is every state the signin partial can be in — each step,
+// each problem, each remembered method, with and without a passkey
+// door, and Reauth over every door — for the axe scan. The Screens page
+// shows ten; the rest are rendered here only.
+func signinMatrix() map[string]auth.SigninState {
+	door := galleryPasskey
+	kay := &auth.Remembered{Method: "keymail", Address: "kay@example.org"}
+	ada := &auth.Remembered{Method: "magiclink", Address: graceAddress}
+	pk := &auth.Remembered{Method: "passkey"}
+	s := func(mut func(*auth.SigninState)) auth.SigninState { return *signinScreen(mut) }
+	return map[string]auth.SigninState{
+		"ask":                        s(func(st *auth.SigninState) {}),
+		"ask-door":                   s(func(st *auth.SigninState) { st.Passkey = door }),
+		"returning-keymail":          s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, kay }),
+		"returning-link":             s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, ada }),
+		"returning-passkey":          s(func(st *auth.SigninState) { st.Step, st.Remembered, st.Passkey = auth.StepReturning, pk, door }),
+		"returning-passkey-no-door":  s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, pk }),
+		"sent-bound":                 s(func(st *auth.SigninState) { st.Step, st.SentTo = auth.StepSent, graceAddress }),
+		"sent-unbound":               s(func(st *auth.SigninState) { st.Step = auth.StepSent }),
+		"sent-instead":               s(func(st *auth.SigninState) { st.Step, st.SentTo, st.SentInstead = auth.StepSent, kay.Address, true }),
+		"continue":                   s(func(st *auth.SigninState) { st.Step, st.ContinueURL = auth.StepContinue, "https://keymail.example/oauth/authorize" }),
+		"problem-rate":               s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemRate, graceAddress }),
+		"problem-address":            s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemAddress, "grace@example" }),
+		"problem-expired":            s(func(st *auth.SigninState) { st.Problem = auth.ProblemExpired }),
+		"problem-keymail":            s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemKeymail, kay.Address }),
+		"problem-generic":            s(func(st *auth.SigninState) { st.Problem, st.Passkey = auth.ProblemGeneric, door }),
+		"reauth-ask":                 s(func(st *auth.SigninState) { st.Problem = auth.ProblemReauth }),
+		"reauth-returning-keymail":   s(func(st *auth.SigninState) { st.Step, st.Problem, st.Remembered = auth.StepReturning, auth.ProblemReauth, kay }),
+		"reauth-returning-link":      s(func(st *auth.SigninState) { st.Step, st.Problem, st.Remembered = auth.StepReturning, auth.ProblemReauth, ada }),
+		"reauth-returning-passkey":   s(func(st *auth.SigninState) { st.Step, st.Problem, st.Remembered, st.Passkey = auth.StepReturning, auth.ProblemReauth, pk, door }),
+	}
+}
+
+// TestA11yScansEverySigninState is §5's "axe WCAG 2.2 AA on every
+// screen state in every theme × scheme". The pages are Preview renders
+// (so the passkey door shows as it would once revealed) in the same
+// stage frame the gallery uses, served beside the gallery tree so they
+// load its tokens.css and themes.
+func TestA11yScansEverySigninState(t *testing.T) {
+	tmpl, err := partialTree("en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tmpl.Parse(screenFrame); err != nil {
+		t.Fatal(err)
+	}
+	pages := map[string][]byte{}
+	for _, theme := range ui.ThemeNames() {
+		for name, st := range signinMatrix() {
+			var b strings.Builder
+			if err := tmpl.ExecuteTemplate(&b, "ds-screen-stage", map[string]any{"State": st, "Brand": galleryBrand, "Preview": true, "Art": true}); err != nil {
+				t.Fatalf("%s: %v", name, err)
+			}
+			pages["/signin-matrix/"+theme+"/"+name+".html"] = []byte(srcdoc(mountPath, theme, "en", "Sign-in state "+name, b.String()))
+		}
+	}
+	rig := harness.New(t, func(string) http.Handler {
+		tree := treeHandler(t)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if body, ok := pages[r.URL.Path]; ok {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write(body)
+				return
+			}
+			tree.ServeHTTP(w, r)
+		})
+	})
+	ctx, cancel := context.WithTimeout(rig.Context(), 900*time.Second)
+	defer cancel()
+	axeJS := axeSource(t)
+	total := 0
+	for href := range pages {
+		for _, scheme := range a11ySchemes {
+			where := href + " (" + scheme + ")"
+			if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+href), chromedp.WaitReady("body"), chromedp.Evaluate(axeJS, nil)); err != nil {
+				t.Fatalf("%s: loading: %v", where, err)
+			}
+			paint(t, ctx, scheme)
+			total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
+		}
+	}
+	if total == 0 {
+		t.Logf("clean: %d sign-in states × %d themes × %d schemes", len(signinMatrix()), len(ui.ThemeNames()), len(a11ySchemes))
+	}
+}
+```
+
 `Makefile` — the browser target's package list becomes `./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/`, and its comment gains "and the sign-in screen's whole journey".
 
 - [ ] **Step 4: Measure the preview heights**
@@ -6760,6 +7061,8 @@ Expected: PASS, with slack logged per frame. For any `screen-signin-*` or `shell
 - [ ] **Step 5: Run the gallery's and ui's browser suites**
 
 Run: `TMPDIR=/var/tmp RASTRILLO_CHROME=/usr/bin/chromium GOFLAGS=-mod=mod go test -tags browser -p 1 ./internal/designsystem/ ./ui/ -count=1`
+
+This includes `TestA11yScansEverySigninState` — nineteen states × three themes × two schemes.
 Expected: PASS — `TestA11yScansTheGallery`, `TestA11yScansThePreviewDocuments` (now including every sign-in frame in day, plain and signal, light and dark, and day/ar), `TestA11yReflowsAt320`, `TestA11yWalksTheKeyboard`, and ui's shell drives with `stage` among `LayoutNames()`. An axe violation in a sign-in frame is a defect in the partial or its CSS: fix it there.
 
 - [ ] **Step 6: Run the gate and commit**
@@ -6788,6 +7091,285 @@ EOF
 ```
 
 ---
+### Task 14: Copy review, batch 2 — the docs and the CHANGELOG; SKILL.md
+
+The docs and the CHANGELOG go to the operator before they are written, as batch 1's strings did (Task 10). They are a separate batch because they describe the finished feature, so they are drafted last; nothing in this batch is a translation key, so nothing is translated. SKILL.md is read by an LLM, not a person, so it is not reviewed; it is written here because it describes the same feature.
+
+**Files:**
+- Create (untracked, `.gitignore`d): `copy-review/strings.json`; `docs/site/reference/lastsignin.md`
+- Modify: `docs/site/magic-links.md`, `docs/site/passkeys.md`, `docs/site/templates.md`, `docs/site/reference/{auth,passkey,ui}.md`, `docs/site/nav.json`, `CHANGELOG.md`, `SKILL.md`
+
+**Interfaces:**
+- Consumes: the API names from Tasks 2–12 the docs describe. Task 12 deleted batch 1's `copy-review/`, so this batch starts a fresh index.
+- Produces: nothing code depends on.
+
+- [ ] **Step 1: Write the string index**
+
+Write `copy-review/strings.json` exactly as below. Each `id` names where the approved text goes (the table in Step 4). Order is the order a reader meets them.
+
+```json
+[
+  {"id": "docs/site/magic-links.md#intro", "section": "Docs: Magic links", "label": "Opening paragraph, second sentence", "text": "It is the framework's turnkey option: you get the whole flow — link minting, single-use redemption, rate limiting, sessions, CSRF — and a sign-in screen to use as it is or replace with your own.", "context": "The second paragraph of the Magic links guide. It used to end and you keep your own sign-in page, which is no longer the only option."},
+  {"id": "docs/site/magic-links.md#screen-heading", "section": "Docs: Magic links", "label": "Section heading", "text": "Use the shipped screen, or your own", "context": "Heading of the section that replaces The sign-in page stays yours. Other pages link to it by its slug.", "notes": "If reworded, the link targets #use-the-shipped-screen-or-your-own in reference/auth.md, reference/ui.md and the CHANGELOG change with it."},
+  {"id": "docs/site/magic-links.md#screen-what", "section": "Docs: Magic links", "label": "What the screen is", "text": "Turn on `SigninScreen` and render ui's `signin` partial, and your app has a sign-in page on its first day: one field for an address, the right thing happening next whether that address gets a link or Keymail, and a one-tap for someone coming back.", "context": "First paragraph of the section, before a code sample showing the configuration and the page handler.", "notes": "Markdown; keep the backticked names."},
+  {"id": "docs/site/magic-links.md#screen-turns-on", "section": "Docs: Magic links", "label": "What the switch turns on", "text": "`SigninScreen` turns on everything the screen needs from `auth`, together: a short-lived cookie that remembers what was typed, so the page can refill the field after a problem and name the address a link went to; a keymail sign-in that stays on your page instead of leaving the form, so the default CSP's `form-action 'self'` needs no widening; and a cookie that remembers which way this browser got in last. Leave it off and nothing changes: no new cookie, and `Begin` and `Callback` answer exactly as before.", "context": "After the code sample. Developers deciding whether to turn it on need to know what they are agreeing to.", "notes": "Markdown."},
+  {"id": "docs/site/magic-links.md#screen-remember", "section": "Docs: Magic links", "label": "Turning remembering off", "text": "Set `Remember` to a pointer to `false` to keep the screen and stop remembering — for a kiosk or a shared computer. It also deletes anything remembered before. The remembered cookie is a hint for the screen and nothing else: it signs nobody in, and a one-tap is checked from scratch like a typed address.", "context": "Next paragraph.", "notes": "Markdown."},
+  {"id": "docs/site/magic-links.md#screen-passkeys", "section": "Docs: Magic links", "label": "With passkeys", "text": "If you use passkeys, serve `passkey.JS()` beside `webauthn.JS()` and set both addresses on the page's `Passkey` door, as above; the screen loads the passkey script only when it shows the door. Pass `a.RememberJar()` as `passkey.Config.Remember`: a passkey sign-in then clears an address typed earlier in the same browser, and the next visit offers the passkey first.", "context": "Next paragraph.", "notes": "Markdown."},
+  {"id": "docs/site/magic-links.md#screen-stage", "section": "Docs: Magic links", "label": "The stage shell", "text": "The `stage` shell is made for this page: one card over a generated backdrop. Redefine its `backdrop` block for a pattern or a picture of your own.", "context": "Last paragraph before the table of outcome addresses.", "notes": "Markdown."},
+  {"id": "docs/site/magic-links.md#outcomes-lead", "section": "Docs: Magic links", "label": "Outcome table lead", "text": "`Begin` and the completion handlers report outcomes by redirecting to `Config.SigninPath`. The shipped screen reads these for you; a page of your own renders them:", "context": "Introduces the table of query strings the sign-in page receives.", "notes": "Markdown."},
+  {"id": "docs/site/magic-links.md#outcomes-table", "section": "Docs: Magic links", "label": "Outcome table", "text": "| Query | Meaning |\n|---|---|\n| `?sent=1` | a link was emailed — or the address was refused; the page cannot tell which |\n| `?sent=1&attempt=<id>` | the same, with the screen on: the id lets the page name the address |\n| `?continue=<id>` | a keymail sign-in is under way; the screen moves on by itself |\n| `?err=rate` | rate limited |\n| `?err=address` | the address was rejected |\n| `?err=expired` | the link had expired or was already used |\n| `?err=1` | something else went wrong |\n| `?reauth=1` | a fresh sign-in is needed to continue |", "context": "The table itself. Only the Meaning column is prose.", "notes": "Markdown table; keep the first column exactly."},
+  {"id": "docs/site/magic-links.md#wrapper-heading", "section": "Docs: Magic links", "label": "Sub-heading", "text": "An admission check in front of Begin", "context": "A sub-heading in the same section, for apps that refuse non-members before any mail goes out. reference/auth.md links to it by slug.", "notes": "If reworded, update the #an-admission-check-in-front-of-begin link in reference/auth.md."},
+  {"id": "docs/site/magic-links.md#wrapper", "section": "Docs: Magic links", "label": "Admission checks", "text": "If you put an admission check in front of `Begin` — refusing addresses that are not members before any mail goes out — answer a refusal with `a.AnswerAsSent(w, r)`, not a redirect of your own. With the screen on, a sent link leaves a cookie and an `attempt=` behind; a plain `?sent=1` for a refusal would look different on the very first try, and anyone could learn who is a member. `AnswerAsSent` answers exactly as a sent link does and sends nothing, so the page and the cookies give nothing away. It does not stop the per-address rate limit or keymail classification from revealing something about an address; that is separate work, and this does not do it.", "context": "The paragraph under that sub-heading. Written for the developer of an invite-only app.", "notes": "Markdown."},
+  {"id": "docs/site/magic-links.md#keymail-servers", "section": "Docs: Magic links", "label": "Which keymail servers are trusted", "text": "By default any keymail server an address's own domain names is trusted. That is keymail's design: whoever controls a domain chooses its server, the same person who controls its mail and could receive a link anyway, and a server cannot vouch for anyone else's address, because the address it returns must match the one that was typed. To trust a closed set instead, list them in `KeymailServers` (host or host:port). An address whose server is not listed gets an ordinary link, and its server is never contacted — not to check the address, and not to finish a sign-in. The list applies with the screen on or off.", "context": "A new last paragraph of the Aside: the keymail upgrade section.", "notes": "Markdown."},
+  {"id": "docs/site/passkeys.md#allowed-1", "section": "Docs: Passkeys", "label": "What a passkey may do, first paragraph", "text": "A passkey can sign someone in on its own, through the discover endpoints. A passkey that checked the person with a PIN, a fingerprint or a face has already proved who they are and what they hold, and asking for an emailed link as well adds work and no safety.", "context": "Replaces A passkey never signs anybody in from nothing, which stopped being true when discovery shipped."},
+  {"id": "docs/site/passkeys.md#allowed-2", "section": "Docs: Passkeys", "label": "What a passkey may do, second paragraph", "text": "It also refreshes an existing session at step-up, and completes a sign-in whose first factor already checked out. A passkey that only found somebody present, without checking who, is the weaker proof: where the account has another factor, discover holds the sign-in for it.", "context": "Replaces the paragraph that followed."},
+  {"id": "docs/site/passkeys.md#remember", "section": "Docs: Passkeys", "label": "On the sign-in screen", "text": "On `auth`'s shipped sign-in screen, the discover pair is the passkey button. Set `Config.Remember` to `auth`'s `RememberJar()`: a passkey sign-in then clears any address typed earlier in the same browser, and the next visit offers the passkey first. Without it, an address someone typed before using their passkey stays in the form.", "context": "A new paragraph after the list of endpoints in Wiring it.", "notes": "Markdown."},
+  {"id": "docs/site/templates.md#funcs", "section": "Docs: Templates", "label": "Template functions list", "text": "`ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.", "context": "The first line under Template functions.", "notes": "Markdown."},
+  {"id": "docs/site/templates.md#blocks", "section": "Docs: Templates", "label": "Shell blocks", "text": "The blocks are `title`, `lang`, `dir` and `head` in all five shells, plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and `console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in `stage`. None of them reads a field off the data, so a shell renders whether your handler passes a struct, a `dict`-built map or nil — a shell can never break because a page's view model changed shape.", "context": "Replaces the paragraph that lists the shells' blocks for four shells.", "notes": "Markdown."},
+  {"id": "docs/site/templates.md#stage", "section": "Docs: Templates", "label": "The stage shell", "text": "`stage` has no chrome. It centres one card — the sign-in screen, usually — over a full-page backdrop, drawn by `{{stageArt \"rastrillo\"}}` unless you redefine `backdrop`: `{{define \"backdrop\"}}{{stageArt \"your-app\"}}{{end}}` draws a pattern of your own from any word, and an `<img>` or your own SVG replaces it outright. Its attributes are `rst-stage`, `rst-stage-scene`, `rst-stage-art` and `rst-stage-foot`, and it carries `rst-skip` like the others.", "context": "A new paragraph after the one listing the chrome attributes (which ends with the skip link that all shells carry).", "notes": "Markdown; keep the template code exactly."},
+  {"id": "docs/site/reference/auth.md#screen-config", "section": "Docs: auth reference", "label": "The screen's settings", "text": "`SigninScreen` turns on the shipped sign-in screen's side of `auth`: the attempt and continuation cookies, the keymail continuation, and remembering the way in. Off, nothing about `Begin` or `Callback` changes. `BeginPath` and `ForgetPath` (default `/signin` and `/signin/forget`) are where you mounted `Begin` and `Forget`, for the screen's forms. `Remember` set to `false` keeps the screen and stops remembering.", "context": "After the Config code block, before the InstanceKey paragraph.", "notes": "Markdown."},
+  {"id": "docs/site/reference/auth.md#keymail-servers", "section": "Docs: auth reference", "label": "KeymailServers", "text": "`KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).", "context": "After the TrustedProxyHops paragraph.", "notes": "Markdown."},
+  {"id": "docs/site/reference/auth.md#handlers", "section": "Docs: auth reference", "label": "What the handlers report", "text": "These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and — with `SigninScreen` on — `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself.", "context": "Replaces The sign-in page stays yours paragraph under The handlers.", "notes": "Markdown."},
+  {"id": "docs/site/reference/auth.md#screen-heading", "section": "Docs: auth reference", "label": "Section heading", "text": "The sign-in screen", "context": "A new section heading after The handlers."},
+  {"id": "docs/site/reference/auth.md#state", "section": "Docs: auth reference", "label": "SigninState and PrepareSigninResponse", "text": "`SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process.", "context": "After a code block of the new signatures.", "notes": "Markdown."},
+  {"id": "docs/site/reference/auth.md#forget", "section": "Docs: auth reference", "label": "Forget, AnswerAsSent, RememberJar", "text": "`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin` — see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.", "context": "Last paragraph of that section.", "notes": "Markdown."},
+  {"id": "docs/site/reference/passkey.md#remember", "section": "Docs: passkey reference", "label": "Config.Remember", "text": "`Config.Remember` takes `auth`'s `RememberJar()`. With it, a verified discover assertion ends the sign-in screen's attempt and remembers passkey as this browser's way in, with no address.", "context": "A new last paragraph of Discover: the passkey as the front door.", "notes": "Markdown."},
+  {"id": "docs/site/reference/ui.md#funcs", "section": "Docs: ui reference", "label": "Funcs list and the three new ones", "text": "Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.\n\n`opt` reads an optional key off a partial's data, whether it is a map or a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a sentence that shows back something a visitor typed: each value is escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's backdrop from a word; the same word always draws the same picture.", "context": "Replaces the one-line list under Funcs.", "notes": "Markdown; two paragraphs."},
+  {"id": "docs/site/reference/ui.md#shells", "section": "Docs: ui reference", "label": "The stage shell", "text": "`stage` is one card centred over a full-page backdrop, for a page that stands alone — the sign-in screen above all. Its blocks are `title`, `lang`, `dir`, `head`, `backdrop` and `foot`.", "context": "A new paragraph in the Shells section, after the one describing the other four. That section's first words become The five shipped page frames.", "notes": "Markdown."},
+  {"id": "docs/site/reference/ui.md#signin", "section": "Docs: ui reference", "label": "The signin partial", "text": "`signin` renders the whole sign-in card from an `auth.SigninState`, and `signin-title` the matching tab title. Pass `Brand` with a `Name`, and optionally a one-line `Pitch` and a `Mark` (an `<img>` or inline SVG as `template.HTML`). Every string comes from the base catalogs under `rastrillo.ui.signin_*`, in all twelve languages. The passkey button loads `passkey.JS()` from the `ScriptURL` you set, and only on a page that shows it; without that script it stays hidden, and the email form works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).", "context": "A new section, The sign-in screen, before Styleguide.", "notes": "Markdown."},
+  {"id": "docs/site/reference/lastsignin.md#lead", "section": "Docs: lastsignin reference (new page)", "label": "Lead", "text": "Remembers, in one browser, which way it last used to sign in — keymail, an emailed link or a passkey — and the address for the first two, so the sign-in screen can offer a one-tap. It is a hint for the screen and nothing more: it signs nobody in, and a one-tap is checked from scratch.", "context": "The opening paragraph of a new reference page for a small package developers rarely call directly."},
+  {"id": "docs/site/reference/lastsignin.md#usually", "section": "Docs: lastsignin reference (new page)", "label": "You rarely build one", "text": "You rarely build one yourself. `auth.New` builds the jar from its own configuration, and `auth.RememberJar` hands it to `passkey.Config.Remember`.", "context": "Second paragraph, before the API listing.", "notes": "Markdown."},
+  {"id": "docs/site/reference/lastsignin.md#modes", "section": "Docs: lastsignin reference (new page)", "label": "Modes", "text": "`Off` writes, reads and deletes nothing — an app without the shipped screen sees no cookie at all. `Forgetting` deletes what was remembered and never reads it. `On` remembers. `EndAttempt` deletes the screen's attempt cookie; every sign-in path calls it once a first factor checks out.", "context": "After the API listing.", "notes": "Markdown."},
+  {"id": "docs/site/reference/lastsignin.md#cookie", "section": "Docs: lastsignin reference (new page)", "label": "The cookie", "text": "The cookie is sealed, HttpOnly, and lasts 400 days, the longest browsers allow; each sign-in renews it. Signing out does not delete it.", "context": "Last paragraph."},
+  {"id": "docs/site/nav.json#lastsignin", "section": "Docs: lastsignin reference (new page)", "label": "Docs index blurb", "text": "The sign-in screen's memory of how this browser got in last, and the seam that ends a sign-in attempt.", "context": "The one-line description of the new page on the docs index."},
+  {"id": "CHANGELOG.md#added-heading", "section": "CHANGELOG", "label": "Entry heading", "text": "Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`", "context": "A new entry at the top of Unreleased. Headings in this file start with Added, Changed or Fixed and name the one thing to do if there is one.", "notes": "Written after ### ."},
+  {"id": "CHANGELOG.md#added-1", "section": "CHANGELOG", "label": "What it is", "text": "`ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it — an emailed link, or Keymail — and offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.", "context": "First paragraph of the entry.", "notes": "Markdown."},
+  {"id": "CHANGELOG.md#added-2", "section": "CHANGELOG", "label": "How to use it", "text": "Turn it on with `auth.Config.SigninScreen`, render the page from `auth.SigninState` and `PrepareSigninResponse`, and mount `auth.Forget`. With it on, a keymail sign-in stays on your page, so the default CSP's `form-action 'self'` needs no widening. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).", "context": "Second paragraph.", "notes": "Markdown."},
+  {"id": "CHANGELOG.md#added-3", "section": "CHANGELOG", "label": "Everything else new", "text": "Also new: `auth.AnswerAsSent`, for an admission check in front of `Begin`; `auth.Config.KeymailServers`, to trust only the keymail servers you list; `BeginPath`, `ForgetPath` and `Remember` on `auth.Config`; `passkey.Config.Remember` and `passkey.JS()`, the passkey button's script; the `lastsignin` package; `QuietError` on the `field` partial; `ID` and `Focus` on the `callout` partial; and the `opt` and `Tbdi` template functions.", "context": "Third paragraph: the full list, for someone scanning for a name.", "notes": "Markdown."},
+  {"id": "CHANGELOG.md#added-4", "section": "CHANGELOG", "label": "What changes for existing apps", "text": "An app that leaves `SigninScreen` off sees no change: no new cookie, and `Begin` and `Callback` answer as before. `KeymailServers`, if you set it, applies either way. Turning the screen on turns on the keymail continuation and remembering together; set `Remember` to false to keep the screen and stop remembering.", "context": "Fourth paragraph. The file's rule: anything that could change an app's behaviour is said plainly.", "notes": "Markdown."},
+  {"id": "CHANGELOG.md#added-5", "section": "CHANGELOG", "label": "Re-vendoring", "text": "The screen's styles are in `tokens.css`, which your app has its own copy of. Run `rastrillo doctor --fix` to take the new one.", "context": "Last paragraph, the action the heading promises.", "notes": "Markdown."}
+]
+```
+
+Validate it: `python3 -m json.tool copy-review/strings.json > /dev/null` — no output means valid.
+
+- [ ] **Step 2: Run the review**
+
+Invoke the `copy-review` skill (Skill tool, `skill: "copy-review"`) and follow it exactly: launch `serve.sh copy-review/strings.json` with the Bash sandbox off (it exits 3 inside the sandbox), give the operator the one URL it prints, and poll for `copy-review/result.json`. On `"action": "reroll"`, rewrite as the skill says — carrying the operator's edited strings over unchanged and applying their demonstrated edits to the rest — and relaunch. Loop until `"action": "approve"`. Do not write any of these strings into a tracked file before then.
+
+- [ ] **Step 3: Apply the approved strings, verbatim**
+
+For every entry in `result.json`, the approved `text` goes where its `id` says, byte for byte — no fixed typos, no changed capitalisation. If a string would break markup (an unbalanced backtick, a lost `{name}`), stop and ask the operator; never repair it silently.
+
+| `id` | Destination |
+|---|---|
+| `docs/site/magic-links.md#intro` | replaces the paragraph beginning "It is the framework's turnkey option" |
+| `docs/site/magic-links.md#screen-*`, `#outcomes-*`, `#wrapper*` | the new section, in this order, replacing the whole `### The sign-in page stays yours` section: `### <#screen-heading>`, `#screen-what`, the two code blocks in Step 4, `#screen-turns-on`, `#screen-remember`, `#screen-passkeys`, `#screen-stage`, `#outcomes-lead`, `#outcomes-table`, `#### <#wrapper-heading>`, `#wrapper` |
+| `docs/site/magic-links.md#keymail-servers` | a new last paragraph of `## Aside: the keymail upgrade` |
+| `docs/site/passkeys.md#allowed-1`, `#allowed-2` | replace the two paragraphs under `## What a passkey is allowed to do` |
+| `docs/site/passkeys.md#remember` | after the endpoint list in `## Wiring it`, which gains the two discover lines in Step 4 |
+| `docs/site/templates.md#funcs` | replaces line 24–25's sentence |
+| `docs/site/templates.md#blocks` | replaces the paragraph beginning "The blocks are `title`, `lang`, `dir` and `head` in all four shells" |
+| `docs/site/templates.md#stage` | a new paragraph after the one ending "like every other idiom here." (the chrome-attributes paragraph), whose "which all four shells carry — `column` included" becomes "which all five shells carry — `column` and `stage` included" |
+| `docs/site/reference/auth.md#…` | as each entry's context says; the Config block and signatures are in Step 4 |
+| `docs/site/reference/passkey.md#remember` | new last paragraph of `## Discover: the passkey as the front door` |
+| `docs/site/reference/ui.md#funcs` | replaces the "Registers `dict`, …" line under `## Funcs` |
+| `docs/site/reference/ui.md#shells` | a new paragraph in `## Shells`; "The four shipped page frames" becomes "The five shipped page frames" and "in all four" becomes "in all five" |
+| `docs/site/reference/ui.md#signin` | a new `## The sign-in screen` section before `## Styleguide` |
+| `docs/site/reference/lastsignin.md#…` | the new page, laid out in Step 4 |
+| `docs/site/nav.json#lastsignin` | the `blurb` of the new nav entry in Step 4 |
+| `CHANGELOG.md#…` | a new entry at the top of `## Unreleased`: `### <#added-heading>` then `#added-1` … `#added-5` as paragraphs |
+
+If an approved docs heading differs from the draft, change every link that targets its slug (the table's notes name them).
+
+- [ ] **Step 4: Write the code blocks and structure around the approved prose**
+
+These are code, not copy, and go in exactly as written.
+
+`docs/site/magic-links.md`, after `#screen-what`:
+
+````markdown
+```go
+a, err := auth.New(auth.Config{
+	DB:           writer,
+	Origin:       origin,
+	InstanceKey:  instanceKey,
+	Mailer:       mailer,
+	SigninScreen: true,
+})
+
+r.Get("/signin", func(w http.ResponseWriter, r *http.Request) {
+	st := a.SigninState(r)
+	st.Passkey = &auth.PasskeyDoor{ // only if you mounted passkey discovery
+		BeginPath:  "/passkey/discover/begin",
+		FinishPath: "/passkey/discover/finish",
+		ModuleURL:  "/passkey/webauthn.mjs", // serves webauthn.JS()
+		ScriptURL:  "/passkey/signin.mjs",   // serves passkey.JS()
+	}
+	a.PrepareSigninResponse(w, st)
+	render(w, "signin", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}})
+})
+r.Post("/signin/forget", a.Forget)
+r.Get("/passkey/webauthn.mjs", serveJS(webauthn.JS()))
+r.Get("/passkey/signin.mjs", serveJS(passkey.JS()))
+
+// serveJS serves an embedded module with the type a browser requires.
+func serveJS(b []byte) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Write(b)
+	}
+}
+```
+
+`templates/signin.html`, in a page set built on the `stage` shell instead of `layout.html`:
+
+```html
+{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}
+{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}
+```
+
+```go
+stage, _ := ui.Layout("stage")
+t := template.Must(template.New("layout").
+	Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
+	Funcs(template.FuncMap{"asset": assets.Path}).
+	ParseFS(ui.Templates(), "*.html"))
+t = template.Must(t.Parse(string(stage)))
+pages["signin"] = template.Must(t.ParseFS(appFS, "templates/signin.html"))
+```
+````
+
+`docs/site/passkeys.md` — the endpoint list in `## Wiring it` gains:
+
+```text
+POST /passkey/discover/begin    -> {"challenge": ...}
+POST /passkey/discover/finish   <- authenticate()'s result -> {"to": ...}
+```
+
+`docs/site/reference/auth.md` — the `Config` block gains, after `TrustedProxyHops *int`:
+
+```go
+	SigninScreen     bool
+	BeginPath        string
+	ForgetPath       string
+	Remember         *bool
+	KeymailServers   []string
+```
+
+the handler table gains `POST /signin/forget -> Auth.Forget`, and the new `## <#screen-heading>` section opens with:
+
+```go
+func (a *Auth) SigninState(r *http.Request) SigninState
+func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
+func (a *Auth) Forget(w http.ResponseWriter, r *http.Request)
+func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request)
+func (a *Auth) RememberJar() *lastsignin.Jar
+```
+
+`docs/site/reference/lastsignin.md`:
+
+````markdown
+# 🤖 lastsignin
+
+`amadan.net/rastrillo/rastrillo/lastsignin`
+
+<#lead>
+
+<#usually>
+
+```go
+func New(cfg Config) (*Jar, error)
+type Config struct {
+	Origin, InstanceKey, AttemptCookie string
+	Mode                               Mode // Off, Forgetting, On
+	Now                                func() time.Time
+}
+func (j *Jar) Remember(w http.ResponseWriter, rec Record)
+func (j *Jar) Read(r *http.Request) (Record, ReadResult) // Absent, Valid, Invalid
+func (j *Jar) Clear(w http.ResponseWriter)
+func (j *Jar) EndAttempt(w http.ResponseWriter)
+type Record struct{ Method, Address string }
+```
+
+<#modes>
+
+<#cookie>
+````
+
+where each `<#…>` is that entry's approved text.
+
+`docs/site/nav.json` — after the `reference/keyring` entry:
+
+```json
+        {
+          "slug": "reference/lastsignin",
+          "label": "lastsignin",
+          "blurb": "<nav.json#lastsignin>"
+        },
+```
+
+- [ ] **Step 5: SKILL.md (not reviewed; LLM-facing)**
+
+Line 32: `--shell=column|topbar|sidebar|console` becomes `--shell=column|topbar|sidebar|console|stage`.
+
+Replace the `**CSP:**` paragraph (lines 287–295) with:
+
+```markdown
+**Sign-in screen:** set `auth.Config.SigninScreen: true` and render
+`{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:
+`signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
+set `st.Passkey` if passkey discovery is mounted — then
+`a.PrepareSigninResponse(w, st)` before rendering. Mount
+`POST /signin/forget` → `a.Forget`; with passkeys, serve `passkey.JS()`
+beside `webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
+`st.Passkey`, and wire `passkey.Config.Remember: a.RememberJar()`. An admission check in front
+of `Begin` answers refusals with `a.AnswerAsSent(w, r)`, never its own
+`?sent=1`.
+
+**CSP:** `form-action 'self'` covers a form's whole redirect chain, so
+`Begin`'s 303 to a keymail server is refused. With `SigninScreen` on,
+keymail continues on your own page and `form-action` stays `'self'`.
+Only a hand-built sign-in page with the screen off restates
+`Options.CSP` (it replaces the policy wholesale) with the keymail
+origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
+'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self'
+data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
+servers are trusted; other addresses get a link.
+```
+
+Then `grep -n "four shells\|dateWords" SKILL.md` and bring any hit in line with this branch (five shells; the helper list ending `opt`, `Tbdi`, `stageArt`). Check the budget: `wc -c SKILL.md` must stay ≤ 30000; if it does not, trim genuinely redundant prose elsewhere in the file rather than cutting a fact (AGENTS.md).
+
+- [ ] **Step 6: Run everything the words touch**
+
+Run: `GOFLAGS=-mod=mod go test . ./ui/ ./internal/designsystem/ ./internal/docsite/ -count=1`
+Expected: PASS — `TestBaseCatalogsShareOneKeySet`, `TestSkillMDStaysWithinBudget`, the CSS-floor statement test, and the docsite nav tests (the new page is reachable, has a label and a blurb). Then `rm -rf copy-review`.
+
+- [ ] **Step 7: Run the gate and commit**
+
+Run: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./... -count=1`
+
+```bash
+git add docs/site CHANGELOG.md SKILL.md
+git commit -F - <<'EOF'
+Docs and CHANGELOG for the sign-in screen, as approved in copy review
+
+The guides and the changelog went through the operator's copy review
+before being written, and the approved text is applied verbatim, as the
+screen's own strings were in the first batch.
+
+magic-links.md no longer says the sign-in page stays yours, passkeys.md
+no longer says a passkey never signs anybody in from nothing, and
+SKILL.md stops recommending a wider form-action for apps on the shipped
+screen, where it is no longer needed.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+EOF
+```
+
+---
+
 ### Task 15: The whole gate, the push, and what only a person can check
 
 **Files:** none new.
@@ -6799,8 +7381,16 @@ Expected: every target passes — gofmt, money, root (with node required), chrom
 
 - [ ] **Step 2: Try the scaffold with the new shell**
 
-Run: `GOFLAGS=-mod=mod go run ./cmd/rastrillo new --shell=stage "$TMPDIR/stageapp" && (cd "$TMPDIR/stageapp" && GOFLAGS=-mod=mod go mod edit -replace amadan.net/rastrillo/rastrillo=$PWD && GOFLAGS=-mod=mod go mod tidy && GOFLAGS=-mod=mod go test ./...)`
-Expected: the app builds and its tests pass on the `stage` shell (the page renders the index inside the card area). If `$PWD` is not the worktree root when the inner commands run, use the absolute worktree path for the replace.
+Run, from the worktree root, as one command — the repository path is captured before any `cd`, and the destination is made explicitly rather than trusted to an inherited `$TMPDIR`:
+
+```bash
+repo=$(pwd) && dest=$(mktemp -d)/stageapp && \
+GOFLAGS=-mod=mod go run ./cmd/rastrillo new --shell=stage "$dest" && \
+cd "$dest" && GOFLAGS=-mod=mod go mod edit -replace "amadan.net/rastrillo/rastrillo=$repo" && \
+GOFLAGS=-mod=mod go mod tidy && GOFLAGS=-mod=mod go test ./...
+```
+
+Expected: the app builds and its tests pass on the `stage` shell (the page renders the index inside the card area).
 
 - [ ] **Step 3: Push**
 
