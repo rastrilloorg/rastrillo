@@ -244,6 +244,9 @@ type Auth struct {
 	// attemptKey seals the attempt cookie. Its own derivation so it
 	// opens nothing else and nothing else opens it.
 	attemptKey []byte
+	// continueKey seals the continuation cookie; its own derivation for
+	// the same reason as attemptKey.
+	continueKey []byte
 	// now is the clock the screen's cookies are sealed and judged by.
 	// time.Now outside tests.
 	now func() time.Time
@@ -315,8 +318,9 @@ func New(cfg Config) (*Auth, error) {
 
 	a := &Auth{
 		cfg: cfg, sessions: sess, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running()),
-		now:        time.Now,
-		attemptKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
+		now:         time.Now,
+		attemptKey:  crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
+		continueKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/continue/v1"),
 	}
 	jar, err := lastsignin.New(lastsignin.Config{
 		Origin: cfg.Origin, InstanceKey: cfg.InstanceKey,

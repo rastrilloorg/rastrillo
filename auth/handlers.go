@@ -35,7 +35,9 @@ import (
 // ?sent=1&attempt=<id> so the Sent page can name the address, and an
 // expect=keymail field — which only the remembered-Keymail one-tap
 // sends — marks a link that went out where Keymail was promised. expect
-// never chooses a path.
+// never chooses a path. The keymail answer is then no longer a 303 to
+// the authorize URL but to SigninPath?continue=<id>, the URL kept in a
+// sealed continuation cookie (continueKeymail says why).
 func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
@@ -65,6 +67,10 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if next.Kind == signin.NextKeymail {
+		if a.cfg.SigninScreen {
+			a.continueKeymail(w, r, address, next)
+			return
+		}
 		a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
 		// next.Redirect points at a host the submitted address chose
 		// (via its DNS delegation) — untrusted output, sent as a
@@ -73,6 +79,32 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.answerSent(w, r, address)
+}
+
+// continueKeymail is the keymail answer with SigninScreen on. A 303
+// straight to the provider is refused by the default CSP, whose
+// form-action 'self' covers a form's whole redirect chain; so this
+// stays on the origin — the pending cookie as today, a continuation
+// cookie holding the authorize URL, and a redirect to the sign-in page,
+// whose Continue state navigates on by itself.
+func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address string, next signin.Next) {
+	if !a.validAuthorizeURL(next.Redirect) {
+		// A correct library never builds one. If one appears it is not
+		// turned into a link, and nothing is left half-set.
+		a.cfg.Logger.Error("rastrillo/auth: the keymail authorize URL failed the predicate; not continuing")
+		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		return
+	}
+	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
+	if err != nil {
+		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
+		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		return
+	}
+	a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
+	a.setCookie(w, a.continueCookie(), value, int(continuationTTL.Seconds()))
+	a.noteAttempt(w, attemptKeymail, address, false)
+	a.redirect(w, r, a.cfg.SigninPath+"?continue="+id)
 }
 
 // AnswerAsSent is Begin's magic-link answer without the magic link, for
@@ -100,11 +132,32 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 // lifetime (seapointish's rule). A keymail approval that could not be
 // completed is never a dead end: it redirects to the signin page with
 // ?force=1&err=keymail so the page can offer the plain-email path.
+// With SigninScreen on, a callback whose state is not the attempt the
+// browser's continuation describes answers Expired without clearing
+// anything (see the comment inside).
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie(a.pendingCookie())
 	if err != nil {
 		a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
 		return
+	}
+	if a.cfg.SigninScreen {
+		// Today the pending cookie is cleared the moment it is read and
+		// the library then finds a state mismatch — so a late callback
+		// from tab A, or a callback URL a third party makes the browser
+		// open, throws away tab B's newer attempt. When the continuation
+		// describes the pending cookie just read and this callback's
+		// state is not that attempt's, the callback belongs to some other
+		// attempt: answer Expired and leave the pair alone. The pending
+		// blob's own authenticated expiry still bounds it; nothing is
+		// refreshed. Any other case — no continuation, or one left from
+		// an earlier attempt or a screen-off Begin — is today's path.
+		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(c.Value) &&
+			p.ST != digest(r.URL.Query().Get("state")) {
+			a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
+			return
+		}
+		a.clearCookie(w, a.continueCookie())
 	}
 	a.clearCookie(w, a.pendingCookie())
 
