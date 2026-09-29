@@ -179,8 +179,16 @@ time.
 
 Every submit button in every form gets a loading state on its way out:
 `aria-busy="true"`, a spinner in place of the label, and — a tick later,
-once the submission is under way — `disabled`. `rastrillo.js` does it by
-default, with no attribute to remember. A button that only *reveals*
+once the submission is under way — `disabled`. `busy.js` does it by
+default, with no attribute to remember; linking the file is the whole
+opt-in.
+
+The spinner shows for at least 650ms. A response faster than that would
+make it flicker, which reads as a glitch rather than an answer, so the
+submit is held until 650ms after the click and then sent — the clicked
+button's `name` and `value` with it, exactly as the click would have
+sent them. Leaving the page while a submit is held drops it, and going
+Back to a page whose form was sent hands the form back, clean. A button that only *reveals*
 something gets nothing: a disclosure, a dropdown, a tab is not doing
 work, and dressing it as though it were is a lie the reader has to learn
 to ignore.

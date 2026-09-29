@@ -300,13 +300,13 @@ the meantime. This list is their union. **Built:**
   work that must survive one belongs in `eventlog`. It is bounded, too:
   an owner holds at most four running jobs (`Start` answers
   `ErrOwnerBusy` past that), and a job still running after fifteen
-  minutes is marked failed, its context expired. The only JavaScript
-  in the framework is `static/rastrillo.js`, an app-owned shim
-  `rastrillo new` writes beside `tokens.css`: it replaces an element
-  carrying `data-poll` with the HTML fragment it fetches and stops when
-  the new fragment stops asking, and gives every submit button a
-  spinner and a double-submit guard while its form is out
-  (`data-busy="false"` opts out). Status pages poll, or ride
+  minutes is marked failed, its context expired. The framework's
+  JavaScript is two app-owned files `rastrillo new` writes beside
+  `tokens.css`: `static/rastrillo.js` replaces an element carrying
+  `data-poll` with the HTML fragment it fetches and stops when the new
+  fragment stops asking, and `static/busy.js` gives every submit button
+  a spinner (for at least 650ms) and a double-submit guard while its
+  form is out (`data-busy="false"` opts out). Status pages poll, or ride
   Server-Sent Events where the browser supports them: `Events` streams
   at `/jobs/{id}/events` (heartbeats, per-write deadlines, a bounded
   stream lifetime — the serve.go streaming recipe), and the shim's

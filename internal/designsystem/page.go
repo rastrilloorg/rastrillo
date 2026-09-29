@@ -1339,6 +1339,7 @@ var srcdocScripts = []struct {
 	hooks []string
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
+	{"busy.js", []string{"data-busy"}},
 	{"select.js", []string{"data-rst-select"}},
 	// calendar.js comes FIRST, and the order is load-bearing here in a
 	// way it is not on an ordinary page. datetime.js scans on
@@ -1405,7 +1406,7 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	// a reader who clicks Save gets the submission a real app would make
 	// and a preview that is still on the screen afterwards — instead of
 	// a frame navigated to a route this static site does not serve.
-	// rastrillo.js's busy rule skips a form whose target is not _self
+	// busy.js's busy rule skips a form whose target is not _self
 	// for the same reason, so nothing spins pointlessly either.
 	if strings.Contains(body, "<form") {
 		b.WriteString("\n<iframe name=\"ds-void\" hidden></iframe>")
@@ -2143,7 +2144,9 @@ func buildAssets(mount, theme, locale string) assetsView {
 			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
 	}
 	add(&out, "rastrillo.js", ui.ShimJS(),
-		"The progressive-enhancement shim: polling fragments, busy states and light dismiss. Every scaffolded app gets it.")
+		"The progressive-enhancement shim: polling fragments and light dismiss. Every scaffolded app gets it.")
+	add(&out, "busy.js", ui.BusyJS(),
+		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
@@ -2347,7 +2350,7 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h3 class="ds-sub">{{P "The scripts"}}</h3>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss. busy.js is the busy rule. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
 
 <h3 class="ds-sub">{{P "What each file weighs"}}</h3>
 <p class="ds-note">{{P "Filesizes for the various components."}}</p>

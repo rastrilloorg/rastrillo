@@ -761,7 +761,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "select.js", "datetime.js", "calendar.js",
+		"tokens.css", "rastrillo.js", "busy.js", "select.js", "datetime.js", "calendar.js",
 		"gallery.js", "gallery.css",
 	}
 	for _, theme := range ui.ThemeNames() {
@@ -1080,7 +1080,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 
 // A sample's links go nowhere and its forms go into a sink, so nothing
 // a reader clicks in a preview can navigate the frame away from the
-// example they were looking at — and rastrillo.js's busy rule skips a
+// example they were looking at — and busy.js's busy rule skips a
 // form whose target is not _self, so nothing spins on its way nowhere
 // either. The source beside it keeps the real routes.
 func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {

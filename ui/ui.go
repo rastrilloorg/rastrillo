@@ -56,7 +56,7 @@
 // shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
 // static files the app is free to edit in place. rastrillo.js, the fragment shim behind
-// data-poll and data-busy, ships the same way, landing beside it. It
+// data-poll, and busy.js, the busy rule, ship the same way, landing beside it. It
 // never replaces a native idiom — every "no JavaScript" idiom above
 // still works with scripts disabled; the shim exists only for the kinds
 // of work a native idiom cannot do. Two of them: work that finishes
@@ -254,6 +254,9 @@ var layoutsFS embed.FS
 //go:embed rastrillo.js
 var shimJS []byte
 
+//go:embed busy.js
+var busyJS []byte
+
 //go:embed select.js
 var selectJS []byte
 
@@ -327,6 +330,13 @@ func ThemeCSS(name string) ([]byte, bool) {
 // once and app-owned from then on. The file's own header comment is
 // its contract; TestShimContract holds the two honest.
 func ShimJS() []byte { return shimJS }
+
+// BusyJS returns busy.js — the busy rule: every submit button shows a
+// spinner in place of its label for at least 650ms, goes disabled, and
+// its form refuses a second submit; Back hands it back. Delivered once
+// by rastrillo new, like ShimJS, and app-owned from then on. Linking it
+// is the whole opt-in; the file's own header comment is its contract.
+func BusyJS() []byte { return busyJS }
 
 // SelectJS returns select.js — field-select's searchable enhancement,
 // on exactly the same terms as ShimJS: delivered once by rastrillo new,

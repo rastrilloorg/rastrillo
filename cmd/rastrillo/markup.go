@@ -100,7 +100,7 @@ func vendored(rel string) bool {
 		return false
 	}
 	switch base {
-	case "tokens.css", "theme.css", "rastrillo.js", "select.js", "datetime.js":
+	case "tokens.css", "theme.css", "rastrillo.js", "busy.js", "select.js", "datetime.js":
 		return true
 	}
 	return false

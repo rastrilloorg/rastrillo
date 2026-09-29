@@ -430,6 +430,7 @@ undemonstrated. The returned map is a copy, safe to mutate.
 ```go
 func TokensCSS() []byte
 func ShimJS() []byte
+func BusyJS() []byte
 func SelectJS() []byte
 func DatetimeJS() []byte
 func CalendarJS() []byte
@@ -438,12 +439,14 @@ func CalendarJS() []byte
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
 into the app's `static/`. `ShimJS` is `rastrillo.js` — the
 progressive-enhancement shim. It drives `data-poll` and
-`data-poll-push` ([Background jobs](/docs/jobs)); it gives every submit
-button a busy state and every form a double-submit guard by default,
-with `data-busy="false"` as the opt-out and `data-busy-label` as the
-label swap; and it closes an open `<details>` menu on an outside click
-or Escape, which is the one part of the menu idiom the native element
-cannot express. `SelectJS` backs the enhanced select: it mirrors a
+`data-poll-push` ([Background jobs](/docs/jobs)), and it closes an open
+`<details>` menu on an outside click or Escape, which is the one part of
+the menu idiom the native element cannot express. `BusyJS` is `busy.js`,
+the busy rule: every submit button's label gives way to a spinner for
+at least 650ms, the button disables and the form refuses a second
+submit, and Back hands the form back — by default, with
+`data-busy="false"` as the opt-out and `data-busy-label` as the label
+swap. Linking it is the whole opt-in. `SelectJS` backs the enhanced select: it mirrors a
 `<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one
