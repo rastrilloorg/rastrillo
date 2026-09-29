@@ -1339,6 +1339,7 @@ var srcdocScripts = []struct {
 	hooks []string
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
+	{"busy.js", []string{"data-busy"}},
 	{"select.js", []string{"data-rst-select"}},
 	// calendar.js comes FIRST, and the order is load-bearing here in a
 	// way it is not on an ordinary page. datetime.js scans on
@@ -2143,7 +2144,9 @@ func buildAssets(mount, theme, locale string) assetsView {
 			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
 	}
 	add(&out, "rastrillo.js", ui.ShimJS(),
-		"The progressive-enhancement shim: polling fragments, busy states and light dismiss. Every scaffolded app gets it.")
+		"The progressive-enhancement shim: polling fragments and light dismiss. Every scaffolded app gets it.")
+	add(&out, "busy.js", ui.BusyJS(),
+		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),

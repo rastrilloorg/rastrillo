@@ -254,6 +254,9 @@ var layoutsFS embed.FS
 //go:embed rastrillo.js
 var shimJS []byte
 
+//go:embed busy.js
+var busyJS []byte
+
 //go:embed select.js
 var selectJS []byte
 
@@ -327,6 +330,13 @@ func ThemeCSS(name string) ([]byte, bool) {
 // once and app-owned from then on. The file's own header comment is
 // its contract; TestShimContract holds the two honest.
 func ShimJS() []byte { return shimJS }
+
+// BusyJS returns busy.js — the busy rule: every submit button shows a
+// spinner in place of its label for at least 650ms, goes disabled, and
+// its form refuses a second submit; Back hands it back. Delivered once
+// by rastrillo new, like ShimJS, and app-owned from then on. Linking it
+// is the whole opt-in; the file's own header comment is its contract.
+func BusyJS() []byte { return busyJS }
 
 // SelectJS returns select.js — field-select's searchable enhancement,
 // on exactly the same terms as ShimJS: delivered once by rastrillo new,

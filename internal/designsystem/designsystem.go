@@ -135,6 +135,7 @@ func Render(mount string) (map[string][]byte, error) {
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
+		"busy.js":      ui.BusyJS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
 		"calendar.js":  ui.CalendarJS(),
