@@ -1406,7 +1406,7 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	// a reader who clicks Save gets the submission a real app would make
 	// and a preview that is still on the screen afterwards — instead of
 	// a frame navigated to a route this static site does not serve.
-	// rastrillo.js's busy rule skips a form whose target is not _self
+	// busy.js's busy rule skips a form whose target is not _self
 	// for the same reason, so nothing spins pointlessly either.
 	if strings.Contains(body, "<form") {
 		b.WriteString("\n<iframe name=\"ds-void\" hidden></iframe>")
@@ -2350,7 +2350,7 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h3 class="ds-sub">{{P "The scripts"}}</h3>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss. busy.js is the busy rule. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
 
 <h3 class="ds-sub">{{P "What each file weighs"}}</h3>
 <p class="ds-note">{{P "Filesizes for the various components."}}</p>

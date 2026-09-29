@@ -26,7 +26,11 @@
    A script that handles a submit itself (a fetch, say) cancels it in a
    listener on the form or the document, as it would anyway: those run
    before this file's window listener, which then sees the cancelled
-   submit and leaves it — and its feedback — to that script. */
+   submit and leaves it — and its feedback — to that script. Two edges
+   of the hold, on purpose: a handler that stops the submit event's
+   propagation keeps it from the window, so that submit goes at once,
+   unheld; and a form removed from the page during the hold (a polled
+   fragment replacing it) takes its held submit with it. */
 (function () {
   "use strict";
 
@@ -103,7 +107,7 @@
     // switches the rule off and hands back the double submit. The busy flag
     // below is the form's own aria-busy for the same reason: an expando is
     // shadowable, and under strict mode assigning to a shadowed one throws.
-    var to = form.getAttribute("target");
+    var to = (btn && btn.getAttribute("formtarget")) || form.getAttribute("target");
     if (to && to !== "_self") return;
     if (/^dialog$/i.test(btn && btn.getAttribute("formmethod") ||
       form.getAttribute("method"))) return;
@@ -194,7 +198,17 @@
       form.reportValidity();
       return;
     }
+    // The submitter may have left the form during the hold (moved,
+    // removed, its form= changed): requestSubmit would throw and leave
+    // the form guarded for good. Hand it back instead.
+    if (btn && (!btn.isConnected || btn.form !== form)) {
+      busyOff(form);
+      return;
+    }
     var busyValue = null;
+    // Restored, not assumed: a button that opted out of the busy state
+    // (data-busy="false") was never disabled, and must not end up so.
+    var wasDisabled = btn ? btn.disabled : false;
     if (btn) {
       btn.disabled = false;
       var idle = btn.getAttribute("data-idle-label");
@@ -209,7 +223,7 @@
     } finally {
       releasing = null;
       if (btn) {
-        btn.disabled = true;
+        btn.disabled = wasDisabled;
         if (busyValue !== null) btn.value = busyValue;
       }
     }
@@ -226,6 +240,7 @@
   // The back/forward cache restores a page's DOM exactly as it was left
   // — busy buttons still disabled, still wearing the busy label and the
   // spinner — so a visitor who navigates back finds a dead form. Hand
+  // every busy form back.
   window.addEventListener("pageshow", function (e) {
     if (e.persisted) document.querySelectorAll("form[aria-busy]").forEach(busyOff);
   });

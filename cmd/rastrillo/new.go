@@ -165,7 +165,8 @@ func runNew(args []string) error {
 	//	theme.css      the colour, type family and shape tokens
 	//	               tokens.css paints its classes with; swap it for
 	//	               another of ui.ThemeNames() or edit it freely
-	//	rastrillo.js   the fragment shim behind data-poll and data-busy
+	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
+	//	busy.js        the busy rule: every submit button, data-busy opts out
 	//	select.js      field-select's searchable enhancement, inert
 	//	               until a <select> opts in with data-rst-select
 	//	datetime.js    the date fields' natural-language combobox,

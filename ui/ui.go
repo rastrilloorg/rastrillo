@@ -56,7 +56,7 @@
 // shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
 // static files the app is free to edit in place. rastrillo.js, the fragment shim behind
-// data-poll and data-busy, ships the same way, landing beside it. It
+// data-poll, and busy.js, the busy rule, ship the same way, landing beside it. It
 // never replaces a native idiom — every "no JavaScript" idiom above
 // still works with scripts disabled; the shim exists only for the kinds
 // of work a native idiom cannot do. Two of them: work that finishes

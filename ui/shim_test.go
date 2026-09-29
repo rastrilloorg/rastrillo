@@ -100,7 +100,7 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	// selector is the old shape coming back.
 	for _, bad := range []string{`"form[data-busy]"`, `"[data-busy]"`, "busyForm"} {
 		if strings.Contains(js, bad) {
-			t.Errorf("shim still scans for %s; the busy rule is on by default, not opted into", bad)
+			t.Errorf("busy.js scans for %s; the busy rule is on by default, not opted into", bad)
 		}
 	}
 	// data-busy survives only as an opt-out, on the form and on the
@@ -386,6 +386,9 @@ func TestBusyContract(t *testing.T) {
 		"HOLD_MS = 650", `window.addEventListener("submit"`, "requestSubmit(btn || undefined)",
 		"held.has(e)", "form === releasing", "checkValidity()",
 		"pagehide", "clearTimeout", "pageshow", "e.persisted",
+		// Review fixes: an opted-out button is never left disabled, and a
+		// submitter that left the form during the hold hands the form back.
+		"btn.disabled = wasDisabled", "btn.form !== form", `getAttribute("formtarget")`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("busy.js does not mention %q", want)
