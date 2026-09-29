@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -22,12 +23,42 @@ import (
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
-// captureMailer records the last message instead of sending it.
-type captureMailer struct{ to, subject, body string }
+// captureMailer records the last message instead of sending it. Send
+// runs on the server's goroutine and a browser drive reads on the
+// test's, and what orders the two is a page loading in another process:
+// no happens-before the race detector can see, so it stays quiet only
+// by luck. Every access takes the lock, and the fields are reached only
+// through the methods.
+type captureMailer struct {
+	mu               sync.Mutex
+	lastTo, lastBody string
+}
 
-func (m *captureMailer) Send(_ context.Context, to, subject, body string) error {
-	m.to, m.subject, m.body = to, subject, body
+func (m *captureMailer) Send(_ context.Context, to, _, body string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.lastTo, m.lastBody = to, body
 	return nil
+}
+
+// sentTo is the last message's recipient; "" if none since forget.
+func (m *captureMailer) sentTo() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.lastTo
+}
+
+func (m *captureMailer) sentBody() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.lastBody
+}
+
+// forget clears the record, so a test can show that nothing was sent.
+func (m *captureMailer) forget() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.lastTo, m.lastBody = "", ""
 }
 
 // newTestAuthDB is a migrated database for a test that calls New itself
@@ -118,12 +149,12 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin?sent=1" {
 		t.Fatalf("Begin: %d → %q, want 303 → /signin?sent=1", w.Code, w.Header().Get("Location"))
 	}
-	if m.to != "person@example.com" {
-		t.Fatalf("mail went to %q", m.to)
+	if m.sentTo() != "person@example.com" {
+		t.Fatalf("mail went to %q", m.sentTo())
 	}
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	if link == "" {
-		t.Fatalf("no verify link in mail body:\n%s", m.body)
+		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 
 	// Verify: land the link, get a session.
@@ -206,9 +237,9 @@ func TestVerifySecondFactorIntercepts(t *testing.T) {
 	})
 
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	if link == "" {
-		t.Fatalf("no verify link in mail body:\n%s", m.body)
+		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
@@ -229,7 +260,7 @@ func TestVerifySecondFactorIntercepts(t *testing.T) {
 func TestRequireFreshSessionStepUp(t *testing.T) {
 	a, m := newTestAuth(t, nil)
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 	var session *http.Cookie
@@ -317,11 +348,11 @@ func TestBeginCSRF(t *testing.T) {
 	if w := post(func(r *http.Request) { r.Header.Set("Origin", "http://evil.test") }); w.Code != http.StatusForbidden {
 		t.Fatalf("foreign Origin: %d, want 403", w.Code)
 	}
-	m.to = ""
+	m.forget()
 	if w := post(func(r *http.Request) { r.Header.Set("Origin", "http://app.test") }); w.Code != http.StatusSeeOther {
 		t.Fatalf("matching Origin: %d, want 303", w.Code)
 	}
-	if m.to == "" {
+	if m.sentTo() == "" {
 		t.Fatal("matching Origin did not reach the flow")
 	}
 	if w := post(func(r *http.Request) { r.Header.Set("Referer", "http://app.test/signin") }); w.Code != http.StatusSeeOther {
@@ -335,7 +366,7 @@ func TestAuthorizeGate(t *testing.T) {
 	})
 
 	beginSignin(t, a, "stranger@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 	if w.Code != http.StatusForbidden {
@@ -343,7 +374,7 @@ func TestAuthorizeGate(t *testing.T) {
 	}
 
 	beginSignin(t, a, "member@example.com")
-	link = linkRE.FindString(m.body)
+	link = linkRE.FindString(m.sentBody())
 	w = httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/" {
@@ -754,9 +785,9 @@ func TestSubjectForRemapsTheStoredSubject(t *testing.T) {
 	})
 
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	if link == "" {
-		t.Fatalf("no verify link in mail body:\n%s", m.body)
+		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
@@ -816,7 +847,7 @@ func TestSubjectForErrorRefusesSignin(t *testing.T) {
 	})
 
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 

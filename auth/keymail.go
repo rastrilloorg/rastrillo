@@ -25,12 +25,12 @@ const (
 	exchangeTimeout = 15 * time.Second
 )
 
-// keymailServers parses Config.KeymailServers into a lowercased set; nil
-// means any delegated server. An entry that could never equal a URL's
-// host — a scheme, a path, userinfo, a port that is not a port, an
-// unclosed IPv6 bracket, a control character — is refused here, because
-// accepted it would match nothing and every keymail user would quietly
-// be sent a link instead.
+// keymailServers parses Config.KeymailServers into a set of
+// serverKeys; nil means any delegated server. An entry that could never
+// equal a URL's host — a scheme, a path, userinfo, a port that is not a
+// port, an unclosed IPv6 bracket, a control character — is refused
+// here, because accepted it would match nothing and every keymail user
+// would quietly be sent a link instead.
 func keymailServers(list []string) (map[string]bool, error) {
 	if len(list) == 0 {
 		return nil, nil
@@ -41,9 +41,29 @@ func keymailServers(list []string) (map[string]bool, error) {
 		if !validAuthority(h) {
 			return nil, fmt.Errorf("rastrillo/auth: KeymailServers entry %q is not a host or host:port", s)
 		}
-		set[h] = true
+		set[serverKey(h)] = true
 	}
 	return set, nil
+}
+
+// serverKey is the one spelling of a keymail server that the list and
+// every host checked against it are reduced to: lowercased, one trailing
+// dot dropped, and an explicit :443 dropped. Each of those names the
+// same https server, and compared as written an operator's
+// "keymail.dev:443" never equals the "keymail.dev" DNS delegates to —
+// so keymail is silently off, every keymail user gets a link, and
+// nothing is logged. Any other port stays: it is a different server.
+func serverKey(authority string) string {
+	h, port := strings.ToLower(authority), ""
+	// The last colon starts a port only outside an IPv6 literal's
+	// brackets.
+	if i := strings.LastIndexByte(h, ':'); i >= 0 && !strings.Contains(h[i:], "]") {
+		h, port = h[:i], h[i:]
+	}
+	if port == ":443" {
+		port = ""
+	}
+	return strings.TrimSuffix(h, ".") + port
 }
 
 // validAuthority is a host with an optional port, exactly as a URL's
@@ -83,13 +103,22 @@ type hostGuard struct {
 }
 
 func (g *hostGuard) RoundTrip(r *http.Request) (*http.Response, error) {
-	host := strings.ToLower(r.URL.Host)
+	host := serverKey(r.URL.Host)
 	if r.URL.Scheme != "https" || !g.allow[host] {
 		// A RoundTripper owns the body even when it refuses.
 		if r.Body != nil {
 			r.Body.Close()
 		}
-		// Host only: the probe's query carries the address being signed in.
+		// This message names only the host, but that is not what keeps
+		// the address out of logs: http.Client wraps it in a *url.Error
+		// carrying the full URL, and the federation probe's query is the
+		// address being signed in. What keeps it out is the classifier,
+		// which reads any failure as "not keymail" and discards the
+		// error unlogged (K/classify.go:285-293). Callback does log a
+		// refused exchange, but that URL is the token endpoint or the
+		// hop a listed server redirected to: the code and verifier
+		// travel in the body, never the URL. Anything that starts
+		// logging a probe's error must strip the URL first.
 		return nil, fmt.Errorf("rastrillo/auth: %s://%s is not a listed keymail server", r.URL.Scheme, host)
 	}
 	base := g.base

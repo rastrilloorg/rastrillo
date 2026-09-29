@@ -548,10 +548,11 @@ func TestAnAdmissionWrapperIsNoOracle(t *testing.T) {
 		form := url.Values{"address": {"ada@example.com"}, "expect": {"keymail"}}
 		ab, rb := newBrowser(), newBrowser()
 		admitted := ab.do(wrapper(true), http.MethodPost, "/signin", form)
-		m.to, f.seen = "", nil
+		m.forget()
+		f.seen = nil
 		refused := rb.do(wrapper(false), http.MethodPost, "/signin", form)
-		if m.to != "" || len(f.seen) != 0 {
-			t.Fatalf("screen=%v: AnswerAsSent sent mail (%q) or classified (%v)", screen, m.to, f.seen)
+		if m.sentTo() != "" || len(f.seen) != 0 {
+			t.Fatalf("screen=%v: AnswerAsSent sent mail (%q) or classified (%v)", screen, m.sentTo(), f.seen)
 		}
 		sa := stateAt(a, ab, admitted.Header().Get("Location"))
 		sr := stateAt(a, rb, refused.Header().Get("Location"))

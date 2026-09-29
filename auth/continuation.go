@@ -142,7 +142,7 @@ func (a *Auth) validAuthorizeURL(raw string) bool {
 		!pkceValue(q.Get("state")) || !pkceValue(q.Get("code_challenge")) {
 		return false
 	}
-	return a.servers == nil || a.servers[strings.ToLower(u.Host)]
+	return a.servers == nil || a.servers[serverKey(u.Host)]
 }
 
 // pkceValue is 43 base64url characters: what signin.NewVerifier and

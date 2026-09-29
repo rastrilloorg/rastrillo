@@ -433,7 +433,9 @@ K/keymail.go:44-57):
   `redirect_uri` equals that + `callbackPath`; `scope` is `identify`;
   `code_challenge_method` is `S256`; `state` and `code_challenge` are
   43 base64url characters (K/keymail.go:133-145).
-- If `KeymailServers` is set, the host (lowercased) is in it.
+- If `KeymailServers` is set, the host is in it, both sides compared
+  as `serverKey` spells them: lowercased, one trailing dot and an
+  explicit `:443` dropped. Any other port is a different server.
 
 **Where the allowlist is enforced.** Two places, both HTTP clients,
 because the library talks to a keymail server twice.
@@ -457,7 +459,7 @@ gives it to both: the classifier's client (keeping its 5-second timeout,
 K/classify.go:86-91) and every `Keymail` the flow's `Keymail` func
 returns (keeping the 15-second timeout, K/keymail.go:105-108). The
 transport refuses any request that is not `https` or whose host
-(lowercased, host[:port]) is not listed. `http.Client` calls the
+(as `serverKey` spells it, host[:port]) is not listed. `http.Client` calls the
 transport for every redirect hop, so a listed server cannot redirect a
 probe or an exchange — code and verifier included — to an unlisted host
 or down to plain http. Consequences:

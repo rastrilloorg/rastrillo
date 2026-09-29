@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/keymaildev/signin"
 )
 
 func listed(servers ...string) func(*Config) {
@@ -27,6 +29,63 @@ func TestKeymailServersRefusesWhatIsNotAHost(t *testing.T) {
 		d := newTestAuthDB(t)
 		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, KeymailServers: []string{bad}}); err == nil {
 			t.Errorf("KeymailServers %q was accepted; it can never match a host, so every keymail user would silently get a link", bad)
+		}
+	}
+	// The refusals above must not be refusing everything: a port, an
+	// IPv6 literal, an explicit :443 and a fully-qualified name are all
+	// hosts an operator may fairly write.
+	for _, good := range []string{"keymail.test:8443", "[::1]:443", "keymail.dev:443", "keymail.dev.", "KeyMail.Dev"} {
+		d := newTestAuthDB(t)
+		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, KeymailServers: []string{good}}); err != nil {
+			t.Errorf("KeymailServers %q was refused: %v", good, err)
+		}
+	}
+}
+
+// The same server spelled two ways must match on both enforcement
+// sides — the guard under the HTTP clients and the authorize-URL
+// predicate — or a valid entry silently turns keymail off: every
+// keymail user gets a link and nothing is logged. Only case, one
+// trailing dot and an explicit :443 are spelling; any other port is a
+// different server.
+func TestKeymailServersMatchOneServerHoweverItIsSpelled(t *testing.T) {
+	ok := roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+	})
+	for _, c := range []struct {
+		listed, host string
+		want         bool
+	}{
+		{"keymail.dev:443", "keymail.dev", true},
+		{"keymail.dev", "keymail.dev:443", true},
+		{"keymail.dev.", "keymail.dev", true},
+		{"keymail.dev", "keymail.dev.", true},
+		{"KeyMail.Dev.:443", "keymail.dev", true},
+		{"keymail.dev", "KEYMAIL.DEV.:443", true},
+		{"[::1]:443", "[::1]", true},
+		{"[::1]", "[::1]:443", true},
+		{"keymail.test:8443", "keymail.test:8443", true},
+		{"keymail.test.:8443", "keymail.test:8443", true},
+		{"keymail.test:8443", "keymail.test.:8443", true},
+		{"keymail.dev", "keymail.dev:8443", false},
+		{"keymail.dev:8443", "keymail.dev", false},
+		{"keymail.dev:8443", "keymail.dev:443", false},
+		{"keymail.dev", "keymail.dev..", false},
+		{"keymail.dev", "rogue.dev", false},
+	} {
+		a, _ := newTestAuth(t, listed(c.listed))
+		a.guard.base = ok
+		req, err := http.NewRequest(http.MethodGet, "https://"+c.host+"/.well-known/keymail", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := a.guard.RoundTrip(req); (err == nil) != c.want {
+			t.Errorf("listed %q, the guard on a request to %q: let through = %v, want %v (%v)", c.listed, c.host, err == nil, c.want, err)
+		}
+		u := (&signin.Keymail{Base: "https://" + c.host, Origin: a.cfg.Origin, RedirectPath: callbackPath}).
+			AuthorizeURL(strings.Repeat("s", 43), strings.Repeat("c", 43), false)
+		if got := a.validAuthorizeURL(u); got != c.want {
+			t.Errorf("listed %q, the predicate on %s: %v, want %v", c.listed, u, got, c.want)
 		}
 	}
 }
@@ -65,8 +124,8 @@ func TestAnUnlistedServerIsNeverProbed(t *testing.T) {
 	if n := f.hits("rogue.test", ""); n != 0 {
 		t.Fatalf("rogue.test received %d requests; an unlisted server must never be contacted", n)
 	}
-	if m.to != "ron@example.net" {
-		t.Fatalf("the link went to %q", m.to)
+	if m.sentTo() != "ron@example.net" {
+		t.Fatalf("the link went to %q", m.sentTo())
 	}
 }
 

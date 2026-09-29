@@ -424,6 +424,10 @@ func requireReflow(t *testing.T, rig *harness.Rig, what string) {
 // only the card's own overflow-wrap can keep it inside 320px.
 const longAddress = "averyverylonglocalpartwithnobreakopportunityatall@anequallylongdomainwithnobreaksanywhere.example"
 
+// longLocalPart is 230 bytes before the @ with no break in them: 242
+// bytes in all, inside the 254 the screen remembers.
+var longLocalPart = strings.Repeat("x", 230) + "@example.com"
+
 func TestSigninScreenInTheBrowser(t *testing.T) {
 	app, build := newScreenApp(t)
 	rig := harness.New(t, build)
@@ -491,7 +495,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	rig.Screen("[rst-signin]", "the Sent screen")
 
 	// The link signs Ada in; she enrols a passkey and signs out.
-	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.body)), chromedp.WaitVisible("#home", chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible("#home", chromedp.ByQuery))
 	var status float64
 	eval(t, rig, registerPasskey, &status)
 	if status != http.StatusOK {
@@ -543,6 +547,13 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	keymail.holdRefresh.Store(true)
 	run(t, rig, chromedp.Navigate(rig.Origin+"/signin?continue="+id), chromedp.WaitVisible(`[rst-signin-door] a[rst-btn]`, chromedp.ByQuery))
 	rig.Screen("[rst-signin]", "the Continue screen")
+	// The select below takes no time to wait, so it proves "nothing went
+	// by itself" only if nothing could: a refresh still in the page would
+	// race the click, and whichever won, the link would look tested.
+	eval(t, rig, `document.querySelector('meta[http-equiv="refresh"]') === null`, &ok)
+	if !ok {
+		t.Fatal("the Continue page still carries its meta refresh; the click below would race it")
+	}
 	select {
 	case u := <-keymail.authorize:
 		t.Fatalf("with its refresh held back the Continue page still went to %q by itself", u)
@@ -618,26 +629,38 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	}
 
 	// 320px, with an address no line break can split: Sent shows it back
-	// and the one-tap carries it on its label, and neither may push the
-	// page sideways.
+	// and the magic-link one-tap carries it on its label, "Continue as
+	// ‹address›", and neither may push the page sideways.
 	signOut(t, rig)
 	run(t, rig, chromedp.EmulateViewport(320, 640))
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery),
-		chromedp.SetValue("#rst-signin-email", longAddress, chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery))
-	if s = awaitSent(t, rig); s != longAddress {
-		t.Fatalf("Sent names %q", s)
+	continueAs := catalog["rastrillo.ui.signin_continue_as"]
+	atNarrowest := func(address string) {
+		t.Helper()
+		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery),
+			chromedp.SetValue("#rst-signin-email", address, chromedp.ByQuery),
+			chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery))
+		if s = awaitSent(t, rig); s != address {
+			t.Fatalf("Sent names %q", s)
+		}
+		requireReflow(t, rig, "the Sent page with "+address)
+		run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible("#home", chromedp.ByQuery))
+		signOut(t, rig)
+		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin"] button[autofocus]`, chromedp.ByQuery))
+		eval(t, rig, `document.querySelector("form[action='/signin'] button[autofocus]").textContent.replace(/\s+/g, " ").trim()`, &s)
+		if want := strings.Replace(continueAs, "{address}", address, 1); s != want {
+			t.Fatalf("the one-tap reads %q, want %q", s, want)
+		}
+		requireReflow(t, rig, "the Returning one-tap for "+address)
 	}
-	requireReflow(t, rig, "the Sent page with a long address")
-	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.body)), chromedp.WaitVisible("#home", chromedp.ByQuery))
-	signOut(t, rig)
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin"] button[autofocus]`, chromedp.ByQuery))
-	eval(t, rig, `document.querySelector("form[action='/signin'] button[autofocus] bdi").textContent`, &s)
-	if s != longAddress {
-		t.Fatalf("the one-tap names %q", s)
-	}
-	requireReflow(t, rig, "the Returning one-tap with a long address")
+	atNarrowest(longAddress)
 	rig.Screen("[rst-signin]", "the Returning screen at 320px")
+	// The local part alone is past 200 bytes: the label's own worst case,
+	// near the 254-byte ceiling the attempt cookie and the jar keep, with
+	// "Continue as" on the same line to crowd it. "Use a different email"
+	// first, because the one-tap above has replaced the field.
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin/forget"] button`, chromedp.ByQuery),
+		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
+	atNarrowest(longLocalPart)
 	run(t, rig, chromedp.EmulateViewport(1280, 800))
 }
 

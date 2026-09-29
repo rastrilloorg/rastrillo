@@ -187,7 +187,7 @@ func TestScreenOffIsToday(t *testing.T) {
 			}
 
 			want("a link", post(a.Begin, "ada@example.com", url.Values{"expect": {"keymail"}}), "/signin?sent=1", nil)
-			adaLink := linkRE.FindString(m.body)
+			adaLink := linkRE.FindString(m.sentBody())
 			want("a bad address", post(a.Begin, "not an address", nil), "/signin?err=address", nil)
 			for i := 0; i < 5; i++ {
 				post(a.Begin, "bea@example.com", nil)
@@ -199,7 +199,7 @@ func TestScreenOffIsToday(t *testing.T) {
 
 			a.cfg.SecondFactor = holdingGate(t, a).Hold
 			post(a.Begin, "dee@example.com", nil)
-			want("admit, held", b.do(a.Verify, http.MethodGet, pathOf(linkRE.FindString(m.body)), nil),
+			want("admit, held", b.do(a.Verify, http.MethodGet, pathOf(linkRE.FindString(m.sentBody())), nil),
 				"/signin/confirm", []string{"rastrillo_secondfactor"})
 
 			a.flow.Mailer = failingMailer{}
@@ -333,9 +333,9 @@ func TestAnswerAsSentAnswersLikeASentLink(t *testing.T) {
 			a, m := newTestAuth(t, func(c *Config) { c.SigninScreen = screen })
 			form := url.Values{"address": {"ada@example.com"}, "force": {"1"}, "expect": {"keymail"}}
 			sent := newBrowser().do(a.Begin, http.MethodPost, "/signin", form)
-			m.to = ""
+			m.forget()
 			refused := newBrowser().do(a.AnswerAsSent, http.MethodPost, "/signin", form)
-			if m.to != "" {
+			if m.sentTo() != "" {
 				t.Fatal("AnswerAsSent sent mail")
 			}
 			if sent.Code != refused.Code || redirectShape(sent) != redirectShape(refused) ||
@@ -359,7 +359,7 @@ func TestAdmitRemembersTheWayInAndEndsTheAttempt(t *testing.T) {
 	signIn := func(t *testing.T, a *Auth, m *captureMailer, b *browser, address string) *httptest.ResponseRecorder {
 		t.Helper()
 		b.do(a.Begin, http.MethodPost, "/signin", url.Values{"address": {address}, "force": {"1"}})
-		return b.do(a.Verify, http.MethodGet, pathOf(linkRE.FindString(m.body)), nil)
+		return b.do(a.Verify, http.MethodGet, pathOf(linkRE.FindString(m.sentBody())), nil)
 	}
 	remembered := func(a *Auth, b *browser) (lastsignin.Record, lastsignin.ReadResult) {
 		return a.jar.Read(b.request(http.MethodGet, "/signin", nil))
