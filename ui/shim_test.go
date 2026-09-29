@@ -389,6 +389,8 @@ func TestBusyContract(t *testing.T) {
 		// Review fixes: an opted-out button is never left disabled, and a
 		// submitter that left the form during the hold hands the form back.
 		"btn.disabled = wasDisabled", "btn.form !== form", `getAttribute("formtarget")`,
+		// Only a submit with a spinner showing is held.
+		`btn.getAttribute("aria-busy") !== "true") return;`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("busy.js does not mention %q", want)

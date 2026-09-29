@@ -2114,6 +2114,7 @@ func TestBusyButtonDrive(t *testing.T) {
 	// because the guard is the substance of the rule and is not what
 	// was opted out of.
 	var quiet string
+	quietAt := time.Now()
 	fail(chromedp.Run(ctx,
 		chromedp.Click(`#quietbtn`, chromedp.ByQuery), at("clicked-quiet"),
 		chromedp.Sleep(300*time.Millisecond),
@@ -2121,6 +2122,11 @@ func TestBusyButtonDrive(t *testing.T) {
 	))
 	if got := took(t, payloads, "button opt-out"); got != "action=quiet" {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
+	}
+	// No spinner, no hold: the 650ms minimum is for a spinner on screen,
+	// and an opted-out button shows none.
+	if waited := time.Since(quietAt); waited > 450*time.Millisecond {
+		t.Errorf("the opted-out button's submit took %v to arrive; with no spinner to show it must not be held", waited)
 	}
 	const wantQuiet = "form:true btn:- btn-off:false spin:no"
 	if quiet != wantQuiet {
@@ -2579,6 +2585,29 @@ func TestBusyButtonDrive(t *testing.T) {
 	if heldBack != wantBack {
 		t.Errorf("back on the page after leaving during the hold it reads\n  %q\nwant\n  %q — the form must be handed back", heldBack, wantBack)
 	}
+
+	// ── 8. A script's submit, with no button ─────────────────────────
+	//
+	// requestSubmit() from a script (Enter in a quick-add field, a file
+	// dropped on a page) has no submitter, so nothing shows a spinner and
+	// nothing is held: it goes at once. The form is still guarded.
+	scriptAt := time.Now()
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-script-submit"),
+		chromedp.WaitVisible(`#save`, chromedp.ByQuery),
+		chromedp.ActionFunc(func(context.Context) error { scriptAt = time.Now(); return nil }),
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-submitted"),
+	))
+	if got := took(t, payloads, "script submit"); got != "note=hello" {
+		t.Errorf("the script's submit sent %q, want %q", got, "note=hello")
+	}
+	if waited := time.Since(scriptAt); waited > 450*time.Millisecond {
+		t.Errorf("a script's submit with no button took %v to arrive; with no spinner it must not be held", waited)
+	}
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-resubmitted"),
+	))
+	tookNothing(t, payloads, "script submit, second")
 }
 
 // ── Bidirectional text: the name cell ────────────────────────────────
