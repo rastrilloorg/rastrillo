@@ -22,7 +22,10 @@ shim in your layout.
 The spinner now shows for at least 650ms: a submit is held until 650ms
 after the click and then sent, with the clicked button's name and value.
 Leaving the page during the hold drops the submit, rather than sending
-it when the visitor comes Back. A script that handles a submit itself
+it when the visitor comes Back. Only a submit whose button is showing the spinner is
+held; a script's `requestSubmit()` with no submitter, or an opted-out
+button, goes at once — pass the button (`requestSubmit(button)`) to get
+the spinner. A script that handles a submit itself
 still cancels it in a form or document listener, as before; the hold
 leaves a cancelled submit alone.
 

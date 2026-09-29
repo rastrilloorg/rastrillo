@@ -166,7 +166,7 @@
   // back); so does the guard's own refusal of a second submit. Only a
   // submit nobody else stopped is held, and only if the busy rule armed
   // it (aria-busy on the form: not opted out, not a dialog, not a new
-  // window).
+  // window) and a button is showing the spinner.
   var held = new WeakSet(); // submit events this listener cancelled
   var pending = new Map();  // form -> timer, for a hold still running
   var releasing = null;     // the form whose held submit is going now
@@ -175,9 +175,14 @@
     if (!form || form.tagName !== "FORM") return;
     if (form === releasing) { releasing = null; return; }
     if (e.defaultPrevented || form.getAttribute("aria-busy") !== "true") return;
+    // Only a submit with a spinner to show is held: the hold is for the
+    // spinner. A script's requestSubmit() with no submitter, or a button
+    // that opted out, has nothing on screen to keep up, and holding it
+    // would only be a silent 650ms stall. The form is still guarded.
+    var btn = e.submitter || null;
+    if (!btn || btn.getAttribute("aria-busy") !== "true") return;
     e.preventDefault();
     held.add(e);
-    var btn = e.submitter || null;
     pending.set(form, setTimeout(function () { release(form, btn); }, HOLD_MS));
   });
 
