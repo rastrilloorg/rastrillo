@@ -95,8 +95,19 @@ func screenPartialViews() []screenPartialView {
 var galleryPasskey = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs"}
 
 // galleryBrand is sample data, not the page's voice: it stays English on
-// every page, like every other sample's names.
-var galleryBrand = map[string]any{"Name": "Harbour"}
+// every page, like every other sample's names. It has all three parts a
+// brand can have, because a brand column with only a name is half a card
+// of nothing and not what an app would ship. The mark is drawn in
+// currentColor with no colours of its own, so the card's CSS gives it
+// the theme's accent, as it would an app's own mark drawn the same way.
+var galleryBrand = map[string]any{
+	"Name":  "Harbour",
+	"Pitch": "Moorings and berths, booked in a minute.",
+	"Mark": template.HTML(`<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">` +
+		`<circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="3"/>` +
+		`<path d="M11 29c4.5 0 4.5-4 9-4s4.5 4 9 4 4.5-4 9-4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>` +
+		`<path d="M24 11v11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`),
+}
 
 const graceAddress = "grace@example.com"
 

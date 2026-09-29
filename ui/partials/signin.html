@@ -11,8 +11,9 @@
      Keys:
        State    auth.SigninState, required
        Brand    required: Name (string); optional Pitch (string, one
-                line) and Mark (template.HTML — an <img> or inline SVG
-                the app owns)
+                line) and Mark (template.HTML — an img element or inline
+                SVG the app owns; give it aria-hidden or alt="" when the
+                Name beside it already says what it is)
        Preview  bool, optional — gallery use only: no meta refresh, the
                 Continue link goes to #, and the passkey door shows as
                 the enhanced page would, with nothing for a script to find
@@ -51,7 +52,9 @@
 </form>
 {{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
 <input type="hidden" name="address" value="{{$s.Remembered.Address}}">
-<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}>{{Tbdi "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</button>
+{{/* The label is one <span>: [rst-btn] is a flex box with a gap, and
+     the sentence's text and its <bdi> as two flex items would show that
+     gap as a double space before the address. */}}<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}><span>{{Tbdi "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
 </form>
 {{else}}{{/* The ask door, and the passkey door with the email form beside it
      (the email form is always on the screen where a passkey door is:
@@ -62,8 +65,11 @@
 {{if eq $s.Problem "keymail"}}<input type="hidden" name="force" value="1">
 {{end}}<button rst-btn="primary block" type="submit">{{if eq $s.Problem "keymail"}}{{T "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T "rastrillo.ui.signin_submit"}}{{end}}</button>
 </form>
-{{else if and $s.Passkey (eq . $pkSlot)}}<button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
+{{else if and $s.Passkey (eq . $pkSlot)}}{{/* The button and its message are one child of the door, so the
+     message, empty until the script writes to it, takes none of the
+     door's gaps. */}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
 {{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
 {{end}}{{end}}{{end}}{{end}}{{end}}{{/* The way out of a remembered or kept address — the three one-taps
      and Sent — written once, after whichever door this is. Not on Ask,

@@ -3235,6 +3235,16 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 		if !strings.Contains(section, "rst-signin") || !strings.Contains(section, "rst-stage") {
 			t.Errorf("screen %s is not the signin partial in a stage frame", key)
 		}
+		// A brand column with a name alone is half a card of nothing;
+		// the sample brand shows every part an app's can have.
+		if !strings.Contains(section, "rst-signin-mark") || !strings.Contains(section, "rst-signin-pitch") {
+			t.Errorf("screen %s shows a brand with no mark or pitch", key)
+		}
+	}
+	// The stage shell demo frames the same sample app as the screens.
+	stage := string(files[RootTheme()+"/en/shells/stage.html"])
+	if !strings.Contains(stage, "<p rst-signin-pitch>"+html.EscapeString(galleryBrand["Pitch"].(string))+"</p>") || !strings.Contains(stage, "<div rst-signin-mark>") {
+		t.Errorf("the stage shell demo does not show the Screens page's sample brand")
 	}
 	// Counted exactly: a screen dropped from screenDocs, or a hand-written
 	// one that quietly became a stage frame, changes one of these.

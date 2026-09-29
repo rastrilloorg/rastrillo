@@ -964,7 +964,8 @@ func familyOf(fams []familyView, kind string) *familyView {
 
 // buildFamilies renders every sample in samples.go and holds the table
 // to ui: a partial samples.go documents that ui does not define, and a
-// partial ui defines that no family claims, are both errors here.
+// partial ui defines that no page claims — no family, and not the
+// Screens page's screenPartials — are both errors here.
 func buildFamilies(mount string, tmpl *template.Template, theme, locale string) ([]familyView, error) {
 	claimed := map[string]bool{}
 	out := make([]familyView, 0, len(families()))
@@ -1017,14 +1018,15 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 	// can call.
 	//
 	// There is no such page any more. A family IS a page, so a partial
-	// with no family has nowhere to be, and the choices were a page
+	// no page claims — no family, and not screenPartials, the Screens
+	// page's own claim — has nowhere to be, and the choices were a page
 	// that exists only on the days something is broken or a failure
 	// that says so. This is the failure. It is stricter than what it
 	// replaces — the old sweep let a partial reach the gallery with no
 	// sample and no thought — and it fails at build rather than in a
 	// coverage gate, so the message can name the file to edit.
 	if len(orphans) > 0 {
-		return nil, fmt.Errorf("ui defines %d partial(s) no family in samples.go claims: %s — every partial belongs to a family, because a family is a page of this gallery; add them to families() in internal/designsystem/samples.go",
+		return nil, fmt.Errorf("ui defines %d partial(s) no page of this gallery claims: %s — every partial belongs to a page; add a component to a family in families() in internal/designsystem/samples.go, or a whole screen to screenPartials in internal/designsystem/screens.go",
 			len(orphans), strings.Join(orphans, ", "))
 	}
 	return out, nil
@@ -1670,10 +1672,12 @@ type shellData struct {
 	Index   string
 	Locales []localeLink
 	Account template.HTML
-	// Signin is the stage demo's card: the plain Ask state, with no
-	// problem, nothing remembered and no passkey door, because the demo
-	// is about the shell and the card is only what it frames.
+	// Signin and Brand are the stage demo's card: the plain Ask state,
+	// with no problem, nothing remembered and no passkey door, because
+	// the demo is about the shell and the card is only what it frames;
+	// and the Screens page's own sample brand, so the two show one app.
 	Signin auth.SigninState
+	Brand  map[string]any
 }
 
 // accountMarkup is the one block whose shape differs between the
@@ -1736,6 +1740,7 @@ func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 		Locales: localeLinks(mount, theme, locale, "index.html"),
 		Account: accountMarkup[shell],
 		Signin:  auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
+		Brand:   galleryBrand,
 	})
 	if err != nil {
 		return nil, err
@@ -2568,7 +2573,7 @@ const shellTemplate = `
 // default art.
 const stageShellTemplate = `
 {{define "foot"}}<footer rst-stage-foot><a href="{{.Index}}">{{P "Back to the design system"}}</a></footer>{{end}}
-{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" (dict "Name" "Harbour") "Preview" true)}}{{end}}
+{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand "Preview" true)}}{{end}}
 `
 
 // modalTemplate is the modal demo page: the sample's structure with

@@ -483,3 +483,72 @@ func TestSigninRendersTheBrandsOptionalParts(t *testing.T) {
 		t.Errorf("a Brand with no Mark or Pitch leaves empty slots:\n%s", bare)
 	}
 }
+
+// [rst-btn] is an inline-flex box with a gap, so a label whose text and
+// <bdi> sit directly in the button are two flex items, and the gap
+// between them reads as a double space before the address. The label
+// must be one element, and its text must carry exactly one space there.
+func TestTheLinkOneTapLabelIsOneRunOfText(t *testing.T) {
+	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepReturning, Remembered: remembered("magiclink", "grace@example.com")}))
+	button := regexp.MustCompile(`(?s)<button rst-btn="primary block" type="submit"[^>]*>(.*?)</button>`).FindStringSubmatch(out)
+	if button == nil {
+		t.Fatalf("no one-tap button:\n%s", out)
+	}
+	if !regexp.MustCompile(`^<span>[^<]*<bdi>[^<]*</bdi>[^<]*</span>$`).MatchString(button[1]) {
+		t.Errorf("the one-tap's label is not a single <span> run, so the button's flex gap splits it: %q", button[1])
+	}
+	label := text(button[1])
+	if strings.Contains(label, "  ") || label != strings.TrimSpace(defaultTf("rastrillo.ui.signin_continue_as", "address", "grace@example.com")) {
+		t.Errorf("the one-tap reads %q, want %q with single spaces", label, defaultTf("rastrillo.ui.signin_continue_as", "address", "grace@example.com"))
+	}
+}
+
+// The passkey message is empty until the door's script writes to it,
+// and an empty paragraph directly in the door would still take one of
+// the door's gaps. The button and its message are one child of the door.
+func TestThePasskeyButtonAndItsMessageAreOneDoorChild(t *testing.T) {
+	for _, preview := range []bool{false, true} {
+		for _, st := range []auth.SigninState{
+			{Step: auth.StepAsk, Passkey: signinDoor},
+			{Step: auth.StepReturning, Remembered: remembered("passkey", ""), Passkey: signinDoor},
+		} {
+			data := signinData(st)
+			if preview {
+				data["Preview"] = true
+			}
+			out := render(t, "signin", data)
+			if !regexp.MustCompile(`<div rst-signin-passkey><button [^>]*>[^<]*</button>\s*<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>\s*</div>`).MatchString(out) {
+				t.Errorf("door %s, preview %v: the passkey button and message are not wrapped together:\n%s", st.Door(), preview, out)
+			}
+		}
+	}
+}
+
+// An app that mounts auth somewhere else must get a screen that posts
+// there: every form action is BeginPath or ForgetPath, and the forget
+// form is the only one posting to ForgetPath.
+func TestEveryFormPostsWhereTheAppMountedAuth(t *testing.T) {
+	action := regexp.MustCompile(`<form\b[^>]*\saction="([^"]*)"`)
+	for _, c := range signinStates() {
+		st := c.st
+		st.BeginPath, st.ForgetPath = "/account/begin", "/account/forget"
+		out := render(t, "signin", signinData(st))
+		forms := action.FindAllStringSubmatch(out, -1)
+		if st.Door() != "continue" && len(forms) == 0 {
+			t.Errorf("%s: no form at all", c.name)
+		}
+		forget := 0
+		for _, f := range forms {
+			switch f[1] {
+			case st.BeginPath:
+			case st.ForgetPath:
+				forget++
+			default:
+				t.Errorf("%s: a form posts to %q, neither BeginPath nor ForgetPath", c.name, f[1])
+			}
+		}
+		if forget != strings.Count(out, html.EscapeString(defaultT("rastrillo.ui.signin_different"))) {
+			t.Errorf("%s: %d forms post to ForgetPath but the page has a different number of Use a different email buttons", c.name, forget)
+		}
+	}
+}

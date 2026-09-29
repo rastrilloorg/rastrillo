@@ -1955,11 +1955,18 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 @media (min-width: 48rem) {
   .rst-signin, [rst-signin] { align-items: center; gap: var(--rst-sp-6); grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: var(--rst-sp-6); }
 }
-.rst-signin__brand, [rst-signin-brand] { display: flex; flex-direction: column; gap: var(--rst-sp-2); min-inline-size: 0; }
-.rst-signin__mark, [rst-signin-mark] { block-size: 3rem; inline-size: 3rem; }
+/* The brand column reads mark, name, pitch. The pitch is the line the
+   column is for, so it is the largest type on the card, bigger than the
+   door's heading; the name above it is a label. A brand with no pitch
+   still has its name at label size: the door's heading already says
+   "Sign in to" that name. The mark takes the accent through
+   currentColor, so an inline SVG drawn in currentColor follows the
+   theme without colours of its own. */
+.rst-signin__brand, [rst-signin-brand] { display: flex; flex-direction: column; gap: var(--rst-sp-3); min-inline-size: 0; }
+.rst-signin__mark, [rst-signin-mark] { block-size: 3rem; color: var(--rst-accent); inline-size: 3rem; }
 .rst-signin__mark > *, [rst-signin-mark] > * { block-size: 100%; display: block; inline-size: 100%; }
-.rst-signin__name, [rst-signin-name] { font-size: var(--rst-fs-lg); font-weight: 600; margin: 0; }
-.rst-signin__pitch, [rst-signin-pitch] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__name, [rst-signin-name] { color: var(--rst-text-muted); font-size: var(--rst-fs-lg); font-weight: 600; margin: 0; }
+.rst-signin__pitch, [rst-signin-pitch] { color: var(--rst-text); font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; margin: 0; text-wrap: balance; }
 .rst-signin__door, [rst-signin-door] { display: flex; flex-direction: column; gap: var(--rst-sp-4); min-inline-size: 0; overflow-wrap: anywhere; }
 .rst-signin__door h1, [rst-signin-door] h1 { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin: 0; }
 .rst-signin__door > p, [rst-signin-door] > p { margin: 0; }
@@ -1969,7 +1976,18 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
 .rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
 .rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }
+/* The passkey button and its message are one child of the door. The
+   message is a live region and must stay rendered, so it is never
+   display: none; it is only spaced from the button once it has
+   something to say. While the button is hidden — before the door's
+   script has found a working WebAuthn, or on a browser without one —
+   the whole pair is, so the door keeps no gap for a control nobody can
+   see; the region is back in the page before the button can be
+   pressed, which is all an announcement needs. */
+.rst-signin__passkey, [rst-signin-passkey] { display: flex; flex-direction: column; }
+.rst-signin__passkey:has(> .rst-btn[hidden]), [rst-signin-passkey]:has(> [rst-btn][hidden]) { display: none; }
 .rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__passkey-msg:not(:empty), [rst-signin-passkey-msg]:not(:empty) { margin-block-start: var(--rst-sp-2); }
 
 /* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
    One card centred on a full-page backdrop. [rst-stage] is <body> in
