@@ -25,6 +25,19 @@ func TestKeymailServersRefusesWhatIsNotAHost(t *testing.T) {
 	for _, bad := range []string{
 		"https://keymail.dev", "keymail.dev/", "keymail.dev/x", "", "key mail.dev", "user@keymail.dev",
 		"keymail.test:banana", "keymail.test:99999", "keymail.test:0", "keymail.test:", "[::1", "keymail\x00.test", "keymail.test?x",
+		// Unbracketed IPv6: serverKey takes only the last colon as a
+		// port, so listed "::1" keys as "::1" (host ":", port 1) and a
+		// request to ::1 (host "::1", dialed [::1]:443) keys to the same
+		// string — two different authorities sharing one allowlist
+		// entry. "::1:8443" is worse: it would admit a request to
+		// ::1:8443, dialed [::1:8443]:443, not ::1:8443. IPv6 must be
+		// bracketed.
+		"::1", "::1:8443", "2001:db8::1",
+		// serverKey("." or "..") trims one trailing dot, so their keys
+		// are "" and "." — neither can equal a real request's host, but
+		// an operator who typos one would see it accepted and never
+		// learn it matches nothing.
+		".", "..",
 	} {
 		d := newTestAuthDB(t)
 		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, KeymailServers: []string{bad}}); err == nil {

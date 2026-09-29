@@ -219,7 +219,10 @@ type Config struct {
 	// KeymailServers, when set, is the closed set of keymail servers (host
 	// or host:port, compared ignoring case, one trailing dot and an
 	// explicit :443) this app will classify against or exchange a code
-	// with. Empty means any server an address's own _keymail delegation
+	// with. An IPv6 host must be written in brackets ("[::1]" or
+	// "[::1]:8443"); unbracketed, its colons collide with the port
+	// separator and let one entry match more than the operator wrote.
+	// Empty means any server an address's own _keymail delegation
 	// names — which is keymail's protocol: the domain's owner chooses its
 	// server, the same party that controls its MX and could receive a
 	// magic link anyway, and a server cannot vouch for anyone else's

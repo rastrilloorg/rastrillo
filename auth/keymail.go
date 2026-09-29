@@ -85,6 +85,30 @@ func validAuthority(h string) bool {
 			return false
 		}
 	}
+	// url.Parse folds an unbracketed IPv6 literal's colons into
+	// Hostname()+Port() the same way it would a bracketed one, but
+	// serverKey does not: it takes only the last colon as a port. An
+	// unbracketed "::1" and a request to ::1 (which Go dials as
+	// [::1]:443) would then key alike, and an entry like "::1:8443"
+	// would key alike with a request to ::1:8443 (dialed as
+	// [::1:8443]:443) — two different authorities sharing one
+	// allowlist entry. Demanding brackets around any colon closes that;
+	// a bracketed host is left to serverKey exactly as parsed.
+	host := h
+	if !strings.HasPrefix(host, "[") {
+		if p := u.Port(); p != "" {
+			host = strings.TrimSuffix(host, ":"+p)
+		}
+		if strings.Contains(host, ":") {
+			return false
+		}
+	}
+	// A host of only dots parses clean but names nothing: serverKey
+	// trims one trailing dot, so "." and ".." key as "" and ".",
+	// neither of which any real request's host can equal.
+	if strings.Trim(host, ".") == "" {
+		return false
+	}
 	return true
 }
 
