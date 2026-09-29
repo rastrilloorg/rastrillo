@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`
+
+`ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it, whether that is an emailed link or Keymail. It offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.
+
+Turn it on with `auth.Config.SigninScreen`, render the page from `auth.SigninState` and `PrepareSigninResponse`, and mount `auth.Forget`. With it on, a keymail sign-in stays on your page, so the default CSP's `form-action 'self'` needs no widening. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
+
+Also new: `auth.AnswerAsSent`, for an admission check in front of `Begin`; `auth.Config.KeymailServers`, to trust only the keymail servers you list; `BeginPath`, `ForgetPath` and `Remember` on `auth.Config`; `passkey.Config.Remember` and `passkey.JS()`, the passkey button's script; the `lastsignin` package; `QuietError` on the `field` partial; `ID` and `Focus` on the `callout` partial; and the `opt` and `Tbdi` template functions.
+
+An app that leaves `SigninScreen` off sees no change: no new cookie, and `Begin` and `Callback` answer as before. `KeymailServers`, if you set it, applies either way. Turning the screen on turns on the keymail continuation and remembering together; set `Remember` to false to keep the screen and stop remembering.
+
+The screen's styles are in `tokens.css`, which your app has its own copy of. Run `rastrillo doctor --fix` to take the new one.
+
 ### Changed — a busy button's spinner takes the place of its label; re-vendor `tokens.css`
 
 While a form is sending, its submit button now shows a spinner in place

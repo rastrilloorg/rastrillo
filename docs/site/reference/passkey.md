@@ -78,6 +78,8 @@ else to prove, the person is signed in at the weaker method and it is
 the app's job to nudge. Verified or not, the answer carries `"to"`, the
 same-site `return_to` or `Config.SignedInPath`.
 
+`Config.Remember` takes `auth`'s `RememberJar()`. With it, a verified discover assertion ends the sign-in screen's attempt and remembers passkey as this browser's way in, with no address.
+
 ## The inventory
 
 ```go

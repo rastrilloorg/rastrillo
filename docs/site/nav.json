@@ -224,6 +224,11 @@
           "blurb": "One seed per person: purpose derivation, passkey wraps, member grants, and the last-wrap guard."
         },
         {
+          "slug": "reference/lastsignin",
+          "label": "lastsignin",
+          "blurb": "The sign-in screen's memory of how this browser got in last, and the seam that ends a sign-in attempt."
+        },
+        {
           "slug": "reference/mail",
           "label": "mail",
           "blurb": "One Sender interface, SMTP, and a logging fallback that warns."

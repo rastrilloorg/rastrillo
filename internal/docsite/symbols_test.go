@@ -61,6 +61,7 @@ var referencePages = map[string]string{
 	"vault":        "reference/vault",
 	"vectors":      "reference/vectors",
 	"harness":      "reference/harness",
+	"lastsignin":   "reference/lastsignin",
 	".":            "reference/rastrillo",
 }
 
@@ -304,11 +305,6 @@ var coveredElsewhere = map[string]string{
 	"migrate/dump":      "reference/migrate",
 	"migrate/gormfn":    "reference/migrate",
 	"migrate/modeldiff": "reference/migrate",
-	// lastsignin gets its own reference page with the sign-in screen's
-	// copy-reviewed docs (signin-screen plan, Task 14); until then this
-	// entry stands in so the package isn't undocumented in the
-	// meantime. Task 14 replaces this line with a referencePages entry.
-	"lastsignin": "reference/auth",
 }
 
 // TestEveryPackageHasAReferencePage is the other half of the
