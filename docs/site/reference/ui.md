@@ -395,7 +395,7 @@ shape most admin consoles are. `Layout` returns one shell's complete
 `layout.html` text and reports `false` for a name that is not shipped.
 
 `stage` is one card centred over a full-page backdrop, for a page that
-stands alone, above all the sign-in screen. Its blocks are `title`,
+stands alone, such as the sign-in screen. Its blocks are `title`,
 `lang`, `dir`, `head`, `backdrop` and `foot`.
 
 A shell executes `{{template "content" .}}` for the page body and wraps

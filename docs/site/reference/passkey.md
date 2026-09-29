@@ -11,10 +11,12 @@ assertion before a session exists.
 
 ## The trust boundary
 
-A passkey never signs anybody in from nothing. Step-up endpoints demand
-a valid session — stale is fine, absent is not. The sign-in pair demands
-a live pending half-session, which only a verified first factor mints.
-So a stolen credential id on its own opens no door.
+A passkey signs someone in on its own only through the discover
+endpoints, and only by proving it holds a key registered here: a
+stolen credential id on its own opens no door. Step-up endpoints
+demand a valid session; stale is fine, absent is not. The sign-in pair
+demands a live pending half-session, which only a verified first factor
+mints.
 
 ## New, Config and Schema
 

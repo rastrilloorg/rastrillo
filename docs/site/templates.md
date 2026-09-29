@@ -568,9 +568,9 @@ This partial never emits it — `Plain` simply emits nothing — but
 
 ## The design system
 
-Every partial, every state, every markup idiom and all four shells,
-rendered live for all three themes and all twelve base locales — five
-pages per theme × locale, one per section, plus a full-page demo for
+Every partial, every state, every markup idiom and all five shells,
+rendered live for all three themes and all twelve base locales: one
+page per section for each theme and locale, plus a full-page demo for
 each shell and one for the modal route. It is live at
 rastrillo.org/design-system.
 
