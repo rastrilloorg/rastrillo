@@ -166,11 +166,16 @@ body {
 
 
 /* ── Buttons: page-header's primary action, empty-state's CTA. ────── */
+/* border-box because rst-btn goes on <a> as often as on <button>, and
+   only <button> is border-box by the browser's own stylesheet: a block
+   link-button's width: 100% came out its padding and border wider than
+   its column, and poked past the sign-in card on a phone. */
 .rst-btn, [rst-btn] {
   align-items: center;
   background: var(--rst-surface);
   border: 1px solid var(--rst-line-strong);
   border-radius: var(--rst-radius-sm);
+  box-sizing: border-box;
   color: var(--rst-text);
   cursor: pointer;
   display: inline-flex;
@@ -1973,12 +1978,6 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 /* The door spaces its children with gap; a callout's and a field's own
    block margins would double it. */
 .rst-signin__door > .rst-callout, [rst-signin-door] > [rst-callout] { margin: 0; }
-/* Every button on the card fills its column (rst-btn's block), and
-   width: 100% is the content box unless the element says otherwise. A
-   <button> is border-box by the browser's own stylesheet; an <a> is
-   not, so Continue's link came out its padding and border wider than
-   the column and poked past the card's edge on a phone. */
-.rst-signin .rst-btn, [rst-signin] [rst-btn] { box-sizing: border-box; }
 .rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
 .rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
 .rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }

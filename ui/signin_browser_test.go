@@ -340,3 +340,39 @@ func TestTheOrDividerShowsOnlyWithThePasskeyButton(t *testing.T) {
 		}
 	}
 }
+
+// The same overflow as Continue's, anywhere in an app: rst-btn's block
+// is width: 100%, and an <a> — unlike a <button> — is content-box by
+// the browser's own stylesheet, so a link-button that fills its column
+// came out its padding and border wider than it. Every size, since the
+// padding, and so the overshoot, differs per size.
+func TestABlockLinkButtonStaysInsideItsContainer(t *testing.T) {
+	var body strings.Builder
+	body.WriteString(`<div id="box" style="inline-size: 320px">`)
+	for _, v := range []string{"primary block", "primary block sm", "primary block lg", "ghost block"} {
+		fmt.Fprintf(&body, `<p><a rst-btn=%q href="#">Continue to Keymail</a></p>`, v)
+	}
+	body.WriteString(`</div>`)
+	rig := harness.New(t, func(string) http.Handler { return signinServer(body.String()) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+
+	var bad []string
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(390, 900),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`#box a`, chromedp.ByQuery),
+		chromedp.Evaluate(`(function () {
+  const box = document.getElementById("box").getBoundingClientRect();
+  return [...document.querySelectorAll("#box a")].map(a => [a, a.getBoundingClientRect()])
+    .filter(([, r]) => r.left < box.left - 0.5 || r.right > box.right + 0.5)
+    .map(([a, r]) => a.getAttribute("rst-btn") + " spans " + r.left.toFixed(1) + ".." + r.right.toFixed(1) +
+      " in " + box.left.toFixed(1) + ".." + box.right.toFixed(1));
+})()`, &bad),
+	); err != nil {
+		t.Fatal(err)
+	}
+	for _, b := range bad {
+		t.Errorf("an <a rst-btn> block overflows its 320px container: %s", b)
+	}
+}
