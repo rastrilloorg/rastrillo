@@ -75,6 +75,7 @@ rastrillo.ui.signin_problem_title = "Проблема со входом в {name
 rastrillo.ui.signin_email = "Электронная почта"
 rastrillo.ui.signin_submit = "Продолжить"
 rastrillo.ui.signin_passkey = "Войти с ключом доступа"
+rastrillo.ui.signin_or = "или"
 rastrillo.ui.signin_passkey_cancelled = "Ключ доступа не был использован. Попробуйте снова или используйте свою почту."
 rastrillo.ui.signin_passkey_failed = "Не получилось. Попробуйте снова или используйте свою почту."
 rastrillo.ui.signin_problem_rate = "Слишком много попыток. Попробуйте снова через несколько минут."

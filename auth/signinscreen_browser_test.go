@@ -420,6 +420,14 @@ func requireReflow(t *testing.T, rig *harness.Rig, what string) {
 	}
 }
 
+// orShown is whether the "or" between the email form and the passkey
+// door is drawn. It has no script of its own: the door's stylesheet
+// shows it exactly when the passkey button shows.
+const orShown = `(function () {
+  const or = document.querySelector("[rst-signin-or]");
+  return !!or && or.checkVisibility() && or.getBoundingClientRect().height > 0;
+})()`
+
 // longAddress has no break opportunity in it — no hyphen, no space — so
 // only the card's own overflow-wrap can keep it inside 320px.
 const longAddress = "averyverylonglocalpartwithnobreakopportunityatall@anequallylongdomainwithnobreaksanywhere.example"
@@ -469,6 +477,10 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 		t.Fatal("the screen with a passkey door never loaded its module")
 	}
 	rig.Screen("[rst-signin]", "the Ask screen")
+	eval(t, rig, orShown, &ok)
+	if !ok {
+		t.Fatal("the passkey door is showing and the or between it and the form is not")
+	}
 	eval(t, rig, awaitAutofocus+`.then(el => el.id)`, &s)
 	if s != "rst-signin-email" {
 		t.Fatalf("focus starts on %q, want the email field", s)
@@ -578,6 +590,10 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	if !ok {
 		t.Fatal("with scripts off the passkey door is showing")
 	}
+	eval(t, rig, orShown, &ok)
+	if ok {
+		t.Fatal("with scripts off the passkey door is hidden and the or beside it is showing")
+	}
 	run(t, rig,
 		chromedp.SetValue("#rst-signin-email", "sam@example.com", chromedp.ByQuery),
 		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
@@ -623,6 +639,10 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	}
 	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
 	rig.Screen("[rst-signin]", "the Returning (passkey) screen")
+	eval(t, rig, orShown, &ok)
+	if !ok {
+		t.Fatal("the remembered passkey is showing and the or between it and the form is not")
+	}
 	eval(t, rig, `document.getElementById("rst-signin-email").value + "|" + document.querySelector("[data-rst-passkey]").textContent.trim()`, &s)
 	if want := "|" + catalog["rastrillo.ui.signin_passkey_remembered"]; s != want {
 		t.Fatalf("after a passkey sign-in: %q, want %q", s, want)

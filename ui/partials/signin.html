@@ -67,10 +67,15 @@
 </form>
 {{else if and $s.Passkey (eq . $pkSlot)}}{{/* The button and its message are one child of the door, so the
      message, empty until the script writes to it, takes none of the
-     door's gaps. */}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
+     door's gaps. The "or" between it and the form is the wrapper's
+     immediate neighbour on the form's side, because tokens.css hides it
+     with the pair through that adjacency: with the button hidden the
+     page has one way in, and an "or" would point at nothing. */}}{{if eq . "after"}}<p rst-signin-or>{{T "rastrillo.ui.signin_or"}}</p>
+{{end}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
-{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
+{{if eq . "before"}}<p rst-signin-or>{{T "rastrillo.ui.signin_or"}}</p>
+{{end}}{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
 {{end}}{{end}}{{end}}{{end}}{{end}}{{/* The way out of a remembered or kept address — the three one-taps
      and Sent — written once, after whichever door this is. Not on Ask,
      where the field already is the different email, and not on

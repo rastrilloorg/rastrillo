@@ -1973,6 +1973,12 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 /* The door spaces its children with gap; a callout's and a field's own
    block margins would double it. */
 .rst-signin__door > .rst-callout, [rst-signin-door] > [rst-callout] { margin: 0; }
+/* Every button on the card fills its column (rst-btn's block), and
+   width: 100% is the content box unless the element says otherwise. A
+   <button> is border-box by the browser's own stylesheet; an <a> is
+   not, so Continue's link came out its padding and border wider than
+   the column and poked past the card's edge on a phone. */
+.rst-signin .rst-btn, [rst-signin] [rst-btn] { box-sizing: border-box; }
 .rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
 .rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
 .rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }
@@ -1983,11 +1989,20 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    script has found a working WebAuthn, or on a browser without one —
    the whole pair is, so the door keeps no gap for a control nobody can
    see; the region is back in the page before the button can be
-   pressed, which is all an announcement needs. */
+   pressed, which is all an announcement needs. The "or" between the
+   pair and the email form goes with them: beside a hidden button the
+   page has one way in, and an "or" would point at nothing. It is the
+   wrapper's immediate neighbour, before it on Ask and after it on a
+   remembered passkey, so one sibling selector each way reaches it. */
 .rst-signin__passkey, [rst-signin-passkey] { display: flex; flex-direction: column; }
-.rst-signin__passkey:has(> .rst-btn[hidden]), [rst-signin-passkey]:has(> [rst-btn][hidden]) { display: none; }
+.rst-signin__passkey:has(> .rst-btn[hidden]), [rst-signin-passkey]:has(> [rst-btn][hidden]), .rst-signin__passkey:has(> .rst-btn[hidden]) + .rst-signin__or, [rst-signin-passkey]:has(> [rst-btn][hidden]) + [rst-signin-or], .rst-signin__or:has(+ .rst-signin__passkey > .rst-btn[hidden]), [rst-signin-or]:has(+ [rst-signin-passkey] > [rst-btn][hidden]) { display: none; }
 .rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
 .rst-signin__passkey-msg:not(:empty), [rst-signin-passkey-msg]:not(:empty) { margin-block-start: var(--rst-sp-2); }
+/* The word sits on a hairline drawn by its own ::before and ::after,
+   which carry no text, so a screen reader hears "or" in reading order
+   between the two ways in and nothing else. */
+.rst-signin__or, [rst-signin-or] { align-items: center; color: var(--rst-text-muted); display: flex; font-size: var(--rst-fs-sm); gap: var(--rst-sp-3); }
+.rst-signin__or::before, .rst-signin__or::after, [rst-signin-or]::before, [rst-signin-or]::after { border-block-start: 1px solid var(--rst-line); content: ""; flex: 1; }
 
 /* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
    One card centred on a full-page backdrop. [rst-stage] is <body> in

@@ -56,6 +56,12 @@ func signinPage(t *testing.T) http.Handler {
 		// to its container, and the page is never read by anything else.
 		fmt.Fprintf(&body, `<div id="case-%s">%s</div>`, c.id, render(t, "signin", data))
 	}
+	return signinServer(body.String())
+}
+
+// signinServer serves body as the page at /, with the stylesheets and
+// an empty passkey script beside it.
+func signinServer(body string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
@@ -75,7 +81,7 @@ func signinPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>signin</title><link rel="stylesheet" href="/tokens.css">`+
-			`<link rel="stylesheet" href="/theme.css"></head><body>`+body.String()+`</body></html>`)
+			`<link rel="stylesheet" href="/theme.css"></head><body>`+body+`</body></html>`)
 	})
 	return mux
 }
@@ -182,5 +188,155 @@ func TestTheSigninCardLaysOutAsDesigned(t *testing.T) {
 	}
 	if got.Mark != got.Accent {
 		t.Errorf("the mark's colour is %s, the accent %s; a currentColor mark takes the theme's accent", got.Mark, got.Accent)
+	}
+}
+
+// fitJS reports, per case container, every button and form control in
+// the card whose box leaves the card's content box by more than half a
+// pixel on either side. Hidden controls have no box and are skipped.
+const fitJS = `(function () {
+  const out = {};
+  for (const c of document.querySelectorAll("[id^=case-]")) {
+    const card = c.querySelector("[rst-signin]");
+    const cs = getComputedStyle(card);
+    const r = card.getBoundingClientRect();
+    const left = r.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+    const right = r.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight);
+    const bad = [];
+    for (const el of card.querySelectorAll("[rst-btn], input:not([type=hidden]), select, textarea")) {
+      const b = el.getBoundingClientRect();
+      if (b.width === 0 && b.height === 0) continue;
+      if (b.left < left - 0.5 || b.right > right + 0.5) {
+        bad.push(el.outerHTML.slice(0, 60) + " spans " + b.left.toFixed(1) + ".." + b.right.toFixed(1) +
+          " in " + left.toFixed(1) + ".." + right.toFixed(1));
+      }
+    }
+    if (bad.length) out[c.id + " (" + c.title + ")"] = bad;
+  }
+  return out;
+})()`
+
+// A full-width control drawn wider than its card pokes out past the
+// card's edge on a phone. It was seen on Continue's link: an <a> is
+// content-box, unlike a <button>, so width: 100% plus its padding and
+// border is wider than the column it fills. Every state, live and in
+// Preview (where the passkey button shows), at the two phone widths
+// the gallery and WCAG's reflow measure.
+func TestSigninControlsStayInsideTheCardOnAPhone(t *testing.T) {
+	var body strings.Builder
+	for i, c := range signinStates() {
+		for _, preview := range []bool{false, true} {
+			// Continue's live page refreshes to keymail at once and would
+			// take the drive with it; its Preview is the same card with
+			// the link pointing at #.
+			if !preview && c.st.Door() == "continue" {
+				continue
+			}
+			data := signinData(c.st)
+			data["Brand"] = map[string]any{"Name": "Harbour", "Pitch": "Moorings and berths, booked in a minute."}
+			if preview {
+				data["Preview"] = true
+			}
+			fmt.Fprintf(&body, `<div id="case-%d-%v" title=%q>%s</div>`, i, preview, c.name, render(t, "signin", data))
+		}
+	}
+	rig := harness.New(t, func(string) http.Handler { return signinServer(body.String()) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancel()
+
+	for _, width := range []int64{320, 390} {
+		var got map[string][]string
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(width, 900),
+			chromedp.Navigate(rig.Origin+"/"),
+			chromedp.WaitVisible(`#case-0-false [rst-signin]`, chromedp.ByQuery),
+			chromedp.Evaluate(fitJS, &got),
+		); err != nil {
+			t.Fatal(err)
+		}
+		for id, bad := range got {
+			t.Errorf("%dpx, %s: controls outside the card's content box:\n\t%s", width, id, strings.Join(bad, "\n\t"))
+		}
+	}
+}
+
+// orState is one door's divider as the browser draws it.
+type orState struct {
+	Shown bool
+	// The rule on each side of the word, and the word's and the rules'
+	// colours against the theme's muted text and hairline.
+	Before, After             float64
+	Colour, Muted, Rule, Line string
+}
+
+// The divider says "or" between two ways in, so it shows exactly when
+// the passkey button does: hidden while the live door's script has not
+// revealed the button (here, an empty script that never will), shown in
+// Preview, and shown the moment a script unhides the button — the
+// wrapper's :has() rule, not a second script, is what brings it back.
+func TestTheOrDividerShowsOnlyWithThePasskeyButton(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return signinPage(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancel()
+
+	const read = `(function () {
+  const probe = document.createElement("span");
+  probe.style.color = "var(--rst-text-muted)";
+  document.body.appendChild(probe);
+  const muted = getComputedStyle(probe).color;
+  probe.style.color = "var(--rst-line)";
+  const line = getComputedStyle(probe).color;
+  probe.remove();
+  const out = {};
+  for (const id of ["ask-live", "ask-preview", "passkey-live", "passkey-preview"]) {
+    const or = document.querySelector("#case-" + id + " [rst-signin-or]");
+    if (!or) { out[id] = null; continue; }
+    const r = or.getBoundingClientRect();
+    out[id] = {
+      Shown: getComputedStyle(or).display !== "none" && r.height > 0,
+      Before: parseFloat(getComputedStyle(or, "::before").width) || 0,
+      After: parseFloat(getComputedStyle(or, "::after").width) || 0,
+      Colour: getComputedStyle(or).color, Muted: muted,
+      Rule: getComputedStyle(or, "::before").borderTopColor + " " + getComputedStyle(or, "::after").borderTopColor, Line: line,
+    };
+  }
+  return out;
+})()`
+	var before, after map[string]*orState
+	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`#case-ask-preview [rst-signin]`, chromedp.ByQuery),
+		chromedp.Evaluate(read, &before),
+		// What the door's script does once it has found a working
+		// WebAuthn: it unhides the button, and nothing else.
+		chromedp.Evaluate(`document.querySelectorAll("[data-rst-passkey]").forEach(b => { b.hidden = false; }); "ok"`, new(string)),
+		chromedp.Evaluate(read, &after),
+	); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"ask-live", "ask-preview", "passkey-live", "passkey-preview"} {
+		b, a := before[id], after[id]
+		if b == nil {
+			t.Errorf("%s: no divider on the page", id)
+			continue
+		}
+		live := strings.HasSuffix(id, "-live")
+		if b.Shown == live {
+			t.Errorf("%s: the divider shown is %v with the passkey button hidden %v; it goes with the button", id, b.Shown, live)
+		}
+		if !a.Shown {
+			t.Errorf("%s: the passkey button is showing and the divider is not", id)
+			continue
+		}
+		if a.Before < 8 || a.After < 8 {
+			t.Errorf("%s: the divider's rules are %.1fpx and %.1fpx; want a line on each side of the word", id, a.Before, a.After)
+		}
+		if a.Colour != a.Muted {
+			t.Errorf("%s: the divider's text is %s, the muted text colour %s", id, a.Colour, a.Muted)
+		}
+		if a.Rule != a.Line+" "+a.Line {
+			t.Errorf("%s: the divider's rules are %s, the hairline %s", id, a.Rule, a.Line)
+		}
 	}
 }

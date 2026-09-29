@@ -552,3 +552,86 @@ func TestEveryFormPostsWhereTheAppMountedAuth(t *testing.T) {
 		}
 	}
 }
+
+// orDivider is the "or" between the email form and the passkey door,
+// in the words of the catalog: visible text, read in order, and nothing
+// that tells a screen reader to skip it or read it as a rule.
+var orDivider = regexp.MustCompile(`<p rst-signin-or>([^<]*)</p>`)
+
+// "or" only means something with two ways in beside it. A screen with
+// no passkey door — email only, a one-tap, Sent, Continue, a remembered
+// passkey the app has not wired — has nothing to set the form against,
+// and a divider there points at a button that is not on the page.
+func TestTheOrDividerStandsOnlyBetweenTheFormAndAPasskeyDoor(t *testing.T) {
+	for _, c := range signinStates() {
+		for _, preview := range []bool{false, true} {
+			data := signinData(c.st)
+			if preview {
+				data["Preview"] = true
+			}
+			out := render(t, "signin", data)
+			door := c.st.Passkey != nil && (c.st.Door() == "ask" || c.st.Door() == "passkey")
+			m := orDivider.FindAllStringSubmatch(out, -1)
+			if !door {
+				if len(m) != 0 || strings.Contains(out, "rst-signin-or") {
+					t.Errorf("%s, preview %v: no passkey door, but the screen says or:\n%s", c.name, preview, out)
+				}
+				continue
+			}
+			if len(m) != 1 {
+				t.Errorf("%s, preview %v: %d or dividers, want one:\n%s", c.name, preview, len(m), out)
+				continue
+			}
+			if got, want := m[0][1], html.EscapeString(defaultT("rastrillo.ui.signin_or")); got != want {
+				t.Errorf("%s, preview %v: the divider reads %q, want %q", c.name, preview, got, want)
+			}
+			or, form, pk := strings.Index(out, "<p rst-signin-or>"), strings.Index(out, `id="rst-signin-email"`), strings.Index(out, "<div rst-signin-passkey>")
+			if (or < form) == (or < pk) {
+				t.Errorf("%s, preview %v: the divider is not between the email form and the passkey door:\n%s", c.name, preview, out)
+			}
+		}
+	}
+}
+
+// With the passkey button hidden — no script yet, scripts off, or a
+// browser with no WebAuthn — the page offers one way in, and an "or"
+// beside it would dangle. tokens.css hides the divider with the pair,
+// through the wrapper's own rule, which reaches the divider only as the
+// wrapper's immediate neighbour: anything written between them would
+// leave the divider showing beside a hidden button.
+func TestTheOrDividerIsHiddenWithThePasskeyButton(t *testing.T) {
+	adjacent := regexp.MustCompile(`<p rst-signin-or>[^<]*</p>\s*<div rst-signin-passkey>|<div rst-signin-passkey>(?s:.*?)</div>\s*<p rst-signin-or>`)
+	for _, st := range []auth.SigninState{
+		{Step: auth.StepAsk, Passkey: signinDoor},
+		{Step: auth.StepReturning, Remembered: remembered("passkey", ""), Passkey: signinDoor},
+	} {
+		if out := render(t, "signin", signinData(st)); !adjacent.MatchString(out) {
+			t.Errorf("door %s: the divider is not the passkey wrapper's immediate neighbour:\n%s", st.Door(), out)
+		}
+	}
+	css := string(TokensCSS())
+	for _, sel := range []string{
+		`[rst-signin-passkey]:has(> [rst-btn][hidden]) + [rst-signin-or]`,
+		`[rst-signin-or]:has(+ [rst-signin-passkey] > [rst-btn][hidden])`,
+	} {
+		if !cssRuleSays(css, sel, "display: none") {
+			t.Errorf("tokens.css has no %s { display: none } rule; the divider shows beside a hidden passkey button", sel)
+		}
+	}
+}
+
+// cssRuleSays reports whether some rule in css lists selector among its
+// selectors and declares decl.
+func cssRuleSays(css, selector, decl string) bool {
+	for _, rule := range regexp.MustCompile(`(?s)([^{}]*)\{([^{}]*)\}`).FindAllStringSubmatch(stripCSSComments(css), -1) {
+		if !strings.Contains(rule[2], decl) {
+			continue
+		}
+		for _, sel := range splitSelectorList(rule[1]) {
+			if collapseSpace(sel) == selector {
+				return true
+			}
+		}
+	}
+	return false
+}

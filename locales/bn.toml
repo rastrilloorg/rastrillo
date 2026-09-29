@@ -75,6 +75,7 @@ rastrillo.ui.signin_problem_title = "{name}-এ সাইন ইন করতে
 rastrillo.ui.signin_email = "ইমেল"
 rastrillo.ui.signin_submit = "চালিয়ে যান"
 rastrillo.ui.signin_passkey = "পাসকি দিয়ে সাইন ইন করুন"
+rastrillo.ui.signin_or = "অথবা"
 rastrillo.ui.signin_passkey_cancelled = "কোনো পাসকি ব্যবহার করা হয়নি। আবার চেষ্টা করুন, বা আপনার ইমেল ব্যবহার করুন।"
 rastrillo.ui.signin_passkey_failed = "এটি কাজ করেনি। আবার চেষ্টা করুন, বা আপনার ইমেল ব্যবহার করুন।"
 rastrillo.ui.signin_problem_rate = "অনেকবার চেষ্টা করা হয়েছে। কয়েক মিনিট পরে আবার চেষ্টা করুন।"
