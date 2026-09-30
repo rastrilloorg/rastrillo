@@ -3,7 +3,7 @@
 Status: design, 2026-09-30. The operator chose each look from a
 throwaway prototype; this spec turns those choices into the framework
 and decides what the choices left open. Revised after adversarial
-review round 1 (see "Review log") with the operator's answers on
+review rounds 1 and 2 (see "Review log") with the operator's answers on
 prerender, the gallery and copy review.
 
 Part H of the design-system iteration (F is the sign-in screen,
@@ -1498,6 +1498,10 @@ with touch:
   item that lies over the second row's kebab or checkbox hits the item.
 - A list grid whose `--rst-cols` ends in a literal `32px`, at 1024 with
   touch: the 44px kebab does not overlap the previous cell's box.
+- A list-grid row holding a switch, a date field and an enhanced select:
+  each keeps the box it has outside a row (switch input still over its
+  track, pick button still inside the field, native select still out
+  of flow), and each is operable by a click at its centre.
 - A row with no primary link: a click navigates nowhere, and hovering
   it does not change its background.
 - Focus on the primary link draws the ring around the whole row (the
@@ -1530,7 +1534,12 @@ Driven with scripts off and on, at 390 (touch) and 1280, in LTR and RTL.
     focus is the browser's default and nothing throws;
   - Ctrl, Meta and Shift clicks and a middle click on the back control
     are not intercepted;
-  - an `up` that redirects: the link is followed.
+  - an `up` that redirects: the link is followed;
+  - two sections in a row: back to `/#nav-invoices`, then Orders, then
+    the browser's back button: focus lands on Orders, not Invoices;
+  - a prerendered index (CDP `Preload` shows it ready before the click),
+    activated by the back control: focus lands on the right nav link,
+    and `pagereveal` saw type `back`.
   A recorded `pagereveal` sees type `forward` going in and `back`
   coming out, and no transition at all under
   `prefers-reduced-motion: reduce`.
@@ -1557,6 +1566,9 @@ Scripts off and on, at 390 with touch, LTR and RTL.
   Menu summary; opening the account menu inside the card keeps the card
   open. The same three with the whole topbar in the class spelling
   (`.rst-shell__menu`, `.rst-shell__tail`).
+- **Escape after widening:** open the card and the account menu inside
+  it at 390, resize to 1280, press Escape: focus is on the account
+  summary, which is visible, and no hidden element holds focus.
 - **Resize while open:** open the card at 390, resize to 1280: the bar
   is today's (tail inline, account panel absolute and closed state as
   before, nav underline on the current item), and a click on a link in
@@ -1586,8 +1598,9 @@ Scripts off and on, at 390 with touch, LTR and RTL.
   it (scripts on) and Escape returns focus to its summary; near the
   viewport's bottom the panel opens upward in an engine with anchor
   positioning; clicking an item never navigates to the row's href; a
-  POST item shows the busy spinner beside its label and the item's
-  box does not change size, with a still ring under reduced motion;
+  POST item shows the busy spinner in its reserved slot and neither the
+  item's nor the panel's box changes size, including with a
+  40-character label at 320px, with a still ring under reduced motion;
   items and trigger are 44px at 390 with touch.
 - **a11y:** axe on the gallery sample in every theme and scheme; every
   control named (TestEveryControlHasAnAccessibleName, ui_test.go:1301).
