@@ -162,8 +162,9 @@ Every refusal is an `*Error`:
 
 - `rastrillo.ui.url_invalid` for any scheme but http and https
   (`javascript:`, `data:`, `mailto:`, `ftp:`), a host with no dot
-  (`localhost`), a character a host cannot hold, or whitespace inside
-  the address.
+  (`localhost`), a character a host cannot hold, a numeric host a
+  browser would read as a different address (`0127.0.0.1`, which opens
+  87.0.0.1), a port above 65535, or whitespace inside the address.
 - `rastrillo.ui.url_credentials` for a username or password in the
   address. `https://bank.example@evil.example` reads as one site and
   goes to another.
