@@ -74,7 +74,8 @@ Usage:
   rastrillo doctor [flags] [dir]                compare the app's vendored static/ files with this binary's (default dir: .)
        --fix [--force]                          re-copy what drifted (--force overrides its two refusals)
        --theme <name>                           which theme static/theme.css should be, for an app with no pin
-                                                exits 0 clean, 3 drift, 4 the app is on a different rastrillo version.
+                                                exits 0 clean, 3 drift, 4 the app is on a different rastrillo version,
+                                                5 it imports rastrillo's old module path.
                                                 A convenience and an upgrade tool: the vendored_test.go the scaffold
                                                 writes is what catches drift on every commit without being run.
   rastrillo markup [--fix] [dir]                rewrite the rst- class spelling as the rst- attribute spelling (default dir: .)

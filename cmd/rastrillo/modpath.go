@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/mod/modfile"
 )
 
 // modulePath reads the module directive from dir/go.mod. Hand-rolled
@@ -37,92 +39,83 @@ func modulePath(dir string) (string, error) {
 // against.
 const rastrilloModule = "amadan.net/rastrillo/rastrillo"
 
+// preMoveModule is the path rastrillo had until v0.25.0 moved it to
+// amadan. Nothing after v0.23.0 was released under it that Go will
+// build — the mirror's later tags declare the new path — so an app
+// still importing from here is frozen at v0.23.0 or earlier, and its
+// own vendored test cannot notice, because it compares against the
+// same frozen module (issue #52).
+const preMoveModule = "github.com/carlosframework/rastrillo"
+
 // moduleRequirement reports the version dir/go.mod requires of the
 // named module, and the target of any replace directive pointing at it.
 // Both are empty when the file does not mention the module at all.
-//
-// Hand-rolled for the same reason modulePath is: require and replace
-// are two fixed line shapes in the two forms gofmt writes them, single
-// and block. A require inside a block is indented; a replace is
-// "replace <path> => <target>", optionally with a version on either
-// side. Anything this parser does not recognise reports empty, and
-// doctor says it could not read the version rather than guessing one.
 func moduleRequirement(dir, module string) (version, replacement string, err error) {
-	f, err := os.Open(filepath.Join(dir, "go.mod"))
-	if err != nil {
-		return "", "", fmt.Errorf("read go.mod: %w", err)
-	}
-	defer f.Close()
+	req, err := readRequirement(dir, module)
+	return req.version, req.replaced, err
+}
 
-	inRequire, inReplace := false, false
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if i := strings.Index(line, "//"); i >= 0 {
-			line = strings.TrimSpace(line[:i])
+// requirement is what go.mod says about one module.
+type requirement struct {
+	version  string
+	replaced string
+	// indirect is the "// indirect" mark on the require line: nothing in
+	// the app itself imports the module, a dependency does. Doctor's
+	// pre-move check turns on it, because only a direct import is one
+	// the app can rewrite.
+	indirect bool
+}
+
+// readRequirement reads go.mod with the go command's own parser.
+//
+// This used to be hand-rolled, like modulePath still is, on the theory
+// that require and replace have two fixed shapes. That held while the
+// answer only labelled a report. Once the pre-move check made it a
+// safety check, each spelling the go command accepts and this missed
+// (a quoted path, "require(", a tab, "// indirect;" with nothing after
+// it, one replace listed after another) let a frozen app through to a
+// clean report and a --fix, and two review rounds kept finding more.
+// Go's grammar is not ours to re-derive.
+func readRequirement(dir, module string) (requirement, error) {
+	path := filepath.Join(dir, "go.mod")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return requirement{}, fmt.Errorf("read go.mod: %w", err)
+	}
+	f, err := modfile.Parse(path, data, nil)
+	if err != nil {
+		return requirement{}, fmt.Errorf("read go.mod: %w", err)
+	}
+	var req requirement
+	for _, r := range f.Require {
+		if r.Mod.Path == module {
+			req.version, req.indirect = r.Mod.Version, r.Indirect
+		}
+	}
+	// A replace that names a version applies only to that version, and
+	// beats one that names none, whatever order they are listed in.
+	// "old v0.22.0 => ../x" leaves an app on v0.23.0 building against
+	// the real, frozen v0.23.0. With no requirement at all there is no
+	// version to scope by, so any replace is reported.
+	var exact, unscoped string
+	for _, r := range f.Replace {
+		if r.Old.Path != module {
+			continue
+		}
+		target := r.New.Path
+		if r.New.Version != "" {
+			target += " " + r.New.Version
 		}
 		switch {
-		case line == ")":
-			inRequire, inReplace = false, false
-			continue
-		case line == "require (":
-			inRequire = true
-			continue
-		case line == "replace (":
-			inReplace = true
-			continue
-		case strings.HasPrefix(line, "require "):
-			line, inRequire = strings.TrimSpace(strings.TrimPrefix(line, "require ")), false
-			if v := requireVersion(line, module); v != "" {
-				version = v
-			}
-			continue
-		case strings.HasPrefix(line, "replace "):
-			line, inReplace = strings.TrimSpace(strings.TrimPrefix(line, "replace ")), false
-			if r := replaceTarget(line, module); r != "" {
-				replacement = r
-			}
-			continue
-		}
-		if inRequire {
-			if v := requireVersion(line, module); v != "" {
-				version = v
-			}
-		}
-		if inReplace {
-			if r := replaceTarget(line, module); r != "" {
-				replacement = r
-			}
+		case r.Old.Version == "":
+			unscoped = target
+		case r.Old.Version == req.version || req.version == "":
+			exact = target
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return "", "", err
+	req.replaced = exact
+	if req.replaced == "" {
+		req.replaced = unscoped
 	}
-	return version, replacement, nil
-}
-
-// requireVersion reads "<module> <version>" from one require line,
-// reporting empty for any other module.
-func requireVersion(line, module string) string {
-	fields := strings.Fields(line)
-	if len(fields) != 2 || fields[0] != module {
-		return ""
-	}
-	return fields[1]
-}
-
-// replaceTarget reads the right-hand side of "<module> [version] =>
-// <target> [version]", reporting empty for any other module. The target
-// is what the app actually builds against, so doctor names it rather
-// than the version it displaced.
-func replaceTarget(line, module string) string {
-	left, right, ok := strings.Cut(line, "=>")
-	if !ok {
-		return ""
-	}
-	lf, rf := strings.Fields(left), strings.Fields(right)
-	if len(lf) == 0 || lf[0] != module || len(rf) == 0 {
-		return ""
-	}
-	return strings.Join(rf, " ")
+	return req, nil
 }

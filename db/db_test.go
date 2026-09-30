@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -187,5 +188,134 @@ func TestWriterSerialized(t *testing.T) {
 	defer d.Close()
 	if got := d.writer.Stats().MaxOpenConnections; got != 1 {
 		t.Fatalf("writer MaxOpenConnections = %d, want 1", got)
+	}
+}
+
+// A time.Time in a bare numeric zone (as mail.ParseDate yields for a
+// "+0100" Date header) must come back as a time, not a string the
+// driver could not parse.
+func TestTimesInNumericZonesRoundTrip(t *testing.T) {
+	d, err := Open(filepath.Join(t.TempDir(), "t.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err := d.G.Exec("CREATE TABLE stamps (id INTEGER PRIMARY KEY, at DATETIME)").Error; err != nil {
+		t.Fatal(err)
+	}
+	in := time.Date(2026, 8, 30, 13, 44, 12, 0, time.FixedZone("", 3600))
+	if err := d.G.Exec("INSERT INTO stamps (at) VALUES (?)", in).Error; err != nil {
+		t.Fatal(err)
+	}
+	var out time.Time
+	if err := d.G.Raw("SELECT at FROM stamps").Scan(&out).Error; err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if !out.Equal(in) {
+		t.Fatalf("got %v, want %v", out, in)
+	}
+}
+
+// SQLite's own date functions must read what the driver writes. The
+// driver's default layout, time.Time.String(), made julianday and date
+// return NULL, so raw SQL doing date arithmetic in an app got nothing
+// back while every scan into a time.Time still worked. A bare
+// time.Now() is the worst case: it carries a monotonic reading, which
+// String() wrote into the column as " m=+0.000123".
+func TestSQLiteDateFunctionsReadStoredTimes(t *testing.T) {
+	d, err := Open(filepath.Join(t.TempDir(), "t.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err := d.G.Exec("CREATE TABLE stamps (id INTEGER PRIMARY KEY, at DATETIME)").Error; err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	if !strings.Contains(now.String(), " m=") {
+		t.Fatalf("test premise wrong: time.Now() has no monotonic reading: %v", now)
+	}
+	earlier := time.Date(2026, 8, 30, 23, 30, 0, 0, time.FixedZone("", 3600))
+	for _, at := range []time.Time{now, earlier} {
+		if err := d.G.Exec("INSERT INTO stamps (at) VALUES (?)", at).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	var row struct {
+		Seconds *float64
+		Day     *string
+	}
+	if err := d.G.Raw(`SELECT (julianday(MAX(at)) - julianday(MIN(at))) * 86400.0 AS seconds,
+		(SELECT date(at) FROM stamps WHERE id = 2) AS day FROM stamps`).Scan(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.Seconds == nil {
+		t.Fatal("julianday returned NULL for a stored time")
+	}
+	if want := now.Sub(earlier).Seconds(); *row.Seconds < want-1 || *row.Seconds > want+1 {
+		t.Errorf("julianday difference = %v seconds, want %v", *row.Seconds, want)
+	}
+	// 23:30 at +01:00 is 22:30 UTC the same day; date() reads the offset.
+	if row.Day == nil || *row.Day != "2026-08-30" {
+		t.Errorf("date(at) = %v, want 2026-08-30", row.Day)
+	}
+}
+
+// Every time is stored in UTC, whatever zone it arrives in: a bare
+// time.Now() on a machine that is not in UTC, and a parsed Date header's
+// "+0900". SQL that compares stored times as text (WHERE at < ?, ORDER BY
+// at) agrees with the instants only while every row is in one zone:
+// stored as it came, 15:00+09:00 sorts after 12:00+00:00 though it is
+// six hours earlier.
+func TestTimesAreStoredInUTCWhateverZoneTheyArriveIn(t *testing.T) {
+	local := time.Local
+	time.Local = time.FixedZone("CEST", 2*60*60)
+	t.Cleanup(func() { time.Local = local })
+
+	d, err := Open(filepath.Join(t.TempDir(), "t.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err := d.G.Exec("CREATE TABLE stamps (id INTEGER PRIMARY KEY, at DATETIME)").Error; err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	if _, off := now.Zone(); off == 0 {
+		t.Fatalf("test premise wrong: time.Now() is in UTC: %v", now)
+	}
+	tokyo := time.Date(2026, 9, 19, 15, 0, 0, 0, time.FixedZone("", 9*60*60)) // 06:00 UTC
+	noon := time.Date(2026, 9, 19, 12, 0, 0, 0, time.UTC)
+	for _, at := range []time.Time{now, tokyo, noon} {
+		if err := d.G.Exec("INSERT INTO stamps (at) VALUES (?)", at).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var stored []string
+	if err := d.G.Raw("SELECT CAST(at AS TEXT) FROM stamps ORDER BY id").Scan(&stored).Error; err != nil {
+		t.Fatal(err)
+	}
+	if want := now.UTC().Format("2006-01-02 15:04:05.999999999-07:00"); stored[0] != want {
+		t.Errorf("time.Now() in %s stored as %q, want %q", now.Location(), stored[0], want)
+	}
+	if want := "2026-09-19 06:00:00+00:00"; stored[1] != want {
+		t.Errorf("15:00+09:00 stored as %q, want %q", stored[1], want)
+	}
+
+	var order []int64
+	if err := d.G.Raw("SELECT id FROM stamps WHERE at < ? ORDER BY at", noon.Add(time.Second)).Scan(&order).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(order) != 2 || order[0] != 2 || order[1] != 3 {
+		t.Errorf("text comparison gave ids %v, want [2 3]: Tokyo's 06:00 UTC before noon", order)
+	}
+
+	var back time.Time
+	if err := d.G.Raw("SELECT at FROM stamps WHERE id = 2").Scan(&back).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !back.Equal(tokyo) || back.Location() != time.UTC {
+		t.Errorf("read back %v (%s), want %v in UTC", back, back.Location(), tokyo.UTC())
 	}
 }
