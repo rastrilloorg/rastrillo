@@ -238,6 +238,10 @@ error values are `rastrillo.ui.*` **keys**, not sentences, so render
 `"Error" (T (index .Errors "Starts"))`; and `field-daterange`'s two
 halves need distinct `Name`s. docs/site/forms.md
 
+A web address is `form.URL` + `field-url` (scheme optional; errors are
+keys too). Link a stored one only through `{{with safeHref .Site}}`,
+show it with `displayURL`; never `<input type="url">`.
+
 After a mutation: `flash.Set(w, "notice", "...")`, then 303; the render
 helper calls `flash.Take(w, r)` once per page and the layout renders it.
 

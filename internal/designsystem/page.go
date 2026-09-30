@@ -1273,6 +1273,7 @@ var previewHeights = map[string]int{
 	"partial-field":           210,
 	"partial-field-text":      210,
 	"partial-field-textarea":  260,
+	"partial-field-url":       210,
 	"partial-field-select":    300,
 	"partial-field-check":     140,
 	"partial-choice-field":    280,
@@ -2482,7 +2483,7 @@ const familyBody = `{{define "ds-family"}}{{with .Family}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
 <h3 class="rst-mono">{{.Name}}</h3>
-<p class="ds-lead">{{.Blurb}}</p>
+{{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
 {{range .States}}
 <div class="ds-sample">
 {{if .State}}<p class="ds-state">{{.State}}</p>{{end}}

@@ -43,13 +43,21 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.
+`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`,
+`displayURL` and `safeHref`.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
 sentence that shows back something a visitor typed: each value is
 escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's
 backdrop from a word; the same word always draws the same picture.
+
+`displayURL` and `safeHref` are `form.DisplayURL` and `form.SafeHref`,
+for showing an address that `field-url` collected. `displayURL` is the
+address without its scheme or trailing slash. `safeHref` is the address
+if it is an http or https URL with no username or password in it, and
+`""` otherwise, so wrap the link in `{{with safeHref .Site}}`. See
+[Templates](/docs/templates#web-address-fields).
 
 `dict` builds a partial's single data value at the call site:
 
