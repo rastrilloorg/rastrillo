@@ -143,15 +143,15 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 
 func TestFuncsRegistersExactlyTheDocumentedHelpers(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 12 {
-		t.Errorf("Funcs() has %d entries, want exactly 12", len(f))
+	if len(f) != 14 {
+		t.Errorf("Funcs() has %d entries, want exactly 14", len(f))
 	}
 }
 
@@ -210,13 +210,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 12 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 12", len(f))
+	if len(f) != 14 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 14", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {
@@ -683,5 +683,32 @@ func TestTbdiFollowsARebindOfT(t *testing.T) {
 	fn := FuncsWith(func(key string, _ ...any) string { return "X {address}" })["Tbdi"].(func(string, ...any) template.HTML)
 	if got := string(fn("any", "address", "a@b.c")); got != "X <bdi>a@b.c</bdi>" {
 		t.Fatalf("Tbdi ignored the rebound T: %s", got)
+	}
+}
+
+// A stored address is shown without its scheme and linked only when it
+// is http(s): the idiom docs/site/reference/ui.md gives, run through a
+// real template so the FuncMap entries are exercised as templates call
+// them.
+func TestURLHelpersRenderASafeLink(t *testing.T) {
+	tmpl := template.Must(template.New("site").Funcs(Funcs()).Parse(
+		`{{with safeHref .}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{else}}{{displayURL .}}{{end}}`))
+	render := func(v string) string {
+		var b strings.Builder
+		if err := tmpl.Execute(&b, v); err != nil {
+			t.Fatal(err)
+		}
+		return b.String()
+	}
+	if got, want := render("https://brightwater.example/pricing/"),
+		`<a href="https://brightwater.example/pricing/" rel="noopener noreferrer">brightwater.example/pricing</a>`; got != want {
+		t.Errorf("an http(s) address rendered\n%s\nwant\n%s", got, want)
+	}
+	// A value that predates validation is shown as text and never
+	// linked: html/template would have let mailto: through as an href.
+	for _, bad := range []string{"javascript:alert(1)", "mailto:ana@example.com"} {
+		if got := render(bad); strings.Contains(got, "<a") {
+			t.Errorf("%q became a link: %s", bad, got)
+		}
 	}
 }

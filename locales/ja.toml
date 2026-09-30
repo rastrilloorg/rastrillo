@@ -69,6 +69,9 @@ rastrillo.ui.date_end_before_start = "終了が開始より前になっていま
 rastrillo.ui.field_required = "この項目は必須です。"
 rastrillo.ui.money_invalid = "有効な金額を入力してください。"
 rastrillo.ui.money_precision = "小数点以下2桁までの金額を入力してください。"
+# TODO(copy-review): English placeholders until the en wording is approved; translate then.
+rastrillo.ui.url_invalid = "Enter a web address, like example.com."
+rastrillo.ui.url_credentials = "Remove the username and password from this address."
 rastrillo.ui.signin_heading = "{name} にサインイン"
 rastrillo.ui.signin_title = "{name} にサインイン"
 rastrillo.ui.signin_problem_title = "{name} へのサインインで問題が発生しました"

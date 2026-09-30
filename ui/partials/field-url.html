@@ -1,0 +1,42 @@
+{{/* field-url — one labelled web-address input that does not care
+     whether the scheme was typed. Pair it with form.URL (or
+     form.NormaliseURL) on the server, which is where the forgiveness
+     and the refusals live.
+
+     It is type="text", never type="url": browsers refuse "example.com"
+     for lacking a scheme, which is how most people write an address, so
+     the native type fails the one thing this field is for. inputmode
+     still brings up the URL keyboard on a phone. autocapitalize,
+     autocorrect and spellcheck are off because a phone otherwise
+     capitalises the first letter and "corrects" a domain into a word.
+
+     The wrapper repeats field-text's rather than composing it, for the
+     reason field-text's own comment gives.
+
+     Show the stored value as Value unchanged. Stripping the scheme for
+     editing would turn a stored http:// address into https:// on the
+     next save; displayURL is for reading, not for seeding a form.
+
+     Keys:
+       Name          string, required — the input's name and id, and
+                     the prefix for the hint/error ids
+       Label         string, required — the visible label
+       Value         string, optional — the current value
+       Required      bool, optional — required attribute + visible *
+       Hint          string, optional — muted guidance under the input
+       Error         string, optional — validation message; also sets
+                     aria-invalid
+       Autocomplete  string, optional — default "url", which offers the
+                     visitor's own homepage. Pass "off" for a field about
+                     someone else's site (a customer's, a supplier's).
+                     Read through opt. */}}
+{{define "field-url"}}<div rst-field>
+  <label rst-field-label for="{{.Name}}">{{.Label}}{{if .Required}} <span rst-field-required aria-hidden="true">*</span>{{end}}</label>
+  <input rst-input id="{{.Name}}" name="{{.Name}}" type="text" inputmode="url" autocomplete="{{or (opt . "Autocomplete") "url"}}" autocapitalize="none" autocorrect="off" spellcheck="false"{{if .Value}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+  {{- if .Hint}}
+  <small rst-field-hint id="{{.Name}}-hint">{{.Hint}}</small>
+  {{- end}}
+  {{- if .Error}}
+  <small rst-field-error id="{{.Name}}-error">{{.Error}}</small>
+  {{- end}}
+</div>{{end}}

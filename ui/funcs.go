@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
 )
 
 // Option configures Funcs. No options is the framework's own behaviour,
@@ -106,8 +107,17 @@ func WithT(t func(key string, args ...any) string) Option {
 // stageArt draws the stage shell's default backdrop from a seed (see
 // its own comment).
 //
+// displayURL and safeHref are form.DisplayURL and form.SafeHref, the
+// read side of field-url: a stored address shown without its scheme,
+// and linked only when it is http(s). They are here rather than left
+// to each app because a template is where the link gets written, and
+// html/template alone would pass a stored mailto: straight into href:
+//
+//	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
+//
 // An app is free to add its own entries on top; it must not drop these
-// twelve, or the shipped partials and shells stop parsing.
+// fourteen. The shipped partials and shells stop parsing without most
+// of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -123,7 +133,8 @@ func Funcs(opts ...Option) template.FuncMap {
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 		"dateWords": dateWords(c.t),
 		"opt":       opt, "Tbdi": tbdi(c.t),
-		"stageArt": stageArt,
+		"stageArt":   stageArt,
+		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
 	}
 }
 

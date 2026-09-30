@@ -40,6 +40,7 @@ plain `form.Field{Name: "Title"}` does the common thing.
 | `Date` | `Parsed.Date` | `time.ParseInLocation` on `2006-01-02` in `Location` |
 | `Time` | `Parsed.Time` | `time.Parse` on `15:04` — a clock reading, no location |
 | `DateTime` | `Parsed.DateTime` | `time.ParseInLocation` on `2006-01-02T15:04` in `Location` |
+| `URL` | `Parsed.String` | `NormaliseURL`; echo keeps the raw text; a refused value reads back as `""` |
 
 `Required` on `Money`, `Date`, `Time` and `DateTime` is checked against
 the raw text rather than the parsed value, so a present but unparseable
@@ -48,10 +49,12 @@ value reports the parse error instead of the required message. For
 required-blank; a date has no such pair, because `"0"` is not a date and
 reports `rastrillo.ui.date_invalid`.
 
-The three date kinds report catalog keys rather than English:
-`rastrillo.ui.date_invalid` for an unparseable value,
-`rastrillo.ui.field_required` for a blank required one. The renderer
-resolves them through `T`. See [Dates and times](#dates-and-times).
+The three date kinds and `URL` report catalog keys rather than English:
+`rastrillo.ui.date_invalid` for an unparseable date,
+`rastrillo.ui.url_invalid` or `rastrillo.ui.url_credentials` for a
+refused address, and `rastrillo.ui.field_required` for a blank required
+one. The renderer resolves them through `T`. See
+[Dates and times](#dates-and-times) and [Web addresses](#web-addresses).
 
 ## Parsed
 
@@ -65,7 +68,7 @@ type Parsed struct{ /* unexported */ }
 |---|---|
 | `Parsed.OK` | true when every field validated |
 | `Parsed.Errors` | the `Errors` map, empty rather than nil when OK |
-| `Parsed.String` | a `Text` or `Textarea` field's value |
+| `Parsed.String` | a `Text`, `Textarea` or `URL` field's value |
 | `Parsed.Cents` | a `Money` field's value in integer cents |
 | `Parsed.Date` | a `Date` field's `time.Time` |
 | `Parsed.DateTime` | a `DateTime` field's `time.Time` |
@@ -132,6 +135,56 @@ it collapses onto land on the same instant. An app scheduling across a
 transition should store the zone alongside the value and say so on
 screen, rather than trusting that two distinct readings stay distinct.
 
+## Web addresses
+
+```go
+func NormaliseURL(s string) (string, error)
+func DisplayURL(s string) string
+func SafeHref(s string) string
+func URLKey(s string) string
+```
+
+`NormaliseURL` is what `form.URL` runs. It accepts an address with or
+without its scheme and returns the form to store: an http or https URL
+with a lowercase host and no bare trailing slash. `https` is added when
+no scheme was typed. A path, port, query and fragment are kept as
+typed.
+
+| Typed | Stored |
+|---|---|
+| `example.com` | `https://example.com` |
+| `WWW.Example.com/` | `https://www.example.com` |
+| `http://example.com` | `http://example.com` |
+| `example.com:8443/pricing?plan=team` | `https://example.com:8443/pricing?plan=team` |
+
+Blank is `""` with no error, so `Required` stays the caller's choice.
+Every refusal is an `*Error`:
+
+- `rastrillo.ui.url_invalid` for any scheme but http and https
+  (`javascript:`, `data:`, `mailto:`, `ftp:`), a host with no dot
+  (`localhost`), a character a host cannot hold, or whitespace inside
+  the address.
+- `rastrillo.ui.url_credentials` for a username or password in the
+  address. `https://bank.example@evil.example` reads as one site and
+  goes to another.
+
+The refusals are what make a stored value safe to put in an `href`.
+
+`DisplayURL` is a stored address as a reader sees it: no scheme, no
+trailing slash, so `https://example.com/pricing/` shows as
+`example.com/pricing`. It is for display only.
+
+`SafeHref` is the address if it is an absolute http or https URL with a
+host and no credentials, and `""` for anything else. Use it for every
+link to a stored address, including one saved before you validated. The
+`ui` template functions `displayURL` and `safeHref` are these two.
+
+`URLKey` is for finding duplicates. It drops the scheme, a leading
+`www.` and the trailing slash, and lowercases the rest, so
+`https://www.Example.com/` and `example.com` have the same key. The port
+and path still count. Store what `NormaliseURL` returns and compare the
+keys.
+
 ## Errors
 
 ```go
@@ -182,7 +235,7 @@ type Error struct {
 func (e *Error) Error() string
 ```
 
-Every error `ParseCents` returns is one of these. It names the catalog
+Every error `ParseCents` and `NormaliseURL` return is one of these. It names the catalog
 key for its message as well as carrying the message, so a caller that
 has a translator can render it in the reader's language:
 

@@ -17,12 +17,17 @@
                  form. Composes with Short into "short primary",
                  though a headline field that narrow is a mistake.
        Autofocus bool, optional
+       Inputmode string, optional — the inputmode attribute: which
+                 on-screen keyboard a phone offers ("numeric", "url",
+                 "email"...) without the browser validation a Type
+                 brings. Read through opt, so struct callers need no
+                 new field
        QuietError bool, optional — the error without role="alert", for a
                  page where focus lands on this field at load: the focus
                  already announces the message, and a live alert would
                  race it */}}
 {{define "field"}}<div rst-field><label rst-field-label for="{{.ID}}">{{.Label}}{{with .Hint}} <span rst-field-hint>({{.}})</span>{{end}}</label>
-<input rst-input{{if or .Short .Primary}}="{{if .Short}}short{{end}}{{if and .Short .Primary}} {{end}}{{if .Primary}}primary{{end}}"{{end}} type="{{or .Type "text"}}" id="{{.ID}}" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Autofocus}} autofocus{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Maxlength}} maxlength="{{.}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>
+<input rst-input{{if or .Short .Primary}}="{{if .Short}}short{{end}}{{if and .Short .Primary}} {{end}}{{if .Primary}}primary{{end}}"{{end}} type="{{or .Type "text"}}" id="{{.ID}}" name="{{.Name}}"{{with .Value}} value="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{if .Required}} required{{end}}{{if .Autofocus}} autofocus{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Maxlength}} maxlength="{{.}}"{{end}}{{with .Min}} min="{{.}}"{{end}}{{with .Max}} max="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{with opt . "Inputmode"}} inputmode="{{.}}"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>
 {{if .Error}}<p rst-field-error id="{{.ID}}-error"{{if not (opt . "QuietError")}} role="alert"{{end}}>{{.Error}}</p>
 {{else if .Help}}<p rst-field-help id="{{.ID}}-help">{{.Help}}</p>
 {{end}}</div>{{end}}

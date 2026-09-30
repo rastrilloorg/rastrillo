@@ -10,6 +10,16 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added — a web address field that does not care about `https://`
+
+`ui` ships a `field-url` partial, and `form` a `URL` kind to read it with. A person can type `example.com`, `www.Example.com/` or `http://example.com/pricing`, and you store an http or https address with a lowercase host. The field is a text input with the URL keyboard, because browsers refuse `example.com` in `<input type="url">`.
+
+`form.URL` refuses any scheme but http and https, a username or password in the address, a host with no dot, and whitespace. It reports the catalog keys `rastrillo.ui.url_invalid` and `rastrillo.ui.url_credentials`, so wrap the error in `T` as you do for dates. `form.NormaliseURL` does the same work outside `Parse`.
+
+To show a stored address, the new `displayURL` and `safeHref` template functions (`form.DisplayURL` and `form.SafeHref`) give you the address without its scheme and a link target that is `""` for anything not http or https. `form.URLKey` tells you when two addresses are the same site. The `field` partial also takes `Inputmode` now, to pick a phone keyboard without the validation a `Type` brings.
+
+Nothing to re-vendor: the partial and the functions come from the module.
+
 ### Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`
 
 `ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it, whether that is an emailed link or Keymail. It offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.
