@@ -95,16 +95,22 @@ func runDoctor(args []string) error {
 // The exit codes, which are the CI-facing surface. Each means one
 // thing, so a script can act on it: 0 clean, 1 an error, 2 usage (main
 // already uses it), 3 drift, 4 a version mismatch that makes the
-// comparison inconclusive.
+// comparison inconclusive, 5 an app on the pre-move module path.
 //
 // Skew gets its own code rather than being folded into drift because
 // the two call for opposite actions. Drift means "re-copy these files".
 // Skew means "do not re-copy anything yet — upgrade the module, or
 // pin the CLI, and ask again." A CI that treated them alike would
 // answer an upgrade question with a file list.
+//
+// The pre-move path is a third action again: skew says "upgrade the
+// module", and for an app importing the old path the obvious upgrade
+// fails with a module-path error that names no way out. It needs the
+// migration, so it gets a code a CI can tell apart from both.
 const (
-	exitDrift = 3
-	exitSkew  = 4
+	exitDrift   = 3
+	exitSkew    = 4
+	exitPreMove = 5
 )
 
 // exitError carries an exit code out of a subcommand. Its message may
@@ -153,6 +159,7 @@ type report struct {
 	themeFrom  string // how the theme was decided, for the one-line explanation
 	pinFile    string // relative path of the app's vendored_test.go, if it has one
 	pinLegacy  bool   // that pin is the older map-literal shape, with no vendoredIsMine
+	preMove    string // the version of preMoveModule the app requires directly, if any
 	files      []vendoredFile
 }
 
@@ -191,6 +198,8 @@ func (r *report) drifted() bool {
 // exit maps the findings onto the exit codes.
 func (r *report) exit() error {
 	switch {
+	case r.preMove != "":
+		return exitError{code: exitPreMove}
 	case r.skewed():
 		return exitError{code: exitSkew}
 	case r.drifted():
@@ -212,6 +221,22 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	r.appVersion, r.replaced, err = moduleRequirement(dir, rastrilloModule)
 	if err != nil {
 		return nil, err
+	}
+
+	// An app whose ui comes from the pre-move path is checked against
+	// nothing: the files would be compared with this binary's copy while
+	// the app renders the old module's markup, and a clean result would
+	// be the same false comfort its own vendored test already gives. So
+	// the path is the whole report, and it is reached before looking for
+	// static/, because an app with nothing vendored imports a frozen ui
+	// just the same.
+	old, err := readRequirement(dir, preMoveModule)
+	if err != nil {
+		return nil, err
+	}
+	if old.version != "" && !old.indirect && old.replaced == "" {
+		r.preMove = old.version
+		return r, nil
 	}
 
 	pkg := packageName(filepath.Base(module))
@@ -466,6 +491,10 @@ func themeIdentity(flag, pinned string, css []byte) (name, from string) {
 // fixing suppresses the closing advice, since a run that is already
 // re-copying does not need to be told how to.
 func (r *report) print(w io.Writer, fixing bool) {
+	if r.preMove != "" {
+		r.printPreMove(w)
+		return
+	}
 	fmt.Fprintf(w, "rastrillo doctor: %s (%s)\n", r.module, r.staticDir)
 
 	switch {
@@ -551,6 +580,46 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 }
 
+// printPreMove is the report for an app on the pre-move path: what is
+// wrong, and the migration, step by step. The steps are printed rather
+// than run because they rewrite the app's source and reach the network,
+// which is not what anyone asking doctor a question expects it to do.
+//
+// Each step is there for a failure seen doing it by hand. go.mod and
+// go.sum are left out of the rewrite because an app that already
+// requires the new path at a real version would get a second
+// requirement on it at v0.23.0, a version whose go.mod declares the old
+// path. They are left out at every depth, not only the root, because
+// ':!go.mod' is a root-only pathspec and a nested module's manifest
+// would be rewritten into that same broken state. The tool line is swapped explicitly for the same reason, and
+// added where it was missing, since apps scaffolded before v0.24.0 never
+// had one. perl rather than sed -i, whose flag differs between macOS
+// and Linux.
+func (r *report) printPreMove(w io.Writer) {
+	target := r.cliVersion
+	if !r.cliTagged {
+		target = "latest"
+	}
+	fmt.Fprintf(w, "rastrillo doctor: %s\n", r.module)
+	fmt.Fprintf(w, "  This app requires %s %s, rastrillo's path before it moved.\n", preMoveModule, r.preMove)
+	fmt.Fprintf(w, "  That path stops at v0.23.0, so this app gets no rastrillo fix released since.\n")
+	fmt.Fprintf(w, "  Its vendored test cannot tell: it checks against the same old module.\n")
+	fmt.Fprintf(w, "  No files were compared.\n")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "To move it to %s, run these from the app's root on a clean tree:\n", rastrilloModule)
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "  git grep -lz %s -- ':(glob,exclude)**/go.mod' ':(glob,exclude)**/go.sum' |\n", preMoveModule)
+	fmt.Fprintf(w, "    xargs -0 perl -pi -e 's#%s#%s#g'\n", strings.ReplaceAll(preMoveModule, ".", `\.`), rastrilloModule)
+	fmt.Fprintf(w, "  go mod edit -droprequire=%s \\\n", preMoveModule)
+	fmt.Fprintf(w, "    -droptool=%s/cmd/rastrillo \\\n", preMoveModule)
+	fmt.Fprintf(w, "    -tool=%s/cmd/rastrillo\n", rastrilloModule)
+	fmt.Fprintf(w, "  go get %s@%s\n", rastrilloModule, target)
+	fmt.Fprintf(w, "  go mod tidy\n")
+	fmt.Fprintf(w, "  go tool rastrillo doctor --fix\n")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "Then read the changelog for each release after %s: some change markup your app keeps a copy of.\n", r.preMove)
+}
+
 // isAre and them keep the absent-files line grammatical for one file
 // and for several, which is the difference between a sentence and a
 // template someone forgot to finish.
@@ -605,6 +674,15 @@ func (r *report) recordAdvice() string {
 // no tool. --force is there because a person who has read that sentence
 // may still have a reason.
 func (r *report) applyFix(w io.Writer, force bool) error {
+	// No --force here. Skew can be a deliberate pin; an app on the old
+	// path cannot be on it deliberately in any way a re-copy serves,
+	// because the re-copy is the fault this whole report is about.
+	if r.preMove != "" {
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "Refusing to --fix: this app builds its ui from %s %s.\n", preMoveModule, r.preMove)
+		fmt.Fprintf(w, "Copying %s files into it would put new CSS against old markup. Move it first, as above.\n", r.cliVersion)
+		return exitError{code: exitPreMove}
+	}
 	if r.skewed() && !force {
 		fmt.Fprintln(w)
 		fmt.Fprintf(w, "Refusing to --fix: this app requires %s and I carry %s.\n", r.appVersion, r.cliVersion)

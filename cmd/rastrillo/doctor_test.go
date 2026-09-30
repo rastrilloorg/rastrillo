@@ -267,6 +267,169 @@ func TestDoctorFixRefusesAcrossVersions(t *testing.T) {
 	}
 }
 
+// premoveApp is doctorApp in the shape issue #52 measured on four
+// Oficina apps: it requires the current module, and ALSO requires the
+// pre-move path directly, which is where its ui import comes from. The
+// current requirement is the part that makes the app look up to date.
+func premoveApp(t *testing.T) string {
+	t.Helper()
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	mustWrite(t, filepath.Join(dir, "go.mod"), fmt.Sprintf(
+		"module demoapp\n\ngo 1.24\n\nrequire (\n\t%s v0.23.0\n\t%s %s\n)\n",
+		preMoveModule, rastrilloModule, rastrilloVersion()))
+	return dir
+}
+
+// TestDoctorCatchesAnAppOnThePreMovePath is issue #52: five of six apps
+// served a month-old stylesheet, and every check they had passed,
+// because each one compared the app against the same frozen module. The
+// report has to lead with the path, not with a file list that would be
+// read as ordinary drift and "fixed" with --fix.
+func TestDoctorCatchesAnAppOnThePreMovePath(t *testing.T) {
+	dir := premoveApp(t)
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.preMove != "v0.23.0" {
+		t.Fatalf("preMove = %q, want v0.23.0", rep.preMove)
+	}
+	if got := exitCode(t, rep.exit()); got != exitPreMove {
+		t.Errorf("exit %d, want %d", got, exitPreMove)
+	}
+	out := printed(rep, false)
+	head := strings.Split(out, "\n")
+	if len(head) < 2 || !strings.Contains(head[1], preMoveModule) || !strings.Contains(head[1], "v0.23.0") {
+		t.Errorf("the old path is not the headline:\n%s", out)
+	}
+	// The recipe is the feature: the obvious `go get ...@upgrade` fails
+	// with an error that names no way out, so each step is asserted. An
+	// untagged binary asks for @latest rather than naming its fallback
+	// constant, which a checkout newer than the last tag has outgrown.
+	target, tagged := rastrilloVersionTagged()
+	if !tagged {
+		target = "latest"
+	}
+	for _, want := range []string{
+		"perl -pi -e 's#github\\.com/carlosframework/rastrillo#amadan.net/rastrillo/rastrillo#g'",
+		"':(glob,exclude)**/go.mod' ':(glob,exclude)**/go.sum'",
+		"go mod edit -droprequire=" + preMoveModule,
+		"-tool=" + rastrilloModule + "/cmd/rastrillo",
+		"go get " + rastrilloModule + "@" + target,
+		"go mod tidy",
+		"go tool rastrillo doctor --fix",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the report does not contain %q:\n%s", want, out)
+		}
+	}
+	// A file list here would compare against a module the app does not
+	// build its ui from, which is the false comparison the report exists
+	// to stop.
+	for _, bad := range []string{"drift ", "files compared", "ok       ", "theme:"} {
+		if strings.Contains(out, bad) {
+			t.Errorf("the report compares files it cannot fairly compare (%q):\n%s", bad, out)
+		}
+	}
+}
+
+// TestDoctorFixRefusesOnThePreMovePath: re-copying current assets into
+// an app whose ui comes from v0.23.0 is new CSS against old markup, and
+// --force does not change that — the migration is the fix, and there is
+// no reading of the situation in which the re-copy is what someone
+// meant.
+func TestDoctorFixRefusesOnThePreMovePath(t *testing.T) {
+	dir := premoveApp(t)
+	path := filepath.Join(dir, "internal", "demoapp", "static", "tokens.css")
+	mustWrite(t, path, "/* v0.23.0's tokens */\n")
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, force := range []bool{false, true} {
+		var buf bytes.Buffer
+		if got := exitCode(t, rep.applyFix(&buf, force)); got != exitPreMove {
+			t.Errorf("--fix (force %v) exited %d, want %d", force, got, exitPreMove)
+		}
+		if !strings.Contains(buf.String(), "Refusing to --fix") {
+			t.Errorf("--fix (force %v) refused without saying so:\n%s", force, buf.String())
+		}
+	}
+	if body, _ := os.ReadFile(path); string(body) != "/* v0.23.0's tokens */\n" {
+		t.Fatal("--fix wrote into an app on the pre-move path")
+	}
+}
+
+// TestDoctorPreMoveNeedsNothingVendored: the path is the finding, and an
+// app with no static/ still imports a frozen ui. Failing with "nothing
+// vendored to check" would hide the one thing worth saying.
+func TestDoctorPreMoveNeedsNothingVendored(t *testing.T) {
+	dir := t.TempDir()
+	mustWrite(t, filepath.Join(dir, "go.mod"),
+		"module bare\n\ngo 1.24\n\nrequire "+preMoveModule+" v0.22.0\n")
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatalf("diagnose: %v", err)
+	}
+	if rep.preMove != "v0.22.0" {
+		t.Errorf("preMove = %q, want v0.22.0", rep.preMove)
+	}
+}
+
+// TestDoctorIgnoresAnIndirectPreMoveRequirement: an indirect requirement
+// means a dependency imports the old path, not the app. The app's own
+// ui is current, and sending it through a rewrite of imports it does
+// not have would be a false positive, which this tool cannot afford.
+// A replace is left alone for the same reason as skew: the app builds
+// against something doctor cannot see into.
+func TestDoctorIgnoresAnIndirectPreMoveRequirement(t *testing.T) {
+	for name, extra := range map[string]string{
+		"indirect":                "require " + preMoveModule + " v0.23.0 // indirect\n",
+		"indirect with reason":    "require (\n\t" + preMoveModule + " v0.23.0 // indirect; pulled in by an addon\n)\n",
+		"replaced":                "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " => ../old\n",
+		"replaced at its version": "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " v0.23.0 => ../old\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := doctorApp(t, rastrilloVersion(), "day")
+			src, _ := os.ReadFile(filepath.Join(dir, "go.mod"))
+			mustWrite(t, filepath.Join(dir, "go.mod"), string(src)+"\n"+extra)
+			rep, err := diagnose(dir, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if rep.preMove != "" {
+				t.Errorf("preMove = %q for an %s requirement", rep.preMove, name)
+			}
+		})
+	}
+}
+
+// TestDoctorReadsThePreMoveRequirementAsGoDoes: every spelling here is
+// one the go command accepts as a direct requirement, and each one the
+// check missed would send a frozen app to a clean report and a --fix
+// that writes new CSS over it.
+func TestDoctorReadsThePreMoveRequirementAsGoDoes(t *testing.T) {
+	for name, gomod := range map[string]string{
+		"a comment mentioning indirect": "require " + preMoveModule + " v0.23.0 // was indirect until the ui import\n",
+		"a tab after require":           "require\t" + preMoveModule + " v0.23.0\n",
+		"a quoted path":                 "require \"" + preMoveModule + "\" v0.23.0\n",
+		"a quoted path in a block":      "require (\n\t\"" + preMoveModule + "\" v0.23.0\n)\n",
+		"a replace for another version": "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " v0.22.0 => ../old\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			mustWrite(t, filepath.Join(dir, "go.mod"), "module bare\n\ngo 1.24\n\n"+gomod)
+			rep, err := diagnose(dir, "")
+			if err != nil {
+				t.Fatalf("diagnose: %v", err)
+			}
+			if rep.preMove != "v0.23.0" {
+				t.Errorf("preMove = %q, want v0.23.0", rep.preMove)
+			}
+		})
+	}
+}
+
 // TestDoctorLeavesADeliberateEditAlone: a file the app recorded as its
 // own is not drift and is not overwritten. This is the whole reason
 // vendoredIsMine exists.

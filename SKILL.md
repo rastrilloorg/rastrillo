@@ -47,7 +47,9 @@ restarts. docs/site/getting-started.md
 
 `rastrillo doctor [--fix]` compares `static/`'s vendored files with the
 CLI's own copies. The scaffolded pin test, not doctor, is the standing
-gate. docs/site/cli.md
+gate. An app importing `github.com/carlosframework/rastrillo` (the
+pre-move path) is frozen at v0.23.0 and its pin test cannot see it: a
+current doctor exits 5 and prints the migration. docs/site/cli.md
 
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens — field kinds text, textarea, money; no
