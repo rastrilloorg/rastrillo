@@ -10,6 +10,26 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: `rastrillo doctor` finds an app still on the old module path
+
+An app that imports `github.com/carlosframework/rastrillo` is stuck at
+v0.23.0 and gets no fix released since. Nothing told it: its vendored
+test checks against the same old module, and `go get ...@upgrade` fails
+with a module-path error. Five of six Oficina apps were in this state a
+month after the iOS zoom fix shipped.
+
+Run a current `doctor` against your app:
+
+```sh
+go run amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest doctor
+```
+
+If the app is on the old path, it says so, prints the steps to move it
+and exits 5. `--fix` refuses until the app has moved. The steps are also
+in [the CLI reference](/docs/cli#an-app-on-the-old-module-path). They
+replace the v0.25.0 note below, which missed apps that require both
+paths.
+
 ### Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`
 
 `ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it, whether that is an emailed link or Keymail. It offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.
