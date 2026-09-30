@@ -3,7 +3,7 @@
 Status: design, 2026-09-30. The operator chose each look from a
 throwaway prototype; this spec turns those choices into the framework
 and decides what the choices left open. Revised after adversarial
-review rounds 1 to 3 (see "Review log") with the operator's answers on
+review rounds 1 to 4 (see "Review log") with the operator's answers on
 prerender, the gallery and copy review.
 
 Part H of the design-system iteration (F is the sign-in screen,
@@ -107,13 +107,19 @@ where those left room. Each "chosen here" item says what it rejected.
 - **Copy review follows the adversarial review (operator).** The draft
   strings in §11 go to the operator once review is satisfied, before
   any is written into a file.
-- **Chosen here, after rounds 1 and 2: on small or touch screens the
+- **Chosen here, after rounds 1 to 4: on small or touch screens the
   calendar docks to the bottom of the viewport, and its days are 44px
-  where seven fit.** The panel is a 326px border box derived from
-  `--rst-tap`; seven 44px days fit from a 342px viewport. Below that (a
+  where seven fit.** The grid asks for seven taps and the panel fits
+  around it, scrollbar gutter included; seven 44px days fit from a
+  342px viewport (plus a classic scrollbar's gutter). Below that (a
   320px phone, or a zoomed page) days narrow to about 41px, still 44px
   tall: a stated design exception to the house rule, above WCAG 2.5.8's
   24px, and not claimed as 2.5.5 conformance. §1.4.
+- **Operator sign-offs after round 4.** (1) The three deliberate desktop
+  changes are approved: the whole-row target (§2), the whole-row focus
+  ring (§2.4), and the row checkbox's 24×24 label target around the
+  unchanged 16px box (§2.3). (2) The 320px calendar exception, days
+  about 41px wide by 44px tall, is approved (§1.4).
 
 ## 1. Type and tap targets on small or touch screens
 
@@ -295,12 +301,43 @@ screen**:
   inset-block-end: var(--rst-sp-2);
   inset-inline: 0;
   margin: 0 auto;
-  inline-size: min(calc(7 * var(--rst-tap) + 2 * var(--rst-sp-2) + 2px), calc(100vw - 2 * var(--rst-sp-2)));
+  inline-size: fit-content;
+  max-inline-size: calc(100vw - 2 * var(--rst-sp-2));
   max-block-size: calc(100dvh - 2 * var(--rst-sp-2));
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+:is([rst-cal], [rst-dtp] [rst-cal]) [rst-cal-grid] {
+  inline-size: calc(7 * var(--rst-tap));
+  max-inline-size: 100%;
 }
 ```
+
+**The width is the grid's, not a formula for the panel (round 4).** The
+round-3 draft fixed the panel's border box at 326px and let the table
+take 100% of what was left, so once `overflow-y: auto` put a classic
+scrollbar in the panel, the gutter came out of the days: about 41.9px
+each at a 600×320 mouse viewport, well above the stated 342px
+exception. Now the grid asks for seven taps, 308px, and the panel is
+`fit-content` around it with `scrollbar-gutter: stable`, so the gutter
+is reserved whether or not the panel is scrolling and is part of the
+panel's intrinsic width (CSS Overflow 4, `scrollbar-gutter`). The panel
+comes out at 308px plus padding, borders and whatever the platform's
+gutter is: 326px on a phone, whose overlay scrollbars take no space,
+about 341px with a 15px classic scrollbar. The days never pay for it.
+Reserving the gutter even when the month fits costs a strip of empty
+space on the inline-end side on desktop-style scrollbars; that is the
+price of days that do not change width the moment the viewport gets
+short. Rejected: scrolling an inner wrapper around the grid, since the
+wrapper's own scrollbar would come out of the same width; and adding a
+fixed 15px to a formula, since gutter widths vary by platform and are
+zero on phones.
+
+`max-inline-size` on both is what lets a viewport narrower than the
+panel shrink the days (the 320px case below): the panel is clamped to
+the viewport, and the grid's `100%` resolves against the clamped
+content box.
 
 (both spellings; the `:is()` takes the weight of its heaviest argument,
 (0,3,0), so it overrides the `is-above` rule at ui/tokens.css:1622 as
@@ -308,7 +345,8 @@ well as the base rule.) Every declaration earns its place, because
 round 2 found each missing one: `border-box` so the width formula is
 the outer box (the border box is 326px at the default root, the tap
 plus padding plus borders, derived from `--rst-tap` rather than a second
-constant); `top: auto` because the base rule's physical `top: 100%`
+constant, and since round 4 grown by the scrollbar gutter where there
+is one); `top: auto` because the base rule's physical `top: 100%`
 (1643) would otherwise be measured against the viewport once the panel
 is fixed; `inset-block-start` and the margins reset because `is-above`
 sets them. datetime.js still measures and toggles `is-above`
@@ -330,9 +368,11 @@ finding 1). And
 one presentation for every touch screen is one thing to test. Desktop
 under a fine pointer keeps today's anchored 18rem panel.
 
-**Below a 342px viewport** (a 320px phone, or a zoomed page) the docked
-panel is narrower than 326px and days come out at about 41px wide, still
-44px tall. This is a **design exception to the house 44px rule**, not a
+**Below a 342px viewport** (a 320px phone, or a zoomed page; with a
+classic scrollbar the threshold is 342px plus its gutter) the docked
+panel is clamped to the viewport and days come out at about 41px wide,
+still 44px tall. This is a **design exception to the house 44px rule**,
+approved by the operator after round 4, not a
 claim of WCAG 2.5.5 conformance: the date field beside the calendar
 takes a typed date, which gives a keyboard and a thumb an alternative
 way in, but a text field is not an equivalent target for "pick this
@@ -1505,7 +1545,11 @@ A fixture page renders every partial and every styleguide sample.
   the viewport and every day cell is at least 44×44; at 640×320 with
   touch, the panel is no taller than the viewport, scrolls itself, and
   both month buttons and every day of all six weeks can be scrolled to
-  and clicked; at 320, every day
+  and clicked; **with classic scrollbars** (`harness.WithScrollbars()`,
+  harness/rig.go:73) at 600×320 and 390×320, mouse and touch, the panel
+  is scrolling (its `scrollHeight` exceeds its `clientHeight`) and
+  every day cell is still at least 44px wide, the panel's box is inside
+  the viewport, and the grid's width is exactly seven taps; at 320, every day
   is at least 24px wide and 44px tall and the panel does not overflow;
   with the date field at the inline end of a field row, the same.
 - **1024×768, touch** (the pointer half alone) and **600×800, mouse**
@@ -1934,4 +1978,19 @@ each completed below. Round-1 findings 3, 8, 10, 12, 15 and 17 resolved;
 5. Minor, §4.5 still named the doctor message. Resolved: the
    missing-file diagnostic in both places (§4.5, §10.6).
 
-Round 3 found no Blocker, so no fourth round was run.
+Round 3 found no Blocker; a fourth round was run on `97588f9b` all the same.
+
+### Round 4 (Astra, 2026-09-30): all five round-3 findings resolved; 1 new Important
+
+1. Important, the calendar's `overflow-y: auto` let a classic scrollbar
+   take its gutter out of the fixed 326px panel, so days fell to about
+   41.9px at a 600×320 mouse viewport, above the 342px exception.
+   Resolved: the grid asks for seven taps and the panel is
+   `fit-content` around it with `scrollbar-gutter: stable`, so the
+   gutter is added to the panel, never taken from the days; a
+   classic-scrollbar assertion at 600×320 and 390×320 (§1.4, §10.1).
+
+Operator, after round 4: the three deliberate desktop changes are
+approved (whole-row target, whole-row focus ring, the 24×24 checkbox
+label around the 16px box), and so is the 320px calendar exception
+(days about 41×44). Recorded in Decisions. No further review round.
