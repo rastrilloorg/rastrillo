@@ -61,7 +61,15 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 	// tail (and, for a bare time.Now, " m=+1.5" monotonic reading) they
 	// do not parse, so an app's raw SQL doing date arithmetic silently
 	// got nothing back.
-	dsn := path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_time_format=sqlite"
+	//
+	// _timezone=UTC: the driver converts every time.Time to UTC before
+	// writing it, and hands every one it reads back in UTC. NowFunc
+	// already stamped GORM's own columns in UTC, but a time an app
+	// assigns itself (a bare time.Now(), in the machine's zone) or
+	// parses (a Date header's "+0900") was stored in its own zone, and
+	// SQL comparing stored times as text (WHERE at < ?, ORDER BY at)
+	// only agrees with the instants while every row is in one zone.
+	dsn := path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_time_format=sqlite&_timezone=UTC"
 
 	w, err := sql.Open("sqlite", dsn)
 	if err != nil {
