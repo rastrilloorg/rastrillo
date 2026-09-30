@@ -215,3 +215,48 @@ func TestTimesInNumericZonesRoundTrip(t *testing.T) {
 		t.Fatalf("got %v, want %v", out, in)
 	}
 }
+
+// SQLite's own date functions must read what the driver writes. The
+// driver's default layout, time.Time.String(), made julianday and date
+// return NULL, so raw SQL doing date arithmetic in an app got nothing
+// back while every scan into a time.Time still worked. A bare
+// time.Now() is the worst case: it carries a monotonic reading, which
+// String() wrote into the column as " m=+0.000123".
+func TestSQLiteDateFunctionsReadStoredTimes(t *testing.T) {
+	d, err := Open(filepath.Join(t.TempDir(), "t.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err := d.G.Exec("CREATE TABLE stamps (id INTEGER PRIMARY KEY, at DATETIME)").Error; err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	if !strings.Contains(now.String(), " m=") {
+		t.Fatalf("test premise wrong: time.Now() has no monotonic reading: %v", now)
+	}
+	earlier := time.Date(2026, 8, 30, 23, 30, 0, 0, time.FixedZone("", 3600))
+	for _, at := range []time.Time{now, earlier} {
+		if err := d.G.Exec("INSERT INTO stamps (at) VALUES (?)", at).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	var row struct {
+		Seconds *float64
+		Day     *string
+	}
+	if err := d.G.Raw(`SELECT (julianday(MAX(at)) - julianday(MIN(at))) * 86400.0 AS seconds,
+		(SELECT date(at) FROM stamps WHERE id = 2) AS day FROM stamps`).Scan(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.Seconds == nil {
+		t.Fatal("julianday returned NULL for a stored time")
+	}
+	if want := now.Sub(earlier).Seconds(); *row.Seconds < want-1 || *row.Seconds > want+1 {
+		t.Errorf("julianday difference = %v seconds, want %v", *row.Seconds, want)
+	}
+	// 23:30 at +01:00 is 22:30 UTC the same day; date() reads the offset.
+	if row.Day == nil || *row.Day != "2026-08-30" {
+		t.Errorf("date(at) = %v, want 2026-08-30", row.Day)
+	}
+}

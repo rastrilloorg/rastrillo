@@ -27,6 +27,39 @@ uses `--rst-text-muted`.
 Both changes are in `tokens.css`, which your app has its own copy of.
 Run `rastrillo doctor --fix` to take the new one.
 
+### Changed — times are stored in SQLite's layout; old rows keep reading, but back-fill them for SQL date maths
+
+`db.Open` now opens SQLite with `_time_format=sqlite`, so a `time.Time`
+is written as `2026-09-30 11:03:07.457+00:00`. Before, the driver wrote
+Go's `time.Time.String()`: `2026-09-30 11:03:07.457 +0000 UTC`, and for
+a bare `time.Now()` that an app assigns itself, a monotonic-clock
+reading after that, `m=+6980.25`. SQLite's own date functions cannot
+read that. `julianday`, `date` and `strftime` returned NULL for every
+row, so raw SQL doing date arithmetic silently got nothing back. A time
+in a bare numeric zone (`+0100`, as `mail.ParseDate` returns) was also
+written in a form that failed to scan back into a `time.Time`.
+
+The zone written is whatever the `time.Time` carries, as before. GORM's
+own stamps are UTC, because `NowFunc` is `time.Now().UTC()`. Only the
+text changed.
+
+Rows written before this keep scanning into a `time.Time`, because the
+driver reads both layouts. The new binary writes only the new one. Two
+things can still go wrong in the meantime: SQL date functions return
+NULL for the old rows, and text comparison between the two layouts is
+only right to the second. If your app does SQL date maths, rewrite the
+old rows once, in a migration, for each `DATETIME` column you own:
+
+```sql
+UPDATE t SET c = substr(c, 1, instr(substr(c, 12), ' ') + 10)
+       || substr(c, instr(substr(c, 12), ' ') + 12, 3) || ':'
+       || substr(c, instr(substr(c, 12), ' ') + 15, 2)
+ WHERE c GLOB '????-??-?? ??:??:??* [+-][0-9][0-9][0-9][0-9] *';
+```
+
+That gives each row exactly the text the new layout writes for the same
+instant, zone included. Nothing is rounded.
+
 ### Added — `rastrillo/perf`, request timing and budgets
 
 `perf.Middleware` adds a `Server-Timing` header to every response, and logs a

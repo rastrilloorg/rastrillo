@@ -56,6 +56,11 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 	// back when the zone has a name. A time in a bare numeric zone — a
 	// mail Date header's "+0100", say — would otherwise be stored as
 	// "+0100 +0100" and every row carrying it would fail to scan.
+	// It is also the layout SQLite's own date functions read: julianday,
+	// date and strftime return NULL for the default, whose " +0000 UTC"
+	// tail (and, for a bare time.Now, " m=+1.5" monotonic reading) they
+	// do not parse, so an app's raw SQL doing date arithmetic silently
+	// got nothing back.
 	dsn := path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_time_format=sqlite"
 
 	w, err := sql.Open("sqlite", dsn)
