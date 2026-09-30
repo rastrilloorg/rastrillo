@@ -107,13 +107,13 @@ where those left room. Each "chosen here" item says what it rejected.
 - **Copy review follows the adversarial review (operator).** The draft
   strings in §11 go to the operator once review is satisfied, before
   any is written into a file.
-- **Chosen here, after round 1: calendar days on phones are 44px where
-  seven fit, and exempt below that.** On small screens the calendar
-  docks to the bottom of the viewport at up to 20.375rem wide; seven
-  44px days fit from a 342px viewport. Below that (a 320px phone, or
-  400% zoom) days narrow to about 41px, still 44px tall, under WCAG
-  2.5.5's "equivalent" exception: the date field beside the button is a
-  44px target that takes any date typed. §1.4.
+- **Chosen here, after rounds 1 and 2: on small or touch screens the
+  calendar docks to the bottom of the viewport, and its days are 44px
+  where seven fit.** The panel is a 326px border box derived from
+  `--rst-tap`; seven 44px days fit from a 342px viewport. Below that (a
+  320px phone, or a zoomed page) days narrow to about 41px, still 44px
+  tall: a stated design exception to the house rule, above WCAG 2.5.8's
+  24px, and not claimed as 2.5.5 conformance. §1.4.
 
 ## 1. Type and tap targets on small or touch screens
 
@@ -234,7 +234,13 @@ reintroduce.
 ### 1.4 Tap targets
 
 Inside the query, every interactive idiom is at least `var(--rst-tap)`
-on both axes, measured as its **activation area**: the box a tap
+on both axes, measured as its **activation area**. Every row of the
+table below that says "min block size" also gets
+`min-inline-size: var(--rst-tap)` unless the element is already as wide
+as its container (a full-width menu row, a stretched input), and every
+element that is `display: inline` today gets `inline-flex` or `flex` in
+the same rule, since min sizes do nothing on an inline box. The
+activation area is the box a tap
 activates, which for a label-backed control is the label and for a
 stretched link is the row. The prototype's list (P/touch-targets.css:
 20-52) was the starting set; round 1 found it incomplete, so this is the
@@ -245,7 +251,7 @@ full inventory, taken from every interactive rule in tokens.css (every
 |---|---|---|
 | Buttons, all sizes | ui/tokens.css:173-190 | min block and inline size |
 | Inputs, selects, textareas | 1262, 1285 | min block size |
-| Search box, its clear link | 545-614 | box min block size; clear link 44×44 |
+| Search box, its clear link | 545-614 | the box gets min block size and `padding-block: 0`, and the input `align-self: stretch` so the input itself, which is what a tap focuses, fills the 44px box (P/touch-targets.css:22-23); clear link 44×44 |
 | Filter chip's remove link | 1235 (24×24) | 44×44, the chip's padding absorbs it |
 | Help link | 1483 (28×28) | 44×44 |
 | Dropdown summaries (list-bar, header, account, locale) | 1087 | min block size, `align-items: center` |
@@ -261,43 +267,67 @@ full inventory, taken from every interactive rule in tokens.css (every
 | Switch, choice cards, tblock head | 1304, 1317, 1436 | the label: min block size |
 | Bulk bar: close, escalate link, Actions summary | 1491, 1495, 1498 | close 44×44; escalate and Actions min block size |
 | Modal close, modal panel nav links | 1472, 1468 | close 44×44; nav links min block size |
-| Back-nav link | 1504 | min block size |
-| Shell: brand, nav links, Menu summary, back control | 1700, 1702, 1737, 1868 | min block size; back control §4 |
+| Back-nav link | 1504 | `display: inline-flex; align-items: center`, then min block and inline size (it is inline today, where min sizes do nothing) |
+| Shell: brand, nav links, Menu summary, back control | 1700, 1702, 1737, 1868 | `inline-flex` or `flex`, min block and inline size; back control §4 |
+| Legacy sidebar drawer summary (kept for old layouts, §4.3) | 1793 | min block size; it is full width |
 
 A test (§10.1) enumerates every rule in tokens.css that carries
 `cursor: pointer` or styles an `a`, `button`, `summary` or `label`, and
 fails if one is not in this table's fixture, so a new control cannot
 arrive without a decision.
 
-**Calendar days.** The panel is `18rem` wide with 0.5rem padding and a
-seven-column fixed table (ui/tokens.css:1643, 1658), so a day is about
-38.9px wide; seven 44px days need 308px of content. Inside the query
-days get `block-size: var(--rst-tap)` (the prototype changed only the
-line height, P/touch-targets.css:28, which grows height alone), and the
-panel's width becomes `calc(7 * var(--rst-tap) + 2 * var(--rst-sp-2) + 2px)`,
-20.375rem, 326px. Placement:
+**Calendar days.** The panel's content box is `18rem` (it is a content
+box: tokens.css sets `box-sizing` per component and has no universal
+reset, ui/tokens.css:1643, 1253), holding a seven-column fixed table
+(1658), so a day is about 41px wide on desktop; seven 44px days need
+308px of content. Inside the query days get
+`block-size: var(--rst-tap)` (the prototype changed only the line
+height, P/touch-targets.css:28, which grows height alone), and the
+panel is **docked to the bottom of the viewport on every small or touch
+screen**:
 
-- **Below 40rem** the panel docks to the bottom of the viewport:
-  `position: fixed; inset-inline: 0; inset-block-end: var(--rst-sp-2);
-  margin-inline: auto; inline-size: min(20.375rem, calc(100vw - 2 * var(--rst-sp-2)))`.
-  An anchored panel cannot be made to fit: a date field in a field row
-  (ui/tokens.css:1357-1360, fields at least 8rem, side by side on a
-  390px phone) can start past the middle of the screen, and 326px from
-  there runs off the edge. Docked, it always fits. datetime.js still
-  measures and toggles `is-above` (datetime.js:1405-1419); inside this
-  query the `is-above` insets (ui/tokens.css:1622) are overridden at
-  equal-or-higher specificity so the class has no effect.
-- **Between 40rem and a coarse pointer** (a tablet, a phone in
-  landscape) it stays anchored at 326px, which fits beside any field on
-  a screen that wide as well as today's 288px does.
-- **Below a 342px viewport** (a 320px phone, or a zoomed page) the
-  docked panel is narrower than 326px and days come out at about 41px
-  wide, still 44px tall. This is the one exemption from the 44px rule,
-  under WCAG 2.5.5's "equivalent" exception: the date field the calendar
-  belongs to is a 44px target that takes a typed date, which datetime.js
-  parses (the `rastrillo.ui.date_*` words in locales/en.toml:34-63 are
-  its vocabulary). 2.5.8's 24px AA floor
-  still holds by a wide margin. The 320px reflow test covers the panel.
+```css
+:is([rst-cal], [rst-dtp] [rst-cal], [rst-dtp].is-above [rst-cal]) {
+  box-sizing: border-box;
+  position: fixed;
+  top: auto;
+  inset-block-start: auto;
+  inset-block-end: var(--rst-sp-2);
+  inset-inline: 0;
+  margin: 0 auto;
+  inline-size: min(calc(7 * var(--rst-tap) + 2 * var(--rst-sp-2) + 2px), calc(100vw - 2 * var(--rst-sp-2)));
+}
+```
+
+(both spellings; the `:is()` takes the weight of its heaviest argument,
+(0,3,0), so it overrides the `is-above` rule at ui/tokens.css:1622 as
+well as the base rule.) Every declaration earns its place, because
+round 2 found each missing one: `border-box` so the width formula is
+the outer box (the border box is 326px at the default root, the tap
+plus padding plus borders, derived from `--rst-tap` rather than a second
+constant); `top: auto` because the base rule's physical `top: 100%`
+(1643) would otherwise be measured against the viewport once the panel
+is fixed; `inset-block-start` and the margins reset because `is-above`
+sets them. datetime.js still measures and toggles `is-above`
+(datetime.js:1405-1419); inside the query the class changes nothing.
+
+Why dock rather than anchor, on a tablet too: an anchored panel is
+placed from the field's inline start (`inset-inline-start: 0`), and a
+date field can sit at the trailing end of a wrapping field row
+(ui/tokens.css:1357-1360) at any width; datetime.js checks vertical
+room only (1412). Docked, the panel is always inside the viewport, and
+one presentation for every touch screen is one thing to test. Desktop
+under a fine pointer keeps today's anchored 18rem panel.
+
+**Below a 342px viewport** (a 320px phone, or a zoomed page) the docked
+panel is narrower than 326px and days come out at about 41px wide, still
+44px tall. This is a **design exception to the house 44px rule**, not a
+claim of WCAG 2.5.5 conformance: the date field beside the calendar
+takes a typed date, which gives a keyboard and a thumb an alternative
+way in, but a text field is not an equivalent target for "pick this
+day", so the spec does not lean on 2.5.5's equivalent exception. WCAG
+2.5.8's 24px AA floor holds by a wide margin. The 320px reflow test
+covers the panel.
 
 **Exempt:** a link inside running text (inside `p` or `[rst-field-help]`,
 not inside `nav`), per WCAG 2.5.8's inline exception. The prototype's
@@ -363,7 +393,7 @@ grid, status pills were never lifted and stay under the overlay.
 ### 2.3 Controls above the overlay
 
 ```css
-:where([rst-row], [rst-lrow]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person]) {
+:where(:is([rst-row], [rst-lrow]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person])) {
   position: relative;
   z-index: 1;
 }
@@ -373,8 +403,22 @@ grid, status pills were never lifted and stay under the overlay.
 `:is()` with no space: it filters the controls themselves. With a space
 it would be a descendant combinator and lift things *inside* the
 controls, leaving a bare checkbox or summary covered (round 1, finding
-2). The browser test hit-tests the controls themselves (§10.2). Four
-things about it:
+2). The browser test hit-tests the controls themselves (§10.2).
+
+**The whole selector is inside `:where()`, so it weighs nothing.** Its
+job is to give an otherwise static control a position and a z-index, and
+never to replace a position a component chose. Round 2 found three that
+it would have replaced at any positive weight: the switch's input,
+absolutely placed over its track (ui/tokens.css:1305); the date
+picker's pick button, absolutely placed inside the field (1604); and a
+native select that select.js hides out of flow (2118). At zero weight
+every one of those rules wins `position`, and `z-index: 1` still
+applies to them, since an absolutely placed element is positioned. An
+app rule that positions a control in a row wins the same way. The
+browser fixture puts a switch, a date field and an enhanced select in a
+list-grid row and checks each keeps today's box (§10.2).
+
+Four things about it:
 
 - **It lifts the controls, not their containers.** Lifting the row menu's
   `<details>` would make it a stacking context and trap its panel
@@ -495,7 +539,10 @@ renders
 Keys, in the partial's contract comment:
 
 - `Name` string, required: the row's name, used only in the trigger's
-  accessible name through `T "rastrillo.ui.row_menu" "name" .Name`.
+  accessible name through `Tf "rastrillo.ui.row_menu" "name" .Name`. `Tf`, not `T`: the
+  default `T` ignores its extra arguments (ui/funcs.go:163) and would
+  render "Actions for {name}"; `Tf` substitutes (ui/funcs.go:183), as
+  the sign-in partial does (ui/partials/signin.html:45).
 - `Items` list, required. Each item: `Label` required; exactly one of
   `Href` (a GET link) or `Action` (a POST); `Hidden [][2]string`
   optional, POST only, in caller order (the shape `confirm-form` settled
@@ -519,10 +566,22 @@ it inserts a `[rst-spin]` before the label. The spinner-*replaces*-label
 presentation is scoped to `[rst-btn]` (ui/tokens.css:366-380), and a
 menu item is not one, so a POST item shows the spinner **beside** its
 label, the look every non-`rst-btn` button already gets. That is right
-for a full-width, start-aligned row: the width is the panel's, so
-nothing moves, and under reduced motion the ring is still as everywhere
-else (ui/tokens.css:1509). The round-1 draft promised the replacement
-look; it would need the `rst-btn` rules widened for no gain.
+for a full-width, start-aligned row. The round-1 draft promised the
+replacement look; it would need the `rst-btn` rules widened for no gain.
+
+The spinner gets a **reserved slot** so the item's box cannot move.
+Being full width does not guarantee that: the panel has only a
+`min-width` and otherwise sizes to its content (ui/tokens.css:1064), so
+an inline spinner added to a long label could widen the panel or wrap
+the label. POST buttons in a row menu are `position: relative` with
+`padding-inline-end: calc(0.65rem + 1rem + var(--rst-sp-2))` (the
+item's own padding, the spinner's 1rem, a gap), and
+`[rst-row-menu-panel] button > [rst-spin]` is absolutely placed in that
+padding at the inline end, vertically centred. The slot is reserved
+whether or not the item is busy, which widens POST items by 1.5rem of
+empty padding on desktop: a cost paid so a long translated label never
+reflows mid-submit. Under reduced motion the ring is still, as
+everywhere else (ui/tokens.css:1509).
 
 **Validation.** Invalid items fail at Execute, loudly, through a new
 template func `rowMenuItems` that the partial ranges over, the way
@@ -590,8 +649,20 @@ rendering a destructive POST, are the two failures this rules out.
 A `row-menu` sample in the List family (internal/designsystem/samples.go
 beside `list-row-action`, samples.go:196-214), with its Code tab, and
 the demo application's Requests list (page.go:1988-2001) gains a kebab
-per row. The styleguide's list-grid sample (ui/styleguide.go:26-37)
-switches from hand-written markup to the partial.
+per row.
+
+The styleguide's list-grid sample (ui/styleguide.go:26-37) **stays
+hand-written markup**, and gains the kebab exactly as the partial
+renders it. Styleguide samples are raw HTML, not templates: the gallery
+hands them to `newPreview` unexecuted (internal/designsystem/page.go:
+1517, 1639) and their own test parses no partials (ui/ui_test.go:1633),
+so a `{{template "row-menu"}}` call there would render as its source
+text. The raw-source gates that read the sample, the menu group and
+`rst-danger` (ui/ui_test.go:1748, 1981), keep passing because the
+markup still carries both. A new unit test renders `row-menu` with the
+sample's data and asserts the sample's `<details rst-row-menu>` is that
+output, byte for byte after whitespace normalisation, so the two cannot
+drift.
 
 ## 4. Sidebar shell: the index and the back control
 
@@ -633,7 +704,7 @@ back control's `rel="up"`.
 ```html
 <div rst-shell-sidebar="{{block "view" .}}page{{end}}">
 <a rst-skip href="#main">…</a>
-<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{T "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
+<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
 <aside rst-shell-rail>
 <h1 rst-shell-title>{{template "title" .}}</h1>
 {{block "brand" .}}…{{end}}
@@ -750,7 +821,8 @@ of code as in the prototype (P/side-c3.js, 2,524 bytes with terse
 comments):
 
 1. **Direction.** In `pagereveal`, if there is a transition, add type
-   `back` or `forward`. `back` when the Navigation API reports a traverse
+   `back` or `forward`. (For a prerendered page `pagereveal` fires at
+   activation, after the storage swap, so it sees the flag below.) `back` when the Navigation API reports a traverse
    to an earlier entry, or when the page being left set a one-shot
    `sessionStorage` flag because its back control was used; else
    `forward`. The prototype decided by URL regex (P/side-c3.js:5-8); the
@@ -772,23 +844,42 @@ comments):
    prototype's `document.referrer` fallback (P/side-c3.js:29) is
    dropped: the referrer names the document's referrer, not the entry
    before the current one.
-3. **Focus return, by a return record.** On `pagehide` of a content
-   page, shell.js writes `rst-shell-return` = the page's own path and
-   query to `sessionStorage` (per tab). On `pageshow` of an index page
-   at narrow width, it takes the record (reads and removes it) and
-   focuses, in order: the fragment's target, if the URL has one and it
-   is a nav link; else the nav link whose resolved `href` path and query
-   equal the record; else nothing, leaving the browser's own focus.
-   Writing on `pagehide` rather than on a nav click covers every way
-   back: the back control, the browser's back button, and a deep link
-   (a content page opened directly, then its back control), which the
-   round-1 draft promised and did not implement (finding 10). Storing a
-   path rather than an `id` means an app need not give its nav links ids
-   for the scripted path; the scriptless path still needs `#nav-…`.
-   `sessionStorage` is used through a `try` that treats any throw
-   (storage disabled, quota) as "no record", so the fragment rule still
-   applies and nothing else changes. The record is one-shot, so an index
-   reached later in the same tab by other means consumes it at most once.
+3. **Focus return, by a return record.**
+   - **Written when a content page is left:** on `pageswap` (fired on
+     the outgoing document for every navigation, including the
+     activation of a prerendered page, before the new one is revealed),
+     and on `pagehide` in engines without `pageswap`, shell.js writes
+     `rst-shell-return` = the page's own path and query to
+     `sessionStorage` (per tab).
+   - **Read when an index is revealed, never while prerendering:** on
+     `pagereveal` (which fires on first render, on activation of a
+     prerendered page and on a back/forward-cache restore), or on
+     `pageshow` in engines without it, and only when
+     `document.prerendering` is false and the index view is showing at
+     narrow width. A prerendered index runs its first scripts with a
+     cloned storage before the reader has left the source page, so
+     reading earlier would miss the fresh record (round 2, finding 9);
+     `pagereveal` at activation is the first moment the record is
+     there. It takes the record (reads and removes it).
+   - **Focus, in order:** the nav link whose resolved `href` path and
+     query equal the record; else the fragment's target, if the URL has
+     one and it is a nav link; else nothing, leaving the browser's own
+     focus. **Record first**, because the record is always fresher than
+     the fragment: after returning to `/#nav-invoices` and then visiting
+     Orders, a history-backed return restores the URL with the old
+     `#nav-invoices` fragment, and fragment-first would focus Invoices
+     (round 2, finding 8). The fragment is the scriptless mechanism and
+     the scripted fallback when there is no record.
+   - Writing when the page is left, rather than on a nav click, covers
+     every way back: the back control, the browser's back button, and a
+     deep link (a content page opened directly, then its back control),
+     which the round-1 draft promised and did not implement. Storing a
+     path rather than an `id` means an app need not give its nav links
+     ids for the scripted path; the scriptless path still needs
+     `#nav-…`. `sessionStorage` is used through a `try` that treats any
+     throw (storage disabled, quota) as "no record", so the fragment
+     rule still applies. The record is one-shot, so an index reached
+     later in the same tab by other means consumes it at most once.
 
 shell.css (P/side-c3.css):
 
@@ -809,9 +900,14 @@ shell.css (P/side-c3.css):
   The gate (TestReducedMotionDisablesEveryTransition, ui/ui_test.go:
   367-394) reads only `TokensCSS()` today; it is extended to run over
   `ShellCSS()` too, unchanged in what it accepts, so shell.css cannot
-  escape it. The class/attribute twin gates (ui/markup_v3_test.go:329,
-  375) are extended the same way; the console bar's
-  `view-transition-name` rule is written in both spellings.
+  escape it. The class/attribute twin rules (ui/markup_v3_test.go:329,
+  375) apply to shell.css too, but not the existing test as it stands:
+  it carries a floor of 300 pairs (markup_v3_test.go:362) that a small
+  file cannot meet. The pairing check is factored into a helper; tokens.
+  css keeps its 300 floor, and shell.css gets its own test with a floor
+  equal to the pairs it is written with (the console bar's
+  `view-transition-name` rule and the type rules), so the check cannot
+  pass vacuously on either file (round 2, finding 14).
 
 A system back gesture that the browser animates itself (iOS Safari's
 swipe) must not animate twice. The view-transition spec skips a
@@ -880,9 +976,15 @@ every response rather than sniffing for HTML. Set there, it follows the
 file's existing rule: an app's handler or `Options.Wrap` can replace or
 `Del` it.
 
-**The rules file.** `Serve` registers `GET /_speculation-rules` on its
-own mux, beside `POST /_locale` (serve.go:556; `LocaleSwitchPath`,
-localemw.go:197), so the locale middleware does not prefix it. The path
+**The rules file.** `buildHandler` registers `GET /_speculation-rules`
+on its own mux beside `GET /api/next-due` (serve.go:521-523), before
+`mux.Handle("/", app)` (530) and so before the early return for an app
+with no locales (532-534): both return paths serve it. The method-and-path
+pattern is more specific than the app's `/`, so the framework answers it
+even when the app has a catch-all. With locales, the locale middleware
+wraps this mux (558); the unprefixed path still works because the
+middleware negotiates a locale from the cookie or header when the path
+has no prefix, rather than requiring one (localemw.go:36-45). The path
 is exported as `rastrillo.SpeculationRulesPath`. The response is
 `Content-Type: application/speculationrules+json` (a static file would
 go out as `application/json`, which the browser refuses),
@@ -900,18 +1002,23 @@ default and every matched link is a GET; SKILL.md already says a GET
 never mutates, and a handler can tell a prerender from its
 `Sec-Purpose: prefetch;prerender` request header.
 
-**The switch.** `Options.NoSpeculationRules bool`: true sends neither
-the header nor the route. Named as a negative because the default is on
+**The switch.** `Options.NoSpeculationRules bool`: true sends no header
+and registers no route, so the path falls through to the app like any
+other (a 404 from an app with a 404 fallback, whatever a catch-all
+answers otherwise). `securityHeaders` gains the flag as a parameter. Named as a negative because the default is on
 and a zero `Options` must mean on; `Options.CSP` is the precedent for a
 field whose zero value is the framework default (serve.go:146-156).
 
-**CSP.** The rules arrive by header and file, not inline, so
-`'inline-speculation-rules'` is not needed and the default CSP is
-unchanged. The file is same-origin, which `default-src 'self'` allows
-whichever directive a browser applies to it. A prerendered page is a
-normal navigation to the app and carries the app's own CSP. An app with
-its own `Options.CSP` that forbids same-origin fetches of this kind
-simply gets no prerender, which is harmless; the docs say so.
+**CSP, in two stages.** *Loading the rules:* the HTML standard exempts
+a ruleset delivered by the `Speculation-Rules` header from CSP (it is
+not a script, and `'inline-speculation-rules'` governs only inline
+`<script type="speculationrules">`), so no CSP, the default or an app's
+own `Options.CSP`, stops the file loading, and the default CSP needs no
+change. *Acting on them:* each prerender is a same-origin navigation to
+the app, and the prerendered document carries the app's own CSP like any
+page. So CSP is **not** an opt-out, and the docs must not suggest it:
+the opt-outs are `Options.NoSpeculationRules`, or `Del` of the header in
+a handler or `Options.Wrap` (round 2, finding 12).
 
 Rejected: `'inline-speculation-rules'` in the default CSP (widens every
 app's policy and misses apps with their own `Options.CSP`); rules in a
@@ -1070,10 +1177,19 @@ places (round 1, finding 12):
   is `.rst-shell__menu` (ui/tokens.css:1737). So after that line:
   `MENUS += ",[rst-shell-menu][open],.rst-shell__menu[open]"`, and
   `TAIL = "[rst-shell-tail],.rst-shell__tail"`.
-- **A logical parent.** `menuAround(node)` is `node.closest(MENUS)`, or,
-  when that is null, the open shell menu whose tail contains the node:
-  `(t = node.closest(TAIL)) && t.previousElementSibling` if that
-  matches MENUS.
+- **A logical parent, only while the card is showing.** `menuAround(node)`
+  is `node.closest(MENUS)`, or, when that is null, the open shell menu
+  whose tail contains the node: `(t = node.closest(TAIL)) &&
+  t.previousElementSibling` if that matches MENUS **and its summary is
+  rendered** (`summary.getClientRects().length > 0`). At 800px and above
+  the summary is `display: none` (ui/tokens.css:1759) while a
+  `<details>` opened at 390 and then widened keeps `open`; without the
+  condition, Escape from the account menu would climb to that hidden
+  menu and focus a summary nobody can see (round 2, finding 10). With
+  it, the wide bar behaves exactly as today: Escape focuses the account
+  summary. The open, hidden shell menu is still closed by the next
+  outside click or Escape, which is harmless and means a reader who
+  narrows the window again does not find the card open.
 - **Containment and the climb both use it.** `closeMenus(except)` keeps a
   menu open when it contains `except` **or** is `menuAround` of it,
   directly or through the climb. The Escape handler's host is
@@ -1242,8 +1358,9 @@ the same assertion over more input, never a weaker one.
 
 | Gate | Where | In H |
 |---|---|---|
-| Class/attribute twins, no orphans | ui/markup_v3_test.go:329, 375 | extended to `ShellCSS()` |
+| Class/attribute twins, no orphans | ui/markup_v3_test.go:329, 375 | helper shared; tokens.css keeps its 300-pair floor (362); shell.css gets its own test and floor (§4.5) |
 | Both spellings compute the same | ui/markup_v3_browser_test.go:330 | fixture gains every new class and the row, row-menu and card states |
+| Styleguide samples are styled, in the group, carry `rst-danger` | ui/ui_test.go:1729, 1748, 1981 | pass unchanged: the list-grid sample stays raw markup, now kept equal to the partial's output by a new test (§3.5) |
 | Reduced motion disables motion | ui/ui_test.go:367 | extended to `ShellCSS()`; tokens.css's new drop-in and flash carry their `none` |
 | No inline styles in partials and layouts | ui/ui_test.go:3379 | covers `row-menu` and the changed layouts, unchanged |
 | Layouts parse and render with nil data | ui/ui_test.go:2845 | unchanged; the new blocks have defaults |
@@ -1330,14 +1447,18 @@ A fixture page renders every partial and every styleguide sample.
   parents), which is where the round-1 draft would have failed. The
   primary input computes exactly `--rst-fs-lg`, 19px (the 1em bug would
   give 16).
-- **Targets, measured as activation areas.** For each fixture element
-  the test takes the element a tap activates, not the element drawn: a
-  checkbox or radio inside a label is measured as the label, a
-  stretched link as its row (P/measure.js:61-63), and a control is
-  skipped only if `elementFromPoint` at its centre is not it or its
-  label (so a covered control fails loudly instead). Every one is at
-  least 44×44, except links in running text and calendar days below a
-  342px viewport (§1.4).
+- **Targets, measured as activation areas.** Two separate steps.
+  *Visibility filter:* an element is skipped only if it is not rendered
+  (`checkVisibility()` false, or a zero-size box, or clipped as
+  `rst-sr-only`). *Measurement and occlusion,* for everything that
+  passes: the test takes the element a tap activates, not the element
+  drawn (a checkbox or radio inside a label is measured as the label, a
+  stretched link as its row, P/measure.js:61-63), and
+  `elementFromPoint` at that area's centre must return the control, its
+  label, or a descendant of either (a switch's track, a summary's icon);
+  anything else is an **occlusion failure**, not a skip (round 2,
+  finding 11). Every area is at least 44×44, except links in running
+  text and calendar days below a 342px viewport (§1.4).
 - **Inventory completeness (unit, no browser).** The test lists every
   rule in tokens.css that has `cursor: pointer` or styles an `a`,
   `button`, `summary` or `label`, and fails if one names no idiom that
@@ -1482,7 +1603,10 @@ exit code 0.
 
 **Upgrade from an existing scaffold:** a scaffold with the two shell
 files removed (the previous release's set) fails its own
-`TestVendoredAssetsMatchTheLibrary` with the doctor message; after
+`TestVendoredAssetsMatchTheLibrary` with the existing missing-file
+diagnostic, `read vendored shell.js: …` (cmd/rastrillo/new.go:773; the
+doctor instruction is only on the byte-mismatch branch, 779, and an
+existing app's test file is not regenerated by a module upgrade); after
 `rastrillo doctor --fix` it passes. A scaffold that deletes them and
 lists both in `vendoredIsMine` passes.
 
@@ -1493,9 +1617,12 @@ lists both in `vendoredIsMine` passes.
   answers 200, `application/speculationrules+json`, and a body that
   parses as JSON whose one rule is `source: document` with the selector
   in both spellings; with `Locales` set the path is still served
-  unprefixed; with `Options.NoSpeculationRules` neither the header nor
-  the route exists (404); a handler that `Del`s the header removes it;
-  the CSP header is byte for byte `defaultCSP`.
+  unprefixed, and it is served on the no-locales path too; with an app
+  mux holding a catch-all `/`, the framework still answers the rules
+  path; with `Options.NoSpeculationRules` no header is sent and the path
+  reaches the app (a fixture app with a 404 fallback answers 404, one
+  with a catch-all answers its own body); a handler that `Del`s the
+  header removes it; the CSP header is byte for byte `defaultCSP`.
 - **Browser:** with CDP's `Preload` domain enabled, on a sidebar page at
   390 with touch, a pointer-down on a nav link starts a prerender of
   that URL and no CSP violation is reported; a link outside the shell's
@@ -1549,10 +1676,16 @@ between (round 1, finding 16).
 3. `row-menu` (§3) and the gallery sample.
 4. The topbar card and rastrillo.js (§5).
 5. The sidebar and console index and back, shell.js and shell.css, the
-   scaffold, the gallery's asset list (§4).
+   scaffold, the gallery's asset list, **and in the same step** the
+   gallery demo and shell previews with the gallery tests that drive
+   them (§4, §4.9). They cannot be separate steps: the demo and the
+   previews render through `ui.Layout` (internal/designsystem/page.go:
+   1857), so the layout change reaches them at once, and the narrow
+   gallery tests wait for the drawer this step removes
+   (internal/designsystem/a11y_test.go:515; round 2, finding 13). The
+   gallery's own hand-written frame is untouched until B.
 6. The speculation-rules header (§4.6).
-7. The gallery demo and shell previews (§4.9).
-8. Docs, SKILL.md, doctor's advisory, changelog (§6, §7).
+7. Docs, SKILL.md, doctor's advisory, changelog (§6, §7).
 
 ## Out of scope
 
@@ -1596,7 +1729,8 @@ between (round 1, finding 16).
   a page a desktop reader hovers for 200ms and may never open. It is
   scoped to shell navigation, which is few links; an app with expensive
   pages turns it off with `Options.NoSpeculationRules`.
-- **The calendar docks to the bottom on phones**, away from its field.
+- **The calendar docks to the bottom on touch screens**, away from its
+  field.
   A field in the bottom 20rem of a short viewport is covered while the
   calendar is open, which is how a phone's own date picker behaves.
 
@@ -1667,3 +1801,56 @@ between (round 1, finding 16).
 
 Operator, after round 1: prerender ships in H (§4.6); the gallery's own
 frame converts with B, not H (§4.9); copy review after this review (§11).
+
+### Round 2 (Astra, 2026-09-30): not ready; 1 Blocker, 12 Important, 3 Minor
+
+Round-1 findings re-verdicted: 1, 2, 5, 6, 7, 9, 11, 13, 14, 16 and 18
+resolved; 3, 4, 8, 10, 12, 15 and 17 partly, each completed by a round-2
+finding below.
+
+1. Blocker, the docked calendar's width assumed a border box on a
+   content box, and the base rule's physical `top: 100%` survived
+   `position: fixed`. Resolved: `border-box`, `top: auto`, every inset
+   and margin reset, the width derived from `--rst-tap`, at a weight that
+   beats `is-above` (§1.4).
+2. Important, a wide touch screen could still overflow the calendar
+   inline, and the 2.5.5 claim was unsupported. Resolved: docked on every
+   small or touch screen; sub-44px days below 342px are a stated design
+   exception, not a 2.5.5 claim (§1.4, Decisions).
+3. Important, several treatments sized containers, not activation
+   areas. Resolved: the search input stretches, inline elements become
+   flex, both axes are stated, and the legacy drawer summary is in the
+   inventory (§1.4).
+4. Important, the lifting rule would override components' own
+   positioning. Resolved: the whole selector is inside `:where()`, and
+   a fixture puts a switch, a date field and an enhanced select in a row
+   (§2.3).
+5. Important, `T` ignores interpolation. Resolved: `Tf` for both names
+   (§3.1, §4.2).
+6. Important, the styleguide sample cannot call a partial. Resolved: it
+   stays raw markup, held equal to the partial's output by a test (§3.5).
+7. Important, an inline spinner can resize the panel. Resolved: a
+   reserved spinner slot on row-menu POST buttons (§3.1).
+8. Important, fragment-first focus restored a stale section. Resolved:
+   the return record wins over the fragment (§4.5).
+9. Important, focus restoration and prerender activation. Resolved:
+   the record is written on `pageswap` and read on `pagereveal`, never
+   while `document.prerendering` (§4.5).
+10. Important, `menuAround` could focus a hidden summary after a resize.
+    Resolved: the shell menu is a logical parent only while its summary
+    is rendered (§5.3).
+11. Important, the hit test skipped occluded controls. Resolved:
+    visibility filter and occlusion failure are separate steps, with
+    descendants accepted (§10.1).
+12. Important, CSP was described as an opt-out. Resolved: the two
+    stages are described separately; the opt-outs are the switch and
+    the header (§4.6).
+13. Important, the rollout split the shell change from the gallery
+    conversion it breaks. Resolved: one step (Rollout).
+14. Minor, the twin gate's 300-pair floor. Resolved: a shared helper,
+    per-file floors (§4.5, §8.1).
+15. Minor, the upgrade test's expected message. Resolved: the existing
+    missing-file diagnostic (§10.6).
+16. Minor, "404" and the locale wording for the rules route. Resolved:
+    registration before both returns, fall-through when disabled, and
+    the middleware's negotiation stated (§4.6, §10.6a).
