@@ -11,6 +11,7 @@ require (
 	github.com/keymaildev/signin v0.1.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/crypto v0.53.0
+	golang.org/x/mod v0.37.0
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
 	modernc.org/sqlite v1.55.0

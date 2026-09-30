@@ -360,6 +360,27 @@ func TestDoctorFixRefusesOnThePreMovePath(t *testing.T) {
 	}
 }
 
+// TestDoctorNamesNestedModulesOnThePreMovePath: the rewrite reaches
+// every file in the tree, nested modules included, and the go mod steps
+// only fix the module they run in. Each nested module left out would be
+// importing a path its own go.mod does not require.
+func TestDoctorNamesNestedModulesOnThePreMovePath(t *testing.T) {
+	dir := premoveApp(t)
+	mustWrite(t, filepath.Join(dir, "tools", "seed", "go.mod"),
+		"module seed\n\ngo 1.24\n\nrequire "+preMoveModule+" v0.23.0\n")
+	mustWrite(t, filepath.Join(dir, "tools", "other", "go.mod"), "module other\n\ngo 1.24\n")
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rep.preMoveNested) != 1 || rep.preMoveNested[0] != filepath.Join("tools", "seed") {
+		t.Fatalf("preMoveNested = %q, want only tools/seed", rep.preMoveNested)
+	}
+	if out := printed(rep, false); !strings.Contains(out, "Run the go mod steps in each: "+filepath.Join("tools", "seed")) {
+		t.Errorf("the report does not name the nested module:\n%s", out)
+	}
+}
+
 // TestDoctorPreMoveNeedsNothingVendored: the path is the finding, and an
 // app with no static/ still imports a frozen ui. Failing with "nothing
 // vendored to check" would hide the one thing worth saying.
@@ -384,10 +405,12 @@ func TestDoctorPreMoveNeedsNothingVendored(t *testing.T) {
 // against something doctor cannot see into.
 func TestDoctorIgnoresAnIndirectPreMoveRequirement(t *testing.T) {
 	for name, extra := range map[string]string{
-		"indirect":                "require " + preMoveModule + " v0.23.0 // indirect\n",
-		"indirect with reason":    "require (\n\t" + preMoveModule + " v0.23.0 // indirect; pulled in by an addon\n)\n",
-		"replaced":                "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " => ../old\n",
-		"replaced at its version": "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " v0.23.0 => ../old\n",
+		"indirect":                            "require " + preMoveModule + " v0.23.0 // indirect\n",
+		"indirect with reason":                "require (\n\t" + preMoveModule + " v0.23.0 // indirect; pulled in by an addon\n)\n",
+		"replaced":                            "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " => ../old\n",
+		"replaced at its version":             "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " v0.23.0 => ../old\n",
+		"replaced, then an unrelated version": "require " + preMoveModule + " v0.23.0\n\nreplace (\n\t" + preMoveModule + " v0.23.0 => ../active\n\t" + preMoveModule + " v0.22.0 => ../inactive\n)\n",
+		"an unrelated version, then replaced": "require " + preMoveModule + " v0.23.0\n\nreplace (\n\t" + preMoveModule + " v0.22.0 => ../inactive\n\t" + preMoveModule + " v0.23.0 => ../active\n)\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			dir := doctorApp(t, rastrilloVersion(), "day")
@@ -415,6 +438,9 @@ func TestDoctorReadsThePreMoveRequirementAsGoDoes(t *testing.T) {
 		"a quoted path":                 "require \"" + preMoveModule + "\" v0.23.0\n",
 		"a quoted path in a block":      "require (\n\t\"" + preMoveModule + "\" v0.23.0\n)\n",
 		"a replace for another version": "require " + preMoveModule + " v0.23.0\n\nreplace " + preMoveModule + " v0.22.0 => ../old\n",
+		"require( with no space":        "require(\n\t" + preMoveModule + " v0.23.0\n)\n",
+		"indirect; with nothing after":  "require " + preMoveModule + " v0.23.0 // indirect;\n",
+		"indirect;word, no space":       "require " + preMoveModule + " v0.23.0 // indirect;was direct\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()

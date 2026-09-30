@@ -160,7 +160,10 @@ type report struct {
 	pinFile    string // relative path of the app's vendored_test.go, if it has one
 	pinLegacy  bool   // that pin is the older map-literal shape, with no vendoredIsMine
 	preMove    string // the version of preMoveModule the app requires directly, if any
-	files      []vendoredFile
+	// preMoveNested lists modules below the app's root that also
+	// require preMoveModule directly, relative to dir.
+	preMoveNested []string
+	files         []vendoredFile
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -236,6 +239,7 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	}
 	if old.version != "" && !old.indirect && old.replaced == "" {
 		r.preMove = old.version
+		r.preMoveNested = nestedPreMoveModules(dir)
 		return r, nil
 	}
 
@@ -580,6 +584,37 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 }
 
+// nestedPreMoveModules finds the modules inside the app that are on the
+// old path too. The recipe's text rewrite covers the whole tree, so it
+// changes their imports as well; without their names, the go mod steps
+// get run at the root only and each of those modules is left importing
+// a path its go.mod does not require.
+func nestedPreMoveModules(dir string) []string {
+	var found []string
+	filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case ".git", "node_modules", "vendor":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		sub := filepath.Dir(path)
+		if d.Name() != "go.mod" || sub == dir {
+			return nil
+		}
+		if req, err := readRequirement(sub, preMoveModule); err == nil &&
+			req.version != "" && !req.indirect && req.replaced == "" {
+			found = append(found, rel(dir, sub))
+		}
+		return nil
+	})
+	return found
+}
+
 // printPreMove is the report for an app on the pre-move path: what is
 // wrong, and the migration, step by step. The steps are printed rather
 // than run because they rewrite the app's source and reach the network,
@@ -617,6 +652,11 @@ func (r *report) printPreMove(w io.Writer) {
 	fmt.Fprintf(w, "  go mod tidy\n")
 	fmt.Fprintf(w, "  go tool rastrillo doctor --fix\n")
 	fmt.Fprintln(w)
+	if len(r.preMoveNested) > 0 {
+		fmt.Fprintf(w, "These modules inside the app are on the old path too. Run the go mod steps in each: %s\n",
+			strings.Join(r.preMoveNested, ", "))
+		fmt.Fprintln(w)
+	}
 	fmt.Fprintf(w, "Then read the changelog for each release after %s: some change markup your app keeps a copy of.\n", r.preMove)
 }
 

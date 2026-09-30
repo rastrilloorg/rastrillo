@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
+
+	"golang.org/x/mod/modfile"
 )
 
 // modulePath reads the module directive from dir/go.mod. Hand-rolled
@@ -49,13 +50,6 @@ const preMoveModule = "github.com/carlosframework/rastrillo"
 // moduleRequirement reports the version dir/go.mod requires of the
 // named module, and the target of any replace directive pointing at it.
 // Both are empty when the file does not mention the module at all.
-//
-// Hand-rolled for the same reason modulePath is: require and replace
-// are two fixed line shapes in the two forms gofmt writes them, single
-// and block. A require inside a block is indented; a replace is
-// "replace <path> => <target>", optionally with a version on either
-// side. Anything this parser does not recognise reports empty, and
-// doctor says it could not read the version rather than guessing one.
 func moduleRequirement(dir, module string) (version, replacement string, err error) {
 	req, err := readRequirement(dir, module)
 	return req.version, req.replaced, err
@@ -72,100 +66,56 @@ type requirement struct {
 	indirect bool
 }
 
-// readRequirement is moduleRequirement with the indirect mark kept.
+// readRequirement reads go.mod with the go command's own parser.
 //
-// It reads go.mod's tokens the way the go command does, not its
-// gofmt'd shape, because the pre-move check is a safety check: a line
-// it fails to read lets a frozen app through to a clean report and a
-// --fix. So a tab after the verb, a quoted path, and a comment that
-// merely mentions "indirect" all read as Go reads them.
+// This used to be hand-rolled, like modulePath still is, on the theory
+// that require and replace have two fixed shapes. That held while the
+// answer only labelled a report. Once the pre-move check made it a
+// safety check, each spelling the go command accepts and this missed
+// (a quoted path, "require(", a tab, "// indirect;" with nothing after
+// it, one replace listed after another) let a frozen app through to a
+// clean report and a --fix, and two review rounds kept finding more.
+// Go's grammar is not ours to re-derive.
 func readRequirement(dir, module string) (requirement, error) {
-	var req requirement
-	f, err := os.Open(filepath.Join(dir, "go.mod"))
+	path := filepath.Join(dir, "go.mod")
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return req, fmt.Errorf("read go.mod: %w", err)
+		return requirement{}, fmt.Errorf("read go.mod: %w", err)
 	}
-	defer f.Close()
-
-	// A replace can name the version it applies to, and then it
-	// replaces only that one: "old v0.22.0 => ../x" leaves an app on
-	// v0.23.0 building against the real v0.23.0. So the left-hand
-	// version is kept until the require is known.
-	var replaced, replacedFor string
-	block := ""
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line, comment, _ := strings.Cut(scanner.Text(), "//")
-		// Go's own test for the mark: the comment is "indirect", or
-		// starts "indirect;" with more after it.
-		c := strings.TrimSpace(comment)
-		indirect := c == "indirect" || strings.HasPrefix(c, "indirect;")
-		fields := strings.Fields(line)
-		if len(fields) == 0 {
+	f, err := modfile.Parse(path, data, nil)
+	if err != nil {
+		return requirement{}, fmt.Errorf("read go.mod: %w", err)
+	}
+	var req requirement
+	for _, r := range f.Require {
+		if r.Mod.Path == module {
+			req.version, req.indirect = r.Mod.Version, r.Indirect
+		}
+	}
+	// A replace that names a version applies only to that version, and
+	// beats one that names none, whatever order they are listed in.
+	// "old v0.22.0 => ../x" leaves an app on v0.23.0 building against
+	// the real, frozen v0.23.0. With no requirement at all there is no
+	// version to scope by, so any replace is reported.
+	var exact, unscoped string
+	for _, r := range f.Replace {
+		if r.Old.Path != module {
 			continue
 		}
-		verb := block
+		target := r.New.Path
+		if r.New.Version != "" {
+			target += " " + r.New.Version
+		}
 		switch {
-		case len(fields) == 1 && fields[0] == ")":
-			block = ""
-			continue
-		case (fields[0] == "require" || fields[0] == "replace") && len(fields) == 2 && fields[1] == "(":
-			block = fields[0]
-			continue
-		case block == "":
-			verb, fields = fields[0], fields[1:]
-		}
-		for i := range fields {
-			fields[i] = unquote(fields[i])
-		}
-		switch verb {
-		case "require":
-			if len(fields) == 2 && fields[0] == module {
-				req.version, req.indirect = fields[1], indirect
-			}
-		case "replace":
-			if target, forVersion, ok := replaceTarget(fields, module); ok {
-				replaced, replacedFor = target, forVersion
-			}
+		case r.Old.Version == "":
+			unscoped = target
+		case r.Old.Version == req.version || req.version == "":
+			exact = target
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return requirement{}, err
-	}
-	if replacedFor == "" || req.version == "" || replacedFor == req.version {
-		req.replaced = replaced
+	req.replaced = exact
+	if req.replaced == "" {
+		req.replaced = unscoped
 	}
 	return req, nil
-}
-
-// unquote reads a go.mod token that may be written as a Go string,
-// which the go command accepts for any path.
-func unquote(tok string) string {
-	if len(tok) >= 2 && (tok[0] == '"' || tok[0] == '`') {
-		if u, err := strconv.Unquote(tok); err == nil {
-			return u
-		}
-	}
-	return tok
-}
-
-// replaceTarget reads "<module> [version] => <target> [version]" from a
-// replace's tokens, reporting ok false for any other module. The target
-// is what the app actually builds against, so doctor names it rather
-// than the version it displaced; forVersion is the left-hand version,
-// empty when the replace covers every version.
-func replaceTarget(fields []string, module string) (target, forVersion string, ok bool) {
-	arrow := -1
-	for i, f := range fields {
-		if f == "=>" {
-			arrow = i
-		}
-	}
-	if arrow < 1 || arrow > 2 || fields[0] != module || arrow == len(fields)-1 {
-		return "", "", false
-	}
-	if arrow == 2 {
-		forVersion = fields[1]
-	}
-	return strings.Join(fields[arrow+1:], " "), forVersion, true
 }
