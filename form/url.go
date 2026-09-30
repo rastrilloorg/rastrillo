@@ -149,7 +149,16 @@ func plausibleHost(host string) bool {
 // loopback. Stored as typed, that is a link whose text names one
 // machine and whose target is another, so a numeric host must be a
 // dotted-decimal address with nothing a browser would re-read.
+//
+// A bracketed IPv6 literal is exempt: url.Parse has already checked
+// it, and its last dotted part ("::ffff:192.0.2.1") is not a label. A
+// trailing dot is dropped first, as a browser drops it before the same
+// test, so "0127.0.0.1." cannot slip past on an empty last label.
 func browserSameHost(host string) bool {
+	if strings.Contains(host, ":") {
+		return true
+	}
+	host = strings.TrimSuffix(host, ".")
 	last := host[strings.LastIndex(host, ".")+1:]
 	hex := len(last) >= 2 && last[0] == '0' && (last[1] == 'x' || last[1] == 'X')
 	digits := last
@@ -174,13 +183,14 @@ func browserSameHost(host string) bool {
 
 // validPort is net/url's port check plus the range: Parse takes any run
 // of digits, and a browser refuses a link to port 65536, so accepting
-// one would store an address that cannot be followed.
+// one would store an address that cannot be followed. Leading zeros are
+// the same port to a browser, so "000443" passes.
 func validPort(p string) bool {
 	if p == "" {
 		return true
 	}
-	n, err := strconv.Atoi(p)
-	return err == nil && len(p) <= 5 && n <= 65535
+	_, err := strconv.ParseUint(p, 10, 16)
+	return err == nil
 }
 
 // DisplayURL is how a stored address reads on screen: no scheme and no

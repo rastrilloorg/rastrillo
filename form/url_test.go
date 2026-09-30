@@ -22,6 +22,7 @@ func TestNormaliseURLForgives(t *testing.T) {
 		"brightwater.example/Pricing/":   "https://brightwater.example/Pricing/",
 		"192.0.2.10":                     "https://192.0.2.10",
 		"brightwater.example:65535":      "https://brightwater.example:65535",
+		"brightwater.example:000443":     "https://brightwater.example:000443",
 		// "://" later in the address is not a scheme.
 		"brightwater.example/in?next=https://x.example": "https://brightwater.example/in?next=https://x.example",
 		"":    "",
@@ -123,6 +124,9 @@ func TestSafeHref(t *testing.T) {
 		"https://":                          "",
 		"https://bank.example@evil.example": "",
 		"https://0127.0.0.1/":               "",
+		"https://0127.0.0.1./":              "",
+		"https://[::ffff:192.0.2.1]/":       "https://[::ffff:192.0.2.1]/",
+		"https://brightwater.example:0443":  "https://brightwater.example:0443",
 		"https://brightwater.example:65536": "",
 		"":                                  "",
 	} {
