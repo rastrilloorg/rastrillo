@@ -9,14 +9,9 @@ other is an [authenticator app](/docs/second-factors#totp).
 
 ## What a passkey is allowed to do
 
-A passkey never signs anybody in from nothing.
+A passkey can sign someone in on its own, through the discover endpoints. A passkey that checked the person with a PIN, a fingerprint or a face has already proved who they are and what they hold, and asking for an emailed link as well adds work and no safety.
 
-It upgrades an existing session's freshness, or completes a sign-in
-whose first factor already verified. Step-up endpoints demand a valid
-session — stale is fine, absent is not. The sign-in pair demands a live
-pending half-session, which only a verified first factor mints. Either
-way, a stolen credential id on its own opens no door, and the primary
-factor stays the way an account is entered.
+It also refreshes an existing session at step-up, and completes a sign-in whose first factor already checked out. A passkey that only found somebody present, without checking who, is the weaker proof: where the account has another factor, discover holds the sign-in for it.
 
 ## Wiring it
 
@@ -36,7 +31,11 @@ POST /passkey/stepup/begin      -> {"challenge": ...}
 POST /passkey/stepup/finish     <- authenticate()'s result
 POST /passkey/signin/begin      -> {"challenge": ...}
 POST /passkey/signin/finish     <- authenticate()'s result
+POST /passkey/discover/begin    -> {"challenge": ...}
+POST /passkey/discover/finish   <- authenticate()'s result -> {"to": ...}
 ```
+
+On `auth`'s shipped sign-in screen, the discover pair is the passkey button. Set `Config.Remember` to `auth`'s `RememberJar()`: a passkey sign-in then clears any address typed earlier in the same browser, and the next visit offers the passkey first. Without it, an address someone typed before using their passkey stays in the form.
 
 ## Step-up
 

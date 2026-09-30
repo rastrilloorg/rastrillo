@@ -22,7 +22,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 ## Template functions
 
 `ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
-`icon`, `iconAssets`, `T`, `Tf` and `dateWords`.
+`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and
+`stageArt`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -53,15 +54,16 @@ a partial's built-in strings resolve in the request's locale. See
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      error-page       field-time          meter
-badge         field            form-error          notice
-bulk-bar      field-check      form-foot           page-header
-callout       field-date       job-status          pagination
-choice-field  field-daterange  list-bar            person
-confirm-form  field-datetime   list-bar-search     seg-tabs
-detail-list   field-select     list-row-action     stat
-dropdown      field-text       list-search-submit  status-pill
-empty-state   field-textarea   locale-menu
+back-nav      field            form-foot           pagination
+badge         field-check      job-status          person
+bulk-bar      field-date       list-bar            seg-tabs
+callout       field-daterange  list-bar-search     signin
+choice-field  field-datetime   list-row-action     signin-title
+confirm-form  field-select     list-search-submit  stat
+detail-list   field-text       locale-menu         status-pill
+dropdown      field-textarea   meter
+empty-state   field-time       notice
+error-page    form-error       page-header
 ```
 
 `locale-menu` is the language switcher; see
@@ -577,9 +579,9 @@ This partial never emits it — `Plain` simply emits nothing — but
 
 ## The design system
 
-Every partial, every state, every markup idiom and all four shells,
-rendered live for all three themes and all twelve base locales — five
-pages per theme × locale, one per section, plus a full-page demo for
+Every partial, every state, every markup idiom and all five shells,
+rendered live for all three themes and all twelve base locales: one
+page per section for each theme and locale, plus a full-page demo for
 each shell and one for the modal route. It is live at
 rastrillo.org/design-system.
 
@@ -943,12 +945,12 @@ block:
 {{define "content"}}<h1>Your notes</h1>{{end}}
 ```
 
-The blocks are `title`, `lang`, `dir` and `head` in all four shells,
+The blocks are `title`, `lang`, `dir` and `head` in all five shells,
 plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
-`console`, and `foot` in `topbar` and `console`. None of them reads a field off the data, so
-a shell renders whether your handler passes a struct, a `dict`-built map
-or nil — a shell can never break because a page's view model changed
-shape.
+`console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in
+`stage`. None of them reads a field off the data, so a shell renders
+whether your handler passes a struct, a `dict`-built map or nil. A shell
+can never break because a page's view model changed shape.
 
 `head` is the odd one out: it is not chrome, it is your slot in
 `<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
@@ -972,10 +974,18 @@ topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
 `rst-shell-group` and `rst-shell-main` for the sidebar;
 `rst-shell-console` for the console, which reuses the bar, the rail and
 the topbar's `rst-shell-menu` rather than naming anything of its own;
-and `rst-skip`, the skip link, which all four shells carry — `column`
-included. The sidebar's mobile collapse is that
+and `rst-skip`, the skip link, which all five shells carry — `column`
+and `stage` included. The sidebar's mobile collapse is that
 `<details rst-shell-chrome>` and nothing else — no JavaScript,
 like every other idiom here.
+
+`stage` has no chrome. It centres one card, usually the sign-in screen,
+over a full-page backdrop drawn by `{{stageArt "rastrillo"}}` unless you
+redefine `backdrop`. `{{define "backdrop"}}{{stageArt "your-app"}}{{end}}`
+draws a pattern of your own from any word, and an `<img>` or your own
+SVG replaces it outright. Its attributes are `rst-stage`,
+`rst-stage-scene`, `rst-stage-art` and `rst-stage-foot`, and it carries
+`rst-skip` like the others.
 
 ### The console folds two chromes behind one control
 

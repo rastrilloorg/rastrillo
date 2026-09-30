@@ -29,7 +29,7 @@ go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
-`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar|console <name>`
+`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar|console|stage <name>`
 (also `--icons`, `--icon-delivery`, `--ux`) writes the whole §1 shape plus
 `go.mod`, migrations, templates, static assets, app-owned icons, a test
 harness including the browser drive, a `Makefile` whose `ci` target is the
@@ -284,15 +284,27 @@ to the keymail ceremony where the address has one): `auth.New` with
 Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
 user row's id before scoping.
 
-**CSP:** the baseline's `form-action 'self'` is enforced across a form
-submission's whole redirect chain, so `Begin`'s 303 out to the address's
-keymail server is refused — as is any POST of yours that lands
-off-origin. `Options.CSP` replaces the policy wholesale, so restate it
-with the origin appended: `default-src 'self'; style-src 'self'
-'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=';
-img-src 'self' data:; frame-ancestors 'none'; base-uri 'self';
-form-action 'self' https://keymail.dev`. Only listed servers
-work — a federated address on another keymail host is still refused.
+**Sign-in screen:** set `auth.Config.SigninScreen: true` and render
+`{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:
+`signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
+set `st.Passkey` if passkey discovery is mounted — then
+`a.PrepareSigninResponse(w, st)` before rendering. Mount
+`POST /signin/forget` → `a.Forget`; with passkeys, serve `passkey.JS()`
+beside `webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
+`st.Passkey`, and wire `passkey.Config.Remember: a.RememberJar()`. An admission check in front
+of `Begin` answers refusals with `a.AnswerAsSent(w, r)`, never its own
+`?sent=1`.
+
+**CSP:** `form-action 'self'` covers a form's whole redirect chain, so
+`Begin`'s 303 to a keymail server is refused. With `SigninScreen` on,
+keymail continues on your own page and `form-action` stays `'self'`.
+Only a hand-built sign-in page with the screen off restates
+`Options.CSP` (it replaces the policy wholesale) with the keymail
+origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
+'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self'
+data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
+servers are trusted; other addresses get a link.
 
 **Public forms** (`rastrillo/pow`: the front door for anything the
 internet can post to — proof of work, sealed challenge, honeypot).

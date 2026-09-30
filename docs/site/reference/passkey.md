@@ -11,10 +11,12 @@ assertion before a session exists.
 
 ## The trust boundary
 
-A passkey never signs anybody in from nothing. Step-up endpoints demand
-a valid session — stale is fine, absent is not. The sign-in pair demands
-a live pending half-session, which only a verified first factor mints.
-So a stolen credential id on its own opens no door.
+A passkey signs someone in on its own only through the discover
+endpoints, and only by proving it holds a key registered here: a
+stolen credential id on its own opens no door. Step-up endpoints
+demand a valid session; stale is fine, absent is not. The sign-in pair
+demands a live pending half-session, which only a verified first factor
+mints.
 
 ## New, Config and Schema
 
@@ -77,6 +79,8 @@ complete, and the JSON answer's `"to"` is the confirm page; with nothing
 else to prove, the person is signed in at the weaker method and it is
 the app's job to nudge. Verified or not, the answer carries `"to"`, the
 same-site `return_to` or `Config.SignedInPath`.
+
+`Config.Remember` takes `auth`'s `RememberJar()`. With it, a verified discover assertion ends the sign-in screen's attempt and remembers passkey as this browser's way in, with no address.
 
 ## The inventory
 

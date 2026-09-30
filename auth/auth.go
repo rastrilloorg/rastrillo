@@ -24,6 +24,12 @@
 // emailed; ?err=rate|address|expired|keymail; ?force=1 — offer the
 // plain-email escape hatch after a failed keymail approval).
 //
+// The shipped sign-in screen (ui's signin partial) is opt-in:
+// Config.SigninScreen. With it on, SigninState reads what the page
+// shows, PrepareSigninResponse writes the headers and cookie deletions
+// that go with it, Forget is "Use a different email", and the page
+// renders the rest. With it off nothing about Begin or Callback changes.
+//
 // The decision tree: every submitted address is classified; a claimed
 // keymail inbox gets the keymail-OAuth ceremony (the upgrade), and
 // every other address — and every classification failure, which fails
@@ -57,6 +63,8 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/carlos"
 	"amadan.net/rastrillo/rastrillo/clientip"
+	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -179,6 +187,52 @@ type Config struct {
 	// DefaultSessionTTL.
 	SessionTTL time.Duration
 
+	// SigninScreen says this app renders the shipped sign-in screen (ui's
+	// signin partial, fed by SigninState). It turns on everything the
+	// screen needs from auth at once: the attempt cookie that lets the
+	// screen prefill an address and say where a link went, the keymail
+	// continuation that keeps form-action 'self' strict, and remembering
+	// the way in. Default false, and false is exactly the behaviour
+	// before the screen existed: no new cookie is written, read or
+	// deleted, and Begin and Callback answer as they always did. One
+	// switch rather than three because they are one feature — an app
+	// remembering the way in without the screen would be writing a
+	// cookie nothing reads.
+	SigninScreen bool
+
+	// BeginPath and ForgetPath are where the app mounted Begin (POST) and
+	// Forget (POST), for the screen's form actions. auth mounts nothing
+	// itself, and neither can be inferred from SigninPath: an app may
+	// mount Begin at /auth/begin. Defaults "/signin" and
+	// "/signin/forget".
+	BeginPath  string
+	ForgetPath string
+
+	// Remember switches off one part of SigninScreen: a pointer to false
+	// keeps the screen and stops remembering the way in (a shared
+	// kiosk), and deletes what was remembered before. Nil or true leaves
+	// it on. With SigninScreen off it has no effect — nothing is
+	// remembered to begin with. A pointer because an explicit false must
+	// be told apart from unset.
+	Remember *bool
+
+	// KeymailServers, when set, is the closed set of keymail servers (host
+	// or host:port, compared ignoring case, one trailing dot and an
+	// explicit :443) this app will classify against or exchange a code
+	// with. An IPv6 host must be written in brackets ("[::1]" or
+	// "[::1]:8443"); unbracketed, its colons collide with the port
+	// separator and let one entry match more than the operator wrote.
+	// Empty means any server an address's own _keymail delegation
+	// names — which is keymail's protocol: the domain's owner chooses its
+	// server, the same party that controls its MX and could receive a
+	// magic link anyway, and a server cannot vouch for anyone else's
+	// address because Callback compares the address it returns with the
+	// one the flow started for. An address whose server is not listed gets
+	// a magic link and its server is never contacted. Copied at New;
+	// changing it means a restart, which also empties the classifier's
+	// caches. It applies whether or not SigninScreen is on.
+	KeymailServers []string
+
 	Logger *slog.Logger
 }
 
@@ -193,6 +247,26 @@ type Auth struct {
 	// hops is Config.TrustedProxyHops resolved once, at New: the
 	// environment is read at boot, not per request.
 	hops int
+	// jar holds the remembered way in and ends an attempt; passkey gets
+	// the same one through RememberJar.
+	jar *lastsignin.Jar
+	// attemptKey seals the attempt cookie. Its own derivation so it
+	// opens nothing else and nothing else opens it.
+	attemptKey []byte
+	// continueKey seals the continuation cookie; its own derivation for
+	// the same reason as attemptKey.
+	continueKey []byte
+	// now is the clock the screen's cookies are sealed and judged by.
+	// time.Now outside tests.
+	now func() time.Time
+	// servers is KeymailServers as a set, nil for "any server"; guard
+	// enforces it on both clients, and the authorize-URL predicate
+	// checks it again.
+	servers map[string]bool
+	guard   *hostGuard
+	// exchangeHTTP is the token-exchange client: nil — the library's own
+	// default — unless KeymailServers asked for a guard.
+	exchangeHTTP *http.Client
 }
 
 // ErrEmptyInstanceKey means Config.InstanceKey was empty — see the
@@ -233,6 +307,12 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.SessionTTL == 0 {
 		cfg.SessionTTL = DefaultSessionTTL
 	}
+	if cfg.BeginPath == "" {
+		cfg.BeginPath = "/signin"
+	}
+	if cfg.ForgetPath == "" {
+		cfg.ForgetPath = "/signin/forget"
+	}
 
 	sess, err := sessions.New(sessions.Config{
 		DB:         cfg.DB,
@@ -245,11 +325,43 @@ func New(cfg Config) (*Auth, error) {
 		return nil, err
 	}
 
-	a := &Auth{cfg: cfg, sessions: sess, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running())}
+	a := &Auth{
+		cfg: cfg, sessions: sess, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running()),
+		now:         time.Now,
+		attemptKey:  crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
+		continueKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/continue/v1"),
+	}
+	jar, err := lastsignin.New(lastsignin.Config{
+		Origin: cfg.Origin, InstanceKey: cfg.InstanceKey,
+		AttemptCookie: a.attemptCookie(), Mode: rememberMode(cfg),
+		// Through a.now, not time.Now, so a test that moves auth's clock
+		// moves the jar's too and the two never disagree about expiry.
+		Now: func() time.Time { return a.now() },
+	})
+	if err != nil {
+		return nil, err
+	}
+	a.jar = jar
+
+	servers, err := keymailServers(cfg.KeymailServers)
+	if err != nil {
+		return nil, err
+	}
+	a.servers = servers
+	classifier := &signin.Classifier{}
+	if servers != nil {
+		a.guard = &hostGuard{allow: servers}
+		classifier.HTTP = &http.Client{Transport: a.guard, Timeout: classifyTimeout}
+		a.exchangeHTTP = &http.Client{Transport: a.guard, Timeout: exchangeTimeout}
+	}
+
 	a.flow = &signin.Flow{
-		Classifier: &signin.Classifier{},
+		Classifier: classifier,
 		Keymail: func(server string) *signin.Keymail {
-			return &signin.Keymail{Base: "https://" + server, Origin: cfg.Origin}
+			return &signin.Keymail{
+				Base: "https://" + server, Origin: cfg.Origin,
+				RedirectPath: callbackPath, HTTP: a.exchangeHTTP,
+			}
 		},
 		Links:    &linkStore{db: cfg.DB},
 		Mailer:   cfg.Mailer,
@@ -261,6 +373,27 @@ func New(cfg Config) (*Auth, error) {
 	}
 	return a, nil
 }
+
+// rememberMode is the jar's mode, from the one switch: nothing at all
+// without the screen, whatever Remember says; with it, Remember=false
+// forgets and anything else remembers.
+func rememberMode(cfg Config) lastsignin.Mode {
+	switch {
+	case !cfg.SigninScreen:
+		return lastsignin.Off
+	case cfg.Remember != nil && !*cfg.Remember:
+		return lastsignin.Forgetting
+	default:
+		return lastsignin.On
+	}
+}
+
+// RememberJar is the jar holding this browser's remembered way in, and
+// the seam that ends a sign-in attempt. Give it to passkey.Config.Remember
+// so a passkey sign-in clears the screen's typed address and is
+// remembered like the other two ways in. With SigninScreen off the jar
+// is inert, so wiring it is always safe.
+func (a *Auth) RememberJar() *lastsignin.Jar { return a.jar }
 
 // secure reports whether the app's origin is https — which decides both
 // the Secure cookie attribute and the __Host- name prefix (the prefix

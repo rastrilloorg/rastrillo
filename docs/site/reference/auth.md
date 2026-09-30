@@ -35,8 +35,15 @@ type Config struct {
 	SigninPath       string
 	SignedInPath     string
 	TrustedProxyHops *int
+	SigninScreen     bool
+	BeginPath        string
+	ForgetPath       string
+	Remember         *bool
+	KeymailServers   []string
 }
 ```
+
+`SigninScreen` turns on the shipped sign-in screen's side of `auth`: the attempt and continuation cookies, the keymail continuation, and remembering the way in. Off, nothing about `Begin` or `Callback` changes. `BeginPath` and `ForgetPath` (default `/signin` and `/signin/forget`) are where you mounted `Begin` and `Forget`, for the screen's forms. `Remember` set to `false` keeps the screen and stops remembering.
 
 `InstanceKey` must not be empty, and `New` returns
 `ErrEmptyInstanceKey` when it is. It seals the pending blob with an
@@ -68,6 +75,8 @@ anywhere else, where the limit counts the connection's address. A value
 you set always wins, 0 included. See
 [clientip](/docs/reference/clientip).
 
+`KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
+
 ## Schema
 
 ```go
@@ -84,12 +93,70 @@ POST /signin         -> Auth.Begin
 GET  /auth/verify    -> Auth.Verify     (the emailed link's landing)
 GET  /auth/callback  -> Auth.Callback   (the keymail OAuth return)
 POST /signout        -> Auth.Signout
+POST /signin/forget  -> Auth.Forget
 ```
 
-The sign-in page stays yours. These handlers report outcomes by
-redirecting to `SigninPath` with a query your page renders: `?sent=1`
-and `?err=rate|address|expired`, plus `?err=keymail` and `?force=1` on
-the keymail path.
+These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and, with `SigninScreen` on, `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself.
+
+## The sign-in screen
+
+```go
+func (a *Auth) SigninState(r *http.Request) SigninState
+func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
+func (a *Auth) Forget(w http.ResponseWriter, r *http.Request)
+func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request)
+func (a *Auth) RememberJar() *lastsignin.Jar
+```
+
+`SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process.
+
+```go
+type SigninState struct {
+	Step        SigninStep
+	Problem     SigninProblem
+	Address     string
+	SentTo      string
+	SentInstead bool
+	Remembered  *Remembered
+	ContinueURL string
+	BeginPath   string
+	ForgetPath  string
+	Passkey     *PasskeyDoor
+}
+func (s SigninState) Door() string
+func (s SigninState) Focus() string
+
+type SigninStep string
+
+const (
+	StepAsk       SigninStep = "ask"
+	StepReturning SigninStep = "returning"
+	StepSent      SigninStep = "sent"
+	StepContinue  SigninStep = "continue"
+)
+
+type SigninProblem string
+
+const (
+	ProblemNone    SigninProblem = ""
+	ProblemRate    SigninProblem = "rate"
+	ProblemAddress SigninProblem = "address"
+	ProblemExpired SigninProblem = "expired"
+	ProblemKeymail SigninProblem = "keymail"
+	ProblemGeneric SigninProblem = "generic"
+	ProblemReauth  SigninProblem = "reauth"
+)
+
+type Remembered struct{ Method, Address string }
+
+type PasskeyDoor struct {
+	BeginPath, FinishPath string
+	ModuleURL, ScriptURL  string
+	LegacyRPID            string
+}
+```
+
+`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin`; see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.
 
 ## Guarding and reading
 

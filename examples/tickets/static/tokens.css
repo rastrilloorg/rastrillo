@@ -166,11 +166,16 @@ body {
 
 
 /* ── Buttons: page-header's primary action, empty-state's CTA. ────── */
+/* border-box because rst-btn goes on <a> as often as on <button>, and
+   only <button> is border-box by the browser's own stylesheet: a block
+   link-button's width: 100% came out its padding and border wider than
+   its column, and poked past the sign-in card on a phone. */
 .rst-btn, [rst-btn] {
   align-items: center;
   background: var(--rst-surface);
   border: 1px solid var(--rst-line-strong);
   border-radius: var(--rst-radius-sm);
+  box-sizing: border-box;
   color: var(--rst-text);
   cursor: pointer;
   display: inline-flex;
@@ -296,6 +301,12 @@ body {
   justify-content: center;
   width: 100%;
 }
+
+/* The UA's [hidden] { display: none } loses to the display this file
+   gives every button, so a button marked hidden would show anyway. The
+   sign-in screen's passkey door ships hidden and is revealed only where
+   a ceremony can work; without this it would show everywhere. */
+.rst-btn[hidden], [rst-btn][hidden] { display: none; }
 
 /* busy — the loading state rastrillo.js gives every submit button on
    its way out, and the one state of a button that is not a variant:
@@ -1931,6 +1942,111 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      TestTheConsoleRailFitsTheViewport asks the other question, and
      carries a control page that must answer it the other way. */
   .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: var(--rst-sp-4); max-block-size: calc(100dvh - 2 * var(--rst-sp-4)); overflow-y: auto; position: sticky; }
+}
+
+/* ── rst-signin: the shipped sign-in card (partials/signin.html) ─────
+   Brand at the start and the way in at the end, side by side from 48rem
+   and stacked below it, so a phone reads the brand and then the door.
+   The card paints its own surface and border because it usually sits
+   on the stage shell's backdrop: whatever picture an app puts there,
+   the controls stay on a known ground and their contrast is the
+   theme's, not the picture's. The border is --rst-line-strong because
+   it is the card's only edge against that picture, and
+   ui/contrast_test.go holds it to 3:1 against the default art.
+   overflow-wrap on the door is for the one long string it shows back —
+   an address, which has no spaces to break at and would otherwise push
+   a 320px screen sideways. */
+.rst-signin, [rst-signin] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); box-shadow: var(--rst-shadow-pop); box-sizing: border-box; display: grid; gap: var(--rst-sp-5); inline-size: 100%; max-inline-size: 56rem; padding: var(--rst-sp-5); }
+@media (min-width: 48rem) {
+  .rst-signin, [rst-signin] { align-items: center; gap: var(--rst-sp-6); grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: var(--rst-sp-6); }
+}
+/* The brand column reads mark, name, pitch. The pitch is the line the
+   column is for, so it is the largest type on the card, bigger than the
+   door's heading; the name above it is a label. A brand with no pitch
+   still has its name at label size: the door's heading already says
+   "Sign in to" that name. The mark takes the accent through
+   currentColor, so an inline SVG drawn in currentColor follows the
+   theme without colours of its own. */
+.rst-signin__brand, [rst-signin-brand] { display: flex; flex-direction: column; gap: var(--rst-sp-3); min-inline-size: 0; }
+.rst-signin__mark, [rst-signin-mark] { block-size: 3rem; color: var(--rst-accent); inline-size: 3rem; }
+.rst-signin__mark > *, [rst-signin-mark] > * { block-size: 100%; display: block; inline-size: 100%; }
+.rst-signin__name, [rst-signin-name] { color: var(--rst-text-muted); font-size: var(--rst-fs-lg); font-weight: 600; margin: 0; }
+.rst-signin__pitch, [rst-signin-pitch] { color: var(--rst-text); font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; margin: 0; text-wrap: balance; }
+.rst-signin__door, [rst-signin-door] { display: flex; flex-direction: column; gap: var(--rst-sp-4); min-inline-size: 0; overflow-wrap: anywhere; }
+.rst-signin__door h1, [rst-signin-door] h1 { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin: 0; }
+.rst-signin__door > p, [rst-signin-door] > p { margin: 0; }
+/* The door spaces its children with gap; a callout's and a field's own
+   block margins would double it. */
+.rst-signin__door > .rst-callout, [rst-signin-door] > [rst-callout] { margin: 0; }
+.rst-signin__form, [rst-signin-form] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin: 0; }
+.rst-signin__form > .rst-field, [rst-signin-form] > [rst-field] { margin: 0; }
+.rst-signin__remembered, [rst-signin-remembered] { color: var(--rst-text-muted); margin: 0; }
+/* The passkey button and its message are one child of the door. The
+   message is a live region and must stay rendered, so it is never
+   display: none; it is only spaced from the button once it has
+   something to say. While the button is hidden — before the door's
+   script has found a working WebAuthn, or on a browser without one —
+   the whole pair is, so the door keeps no gap for a control nobody can
+   see; the region is back in the page before the button can be
+   pressed, which is all an announcement needs. The "or" between the
+   pair and the email form goes with them: beside a hidden button the
+   page has one way in, and an "or" would point at nothing. It is the
+   wrapper's immediate neighbour, before it on Ask and after it on a
+   remembered passkey, so one sibling selector each way reaches it. */
+.rst-signin__passkey, [rst-signin-passkey] { display: flex; flex-direction: column; }
+.rst-signin__passkey:has(> .rst-btn[hidden]), [rst-signin-passkey]:has(> [rst-btn][hidden]), .rst-signin__passkey:has(> .rst-btn[hidden]) + .rst-signin__or, [rst-signin-passkey]:has(> [rst-btn][hidden]) + [rst-signin-or], .rst-signin__or:has(+ .rst-signin__passkey > .rst-btn[hidden]), [rst-signin-or]:has(+ [rst-signin-passkey] > [rst-btn][hidden]) { display: none; }
+.rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
+.rst-signin__passkey-msg:not(:empty), [rst-signin-passkey-msg]:not(:empty) { margin-block-start: var(--rst-sp-2); }
+/* The word sits on a hairline drawn by its own ::before and ::after,
+   which carry no text, so a screen reader hears "or" in reading order
+   between the two ways in and nothing else. */
+.rst-signin__or, [rst-signin-or] { align-items: center; color: var(--rst-text-muted); display: flex; font-size: var(--rst-fs-sm); gap: var(--rst-sp-3); }
+.rst-signin__or::before, .rst-signin__or::after, [rst-signin-or]::before, [rst-signin-or]::after { border-block-start: 1px solid var(--rst-line); content: ""; flex: 1; }
+/* Provider buttons an app adds itself (Google, Apple, …), one form per
+   provider because each posts to its own route. Sibling forms carry no
+   spacing of their own, so without a wrapper the buttons touch and read
+   as one control split in half; the gap is the card form's, so the two
+   stacks read alike. The 44rem cap is rst-form's measure: stretched
+   past it a block button is a bar with a word in the middle. The forms'
+   margins are zeroed because an app's own `form { margin-bottom }` would
+   be added to the gap, the double spacing rst-form's rule exists to
+   stop. */
+.rst-signin__providers, [rst-signin-providers] { display: flex; flex-direction: column; gap: var(--rst-sp-3); max-inline-size: 44rem; }
+.rst-signin__providers > form, [rst-signin-providers] > form { margin: 0; }
+
+/* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
+   One card centred on a full-page backdrop. [rst-stage] is <body> in
+   the shell and a plain wrapper in the design-system gallery's frames,
+   so nothing here assumes which element carries it. The scene is
+   absolutely positioned inside it rather than fixed, so a page taller
+   than the window scrolls the picture with it instead of sliding the
+   card over a still image. The page column stacks its children and
+   centres each one, rather than laying them in a row: the card is
+   usually alone, but a line of text above or below it must not end up
+   beside it. inline-size: 100% because [rst-page]'s auto margins make
+   a grid item shrink to its content, and a card sized in percent would
+   shrink with it. */
+.rst-stage, [rst-stage] { box-sizing: border-box; display: grid; grid-template-rows: 1fr auto; isolation: isolate; min-block-size: 100dvh; position: relative; }
+.rst-stage > .rst-page, [rst-stage] > [rst-page] { align-items: center; align-self: center; display: flex; flex-direction: column; inline-size: 100%; position: relative; z-index: 1; }
+.rst-stage__scene, [rst-stage-scene] { inset: 0; overflow: hidden; pointer-events: none; position: absolute; z-index: 0; }
+.rst-stage__scene > *, [rst-stage-scene] > * { block-size: 100%; display: block; inline-size: 100%; object-fit: cover; }
+.rst-stage__foot, [rst-stage-foot] { color: var(--rst-text-muted); padding: var(--rst-sp-4); position: relative; text-align: center; z-index: 1; }
+/* The art's two colours: the line colour and a little accent, each
+   mixed into the page background, faint enough that the sign-in card's
+   border still clears 3:1 against them in every theme and scheme —
+   ui/contrast_test.go reads these two color-mix() calls and checks
+   exactly that. Lower the percentages rather than loosen the test.
+   non-scaling-stroke keeps the lines fine on a wide screen, where the
+   viewBox is scaled up to cover it. */
+.rst-stage-art__lines, [rst-stage-art-lines] { fill: none; stroke: color-mix(in srgb, var(--rst-line) 70%, var(--rst-bg)); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.rst-stage-art__glow, [rst-stage-art-glow] { fill: color-mix(in srgb, var(--rst-accent) 8%, var(--rst-bg)); fill-opacity: 0.2; }
+/* Forced colours would paint the lines in the system's text colour at
+   full strength, and a printout does not need a picture of waves. */
+@media (forced-colors: active) {
+  .rst-stage-art, [rst-stage-art] { display: none; }
+}
+@media print {
+  .rst-stage-art, [rst-stage-art] { display: none; }
 }
 
 /* error page — one centred column, whatever shell it lands in: the

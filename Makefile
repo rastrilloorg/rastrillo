@@ -76,7 +76,7 @@ GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
             ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background \
             ./xlsx ./table \
-            ./perf
+            ./perf ./lastsignin
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.
@@ -139,14 +139,15 @@ scaffold-smoke: build-cli
 	./hack/scaffold-smoke.sh
 
 # The browser drive: the ui select journey, the harness's own checks,
-# the design system's, and webauthn's PRF ceremonies including the
-# prfByAssertion fallback. -p 1 serialises the packages - parallel
-# Chromium cold-starts contend for one machine. RASTRILLO_BROWSER_OPTIONAL
+# the design system's, webauthn's PRF ceremonies including the
+# prfByAssertion fallback, and the sign-in screen's whole journey. -p 1
+# serialises the packages - parallel Chromium cold-starts contend for
+# one machine. RASTRILLO_BROWSER_OPTIONAL
 # stays unset on purpose: a skip is not a pass, so a machine that loses
 # its browser fails loudly instead of reporting green.
 # Chromium profiles also need room when the shared /tmp tmpfs fills.
 browser:
-	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ -count=1
+	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a

@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/auth"
 )
 
 // parseAll builds the template tree exactly the way an app is documented
@@ -1077,6 +1078,14 @@ func allPartials() []struct {
 			"Start": map[string]any{"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30"},
 			"End":   map[string]any{"Name": "ends_at", "Label": "Ends", "Error": "The end comes before the start."},
 		}},
+		{"signin", map[string]any{
+			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
+			"Brand": map[string]any{
+				"Name": "Harbour", "Pitch": "Moorings and berths, booked in a minute.",
+				"Mark": template.HTML(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/></svg>`),
+			},
+		}},
+		{"signin-title", map[string]any{"State": auth.SigninState{Step: auth.StepSent}, "Brand": map[string]any{"Name": "Harbour"}}},
 	}
 }
 
@@ -1178,14 +1187,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
+		"signin", "signin-title",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 34 {
-		t.Fatalf("the shipped set is 34 partials, this list has %d", len(want))
+	if len(want) != 36 {
+		t.Fatalf("the shipped set is 36 partials, this list has %d", len(want))
 	}
 }
 
@@ -2116,6 +2126,9 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// it. Order is irrelevant to the contract anyway: a block is
 		// found by name.
 		"console": {"lang", "dir", "title", "head", "brand", "account", "locale", "nav", "content", "foot"},
+		// stage has no chrome to override. backdrop is the picture
+		// behind the card, foot an optional line under it.
+		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {
@@ -2830,7 +2843,7 @@ func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 // (so a struct-vs-map decision in an app cannot break a shell), and
 // resolves every catalog key it names.
 func TestLayoutsParseAndRender(t *testing.T) {
-	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console"}) {
+	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console", "stage"}) {
 		t.Fatalf("LayoutNames = %v", got)
 	}
 	for _, name := range LayoutNames() {
@@ -3385,5 +3398,56 @@ func TestPartialsAndLayoutsEmitNoInlineStyles(t *testing.T) {
 				t.Errorf("%s/%s carries %q, which the default CSP blocks: set it from tokens.css instead", tc.dir, e.Name(), m)
 			}
 		}
+	}
+}
+
+func TestFieldQuietErrorDropsOnlyTheAlertRole(t *testing.T) {
+	quiet := render(t, "field", map[string]any{"ID": "f1", "Name": "n", "Label": "L", "Error": "bad", "QuietError": true})
+	if strings.Contains(quiet, `role="alert"`) {
+		t.Errorf("QuietError still emits role=alert: %s", quiet)
+	}
+	for _, want := range []string{`aria-invalid="true"`, `aria-describedby="f1-error"`, `id="f1-error"`} {
+		if !strings.Contains(quiet, want) {
+			t.Errorf("QuietError lost %s: %s", want, quiet)
+		}
+	}
+}
+
+func TestCalloutIDAndFocus(t *testing.T) {
+	got := render(t, "callout", map[string]any{"Body": "b", "ID": "c1", "Focus": true})
+	if !strings.Contains(got, `id="c1"`) || !strings.Contains(got, `tabindex="-1" autofocus`) {
+		t.Errorf("ID/Focus not emitted: %s", got)
+	}
+	plain := render(t, "callout", map[string]any{"Body": "b"})
+	if strings.Contains(plain, "id=") || strings.Contains(plain, "tabindex") || strings.Contains(plain, "autofocus") {
+		t.Errorf("a plain callout grew attributes: %s", plain)
+	}
+}
+
+// A struct caller written before QuietError, ID and Focus existed must
+// still render: reading those keys inline would make its screen a 500.
+func TestFieldAndCalloutStillTakeAnOlderStruct(t *testing.T) {
+	type field struct {
+		ID, Name, Label, Type, Value, Placeholder, Autocomplete, Maxlength, Min, Max, Pattern, Hint, Help, Error string
+		Required, Short, Primary, Autofocus                                                                      bool
+	}
+	type callout struct {
+		Body, Title, Tone string
+		Alert             bool
+	}
+	if got := render(t, "field", field{ID: "f", Name: "n", Label: "L", Error: "bad"}); !strings.Contains(got, `role="alert"`) {
+		t.Errorf("an older struct lost the default alert role: %s", got)
+	}
+	if got := render(t, "callout", callout{Body: "b"}); strings.Contains(got, "tabindex") {
+		t.Errorf("an older struct grew a tabindex: %s", got)
+	}
+}
+
+// A button's own display rule would otherwise beat the user agent's
+// [hidden] rule, and the passkey door would show before its script
+// decided it can work.
+func TestHiddenButtonsStayHidden(t *testing.T) {
+	if !strings.Contains(string(TokensCSS()), `.rst-btn[hidden], [rst-btn][hidden] { display: none; }`) {
+		t.Fatal("tokens.css does not keep a [hidden] button hidden")
 	}
 }

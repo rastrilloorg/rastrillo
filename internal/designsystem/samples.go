@@ -94,10 +94,12 @@ type partialDoc struct {
 //     Overview routes readers to it with, so they are prose keys twice
 //     over and a new family needs its eleven translations before
 //     anything builds;
-//   - every partial ui.Templates() defines must appear in some family.
-//     A partial no family claims used to land in an "Ungrouped" section
-//     of the one components page; there is no such page to land on any
-//     more, so buildFamilies fails instead and names the partial.
+//   - every partial ui.Templates() defines must appear in some family,
+//     unless it is a whole screen the Screens page claims instead
+//     (screenPartials in screens.go). A partial no page claims used to
+//     land in an "Ungrouped" section of the one components page; there
+//     is no such page to land on any more, so buildFamilies fails
+//     instead and names the partial.
 type family struct {
 	Key      string
 	Title    string

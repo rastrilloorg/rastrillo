@@ -43,7 +43,13 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `T`, `Tf` and `dateWords`.
+`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.
+
+`opt` reads an optional key off a partial's data, whether it is a map or
+a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
+sentence that shows back something a visitor typed: each value is
+escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's
+backdrop from a word; the same word always draws the same picture.
 
 `dict` builds a partial's single data value at the call site:
 
@@ -380,7 +386,7 @@ func LayoutNames() []string
 func Layout(name string) ([]byte, bool)
 ```
 
-The four shipped page frames, `column` first: `column` is the plain
+The five shipped page frames, `column` first: `column` is the plain
 centred page, `topbar` adds a header bar with nav and an account menu,
 `sidebar` a left rail that collapses to a `<details>` chrome bar below
 800px, and `console` is both at once — a brand-and-account bar across
@@ -388,9 +394,13 @@ the top with the navigation rail beneath it down the side, which is the
 shape most admin consoles are. `Layout` returns one shell's complete
 `layout.html` text and reports `false` for a name that is not shipped.
 
+`stage` is one card centred over a full-page backdrop, for a page that
+stands alone, such as the sign-in screen. Its blocks are `title`,
+`lang`, `dir`, `head`, `backdrop` and `foot`.
+
 A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
-`dir` and `head` in all four, plus `brand`, `nav`, `account` and
+`dir` and `head` in all five, plus `brand`, `nav`, `account` and
 `locale` in the three chrome shells, and `foot` in `topbar` and
 `console`. No block reads a field off the data, so a shell renders the
 same whether a handler passes a struct, a `dict`-built map, or nil.
@@ -405,6 +415,17 @@ the ties it should against `tokens.css` and the theme.
 pin, no vendoring test — so overriding a block, or rewriting the file
 outright, is expected on day one. [Templates](/docs/templates) has the
 block contract with a worked override.
+
+## The sign-in screen
+
+`signin` renders the whole sign-in card from an `auth.SigninState`, and
+`signin-title` the matching tab title. Pass `Brand` with a `Name`, and
+optionally a one-line `Pitch` and a `Mark` (an `<img>` or inline SVG as
+`template.HTML`). Every string comes from the base catalogs under
+`rastrillo.ui.signin_*`, in all twelve languages. The passkey button
+loads `passkey.JS()` from the `ScriptURL` you set, and only on a page
+that shows it; without that script it stays hidden, and the email form
+works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
 
 ## Styleguide
 

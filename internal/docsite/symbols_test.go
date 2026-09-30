@@ -61,6 +61,7 @@ var referencePages = map[string]string{
 	"vault":        "reference/vault",
 	"vectors":      "reference/vectors",
 	"harness":      "reference/harness",
+	"lastsignin":   "reference/lastsignin",
 	".":            "reference/rastrillo",
 }
 
