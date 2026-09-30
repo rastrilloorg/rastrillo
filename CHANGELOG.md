@@ -22,6 +22,25 @@ An app that leaves `SigninScreen` off sees no change: no new cookie, and `Begin`
 
 The screen's styles are in `tokens.css`, which your app has its own copy of. Run `rastrillo doctor --fix` to take the new one.
 
+### Changed — the busy rule is `busy.js`, and its spinner shows for at least 650ms; vendor it and link it
+
+The busy rule moved out of `rastrillo.js` into its own vendored file,
+`static/busy.js`, and every layout links it after the shim. **An app
+that re-vendors `rastrillo.js` without adding `busy.js` loses the busy
+rule**: vendor `busy.js` (`rastrillo doctor --fix`) and add
+`<script defer src="{{asset "static/busy.js"}}"></script>` after the
+shim in your layout.
+
+The spinner now shows for at least 650ms: a submit is held until 650ms
+after the click and then sent, with the clicked button's name and value.
+Leaving the page during the hold drops the submit, rather than sending
+it when the visitor comes Back. Only a submit whose button is showing the spinner is
+held; a script's `requestSubmit()` with no submitter, or an opted-out
+button, goes at once — pass the button (`requestSubmit(button)`) to get
+the spinner. A script that handles a submit itself
+still cancels it in a form or document listener, as before; the hold
+leaves a cancelled submit alone.
+
 ### Changed — a busy button's spinner takes the place of its label; re-vendor `tokens.css`
 
 While a form is sending, its submit button now shows a spinner in place

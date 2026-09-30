@@ -916,6 +916,10 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(ShimJS())
 	})
+	mux.HandleFunc("GET /busy.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(BusyJS())
+	})
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
@@ -943,7 +947,7 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>menus, class spelling</title>`+
-			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			`<details class="rst-dropdown" name="`+MenuGroupDefault+`" id="account">`+
 			`<summary id="account-summary">Account</summary>`+
 			`<div class="rst-dropdown__menu"><a id="account-item" href="#settings">Settings</a></div>`+
@@ -960,7 +964,7 @@ func menuPage(t *testing.T) http.Handler {
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>menus</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
-			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			// The header dropdown, in the shared group.
 			`<header rst-shell-bar>`+
 			`<details rst-dropdown rst-shell-account name="`+MenuGroupDefault+`" id="account">`+
@@ -1869,6 +1873,10 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(ShimJS())
 	})
+	mux.HandleFunc("GET /busy.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(BusyJS())
+	})
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
@@ -1912,7 +1920,7 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			// back/forward cache. Registered on window, so it survives
 			// the restore that does not re-run the script.
 			`<script>window.addEventListener("pageshow",function(e){window.__persisted=e.persisted;});</script>`+
-			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			// Two submit buttons in one form: the clicked one goes busy,
 			// the other keeps its name, its value and its wits.
 			`<form id="two" rst-form method="post" action="/submit">`+
@@ -2106,6 +2114,7 @@ func TestBusyButtonDrive(t *testing.T) {
 	// because the guard is the substance of the rule and is not what
 	// was opted out of.
 	var quiet string
+	quietAt := time.Now()
 	fail(chromedp.Run(ctx,
 		chromedp.Click(`#quietbtn`, chromedp.ByQuery), at("clicked-quiet"),
 		chromedp.Sleep(300*time.Millisecond),
@@ -2113,6 +2122,11 @@ func TestBusyButtonDrive(t *testing.T) {
 	))
 	if got := took(t, payloads, "button opt-out"); got != "action=quiet" {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
+	}
+	// No spinner, no hold: the 650ms minimum is for a spinner on screen,
+	// and an opted-out button shows none.
+	if waited := time.Since(quietAt); waited > 450*time.Millisecond {
+		t.Errorf("the opted-out button's submit took %v to arrive; with no spinner to show it must not be held", waited)
 	}
 	const wantQuiet = "form:true btn:- btn-off:false spin:no"
 	if quiet != wantQuiet {
@@ -2215,7 +2229,9 @@ func TestBusyButtonDrive(t *testing.T) {
 
 	// ── 3. The rule itself, and the payload ───────────────────────────
 	var busy, afterSecond string
+	var clickedAt time.Time
 	fail(chromedp.Run(ctx,
+		chromedp.ActionFunc(func(context.Context) error { clickedAt = time.Now(); return nil }),
 		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save"),
 		// The hardening to disabled is deferred by a tick, so wait for
 		// it rather than for a guess at how long a tick takes.
@@ -2226,6 +2242,14 @@ func TestBusyButtonDrive(t *testing.T) {
 	// disabled button whose name/value never reaches the server.
 	if got := took(t, payloads, "save"); got != "action=save&note=hello" {
 		t.Errorf("the server received %q, want %q — the clicked button's name/value was dropped from the payload", got, "action=save&note=hello")
+	}
+	// The hold: the spinner shows for at least 650ms, which it can only
+	// do if the submit leaves no sooner than that. A local server answers
+	// in a millisecond, so without the hold the payload lands at once.
+	// (A little under 650: the click is timed from here, not from inside
+	// the page, and a timer may fire a hair early.)
+	if waited := time.Since(clickedAt); waited < 620*time.Millisecond {
+		t.Errorf("the submit reached the server %v after the click; the busy rule holds it for at least 650ms", waited)
 	}
 	const wantBusy = "form:true save:true save-off:true save-text:Saving… " +
 		"spin-first:true spin-hidden:true spin-anim:rst-spin spin-shown:true " +
@@ -2533,6 +2557,57 @@ func TestBusyButtonDrive(t *testing.T) {
 	if scriptless != wantScriptless {
 		t.Errorf("with scripts off the page reads\n  %q\nwant\n  %q", scriptless, wantScriptless)
 	}
+
+	// ── 7. Leaving during the hold ───────────────────────────────────
+	//
+	// A submit still being held when the visitor leaves the page is
+	// dropped. The trap is the back/forward cache: a timer frozen with
+	// the page resumes when the visitor comes Back, and sends a submit
+	// they walked away from. Click, leave inside the hold, come back the
+	// way leg 5's Back does, and wait out more than the hold: nothing may
+	// reach the server, and the restored form must be clean.
+	var heldBack string
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-hold"),
+		chromedp.WaitVisible(`#navgo`, chromedp.ByQuery),
+		chromedp.Click(`#navgo`, chromedp.ByQuery), at("clicked-nav-then-leave"),
+		chromedp.Evaluate(`setTimeout(function () { location.href = "/elsewhere"; }, 150)`, nil), at("leaving-during-hold"),
+		settle(`location.pathname === "/elsewhere" && document.readyState === "complete"`, true), at("left-during-hold"),
+		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-come-back"),
+		waitForID("navgo"), at("came-back"),
+		chromedp.Sleep(900*time.Millisecond), // more than the hold
+		chromedp.Evaluate(backStateJS, &heldBack),
+	))
+	tookNothing(t, payloads, "left during the hold")
+	if !strings.HasPrefix(heldBack, "persisted:true ") {
+		t.Fatalf("after coming back the page reads %q — it was not restored from the back/forward cache, so this leg proves nothing about a held submit surviving in it", heldBack)
+	}
+	if heldBack != wantBack {
+		t.Errorf("back on the page after leaving during the hold it reads\n  %q\nwant\n  %q — the form must be handed back", heldBack, wantBack)
+	}
+
+	// ── 8. A script's submit, with no button ─────────────────────────
+	//
+	// requestSubmit() from a script (Enter in a quick-add field, a file
+	// dropped on a page) has no submitter, so nothing shows a spinner and
+	// nothing is held: it goes at once. The form is still guarded.
+	scriptAt := time.Now()
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-script-submit"),
+		chromedp.WaitVisible(`#save`, chromedp.ByQuery),
+		chromedp.ActionFunc(func(context.Context) error { scriptAt = time.Now(); return nil }),
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-submitted"),
+	))
+	if got := took(t, payloads, "script submit"); got != "note=hello" {
+		t.Errorf("the script's submit sent %q, want %q", got, "note=hello")
+	}
+	if waited := time.Since(scriptAt); waited > 450*time.Millisecond {
+		t.Errorf("a script's submit with no button took %v to arrive; with no spinner it must not be held", waited)
+	}
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-resubmitted"),
+	))
+	tookNothing(t, payloads, "script submit, second")
 }
 
 // ── Bidirectional text: the name cell ────────────────────────────────

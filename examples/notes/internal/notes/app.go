@@ -131,6 +131,11 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 		w.Write(ui.ShimJS())
 	})
+	// The busy rule, beside the shim and served the same way.
+	r.Get("/static/busy.js", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Write(ui.BusyJS())
+	})
 
 	// The stylesheet, served the same way and for the same reason. It
 	// is one response rather than two files because tokens.css styles
