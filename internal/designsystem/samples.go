@@ -410,15 +410,9 @@ func families() []family {
 					States: fieldTextStates(),
 				},
 				{
-					Name: "field-url",
-					// TODO(copy-review): the Blurb is a prose key, and
-					// TestEveryProseKeyIsTranslated plus the English-leak
-					// sweep both fail until prose.go carries its eleven
-					// translations, which wait on the English being
-					// approved. Proposed: "A web address field that
-					// accepts example.com with or without https://. Pair
-					// it with form.URL on the server."
-					Wrap: wrapForm,
+					Name:  "field-url",
+					Blurb: "A web address field that accepts example.com with or without https://. Pair it with form.URL on the server.",
+					Wrap:  wrapForm,
 					States: []sample{
 						{State: "Bare", Data: map[string]any{"Name": "fu_bare", "Label": "Website"}},
 						{State: "With a hint", Data: map[string]any{
