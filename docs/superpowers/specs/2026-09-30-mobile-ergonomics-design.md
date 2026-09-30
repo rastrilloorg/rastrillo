@@ -3,7 +3,7 @@
 Status: design, 2026-09-30. The operator chose each look from a
 throwaway prototype; this spec turns those choices into the framework
 and decides what the choices left open. Revised after adversarial
-review rounds 1 and 2 (see "Review log") with the operator's answers on
+review rounds 1 to 3 (see "Review log") with the operator's answers on
 prerender, the gallery and copy review.
 
 Part H of the design-system iteration (F is the sign-in screen,
@@ -296,6 +296,9 @@ screen**:
   inset-inline: 0;
   margin: 0 auto;
   inline-size: min(calc(7 * var(--rst-tap) + 2 * var(--rst-sp-2) + 2px), calc(100vw - 2 * var(--rst-sp-2)));
+  max-block-size: calc(100dvh - 2 * var(--rst-sp-2));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 ```
 
@@ -316,6 +319,14 @@ placed from the field's inline start (`inset-inline-start: 0`), and a
 date field can sit at the trailing end of a wrapping field row
 (ui/tokens.css:1357-1360) at any width; datetime.js checks vertical
 room only (1412). Docked, the panel is always inside the viewport, and
+the height cap is what makes that true vertically as well: the calendar
+always draws six weeks (calendar.js:83, 101, 319), so six 44px rows,
+the 44px header, the weekday row and the padding come to about 370px,
+more than a phone in landscape offers (a 640×320 viewport). A fixed
+panel's clipped top cannot be reached by scrolling the page, so the
+panel scrolls itself, with `overscroll-behavior: contain` so a flick
+that bottoms it out does not scroll the page behind (round 3,
+finding 1). And
 one presentation for every touch screen is one thing to test. Desktop
 under a fine pointer keeps today's anchored 18rem panel.
 
@@ -582,6 +593,23 @@ whether or not the item is busy, which widens POST items by 1.5rem of
 empty padding on desktop: a cost paid so a long translated label never
 reflows mid-submit. Under reduced motion the ring is still, as
 everywhere else (ui/tokens.css:1509).
+
+**Inside a bulk-selection form: GET items only.** A POST item is its
+own `<form>`, and `bulk-bar` works on a form around the whole list
+(ui/partials/bulk-bar.html:1-29; the selection vocabulary, ui/ui.go:
+214-219). HTML forbids a form inside a form; the parser drops the inner
+`<form>` tag, so the row's button would submit the bulk form, with every
+checked box, to the bulk form's action (round 3, finding 4). The
+partial cannot see its ancestors, so the contract comment and the docs
+state the rule: in a list inside a bulk-selection form, row-menu items
+are links, and an action that must POST goes through a page of its own
+(the confirm-page pattern the danger item already uses). The `form`
+attribute was considered and rejected: a POST item would need a form
+element emitted outside the list, which a partial rendered inside a row
+cannot do. The gallery's bulk-selection sample uses GET items, and a
+browser test submits a POST item from a row menu outside any form and
+asserts the request goes to that item's action with only its own
+fields.
 
 **Validation.** Invalid items fail at Execute, loudly, through a new
 template func `rowMenuItems` that the partial ranges over, the way
@@ -941,8 +969,9 @@ upgrade notes:
   `vendoredIsMine` names the case.
 
 The test (§10.6) scaffolds with the previous release's file set, removes
-the two files, and asserts the vendoring test fails with the doctor
-message, then passes after `doctor --fix`.
+the two files, and asserts the vendoring test fails with its existing
+missing-file diagnostic, `read vendored shell.js: …`
+(cmd/rastrillo/new.go:773), then passes after `doctor --fix`.
 
 **The gallery serves them too.** The gallery's output map lists its
 assets by hand (internal/designsystem/designsystem.go:136-142), so
@@ -1457,14 +1486,26 @@ A fixture page renders every partial and every styleguide sample.
   `elementFromPoint` at that area's centre must return the control, its
   label, or a descendant of either (a switch's track, a summary's icon);
   anything else is an **occlusion failure**, not a skip (round 2,
-  finding 11). Every area is at least 44×44, except links in running
+  finding 11). Before hit-testing, each target is scrolled into view
+  (`scrollIntoView({block: "center", inline: "center"})`, which scrolls
+  every scrolling ancestor, the rail and a menu panel included) and its
+  box is measured again after the scroll, and the point tested is the
+  centre of the part of that box inside the viewport; a target that
+  cannot be brought fully into the viewport fails as too big to hit.
+  Overlays are measured in their own states, one at a time: each
+  dropdown, row menu, the Menu card and the calendar opened alone, so
+  one open overlay never counts as occluding the next (round 3,
+  finding 2). Every area is at least 44×44, except links in running
   text and calendar days below a 342px viewport (§1.4).
 - **Inventory completeness (unit, no browser).** The test lists every
   rule in tokens.css that has `cursor: pointer` or styles an `a`,
   `button`, `summary` or `label`, and fails if one names no idiom that
   the fixture renders, so a new control needs a row in §1.4's table.
 - **Calendar:** at 390 with touch, the open calendar is docked inside
-  the viewport and every day cell is at least 44×44; at 320, every day
+  the viewport and every day cell is at least 44×44; at 640×320 with
+  touch, the panel is no taller than the viewport, scrolls itself, and
+  both month buttons and every day of all six weeks can be scrolled to
+  and clicked; at 320, every day
   is at least 24px wide and 44px tall and the panel does not overflow;
   with the date field at the inline end of a field row, the same.
 - **1024×768, touch** (the pointer half alone) and **600×800, mouse**
@@ -1491,9 +1532,10 @@ with touch:
   href. `document.elementFromPoint` at that point is the primary link.
 - A click on the action pill goes to the pill's href; on the kebab opens
   the menu and does not navigate; on the checkbox itself, and on its
-  label's padding, toggles it and does not navigate. `elementFromPoint`
-  at each control's centre is that control. Each is at least 44×44 at
-  390; at 1280 the checkbox label is 24×24.
+  label's padding, toggles it and does not navigate. Each hit is judged
+  by §10.1's ownership check (the control, its label, or a descendant of
+  either, so the kebab's SVG and the label's input count). Each is at
+  least 44×44 at 390; at 1280 the checkbox label is 24×24.
 - With the first row's menu open over the second row, a click on a panel
   item that lies over the second row's kebab or checkbox hits the item.
 - A list grid whose `--rst-cols` ends in a literal `32px`, at 1024 with
@@ -1501,7 +1543,10 @@ with touch:
 - A list-grid row holding a switch, a date field and an enhanced select:
   each keeps the box it has outside a row (switch input still over its
   track, pick button still inside the field, native select still out
-  of flow), and each is operable by a click at its centre.
+  of flow), and each is operable by a click at the centre of its
+  visible target under §10.1's ownership check: the switch's label, the
+  date field's input and pick button, and for the enhanced select the
+  combobox select.js draws in place of the clipped native control.
 - A row with no primary link: a click navigates nowhere, and hovering
   it does not change its background.
 - Focus on the primary link draws the ring around the whole row (the
@@ -1862,8 +1907,31 @@ finding below.
     conversion it breaks. Resolved: one step (Rollout).
 14. Minor, the twin gate's 300-pair floor. Resolved: a shared helper,
     per-file floors (§4.5, §8.1).
-15. Minor, the upgrade test's expected message. Resolved: the existing
-    missing-file diagnostic (§10.6).
+15. Minor, the upgrade test's expected message. Resolved in §10.6;
+    §4.5 was left saying "the doctor message" until round 3 (§4.5).
 16. Minor, "404" and the locale wording for the rules route. Resolved:
     registration before both returns, fall-through when disabled, and
     the middleware's negotiation stated (§4.6, §10.6a).
+
+### Round 3 (Astra, 2026-09-30): not ready; no Blockers, 3 Important, 2 Minor
+
+Round-2 findings re-verdicted: 14 of 16 resolved; 11 and 15 partly,
+each completed below. Round-1 findings 3, 8, 10, 12, 15 and 17 resolved;
+4 partly, completed by finding 2 below.
+
+1. Important, the docked calendar had no height cap, and six weeks do
+   not fit a landscape phone. Resolved: capped to the viewport, scrolls
+   itself, tested at 640×320 (§1.4, §10.1).
+2. Important, hit-testing a target outside the viewport is a false
+   occlusion. Resolved: scroll into view, re-measure, test the visible
+   centre; overlays measured one at a time (§10.1).
+3. Minor, §10.2 still demanded exact element hits and a click on a
+   clipped native select. Resolved: §10.1's ownership check everywhere,
+   and the enhanced select's visible combobox as its target (§10.2).
+4. Important, a POST row menu inside a bulk-selection form nests forms.
+   Resolved: GET items only inside bulk forms, stated in the contract and
+   the docs, with a submission test outside one (§3.1).
+5. Minor, §4.5 still named the doctor message. Resolved: the
+   missing-file diagnostic in both places (§4.5, §10.6).
+
+Round 3 found no Blocker, so no fourth round was run.
