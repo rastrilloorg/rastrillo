@@ -1,7 +1,9 @@
 package form
 
 import (
+	"net/netip"
 	"net/url"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -81,7 +83,7 @@ func NormaliseURL(s string) (string, error) {
 		return "", invalid
 	}
 	host := strings.ToLower(u.Hostname())
-	if !plausibleHost(host) {
+	if !plausibleHost(host) || !browserSameHost(host) || !validPort(u.Port()) {
 		return "", invalid
 	}
 	hostport := host
@@ -140,6 +142,47 @@ func plausibleHost(host string) bool {
 	return true
 }
 
+// browserSameHost reports whether a browser will go to the host as
+// written. A browser reads any host whose last label is a number as an
+// IPv4 address, in octal where a part has a leading zero and in hex
+// after 0x: "0127.0.0.1" goes to 87.0.0.1, and "0177.0.0.1" to
+// loopback. Stored as typed, that is a link whose text names one
+// machine and whose target is another, so a numeric host must be a
+// dotted-decimal address with nothing a browser would re-read.
+func browserSameHost(host string) bool {
+	last := host[strings.LastIndex(host, ".")+1:]
+	hex := len(last) >= 2 && last[0] == '0' && (last[1] == 'x' || last[1] == 'X')
+	digits := last
+	if hex {
+		digits = last[2:]
+	}
+	numeric := true
+	for _, r := range digits {
+		isDigit := r >= '0' && r <= '9'
+		isHex := isDigit || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+		if (hex && !isHex) || (!hex && !isDigit) {
+			numeric = false
+			break
+		}
+	}
+	if !numeric || (!hex && last == "") {
+		return true
+	}
+	addr, err := netip.ParseAddr(host)
+	return err == nil && addr.Is4() && addr.String() == host
+}
+
+// validPort is net/url's port check plus the range: Parse takes any run
+// of digits, and a browser refuses a link to port 65536, so accepting
+// one would store an address that cannot be followed.
+func validPort(p string) bool {
+	if p == "" {
+		return true
+	}
+	n, err := strconv.Atoi(p)
+	return err == nil && len(p) <= 5 && n <= 65535
+}
+
 // DisplayURL is how a stored address reads on screen: no scheme and no
 // trailing slash, "brightwater.example/pricing" rather than
 // "https://brightwater.example/pricing/". The scheme is noise to a
@@ -166,7 +209,8 @@ func DisplayURL(s string) string {
 func SafeHref(s string) string {
 	v := strings.TrimSpace(s)
 	u, err := url.Parse(v)
-	if err != nil || u.Host == "" || u.User != nil {
+	if err != nil || u.Host == "" || u.User != nil ||
+		!browserSameHost(strings.ToLower(u.Hostname())) || !validPort(u.Port()) {
 		return ""
 	}
 	if scheme := strings.ToLower(u.Scheme); scheme != "http" && scheme != "https" {

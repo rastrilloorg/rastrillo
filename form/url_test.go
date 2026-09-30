@@ -21,6 +21,7 @@ func TestNormaliseURLForgives(t *testing.T) {
 		"brightwater.example/#team":      "https://brightwater.example/#team",
 		"brightwater.example/Pricing/":   "https://brightwater.example/Pricing/",
 		"192.0.2.10":                     "https://192.0.2.10",
+		"brightwater.example:65535":      "https://brightwater.example:65535",
 		// "://" later in the address is not a scheme.
 		"brightwater.example/in?next=https://x.example": "https://brightwater.example/in?next=https://x.example",
 		"":    "",
@@ -46,6 +47,11 @@ func TestNormaliseURLRefuses(t *testing.T) {
 		".example", "example.", "bright..water.example", "https://",
 		"https://bright<water>.example", "https://[::1]/",
 		"brightwater.example:http",
+		// A browser reads these as IPv4 in octal or hex and goes
+		// somewhere other than what the link says (0127.0.0.1 is
+		// 87.0.0.1); a port out of range is a link nobody can follow.
+		"0127.0.0.1", "0177.0.0.1", "0x7f.0.0.1", "192.0.2.0x10", "127.1",
+		"brightwater.1", "brightwater.0x", "brightwater.example:65536", "brightwater.example:99999999",
 	} {
 		got, err := NormaliseURL(in)
 		if err == nil {
@@ -116,6 +122,8 @@ func TestSafeHref(t *testing.T) {
 		"brightwater.example":               "",
 		"https://":                          "",
 		"https://bank.example@evil.example": "",
+		"https://0127.0.0.1/":               "",
+		"https://brightwater.example:65536": "",
 		"":                                  "",
 	} {
 		if got := SafeHref(in); got != want {
