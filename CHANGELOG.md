@@ -58,6 +58,61 @@ uses `--rst-text-muted`.
 Both changes are in `tokens.css`, which your app has its own copy of.
 Run `rastrillo doctor --fix` to take the new one.
 
+### Changed — times are stored in UTC, in SQLite's layout, and read back in UTC; back-fill old rows for SQL date maths
+
+`db.Open` now opens SQLite with `_time_format=sqlite&_timezone=UTC`.
+
+**Layout.** A `time.Time` is written as `2026-09-30 11:03:07.457+00:00`.
+Before, the driver wrote Go's `time.Time.String()`:
+`2026-09-30 11:03:07.457 +0000 UTC`, and for a bare `time.Now()` that an
+app assigns itself, a monotonic-clock reading after that, `m=+6980.25`.
+SQLite's own date functions cannot read that. `julianday`, `date` and
+`strftime` returned NULL for every row, so raw SQL doing date arithmetic
+silently got nothing back. A time in a bare numeric zone (`+0100`, as
+`mail.ParseDate` returns) was also written in a form that failed to scan
+back into a `time.Time`.
+
+**Zone.** Every time is converted to UTC before it is written, whatever
+zone it carries. Before, only GORM's own stamps were UTC (`NowFunc` is
+`time.Now().UTC()`). A `time.Now()` on a machine not in UTC, or a parsed
+Date header's `+0900`, was stored in its own zone. SQL that compares
+stored times as text (`WHERE at < ?`, `ORDER BY at`) agrees with the
+instants only while every row is in one zone.
+
+**Reading back.** Every time now comes back in `time.UTC`, where before
+it came back in `time.Local` or a fixed zone. The instant is the same,
+and on a machine that runs in UTC nothing prints differently. On a
+machine that does not, code that formats a time from the database
+without calling `.In(loc)` or `.Local()` now prints it in UTC. Convert
+before you format.
+
+Rows written before this keep scanning into a `time.Time`, because the
+driver reads both layouts. Until you rewrite them, SQL date functions
+return NULL for them, and text comparison against new rows is right only
+where both are UTC and only to the second. If your app does SQL date
+maths or compares times in SQL, rewrite the old rows once, in a
+migration, with these two statements for each `DATETIME` column you
+own. The first takes the old layout to the new one and keeps its zone.
+The second takes every time not in UTC to UTC:
+
+```sql
+UPDATE t SET c = substr(c, 1, instr(substr(c, 12), ' ') + 10)
+       || substr(c, instr(substr(c, 12), ' ') + 12, 3) || ':'
+       || substr(c, instr(substr(c, 12), ' ') + 15, 2)
+ WHERE c GLOB '????-??-?? ??:??:??* [+-][0-9][0-9][0-9][0-9] *';
+
+UPDATE t SET c = strftime('%Y-%m-%d %H:%M:%S', substr(c, 1, 19) || substr(c, -6))
+       || substr(c, 20, length(c) - 25) || '+00:00'
+ WHERE c GLOB '????-??-?? ??:??:??*[+-][0-9][0-9]:[0-9][0-9]'
+   AND substr(c, -6) <> '+00:00';
+```
+
+Each row ends up with exactly the text the driver now writes for the
+same instant. No digit of the fraction is lost. The second statement
+converts the whole seconds on their own and puts the fraction back as
+it was, because `strftime` rounds to the millisecond and would carry
+`.9999999` into the next second.
+
 ### Added — `rastrillo/perf`, request timing and budgets
 
 `perf.Middleware` adds a `Server-Timing` header to every response, and logs a
