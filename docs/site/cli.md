@@ -248,6 +248,45 @@ as **absent**, not as drift, and does not fail the exit code — you get a
 line saying what the library ships and how big it is. `--fix` will still
 add it, because asking for `--fix` is asking.
 
+### An app on the old module path
+
+Until v0.25.0 rastrillo's module path was
+`github.com/carlosframework/rastrillo`. An app that still imports from
+there is stuck at v0.23.0. It gets no fix released since, and its own
+`vendored_test.go` still passes, because it checks against the same old
+module. `go get
+github.com/carlosframework/rastrillo/cmd/rastrillo@upgrade` fails with
+"module declares its path as: amadan.net/rastrillo/rastrillo".
+
+`doctor` checks for this first. If the app's `go.mod` requires the old
+path directly, it compares no files, prints the steps below and exits 5.
+`--fix` refuses, even with `--force`.
+
+The app's own CLI is on the old path too, so run a current one:
+
+```sh
+go run amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest doctor
+```
+
+To move the app, run these from its root on a clean tree:
+
+```sh
+git grep -lz github.com/carlosframework/rastrillo -- ':(glob,exclude)**/go.mod' ':(glob,exclude)**/go.sum' |
+  xargs -0 perl -pi -e 's#github\.com/carlosframework/rastrillo#amadan.net/rastrillo/rastrillo#g'
+go mod edit -droprequire=github.com/carlosframework/rastrillo \
+  -droptool=github.com/carlosframework/rastrillo/cmd/rastrillo \
+  -tool=amadan.net/rastrillo/rastrillo/cmd/rastrillo
+go get amadan.net/rastrillo/rastrillo@latest
+go mod tidy
+go tool rastrillo doctor --fix
+```
+
+The text rewrite leaves `go.mod` alone on purpose. Many apps already
+require the new path, and rewriting would add a second requirement on it
+at v0.23.0, a version that does not build under the new path. Then read
+the changelog for each release since the one you were on: some change
+markup your app keeps a copy of.
+
 ### Exit codes
 
 | Code | Meaning |
@@ -257,6 +296,7 @@ add it, because asking for `--fix` is asking.
 | `2` | Usage |
 | `3` | Drift: files differ from the library copy |
 | `4` | The app and the CLI are on different rastrillo versions, so the comparison is not authoritative |
+| `5` | The app imports rastrillo from its old module path; nothing was compared |
 
 Drift and version mismatch are separate codes because they call for
 opposite actions: one means "re-copy these", the other means "do not
