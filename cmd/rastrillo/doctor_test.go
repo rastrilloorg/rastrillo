@@ -369,14 +369,17 @@ func TestDoctorNamesNestedModulesOnThePreMovePath(t *testing.T) {
 	mustWrite(t, filepath.Join(dir, "tools", "seed", "go.mod"),
 		"module seed\n\ngo 1.24\n\nrequire "+preMoveModule+" v0.23.0\n")
 	mustWrite(t, filepath.Join(dir, "tools", "other", "go.mod"), "module other\n\ngo 1.24\n")
+	mustWrite(t, filepath.Join(dir, "tools", "fork", "go.mod"),
+		"module fork\n\ngo 1.24\n\nrequire "+preMoveModule+" v0.23.0\n\nreplace "+preMoveModule+" => ../../old\n")
 	rep, err := diagnose(dir, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rep.preMoveNested) != 1 || rep.preMoveNested[0] != filepath.Join("tools", "seed") {
-		t.Fatalf("preMoveNested = %q, want only tools/seed", rep.preMoveNested)
+	want := []string{filepath.Join("tools", "fork"), filepath.Join("tools", "seed")}
+	if strings.Join(rep.preMoveNested, ",") != strings.Join(want, ",") {
+		t.Fatalf("preMoveNested = %q, want %q", rep.preMoveNested, want)
 	}
-	if out := printed(rep, false); !strings.Contains(out, "Run the go mod steps in each: "+filepath.Join("tools", "seed")) {
+	if out := printed(rep, false); !strings.Contains(out, "Run the go mod steps in each: "+strings.Join(want, ", ")) {
 		t.Errorf("the report does not name the nested module:\n%s", out)
 	}
 }

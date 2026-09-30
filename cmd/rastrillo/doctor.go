@@ -606,8 +606,11 @@ func nestedPreMoveModules(dir string) []string {
 		if d.Name() != "go.mod" || sub == dir {
 			return nil
 		}
-		if req, err := readRequirement(sub, preMoveModule); err == nil &&
-			req.version != "" && !req.indirect && req.replaced == "" {
+		// Any requirement at all, unlike the root's check: an indirect
+		// or replaced one is still a module whose imports the rewrite
+		// may change, and naming one too many costs a look, where
+		// naming one too few leaves it broken.
+		if req, err := readRequirement(sub, preMoveModule); err == nil && req.version != "" {
 			found = append(found, rel(dir, sub))
 		}
 		return nil
