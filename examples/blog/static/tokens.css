@@ -2002,6 +2002,17 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    between the two ways in and nothing else. */
 .rst-signin__or, [rst-signin-or] { align-items: center; color: var(--rst-text-muted); display: flex; font-size: var(--rst-fs-sm); gap: var(--rst-sp-3); }
 .rst-signin__or::before, .rst-signin__or::after, [rst-signin-or]::before, [rst-signin-or]::after { border-block-start: 1px solid var(--rst-line); content: ""; flex: 1; }
+/* Provider buttons an app adds itself (Google, Apple, …), one form per
+   provider because each posts to its own route. Sibling forms carry no
+   spacing of their own, so without a wrapper the buttons touch and read
+   as one control split in half; the gap is the card form's, so the two
+   stacks read alike. The 44rem cap is rst-form's measure: stretched
+   past it a block button is a bar with a word in the middle. The forms'
+   margins are zeroed because an app's own `form { margin-bottom }` would
+   be added to the gap, the double spacing rst-form's rule exists to
+   stop. */
+.rst-signin__providers, [rst-signin-providers] { display: flex; flex-direction: column; gap: var(--rst-sp-3); max-inline-size: 44rem; }
+.rst-signin__providers > form, [rst-signin-providers] > form { margin: 0; }
 
 /* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
    One card centred on a full-page backdrop. [rst-stage] is <body> in

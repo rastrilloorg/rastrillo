@@ -171,6 +171,9 @@ const extraFixture = `
        with a message and hidden with none, and the "or" beside a shown
        pair and on each side of a hidden one, where it hides with it. -->
   <section class="rst-signin"><div class="rst-signin__door"><form class="rst-signin__form"><button class="rst-btn rst-btn--primary rst-btn--block" type="submit">Continue to Keymail</button><p class="rst-signin__remembered">as <bdi>kay@example.org</bdi></p></form><p class="rst-signin__or">or</p><div class="rst-signin__passkey"><button class="rst-btn rst-btn--block" type="button">Sign in with a passkey</button><p class="rst-signin__passkey-msg">No passkey was used.</p></div><p class="rst-signin__or">or</p><div class="rst-signin__passkey"><button class="rst-btn rst-btn--block" type="button" hidden>Hidden</button><p class="rst-signin__passkey-msg"></p></div><p class="rst-signin__or">or</p></div></section>
+  <!-- The provider stack no partial renders: the gallery's social
+       sign-in screen is the only markup that uses it. -->
+  <div class="rst-signin__providers"><form><button class="rst-btn rst-btn--block" type="submit">Google</button></form><form><button class="rst-btn rst-btn--block" type="submit">Apple</button></form></div>
   <div class="rst-stage"><div class="rst-stage__scene"><svg class="rst-stage-art" viewBox="0 0 10 10"><g class="rst-stage-art__glow"><circle cx="5" cy="5" r="3"></circle></g><g class="rst-stage-art__lines"><path d="M0 5h10"></path></g></svg></div><div class="rst-page">Card</div><footer class="rst-stage__foot">Foot</footer></div>
 </div>`
 
