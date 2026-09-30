@@ -287,6 +287,10 @@ at v0.23.0, a version that does not build under the new path. Then read
 the changelog for each release since the one you were on: some change
 markup your app keeps a copy of.
 
+If other modules sit inside the app, `doctor` names the ones on the old
+path. The text rewrite changes their imports too, so run the `go mod`
+steps in each of them.
+
 ### Exit codes
 
 | Code | Meaning |
