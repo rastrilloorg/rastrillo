@@ -16,9 +16,9 @@ import (
 	"github.com/chromedp/chromedp/kb"
 )
 
-// kebabA is a row menu written by hand, the idiom as it stands before
-// Task 6 ships the partial: five items, so its open panel reaches down
-// over the row below it.
+// kebabA is a row menu written by hand in the native details/summary
+// idiom: five items, so its open panel reaches down over the row below
+// it.
 const kebabA = `<details rst-row-menu name="rst-menus" id="menu-a"><summary id="kebab-a" aria-label="Actions for Grace Hopper">⋮</summary>` +
 	`<div rst-row-menu-panel id="panel-a"><a href="/go/a-view">View</a><a href="/go/a-edit">Edit</a><a href="/go/a-copy">Duplicate</a><a href="/go/a-move">Move</a><hr><a class="rst-danger" href="/go/a-delete">Delete…</a></div></details>`
 
@@ -262,13 +262,18 @@ func TestAnOpenRowMenuStaysAboveTheRowsBelowIt(t *testing.T) {
 	for _, coarse := range []bool{false, true} {
 		rig := sizingRig(t, coarse, rowsPages(t))
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+		defer cancel()
 		w := int64(1280)
 		if coarse {
 			w = 390
 		}
-		chromedp.Run(ctx, chromedp.EmulateViewport(w, 844))
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(w, 844)); err != nil {
+			t.Fatal(err)
+		}
 		home(t, ctx, rig.Origin)
-		chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil))
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil)); err != nil {
+			t.Fatal(err)
+		}
 		var got struct {
 			Overlapping int
 			Wrong       []string
@@ -291,7 +296,6 @@ func TestAnOpenRowMenuStaysAboveTheRowsBelowIt(t *testing.T) {
 		if len(got.Wrong) > 0 {
 			t.Errorf("coarse=%v: over row B's kebab, a click on row A's menu lands elsewhere: %v", coarse, got.Wrong)
 		}
-		cancel()
 	}
 }
 
@@ -314,7 +318,9 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, rowsPages(t))
 			ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 			defer cancel()
-			chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h))
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
+				t.Fatal(err)
+			}
 			home(t, ctx, rig.Origin)
 			requirePointer(t, ctx, leg.coarse)
 			var g map[string]string
@@ -370,34 +376,48 @@ func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
 	rig := sizingRig(t, false, rowsPages(t))
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900))
+	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
+		t.Fatal(err)
+	}
 	home(t, ctx, rig.Origin)
 	bg := func(sel string) string {
 		var s string
-		chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`getComputedStyle(document.querySelector(%q)).backgroundColor`, sel), &s))
+		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`getComputedStyle(document.querySelector(%q)).backgroundColor`, sel), &s)); err != nil {
+			t.Fatal(err)
+		}
 		return s
 	}
 	hover := func(sel string) string {
 		p := probe(t, ctx, sel, 0.5, 0.5, 0, 0)
-		chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", p.X, p.Y))
+		if err := chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", p.X, p.Y)); err != nil {
+			t.Fatal(err)
+		}
 		return bg(sel)
 	}
 	for _, c := range []struct{ idiom, inert, linked string }{
 		{"list grid", "#row-n", "#row-a"},
 		{"list-row-action", "#lra-n", "#lra [rst-row]"},
 	} {
-		chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", 1, 1))
+		if err := chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", 1, 1)); err != nil {
+			t.Fatal(err)
+		}
 		restN, restA := bg(c.inert), bg(c.linked)
 		if hovered := hover(c.linked); hovered == restA {
 			t.Fatalf("%s CONTROL: hovering a linked row does not change its background, so the inert row's unchanged background proves nothing", c.idiom)
 		}
-		chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", 1, 1))
+		if err := chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", 1, 1)); err != nil {
+			t.Fatal(err)
+		}
 		if hovered := hover(c.inert); hovered != restN {
 			t.Errorf("%s: hovering a row with no link fills it (%s -> %s): it looks clickable and is not", c.idiom, restN, hovered)
 		}
 		p := probe(t, ctx, c.inert, 0.5, 0.5, 0, 0)
-		if p.Hit == "A" {
-			t.Errorf("%s: the centre of a row with no link is under a link", c.idiom)
+		// Any link at all, by tag, not by the id-less "A" probe reports:
+		// a link with an id would otherwise read as its id and slip by.
+		var link string
+		at(t, ctx, fmt.Sprintf(`(() => { const h = document.elementFromPoint(%v, %v), a = h && h.closest("a"); return JSON.stringify(a ? a.outerHTML.slice(0, 60) : ""); })()`, p.X, p.Y), &link)
+		if link != "" {
+			t.Errorf("%s: the centre of a row with no link is under a link: %s", c.idiom, link)
 		}
 		clickAndStay(t, ctx, p,
 			fmt.Sprintf(`window.rowClicked = false, document.querySelector(%q).addEventListener("click", () => { window.rowClicked = true; }), true`, c.inert), `window.rowClicked === true`)
@@ -422,7 +442,9 @@ func TestMeasureRejectsAHitOnAnotherPartOfTheRow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	read := func(path string) targetReading {
-		chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#name", chromedp.ByQuery))
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#name", chromedp.ByQuery)); err != nil {
+			t.Fatal(err)
+		}
 		for _, g := range readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify(measure(document)); })()`) {
 			if strings.Contains(g.Name, "#name") {
 				return g
@@ -447,7 +469,9 @@ func TestFocusDrawsTheRingAroundTheWholeRow(t *testing.T) {
 	rig := sizingRig(t, false, rowsPages(t))
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900))
+	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
+		t.Fatal(err)
+	}
 	home(t, ctx, rig.Origin)
 	if err := chromedp.Run(ctx, chromedp.Focus("#check-a", chromedp.ByQuery), chromedp.KeyEvent(kb.Tab)); err != nil {
 		t.Fatal(err)

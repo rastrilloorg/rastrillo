@@ -774,7 +774,7 @@ body {
 
 /* A status pill inside a row is part of the row's target, not a
    control: a dead spot inside a row you can tap is a mis-tap on a
-   phone. It was lifted above the overlay until H. */
+   phone. It is not lifted, so a tap on it opens the row. */
 .rst-row .rst-status, [rst-row] [rst-status] {
   flex: none;
 }
@@ -1138,7 +1138,13 @@ a.rst-nm:hover { color: var(--rst-accent); }
    never to replace a position a component chose. The switch's input,
    the date field's pick button and select.js's hidden native select are
    all absolutely placed, and at zero weight their own rules win
-   position while z-index still applies (review round 2, finding 4). */
+   position while z-index still applies; at any weight they would be
+   pulled back into flow, out of the boxes they were drawn for.
+
+   Each lifted control is a stacking context at z-index 1, so a popup
+   it draws itself (a tooltip's [rst-tip]::after) paints under the next
+   row's lifted controls. Do not put such a control in a row without
+   raising it. */
 :where(:is(.rst-row, .rst-lrow) :is(a[href], button, summary, label, input, select, textarea):not(.rst-row__main > a, .rst-lrow > a.rst-nm, .rst-lrow > a.rst-person)), :where(:is([rst-row], [rst-lrow]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person])) { position: relative; z-index: 1; }
 @media (max-width: 800px) {
   .rst-m-hide { display: none; }
