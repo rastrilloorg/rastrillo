@@ -1,7 +1,7 @@
 // Package designsystem renders rastrillo.org/design-system: one static
 // page per theme × locale showing every partial, every markup idiom and
 // every design token the framework ships, plus a full-page demo of each
-// of the four shells and one of the modal route.
+// of the five shells and one of the modal route.
 //
 // It exists because a component library nobody can look at is a
 // specification, not a library. The page is the only place the whole
@@ -135,6 +135,7 @@ func Render(mount string) (map[string][]byte, error) {
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
+		"busy.js":      ui.BusyJS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
 		"calendar.js":  ui.CalendarJS(),

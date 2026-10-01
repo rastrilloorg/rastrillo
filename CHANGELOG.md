@@ -8,6 +8,292 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Fixed: a date button that opens the browser's panel claims no popup
+
+Without calendar.js on the page, `datetime.js`'s date button hands over
+to the browser's own picker. It still said `aria-haspopup="listbox"` and
+`aria-expanded="false"`, and nothing ever set it to true, so a screen
+reader announced a collapsed list box that never opened. Only the popups
+`datetime.js` draws itself carry those attributes now: the calendar grid
+(`dialog`) and a time field's clock (`listbox`). This changes
+`datetime.js`, a vendored asset: run `rastrillo doctor --fix` to re-copy
+it.
+
+### Changed: the sign-in email says how long its link lasts
+
+`auth`'s magic-link email said the link "expires shortly", keymaildev's
+default, while the sign-in pages in front of it said 15 minutes. The
+default body now says "It works once and expires in 15 minutes." Any app
+that relies on `auth` without a `Body` sends this new wording.
+
+- `auth.LinkTTL` (15 minutes) is the link's lifetime. `New` now sets it
+  on the flow itself instead of inheriting signin's default, so the
+  number on the page can't drift from the link.
+- `auth.Config.Body func(link string) string` writes the email around
+  the link, so an app can name itself ("Here’s your link to sign in to
+  Docs: …"). Nil sends `auth.DefaultBody`.
+
+### Added: `rastrillo doctor` finds an app still on the old module path
+
+An app that imports `github.com/carlosframework/rastrillo` is stuck at
+v0.23.0 and gets no fix released since. Nothing told it: its vendored
+test checks against the same old module, and `go get ...@upgrade` fails
+with a module-path error. Five of six Oficina apps were in this state a
+month after the iOS zoom fix shipped.
+
+Run a current `doctor` against your app:
+
+```sh
+go run amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest doctor
+```
+
+If the app is on the old path, it says so, prints the steps to move it
+and exits 5. `--fix` refuses until the app has moved. The steps are also
+in [the CLI reference](/docs/cli#an-app-on-the-old-module-path). They
+replace the v0.25.0 note below, which missed apps that require both
+paths.
+
+### Added — a web address field that does not care about `https://`
+
+`ui` ships a `field-url` partial, and `form` a `URL` kind to read it with. A person can type `example.com`, `www.Example.com/` or `http://example.com/pricing`, and you store an http or https address with a lowercase host. The field is a text input with the URL keyboard, because browsers refuse `example.com` in `<input type="url">`.
+
+`form.URL` refuses any scheme but http and https, a username or password in the address, a host with no dot, and whitespace. It reports the catalog keys `rastrillo.ui.url_invalid` and `rastrillo.ui.url_credentials`, so wrap the error in `T` as you do for dates. `form.NormaliseURL` does the same work outside `Parse`.
+
+To show a stored address, the new `displayURL` and `safeHref` template functions (`form.DisplayURL` and `form.SafeHref`) give you the address without its scheme and a link target that is `""` for anything not http or https. `form.URLKey` tells you when two addresses are the same site. The `field` partial also takes `Inputmode` now, to pick a phone keyboard without the validation a `Type` brings.
+
+Nothing to re-vendor: the partial and the functions come from the module.
+
+### Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`
+
+`ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it, whether that is an emailed link or Keymail. It offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.
+
+Turn it on with `auth.Config.SigninScreen`, render the page from `auth.SigninState` and `PrepareSigninResponse`, and mount `auth.Forget`. With it on, a keymail sign-in stays on your page, so the default CSP's `form-action 'self'` needs no widening. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
+
+Also new: `auth.AnswerAsSent`, for an admission check in front of `Begin`; `auth.Config.KeymailServers`, to trust only the keymail servers you list; `BeginPath`, `ForgetPath` and `Remember` on `auth.Config`; `passkey.Config.Remember` and `passkey.JS()`, the passkey button's script; the `lastsignin` package; `QuietError` on the `field` partial; `ID` and `Focus` on the `callout` partial; and the `opt` and `Tbdi` template functions.
+
+An app that leaves `SigninScreen` off sees no change: no new cookie, and `Begin` and `Callback` answer as before. `KeymailServers`, if you set it, applies either way. Turning the screen on turns on the keymail continuation and remembering together; set `Remember` to false to keep the screen and stop remembering.
+
+The screen's styles are in `tokens.css`, which your app has its own copy of. Run `rastrillo doctor --fix` to take the new one.
+
+### Changed — the busy rule is `busy.js`, and its spinner shows for at least 650ms; vendor it and link it
+
+The busy rule moved out of `rastrillo.js` into its own vendored file,
+`static/busy.js`, and every layout links it after the shim. **An app
+that re-vendors `rastrillo.js` without adding `busy.js` loses the busy
+rule**: vendor `busy.js` (`rastrillo doctor --fix`) and add
+`<script defer src="{{asset "static/busy.js"}}"></script>` after the
+shim in your layout.
+
+The spinner now shows for at least 650ms: a submit is held until 650ms
+after the click and then sent, with the clicked button's name and value.
+Leaving the page during the hold drops the submit, rather than sending
+it when the visitor comes Back. Only a submit whose button is showing the spinner is
+held; a script's `requestSubmit()` with no submitter, or an opted-out
+button, goes at once — pass the button (`requestSubmit(button)`) to get
+the spinner. A script that handles a submit itself
+still cancels it in a form or document listener, as before; the hold
+leaves a cancelled submit alone.
+
+### Changed — a busy button's spinner takes the place of its label; re-vendor `tokens.css`
+
+While a form is sending, its submit button now shows a spinner in place
+of its label, instead of a spinner before it. The button keeps its
+width, so nothing next to it moves, and a screen reader still reads the
+label. A button with `data-busy-label` still shows its busy text beside
+the spinner. With reduced motion or forced colours turned on, the label
+stays and the spinner sits beside it, as before. A button your own
+script marks `aria-busy` without the spinner keeps its label.
+
+The date picker's and calendar's muted text asked for a colour token
+that does not exist, so it drew in full-strength text colour. It now
+uses `--rst-text-muted`.
+
+Both changes are in `tokens.css`, which your app has its own copy of.
+Run `rastrillo doctor --fix` to take the new one.
+
+### Changed — times are stored in UTC, in SQLite's layout, and read back in UTC; back-fill old rows for SQL date maths
+
+`db.Open` now opens SQLite with `_time_format=sqlite&_timezone=UTC`.
+
+**Layout.** A `time.Time` is written as `2026-09-30 11:03:07.457+00:00`.
+Before, the driver wrote Go's `time.Time.String()`:
+`2026-09-30 11:03:07.457 +0000 UTC`, and for a bare `time.Now()` that an
+app assigns itself, a monotonic-clock reading after that, `m=+6980.25`.
+SQLite's own date functions cannot read that. `julianday`, `date` and
+`strftime` returned NULL for every row, so raw SQL doing date arithmetic
+silently got nothing back. A time in a bare numeric zone (`+0100`, as
+`mail.ParseDate` returns) was also written in a form that failed to scan
+back into a `time.Time`.
+
+**Zone.** Every time is converted to UTC before it is written, whatever
+zone it carries. Before, only GORM's own stamps were UTC (`NowFunc` is
+`time.Now().UTC()`). A `time.Now()` on a machine not in UTC, or a parsed
+Date header's `+0900`, was stored in its own zone. SQL that compares
+stored times as text (`WHERE at < ?`, `ORDER BY at`) agrees with the
+instants only while every row is in one zone.
+
+**Reading back.** Every time now comes back in `time.UTC`, where before
+it came back in `time.Local` or a fixed zone. The instant is the same,
+and on a machine that runs in UTC nothing prints differently. On a
+machine that does not, code that formats a time from the database
+without calling `.In(loc)` or `.Local()` now prints it in UTC. Convert
+before you format.
+
+Rows written before this keep scanning into a `time.Time`, because the
+driver reads both layouts. Until you rewrite them, SQL date functions
+return NULL for them, and text comparison against new rows is right only
+where both are UTC and only to the second. If your app does SQL date
+maths or compares times in SQL, rewrite the old rows once, in a
+migration, with these two statements for each `DATETIME` column you
+own. The first takes the old layout to the new one and keeps its zone.
+The second takes every time not in UTC to UTC:
+
+```sql
+UPDATE t SET c = substr(c, 1, instr(substr(c, 12), ' ') + 10)
+       || substr(c, instr(substr(c, 12), ' ') + 12, 3) || ':'
+       || substr(c, instr(substr(c, 12), ' ') + 15, 2)
+ WHERE c GLOB '????-??-?? ??:??:??* [+-][0-9][0-9][0-9][0-9] *';
+
+UPDATE t SET c = strftime('%Y-%m-%d %H:%M:%S', substr(c, 1, 19) || substr(c, -6))
+       || substr(c, 20, length(c) - 25) || '+00:00'
+ WHERE c GLOB '????-??-?? ??:??:??*[+-][0-9][0-9]:[0-9][0-9]'
+   AND substr(c, -6) <> '+00:00';
+```
+
+Each row ends up with exactly the text the driver now writes for the
+same instant. No digit of the fraction is lost. The second statement
+converts the whole seconds on their own and puts the fraction back as
+it was, because `strftime` rounds to the millisecond and would carry
+`.9999999` into the next second.
+
+### Added — `rastrillo/perf`, request timing and budgets
+
+`perf.Middleware` adds a `Server-Timing` header to every response, and logs a
+warning when a GET takes longer than its budget to reach its first byte: 150ms,
+or 500ms for the first request after start-up. `perf.Span` times the parts of a
+request, and a `Recorder` keeps recent requests for per-route p50 and p95.
+Mount it in `Options.Wrap`. See [perf](/docs/reference/perf).
+
+### Changed — `select.js` ranks what you type; re-vendor it
+
+The searchable select now puts the row someone meant first, treats a required
+select's blank as a prompt rather than an answer, and keeps pace with fast
+typing. `<option>` can carry `data-rst-terms`, `data-rst-first`,
+`data-rst-name`, `data-rst-desc`, `data-rst-short`, `data-rst-lead` and
+`data-rst-prompt`, and an `<hr>` draws a divider; all are optional. Run
+`rastrillo doctor --fix` to take the new `select.js`. If you added a locale of
+your own, give it `rastrillo.ui.select_no_matches`, or `generate --check`
+fails. See [Templates](/docs/templates).
+
+### Added — `rastrillo/table` and `rastrillo/xlsx`, for spreadsheet exports
+
+`table.Serve` sends one table as a CSV or XLSX download. Every CSV cell goes
+through `table.Guard`, so a cell that starts with `=` or another formula
+character opens as text, not as a formula. `xlsx` reads and writes workbooks of
+plain strings with the standard library alone. See
+[table](/docs/reference/table) and [xlsx](/docs/reference/xlsx).
+
+### Added — `rastrillo/background`, and `Options.Background`
+
+`background.Group` keeps track of work your app starts and nobody waits for:
+`Go`, `After` and `Loop`. `Stop` refuses new work, cancels pending timers and
+waits for running work. Set `Options.Background` and `Serve` stops the group
+before it closes the database, so a send still in flight does not fail with
+"sql: database is closed". `background.Untracked` finds any `go` statement or
+`time.AfterFunc` that bypasses the group. See
+[background](/docs/reference/background).
+
+### Added — `rastrillo/nodetest`, running Node from a Go test
+
+`nodetest.Run` runs a Node script and fails the test with its full output if
+the script fails. With no `node` on your PATH the test skips, unless
+`RASTRILLO_TEST_REQUIRE_NODE` is set, when it fails. Rastrillo's `make ci` now
+sets it, so running `make ci` needs Node. See
+[nodetest](/docs/reference/nodetest).
+
+### Added — `rastrillo/clientip`, and a sign-in limit per visitor behind a proxy
+
+`clientip.From` returns the address a request came from, trusting only the last
+`hops` elements of `X-Forwarded-For`: the ones your own proxies added.
+`auth.Config.TrustedProxyHops` uses it for the per-IP sign-in limit. Leave it
+unset and it is 1 on CARLOS, so each visitor behind the edge gets their own
+limit, and 0 anywhere else, which keeps today's behaviour. A value you set
+always wins. `carlos.Running` reports whether the app was started by CARLOS.
+See [clientip](/docs/reference/clientip).
+
+### Added — `rastrillo/dbtest`, a migrated database per test
+
+`dbtest.FromSet` migrates one template per test binary, and `Open` or `Path`
+gives each test its own copy. A test then pays for a file copy instead of the
+whole schema: Tito Go measured 207ms per test before and 2.5ms after. It does
+not need GORM. See [dbtest](/docs/reference/dbtest).
+
+### Changed — a Go migration takes the pinned connection, not a `*gorm.DB`
+
+`migrate.Migration.Fn` is now `func(ctx context.Context, tx migrate.Tx) error`.
+`tx` is the same pinned connection, inside the same transaction as the
+migration's ledger row, so a failure still rolls both back. A migration written
+against GORM keeps its body and wraps it:
+
+```go
+Fn: gormfn.Fn(func(g *gorm.DB) error { ... }),   // amadan.net/rastrillo/rastrillo/migrate/gormfn
+```
+
+`migrate.Generate` and `migrate.Change` move to `migrate/modeldiff`; the CLI is
+their only caller. `migrate.Apply` now takes anything with a `Writer() *sql.DB`
+method. `*db.DB` has one, so existing calls compile unchanged, and an app that
+opens its own SQLite passes `migrate.Pool(writer)`.
+
+The point of the change: `migrate`, and with it `pow`, `sessions`, `blobs`,
+`jobs`, `eventlog`, `auth`, `password`, `passkey`, `totp`, `secondfactor` and
+`vault`, no longer link GORM. An app that keeps its data in plain SQL can use
+them without taking on an ORM. `make gorm-free` keeps it that way.
+
+### Changed — `passkey.Config.ConfirmPath` and `Handlers.Gate` are gone; the half-session moved
+
+The pending half-session between a first factor and a passkey, and the
+recovery codes that were its escape hatch, now live in `rastrillo/secondfactor`
+so a second factor of a different kind can complete the same half-session. An
+app wiring the Gate changes three lines:
+
+```go
+g, _ := secondfactor.New(secondfactor.Config{Sessions: sess, DB: writer, Origin: origin})
+pk, _ := passkey.New(passkey.Config{ /* ..., */ Gate: g})   // ConfirmPath is gone
+g.Add(pk)
+au, _ := auth.New(auth.Config{ /* ..., */ SecondFactor: g.Hold})   // was pk.Gate
+```
+
+`pk.RegenerateRecoveryCodes`, `pk.RecoveryCodesRemaining` and `pk.SignInRecovery`
+are `g.`'s now, and the confirm page defaults to `/signin/confirm` rather than
+`/passkey/confirm`. The pending cookie is renamed, so a sign-in in flight across
+the upgrade starts again from the first factor.
+
+**Merge `secondfactor.Schema` after `passkey.Schema`.** Its second migration is
+a Go migration that copies every recovery code out of `passkey_recovery_codes`
+and drops that table and `passkey_pending`. Merged before, it finds nothing to
+copy on a fresh database and leaves passkey's frozen first migration to
+recreate two tables nothing reads; on a deployed database the order does not
+matter, because passkey's migration already ran. The codes people printed
+survive either way.
+
+### Added — `rastrillo/totp`, an authenticator-app second factor
+
+RFC 6238 exactly as every authenticator app defaults to it, on the same two
+seams as `passkey`: `SignIn` completes the gate's half-session, `StepUp` makes
+a stale session fresh. Enrolment is `Begin` (key, otpauth URI, QR as inline
+SVG), `Confirm` (the factor is live only once a code proves the scan) and
+`Disable`, with `Pending` to redraw an unconfirmed enrolment on a GET. Secrets are sealed under `Config.Key` before they reach the
+database; a verified step is spent and never accepted twice; a wrong sign-in
+code is a `secondfactor` strike, five per half-session. Every endpoint is a
+form POST, so a confirm page built on it works with JavaScript off. One new
+dependency, `github.com/skip2/go-qrcode`, for the QR.
+
+`secondfactor.Gate.Hold` is also callable from app code with a method of its
+own — hold `"device"` for a remembered browser, and a passkey alone gets the
+person back in, minting `"device+passkey"`.
+
 ## v0.27.0
 
 Stricter security headers, and a new package for passing a signed-in identity

@@ -50,7 +50,9 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
+	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // axeTags is the ruleset, and it is not negotiable downwards. WCAG 2.2
@@ -328,8 +330,8 @@ func a11yTargets() []a11yTarget {
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
-		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: five forms in five frames, and the only page in the tree carrying a password field, an autocomplete token and a warning callout above the thing it warns about"},
-		{"day/en shells", page("day", "en", "shells"), "the four page frames, each framed at full page size"},
+		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: the shipped partial in ten states in stage frames, and the two examples it does not ship — the only page carrying a password field"},
+		{"day/en shells", page("day", "en", "shells"), "the five page frames, each framed at full page size"},
 		// The two colour ends, on the two pages that carry colour: the
 		// palette itself and the display vocabulary painted in it.
 		{"plain/en tokens", page("plain", "en", "tokens"), "the theme with the least colour — where a contrast floor is closest to the line"},
@@ -340,6 +342,7 @@ func a11yTargets() []a11yTarget {
 		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
 		{"day/en console shell", shellHref(mountPath, "day", "en", "console"), "the only page in the tree with two chromes at once — a banner bar and a complementary rail, both landmarks, in one document with one <main> and one contentinfo. A shell that is two other shells is exactly where a duplicated landmark, a second control with the same name, or a nav with nothing to tell it from the bar would come from, and none of the three shows on a shell that has only one of them"},
+		{"day/en stage shell", shellHref(mountPath, "day", "en", "stage"), "the sign-in shell: a generated backdrop behind one card, no navigation at all — the page every visitor meets first, and the only one whose main landmark sits over a decorative picture"},
 		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
 		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
 	}
@@ -619,6 +622,18 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 	if err := json.Unmarshal([]byte(raw), &got); err != nil {
 		t.Fatalf("decoding the frame list: %v", err)
 	}
+	if kind == "screens" {
+		// Every sign-in state, not the first: §5 asks for axe on every
+		// screen state in every theme and scheme, and the states differ
+		// in exactly what axe checks — a focused callout, a field in
+		// error, a one-tap whose name carries an address. Exactly the
+		// page's own count, so a frame that stopped rendering is a
+		// failure here and not a smaller scan.
+		if len(got.Frames) != len(screenDocs()) {
+			t.Fatalf("expected the ten sign-in states and two examples (%d frames), picked %d", len(screenDocs()), len(got.Frames))
+		}
+		return got.Frames
+	}
 	if kind == "primitives" {
 		if len(got.Frames) < 4 {
 			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Frames), got.Articles)
@@ -645,7 +660,7 @@ func previewPageKinds() []string {
 	for _, pk := range componentPages() {
 		out = append(out, pk.Kind)
 	}
-	return append(out, "primitives")
+	return append(out, "primitives", "screens")
 }
 
 // TestA11yScansThePreviewDocuments scans inside the frames.
@@ -826,6 +841,7 @@ func TestA11yReflowsAt320(t *testing.T) {
 		struct{ name, href string }{"day/ar tokens", pageHref(mountPath, "day", "ar", fileOf("tokens"))},
 		struct{ name, href string }{"day/en modal", modalHref(mountPath, "day", "en")},
 		struct{ name, href string }{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar")},
+		struct{ name, href string }{"day/en stage shell", shellHref(mountPath, "day", "en", "stage")},
 	)
 	// Overflow is measured on both edges, because "sideways" is not
 	// one direction: an LTR page spills past the right edge and an RTL
@@ -1120,5 +1136,202 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	}
 	if !escaped {
 		t.Errorf("modal demo: %d tabs never returned to %q — focus is trapped (WCAG 2.1.2)", modalCount+3, first)
+	}
+}
+
+// signinMatrix is every state the signin partial can be in — each step,
+// each problem, each remembered method, with and without a passkey
+// door, and Reauth over every door — for the axe scan. The Screens page
+// shows ten; the rest are rendered here only.
+func signinMatrix() map[string]auth.SigninState {
+	door := galleryPasskey
+	kay := &auth.Remembered{Method: "keymail", Address: "kay@example.org"}
+	ada := &auth.Remembered{Method: "magiclink", Address: graceAddress}
+	pk := &auth.Remembered{Method: "passkey"}
+	s := func(mut func(*auth.SigninState)) auth.SigninState { return *signinScreen(mut) }
+	return map[string]auth.SigninState{
+		"ask":                       s(func(st *auth.SigninState) {}),
+		"ask-door":                  s(func(st *auth.SigninState) { st.Passkey = door }),
+		"returning-keymail":         s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, kay }),
+		"returning-link":            s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, ada }),
+		"returning-passkey":         s(func(st *auth.SigninState) { st.Step, st.Remembered, st.Passkey = auth.StepReturning, pk, door }),
+		"returning-passkey-no-door": s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, pk }),
+		"sent-bound":                s(func(st *auth.SigninState) { st.Step, st.SentTo = auth.StepSent, graceAddress }),
+		"sent-unbound":              s(func(st *auth.SigninState) { st.Step = auth.StepSent }),
+		"sent-instead":              s(func(st *auth.SigninState) { st.Step, st.SentTo, st.SentInstead = auth.StepSent, kay.Address, true }),
+		"continue": s(func(st *auth.SigninState) {
+			st.Step, st.ContinueURL = auth.StepContinue, "https://keymail.example/oauth/authorize"
+		}),
+		"problem-rate":    s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemRate, graceAddress }),
+		"problem-address": s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemAddress, "grace@example" }),
+		"problem-expired": s(func(st *auth.SigninState) { st.Problem = auth.ProblemExpired }),
+		"problem-keymail": s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemKeymail, kay.Address }),
+		"problem-generic": s(func(st *auth.SigninState) { st.Problem, st.Passkey = auth.ProblemGeneric, door }),
+		"reauth-ask":      s(func(st *auth.SigninState) { st.Problem = auth.ProblemReauth }),
+		"reauth-ask-door": s(func(st *auth.SigninState) { st.Problem, st.Passkey = auth.ProblemReauth, door }),
+		"reauth-returning-keymail": s(func(st *auth.SigninState) {
+			st.Step, st.Problem, st.Remembered = auth.StepReturning, auth.ProblemReauth, kay
+		}),
+		"reauth-returning-link": s(func(st *auth.SigninState) {
+			st.Step, st.Problem, st.Remembered = auth.StepReturning, auth.ProblemReauth, ada
+		}),
+		"reauth-returning-passkey": s(func(st *auth.SigninState) {
+			st.Step, st.Problem, st.Remembered, st.Passkey = auth.StepReturning, auth.ProblemReauth, pk, door
+		}),
+		"reauth-returning-passkey-no-door": s(func(st *auth.SigninState) {
+			st.Step, st.Problem, st.Remembered = auth.StepReturning, auth.ProblemReauth, pk
+		}),
+	}
+}
+
+// TestA11yScansEverySigninState is §5's "axe WCAG 2.2 AA on every
+// screen state in every theme × scheme". The pages are Preview renders
+// (so the passkey door shows as it would once revealed) in the same
+// stage frame the gallery uses, served beside the gallery tree so they
+// load its tokens.css and themes. They are not gallery pages: the
+// Screens page shows ten states to stay inside its byte budget, and the
+// other eleven would exist only for this scan.
+//
+// Without the backdrop, on purpose. Over the art axe cannot compute the
+// brand pitch's background ("partially overlaps other elements") and
+// files its contrast under needs-review, so every one of these scans
+// would leave that text unchecked. The art is the same picture in every
+// state; it is scanned where it ships, on the stage shell and the
+// Screens page's first frame, and its colours against the card's edge
+// are ui/contrast_test.go's.
+func TestA11yScansEverySigninState(t *testing.T) {
+	tmpl, err := partialTree("en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tmpl.Parse(screenFrame); err != nil {
+		t.Fatal(err)
+	}
+	pages := map[string][]byte{}
+	for _, theme := range ui.ThemeNames() {
+		for name, st := range signinMatrix() {
+			var b strings.Builder
+			if err := tmpl.ExecuteTemplate(&b, "ds-screen-stage", map[string]any{"State": st, "Brand": galleryBrand, "Preview": true, "Art": false}); err != nil {
+				t.Fatalf("%s: %v", name, err)
+			}
+			pages["/signin-matrix/"+theme+"/"+name+".html"] = []byte(srcdoc(mountPath, theme, "en", "Sign-in state "+name, b.String()))
+		}
+	}
+	rig := harness.New(t, func(string) http.Handler {
+		tree := treeHandler(t)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if body, ok := pages[r.URL.Path]; ok {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write(body)
+				return
+			}
+			tree.ServeHTTP(w, r)
+		})
+	})
+	ctx, cancel := context.WithTimeout(rig.Context(), 900*time.Second)
+	defer cancel()
+	axeJS := axeSource(t)
+	hrefs := make([]string, 0, len(pages))
+	for href := range pages {
+		hrefs = append(hrefs, href)
+	}
+	sort.Strings(hrefs)
+	total, scans := 0, 0
+	for _, href := range hrefs {
+		// The card is the thing under test: a page whose partial failed
+		// to reach the document would scan clean with nothing in it.
+		var cards int
+		if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+href), chromedp.WaitReady("body"),
+			chromedp.Evaluate(`document.querySelectorAll("[rst-signin] h1").length`, &cards), chromedp.Evaluate(axeJS, nil)); err != nil {
+			t.Fatalf("%s: loading: %v", href, err)
+		}
+		if cards != 1 {
+			t.Fatalf("%s: %d sign-in headings on the page, want the one card", href, cards)
+		}
+		for _, scheme := range a11ySchemes {
+			where := href + " (" + scheme + ")"
+			paint(t, ctx, scheme)
+			total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
+			scans++
+		}
+	}
+	if want := len(signinMatrix()) * len(ui.ThemeNames()) * len(a11ySchemes); scans != want {
+		t.Fatalf("%d scans, want %d", scans, want)
+	}
+	if total == 0 {
+		t.Logf("clean: %d sign-in states × %d themes × %d schemes, %v", len(signinMatrix()), len(ui.ThemeNames()), len(a11ySchemes), axeTags)
+	}
+}
+
+// TestA11yWalksTheStageShell is the keyboard walk on the page every
+// visitor meets first: the stage shell with the sign-in card in it,
+// walked all the way round from where autofocus puts the reader. Every
+// stop must show a focus indicator (2.4.7), none may hold focus (2.1.2),
+// and the circuit must reach every focusable element on the page — a
+// card control that Tab never reaches is a control a keyboard user does
+// not have, and the form page's walk above never meets this card.
+func TestA11yWalksTheStageShell(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancel()
+
+	var count int
+	var start string
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+shellHref(mountPath, "day", "en", "stage")),
+		chromedp.WaitReady("body"),
+		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
+		// Autofocus lands at a rendering update, not at load.
+		chromedp.Evaluate(`(async () => {
+		  for (let i = 0; i < 40 && document.activeElement === document.body; i++) await new Promise(r => setTimeout(r, 50));
+		  return document.activeElement.id;
+		})()`, &start, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
+	); err != nil {
+		t.Fatalf("loading the stage shell: %v", err)
+	}
+	if start != "rst-signin-email" {
+		t.Fatalf("the stage shell's card starts focus on %q, want the email field", start)
+	}
+	visited := map[int]string{}
+	back := false
+	for i := 0; i < count+3 && !back; i++ {
+		// at is the stop's place among the focusables: walkJS's label is
+		// tag, id and class, and the skip link and the foot's link are
+		// both a bare <a>, so a set of labels would count them as one.
+		var raw string
+		var at int
+		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw),
+			chromedp.Evaluate(`[...document.querySelectorAll(`+focusablesJS+`)].indexOf(document.activeElement)`, &at)); err != nil {
+			t.Fatalf("stage shell: tab %d: %v", i+1, err)
+		}
+		var s struct {
+			Tag, Kind, Focused, Blurred string
+			Ring, Same                  bool
+		}
+		if err := json.Unmarshal([]byte(raw), &s); err != nil {
+			t.Fatalf("stage shell: tab %d: decoding: %v", i+1, err)
+		}
+		if s.Tag == "body" {
+			// The browser's own chrome, between the last stop and the
+			// first: a way out, not a stop to measure.
+			continue
+		}
+		if s.Same {
+			t.Errorf("stage shell: tab %d: focus did not move off %s — keyboard trap (WCAG 2.1.2)", i+1, s.Tag)
+		}
+		if !s.Ring {
+			t.Errorf("stage shell: tab %d: %s has no visible focus indicator (WCAG 2.4.7)\n    focused: %s\n    blurred: %s", i+1, s.Tag, s.Focused, s.Blurred)
+		}
+		if at < 0 {
+			t.Errorf("stage shell: tab %d: focus is on %s, which the focusable selector does not count; the coverage check below would be comparing different things", i+1, s.Tag)
+		}
+		visited[at] = s.Tag
+		back = s.Tag == "input#"+start
+	}
+	if !back {
+		t.Errorf("stage shell: %d tabs never came back round to the email field — focus is trapped (WCAG 2.1.2)", count+3)
+	}
+	if len(visited) != count {
+		t.Errorf("stage shell: the walk reached %d of the page's %d focusable elements: %v", len(visited), count, visited)
 	}
 }

@@ -68,6 +68,7 @@ the common thing.
 | `Date` | `p.Date` | `2006-01-02`, parsed in `Location` |
 | `Time` | `p.Time` | `15:04` — a clock reading, no location |
 | `DateTime` | `p.DateTime` | `2006-01-02T15:04`, parsed in `Location` |
+| `URL` | `p.String` | A web address, scheme optional; stored as an http(s) URL |
 
 `Required` on a blank `Text` or `Textarea` reports "<Field name> is
 required", humanized from the field name.
@@ -139,7 +140,8 @@ kind works on either side, and the two can be mixed.
 ### Errors are catalog keys
 
 `Text`, `Textarea` and `Money` report finished English sentences. The
-three date kinds report `rastrillo.ui.*` keys instead —
+three date kinds (and `URL`, below) report `rastrillo.ui.*` keys
+instead —
 `rastrillo.ui.date_invalid`, `rastrillo.ui.field_required`,
 `rastrillo.ui.date_end_before_start` — so a French app's date error is
 in French without the app writing one.
@@ -167,6 +169,33 @@ a finished sentence keeps rendering it unchanged.
 the hour a spring-forward skips — using the offset in force before the
 transition, so a time inside the skipped hour and the real time it
 collapses onto land on the same instant.
+
+## Web addresses
+
+`form.URL` takes a web address however it was typed and gives you one
+you can link to:
+
+```go
+p := form.Parse(r, form.Field{Name: "website", Kind: form.URL})
+site := p.String("website") // "example.com" arrives as "https://example.com"
+```
+
+It adds `https://` when there is no scheme, lowercases the host and
+drops a bare trailing slash. It refuses any scheme but http and https,
+a username or password in the address, a host with no dot, and
+whitespace. A refused address reads back as `""`, so it cannot reach
+your database even if you forget to check `p.OK()`. The echo keeps what
+was typed.
+
+Its errors are catalog keys, like the date kinds':
+`rastrillo.ui.url_invalid`, `rastrillo.ui.url_credentials`, and
+`rastrillo.ui.field_required` when a required field is blank. Wrap them
+in `T` the same way.
+
+Render the input with `field-url`, and show a stored address with
+`displayURL` and `safeHref`; see
+[Templates](/docs/templates#web-address-fields). To tell whether two
+addresses are the same site, compare `form.URLKey` of each.
 
 ## Money is int64 cents
 
@@ -341,9 +370,10 @@ stylesheet after `tokens.css`.
 
 ## The busy button is not a guarantee
 
-`rastrillo.js` gives every submit button a loading state while its form
-is out — spinner, `aria-busy`, then `disabled` — and refuses a second
-submit from the same form while the first is in flight. It is on by
+`busy.js` gives every submit button a loading state while its form is
+out — a spinner in place of the label for at least 650ms, `aria-busy`,
+then `disabled` — and refuses a second submit from the same form while
+the first is in flight. It is on by
 default; `data-busy="false"` on the form or on one button opts out, and
 `data-busy-label` replaces the text. The whole rule, including what it
 looks like, is in

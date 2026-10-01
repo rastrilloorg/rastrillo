@@ -1,6 +1,7 @@
-package migrate
+package modeldiff
 
 import (
+	"amadan.net/rastrillo/rastrillo/migrate"
 	"context"
 	"strings"
 	"testing"
@@ -41,7 +42,7 @@ func TestGenerateEmitsCreateTableForNewModel(t *testing.T) {
 
 func TestGenerateEmitsAddColumnForNewField(t *testing.T) {
 	// The existing migration set already created the narrow table.
-	existing := []Migration{{ID: "0001_init", SQL: "CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, title TEXT);"}}
+	existing := []migrate.Migration{{ID: "0001_init", SQL: "CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, title TEXT);"}}
 	changes, err := Generate(context.Background(), existing, []any{&genNoteWithBody{}})
 	if err != nil {
 		t.Fatal(err)
@@ -60,7 +61,7 @@ func TestGenerateEmitsAddColumnForNewField(t *testing.T) {
 }
 
 func TestGenerateIsEmptyWhenModelsAndMigrationsAgree(t *testing.T) {
-	existing := []Migration{{ID: "0001_init", SQL: "CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, title TEXT);"}}
+	existing := []migrate.Migration{{ID: "0001_init", SQL: "CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, title TEXT);"}}
 	changes, err := Generate(context.Background(), existing, []any{&genNote{}})
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +73,7 @@ func TestGenerateIsEmptyWhenModelsAndMigrationsAgree(t *testing.T) {
 
 func TestGenerateMarksDroppedColumnDestructive(t *testing.T) {
 	// Migrations have a column the model no longer declares.
-	existing := []Migration{{ID: "0001_init",
+	existing := []migrate.Migration{{ID: "0001_init",
 		SQL: "CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, title TEXT, gone TEXT);"}}
 	changes, err := Generate(context.Background(), existing, []any{&genNote{}})
 	if err != nil {
@@ -86,18 +87,6 @@ func TestGenerateMarksDroppedColumnDestructive(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("changes = %q, want one marked Destructive for the dropped column", allSQL(changes))
-	}
-}
-
-func TestSchemaSQLReflectsAppliedMigrations(t *testing.T) {
-	out, err := SchemaSQL(context.Background(), []Migration{
-		{ID: "0001_init", SQL: "CREATE TABLE gen_notes (id INTEGER PRIMARY KEY);"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(out, "gen_notes") {
-		t.Fatalf("schema.sql = %q, want it to contain gen_notes", out)
 	}
 }
 
@@ -123,7 +112,7 @@ func (genNoteIndexed) TableName() string { return "gen_notes" }
 // means SQLite's twelve-step rebuild, and gormlite reconstructs the
 // table from the type='table' row of sqlite_master alone — the index
 // is not in that row, so the rebuild silently loses it.
-var indexedWithDroppedColumn = []Migration{{ID: "0001_init", SQL: `
+var indexedWithDroppedColumn = []migrate.Migration{{ID: "0001_init", SQL: `
 	CREATE TABLE gen_notes (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT, gone TEXT);
 	CREATE INDEX idx_gen_notes_user_id ON gen_notes(user_id);`}}
 
@@ -160,8 +149,8 @@ func TestGenerateConvergesInOnePassAfterARebuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	next := append(append([]Migration{}, indexedWithDroppedColumn...),
-		Migration{ID: "0002_drop_column_gen_notes", SQL: allSQL(changes)})
+	next := append(append([]migrate.Migration{}, indexedWithDroppedColumn...),
+		migrate.Migration{ID: "0002_drop_column_gen_notes", SQL: allSQL(changes)})
 	again, err := Generate(context.Background(), next, []any{&genNoteIndexed{}})
 	if err != nil {
 		t.Fatal(err)

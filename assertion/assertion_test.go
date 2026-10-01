@@ -7,7 +7,6 @@ import (
 	stdjson "encoding/json"
 	"math"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
 func good() Claims {
@@ -343,19 +343,12 @@ func TestIndependentFixture(t *testing.T) {
 	}
 }
 func TestNodeVerifiesGo(t *testing.T) {
-	node, e := exec.LookPath("node")
-	if e != nil {
-		t.Skip("node unavailable")
-	}
+	nodetest.Node(t)
 	k, _ := setup(t)
 	s, e := Sign(k, good())
 	if e != nil {
 		t.Fatal(e)
 	}
 	in, _ := stdjson.Marshal(map[string]string{"token": s, "publicKey": base64.RawURLEncoding.EncodeToString(k.SignPub())})
-	cmd := exec.Command(node, "testdata/twin.mjs", "verify")
-	cmd.Stdin = bytes.NewReader(in)
-	if out, e := cmd.CombinedOutput(); e != nil {
-		t.Fatalf("node verify: %v %s", e, out)
-	}
+	nodetest.Run(t, nodetest.Cmd{Args: []string{"testdata/twin.mjs", "verify"}, Stdin: in})
 }

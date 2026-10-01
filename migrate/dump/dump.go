@@ -16,12 +16,13 @@ import (
 	"os"
 
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
 )
 
 // Payload is what the loader program prints and the CLI parses.
 type Payload struct {
-	Changes []migrate.Change `json:"changes"`
-	Schema  string           `json:"schema"`
+	Changes []modeldiff.Change `json:"changes"`
+	Schema  string             `json:"schema"`
 
 	// Boot is the app's composed boot set (migrate.Merge of every
 	// framework subsystem plus the app's own Schema, in apply order)
@@ -45,7 +46,7 @@ type Payload struct {
 
 // Compute always generates and checks against ms, the app's *own*
 // migration set — never boot. Replaying the composed boot set here
-// instead would make the structural drop-pass in migrate.Generate
+// instead would make the structural drop-pass in modeldiff.Generate
 // compare framework tables (sessions, auth_links, blobs, ...) against
 // a Models list that knows nothing about them, and it would propose
 // dropping every one. boot is passed straight through to the payload,
@@ -55,7 +56,7 @@ func Compute(ms []migrate.Migration, boot []migrate.Migration, models []any) (Pa
 	ctx := context.Background()
 	var p Payload
 	var err error
-	if p.Changes, err = migrate.Generate(ctx, ms, models); err != nil {
+	if p.Changes, err = modeldiff.Generate(ctx, ms, models); err != nil {
 		return p, err
 	}
 	if p.Schema, err = migrate.SchemaSQL(ctx, ms); err != nil {

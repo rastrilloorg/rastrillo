@@ -14,7 +14,7 @@
        Plain     bool, optional — opt out of the searchable enhancement
 
      Past ten options the <select> carries data-rst-select, and
-     rastrillo.js turns it into a filterable ARIA combobox in the
+     select.js turns it into a filterable ARIA combobox in the
      browser. The judgement lives here rather than in the caller or the
      script: below ten, search that filters a handful of items is
      furniture, not help, so nothing is emitted and the script has
@@ -31,7 +31,7 @@
      The native <select> stays the control either way — it is what the
      form submits, and the screen works with scripts disabled. */}}
 {{define "field-select"}}<div rst-field><label rst-field-label for="{{.ID}}">{{.Label}}{{with .Hint}} <span rst-field-hint>({{.}})</span>{{end}}</label>
-<select rst-input{{if .Short}}="short"{{end}} id="{{.ID}}" name="{{.Name}}"{{if .Required}} required{{end}}{{if and (not .Plain) .Options (ge (len .Options) 10)}} data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>{{range .Options}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<select rst-input{{if .Short}}="short"{{end}} id="{{.ID}}" name="{{.Name}}"{{if .Required}} required{{end}}{{if and (not .Plain) .Options (ge (len .Options) 10)}} data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}" data-rst-select-no-matches="{{T "rastrillo.ui.select_no_matches"}}"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="{{.ID}}-error"{{else if .Help}} aria-describedby="{{.ID}}-help"{{end}}>{{range .Options}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select>
 {{if .Error}}<p rst-field-error id="{{.ID}}-error" role="alert">{{.Error}}</p>
 {{else if .Help}}<p rst-field-help id="{{.ID}}-help">{{.Help}}</p>
 {{end}}</div>{{end}}

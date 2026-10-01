@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/auth"
 )
 
 // parseAll builds the template tree exactly the way an app is documented
@@ -1077,6 +1078,21 @@ func allPartials() []struct {
 			"Start": map[string]any{"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30"},
 			"End":   map[string]any{"Name": "ends_at", "Label": "Ends", "Error": "The end comes before the start."},
 		}},
+		{"field-url", map[string]any{
+			// No scheme in the Value: TestRenderedPartialsAreSelfContained
+			// fails on any "https://" in rendered output, and an echo of
+			// what was typed is the common re-render anyway.
+			"Name": "website", "Label": "Website", "Value": "brightwater.example/pricing",
+			"Required": true, "Hint": "Where people can read more.", "Error": "Enter a web address, like example.com.",
+		}},
+		{"signin", map[string]any{
+			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
+			"Brand": map[string]any{
+				"Name": "Harbour", "Pitch": "Moorings and berths, booked in a minute.",
+				"Mark": template.HTML(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/></svg>`),
+			},
+		}},
+		{"signin-title", map[string]any{"State": auth.SigninState{Step: auth.StepSent}, "Brand": map[string]any{"Name": "Harbour"}}},
 	}
 }
 
@@ -1178,14 +1194,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
+		"field-url", "signin", "signin-title",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 34 {
-		t.Fatalf("the shipped set is 34 partials, this list has %d", len(want))
+	if len(want) != 37 {
+		t.Fatalf("the shipped set is 37 partials, this list has %d", len(want))
 	}
 }
 
@@ -1227,6 +1244,59 @@ func TestTokensCSSIsSelfContained(t *testing.T) {
 		for _, bad := range reachOut {
 			if strings.Contains(string(theme), bad) {
 				t.Errorf("themes/%s.css reaches outside the page (%q)", name, bad)
+			}
+		}
+	}
+}
+
+// A var() naming a token nobody declares resolves to the property's
+// initial value with no error anywhere — the date picker's muted text
+// shipped as full-strength body colour that way, through a misspelt
+// --rst-muted. So every fallback-less reference in tokens.css must be
+// declared by tokens.css itself or by every theme; a reference that
+// carries a fallback is an app-settable hook (--rst-cols) and is fine
+// undeclared.
+func TestEveryTokenReferenceIsDeclared(t *testing.T) {
+	decl := regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:`)
+	ref := regexp.MustCompile(`var\((--rst-[a-z0-9-]+)\s*\)`)
+	// Comments out first: a "--rst-x:" in prose would otherwise count as
+	// a declaration, and these files are mostly prose.
+	comment := regexp.MustCompile(`(?s)/\*.*?\*/`)
+	strip := func(b []byte) string { return comment.ReplaceAllString(string(b), "") }
+	tokens := strip(TokensCSS())
+	declared := map[string]bool{}
+	for _, m := range decl.FindAllStringSubmatch(tokens, -1) {
+		declared[m[1]] = true
+	}
+	inEvery := map[string]int{}
+	for _, name := range ThemeNames() {
+		theme, _ := ThemeCSS(name)
+		seen := map[string]bool{}
+		for _, m := range decl.FindAllStringSubmatch(strip(theme), -1) {
+			if !seen[m[1]] {
+				seen[m[1]] = true
+				inEvery[m[1]]++
+			}
+		}
+	}
+	for tok, n := range inEvery {
+		if n == len(ThemeNames()) {
+			declared[tok] = true
+		}
+	}
+	// A theme derives tokens from tokens (--rst-header-rule mixes the
+	// accent), so its references are held to the same bar.
+	sources := map[string]string{"tokens.css": tokens}
+	for _, name := range ThemeNames() {
+		theme, _ := ThemeCSS(name)
+		sources["themes/"+name+".css"] = strip(theme)
+	}
+	for file, css := range sources {
+		reported := map[string]bool{}
+		for _, m := range ref.FindAllStringSubmatch(css, -1) {
+			if !declared[m[1]] && !reported[m[1]] {
+				reported[m[1]] = true
+				t.Errorf("%s uses var(%s), which neither tokens.css nor every theme declares", file, m[1])
 			}
 		}
 	}
@@ -2063,6 +2133,9 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// it. Order is irrelevant to the contract anyway: a block is
 		// found by name.
 		"console": {"lang", "dir", "title", "head", "brand", "account", "locale", "nav", "content", "foot"},
+		// stage has no chrome to override. backdrop is the picture
+		// behind the card, foot an optional line under it.
+		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {
@@ -2777,7 +2850,7 @@ func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 // (so a struct-vs-map decision in an app cannot break a shell), and
 // resolves every catalog key it names.
 func TestLayoutsParseAndRender(t *testing.T) {
-	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console"}) {
+	if got := LayoutNames(); !reflect.DeepEqual(got, []string{"column", "topbar", "sidebar", "console", "stage"}) {
 		t.Fatalf("LayoutNames = %v", got)
 	}
 	for _, name := range LayoutNames() {
@@ -3333,4 +3406,110 @@ func TestPartialsAndLayoutsEmitNoInlineStyles(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestFieldQuietErrorDropsOnlyTheAlertRole(t *testing.T) {
+	quiet := render(t, "field", map[string]any{"ID": "f1", "Name": "n", "Label": "L", "Error": "bad", "QuietError": true})
+	if strings.Contains(quiet, `role="alert"`) {
+		t.Errorf("QuietError still emits role=alert: %s", quiet)
+	}
+	for _, want := range []string{`aria-invalid="true"`, `aria-describedby="f1-error"`, `id="f1-error"`} {
+		if !strings.Contains(quiet, want) {
+			t.Errorf("QuietError lost %s: %s", want, quiet)
+		}
+	}
+}
+
+func TestCalloutIDAndFocus(t *testing.T) {
+	got := render(t, "callout", map[string]any{"Body": "b", "ID": "c1", "Focus": true})
+	if !strings.Contains(got, `id="c1"`) || !strings.Contains(got, `tabindex="-1" autofocus`) {
+		t.Errorf("ID/Focus not emitted: %s", got)
+	}
+	plain := render(t, "callout", map[string]any{"Body": "b"})
+	if strings.Contains(plain, "id=") || strings.Contains(plain, "tabindex") || strings.Contains(plain, "autofocus") {
+		t.Errorf("a plain callout grew attributes: %s", plain)
+	}
+}
+
+// A struct caller written before QuietError, ID and Focus existed must
+// still render: reading those keys inline would make its screen a 500.
+func TestFieldAndCalloutStillTakeAnOlderStruct(t *testing.T) {
+	type field struct {
+		ID, Name, Label, Type, Value, Placeholder, Autocomplete, Maxlength, Min, Max, Pattern, Hint, Help, Error string
+		Required, Short, Primary, Autofocus                                                                      bool
+	}
+	type callout struct {
+		Body, Title, Tone string
+		Alert             bool
+	}
+	if got := render(t, "field", field{ID: "f", Name: "n", Label: "L", Error: "bad"}); !strings.Contains(got, `role="alert"`) {
+		t.Errorf("an older struct lost the default alert role: %s", got)
+	}
+	if got := render(t, "callout", callout{Body: "b"}); strings.Contains(got, "tabindex") {
+		t.Errorf("an older struct grew a tabindex: %s", got)
+	}
+}
+
+// A button's own display rule would otherwise beat the user agent's
+// [hidden] rule, and the passkey door would show before its script
+// decided it can work.
+func TestHiddenButtonsStayHidden(t *testing.T) {
+	if !strings.Contains(string(TokensCSS()), `.rst-btn[hidden], [rst-btn][hidden] { display: none; }`) {
+		t.Fatal("tokens.css does not keep a [hidden] button hidden")
+	}
+}
+
+// field-url is a text input, never type="url": browsers refuse
+// "example.com" for lacking a scheme, which is exactly what the field
+// exists to accept. The rest of the attributes are what make a phone
+// offer the URL keyboard and stop it "correcting" an address into a
+// sentence.
+func TestFieldURLIsAForgivingTextInput(t *testing.T) {
+	got := render(t, "field-url", fixtureFor(t, "field-url"))
+	for _, want := range []string{
+		`<div rst-field>`,
+		`<label rst-field-label for="website">Website <span rst-field-required aria-hidden="true">*</span></label>`,
+		`id="website"`, `name="website"`, `type="text"`, `inputmode="url"`,
+		`autocomplete="url"`, `autocapitalize="none"`, `autocorrect="off"`,
+		`spellcheck="false"`, `value="brightwater.example/pricing"`,
+		" required", ` aria-invalid="true"`,
+		`aria-describedby="website-hint website-error"`,
+		`<small rst-field-hint id="website-hint">Where people can read more.</small>`,
+		`<small rst-field-error id="website-error">Enter a web address, like example.com.</small>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("field-url is missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `type="url"`) {
+		t.Errorf("field-url rendered the native url type, which refuses example.com:\n%s", got)
+	}
+
+	// A field for someone else's site (a customer's, a supplier's) must
+	// not offer the visitor's own homepage, so Autocomplete overrides.
+	got = render(t, "field-url", map[string]any{"Name": "supplier_site", "Label": "Supplier", "Autocomplete": "off"})
+	if !strings.Contains(got, `autocomplete="off"`) || strings.Contains(got, `autocomplete="url"`) {
+		t.Errorf("Autocomplete did not override the default:\n%s", got)
+	}
+	if strings.Contains(got, "aria-describedby") || strings.Contains(got, "aria-invalid") || strings.Contains(got, " required") {
+		t.Errorf("a bare field-url carries state it was not given:\n%s", got)
+	}
+}
+
+// Inputmode on field chooses the on-screen keyboard without changing
+// what the browser validates. It is read through opt, so a struct
+// caller written before the key existed still renders.
+func TestFieldInputmode(t *testing.T) {
+	got := render(t, "field", map[string]any{"ID": "code", "Name": "code", "Label": "Code", "Inputmode": "numeric"})
+	if !strings.Contains(got, ` inputmode="numeric"`) {
+		t.Errorf("Inputmode not emitted:\n%s", got)
+	}
+	if got := render(t, "field", fixtureFor(t, "field")); strings.Contains(got, "inputmode") {
+		t.Errorf("inputmode emitted without being asked for:\n%s", got)
+	}
+	type oldCaller struct {
+		ID, Name, Label, Type, Value, Placeholder, Autocomplete, Maxlength, Min, Max, Pattern, Hint, Help, Error string
+		Required, Short, Primary, Autofocus                                                                      bool
+	}
+	render(t, "field", oldCaller{ID: "x", Name: "x", Label: "X"})
 }

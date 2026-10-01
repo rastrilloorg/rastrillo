@@ -761,7 +761,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "select.js", "datetime.js", "calendar.js",
+		"tokens.css", "rastrillo.js", "busy.js", "select.js", "datetime.js", "calendar.js",
 		"gallery.js", "gallery.css",
 	}
 	for _, theme := range ui.ThemeNames() {
@@ -1080,7 +1080,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 
 // A sample's links go nowhere and its forms go into a sink, so nothing
 // a reader clicks in a preview can navigate the frame away from the
-// example they were looking at — and rastrillo.js's busy rule skips a
+// example they were looking at — and busy.js's busy rule skips a
 // form whose target is not _self, so nothing spins on its way nowhere
 // either. The source beside it keeps the real routes.
 func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
@@ -3195,5 +3195,83 @@ func TestEveryFrameTitleIsUniqueOnThePage(t *testing.T) {
 				t.Errorf("%s has %d frames titled %q — a frame title is an accessible name and has to be unique on the page", name, n, html.UnescapeString(title))
 			}
 		}
+	}
+}
+
+// The Shells page lists every shell ui.LayoutNames returns, so a shell
+// added to ui arrives here on its own, and with nothing to say about
+// itself unless its blurb came with it: an empty paragraph under a
+// shell's name, which no other test notices.
+func TestEveryShellHasABlurb(t *testing.T) {
+	for _, v := range shellViews("", "day", "en") {
+		if v.Blurb == "" {
+			t.Errorf("the %s shell has no blurb in shellViews", v.Name)
+		}
+	}
+}
+
+// The sign-in screens are the shipped partial, not hand-written markup:
+// a gallery screen that is not what the framework renders teaches the
+// wrong thing. Each state's frame must carry the partial's own markers,
+// and the hand-written screens that stay are the two ui does not ship.
+func TestTheSigninScreensAreThePartial(t *testing.T) {
+	files := render(t)
+	page := string(files[RootTheme()+"/en/"+fileOf("screens")])
+	signinKeys := []string{
+		"signin-ask", "signin-returning-keymail", "signin-returning-link", "signin-returning-passkey",
+		"signin-sent", "signin-sent-unbound", "signin-sent-instead", "signin-continue",
+		"signin-problem-address", "signin-problem-keymail",
+	}
+	for _, key := range signinKeys {
+		i := strings.Index(page, `id="`+anchorID("screen", key)+`"`)
+		if i < 0 {
+			t.Errorf("no screen %s on the Screens page", key)
+			continue
+		}
+		section := page[i:]
+		if end := strings.Index(section[1:], `<article class="ds-partial"`); end > 0 {
+			section = section[:end+1]
+		}
+		if !strings.Contains(section, "rst-signin") || !strings.Contains(section, "rst-stage") {
+			t.Errorf("screen %s is not the signin partial in a stage frame", key)
+		}
+		// A brand column with a name alone is half a card of nothing;
+		// the sample brand shows every part an app's can have.
+		if !strings.Contains(section, "rst-signin-mark") || !strings.Contains(section, "rst-signin-pitch") {
+			t.Errorf("screen %s shows a brand with no mark or pitch", key)
+		}
+	}
+	// The stage shell demo frames the same sample app as the screens.
+	stage := string(files[RootTheme()+"/en/shells/stage.html"])
+	if !strings.Contains(stage, "<p rst-signin-pitch>"+html.EscapeString(galleryBrand["Pitch"].(string))+"</p>") || !strings.Contains(stage, "<div rst-signin-mark>") {
+		t.Errorf("the stage shell demo does not show the Screens page's sample brand")
+	}
+	// Counted exactly: a screen dropped from screenDocs, or a hand-written
+	// one that quietly became a stage frame, changes one of these.
+	frames := regexp.MustCompile(`<iframe class="ds-view__frame"[^>]*\ssrcdoc="([^"]*)"`).FindAllStringSubmatch(page, -1)
+	stages := 0
+	for _, f := range frames {
+		if strings.Contains(html.UnescapeString(f[1]), "<div rst-stage>") {
+			stages++
+		}
+	}
+	if len(frames) != len(signinKeys)+2 || stages != len(signinKeys) {
+		t.Errorf("the Screens page frames %d screens, %d of them stage frames; want %d, %d", len(frames), stages, len(signinKeys)+2, len(signinKeys))
+	}
+	// Previews load nothing: the door's module is for a live page.
+	for name, body := range files {
+		for _, module := range []string{"passkey-signin.mjs", "webauthn.mjs"} {
+			if strings.Contains(string(body), module) {
+				t.Errorf("%s names %s; a Preview must not load the passkey door", name, module)
+			}
+		}
+	}
+	for _, gone := range []string{"/signin/other", "/signin/reset"} {
+		if strings.Contains(page, gone) {
+			t.Errorf("the Screens page still links %s, which nothing serves", gone)
+		}
+	}
+	if !strings.Contains(page, anchorID("screen", "signin-password")) || !strings.Contains(page, anchorID("screen", "signin-social")) {
+		t.Error("the two screens ui does not ship (password, social) are gone; they stay as examples to copy")
 	}
 }

@@ -7,5 +7,9 @@
        Body   string, required
        Title  string, optional
        Tone   string, optional — info (default) | positive | warning | negative
-       Alert  bool, optional */}}
-{{define "callout"}}<div rst-callout rst-tone="{{or .Tone "info"}}"{{if .Alert}} role="alert"{{end}}><span rst-callout-ic aria-hidden="true">{{if eq (or .Tone "info") "positive"}}{{icon "check-circle"}}{{else if eq (or .Tone "info") "warning"}}{{icon "alert-triangle"}}{{else if eq (or .Tone "info") "negative"}}{{icon "x-circle"}}{{else}}{{icon "info"}}{{end}}</span><div rst-callout-body>{{with .Title}}<strong>{{.}}</strong>{{end}}<p>{{.Body}}</p></div></div>{{end}}
+       Alert  bool, optional
+       ID     string, optional — for aria-describedby or a skip target
+       Focus  bool, optional — tabindex="-1" autofocus: focus starts on
+              the callout, so a problem shown at load is read first.
+              Not role="alert": focus already announces it */}}
+{{define "callout"}}<div rst-callout{{with opt . "ID"}} id="{{.}}"{{end}} rst-tone="{{or .Tone "info"}}"{{if .Alert}} role="alert"{{end}}{{if opt . "Focus"}} tabindex="-1" autofocus{{end}}><span rst-callout-ic aria-hidden="true">{{if eq (or .Tone "info") "positive"}}{{icon "check-circle"}}{{else if eq (or .Tone "info") "warning"}}{{icon "alert-triangle"}}{{else if eq (or .Tone "info") "negative"}}{{icon "x-circle"}}{{else}}{{icon "info"}}{{end}}</span><div rst-callout-body>{{with .Title}}<strong>{{.}}</strong>{{end}}<p>{{.Body}}</p></div></div>{{end}}

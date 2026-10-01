@@ -24,35 +24,45 @@ import (
 // would let a package go undocumented by staying out of the map, and
 // the second would accept an empty page.
 var referencePages = map[string]string{
-	"assertion": "reference/assertion",
-	"scope":     "reference/scope",
-	"db":        "reference/db",
-	"migrate":   "reference/migrate",
-	"view":      "reference/view",
-	"form":      "reference/form",
-	"money":     "reference/money",
-	"flash":     "reference/flash",
-	"csrf":      "reference/csrf",
-	"sessions":  "reference/sessions",
-	"password":  "reference/password",
-	"auth":      "reference/auth",
-	"passkey":   "reference/passkey",
-	"pow":       "reference/pow",
-	"webauthn":  "reference/webauthn",
-	"jobs":      "reference/jobs",
-	"ui":        "reference/ui",
-	"tools":     "reference/tools",
-	"crypto":    "reference/crypto",
-	"keyring":   "reference/keyring",
-	"blobs":     "reference/blobs",
-	"carlos":    "reference/carlos",
-	"eventlog":  "reference/eventlog",
-	"mail":      "reference/mail",
-	"gormlite":  "reference/gormlite",
-	"vault":     "reference/vault",
-	"vectors":   "reference/vectors",
-	"harness":   "reference/harness",
-	".":         "reference/rastrillo",
+	"assertion":    "reference/assertion",
+	"scope":        "reference/scope",
+	"table":        "reference/table",
+	"xlsx":         "reference/xlsx",
+	"db":           "reference/db",
+	"dbtest":       "reference/dbtest",
+	"migrate":      "reference/migrate",
+	"nodetest":     "reference/nodetest",
+	"view":         "reference/view",
+	"form":         "reference/form",
+	"money":        "reference/money",
+	"flash":        "reference/flash",
+	"csrf":         "reference/csrf",
+	"sessions":     "reference/sessions",
+	"password":     "reference/password",
+	"auth":         "reference/auth",
+	"clientip":     "reference/clientip",
+	"background":   "reference/background",
+	"passkey":      "reference/passkey",
+	"secondfactor": "reference/secondfactor",
+	"totp":         "reference/totp",
+	"perf":         "reference/perf",
+	"pow":          "reference/pow",
+	"webauthn":     "reference/webauthn",
+	"jobs":         "reference/jobs",
+	"ui":           "reference/ui",
+	"tools":        "reference/tools",
+	"crypto":       "reference/crypto",
+	"keyring":      "reference/keyring",
+	"blobs":        "reference/blobs",
+	"carlos":       "reference/carlos",
+	"eventlog":     "reference/eventlog",
+	"mail":         "reference/mail",
+	"gormlite":     "reference/gormlite",
+	"vault":        "reference/vault",
+	"vectors":      "reference/vectors",
+	"harness":      "reference/harness",
+	"lastsignin":   "reference/lastsignin",
+	".":            "reference/rastrillo",
 }
 
 // TestExportedSymbolsAreDocumented is the completeness gate.
@@ -293,6 +303,8 @@ func receiverName(recv *ast.FieldList) string {
 var coveredElsewhere = map[string]string{
 	"webauthn/authtest": "reference/webauthn",
 	"migrate/dump":      "reference/migrate",
+	"migrate/gormfn":    "reference/migrate",
+	"migrate/modeldiff": "reference/migrate",
 }
 
 // TestEveryPackageHasAReferencePage is the other half of the
@@ -320,6 +332,12 @@ func TestEveryPackageHasAReferencePage(t *testing.T) {
 		if d.IsDir() {
 			base := d.Name()
 			if strings.HasPrefix(base, ".") && rel != "." {
+				return filepath.SkipDir
+			}
+			// The go command never treats testdata, or a directory
+			// starting with _, as a package: fixtures live there, and
+			// nothing can import them to need a page.
+			if base == "testdata" || strings.HasPrefix(base, "_") {
 				return filepath.SkipDir
 			}
 			if skip[strings.SplitN(rel, "/", 2)[0]] && rel != "." {

@@ -20,6 +20,13 @@ import (
 // line of main, which is what lets an app re-assert its timers at boot.
 const socketEnv = "CARLOS_CONTROL_SOCKET"
 
+// Running reports whether this process was spawned by the CARLOS agent:
+// $CARLOS_CONTROL_SOCKET is set. The agent sets it only when it has
+// bound the instance's control channel, and strips a tenant's own copy,
+// so it cannot be claimed by configuration. Off CARLOS — a laptop, a
+// test, a box of your own — it is false.
+func Running() bool { return os.Getenv(socketEnv) != "" }
+
 // MaxAhead is how far ahead a one-shot timer may be set. The platform
 // enforces the same bound and answers 400 past it; ScheduleAt checks it
 // first so the caller gets a typed error without a round trip, and so

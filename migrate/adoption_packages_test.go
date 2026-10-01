@@ -11,8 +11,11 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/eventlog"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
 	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/totp"
 )
 
 // legacySQL is each package's schema exactly as it shipped before the
@@ -134,19 +137,89 @@ func TestPackagesAdoptLegacyDatabases(t *testing.T) {
 			if err != nil {
 				t.Fatalf("a database built from the shipped Migrations must adopt cleanly: %v", err)
 			}
-			if !r.Adopted || len(r.Applied) != 0 {
-				t.Fatalf("Result = %+v, want adopted with zero DDL applied", r)
+			// Adoption runs no DDL against a live database — except a
+			// migration that declares itself post-adoption, which is
+			// the one kind allowed to touch an adopted table.
+			later := map[string]bool{}
+			for _, m := range sets[name].All() {
+				if m.PostAdoption {
+					later[m.ID] = true
+				}
+			}
+			for _, id := range r.Applied {
+				if !later[id] {
+					t.Fatalf("Result = %+v: %s ran against a live database", r, id)
+				}
+			}
+			if !r.Adopted {
+				t.Fatalf("Result = %+v, want adopted", r)
+			}
+			// Idempotent second boot.
+			if r2, err := migrate.Apply(context.Background(), d, sets[name]); err != nil || len(r2.Applied) != 0 {
+				t.Fatalf("second boot: %+v, %v", r2, err)
 			}
 		})
 	}
 }
 
+// TestPostAdoptionMigrationRunsOnAnAdoptedDatabase pins the one way an
+// adoption-era table can change: a database built from passkey's old
+// Migrations []string adopts through 0001 and then RUNS 0002, so the
+// columns 0002 adds exist afterwards — and a ledger-less database that
+// already has them adopts whole.
+func TestPostAdoptionMigrationRunsOnAnAdoptedDatabase(t *testing.T) {
+	d, err := db.Open(filepath.Join(t.TempDir(), "legacy.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	for _, s := range legacySQL["passkey"] {
+		if err := d.G.Exec(s).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := d.G.Exec(`INSERT INTO passkey_credentials (id, subject, public_key, sign_count, created_at) VALUES ('c1', 'alice', x'00', 0, 'then')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	r, err := migrate.Apply(context.Background(), d, passkey.Schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r.Adopted || len(r.Applied) != 1 || r.Applied[0] != "passkey/0002_credential_details" {
+		t.Fatalf("Result = %+v, want adopted through 0001 with 0002 applied", r)
+	}
+	var label string
+	if err := d.G.Raw(`SELECT label FROM passkey_credentials WHERE id = 'c1'`).Scan(&label).Error; err != nil {
+		t.Fatalf("the post-adoption column is missing: %v", err)
+	}
+	// A ledger-less database already at the full shape adopts whole.
+	d2, err := db.Open(filepath.Join(t.TempDir(), "current.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d2.Close()
+	for _, m := range passkey.Schema.All() {
+		if err := d2.G.Exec(m.SQL).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	r2, err := migrate.Apply(context.Background(), d2, passkey.Schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r2.Adopted || len(r2.Applied) != 0 {
+		t.Fatalf("Result = %+v, want adopted whole", r2)
+	}
+}
+
 func TestPackagesApplyToEmptyDatabase(t *testing.T) {
 	for name, s := range map[string]*migrate.Set{
-		"sessions": sessions.Schema,
-		"blobs":    blobs.Schema,
-		"eventlog": eventlog.Schema,
-		"passkey":  passkey.Schema,
+		"sessions":     sessions.Schema,
+		"blobs":        blobs.Schema,
+		"eventlog":     eventlog.Schema,
+		"passkey":      passkey.Schema,
+		"secondfactor": secondfactor.Schema,
+		"totp":         totp.Schema,
 	} {
 		t.Run(name, func(t *testing.T) {
 			d, err := db.Open(filepath.Join(t.TempDir(), name+".db"), nil)
@@ -242,7 +315,7 @@ func TestWholeAppAdoptsItsComposedBootSchema(t *testing.T) {
 	// writes for these models on a fresh app — generated rather than
 	// transcribed, so it cannot drift from what AutoMigrate builds
 	// below.
-	changes, err := migrate.Generate(ctx, nil, []any{&appNote{}})
+	changes, err := modeldiff.Generate(ctx, nil, []any{&appNote{}})
 	if err != nil {
 		t.Fatal(err)
 	}

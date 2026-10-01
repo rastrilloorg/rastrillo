@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,30 +19,73 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
-// captureMailer records the last message instead of sending it.
-type captureMailer struct{ to, subject, body string }
+// captureMailer records the last message instead of sending it. Send
+// runs on the server's goroutine and a browser drive reads on the
+// test's, and what orders the two is a page loading in another process:
+// no happens-before the race detector can see, so it stays quiet only
+// by luck. Every access takes the lock, and the fields are reached only
+// through the methods.
+type captureMailer struct {
+	mu               sync.Mutex
+	lastTo, lastBody string
+}
 
-func (m *captureMailer) Send(_ context.Context, to, subject, body string) error {
-	m.to, m.subject, m.body = to, subject, body
+func (m *captureMailer) Send(_ context.Context, to, _, body string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.lastTo, m.lastBody = to, body
 	return nil
 }
 
-func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
+// sentTo is the last message's recipient; "" if none since forget.
+func (m *captureMailer) sentTo() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.lastTo
+}
+
+func (m *captureMailer) sentBody() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.lastBody
+}
+
+// forget clears the record, so a test can show that nothing was sent.
+func (m *captureMailer) forget() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.lastTo, m.lastBody = "", ""
+}
+
+// newTestAuthDB is a migrated database for a test that calls New itself
+// — the part of newTestAuth's setup that doesn't touch Config, factored
+// out so a test building its own Config (a bad KeymailServers entry,
+// say) doesn't repeat the schema list and risk it drifting from
+// newTestAuth's.
+func newTestAuthDB(t *testing.T) *sql.DB {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "auth.db"), nil)
 	if err != nil {
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { d.Close() })
-	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema)); err != nil {
+	// secondfactor.Schema as well: the screen's tests hold sign-ins at a
+	// real secondfactor.Gate, whose half-session table must exist.
+	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, secondfactor.Schema)); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
+	return d.Writer()
+}
+
+func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
+	t.Helper()
 	m := &captureMailer{}
 	cfg := Config{
-		DB:          d.Writer(),
+		DB:          newTestAuthDB(t),
 		Origin:      "http://app.test",
 		InstanceKey: "test-instance-key",
 		Mailer:      m,
@@ -104,12 +149,12 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin?sent=1" {
 		t.Fatalf("Begin: %d → %q, want 303 → /signin?sent=1", w.Code, w.Header().Get("Location"))
 	}
-	if m.to != "person@example.com" {
-		t.Fatalf("mail went to %q", m.to)
+	if m.sentTo() != "person@example.com" {
+		t.Fatalf("mail went to %q", m.sentTo())
 	}
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	if link == "" {
-		t.Fatalf("no verify link in mail body:\n%s", m.body)
+		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 
 	// Verify: land the link, get a session.
@@ -192,9 +237,9 @@ func TestVerifySecondFactorIntercepts(t *testing.T) {
 	})
 
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	if link == "" {
-		t.Fatalf("no verify link in mail body:\n%s", m.body)
+		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
@@ -215,7 +260,7 @@ func TestVerifySecondFactorIntercepts(t *testing.T) {
 func TestRequireFreshSessionStepUp(t *testing.T) {
 	a, m := newTestAuth(t, nil)
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 	var session *http.Cookie
@@ -303,11 +348,11 @@ func TestBeginCSRF(t *testing.T) {
 	if w := post(func(r *http.Request) { r.Header.Set("Origin", "http://evil.test") }); w.Code != http.StatusForbidden {
 		t.Fatalf("foreign Origin: %d, want 403", w.Code)
 	}
-	m.to = ""
+	m.forget()
 	if w := post(func(r *http.Request) { r.Header.Set("Origin", "http://app.test") }); w.Code != http.StatusSeeOther {
 		t.Fatalf("matching Origin: %d, want 303", w.Code)
 	}
-	if m.to == "" {
+	if m.sentTo() == "" {
 		t.Fatal("matching Origin did not reach the flow")
 	}
 	if w := post(func(r *http.Request) { r.Header.Set("Referer", "http://app.test/signin") }); w.Code != http.StatusSeeOther {
@@ -321,7 +366,7 @@ func TestAuthorizeGate(t *testing.T) {
 	})
 
 	beginSignin(t, a, "stranger@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 	if w.Code != http.StatusForbidden {
@@ -329,7 +374,7 @@ func TestAuthorizeGate(t *testing.T) {
 	}
 
 	beginSignin(t, a, "member@example.com")
-	link = linkRE.FindString(m.body)
+	link = linkRE.FindString(m.sentBody())
 	w = httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/" {
@@ -638,8 +683,13 @@ func TestRecoveryStampsBeforeCreatingTheTable(t *testing.T) {
 		t.Fatal("auth/0002 was recorded without running: the backfill is stranded and every user is signed out")
 	}
 
-	// Step 3, then step 4.
+	// Step 3 — the migration the baseline stamped, run by hand; later
+	// sessions migrations are unstamped and Apply runs them itself in
+	// step 4 — then step 4.
 	for _, m := range sessions.Schema.All() {
+		if m.ID != "sessions/0001_init" {
+			continue
+		}
 		if err := d.G.Exec(m.SQL).Error; err != nil {
 			t.Fatal(err)
 		}
@@ -735,9 +785,9 @@ func TestSubjectForRemapsTheStoredSubject(t *testing.T) {
 	})
 
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	if link == "" {
-		t.Fatalf("no verify link in mail body:\n%s", m.body)
+		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
@@ -797,7 +847,7 @@ func TestSubjectForErrorRefusesSignin(t *testing.T) {
 	})
 
 	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.body)
+	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
 	a.Verify(w, httptest.NewRequest("GET", link, nil))
 
@@ -815,5 +865,26 @@ func TestSubjectForErrorRefusesSignin(t *testing.T) {
 	}
 	if n != 0 {
 		t.Errorf("sessions rows = %d, want 0 — no session may exist without a subject", n)
+	}
+}
+
+func TestSpendLinksClearsTheAddressAndNobodyElse(t *testing.T) {
+	a, _ := newTestAuth(t, nil)
+	beginSignin(t, a, "alice@example.com")
+	beginSignin(t, a, "alice@example.com")
+	beginSignin(t, a, "bob@example.com")
+	n, err := a.SpendLinks(context.Background(), "Alice@Example.com")
+	if err != nil {
+		t.Fatalf("SpendLinks: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("SpendLinks spent %d, want 2", n)
+	}
+	var left int
+	if err := a.cfg.DB.QueryRow(`SELECT count(*) FROM auth_links`).Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+	if left != 1 {
+		t.Fatalf("%d links left, want bob's 1", left)
 	}
 }

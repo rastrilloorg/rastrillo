@@ -79,6 +79,11 @@ poll. Unset, the route does not exist.
 **`Sidecar`** — the app's sidecar pass, run in a loop when the platform
 spawns `<binary> sidecar run`. See [Agents and tools](/docs/agents).
 
+**`Background`** — your app's
+[`background.Group`](/docs/reference/background). `Serve` stops it after
+the last request finishes and before the database closes, so work still
+running does not lose its database.
+
 **`ErrorPage`** — your own error page, for a failure your app never saw.
 The framework recovers a panicking handler outermost of all — outside
 the security headers, so outside your middleware too — logs the stack

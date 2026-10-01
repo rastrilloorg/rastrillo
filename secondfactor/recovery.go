@@ -1,10 +1,10 @@
-// recovery.go is the Gate's escape hatch: saved single-use codes that
-// redeem a pending half-session when the passkey that should have is
-// lost. Sign-in only, by design — there is no recovery step-up;
-// sessions.RequireFresh stays satisfiable by an assertion or a full
-// re-sign-in and nothing else.
+// recovery.go is the escape hatch: saved single-use codes that redeem
+// a pending half-session when the factor that should have is lost —
+// whichever factor that was. Sign-in only, by design: there is no
+// recovery step-up, and sessions.RequireFresh stays satisfiable by a
+// real proof or a full re-sign-in and nothing else.
 
-package passkey
+package secondfactor
 
 import (
 	"crypto/rand"
@@ -53,13 +53,13 @@ func normalizeRecoveryCode(code string) string {
 // nothing else) reach the database. Call it from a page mounted behind
 // sessions.RequireFresh: showing sign-in-grade secrets is exactly the
 // dangerous action step-up exists for.
-func (h *Handlers) RegenerateRecoveryCodes(subject string) ([]string, error) {
-	tx, err := h.cfg.DB.Begin()
+func (g *Gate) RegenerateRecoveryCodes(subject string) ([]string, error) {
+	tx, err := g.cfg.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`DELETE FROM passkey_recovery_codes WHERE subject = ?`, subject); err != nil {
+	if _, err := tx.Exec(`DELETE FROM secondfactor_recovery_codes WHERE subject = ?`, subject); err != nil {
 		return nil, err
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -70,7 +70,7 @@ func (h *Handlers) RegenerateRecoveryCodes(subject string) ([]string, error) {
 			return nil, err
 		}
 		if _, err := tx.Exec(
-			`INSERT INTO passkey_recovery_codes (code_hash, subject, created_at) VALUES (?, ?, ?)`,
+			`INSERT INTO secondfactor_recovery_codes (code_hash, subject, created_at) VALUES (?, ?, ?)`,
 			sessions.HashToken(normalizeRecoveryCode(code)), subject, now); err != nil {
 			return nil, err
 		}
@@ -85,18 +85,18 @@ func (h *Handlers) RegenerateRecoveryCodes(subject string) ([]string, error) {
 // RecoveryCodesRemaining reports how many unspent codes subject holds —
 // for a settings page's "6 of 10 left", and for deciding whether the
 // confirm page should offer the recovery form at all.
-func (h *Handlers) RecoveryCodesRemaining(subject string) (int, error) {
+func (g *Gate) RecoveryCodesRemaining(subject string) (int, error) {
 	var n int
-	err := h.cfg.DB.QueryRow(
-		`SELECT COUNT(*) FROM passkey_recovery_codes WHERE subject = ?`, subject).Scan(&n)
+	err := g.cfg.DB.QueryRow(
+		`SELECT COUNT(*) FROM secondfactor_recovery_codes WHERE subject = ?`, subject).Scan(&n)
 	return n, err
 }
 
-// SignInRecovery is POST /passkey/signin/recovery: redeem a recovery
-// code against the pending half-session — a plain form POST (field
-// "code"), deliberately, because recovery is exactly the moment
-// WebAuthn or JavaScript isn't working. Mount it behind csrf.Protect
-// like every ceremony endpoint.
+// SignInRecovery is POST /signin/recovery: redeem a recovery code
+// against the pending half-session — a plain form POST (field
+// "code"), deliberately, because recovery is exactly the moment the
+// authenticator, WebAuthn or JavaScript isn't working. Mount it
+// behind csrf.Protect like every ceremony endpoint.
 //
 // A miss 303s back to ConfirmPath with ?recovery=failed and leaves the
 // half-session alive (a typo must not burn the between-factors
@@ -104,54 +104,54 @@ func (h *Handlers) RecoveryCodesRemaining(subject string) (int, error) {
 // consumes the half-session (a raced second finish loses), and mints
 // the real session as the original first-factor method plus
 // "+recovery" — an app can spot that marker and nudge enrolling a
-// replacement passkey.
+// replacement factor.
 //
 // There is no attempt counter, on the math rather than an oversight:
 // redemption requires a live half-session, so the guesser has already
 // verified the first factor, and holds it for pendingTTL at most —
 // 10 valid codes at 2^-50 apiece leave even a thousand guesses a
 // second at odds near 3×10⁻⁹ across the whole window.
-func (h *Handlers) SignInRecovery(w http.ResponseWriter, r *http.Request) {
+func (g *Gate) SignInRecovery(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	p, ok := h.pendingFrom(r)
+	p, ok := g.Pending(r)
 	if !ok {
-		h.refuse(w)
+		http.Error(w, "signed out", http.StatusForbidden)
 		return
 	}
-	failedTo := h.cfg.ConfirmPath + "?recovery=failed"
+	failedTo := g.cfg.ConfirmPath + "?recovery=failed"
 	code := normalizeRecoveryCode(r.PostFormValue("code"))
 	if code == "" {
 		http.Redirect(w, r, failedTo, http.StatusSeeOther)
 		return
 	}
 	var redeemed string
-	if err := h.cfg.DB.QueryRow(
-		`DELETE FROM passkey_recovery_codes WHERE code_hash = ? AND subject = ? RETURNING subject`,
-		sessions.HashToken(code), p.subject).Scan(&redeemed); err != nil {
-		h.cfg.Logger.Warn("rastrillo/passkey: recovery code refused")
+	if err := g.cfg.DB.QueryRow(
+		`DELETE FROM secondfactor_recovery_codes WHERE code_hash = ? AND subject = ? RETURNING subject`,
+		sessions.HashToken(code), p.Subject).Scan(&redeemed); err != nil {
+		g.cfg.Logger.Warn("rastrillo/secondfactor: recovery code refused")
+		// A miss is a strike, the same as a wrong authenticator code:
+		// the codes are not guessable inside the window, but a secret
+		// that is never rate limited is a secret somebody will one day
+		// find a reason to hammer, and five misses in a row is not how
+		// a person reads a code off a printout.
+		if err := g.Strike(w, p); err != nil {
+			http.Redirect(w, r, g.cfg.ConfirmPath+"?recovery=exhausted", http.StatusSeeOther)
+			return
+		}
 		http.Redirect(w, r, failedTo, http.StatusSeeOther)
 		return
 	}
-	// Consume the half-session last, on success only — same order as
-	// SignInFinish, so a raced (or replayed) completion loses here.
-	var consumed string
-	if err := h.cfg.DB.QueryRow(
-		`DELETE FROM passkey_pending WHERE token_hash = ? RETURNING subject`,
-		p.hash).Scan(&consumed); err != nil {
-		http.Redirect(w, r, failedTo, http.StatusSeeOther)
+	if err := g.Complete(w, r, p, "recovery"); err != nil {
+		if err == ErrConsumed {
+			http.Redirect(w, r, failedTo, http.StatusSeeOther)
+			return
+		}
+		g.cfg.Logger.Error("rastrillo/secondfactor: mint session", "err", err)
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
-	h.setPendingCookie(w, "", -1)
-	if err := h.cfg.Sessions.SignIn(w, r, sessions.Session{
-		Subject:  p.subject,
-		Method:   p.method + "+recovery",
-		AuthTime: time.Now(),
-	}); err != nil {
-		h.fail(w, "mint session", err)
-		return
-	}
-	http.Redirect(w, r, p.returnTo, http.StatusSeeOther)
+	http.Redirect(w, r, p.ReturnTo, http.StatusSeeOther)
 }

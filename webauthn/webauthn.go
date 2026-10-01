@@ -41,9 +41,11 @@ import (
 
 // Authenticator data flags (WebAuthn §6.1).
 const (
-	flagUserPresent  = 1 << 0
-	flagUserVerified = 1 << 2
-	flagAttestedData = 1 << 6
+	flagUserPresent    = 1 << 0
+	flagUserVerified   = 1 << 2
+	flagBackupEligible = 1 << 3
+	flagBackupState    = 1 << 4
+	flagAttestedData   = 1 << 6
 )
 
 const coseAlgES256 = -7
@@ -55,6 +57,29 @@ type Credential struct {
 	ID        []byte `json:"id"`
 	PublicKey []byte `json:"public_key"` // uncompressed EC point: 0x04 ‖ X ‖ Y
 	SignCount uint32 `json:"sign_count"`
+	// What the registration ceremony said about the authenticator,
+	// recorded rather than assumed: whether it verified the user (a
+	// PIN, a fingerprint, a face) as well as finding one present;
+	// whether the credential may be, and is, backed up (a synced
+	// passkey) or is bound to one device; and the authenticator's
+	// AAGUID, sixteen bytes naming its make and model where the
+	// attestation carried one, all zero where it did not.
+	UserVerified   bool   `json:"user_verified"`
+	BackupEligible bool   `json:"backup_eligible"`
+	BackupState    bool   `json:"backup_state"`
+	AAGUID         []byte `json:"aaguid"`
+}
+
+// Assertion is what an assertion ceremony proved: the counter to
+// persist, and what the authenticator said about how it checked the
+// user this time. A credential registered with user verification can
+// still be asserted without it (a platform that skipped the PIN), so
+// the flag is read on every ceremony and left to policy.
+type Assertion struct {
+	SignCount      uint32
+	UserVerified   bool
+	BackupEligible bool
+	BackupState    bool
 }
 
 // Config pins the things every ceremony is checked against.
@@ -120,21 +145,18 @@ func (c Config) checkClientData(raw []byte, wantType string, challenge []byte) e
 // there and verified.
 //
 // allowLegacy is true only for assertions. See Config.LegacyRPID.
-func (c Config) checkAuthData(authData []byte, allowLegacy bool) error {
+func (c Config) checkAuthData(authData []byte, allowLegacy bool) (byte, error) {
 	if len(authData) < 37 {
-		return errors.New("authenticator data is too short")
+		return 0, errors.New("authenticator data is too short")
 	}
 	if !c.rpMatches(authData[:32], allowLegacy) {
-		return ErrRPID
+		return 0, ErrRPID
 	}
 	flags := authData[32]
 	if flags&flagUserPresent == 0 {
-		return fmt.Errorf("%w: nobody was present", ErrNotVerified)
+		return 0, fmt.Errorf("%w: nobody was present", ErrNotVerified)
 	}
-	if flags&flagUserVerified == 0 {
-		return ErrNotVerified
-	}
-	return nil
+	return flags, nil
 }
 
 // rpMatches compares the relying party hash the authenticator signed against
@@ -172,12 +194,16 @@ func (c Config) Register(challenge, clientDataJSON, attestationObject []byte) (C
 	if !ok {
 		return Credential{}, errors.New("attestation object has no authenticator data")
 	}
-	// Registration is strict: a new credential is always minted under the name
-	// this instance is now, never the one it used to be.
-	if err := c.checkAuthData(authData, false); err != nil {
+	// Registration is strict about WHO: a new credential is always minted
+	// under the name this instance is now, never the one it used to be.
+	// It is not strict about user verification — that is recorded, and
+	// an authenticator that only checked presence yields a credential
+	// the app rates accordingly.
+	flags, err := c.checkAuthData(authData, false)
+	if err != nil {
 		return Credential{}, err
 	}
-	if authData[32]&flagAttestedData == 0 {
+	if flags&flagAttestedData == 0 {
 		return Credential{}, errors.New("registration carried no credential")
 	}
 
@@ -186,6 +212,8 @@ func (c Config) Register(challenge, clientDataJSON, attestationObject []byte) (C
 	if len(rest) < 18 {
 		return Credential{}, errors.New("credential data is truncated")
 	}
+	aaguid := make([]byte, 16)
+	copy(aaguid, rest[:16])
 	idLen := int(rest[16])<<8 | int(rest[17])
 	rest = rest[18:]
 	if idLen == 0 || idLen > len(rest) {
@@ -198,28 +226,53 @@ func (c Config) Register(challenge, clientDataJSON, attestationObject []byte) (C
 	if err != nil {
 		return Credential{}, err
 	}
-	return Credential{ID: credID, PublicKey: pub, SignCount: signCount(authData)}, nil
+	return Credential{
+		ID: credID, PublicKey: pub, SignCount: signCount(authData),
+		UserVerified:   flags&flagUserVerified != 0,
+		BackupEligible: flags&flagBackupEligible != 0,
+		BackupState:    flags&flagBackupState != 0,
+		AAGUID:         aaguid,
+	}, nil
 }
 
 // Verify checks an assertion against a stored credential and returns the new
-// signature counter to persist.
+// signature counter to persist. It insists the authenticator verified the
+// user: the strict reading, for a caller with one policy. Assert is the
+// same check with the verification flag returned instead of enforced.
 func (c Config) Verify(cred Credential, challenge, clientDataJSON, authData, signature []byte) (uint32, error) {
-	if err := c.checkClientData(clientDataJSON, "webauthn.get", challenge); err != nil {
+	a, err := c.Assert(cred, challenge, clientDataJSON, authData, signature)
+	if err != nil {
 		return 0, err
 	}
-	if err := c.checkAuthData(authData, true); err != nil {
-		return 0, err
+	if !a.UserVerified {
+		return 0, ErrNotVerified
+	}
+	return a.SignCount, nil
+}
+
+// Assert checks an assertion against a stored credential and reports what
+// it proved. Presence is required — an assertion nobody touched is not one
+// — and everything else the authenticator flagged is handed back for the
+// caller's policy to weigh: a passkey asserted without user verification
+// is a weaker proof, not a forged one.
+func (c Config) Assert(cred Credential, challenge, clientDataJSON, authData, signature []byte) (Assertion, error) {
+	if err := c.checkClientData(clientDataJSON, "webauthn.get", challenge); err != nil {
+		return Assertion{}, err
+	}
+	flags, err := c.checkAuthData(authData, true)
+	if err != nil {
+		return Assertion{}, err
 	}
 
 	pub, err := publicKey(cred.PublicKey)
 	if err != nil {
-		return 0, err
+		return Assertion{}, err
 	}
 	clientHash := sha256.Sum256(clientDataJSON)
 	signed := append(append([]byte{}, authData...), clientHash[:]...)
 	digest := sha256.Sum256(signed)
 	if !ecdsa.VerifyASN1(pub, digest[:], signature) {
-		return 0, ErrSignature
+		return Assertion{}, ErrSignature
 	}
 
 	// A counter that goes backwards means the credential has been cloned. Many
@@ -228,10 +281,15 @@ func (c Config) Verify(cred Credential, challenge, clientDataJSON, authData, sig
 	next := signCount(authData)
 	if cred.SignCount != 0 || next != 0 {
 		if next <= cred.SignCount {
-			return 0, ErrCounter
+			return Assertion{}, ErrCounter
 		}
 	}
-	return next, nil
+	return Assertion{
+		SignCount:      next,
+		UserVerified:   flags&flagUserVerified != 0,
+		BackupEligible: flags&flagBackupEligible != 0,
+		BackupState:    flags&flagBackupState != 0,
+	}, nil
 }
 
 func signCount(authData []byte) uint32 {

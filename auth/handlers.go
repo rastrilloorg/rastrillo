@@ -3,12 +3,13 @@ package auth
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"time"
 
 	"github.com/keymaildev/signin"
 
+	"amadan.net/rastrillo/rastrillo/clientip"
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -28,6 +29,15 @@ import (
 // distinguishing would be an enumeration oracle on an unauthenticated
 // endpoint), ?err=rate (over budget), ?err=address (unparseable), or a
 // 303 to the keymail authorize URL with the pending cookie set.
+//
+// With Config.SigninScreen on, every answer also records this attempt
+// for the screen (the attempt cookie), a sent link lands on
+// ?sent=1&attempt=<id> so the Sent page can name the address, and an
+// expect=keymail field — which only the remembered-Keymail one-tap
+// sends — marks a link that went out where Keymail was promised. expect
+// never chooses a path. The keymail answer is then no longer a 303 to
+// the authorize URL but to SigninPath?continue=<id>, the URL kept in a
+// sealed continuation cookie (continueKeymail says why).
 func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
@@ -39,21 +49,28 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		force = signin.MethodMagicLink
 	}
 
-	next, err := a.flow.Begin(r.Context(), address, clientIP(r), force)
+	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.hops), force)
 	switch {
 	case errors.Is(err, signin.ErrRateLimited):
+		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.cfg.SigninPath+"?err=rate")
 		return
 	case errors.Is(err, signin.ErrBadAddress):
+		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.cfg.SigninPath+"?err=address")
 		return
 	case err != nil:
 		a.cfg.Logger.Error("rastrillo/auth: begin sign-in", "err", err)
+		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
 		return
 	}
 
 	if next.Kind == signin.NextKeymail {
+		if a.cfg.SigninScreen {
+			a.continueKeymail(w, r, address, next)
+			return
+		}
 		a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
 		// next.Redirect points at a host the submitted address chose
 		// (via its DNS delegation) — untrusted output, sent as a
@@ -61,7 +78,52 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		a.redirect(w, r, next.Redirect)
 		return
 	}
-	a.redirect(w, r, a.cfg.SigninPath+"?sent=1")
+	a.answerSent(w, r, address)
+}
+
+// continueKeymail is the keymail answer with SigninScreen on. A 303
+// straight to the provider is refused by the default CSP, whose
+// form-action 'self' covers a form's whole redirect chain; so this
+// stays on the origin — the pending cookie as today, a continuation
+// cookie holding the authorize URL, and a redirect to the sign-in page,
+// whose Continue state navigates on by itself.
+func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address string, next signin.Next) {
+	if !a.validAuthorizeURL(next.Redirect) {
+		// A correct library never builds one. If one appears it is not
+		// turned into a link, and nothing is left half-set.
+		a.cfg.Logger.Error("rastrillo/auth: the keymail authorize URL failed the predicate; not continuing")
+		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		return
+	}
+	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
+	if err != nil {
+		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
+		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		return
+	}
+	a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
+	a.setCookie(w, a.continueCookie(), value, int(continuationTTL.Seconds()))
+	a.noteAttempt(w, attemptKeymail, address, false)
+	a.redirect(w, r, a.cfg.SigninPath+"?continue="+id)
+}
+
+// AnswerAsSent is Begin's magic-link answer without the magic link, for
+// an admission wrapper that refuses an address before Begin can
+// classify it. A wrapper that answered a refusal with a plain ?sent=1
+// would give a refused address no attempt cookie and no attempt= while
+// an admitted one got both: a membership oracle on the first try. This
+// answers exactly as Begin does for a sent link, down to the cookie,
+// and sends nothing. With SigninScreen off that is today's plain
+// ?sent=1 and no cookie.
+//
+// It does not hide what classification and the per-address rate limit
+// reveal; docs/site/magic-links.md says what does.
+func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
+	if !a.sameOrigin(r) {
+		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
+		return
+	}
+	a.answerSent(w, r, r.FormValue("address"))
 }
 
 // Callback is GET /auth/callback: the keymail OAuth return. The pending
@@ -70,11 +132,32 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 // lifetime (seapointish's rule). A keymail approval that could not be
 // completed is never a dead end: it redirects to the signin page with
 // ?force=1&err=keymail so the page can offer the plain-email path.
+// With SigninScreen on, a callback whose state is not the attempt the
+// browser's continuation describes answers Expired without clearing
+// anything (see the comment inside).
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie(a.pendingCookie())
 	if err != nil {
 		a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
 		return
+	}
+	if a.cfg.SigninScreen {
+		// Today the pending cookie is cleared the moment it is read and
+		// the library then finds a state mismatch — so a late callback
+		// from tab A, or a callback URL a third party makes the browser
+		// open, throws away tab B's newer attempt. When the continuation
+		// describes the pending cookie just read and this callback's
+		// state is not that attempt's, the callback belongs to some other
+		// attempt: answer Expired and leave the pair alone. The pending
+		// blob's own authenticated expiry still bounds it; nothing is
+		// refreshed. Any other case — no continuation, or one left from
+		// an earlier attempt or a screen-off Begin — is today's path.
+		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(c.Value) &&
+			p.ST != digest(r.URL.Query().Get("state")) {
+			a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
+			return
+		}
+		a.clearCookie(w, a.continueCookie())
 	}
 	a.clearCookie(w, a.pendingCookie())
 
@@ -128,6 +211,11 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 // SecondFactor hook (which may trade it for a pending half-session
 // and take over the response), and otherwise mints it.
 func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
+	// A first factor has verified, so this browser's attempt is over
+	// whether or not the address is admitted. Left behind, it would keep
+	// prefilling the form with an address already proved (round 3,
+	// finding 25).
+	a.jar.EndAttempt(w)
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
@@ -145,6 +233,13 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		}
 		subject = s
 	}
+	// The address, never the subject: SubjectFor may make subjects
+	// opaque, and the screen shows this address back. Before the
+	// SecondFactor hook because nothing after it knows the address —
+	// Gate.Complete holds only the subject — so a sign-in held for a
+	// second factor is remembered too. The record says which door this
+	// browser used, never that the person got in.
+	a.jar.Remember(w, lastsignin.Record{Method: string(id.Method), Address: id.Address})
 	sess := sessions.Session{
 		Subject:  subject,
 		Method:   string(id.Method),
@@ -263,16 +358,4 @@ func From(r *http.Request) (Identity, bool) {
 
 func (a *Auth) redirect(w http.ResponseWriter, r *http.Request, to string) {
 	http.Redirect(w, r, to, http.StatusSeeOther)
-}
-
-// clientIP is the per-IP rate-limit key: the connection's remote host.
-// Behind the platform edge every connection shares the edge's address,
-// collapsing the per-IP budget into a global one — a conservative
-// failure (limits bite sooner, never later).
-func clientIP(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return host
 }

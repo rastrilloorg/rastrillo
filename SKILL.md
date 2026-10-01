@@ -1,14 +1,14 @@
 ---
 name: rastrillo
-description: Build a multi-user CARLOS app: GORM models, chi routes, sessions, owner-scoped queries.
+description: "Build a multi-user CARLOS app: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
 
-CARLOS middle layer, not full-stack: you write GORM models, `net/http`
-handlers on a chi router and `html/template` pages; it supplies the
-database opener, session store, identity plugins, CSRF, owner scoping,
-form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
+CARLOS middle layer, not full-stack: you write GORM models (or plain
+SQL, §2), `net/http` handlers on a chi router and `html/template`
+pages; it supplies the database opener, session store, identity
+plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
 published module (Go excludes nested modules from a zip), so read it
 there, never in your checkout. Rare traps get one sentence plus a page:
@@ -29,7 +29,7 @@ go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
-`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar|console <name>`
+`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar|console|stage <name>`
 (also `--icons`, `--icon-delivery`, `--ux`) writes the whole §1 shape plus
 `go.mod`, migrations, templates, static assets, app-owned icons, a test
 harness including the browser drive, a `Makefile` whose `ci` target is the
@@ -47,7 +47,9 @@ restarts. docs/site/getting-started.md
 
 `rastrillo doctor [--fix]` compares `static/`'s vendored files with the
 CLI's own copies. The scaffolded pin test, not doctor, is the standing
-gate. docs/site/cli.md
+gate. An app importing `github.com/carlosframework/rastrillo` (the
+pre-move path) is frozen at v0.23.0 and its pin test cannot see it: a
+current doctor exits 5 and prints the migration. docs/site/cli.md
 
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens — field kinds text, textarea, money; no
@@ -104,6 +106,30 @@ code; twelve ship translated. **Any locale you add must translate the
 docs/site/localization.md
 
 ## 2. Data
+
+**Pick the data layer before the first model; both are supported.**
+(a) **GORM**, the scaffold's default: `db.Open`, models,
+`rastrillo migration generate`, `migrate/gormfn` Go migrations, `scope`
+(§3). About 12–16% less CRUD code. Costs ~2× read time (1.7–1.9× the
+allocations), +4.8 MB of binary, a hidden `BEGIN`/`COMMIT` around every
+standalone write, and silent traps: `Updates(struct)` skips zero fields
+(always `Select`, §4); int64 `CreatedAt`/`UpdatedAt` get the wall clock;
+`Session` shares its parent's statement; a `d.G` statement inside a
+transaction deadlocks (§3); `Model(&T{ID: 0})` refuses the update.
+Upserts, `RETURNING` and locking writes need escape hatches.
+(b) **Plain `database/sql`**, as Tito Go does: open your own
+one-connection writer (db.Open's DSN) and readers;
+`migrate.Apply(ctx, migrate.Pool(writer), set)`; Go migrations take
+`migrate.Tx`; tests copy `dbtest.FromSet(set)`; besides the root
+package, import only `make gorm-free` ones — no `db`, `scope`,
+`gormlite`. Explicit transactions and plans, smaller and faster. You
+write the scans, every migration (generate and `check` need GORM
+`Models`: drop `migration-check` from `make ci` and
+`.amadan/ci.d/40-migration-check`) and every owned query's
+`WHERE user_id = ?`. CRUD-heavy, small team: (a). Money, fulfilment,
+transaction-critical: (b). Switching is per package; schema and ledger
+are the same.
+docs/superpowers/specs/2026-09-26-gorm-vs-sql-findings.md
 
 Models are plain GORM structs — no base type, no embedding. Owner
 column `UserID int64` tagged `gorm:"index"` is what `scope.Owned`
@@ -212,6 +238,10 @@ error values are `rastrillo.ui.*` **keys**, not sentences, so render
 `"Error" (T (index .Errors "Starts"))`; and `field-daterange`'s two
 halves need distinct `Name`s. docs/site/forms.md
 
+A web address is `form.URL` + `field-url` (scheme optional; errors are
+keys too). Link a stored one only through `{{with safeHref .Site}}`,
+show it with `displayURL`; never `<input type="url">`.
+
 After a mutation: `flash.Set(w, "notice", "...")`, then 303; the render
 helper calls `flash.Take(w, r)` once per page and the layout renders it.
 
@@ -227,10 +257,14 @@ verifies a credential and calls `SignIn` — the whole contract.
   redirects to `SigninPath` with a same-site `return_to`; the rest 403.
   `s.Middleware` only resolves, blocks nothing.
 - `s.RequireFresh(maxAge)` step-up: past maxAge, GET/HEAD goes to
-  `SigninPath?reauth=1`; re-signing-in or a `passkey` assertion rotates
-  fresh (2FA: `Config.SecondFactor` = passkey's `Gate`). Lost passkey: a
-  recovery code redeems at POST `/passkey/signin/recovery`, minted by
-  `RegenerateRecoveryCodes` behind `RequireFresh`. docs/site/passkeys.md
+  `SigninPath?reauth=1`; re-signing-in, a `passkey` assertion or a
+  `totp` code rotates fresh. 2FA: `secondfactor.New` is the gate;
+  `Config.SecondFactor` = `g.Hold`; `g.Add(pk, tp)`; a factor completes
+  `g.Pending(r)` via `g.Complete`. Merge `secondfactor.Schema` AFTER
+  `passkey.Schema` (it adopts passkey's old tables). Lost factor: a
+  recovery code redeems at POST `/signin/recovery` (`g.SignInRecovery`),
+  minted by `g.RegenerateRecoveryCodes` behind `RequireFresh`.
+  docs/site/second-factors.md
 - Viewer: `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (Subject, Method, AuthTime, At). Past `Require`, `ok` holds only when
   the plugin's Subject is a numeric user id — see the `auth` warning.
@@ -256,15 +290,27 @@ to the keymail ceremony where the address has one): `auth.New` with
 Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
 user row's id before scoping.
 
-**CSP:** the baseline's `form-action 'self'` is enforced across a form
-submission's whole redirect chain, so `Begin`'s 303 out to the address's
-keymail server is refused — as is any POST of yours that lands
-off-origin. `Options.CSP` replaces the policy wholesale, so restate it
-with the origin appended: `default-src 'self'; style-src 'self'
-'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=';
-img-src 'self' data:; frame-ancestors 'none'; base-uri 'self';
-form-action 'self' https://keymail.dev`. Only listed servers
-work — a federated address on another keymail host is still refused.
+**Sign-in screen:** set `auth.Config.SigninScreen: true` and render
+`{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:
+`signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
+set `st.Passkey` if passkey discovery is mounted — then
+`a.PrepareSigninResponse(w, st)` before rendering. Mount
+`POST /signin/forget` → `a.Forget`; with passkeys, serve `passkey.JS()`
+beside `webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
+`st.Passkey`, and wire `passkey.Config.Remember: a.RememberJar()`. An admission check in front
+of `Begin` answers refusals with `a.AnswerAsSent(w, r)`, never its own
+`?sent=1`.
+
+**CSP:** `form-action 'self'` covers a form's whole redirect chain, so
+`Begin`'s 303 to a keymail server is refused. With `SigninScreen` on,
+keymail continues on your own page and `form-action` stays `'self'`.
+Only a hand-built sign-in page with the screen off restates
+`Options.CSP` (it replaces the policy wholesale) with the keymail
+origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
+'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self'
+data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
+servers are trusted; other addresses get a link.
 
 **Public forms** (`rastrillo/pow`: the front door for anything the
 internet can post to — proof of work, sealed challenge, honeypot).
@@ -301,16 +347,17 @@ on the next poll; and it must work with scripts off — a `<noscript>`
 meta refresh only while Running, or a failed page refreshes forever.
 docs/site/jobs.md
 
-The only JavaScript is app-owned `static/rastrillo.js`, inert until
-markup opts in. `data-poll="URL"` + `data-poll-every="2"` swap the
+The JavaScript is app-owned `static/rastrillo.js`, inert until
+markup opts in, and `static/busy.js`, on by default. `data-poll="URL"` + `data-poll-every="2"` swap the
 element for the fetched fragment, repeating while the fragment still
 carries `data-poll` (ui's `job-status` partial drops it once done); the
 partial's `PushURL` (= `EventsPath`) emits `data-poll-push` and the
-shim rides SSE, falling back to polling. Every submit button gets a
-spinner, `aria-busy` and a double-submit guard by DEFAULT;
-`data-busy="false"` (form or button) opts out, `data-busy-label`
-retitles. Manners, not idempotency — the server still refuses the
-second write.
+shim rides SSE, falling back to polling. `static/busy.js`: every
+submit button's label gives way to a spinner for ≥650ms (the submit
+is held; beside the label under reduced motion or forced colours),
+`aria-busy` and a double-submit guard by DEFAULT, cleared on back; `data-busy="false"` (form or button) opts
+out, `data-busy-label` shows words beside the spinner. Manners, not
+idempotency — the server still refuses the second write.
 
 Hibernation means a `time.Ticker` is not a scheduler. Declare recurring
 work outside the app (`carlos schedule set -name sync -every 6h -path
@@ -324,6 +371,17 @@ name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 `ErrDeclaredSchedule`, `ErrTooManyTimers`) and `carlos.ScheduleCancel`.
 
 ## 7. Screens and flows
+
+**Use Rastrillo's design system by default.** Start with its shells,
+`ui` partials, `rst-` attributes, tokens and a shipped theme. Check the
+design-system vocabulary (§8) before building a custom component.
+Customise with a thin app-owned CSS layer loaded after `tokens.css` and
+`theme.css` through the shell's `head` block. Prefer `--rst-*` token
+overrides for colour, type and shape; use app-specific classes for layout
+or components the system does not cover. Keep the base styles intact so
+framework fixes remain easy to adopt. Follow an explicit user design
+requirement when it calls for more, but reuse the system wherever it fits.
+docs/site/templates.md
 
 **One screen, one job.** A screen shows a thing, or asks for one thing —
 never both. The failure it prevents is stacking: a list page that also

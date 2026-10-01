@@ -22,7 +22,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 ## Template functions
 
 `ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
-`icon`, `iconAssets`, `T`, `Tf` and `dateWords`.
+`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`,
+`stageArt`, `displayURL` and `safeHref`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -53,15 +54,16 @@ a partial's built-in strings resolve in the request's locale. See
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      error-page       field-time          meter
-badge         field            form-error          notice
-bulk-bar      field-check      form-foot           page-header
-callout       field-date       job-status          pagination
-choice-field  field-daterange  list-bar            person
-confirm-form  field-datetime   list-bar-search     seg-tabs
-detail-list   field-select     list-row-action     stat
-dropdown      field-text       list-search-submit  status-pill
-empty-state   field-textarea   locale-menu
+back-nav      field            form-error          page-header
+badge         field-check      form-foot           pagination
+bulk-bar      field-date       job-status          person
+callout       field-daterange  list-bar            seg-tabs
+choice-field  field-datetime   list-bar-search     signin
+confirm-form  field-select     list-row-action     signin-title
+detail-list   field-text       list-search-submit  stat
+dropdown      field-textarea   locale-menu         status-pill
+empty-state   field-time       meter
+error-page    field-url        notice
 ```
 
 `locale-menu` is the language switcher; see
@@ -178,12 +180,31 @@ time.
 ### A button that changes something says so
 
 Every submit button in every form gets a loading state on its way out:
-`aria-busy="true"`, a spinner before the label, and — a tick later, once
-the submission is under way — `disabled`. `rastrillo.js` does it by
-default, with no attribute to remember. A button that only *reveals*
+`aria-busy="true"`, a spinner in place of the label, and — a tick later,
+once the submission is under way — `disabled`. `busy.js` does it by
+default, with no attribute to remember; linking the file is the whole
+opt-in.
+
+The spinner shows for at least 650ms. A response faster than that would
+make it flicker, which reads as a glitch rather than an answer, so the
+submit is held until 650ms after the click and then sent — the clicked
+button's `name` and `value` with it, exactly as the click would have
+sent them. Only a submit with a spinner on screen is held: a button that
+opted out, or a script's `requestSubmit()` with no button, goes at once
+(the form is still guarded). A script that wants the spinner passes the
+button: `form.requestSubmit(button)`. Leaving the page while a submit is held drops it, and going
+Back to a page whose form was sent hands the form back, clean. A button that only *reveals*
 something gets nothing: a disclosure, a dropdown, a tab is not doing
 work, and dressing it as though it were is a lie the reader has to learn
 to ignore.
+
+The button keeps its width while it works, so nothing beside it moves,
+and its label is still there for a screen reader to announce. A button
+with a `data-busy-label` shows those words beside the spinner instead.
+For someone who has asked for reduced motion, or who uses forced
+colours, the label stays and the spinner sits beside it: a spinner that
+does not turn, or one drawn over repainted text, is too easy to miss on
+its own.
 
 Only the button that was clicked. The others in the same form keep their
 `name` and their `value`, so a Save / Save-draft pair still tells your
@@ -195,7 +216,7 @@ at the same place and are all refused while the first submission is out.
 |---|---|---|
 | `data-busy="false"` | the `<form>` | the whole form opts out |
 | `data-busy="false"` | one submit button | that button opts out; the form is still guarded |
-| `data-busy-label="Saving…"` | either | replaces the button's text while it works |
+| `data-busy-label="Saving…"` | either | shows this text beside the spinner, in place of the label |
 
 Three things the rule deliberately does not do. It does not touch a form
 whose `target` sends the result somewhere else — that page is not going
@@ -396,6 +417,48 @@ adds `role="alert"`, which interrupts a screen reader mid-sentence:
 reserve it for a problem happening now, and leave ambient notes as the
 ordinary tones.
 
+## Web address fields
+
+`field-url` takes a web address and does not care whether the person
+types `https://`. It has `field-text`'s keys, `Name`, `Label`, `Value`,
+`Required`, `Hint` and `Error`, plus `Autocomplete`:
+
+```html
+{{template "field-url" dict "Name" "Website" "Label" "Website"
+	"Value" .Fields.Website "Error" (T (index .Errors "Website"))}}
+```
+
+It is a text input, not `<input type="url">`, because browsers refuse
+`example.com` in a url input until it has a scheme. It still asks a
+phone for the URL keyboard, and it turns off autocapitalise and
+autocorrect so the phone leaves the address alone.
+
+`Autocomplete` defaults to `url`, which offers the visitor their own
+homepage. For a field about someone else's site, such as a customer's,
+pass `"off"`.
+
+Read it on the server with `form.URL`. It turns `example.com` into
+`https://example.com` and refuses anything that is not an http or https
+address, so what you store is safe to link. See
+[Forms](/docs/forms#web-addresses).
+
+To show a stored address, use `displayURL` for the text and `safeHref`
+for the link:
+
+```html
+{{with safeHref .Website}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
+```
+
+`displayURL` drops the scheme and the trailing slash. `safeHref` gives
+back the address unchanged if it is an http or https URL, and `""` for
+anything else, so a bad value from before validation shows no link at
+all. On its own, `html/template` would let a stored `mailto:` into the
+`href`.
+
+Seed the form with the stored value as it is, not with `displayURL`.
+Dropping the scheme would turn a stored `http://` address into
+`https://` the next time the form is saved.
+
 ## Date and time fields
 
 Four partials, each `field-text`'s envelope — label, hint, error, the
@@ -527,8 +590,29 @@ any size.
 `Options` is flat here, so `<optgroup>` is a hand-written-markup thing —
 and `select.js` renders those groups rather than flattening them: each
 optgroup becomes a `role="group"` with its label as the group's
-accessible name, and loose options sit at the top level. A group
-filtered down to nothing takes its heading with it.
+accessible name, and loose options sit at the top level. While someone
+searches, the best matches come first and the group headings step aside;
+clear the search and every row is back in its group.
+
+A search puts the row someone meant first. Accents don't matter, so
+`osterreich` finds Österreich; the start of a name beats the middle of
+one, and an exact match beats both. Leaving the box after a search takes
+the one row it can only mean. Two letters never do.
+
+An `<option>` can say more, all optional. `data-rst-terms` lists more
+words the search matches, such as an ISO code or a calling code.
+`data-rst-first` puts it first when an exact search matches several.
+`data-rst-name` and `data-rst-desc` split a label into a name and a
+quieter description. `data-rst-short` is what the closed box shows once
+it is picked (`+44`). `data-rst-lead` is a decorative glyph such as a
+flag, drawn before the row and the box. An `<hr>` between two options
+draws a divider in the list, hidden while searching.
+
+A blank that asks rather than answers is a prompt: the blank of a
+`required` select, a disabled blank, or one marked `data-rst-prompt`.
+The box never shows a prompt as the pick, and a required select never
+lists its blank. With nothing picked yet, the list opens with nothing
+highlighted, so pressing Enter can't answer the question for someone.
 
 A hand-written select opts out from the markup side with
 `data-rst-select="false"`, which is never enhanced whatever its size.
@@ -537,9 +621,9 @@ This partial never emits it — `Plain` simply emits nothing — but
 
 ## The design system
 
-Every partial, every state, every markup idiom and all four shells,
-rendered live for all three themes and all twelve base locales — five
-pages per theme × locale, one per section, plus a full-page demo for
+Every partial, every state, every markup idiom and all five shells,
+rendered live for all three themes and all twelve base locales: one
+page per section for each theme and locale, plus a full-page demo for
 each shell and one for the modal route. It is live at
 rastrillo.org/design-system.
 
@@ -903,12 +987,12 @@ block:
 {{define "content"}}<h1>Your notes</h1>{{end}}
 ```
 
-The blocks are `title`, `lang`, `dir` and `head` in all four shells,
+The blocks are `title`, `lang`, `dir` and `head` in all five shells,
 plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
-`console`, and `foot` in `topbar` and `console`. None of them reads a field off the data, so
-a shell renders whether your handler passes a struct, a `dict`-built map
-or nil — a shell can never break because a page's view model changed
-shape.
+`console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in
+`stage`. None of them reads a field off the data, so a shell renders
+whether your handler passes a struct, a `dict`-built map or nil. A shell
+can never break because a page's view model changed shape.
 
 `head` is the odd one out: it is not chrome, it is your slot in
 `<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
@@ -932,10 +1016,18 @@ topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
 `rst-shell-group` and `rst-shell-main` for the sidebar;
 `rst-shell-console` for the console, which reuses the bar, the rail and
 the topbar's `rst-shell-menu` rather than naming anything of its own;
-and `rst-skip`, the skip link, which all four shells carry — `column`
-included. The sidebar's mobile collapse is that
+and `rst-skip`, the skip link, which all five shells carry — `column`
+and `stage` included. The sidebar's mobile collapse is that
 `<details rst-shell-chrome>` and nothing else — no JavaScript,
 like every other idiom here.
+
+`stage` has no chrome. It centres one card, usually the sign-in screen,
+over a full-page backdrop drawn by `{{stageArt "rastrillo"}}` unless you
+redefine `backdrop`. `{{define "backdrop"}}{{stageArt "your-app"}}{{end}}`
+draws a pattern of your own from any word, and an `<img>` or your own
+SVG replaces it outright. Its attributes are `rst-stage`,
+`rst-stage-scene`, `rst-stage-art` and `rst-stage-foot`, and it carries
+`rst-skip` like the others.
 
 ### The console folds two chromes behind one control
 

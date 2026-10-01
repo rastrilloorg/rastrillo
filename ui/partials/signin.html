@@ -1,0 +1,89 @@
+{{/* signin — the shipped sign-in screen: one card, brand at the start
+     and the way in at the end. Everything it shows comes from
+     auth.SigninState; the page calls auth's PrepareSigninResponse
+     before rendering it. Put it in the stage shell (ui.Layout("stage"))
+     or any other.
+
+     The auth side must have Config.SigninScreen on: that is what writes
+     the cookies this screen reads, keeps a keymail sign-in on the page
+     under the default CSP, and remembers the way in.
+
+     Keys:
+       State    auth.SigninState, required
+       Brand    required: Name (string); optional Pitch (string, one
+                line) and Mark (template.HTML — an img element or inline
+                SVG the app owns; give it aria-hidden or alt="" when the
+                Name beside it already says what it is)
+       Preview  bool, optional — gallery use only: no meta refresh, the
+                Continue link goes to #, and the passkey door shows as
+                the enhanced page would, with nothing for a script to find
+                and no script loaded
+
+     The passkey door loads its own module, State.Passkey.ScriptURL
+     (passkey.JS(), served by the app), and only when it renders: every
+     other page of the app, and every other state of this one, requests
+     nothing.
+
+     No role="alert" anywhere: every message present at load is where
+     focus starts (State.Focus), and a live alert would race the focus
+     announcement. The only live region is the passkey message. */}}
+{{define "signin"}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
+<div rst-signin-door>
+{{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
+     is, the page's layout owns <head>, and this is how fichas runs in
+     production. A document navigating is not the form's redirect chain,
+     so form-action 'self' never sees it. ContinueURL is written only
+     through html/template's attribute escaping, here and in the link:
+     as template.URL a quote in it would end the attribute. */}}{{if not $preview}}<meta http-equiv="refresh" content="0;url={{$s.ContinueURL}}">{{end}}
+<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_continue_heading"}}</h1>
+<p>{{T "rastrillo.ui.signin_continue_body"}}</p>
+<a rst-btn="primary block" href="{{if $preview}}#{{else}}{{$s.ContinueURL}}{{end}}">{{T "rastrillo.ui.signin_to_keymail"}}</a>
+{{else if eq $door "sent"}}<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_sent_heading"}}</h1>
+{{if $s.SentInstead}}<p>{{T "rastrillo.ui.signin_sent_instead"}}</p>
+{{end}}<p>{{if $s.SentTo}}{{Tbdi "rastrillo.ui.signin_sent_to" "address" $s.SentTo}}{{else}}{{T "rastrillo.ui.signin_sent_inbox"}}{{end}} {{T "rastrillo.ui.signin_sent_once"}}</p>
+{{else}}<h1 id="rst-signin-heading">{{Tf "rastrillo.ui.signin_heading" "name" $name}}</h1>
+{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "ID" "rst-signin-problem" "Tone" $tone "Body" (T (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (eq $focus "callout"))}}
+{{end}}{{if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
+<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}>{{T "rastrillo.ui.signin_to_keymail"}}</button>
+<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
+</form>
+{{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
+<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
+{{/* The label is one <span>: [rst-btn] is a flex box with a gap, and
+     the sentence's text and its <bdi> as two flex items would show that
+     gap as a double space before the address. */}}<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}><span>{{Tbdi "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
+</form>
+{{else}}{{/* The ask door, and the passkey door with the email form beside it
+     (the email form is always on the screen where a passkey door is:
+     a passkey is never the only way in). The passkey button is written
+     once, in whichever slot this door puts it: first for a remembered
+     passkey, after the form otherwise. */}}{{$pkSlot := "after"}}{{if eq $door "passkey"}}{{$pkSlot = "before"}}{{end}}{{$fieldErr := ""}}{{if eq $s.Problem "address"}}{{$fieldErr = T "rastrillo.ui.signin_problem_address"}}{{end}}{{range list "before" "form" "after"}}{{if eq . "form"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}">
+{{template "field" (dict "ID" "rst-signin-email" "Name" "address" "Label" (T "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" "email" "Required" true "Value" $s.Address "Autofocus" (eq $focus "field") "Error" $fieldErr "QuietError" true)}}
+{{if eq $s.Problem "keymail"}}<input type="hidden" name="force" value="1">
+{{end}}<button rst-btn="primary block" type="submit">{{if eq $s.Problem "keymail"}}{{T "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T "rastrillo.ui.signin_submit"}}{{end}}</button>
+</form>
+{{else if and $s.Passkey (eq . $pkSlot)}}{{/* The button and its message are one child of the door, so the
+     message, empty until the script writes to it, takes none of the
+     door's gaps. The "or" between it and the form is the wrapper's
+     immediate neighbour on the form's side, because tokens.css hides it
+     with the pair through that adjacency: with the button hidden the
+     page has one way in, and an "or" would point at nothing. */}}{{if eq . "after"}}<p rst-signin-or>{{T "rastrillo.ui.signin_or"}}</p>
+{{end}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.Passkey.FinishPath}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+{{if eq . "before"}}<p rst-signin-or>{{T "rastrillo.ui.signin_or"}}</p>
+{{end}}{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
+{{end}}{{end}}{{end}}{{end}}{{end}}{{/* The way out of a remembered or kept address — the three one-taps
+     and Sent — written once, after whichever door this is. Not on Ask,
+     where the field already is the different email, and not on
+     Continue, which has no controls but its link. */}}{{if and (ne $door "ask") (ne $door "continue")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}"><button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
+{{end}}</div>
+</section>{{end}}
+{{/* signin-title — the document title for the same state, for the
+     page's title block: every state has one heading and a title
+     that says the same thing, so a screen-reader user who lands on the
+     page hears where they are. Keys: State, Brand (as signin). */}}
+{{define "signin-title"}}{{$s := .State}}{{$n := .Brand.Name}}{{if eq $s.Step "sent"}}{{Tf "rastrillo.ui.signin_sent_title" "name" $n}}{{else if eq $s.Step "continue"}}{{Tf "rastrillo.ui.signin_continue_title" "name" $n}}{{else if and $s.Problem (ne $s.Problem "reauth")}}{{Tf "rastrillo.ui.signin_problem_title" "name" $n}}{{else}}{{Tf "rastrillo.ui.signin_title" "name" $n}}{{end}}{{end}}

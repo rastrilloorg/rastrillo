@@ -14,14 +14,13 @@ import (
 func TestShimContract(t *testing.T) {
 	js := string(ShimJS())
 	for _, want := range []string{
-		"data-poll", "data-poll-every", "data-poll-push", "data-busy", "data-busy-label",
+		"data-poll", "data-poll-every", "data-poll-push",
 		"EventSource",
 		"Rastrillo-Fragment", "Rastrillo-Location",
 		// Behavior a Go test can still hold cheaply: the terminal
 		// statuses that end a poll, the local-path guard on the
-		// header-driven navigation, and the bfcache restore that
-		// re-enables a busy form.
-		"403", "404", "localPath", "pageshow",
+		// header-driven navigation.
+		"403", "404", "localPath",
 		// Light dismiss: the menu classes it answers to — the nested
 		// rst-menu-group among them, so a submenu is never left open
 		// behind its closing parent — the containment test that keeps the
@@ -36,10 +35,6 @@ func TestShimContract(t *testing.T) {
 		// shim has to pair them for the same window or an app's menus
 		// stop dismissing halfway through the upgrade we hand it.
 		`MENUS.replace(`,
-		// The busy rule: the spinner it builds, the submitter it reads
-		// (only the clicked button goes busy), and the cancelled-submit
-		// hand-back.
-		`spin.setAttribute("rst-spin", "")`, "e.submitter", "defaultPrevented",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
@@ -92,7 +87,7 @@ func TestShimContract(t *testing.T) {
 // every drive that plants data-busy on its form keeps passing, and every
 // app that never wrote the attribute silently loses the rule.
 func TestBusyRuleIsTheDefault(t *testing.T) {
-	js := string(ShimJS())
+	js := string(BusyJS())
 	if !strings.Contains(js, `document.addEventListener("submit", busySubmit, true)`) {
 		t.Error("the busy rule is not one delegated capture-phase submit listener on the document")
 	}
@@ -105,7 +100,7 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	// selector is the old shape coming back.
 	for _, bad := range []string{`"form[data-busy]"`, `"[data-busy]"`, "busyForm"} {
 		if strings.Contains(js, bad) {
-			t.Errorf("shim still scans for %s; the busy rule is on by default, not opted into", bad)
+			t.Errorf("busy.js scans for %s; the busy rule is on by default, not opted into", bad)
 		}
 	}
 	// data-busy survives only as an opt-out, on the form and on the
@@ -290,8 +285,10 @@ func TestSelectContract(t *testing.T) {
 		}
 	}
 	// The whole point: the native control survives enhancement, because
-	// it is what the form submits.
-	for _, bad := range []string{".remove()", "removeChild", "outerHTML ="} {
+	// it is what the form submits. The one thing select.js does remove is
+	// a row it drew itself (a page's extra suggestions, replaced), so the
+	// fence is on the native select and the markup around it.
+	for _, bad := range []string{"native.remove()", "removeChild(native", "outerHTML =", "innerHTML ="} {
 		if strings.Contains(js, bad) {
 			t.Errorf("select.js destroys DOM (%q); the native select must survive", bad)
 		}
@@ -316,10 +313,41 @@ func TestSelectContract(t *testing.T) {
 	// per optgroup, and a filter that hides a heading when its rows all
 	// go. That is the trade, and it is a decision, not a drift.
 	//
-	// The cap is still the point: this file exists apart from the shim
-	// so the app owner who now owns it can read the whole thing in one
-	// sitting. Past 12KB, split something out instead.
-	if n := len(SelectJS()); n > 12*1024 {
+	// Raised again, to 37KB (measured 36,296 bytes), by the convergence
+	// with Tito Go's searchselect (2026-09-26): ranking that puts the row
+	// someone meant first (accents folded, ISO and calling codes as
+	// terms), prompts that are never picks, a list that keeps pace with
+	// fast typing by moving only what a search shows, settle-on-leave,
+	// dividers, compact boxes and borrowed validity. Splitting the pure
+	// ranking into its own file was tried and rejected: importing it makes
+	// this an ES module, which every app's classic <script defer> tag and
+	// the design system's srcdoc previews would have to change for, and an
+	// app that re-vendored without editing its layout would lose the
+	// enhancement silently. Most of the growth is the why-comments, which
+	// are what let the app owner who now owns it read it in one sitting.
+	// The headroom is about what the old 12KB ceiling had: room for a fix
+	// and its why, not for a feature.
+	//
+	// Then to 47KB by the alignment with Tito's final searchselect (titogo
+	// 9d21ce1): the box steps aside when a page replaces the select
+	// outright, and rebuilds itself when a page changes the options —
+	// without both it showed one pick while the form posted another — and,
+	// from Paul's iPhone, the list opens upward when the keyboard leaves no
+	// room below, with layout read once a frame. Measured 48,035 bytes after
+	// rows moved from the hidden attribute to inline display (titogo
+	// #3145); comments were trimmed to stay inside rather than raise it.
+	//
+	// Then to 48KB (measured 48,573 bytes) by rst:select-scan, the one way
+	// a page that adds content after load gets its selects enhanced (Tito's
+	// modal forms need it). The header was trimmed first; the ranking
+	// comments were not, because they are kept in step with Tito's.
+	//
+	// Then to 50KB (measured 51,096 bytes) by placement in frames: a band a
+	// host tells the frame (rst:select-viewport), floors under sticky bars
+	// (data-rst-select-floor), the list's padding and borders counted
+	// against the room, and the gap re-read — Tito Go #3146's rule, which
+	// the checkout widget's iPhone keyboard needed.
+	if n := len(SelectJS()); n > 50*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
@@ -327,11 +355,12 @@ func TestSelectContract(t *testing.T) {
 	}
 }
 
-// No scaffolded script may reach off-origin: all four are vendored,
+// No scaffolded script may reach off-origin: all five are vendored,
 // first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
 	for name, js := range map[string]string{
 		"rastrillo.js": string(ShimJS()),
+		"busy.js":      string(BusyJS()),
 		"select.js":    string(SelectJS()),
 		"datetime.js":  string(DatetimeJS()),
 		"calendar.js":  string(CalendarJS()),
@@ -341,5 +370,39 @@ func TestScriptsAreSelfContained(t *testing.T) {
 				t.Errorf("%s reaches outside the page (%q)", name, bad)
 			}
 		}
+	}
+}
+
+// busy.js was split out of the shim when the hold was added (the shim
+// sat 20 bytes under its cap). Its contract, held the same way: the
+// vocabulary, the spinner and submitter, the cancelled-submit hand-back,
+// the hold (its duration, the window listener that runs last, the
+// re-submit that keeps the submitter), and Back in both directions.
+func TestBusyContract(t *testing.T) {
+	js := string(BusyJS())
+	for _, want := range []string{
+		"data-busy", "data-busy-label",
+		`spin.setAttribute("rst-spin", "")`, "e.submitter", "defaultPrevented",
+		"HOLD_MS = 650", `window.addEventListener("submit"`, "requestSubmit(btn || undefined)",
+		"held.has(e)", "form === releasing", "checkValidity()",
+		"pagehide", "clearTimeout", "pageshow", "e.persisted",
+		// Review fixes: an opted-out button is never left disabled, and a
+		// submitter that left the form during the hold hands the form back.
+		"btn.disabled = wasDisabled", "btn.form !== form", `getAttribute("formtarget")`,
+		// Only a submit with a spinner showing is held.
+		`btn.getAttribute("aria-busy") !== "true") return;`,
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("busy.js does not mention %q", want)
+		}
+	}
+	if !strings.HasPrefix(strings.TrimSpace(js), "/*") || !strings.Contains(js, "(function () {") || !strings.HasSuffix(strings.TrimSpace(js), "})();") {
+		t.Error("busy.js should be its contract comment and a single IIFE")
+	}
+	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") || strings.Contains(js, "\t") {
+		t.Error("busy.js must stay CSP-clean and use two-space indentation")
+	}
+	if n := len(js); n > 16*1024 {
+		t.Fatalf("busy.js is %d bytes; keep it readable in one sitting", n)
 	}
 }

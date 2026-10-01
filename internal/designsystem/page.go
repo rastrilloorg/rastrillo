@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/internal/iconsets"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
@@ -181,8 +182,10 @@ type pageView struct {
 	Assets assetsView
 
 	// Screens is the Screens page: whole compositions rather than
-	// components. See screenViews.
-	Screens []screenView
+	// components, and ScreenPartials the partials it documents. See
+	// buildScreens and screenPartials.
+	Screens        []screenView
+	ScreenPartials []screenPartialView
 
 	// Formats is the Dates, numbers and names page. See buildFormats.
 	Formats []formatView
@@ -663,6 +666,9 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	if err := parseRawSamples(tmpl); err != nil {
 		return nil, err
 	}
+	if _, err := tmpl.Parse(screenFrame); err != nil {
+		return nil, fmt.Errorf("parsing the screen frame: %w", err)
+	}
 
 	colours, err := themePalette(theme)
 	if err != nil {
@@ -688,19 +694,20 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	localeName := rastrillo.BaseCatalogs()[locale]["rastrillo.ui.locale_name"]
 	base := pageView{
 		Theme: theme, Locale: locale, Dir: rastrillo.Dir(locale),
-		LocaleName: localeName,
-		Mount:      mount,
-		Sub:        subhead(locale, theme, localeName),
-		Schemes:    schemeButtons(locale),
-		Colours:    localiseGroups(locale, colours),
-		Structure:  localiseGroups(locale, structure),
-		Families:   families,
-		Idioms:     idioms,
-		Formats:    buildFormats(mount, theme, locale),
-		Screens:    screens,
-		Shells:     shellViews(mount, theme, locale),
-		Icons:      buildIcons(locale),
-		Assets:     buildAssets(mount, theme, locale),
+		LocaleName:     localeName,
+		Mount:          mount,
+		Sub:            subhead(locale, theme, localeName),
+		Schemes:        schemeButtons(locale),
+		Colours:        localiseGroups(locale, colours),
+		Structure:      localiseGroups(locale, structure),
+		Families:       families,
+		Idioms:         idioms,
+		Formats:        buildFormats(mount, theme, locale),
+		Screens:        screens,
+		ScreenPartials: screenPartialViews(),
+		Shells:         shellViews(mount, theme, locale),
+		Icons:          buildIcons(locale),
+		Assets:         buildAssets(mount, theme, locale),
 	}
 
 	out := make(map[string][]byte, len(pageKinds()))
@@ -899,6 +906,7 @@ func shellViews(mount, theme, locale string) []shellView {
 		"topbar":  "Brand, navigation and an account menu across the top, with a footer under the page.",
 		"sidebar": "A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.",
 		"console": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. Below 800px one disclosure folds both. No JavaScript.",
+		"stage":   "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.",
 	}
 	out := make([]shellView, 0, len(ui.LayoutNames()))
 	for _, name := range ui.LayoutNames() {
@@ -956,7 +964,8 @@ func familyOf(fams []familyView, kind string) *familyView {
 
 // buildFamilies renders every sample in samples.go and holds the table
 // to ui: a partial samples.go documents that ui does not define, and a
-// partial ui defines that no family claims, are both errors here.
+// partial ui defines that no page claims — no family, and not the
+// Screens page's screenPartials — are both errors here.
 func buildFamilies(mount string, tmpl *template.Template, theme, locale string) ([]familyView, error) {
 	claimed := map[string]bool{}
 	out := make([]familyView, 0, len(families()))
@@ -987,6 +996,11 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 		out = append(out, view)
 	}
 
+	// The Screens page is a page too, and it documents the sign-in
+	// partials; see screenPartials.
+	for _, name := range screenPartials {
+		claimed[name] = true
+	}
 	defined, err := partialNames()
 	if err != nil {
 		return nil, err
@@ -1004,14 +1018,15 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string) 
 	// can call.
 	//
 	// There is no such page any more. A family IS a page, so a partial
-	// with no family has nowhere to be, and the choices were a page
+	// no page claims — no family, and not screenPartials, the Screens
+	// page's own claim — has nowhere to be, and the choices were a page
 	// that exists only on the days something is broken or a failure
 	// that says so. This is the failure. It is stricter than what it
 	// replaces — the old sweep let a partial reach the gallery with no
 	// sample and no thought — and it fails at build rather than in a
 	// coverage gate, so the message can name the file to edit.
 	if len(orphans) > 0 {
-		return nil, fmt.Errorf("ui defines %d partial(s) no family in samples.go claims: %s — every partial belongs to a family, because a family is a page of this gallery; add them to families() in internal/designsystem/samples.go",
+		return nil, fmt.Errorf("ui defines %d partial(s) no page of this gallery claims: %s — every partial belongs to a page; add a component to a family in families() in internal/designsystem/samples.go, or a whole screen to screenPartials in internal/designsystem/screens.go",
 			len(orphans), strings.Join(orphans, ", "))
 	}
 	return out, nil
@@ -1258,6 +1273,7 @@ var previewHeights = map[string]int{
 	"partial-field":           210,
 	"partial-field-text":      210,
 	"partial-field-textarea":  260,
+	"partial-field-url":       210,
 	"partial-field-select":    300,
 	"partial-field-check":     140,
 	"partial-choice-field":    280,
@@ -1283,8 +1299,8 @@ var previewHeights = map[string]int{
 	"idiom-selbox":        70,
 	"idiom-shell-topbar":  250,
 	"idiom-shell-sidebar": 400,
-	// The four shell demos, which are whole pages.
-	// One height for the four, because they sit under one another and
+	// The shell demos, which are whole pages.
+	// One height for them all, because they sit under one another and
 	// the sidebar's rail is the tallest of them.
 	// The demo application, framed at the top of the Overview. Taller
 	// than the shells because it is a screen with content in it rather
@@ -1295,19 +1311,29 @@ var previewHeights = map[string]int{
 	"format-ratios": 320,
 	"format-output": 260,
 
-	// The sign-in screens. A form in a card is taller than a component:
-	// a heading, a field or two, a button and a way out.
-	"screen-signin-link":     300,
-	"screen-signin-sent":     220,
-	"screen-signin-passkey":  230,
-	"screen-signin-social":   290,
-	"screen-signin-password": 420,
+	// The sign-in screens. A stage frame is at least as tall as the
+	// window it is drawn in (100dvh), so each height here is the card
+	// plus the stage's margin around it; the browser gate
+	// TestPreviewFrameHeightsFitTheirContent is what holds them to it.
+	"screen-signin-ask":               460,
+	"screen-signin-returning-keymail": 420,
+	"screen-signin-returning-link":    400,
+	"screen-signin-returning-passkey": 520,
+	"screen-signin-sent":              400,
+	"screen-signin-sent-unbound":      400,
+	"screen-signin-sent-instead":      440,
+	"screen-signin-continue":          400,
+	"screen-signin-problem-address":   480,
+	"screen-signin-problem-keymail":   520,
+	"screen-signin-social":            290,
+	"screen-signin-password":          420,
 
 	"demo-app":      780,
 	"shell-column":  780,
 	"shell-topbar":  780,
 	"shell-sidebar": 780,
 	"shell-console": 780,
+	"shell-stage":   780,
 }
 
 // previewHeight is what an example gets when the table has nothing to
@@ -1339,6 +1365,7 @@ var srcdocScripts = []struct {
 	hooks []string
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
+	{"busy.js", []string{"data-busy"}},
 	{"select.js", []string{"data-rst-select"}},
 	// calendar.js comes FIRST, and the order is load-bearing here in a
 	// way it is not on an ordinary page. datetime.js scans on
@@ -1385,12 +1412,13 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	b.WriteString(`<link rel="stylesheet" href="` + mount + `/tokens.css">` + "\n")
 	b.WriteString(`<link rel="stylesheet" href="` + mount + `/theme-` + theme + `.css">` + "\n")
 	// A component sample gets breathing room; a whole-page sample —
-	// a shell frame, the modal's backdrop — fills the frame, because
-	// insetting a page inside a page is not what any of them look
-	// like. The shells' rail is block-size: 100dvh, so padding under
-	// one is also a scrollbar that can never be got rid of.
+	// a shell frame, the modal's backdrop, a stage frame — fills the
+	// frame, because insetting a page inside a page is not what any of
+	// them look like. The shells' rail and the stage are 100dvh tall,
+	// so padding under one is also a scrollbar that can never be got
+	// rid of.
 	b.WriteString("<style>body { padding: 1rem; }\n")
-	b.WriteString("body:has(> [rst-shell-topbar], > [rst-shell-sidebar], > [rst-backdrop]) { padding: 0; }</style>\n")
+	b.WriteString("body:has(> [rst-shell-topbar], > [rst-shell-sidebar], > [rst-backdrop], > [rst-stage]) { padding: 0; }</style>\n")
 	for _, s := range srcdocScripts {
 		for _, hook := range s.hooks {
 			if strings.Contains(body, hook) {
@@ -1405,7 +1433,7 @@ func srcdoc(mount, theme, locale, title, body string) string {
 	// a reader who clicks Save gets the submission a real app would make
 	// and a preview that is still on the screen afterwards — instead of
 	// a frame navigated to a route this static site does not serve.
-	// rastrillo.js's busy rule skips a form whose target is not _self
+	// busy.js's busy rule skips a form whose target is not _self
 	// for the same reason, so nothing spins pointlessly either.
 	if strings.Contains(body, "<form") {
 		b.WriteString("\n<iframe name=\"ds-void\" hidden></iframe>")
@@ -1646,6 +1674,12 @@ type shellData struct {
 	Index   string
 	Locales []localeLink
 	Account template.HTML
+	// Signin and Brand are the stage demo's card: the plain Ask state,
+	// with no problem, nothing remembered and no passkey door, because
+	// the demo is about the shell and the card is only what it frames;
+	// and the Screens page's own sample brand, so the two show one app.
+	Signin auth.SigninState
+	Brand  map[string]any
 }
 
 // accountMarkup is the one block whose shape differs between the
@@ -1687,7 +1721,14 @@ func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 	if _, err := tmpl.Parse(string(src)); err != nil {
 		return nil, fmt.Errorf("parsing the %s shell: %w", shell, err)
 	}
-	if _, err := tmpl.Parse(shellTemplate); err != nil {
+	overrides := shellTemplate
+	if shell == "stage" {
+		// stage has no chrome to fill and one card to show; the chrome
+		// shells' content would put a Posts list in the middle of a
+		// sign-in frame.
+		overrides = stageShellTemplate
+	}
+	if _, err := tmpl.Parse(shellCommon + overrides); err != nil {
 		return nil, fmt.Errorf("parsing the shell overrides: %w", err)
 	}
 	var buf strings.Builder
@@ -1700,6 +1741,8 @@ func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 		Index:   indexHref(mount, theme, locale),
 		Locales: localeLinks(mount, theme, locale, "index.html"),
 		Account: accountMarkup[shell],
+		Signin:  auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
+		Brand:   galleryBrand,
 	})
 	if err != nil {
 		return nil, err
@@ -2143,7 +2186,9 @@ func buildAssets(mount, theme, locale string) assetsView {
 			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
 	}
 	add(&out, "rastrillo.js", ui.ShimJS(),
-		"The progressive-enhancement shim: polling fragments, busy states and light dismiss. Every scaffolded app gets it.")
+		"The progressive-enhancement shim: polling fragments and light dismiss. Every scaffolded app gets it.")
+	add(&out, "busy.js", ui.BusyJS(),
+		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
@@ -2347,7 +2392,7 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h3 class="ds-sub">{{P "The scripts"}}</h3>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, busy states, light dismiss. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss. busy.js is the busy rule. select.js and datetime.js are enhancements — each inert until a control opts in, each deletable on its own."}}</p>
 
 <h3 class="ds-sub">{{P "What each file weighs"}}</h3>
 <p class="ds-note">{{P "Filesizes for the various components."}}</p>
@@ -2438,7 +2483,7 @@ const familyBody = `{{define "ds-family"}}{{with .Family}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
 <h3 class="rst-mono">{{.Name}}</h3>
-<p class="ds-lead">{{.Blurb}}</p>
+{{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
 {{range .States}}
 <div class="ds-sample">
 {{if .State}}<p class="ds-state">{{.State}}</p>{{end}}
@@ -2480,9 +2525,10 @@ const shellsBody = `{{define "ds-body-shells"}}
 {{end}}
 {{end}}`
 
-// shellTemplate fills every block the four shells leave open. The
-// blocks a given shell does not declare are simply never executed, so
-// one override set covers all four.
+// shellCommon fills the blocks every shell declares, the stage
+// included: the document's language, direction and title, and head.
+// It is prepended to whichever override set a shell gets, so the two
+// sets cannot drift on the blocks they share.
 //
 // head is the newest of them and the reason it exists: this demo is a
 // real page a reader can open in a tab of its own, and a reader who
@@ -2492,11 +2538,18 @@ const shellsBody = `{{define "ds-body-shells"}}
 // doing the same job it does on the gallery. It is also the honest
 // answer to "what is the head block FOR": an app's favicon, an app's
 // stylesheet, an app's one script that has to run early.
-const shellTemplate = `
+const shellCommon = `
 {{define "head"}}<script src="{{.Mount}}/gallery.js"></script>{{end}}
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
+`
+
+// shellTemplate fills the rest of the blocks the chrome shells leave
+// open. The blocks a given shell does not declare are simply never
+// executed, so one override set covers all four of them; stage has its
+// own, below.
+const shellTemplate = `
 {{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
 {{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
@@ -2505,7 +2558,7 @@ const shellTemplate = `
 {{define "content"}}
 {{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
 <div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></div>
-<section rst-box><p>{{P "This is the {shell} shell, one of the four ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
+<section rst-box><p>{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
 <div rst-box-head><h2>Recent</h2></div>
 <div rst-card style="--rst-cols: 2fr 110px 32px">
 <div rst-lrow="head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
@@ -2516,9 +2569,20 @@ const shellTemplate = `
 {{end}}
 `
 
+// stageShellTemplate fills the stage shell's blocks for its demo: the
+// sign-in card in its Ask state, and a foot with the way back, in the
+// <footer rst-stage-foot> the shell's foot block documents — a bare
+// link there would sit outside every landmark and miss the foot's
+// styling. The backdrop block is left alone, so the demo shows the
+// default art.
+const stageShellTemplate = `
+{{define "foot"}}<footer rst-stage-foot><a href="{{.Index}}">{{P "Back to the design system"}}</a></footer>{{end}}
+{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand "Preview" true)}}{{end}}
+`
+
 // modalTemplate is the modal demo page: the sample's structure with
 // real addresses. It is a hand-written document rather than one of the
-// four shells because the idiom is body-level — the backdrop wraps the
+// shells because the idiom is body-level — the backdrop wraps the
 // whole page, and no shell has a block outside its own main.
 //
 // The three deviations from ui.Styleguide()["modal"], all of them the

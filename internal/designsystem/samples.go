@@ -94,10 +94,12 @@ type partialDoc struct {
 //     Overview routes readers to it with, so they are prose keys twice
 //     over and a new family needs its eleven translations before
 //     anything builds;
-//   - every partial ui.Templates() defines must appear in some family.
-//     A partial no family claims used to land in an "Ungrouped" section
-//     of the one components page; there is no such page to land on any
-//     more, so buildFamilies fails instead and names the partial.
+//   - every partial ui.Templates() defines must appear in some family,
+//     unless it is a whole screen the Screens page claims instead
+//     (screenPartials in screens.go). A partial no page claims used to
+//     land in an "Ungrouped" section of the one components page; there
+//     is no such page to land on any more, so buildFamilies fails
+//     instead and names the partial.
 type family struct {
 	Key      string
 	Title    string
@@ -408,6 +410,21 @@ func families() []family {
 					States: fieldTextStates(),
 				},
 				{
+					Name:  "field-url",
+					Blurb: "A web address field that accepts example.com with or without https://. Pair it with form.URL on the server.",
+					Wrap:  wrapForm,
+					States: []sample{
+						{State: "Bare", Data: map[string]any{"Name": "fu_bare", "Label": "Website"}},
+						{State: "With a hint", Data: map[string]any{
+							"Name": "fu_hint", "Label": "Company website", "Hint": "You can leave off the https.",
+						}},
+						{State: "With an error", Data: map[string]any{
+							"Name": "fu_error", "Label": "Website", "Value": "brightwater",
+							"Error": "Enter a web address, like example.com.",
+						}},
+					},
+				},
+				{
 					Name:  "field-textarea",
 					Blurb: "field-text's wrapper around a textarea.",
 					Wrap:  wrapForm,
@@ -477,14 +494,18 @@ func families() []family {
 						// second state is Raw rather than data, because
 						// it is not a state the partial can be asked
 						// for: it is what rastrillo.js writes over the
-						// first one the moment the form goes out.
+						// first one the moment the form goes out. It
+						// is the default — no data-busy-label — so the
+						// spinner stands in for the label. Showing
+						// the data-busy-label variant here instead
+						// would picture the exception as the rule.
 						{State: "Idle — the button before anything happens", Data: map[string]any{
 							"Submit": "Publish", "CancelHref": "/posts", "CancelLabel": "Back to posts",
 						}, Note: "A button that CHANGES something gets a loading state; a button that only reveals something, e.g. a disclosure, a dropdown, a tab, does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into."},
 						{State: "Working — what rastrillo.js writes on the way out",
 							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
 							Raw: `<div rst-form-foot>
-<button rst-btn="primary lg" type="submit" aria-busy="true" data-idle-label="Publish" disabled><span rst-spin aria-hidden="true"></span>Publishing…</button>
+<button rst-btn="primary lg" type="submit" aria-busy="true" disabled><span rst-spin aria-hidden="true"></span>Publish</button>
 <a rst-btn="lg" href="/posts">Back to posts</a>
 </div>`,
 						},
@@ -745,7 +766,7 @@ func fieldSelectStates() []sample {
 			State: "Hand-written, with optgroups",
 			Note:  "Options here is a flat list, so grouped choices are markup the app writes. select.js renders the groups rather than dropping them; a hand-written select can also refuse the enhancement outright with data-rst-select=\"false\".",
 			Raw: `<div rst-field><label rst-field-label for="sel_grouped">Region</label>
-<select rst-input id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}">
+<select rst-input id="sel_grouped" name="sel_grouped" data-rst-select data-rst-select-filter="{{T "rastrillo.ui.select_filter"}}" data-rst-select-results="{{T "rastrillo.ui.select_results"}}" data-rst-select-result-one="{{T "rastrillo.ui.select_result_one"}}" data-rst-select-no-matches="{{T "rastrillo.ui.select_no_matches"}}">
 <optgroup label="Europe"><option value="dublin" selected>Dublin</option><option value="lisbon">Lisbon</option><option value="warsaw">Warsaw</option></optgroup>
 <optgroup label="Americas"><option value="montreal">Montréal</option><option value="lima">Lima</option><option value="austin">Austin</option></optgroup>
 <optgroup label="Asia"><option value="osaka">Osaka</option><option value="hanoi">Hanoi</option><option value="dhaka">Dhaka</option></optgroup>

@@ -52,13 +52,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/accessibility"
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -181,7 +185,11 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// combobox is a broken one.
 		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
 		chromedp.SendKeys(`input[role="combobox"]`, "Option 12", chromedp.ByQuery), at("typed-filter"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &optionsShown),
+		// A burst of keystrokes inside one frame is searched once more
+		// before that frame is drawn (select.js coalesces), so the count is
+		// read after a frame, as a person would see it.
+		chromedp.Evaluate(`new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); })`, nil, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &optionsShown),
 		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &filterText),
 		// Synchronise on observable state rather than assuming a keystroke
 		// landed: under load the arrow key can arrive before the filtered
@@ -189,7 +197,7 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// silent no-op the next step would inherit. Waiting for the
 		// highlight turns that into a fast, legible failure at the exact
 		// step that did not happen.
-		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("list-drawn"),
+		chromedp.WaitVisible(`[role="option"]:not([style*="none"])`, chromedp.ByQuery), at("list-drawn"),
 		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, while
 		// SendKeys focuses its target first and then delivers the same
 		// CDP key events, so the key lands where the user's would. It
@@ -338,9 +346,14 @@ func datePage(t *testing.T, partial, field string) (http.Handler, chan string) {
 		var body strings.Builder
 		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
 			`<title>date</title><link rel="stylesheet" href="/tokens.css">` +
-			`<link rel="stylesheet" href="/theme.css">` +
-			`<script defer src="/calendar.js"></script>` +
-			`<script defer src="/datetime.js"></script></head><body>` +
+			`<link rel="stylesheet" href="/theme.css">`)
+		// ?nocal leaves calendar.js off the page: the app that never
+		// adopted the overlay, whose date button opens the browser's
+		// own panel instead.
+		if !r.URL.Query().Has("nocal") {
+			body.WriteString(`<script defer src="/calendar.js"></script>`)
+		}
+		body.WriteString(`<script defer src="/datetime.js"></script></head><body>` +
 			`<form method="post" action="/submit">`)
 		if err := tmpl.ExecuteTemplate(&body, partial, map[string]any{
 			"Name": field, "Label": "Due",
@@ -579,7 +592,7 @@ func TestEnterCommitsWithoutSubmittingTheForm(t *testing.T) {
 				chromedp.Evaluate(spy, nil),
 				chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, tc.typed, chromedp.ByQuery),
-				chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery),
+				chromedp.WaitVisible(`[role="option"]:not([style*="none"])`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery),
 				chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery),
 				chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery),
@@ -647,7 +660,7 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 			`<script defer src="/select.js"></script></head><body>` +
 			`<form method="post" action="/submit">` +
 			`<label rst-field-label for="city">City</label>` +
-			`<select rst-input id="city" name="city" data-rst-select` +
+			`<select rst-input id="city" name="city" required data-rst-select` +
 			` data-rst-select-filter="Type to filter"` +
 			` data-rst-select-results="{n} results"` +
 			` data-rst-select-result-one="1 result">` +
@@ -687,8 +700,8 @@ func groupPage(t *testing.T) (http.Handler, chan string) {
 //
 //   - the mirror flattens native.options, so the headings the author
 //     wrote to make a long list readable silently vanish;
-//   - a group whose options all filter out keeps its heading, leaving a
-//     heading over nothing;
+//   - a search leaves the headings up over rows it has re-ranked, or
+//     clearing it leaves a lifted row outside its own group;
 //   - the headings join the keyboard order, so arrowing down lands on a
 //     heading and Enter commits the wrong option — or nothing;
 //   - the opt-out is read as a truthy attribute (it is present, after
@@ -712,6 +725,7 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		narrowedGroups, narrowedOptions       int
 		narrowedHeadings                      string
 		activeText, nativeValue, carrierShape string
+		restored                              string
 	)
 
 	reached := "start"
@@ -769,40 +783,52 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 			return s.querySelectorAll('optgroup').length + "/" + s.options.length;
 		})()`, &carrierShape),
 
-		// Open it: focus draws the unfiltered list.
+		// Open it: focus draws the unfiltered list. The select is required,
+		// so its blank ("Choose a city") is a prompt and never a row.
 		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
-		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]').length === 5`),
+		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 5`),
 		at("list-drawn"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &openGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &openOptions),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([style*="none"])').length`, &openGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &openOptions),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`, &groupLabels),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
 		// A heading is furniture, never a pick.
 		chromedp.Evaluate(`document.querySelectorAll('[rst-select-group][role="option"]').length`, &headingsAreOptions),
 
-		// Filter to "a": Galway in one group, Madrid and Barcelona in the
-		// other. Both groups survive, so the keyboard has a boundary to
-		// cross.
-		chromedp.SendKeys(`input[role="combobox"]`, "a", chromedp.ByQuery), at("typed-a"),
-		until("the list narrows to three", `document.querySelectorAll('[role="option"]').length === 3`),
-		at("narrowed-to-three"),
-		// Two arrows: the second lands on the first option of the SECOND
-		// group. If the headings were in the keyboard order it would land
-		// on the "Spain" heading instead.
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down-1"),
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down-2"),
+		// Four arrows from nothing highlighted (an unanswered question
+		// opens with nothing): Dublin, Cork, Galway, then Madrid, the first
+		// row of the SECOND group. Were the headings in the keyboard order,
+		// the fourth would land on the "Spain" heading instead.
+		chromedp.SendKeys(`input[role="combobox"]`, strings.Repeat(string(kb.ArrowDown), 4), chromedp.ByQuery), at("arrow-down-4"),
 		until("a row is highlighted", `document.querySelectorAll('[role="option"].is-active').length === 1`),
 		at("row-highlighted"),
 		chromedp.Evaluate(`document.querySelector('[role="option"].is-active')?.textContent ?? ''`, &activeText),
 
-		// Extend the filter to "ad": only Madrid matches, so the Ireland
-		// group empties — and must take its heading with it.
-		chromedp.SendKeys(`input[role="combobox"]`, "d", chromedp.ByQuery), at("typed-d"),
-		until("the list narrows to one", `document.querySelectorAll('[role="option"]').length === 1`),
+		// Filter to "ad": only Madrid matches. A search ranks across groups,
+		// so the headings step aside and the one row stands alone.
+		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad"),
+		until("the list narrows to one", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 1`),
 		at("narrowed-to-one"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]').length`, &narrowedGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &narrowedOptions),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([style*="none"])').length`, &narrowedGroups),
+		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &narrowedOptions),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+
+		// Clear it: every row is back in its own group, in its own place,
+		// under its own heading.
+		chromedp.Evaluate(`(function () {
+			var input = document.querySelector('input[role="combobox"]');
+			input.value = '';
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+			return true;
+		})()`, nil), at("cleared"),
+		until("the list is whole again", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 5`),
+		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"])')).map(function (g) {
+			return g.getAttribute('aria-label') + ':' + Array.from(g.querySelectorAll('[role="option"]')).map(function (o) { return o.textContent }).join('|');
+		}).join(';')`, &restored),
+
+		// Filter again, to the one row, and take it.
+		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad-again"),
+		until("the one row is highlighted", `(document.querySelector('[role="option"].is-active')?.textContent ?? '') === 'Madrid'`),
 
 		// The sole match commits on Enter, and mirrors onto the carrier.
 		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
@@ -844,17 +870,20 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 	if headingsAreOptions != 0 {
 		t.Errorf("%d group headings carry role=option; a heading is furniture, not a pick", headingsAreOptions)
 	}
-	// Two arrows from nothing highlighted lands on the second match,
-	// which lives in the second group. A heading in the keyboard order
-	// would leave "Galway" here (or nothing highlighted at all).
+	// Four arrows from nothing highlighted land on the first row of the
+	// second group. A heading in the keyboard order would leave the
+	// highlight on "Spain" (or on "Galway", a step short).
 	if activeText != "Madrid" {
-		t.Errorf("two ArrowDowns highlighted %q, want %q: the keyboard order is not skipping the group headings", activeText, "Madrid")
+		t.Errorf("four ArrowDowns highlighted %q, want %q: the keyboard order is not skipping the group headings", activeText, "Madrid")
 	}
-	if narrowedGroups != 1 || narrowedOptions != 1 {
-		t.Errorf("filtering to one match left %d groups and %d options, want 1 and 1", narrowedGroups, narrowedOptions)
+	if narrowedGroups != 0 || narrowedOptions != 1 {
+		t.Errorf("filtering to one match left %d groups and %d options showing, want 0 and 1: a search steps the headings aside", narrowedGroups, narrowedOptions)
 	}
-	if narrowedHeadings != "Spain" {
-		t.Errorf("after filtering the headings read %q, want %q: an emptied group kept its heading", narrowedHeadings, "Spain")
+	if narrowedHeadings != "" {
+		t.Errorf("while searching the visible headings read %q, want none: a heading over re-ranked rows is a lie about what is under it", narrowedHeadings)
+	}
+	if want := "Ireland:Dublin|Cork|Galway;Spain:Madrid|Barcelona"; restored != want {
+		t.Errorf("after clearing the search the groups read %q, want %q: a row a search lifted did not go back into its own group", restored, want)
 	}
 	if nativeValue != "mad" {
 		t.Errorf("the carrier holds %q, want %q — the pick inside a group did not mirror back", nativeValue, "mad")
@@ -892,6 +921,10 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(ShimJS())
 	})
+	mux.HandleFunc("GET /busy.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(BusyJS())
+	})
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
@@ -919,7 +952,7 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>menus, class spelling</title>`+
-			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			`<details class="rst-dropdown" name="`+MenuGroupDefault+`" id="account">`+
 			`<summary id="account-summary">Account</summary>`+
 			`<div class="rst-dropdown__menu"><a id="account-item" href="#settings">Settings</a></div>`+
@@ -936,7 +969,7 @@ func menuPage(t *testing.T) http.Handler {
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>menus</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
-			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			// The header dropdown, in the shared group.
 			`<header rst-shell-bar>`+
 			`<details rst-dropdown rst-shell-account name="`+MenuGroupDefault+`" id="account">`+
@@ -1653,6 +1686,30 @@ func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
 
 // ── The busy rule ────────────────────────────────────────────────────
 
+// swapStateJS reads the busy button whose spinner replaces its label.
+// "Ink" is what paints: a transparent text fill, a zero opacity, or a
+// transparent ring all read as none. Width is read on its own, because
+// only the default leg expects it unchanged.
+const swapStateJS = `(function () {
+  var b = document.getElementById("swapgo");
+  var icon = document.getElementById("swapicon");
+  var spin = b.querySelector("[rst-spin]");
+  var cs = getComputedStyle(b);
+  var clear = "rgba(0, 0, 0, 0)";
+  var sc = spin && getComputedStyle(spin);
+  var br = b.getBoundingClientRect();
+  var sr = spin && spin.getBoundingClientRect();
+  var centred = !!spin &&
+    Math.abs((sr.left + sr.width / 2) - (br.left + br.width / 2)) < 1 &&
+    Math.abs((sr.top + sr.height / 2) - (br.top + br.height / 2)) < 1;
+  return [
+    "label-ink:" + (cs.webkitTextFillColor === clear ? "none" : "shown"),
+    "icon-ink:" + (parseFloat(getComputedStyle(icon).opacity) === 0 ? "none" : "shown"),
+    "spin-ink:" + (sc && sc.borderTopColor !== clear && spin.offsetWidth > 6 ? "shown" : "none"),
+    "spin-centred:" + centred,
+  ].join(" ");
+})()`
+
 // busyStateJS reads the whole busy state of the two-button form in one
 // round trip: the attributes, the swapped label, the untouched sibling,
 // and — the part an attribute check would miss — whether the spinner is
@@ -1821,6 +1878,10 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(ShimJS())
 	})
+	mux.HandleFunc("GET /busy.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript")
+		w.Write(BusyJS())
+	})
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(TokensCSS())
@@ -1864,7 +1925,7 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			// back/forward cache. Registered on window, so it survives
 			// the restore that does not re-run the script.
 			`<script>window.addEventListener("pageshow",function(e){window.__persisted=e.persisted;});</script>`+
-			`<script defer src="/rastrillo.js"></script></head><body>`+
+			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			// Two submit buttons in one form: the clicked one goes busy,
 			// the other keeps its name, its value and its wits.
 			`<form id="two" rst-form method="post" action="/submit">`+
@@ -1924,6 +1985,22 @@ func busyPage(t *testing.T) (http.Handler, chan string) {
 			`<div rst-form-foot>`+
 			`<button id="extgo" rst-btn="primary" type="submit" form="ext" name="action" value="ext" data-busy-label="Sending…">Save</button>`+
 			`</div>`+
+			// A submit with no busy label: the spinner takes the
+			// label's place rather than joining it. The icon is there
+			// because an element child, unlike the text, is not hidden
+			// by the text fill — it needs its own rule.
+			// In a form-foot, like #save, so the button is sized by its
+			// content: a stretched one keeps its width whatever the
+			// spinner does, and the width check would pin nothing.
+			`<form id="swap" rst-form method="post" action="/submit"><div rst-form-foot>`+
+			`<button id="swapgo" rst-btn="primary" type="submit" name="action" value="swap">`+
+			`<span id="swapicon" aria-hidden="true">+</span>Publish</button>`+
+			`</div></form>`+
+			// aria-busy is ordinary ARIA an app may set on its own fetch
+			// button, with no shim and no spinner. Keying the swap on
+			// aria-busy alone would blank this button's label and put
+			// nothing in its place.
+			`<button id="authored" rst-btn type="button" aria-busy="true">Refresh</button>`+
 			// The form that really navigates, for the back-button leg.
 			`<form id="nav" rst-form method="post" action="/go">`+
 			`<button id="navgo" rst-btn="primary" type="submit" name="action" value="nav" data-busy-label="Sending…">Send</button>`+
@@ -2042,6 +2119,7 @@ func TestBusyButtonDrive(t *testing.T) {
 	// because the guard is the substance of the rule and is not what
 	// was opted out of.
 	var quiet string
+	quietAt := time.Now()
 	fail(chromedp.Run(ctx,
 		chromedp.Click(`#quietbtn`, chromedp.ByQuery), at("clicked-quiet"),
 		chromedp.Sleep(300*time.Millisecond),
@@ -2049,6 +2127,11 @@ func TestBusyButtonDrive(t *testing.T) {
 	))
 	if got := took(t, payloads, "button opt-out"); got != "action=quiet" {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
+	}
+	// No spinner, no hold: the 650ms minimum is for a spinner on screen,
+	// and an opted-out button shows none.
+	if waited := time.Since(quietAt); waited > 450*time.Millisecond {
+		t.Errorf("the opted-out button's submit took %v to arrive; with no spinner to show it must not be held", waited)
 	}
 	const wantQuiet = "form:true btn:- btn-off:false spin:no"
 	if quiet != wantQuiet {
@@ -2151,7 +2234,9 @@ func TestBusyButtonDrive(t *testing.T) {
 
 	// ── 3. The rule itself, and the payload ───────────────────────────
 	var busy, afterSecond string
+	var clickedAt time.Time
 	fail(chromedp.Run(ctx,
+		chromedp.ActionFunc(func(context.Context) error { clickedAt = time.Now(); return nil }),
 		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save"),
 		// The hardening to disabled is deferred by a tick, so wait for
 		// it rather than for a guess at how long a tick takes.
@@ -2162,6 +2247,14 @@ func TestBusyButtonDrive(t *testing.T) {
 	// disabled button whose name/value never reaches the server.
 	if got := took(t, payloads, "save"); got != "action=save&note=hello" {
 		t.Errorf("the server received %q, want %q — the clicked button's name/value was dropped from the payload", got, "action=save&note=hello")
+	}
+	// The hold: the spinner shows for at least 650ms, which it can only
+	// do if the submit leaves no sooner than that. A local server answers
+	// in a millisecond, so without the hold the payload lands at once.
+	// (A little under 650: the click is timed from here, not from inside
+	// the page, and a timer may fire a hair early.)
+	if waited := time.Since(clickedAt); waited < 620*time.Millisecond {
+		t.Errorf("the submit reached the server %v after the click; the busy rule holds it for at least 650ms", waited)
 	}
 	const wantBusy = "form:true save:true save-off:true save-text:Saving… " +
 		"spin-first:true spin-hidden:true spin-anim:rst-spin spin-shown:true " +
@@ -2188,6 +2281,58 @@ func TestBusyButtonDrive(t *testing.T) {
 	if afterSecond != wantBusy {
 		t.Errorf("after the re-entrancy attempts the state is\n  %q\nwant it unchanged:\n  %q", afterSecond, wantBusy)
 	}
+
+	// ── 4a. The spinner takes the label's place ─────────────────────
+	//
+	// With no data-busy-label there are no words to show while it works,
+	// so the label gives way to a centred spinner. Bug classes, each of
+	// which still "works": the spinner joins the label and the button
+	// grows, reflowing everything beside it mid-click; the label is hidden
+	// with the spinner, so it inherits the transparent ink and the button
+	// shows nothing at all; the label is hidden from the accessibility
+	// tree too, so a screen reader announces an unnamed busy button.
+	var idleWidth, busyWidth float64
+	var swap string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &idleWidth), at("measured-swap"),
+		chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap"),
+		chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened"),
+		chromedp.Evaluate(swapStateJS, &swap),
+		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &busyWidth),
+	))
+	if got := took(t, payloads, "swap"); got != "action=swap" {
+		t.Errorf("the swapping form sent %q, want %q", got, "action=swap")
+	}
+	const wantSwap = "label-ink:none icon-ink:none spin-ink:shown spin-centred:true"
+	if swap != wantSwap {
+		t.Errorf("a busy button with no busy label reads\n  %q\nwant\n  %q", swap, wantSwap)
+	}
+	if math.Abs(busyWidth-idleWidth) > 0.5 {
+		t.Errorf("the busy button is %.1fpx wide, %.1fpx idle — the spinner must take the label's place, not add to it", busyWidth, idleWidth)
+	}
+	// The name is read from the accessibility tree, not textContent:
+	// textContent ignores CSS and aria-hidden, so it would still say
+	// Publish with the label hidden from a screen reader.
+	if name := axName(ctx, t, "#swapgo"); name != "Publish" {
+		t.Errorf("the busy button's accessible name is %q, want %q — unpainting the label must not take it away from a screen reader", name, "Publish")
+	}
+	var authoredInk string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`getComputedStyle(document.getElementById("authored")).webkitTextFillColor`, &authoredInk),
+	))
+	if authoredInk == "rgba(0, 0, 0, 0)" {
+		t.Errorf("a button an app marked aria-busy, with no spinner in it, has transparent label ink — it renders blank")
+	}
+	// And the other side of the same selector: a busy label is words
+	// the author asked to be read, so it stays inked.
+	var saveInk string
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`getComputedStyle(document.getElementById("save")).webkitTextFillColor`, &saveInk),
+	))
+	if saveInk == "rgba(0, 0, 0, 0)" {
+		t.Errorf("the button with data-busy-label has transparent label ink — its busy label must stay visible")
+	}
+	rig.Screen("body", "a busy button whose spinner replaces the label")
 
 	// ── 4b. Back ──────────────────────────────────────────────────────
 	//
@@ -2351,6 +2496,41 @@ func TestBusyButtonDrive(t *testing.T) {
 		t.Errorf("under prefers-reduced-motion the busy state is\n  %q\nwant\n  %q", reduced, wantReduced)
 	}
 
+	// ── 5b. The swap stands down where a lone ring fails ──────────────
+	//
+	// Two readers for whom a spinner alone is the wrong trade, so the
+	// label stays and the ring sits beside it as it used to:
+	//
+	//   - reduced motion: the ring stops turning and is dimmed, and a
+	//     pale, still, open ring on its own reads as a stray "C";
+	//   - forced colours: the engine repaints the text fill, so the
+	//     "hidden" label paints anyway and a centred ring lands on top
+	//     of it. The computed fill still reads transparent there, which
+	//     is why this leg asserts position and not only ink.
+	for _, media := range []struct {
+		name, value string
+	}{{"prefers-reduced-motion", "reduce"}, {"forced-colors", "active"}} {
+		var state, pos string
+		fail(chromedp.Run(ctx,
+			chromedp.ActionFunc(func(c context.Context) error {
+				return emulation.SetEmulatedMedia().
+					WithFeatures([]*emulation.MediaFeature{{Name: media.name, Value: media.value}}).
+					Do(c)
+			}), at("emulated-"+media.name),
+			chromedp.Navigate(rig.Origin+"/"), at("navigated-"+media.name),
+			chromedp.WaitVisible(`#swapgo`, chromedp.ByQuery), at("page-visible-"+media.name),
+			chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap-"+media.name),
+			chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened-"+media.name),
+			chromedp.Evaluate(swapStateJS, &state),
+			chromedp.Evaluate(`getComputedStyle(document.querySelector("#swapgo > [rst-spin]")).position`, &pos),
+		))
+		took(t, payloads, media.name)
+		const want = "label-ink:shown icon-ink:shown spin-ink:shown spin-centred:false"
+		if state != want || pos != "static" {
+			t.Errorf("under %s: %s the busy button reads %q with the spinner %s, want %q with it static beside the label", media.name, media.value, state, pos, want)
+		}
+	}
+
 	// ── 6. Scriptless ─────────────────────────────────────────────────
 	//
 	// The rule is an enhancement, not a correctness claim. With script
@@ -2382,6 +2562,57 @@ func TestBusyButtonDrive(t *testing.T) {
 	if scriptless != wantScriptless {
 		t.Errorf("with scripts off the page reads\n  %q\nwant\n  %q", scriptless, wantScriptless)
 	}
+
+	// ── 7. Leaving during the hold ───────────────────────────────────
+	//
+	// A submit still being held when the visitor leaves the page is
+	// dropped. The trap is the back/forward cache: a timer frozen with
+	// the page resumes when the visitor comes Back, and sends a submit
+	// they walked away from. Click, leave inside the hold, come back the
+	// way leg 5's Back does, and wait out more than the hold: nothing may
+	// reach the server, and the restored form must be clean.
+	var heldBack string
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-hold"),
+		chromedp.WaitVisible(`#navgo`, chromedp.ByQuery),
+		chromedp.Click(`#navgo`, chromedp.ByQuery), at("clicked-nav-then-leave"),
+		chromedp.Evaluate(`setTimeout(function () { location.href = "/elsewhere"; }, 150)`, nil), at("leaving-during-hold"),
+		settle(`location.pathname === "/elsewhere" && document.readyState === "complete"`, true), at("left-during-hold"),
+		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-come-back"),
+		waitForID("navgo"), at("came-back"),
+		chromedp.Sleep(900*time.Millisecond), // more than the hold
+		chromedp.Evaluate(backStateJS, &heldBack),
+	))
+	tookNothing(t, payloads, "left during the hold")
+	if !strings.HasPrefix(heldBack, "persisted:true ") {
+		t.Fatalf("after coming back the page reads %q — it was not restored from the back/forward cache, so this leg proves nothing about a held submit surviving in it", heldBack)
+	}
+	if heldBack != wantBack {
+		t.Errorf("back on the page after leaving during the hold it reads\n  %q\nwant\n  %q — the form must be handed back", heldBack, wantBack)
+	}
+
+	// ── 8. A script's submit, with no button ─────────────────────────
+	//
+	// requestSubmit() from a script (Enter in a quick-add field, a file
+	// dropped on a page) has no submitter, so nothing shows a spinner and
+	// nothing is held: it goes at once. The form is still guarded.
+	scriptAt := time.Now()
+	fail(chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-script-submit"),
+		chromedp.WaitVisible(`#save`, chromedp.ByQuery),
+		chromedp.ActionFunc(func(context.Context) error { scriptAt = time.Now(); return nil }),
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-submitted"),
+	))
+	if got := took(t, payloads, "script submit"); got != "note=hello" {
+		t.Errorf("the script's submit sent %q, want %q", got, "note=hello")
+	}
+	if waited := time.Since(scriptAt); waited > 450*time.Millisecond {
+		t.Errorf("a script's submit with no button took %v to arrive; with no spinner it must not be held", waited)
+	}
+	fail(chromedp.Run(ctx,
+		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-resubmitted"),
+	))
+	tookNothing(t, payloads, "script submit, second")
 }
 
 // ── Bidirectional text: the name cell ────────────────────────────────
@@ -2755,6 +2986,57 @@ func TestCalendarOverlayDrivesTheWholeJourney(t *testing.T) {
 	rig.Screen("body", "after the calendar journey")
 }
 
+// Without calendar.js a date field's button hands over to the browser's
+// own panel, which is not ours to describe: it is not a listbox, and
+// nothing on the page ever learns whether it is open. The button used to
+// say aria-haspopup="listbox" and aria-expanded="false" there — a popup
+// type that was wrong, and a state that was permanently "closed" even
+// while the browser's panel was up. A screen reader announced a
+// collapsed list box that never expanded. The button there is a plain
+// button; only the popups this file draws (the grid, the clock) carry
+// the popup attributes.
+func TestNativePickerButtonClaimsNoPopup(t *testing.T) {
+	mux, _ := datePage(t, "field-date", "due")
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancelTimeout()
+
+	attrs := `(function () {
+	  var b = document.querySelector('[rst-dtp-pick]');
+	  if (!b) return 'no button';
+	  return 'haspopup=' + b.hasAttribute('aria-haspopup') + ' expanded=' + b.hasAttribute('aria-expanded');
+	})()`
+	var calendars int
+	var before, listOpen, pressed string
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/?nocal"),
+		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]').length`, &calendars),
+		chromedp.Evaluate(attrs, &before),
+		// The suggestions opening is the combobox's popup, not the
+		// button's: it must not hand the button a state either.
+		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery),
+		chromedp.Evaluate(attrs, &listOpen),
+		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery),
+		chromedp.Evaluate(attrs, &pressed),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if calendars != 0 {
+		t.Fatalf("the page built %d calendars; this test needs calendar.js off the page", calendars)
+	}
+	want := "haspopup=false expanded=false"
+	for _, c := range []struct{ when, got string }{
+		{"on load", before}, {"with the suggestions open", listOpen}, {"after the press", pressed},
+	} {
+		if c.got != want {
+			t.Errorf("%s the native-picker button says %s, want %s: the browser's panel is neither a listbox nor a state this page can report", c.when, c.got, want)
+		}
+	}
+}
+
 // A time field has no calendar, so its button opens the clock instead:
 // every half hour of the day, in the field's own locale, scrolled to the
 // one it is already showing. Its own drive because it is its own popup —
@@ -2864,4 +3146,34 @@ func TestTimeFieldOpensAClockRatherThanACalendar(t *testing.T) {
 	default:
 		t.Fatal("the form never reached the server")
 	}
+}
+
+// axName is an element's accessible name as the browser computes it for
+// assistive technology — the only reading that sees CSS and aria-hidden.
+// GetPartialAXTree rather than GetFullAXTree: the full tree carries an
+// ignored-reason the vendored cdproto cannot unmarshal.
+func axName(ctx context.Context, t *testing.T, sel string) string {
+	t.Helper()
+	var nodes []*cdp.Node
+	if err := chromedp.Run(ctx, chromedp.Nodes(sel, &nodes, chromedp.ByQuery)); err != nil || len(nodes) == 0 {
+		t.Fatalf("axName: no node for %s: %v", sel, err)
+	}
+	var name string
+	err := chromedp.Run(ctx, chromedp.ActionFunc(func(c context.Context) error {
+		ax, err := accessibility.GetPartialAXTree().WithBackendNodeID(nodes[0].BackendNodeID).WithFetchRelatives(false).Do(c)
+		if err != nil {
+			return err
+		}
+		if len(ax) > 0 && ax[0].Name != nil {
+			var v string
+			if json.Unmarshal(ax[0].Name.Value, &v) == nil {
+				name = v
+			}
+		}
+		return nil
+	}))
+	if err != nil {
+		t.Fatalf("axName(%s): %v", sel, err)
+	}
+	return name
 }

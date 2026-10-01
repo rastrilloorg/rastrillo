@@ -1,10 +1,12 @@
 # 🤖 Data
 
-Your app keeps its data in one SQLite file, reached through one
-`*gorm.DB`. This page covers the models you write and the handle
-`db.Open` gives you. [Migrations](/docs/migrations) covers changing the
-schema afterwards, and [Scoping](/docs/scoping) covers keeping one
-user's rows away from another's.
+Your app keeps its data in one SQLite file. This page covers the default
+way to reach it: GORM models, and the `*gorm.DB` that `db.Open` gives
+you. An app can use plain `database/sql` instead, with `migrate.Pool`
+and migrations written by hand; `SKILL.md` explains how to choose.
+[Migrations](/docs/migrations) covers changing the schema afterwards,
+and [Scoping](/docs/scoping) covers keeping one user's rows away from
+another's.
 
 ## Models are plain GORM structs
 

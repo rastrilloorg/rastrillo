@@ -26,16 +26,24 @@ Build one at boot.
 
 ```go
 type Config struct {
-	DB           *sql.DB
-	Origin       string
-	InstanceKey  string
-	Mailer       mail.Sender
-	Authorize    func(address string) bool
-	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
-	SigninPath   string
-	SignedInPath string
+	DB               *sql.DB
+	Origin           string
+	InstanceKey      string
+	Mailer           mail.Sender
+	Authorize        func(address string) bool
+	SecondFactor     func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
+	SigninPath       string
+	SignedInPath     string
+	TrustedProxyHops *int
+	SigninScreen     bool
+	BeginPath        string
+	ForgetPath       string
+	Remember         *bool
+	KeymailServers   []string
 }
 ```
+
+`SigninScreen` turns on the shipped sign-in screen's side of `auth`: the attempt and continuation cookies, the keymail continuation, and remembering the way in. Off, nothing about `Begin` or `Callback` changes. `BeginPath` and `ForgetPath` (default `/signin` and `/signin/forget`) are where you mounted `Begin` and `Forget`, for the screen's forms. `Remember` set to `false` keeps the screen and stops remembering.
 
 `InstanceKey` must not be empty, and `New` returns
 `ErrEmptyInstanceKey` when it is. It seals the pending blob with an
@@ -52,6 +60,12 @@ redirects against.
 you get `mail.Logged` with a warning on every send: an emailed link is a
 live credential, so the fallback is development-only and says so.
 
+`Subject` and `Body` write the sign-in email. `Body` takes the link and
+returns the whole text, so the email can name your app. Leave it nil and
+you get `DefaultBody`, which says how long the link works. `LinkTTL` is
+that lifetime, 15 minutes. If your body says the number, take it from
+`LinkTTL`.
+
 `Authorize` is the admission gate: given a verified address, may it have
 a session? Nil admits every verified address. Membership tables, roles
 and admin bootstrap are your policy layered on this hook.
@@ -59,6 +73,15 @@ and admin bootstrap are your policy layered on this hook.
 `SecondFactor` is the same seam `password` has.
 `DefaultSessionTTL` is the TTL used when the config does not override
 it.
+
+`TrustedProxyHops` is how many proxies you run in front of the app, and
+decides which address the per-IP sign-in limit counts. Leave it unset
+and it is 1 on CARLOS, whose edge adds the visitor's address, and 0
+anywhere else, where the limit counts the connection's address. A value
+you set always wins, 0 included. See
+[clientip](/docs/reference/clientip).
+
+`KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
 
 ## Schema
 
@@ -76,12 +99,70 @@ POST /signin         -> Auth.Begin
 GET  /auth/verify    -> Auth.Verify     (the emailed link's landing)
 GET  /auth/callback  -> Auth.Callback   (the keymail OAuth return)
 POST /signout        -> Auth.Signout
+POST /signin/forget  -> Auth.Forget
 ```
 
-The sign-in page stays yours. These handlers report outcomes by
-redirecting to `SigninPath` with a query your page renders: `?sent=1`
-and `?err=rate|address|expired`, plus `?err=keymail` and `?force=1` on
-the keymail path.
+These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and, with `SigninScreen` on, `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself.
+
+## The sign-in screen
+
+```go
+func (a *Auth) SigninState(r *http.Request) SigninState
+func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
+func (a *Auth) Forget(w http.ResponseWriter, r *http.Request)
+func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request)
+func (a *Auth) RememberJar() *lastsignin.Jar
+```
+
+`SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process.
+
+```go
+type SigninState struct {
+	Step        SigninStep
+	Problem     SigninProblem
+	Address     string
+	SentTo      string
+	SentInstead bool
+	Remembered  *Remembered
+	ContinueURL string
+	BeginPath   string
+	ForgetPath  string
+	Passkey     *PasskeyDoor
+}
+func (s SigninState) Door() string
+func (s SigninState) Focus() string
+
+type SigninStep string
+
+const (
+	StepAsk       SigninStep = "ask"
+	StepReturning SigninStep = "returning"
+	StepSent      SigninStep = "sent"
+	StepContinue  SigninStep = "continue"
+)
+
+type SigninProblem string
+
+const (
+	ProblemNone    SigninProblem = ""
+	ProblemRate    SigninProblem = "rate"
+	ProblemAddress SigninProblem = "address"
+	ProblemExpired SigninProblem = "expired"
+	ProblemKeymail SigninProblem = "keymail"
+	ProblemGeneric SigninProblem = "generic"
+	ProblemReauth  SigninProblem = "reauth"
+)
+
+type Remembered struct{ Method, Address string }
+
+type PasskeyDoor struct {
+	BeginPath, FinishPath string
+	ModuleURL, ScriptURL  string
+	LegacyRPID            string
+}
+```
+
+`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin`; see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.
 
 ## Guarding and reading
 
@@ -123,3 +204,16 @@ single use.
 An unknown hash, a wrong purpose and an expired row all come back as the
 same "not ok"; telling them apart would be an oracle. The row is deleted
 even when expired, because a presented token is spent either way.
+## SpendLinks
+
+```go
+func (a *Auth) SpendLinks(ctx context.Context, address string) (int, error)
+```
+
+Deletes every outstanding sign-in link for an address and returns how
+many it spent. A link is a credential waiting to be used; once the
+person is in by any door — this one, a password, a passkey on a
+remembered browser — the ones still in their inbox are a credential
+nobody needs, and an app calls this at every sign-in so a stolen inbox
+cannot cash one later.
+

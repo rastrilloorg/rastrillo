@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt root chromedp-graph race generate-check scaffold-smoke browser \
+.PHONY: ci gofmt root chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -28,27 +28,62 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt money root chromedp-graph race \
+ci: gofmt money root chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
+# The repo's own Go files, not everything under the checkout: GOTMPDIR is
+# .build/tmp, and a go command killed mid-build (a Ctrl-C, or a runner
+# cancelling a job a newer push superseded) leaves its generated
+# _testmain.go and cgo files there. gofmt -l . walked into them and failed
+# the next run on files nobody wrote. Dot-directories are pruned, the same
+# rule ./... applies. It is a walk of the working tree rather than a git
+# listing, so an unstaged deletion is simply absent instead of a missing
+# path. NUL-delimited so a path with a space stays one argument, and a
+# gofmt error (a file that does not parse) fails the target instead of
+# vanishing into stderr.
 gofmt:
-	@out=$$(gofmt -l .); if [ -n "$$out" ]; then \
-		echo "gofmt needed on:"; echo "$$out"; exit 1; fi
+	@out=$$(find . -name '.?*' -type d -prune -o -name '*.go' -type f -print0 | xargs -0 gofmt -l) || exit 1; \
+	if [ -n "$$out" ]; then echo "gofmt needed on:"; echo "$$out"; exit 1; fi
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
 
+# RASTRILLO_TEST_REQUIRE_NODE turns every nodetest skip into a failure
+# here: on a laptop without Node a skip is honest, but a gate that lost
+# node would otherwise go green having checked none of the JavaScript
+# twins. Override with RASTRILLO_TEST_REQUIRE_NODE= to run without it.
+RASTRILLO_TEST_REQUIRE_NODE ?= 1
 root:
 	go build ./...
 	go vet ./...
-	go test ./... -count=1
+	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) go test ./... -count=1
 
 # The README promises chromedp stays out of the ordinary build graph.
 # This is that sentence, executable.
 chromedp-graph:
 	@if go list -deps ./... | grep -i chromedp; then \
 		echo "go list -deps ./... pulls chromedp - the README's promise is broken"; \
+		exit 1; \
+	fi
+
+# The packages an app adopts to get a subsystem - its schema, its
+# handlers - must not link GORM: an app that keeps its data in raw SQL
+# (Tito Go is the first) would otherwise take on a second persistence
+# layer to use pow or sessions. migrate is where GORM used to leak in;
+# gormfn and modeldiff are the two places it is allowed to live.
+GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
+            ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
+            ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background \
+            ./xlsx ./table \
+            ./perf ./lastsignin
+# go list runs on its own line so its failure fails the target: piped
+# straight into grep, a path that stopped resolving printed nothing and
+# the fence passed without checking anything.
+gorm-free:
+	@deps=$$(go list -deps $(GORM_FREE)) || exit 1; \
+	if echo "$$deps" | grep '^gorm.io/'; then \
+		echo "a GORM-free package now links GORM (see GORM_FREE in the Makefile)"; \
 		exit 1; \
 	fi
 
@@ -104,14 +139,15 @@ scaffold-smoke: build-cli
 	./hack/scaffold-smoke.sh
 
 # The browser drive: the ui select journey, the harness's own checks,
-# the design system's, and webauthn's PRF ceremonies including the
-# prfByAssertion fallback. -p 1 serialises the packages - parallel
-# Chromium cold-starts contend for one machine. RASTRILLO_BROWSER_OPTIONAL
+# the design system's, webauthn's PRF ceremonies including the
+# prfByAssertion fallback, and the sign-in screen's whole journey. -p 1
+# serialises the packages - parallel Chromium cold-starts contend for
+# one machine. RASTRILLO_BROWSER_OPTIONAL
 # stays unset on purpose: a skip is not a pass, so a machine that loses
 # its browser fails loudly instead of reporting green.
 # Chromium profiles also need room when the shared /tmp tmpfs fills.
 browser:
-	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ -count=1
+	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a

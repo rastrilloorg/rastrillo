@@ -1,7 +1,9 @@
 package ui
 
 import (
+	"math"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -351,6 +353,69 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 					}
 				}
 			})
+		}
+	}
+}
+
+// stageArtMix reads the colour tokens.css gives one part of the stage
+// art — color-mix(in srgb, var(A) N%, var(B)) — so the check below
+// measures what the stylesheet actually says rather than a copy of it.
+func stageArtMix(t *testing.T, part string) (a string, p float64, b string) {
+	t.Helper()
+	re := regexp.MustCompile(`\[rst-stage-art-` + part + `\] \{[^}]*(?:fill|stroke): color-mix\(in srgb, var\((--rst-[a-z-]+)\) (\d+)%, var\((--rst-[a-z-]+)\)\)`)
+	m := re.FindStringSubmatch(string(TokensCSS()))
+	if m == nil {
+		t.Fatalf("tokens.css paints [rst-stage-art-%s] with no color-mix(in srgb, var(--rst-…) N%%, var(--rst-…))", part)
+	}
+	n, _ := strconv.Atoi(m[2])
+	return m[1], float64(n) / 100, m[3]
+}
+
+// mixSRGB is CSS color-mix(in srgb, a p, b): a per-channel linear blend
+// of the two sRGB values.
+func mixSRGB(t *testing.T, a, b string, p float64) string {
+	t.Helper()
+	ar, ag, ab, err := parseHex(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	br, bg, bb, err := parseHex(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mix := func(x, y uint8) uint8 { return uint8(math.Round(float64(x)*p + float64(y)*(1-p))) }
+	return hexOf([3]uint8{mix(ar, br), mix(ag, bg), mix(ab, bb)})
+}
+
+// The sign-in card's border is its boundary against the stage art (WCAG
+// 1.4.11). The art is drawn by mixing accent and line into the page
+// background, so the border must clear 3:1 against each colour the art
+// paints, in every theme and scheme — not only against --rst-bg, which
+// is all the token-pair gate above can see. Each colour is measured at
+// full strength, which the glow only reaches where its translucent
+// circles pile up: the worst case, never better than it. If this fails,
+// lower the art's percentage in tokens.css; never the floor.
+func TestTheSigninCardStandsOutFromTheStageArt(t *testing.T) {
+	// What follows measures --rst-line-strong. Hold the card to it, or a
+	// later edit to the card's border leaves this passing about a colour
+	// nothing paints.
+	if !regexp.MustCompile(`\[rst-signin\] \{[^}]*border: 1px solid var\(--rst-line-strong\)`).Match(TokensCSS()) {
+		t.Fatal("tokens.css no longer borders [rst-signin] with 1px solid var(--rst-line-strong), the colour this test measures")
+	}
+	for _, theme := range ThemeNames() {
+		for _, scheme := range []string{"light", "dark"} {
+			tok := themeTokens(t, theme)[scheme]
+			for _, part := range []string{"lines", "glow"} {
+				a, p, b := stageArtMix(t, part)
+				behind := mixSRGB(t, tok[a], tok[b], p)
+				ratio, err := ContrastRatio(tok["--rst-line-strong"], behind)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if ratio < 3.0 {
+					t.Errorf("%s/%s: the card border on the art's %s is %.2f:1, want >= 3:1", theme, scheme, part, ratio)
+				}
+			}
 		}
 	}
 }

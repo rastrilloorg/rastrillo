@@ -56,7 +56,7 @@
 // shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
 // static files the app is free to edit in place. rastrillo.js, the fragment shim behind
-// data-poll and data-busy, ships the same way, landing beside it. It
+// data-poll, and busy.js, the busy rule, ship the same way, landing beside it. It
 // never replaces a native idiom — every "no JavaScript" idiom above
 // still works with scripts disabled; the shim exists only for the kinds
 // of work a native idiom cannot do. Two of them: work that finishes
@@ -226,11 +226,12 @@
 // <details rst-shell-chrome> — no JavaScript. rst-shell-console is
 // both at once: the bar's tail and the rail collapse behind the ONE
 // <details rst-shell-menu>, which gates its sibling tail with + and
-// the rail with :has(). All four carry rst-skip, the skip link —
-// column included. The
+// the rail with :has(). rst-stage has no chrome at all: one card over
+// a rst-stage-scene backdrop, for a screen that stands alone. All five
+// carry rst-skip, the skip link — column and stage included. The
 // canonical markup is Styleguide's "shell-topbar" and "shell-sidebar",
 // and an app does not usually write any of it by hand: Layout ships
-// the four shells as whole templates and rastrillo new writes the
+// the five shells as whole templates and rastrillo new writes the
 // chosen one as templates/layout.html.
 package ui
 
@@ -253,6 +254,9 @@ var layoutsFS embed.FS
 
 //go:embed rastrillo.js
 var shimJS []byte
+
+//go:embed busy.js
+var busyJS []byte
 
 //go:embed select.js
 var selectJS []byte
@@ -328,6 +332,13 @@ func ThemeCSS(name string) ([]byte, bool) {
 // its contract; TestShimContract holds the two honest.
 func ShimJS() []byte { return shimJS }
 
+// BusyJS returns busy.js — the busy rule: every submit button shows a
+// spinner in place of its label for at least 650ms, goes disabled, and
+// its form refuses a second submit; Back hands it back. Delivered once
+// by rastrillo new, like ShimJS, and app-owned from then on. Linking it
+// is the whole opt-in; the file's own header comment is its contract.
+func BusyJS() []byte { return busyJS }
+
 // SelectJS returns select.js — field-select's searchable enhancement,
 // on exactly the same terms as ShimJS: delivered once by rastrillo new,
 // app-owned from then on, inert until a <select> opts in with
@@ -382,10 +393,11 @@ func DatetimeJS() []byte { return datetimeJS }
 func CalendarJS() []byte { return calendarJS }
 
 // layoutNames lists the shipped shells, column first: it is the plain
-// centred page every scaffolded app starts on, and the three chrome
-// shells are the ones an app opts into. The slice matches the files in
-// layouts/ exactly — adding a shell means adding both.
-var layoutNames = []string{"column", "topbar", "sidebar", "console"}
+// centred page every scaffolded app starts on, the three chrome shells
+// are the ones an app opts into, and stage is the one-card page a
+// sign-in screen sits in. The slice matches the files in layouts/
+// exactly — adding a shell means adding both.
+var layoutNames = []string{"column", "topbar", "sidebar", "console", "stage"}
 
 // LayoutNames returns the shipped shell names, column first. The
 // returned slice is a copy, so a caller sorting or truncating it cannot
@@ -401,9 +413,11 @@ func LayoutNames() []string { return append([]string(nil), layoutNames...) }
 // A shell is a page frame with holes in it. It executes
 // {{template "content" .}} for the page's own body, and every piece of
 // chrome around that is a block with a working default a page overrides
-// by redefining it: title, lang, dir and head in all four, plus brand,
+// by redefining it: title, lang, dir and head in all five, plus brand,
 // nav, account and locale in the three chrome shells, and foot in
-// topbar and console. No block reads a field off the data, so a shell
+// topbar and console. stage has backdrop — the picture behind its
+// card — and foot instead of chrome; its foot is the whole element,
+// not the inside of one. No block reads a field off the data, so a shell
 // renders the same whether a handler passes a struct, a dict-built
 // map, or nil.
 //

@@ -176,3 +176,62 @@ func TestHandlerSubdirectoryAsset(t *testing.T) {
 		t.Errorf("Cache-Control = %q, want immutable year", got)
 	}
 }
+
+// Every answer carries the fingerprint as a strong ETag, so a no-cache
+// answer revalidates to a 304: a conditional GET with the current ETag
+// gets no body, one with any other ETag gets the file. The bare name, a
+// legacy ?v= link and a stale hash all revalidate this way, and the
+// immutable answer keeps its Cache-Control.
+func TestHandlerRevalidatesByFingerprint(t *testing.T) {
+	a := NewAssets(fstest.MapFS{"static/tokens.css": {Data: []byte("body{}")}})
+	hashed := a.Path("static/tokens.css")
+	fp := strings.TrimSuffix(strings.TrimPrefix(hashed, "/static/tokens."), ".css")
+	want := `"` + fp + `"`
+	for _, target := range []string{hashed, "/static/tokens.css", "/static/tokens.css?v=3", "/static/tokens.0123456789abcdef.css"} {
+		rec := serveAsset(t, a, target)
+		if got := rec.Header().Get("ETag"); got != want {
+			t.Errorf("%s: ETag = %q, want %q (the fingerprint, strong, quoted)", target, got, want)
+		}
+
+		req := httptest.NewRequest(http.MethodGet, target, nil)
+		req.Header.Set("If-None-Match", want)
+		rec = httptest.NewRecorder()
+		a.Handler().ServeHTTP(rec, req)
+		if rec.Code != http.StatusNotModified || rec.Body.Len() != 0 {
+			t.Errorf("%s with the current ETag: %d and %d bytes, want 304 and none", target, rec.Code, rec.Body.Len())
+		}
+
+		req = httptest.NewRequest(http.MethodGet, target, nil)
+		req.Header.Set("If-None-Match", `"0123456789abcdef"`)
+		rec = httptest.NewRecorder()
+		a.Handler().ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK || rec.Body.String() != "body{}" {
+			t.Errorf("%s with another ETag: %d %q, want 200 and the file", target, rec.Code, rec.Body.String())
+		}
+	}
+	if got := serveAsset(t, a, hashed).Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
+		t.Errorf("the current hash's Cache-Control is %q, want it unchanged", got)
+	}
+	if got := serveAsset(t, a, "/static/tokens.0123456789abcdef.css").Header().Get("Cache-Control"); got != "no-cache" {
+		t.Errorf("a stale hash's Cache-Control is %q, want it unchanged", got)
+	}
+}
+
+// The ETag describes the bytes served: after an edit, the old ETag no
+// longer matches and the new content comes back whole.
+func TestHandlerETagFollowsTheContent(t *testing.T) {
+	fsys := fstest.MapFS{"static/tokens.css": {Data: []byte("body{}")}}
+	a := NewAssets(fsys)
+	old := serveAsset(t, a, "/static/tokens.css").Header().Get("ETag")
+	fsys["static/tokens.css"] = &fstest.MapFile{Data: []byte("body{color:red}"), ModTime: fsys["static/tokens.css"].ModTime.Add(time.Second)}
+	req := httptest.NewRequest(http.MethodGet, "/static/tokens.css", nil)
+	req.Header.Set("If-None-Match", old)
+	rec := httptest.NewRecorder()
+	a.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Body.String() != "body{color:red}" {
+		t.Fatalf("after an edit the old ETag got %d %q, want 200 and the new content", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("ETag") == old {
+		t.Error("the ETag did not change with the content")
+	}
+}

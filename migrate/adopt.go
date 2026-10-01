@@ -15,56 +15,96 @@ import (
 // fail on a column that is already there. That is the failure the old
 // isDuplicateColumn swallow existed to paper over.
 //
-// It returns true when it stamped the ledger and the caller should run
-// nothing.
-func adopt(ctx context.Context, conn *sql.Conn, ms []Migration) (bool, error) {
+// The database is compared against a replay of the set. A match
+// stamps every migration as applied and returns their count: the
+// caller runs nothing. Failing that, it is compared against a replay
+// of the set WITHOUT its post-adoption migrations (Migration.
+// PostAdoption): a match there is a database from before those
+// migrations existed, so everything else is stamped, the count says
+// how many, and the caller runs the post-adoption ones — which is how
+// an adoption-era table gains a column. No match at all is a refusal.
+func adopt(ctx context.Context, conn *sql.Conn, ms []Migration) (int, error) {
 	empty, err := isEmpty(ctx, conn)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 	if empty {
 		// New app. Normal path.
-		return false, nil
+		return 0, nil
 	}
 
 	live, err := Read(ctx, conn)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
+	lines, err := adoptionDiff(ctx, live, ms)
+	if err != nil {
+		return 0, err
+	}
+	if len(lines) == 0 {
+		return len(ms), Stamp(ctx, conn, ms, "")
+	}
+
+	var base []Migration
+	for _, m := range ms {
+		if !m.PostAdoption {
+			base = append(base, m)
+		}
+	}
+	if len(base) < len(ms) {
+		baseLines, err := adoptionDiff(ctx, live, base)
+		if err != nil {
+			return 0, err
+		}
+		if len(baseLines) == 0 {
+			// Stamp only the base: the post-adoption migrations are
+			// left unrecorded for the caller to run, in order, each in
+			// its own transaction like any pending migration.
+			return len(base), stampOnly(ctx, conn, base)
+		}
+	}
+
+	texts := make([]string, 0, len(lines))
+	strands := false
+	for _, l := range lines {
+		texts = append(texts, l.text)
+		if !l.extra {
+			strands = true
+		}
+	}
+	return 0, fmt.Errorf(
+		"migrate: this database has tables but no migration ledger, and its schema does not match "+
+			"the migration set, so it cannot be adopted safely. Below, \"missing X\" means this "+
+			"database lacks X and the migration set has it; \"extra X\" means this database has X "+
+			"and no migration defines it:\n  %s\n%s",
+		strings.Join(texts, "\n  "), recovery(strands))
+}
+
+// adoptionDiff replays ms into memory and reports how live differs
+// from the result. live already has the ledger table: Apply creates
+// it before calling adopt. The replay gets the same one so it doesn't
+// show up as an "extra table" — the ledger isn't part of the set being
+// adopted.
+func adoptionDiff(ctx context.Context, live Snapshot, ms []Migration) ([]diffLine, error) {
 	mem, err := Replay(ctx, ms)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	defer mem.Close()
-	// live already has the ledger table: Apply creates it before
-	// calling adopt. Give mem the same one so it doesn't show up as
-	// an "extra table" in every comparison — the ledger isn't part of
-	// the migration set being adopted.
 	if _, err := mem.ExecContext(ctx, LedgerDDL); err != nil {
-		return false, err
+		return nil, err
 	}
 	want, err := Read(ctx, mem)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
+	return live.diffLines(want), nil
+}
 
-	if lines := live.diffLines(want); len(lines) > 0 {
-		texts := make([]string, 0, len(lines))
-		strands := false
-		for _, l := range lines {
-			texts = append(texts, l.text)
-			if !l.extra {
-				strands = true
-			}
-		}
-		return false, fmt.Errorf(
-			"migrate: this database has tables but no migration ledger, and its schema does not match "+
-				"the migration set, so it cannot be adopted safely. Below, \"missing X\" means this "+
-				"database lacks X and the migration set has it; \"extra X\" means this database has X "+
-				"and no migration defines it:\n  %s\n%s",
-			strings.Join(texts, "\n  "), recovery(strands))
-	}
-	return true, Stamp(ctx, conn, ms, "")
+// stampOnly records exactly ms as applied — a subset of the composed
+// set, so Stamp's "through" form cannot express it.
+func stampOnly(ctx context.Context, conn *sql.Conn, ms []Migration) error {
+	return Stamp(ctx, conn, ms, "")
 }
 
 // recovery is the second half of the refusal: what to actually do.

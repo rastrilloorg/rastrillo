@@ -24,6 +24,12 @@
 // emailed; ?err=rate|address|expired|keymail; ?force=1 — offer the
 // plain-email escape hatch after a failed keymail approval).
 //
+// The shipped sign-in screen (ui's signin partial) is opt-in:
+// Config.SigninScreen. With it on, SigninState reads what the page
+// shows, PrepareSigninResponse writes the headers and cookie deletions
+// that go with it, Forget is "Use a different email", and the page
+// renders the rest. With it off nothing about Begin or Callback changes.
+//
 // The decision tree: every submitted address is classified; a claimed
 // keymail inbox gets the keymail-OAuth ceremony (the upgrade), and
 // every other address — and every classification failure, which fails
@@ -50,11 +56,16 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/keymaildev/signin"
 
+	"amadan.net/rastrillo/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/clientip"
+	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -147,6 +158,21 @@ type Config struct {
 	// can gate.
 	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 
+	// TrustedProxyHops is how many proxies you run in front of the app,
+	// which decides the address the per-IP sign-in budget counts:
+	// clientip.From reads that many elements from the right of
+	// X-Forwarded-For. Nil — the default — means 1 when the app runs on
+	// CARLOS (carlos.Running), whose edge adds exactly one element (the
+	// visitor), and 0 anywhere else: ignore the header and count the
+	// connection's peer, which behind a proxy of your own means every
+	// visitor shares the proxy's budget — limits bite sooner, never
+	// later. A value you set always wins, 0 included: a pointer, because
+	// an explicit 0 must be told apart from unset. Never set it higher
+	// than the proxies really there: one too many trusts an element the
+	// client wrote, and a forged address per request is an unlimited
+	// budget.
+	TrustedProxyHops *int
+
 	// SigninPath is the app's sign-in page, the target of outcome
 	// redirects. Default "/signin".
 	SigninPath string
@@ -158,9 +184,60 @@ type Config struct {
 	// link".
 	Subject string
 
+	// Body writes the magic-link email around the link, so an app can
+	// name itself and speak in its own voice. Nil sends DefaultBody. A
+	// Body that states the lifetime should take it from LinkTTL.
+	Body func(link string) string
+
 	// SessionTTL is the minted session's lifetime. Default
 	// DefaultSessionTTL.
 	SessionTTL time.Duration
+
+	// SigninScreen says this app renders the shipped sign-in screen (ui's
+	// signin partial, fed by SigninState). It turns on everything the
+	// screen needs from auth at once: the attempt cookie that lets the
+	// screen prefill an address and say where a link went, the keymail
+	// continuation that keeps form-action 'self' strict, and remembering
+	// the way in. Default false, and false is exactly the behaviour
+	// before the screen existed: no new cookie is written, read or
+	// deleted, and Begin and Callback answer as they always did. One
+	// switch rather than three because they are one feature — an app
+	// remembering the way in without the screen would be writing a
+	// cookie nothing reads.
+	SigninScreen bool
+
+	// BeginPath and ForgetPath are where the app mounted Begin (POST) and
+	// Forget (POST), for the screen's form actions. auth mounts nothing
+	// itself, and neither can be inferred from SigninPath: an app may
+	// mount Begin at /auth/begin. Defaults "/signin" and
+	// "/signin/forget".
+	BeginPath  string
+	ForgetPath string
+
+	// Remember switches off one part of SigninScreen: a pointer to false
+	// keeps the screen and stops remembering the way in (a shared
+	// kiosk), and deletes what was remembered before. Nil or true leaves
+	// it on. With SigninScreen off it has no effect — nothing is
+	// remembered to begin with. A pointer because an explicit false must
+	// be told apart from unset.
+	Remember *bool
+
+	// KeymailServers, when set, is the closed set of keymail servers (host
+	// or host:port, compared ignoring case, one trailing dot and an
+	// explicit :443) this app will classify against or exchange a code
+	// with. An IPv6 host must be written in brackets ("[::1]" or
+	// "[::1]:8443"); unbracketed, its colons collide with the port
+	// separator and let one entry match more than the operator wrote.
+	// Empty means any server an address's own _keymail delegation
+	// names — which is keymail's protocol: the domain's owner chooses its
+	// server, the same party that controls its MX and could receive a
+	// magic link anyway, and a server cannot vouch for anyone else's
+	// address because Callback compares the address it returns with the
+	// one the flow started for. An address whose server is not listed gets
+	// a magic link and its server is never contacted. Copied at New;
+	// changing it means a restart, which also empties the classifier's
+	// caches. It applies whether or not SigninScreen is on.
+	KeymailServers []string
 
 	Logger *slog.Logger
 }
@@ -173,6 +250,38 @@ type Auth struct {
 	cfg      Config
 	flow     *signin.Flow
 	sessions *sessions.Sessions
+	// hops is Config.TrustedProxyHops resolved once, at New: the
+	// environment is read at boot, not per request.
+	hops int
+	// jar holds the remembered way in and ends an attempt; passkey gets
+	// the same one through RememberJar.
+	jar *lastsignin.Jar
+	// attemptKey seals the attempt cookie. Its own derivation so it
+	// opens nothing else and nothing else opens it.
+	attemptKey []byte
+	// continueKey seals the continuation cookie; its own derivation for
+	// the same reason as attemptKey.
+	continueKey []byte
+	// now is the clock the screen's cookies are sealed and judged by.
+	// time.Now outside tests.
+	now func() time.Time
+	// servers is KeymailServers as a set, nil for "any server"; guard
+	// enforces it on both clients, and the authorize-URL predicate
+	// checks it again.
+	servers map[string]bool
+	guard   *hostGuard
+	// exchangeHTTP is the token-exchange client: nil — the library's own
+	// default — unless KeymailServers asked for a guard.
+	exchangeHTTP *http.Client
+}
+
+// DefaultBody is the magic-link email when Config.Body is nil. It
+// replaces keymaildev/signin's own default, which says the link "expires
+// shortly": every sign-in page in front of it says how long, and the
+// email has to agree with them.
+func DefaultBody(link string) string {
+	return "Open this link to sign in:\n\n" + link + "\n\nIt works once and expires in " +
+		strconv.Itoa(int(LinkTTL/time.Minute)) + " minutes. If you didn’t ask for it, you can ignore this email."
 }
 
 // ErrEmptyInstanceKey means Config.InstanceKey was empty — see the
@@ -210,8 +319,17 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.Subject == "" {
 		cfg.Subject = "Your sign-in link"
 	}
+	if cfg.Body == nil {
+		cfg.Body = DefaultBody
+	}
 	if cfg.SessionTTL == 0 {
 		cfg.SessionTTL = DefaultSessionTTL
+	}
+	if cfg.BeginPath == "" {
+		cfg.BeginPath = "/signin"
+	}
+	if cfg.ForgetPath == "" {
+		cfg.ForgetPath = "/signin/forget"
 	}
 
 	sess, err := sessions.New(sessions.Config{
@@ -225,11 +343,43 @@ func New(cfg Config) (*Auth, error) {
 		return nil, err
 	}
 
-	a := &Auth{cfg: cfg, sessions: sess}
+	a := &Auth{
+		cfg: cfg, sessions: sess, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running()),
+		now:         time.Now,
+		attemptKey:  crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
+		continueKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/continue/v1"),
+	}
+	jar, err := lastsignin.New(lastsignin.Config{
+		Origin: cfg.Origin, InstanceKey: cfg.InstanceKey,
+		AttemptCookie: a.attemptCookie(), Mode: rememberMode(cfg),
+		// Through a.now, not time.Now, so a test that moves auth's clock
+		// moves the jar's too and the two never disagree about expiry.
+		Now: func() time.Time { return a.now() },
+	})
+	if err != nil {
+		return nil, err
+	}
+	a.jar = jar
+
+	servers, err := keymailServers(cfg.KeymailServers)
+	if err != nil {
+		return nil, err
+	}
+	a.servers = servers
+	classifier := &signin.Classifier{}
+	if servers != nil {
+		a.guard = &hostGuard{allow: servers}
+		classifier.HTTP = &http.Client{Transport: a.guard, Timeout: classifyTimeout}
+		a.exchangeHTTP = &http.Client{Transport: a.guard, Timeout: exchangeTimeout}
+	}
+
 	a.flow = &signin.Flow{
-		Classifier: &signin.Classifier{},
+		Classifier: classifier,
 		Keymail: func(server string) *signin.Keymail {
-			return &signin.Keymail{Base: "https://" + server, Origin: cfg.Origin}
+			return &signin.Keymail{
+				Base: "https://" + server, Origin: cfg.Origin,
+				RedirectPath: callbackPath, HTTP: a.exchangeHTTP,
+			}
 		},
 		Links:    &linkStore{db: cfg.DB},
 		Mailer:   cfg.Mailer,
@@ -238,9 +388,32 @@ func New(cfg Config) (*Auth, error) {
 		Origin:   cfg.Origin,
 		LinkPath: "/auth/verify",
 		Subject:  cfg.Subject,
+		Body:     cfg.Body,
+		LinkTTL:  LinkTTL,
 	}
 	return a, nil
 }
+
+// rememberMode is the jar's mode, from the one switch: nothing at all
+// without the screen, whatever Remember says; with it, Remember=false
+// forgets and anything else remembers.
+func rememberMode(cfg Config) lastsignin.Mode {
+	switch {
+	case !cfg.SigninScreen:
+		return lastsignin.Off
+	case cfg.Remember != nil && !*cfg.Remember:
+		return lastsignin.Forgetting
+	default:
+		return lastsignin.On
+	}
+}
+
+// RememberJar is the jar holding this browser's remembered way in, and
+// the seam that ends a sign-in attempt. Give it to passkey.Config.Remember
+// so a passkey sign-in clears the screen's typed address and is
+// remembered like the other two ways in. With SigninScreen off the jar
+// is inert, so wiring it is always safe.
+func (a *Auth) RememberJar() *lastsignin.Jar { return a.jar }
 
 // secure reports whether the app's origin is https — which decides both
 // the Secure cookie attribute and the __Host- name prefix (the prefix
@@ -284,3 +457,16 @@ func NewToken() (token, hash string, err error) { return sessions.NewToken() }
 // HashToken is the storage hash of a session token: SHA-256, hex —
 // a thin alias over the sessions core.
 func HashToken(token string) string { return sessions.HashToken(token) }
+
+// trustedHops resolves Config.TrustedProxyHops: an explicit value wins;
+// unset is the CARLOS edge's one hop there, and none anywhere else.
+func trustedHops(set *int, onCarlos bool) int {
+	switch {
+	case set != nil:
+		return *set
+	case onCarlos:
+		return clientip.DefaultHops
+	default:
+		return 0
+	}
+}

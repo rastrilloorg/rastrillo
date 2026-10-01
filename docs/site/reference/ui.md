@@ -43,7 +43,21 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `T`, `Tf` and `dateWords`.
+`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`,
+`displayURL` and `safeHref`.
+
+`opt` reads an optional key off a partial's data, whether it is a map or
+a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
+sentence that shows back something a visitor typed: each value is
+escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's
+backdrop from a word; the same word always draws the same picture.
+
+`displayURL` and `safeHref` are `form.DisplayURL` and `form.SafeHref`,
+for showing an address that `field-url` collected. `displayURL` is the
+address without its scheme or trailing slash. `safeHref` is the address
+if it is an http or https URL with no username or password in it, and
+`""` otherwise, so wrap the link in `{{with safeHref .Site}}`. See
+[Templates](/docs/templates#web-address-fields).
 
 `dict` builds a partial's single data value at the call site:
 
@@ -380,7 +394,7 @@ func LayoutNames() []string
 func Layout(name string) ([]byte, bool)
 ```
 
-The four shipped page frames, `column` first: `column` is the plain
+The five shipped page frames, `column` first: `column` is the plain
 centred page, `topbar` adds a header bar with nav and an account menu,
 `sidebar` a left rail that collapses to a `<details>` chrome bar below
 800px, and `console` is both at once — a brand-and-account bar across
@@ -388,9 +402,13 @@ the top with the navigation rail beneath it down the side, which is the
 shape most admin consoles are. `Layout` returns one shell's complete
 `layout.html` text and reports `false` for a name that is not shipped.
 
+`stage` is one card centred over a full-page backdrop, for a page that
+stands alone, such as the sign-in screen. Its blocks are `title`,
+`lang`, `dir`, `head`, `backdrop` and `foot`.
+
 A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
-`dir` and `head` in all four, plus `brand`, `nav`, `account` and
+`dir` and `head` in all five, plus `brand`, `nav`, `account` and
 `locale` in the three chrome shells, and `foot` in `topbar` and
 `console`. No block reads a field off the data, so a shell renders the
 same whether a handler passes a struct, a `dict`-built map, or nil.
@@ -405,6 +423,17 @@ the ties it should against `tokens.css` and the theme.
 pin, no vendoring test — so overriding a block, or rewriting the file
 outright, is expected on day one. [Templates](/docs/templates) has the
 block contract with a worked override.
+
+## The sign-in screen
+
+`signin` renders the whole sign-in card from an `auth.SigninState`, and
+`signin-title` the matching tab title. Pass `Brand` with a `Name`, and
+optionally a one-line `Pitch` and a `Mark` (an `<img>` or inline SVG as
+`template.HTML`). Every string comes from the base catalogs under
+`rastrillo.ui.signin_*`, in all twelve languages. The passkey button
+loads `passkey.JS()` from the `ScriptURL` you set, and only on a page
+that shows it; without that script it stays hidden, and the email form
+works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
 
 ## Styleguide
 
@@ -430,6 +459,7 @@ undemonstrated. The returned map is a copy, safe to mutate.
 ```go
 func TokensCSS() []byte
 func ShimJS() []byte
+func BusyJS() []byte
 func SelectJS() []byte
 func DatetimeJS() []byte
 func CalendarJS() []byte
@@ -438,12 +468,14 @@ func CalendarJS() []byte
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
 into the app's `static/`. `ShimJS` is `rastrillo.js` — the
 progressive-enhancement shim. It drives `data-poll` and
-`data-poll-push` ([Background jobs](/docs/jobs)); it gives every submit
-button a busy state and every form a double-submit guard by default,
-with `data-busy="false"` as the opt-out and `data-busy-label` as the
-label swap; and it closes an open `<details>` menu on an outside click
-or Escape, which is the one part of the menu idiom the native element
-cannot express. `SelectJS` backs the enhanced select: it mirrors a
+`data-poll-push` ([Background jobs](/docs/jobs)), and it closes an open
+`<details>` menu on an outside click or Escape, which is the one part of
+the menu idiom the native element cannot express. `BusyJS` is `busy.js`,
+the busy rule: every submit button's label gives way to a spinner for
+at least 650ms, the button disables and the form refuses a second
+submit, and Back hands the form back — by default, with
+`data-busy="false"` as the opt-out and `data-busy-label` as the label
+swap. Linking it is the whole opt-in. `SelectJS` backs the enhanced select: it mirrors a
 `<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one
@@ -457,6 +489,30 @@ language, and the words it matches on arrive on `data-rst-date-words`
 from the request's catalog.
 Its on-screen labels have English fallbacks, the same way `select.js`
 does, for a field that reaches it without the attributes.
+
+A select added after the page loads stays native until you ask: dispatch
+`rst:select-scan` on `document`, with `{detail: {root}}` to look only
+inside what you added, and `select.js` enhances every `data-rst-select`
+there it has not enhanced already.
+
+The list opens downward unless there is not room for it below and there
+is more room above. It never goes past the edge of what the reader can
+see: if neither side has room for the whole list, it takes the bigger
+side and fits itself to it.
+
+Mark a bar that stays pinned below your form, such as a sticky save bar,
+with `data-rst-select-floor`. The list then treats the top of the bar as
+the bottom of the screen, so it never opens over the bar's buttons.
+
+Inside an iframe, `select.js` sees only its own frame, so it cannot tell
+when the page around it hides part of the frame, for example behind a
+phone's on-screen keyboard. A host that can see the whole page can tell
+it: dispatch `rst:select-viewport` on the frame's `document` with
+`{detail: {top, bottom}}`, the part of the frame the reader can see, in
+the frame's own pixels. Dispatch it again whenever that changes. Send
+`{detail: null}` to go back to the frame's own view. Without it, a list
+in a frame can open under a keyboard or a bar that belongs to the page
+outside.
 
 `CalendarJS` is the month grid those fields open when you press their
 calendar button — a real `<table>` with real column headers under a

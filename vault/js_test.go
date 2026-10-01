@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
 // TestJSEmbedded pins the embed wiring, keyring's pattern: the twin
@@ -32,10 +32,8 @@ func TestJSEmbedded(t *testing.T) {
 // `node --test` — so the cross-language claim is a Go artifact opened
 // by JS, not two monologues. Skipped without node (crypto's rule).
 func TestJSTwin(t *testing.T) {
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skip("node not on PATH; JS twin not exercised")
-	}
+	// Before the fixture is built: no node means none of it is needed.
+	nodetest.Node(t)
 
 	dir := t.TempDir()
 	jsDir := filepath.Join(dir, "js")
@@ -88,10 +86,5 @@ func TestJSTwin(t *testing.T) {
 	}
 	write(filepath.Join(tdDir, "handoff.json"), fx)
 
-	cmd := exec.Command(node, "--test", "handoff.test.mjs")
-	cmd.Dir = jsDir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("node --test handoff.test.mjs failed: %v\n%s", err, out)
-	}
+	nodetest.Run(t, nodetest.Cmd{Dir: jsDir, Args: []string{"--test", "handoff.test.mjs"}})
 }

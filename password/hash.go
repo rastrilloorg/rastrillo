@@ -10,63 +10,127 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"golang.org/x/crypto/argon2"
 )
 
-// iterations and keyLen are pinned in the encoded hash itself (see
-// Hash) rather than only in code, so they can be raised later without
+// Argon2id is what Hash produces: the memory-hard function current
+// guidance (OWASP, RFC 9106) puts first, at OWASP's first recommended
+// setting — 19 MiB of memory, two passes, one lane — which lands near
+// the quarter-second a verification should cost and stays polite to a
+// small instance verifying several at once. The parameters are pinned
+// in the encoded hash itself, so they can be raised later without
 // breaking already-stored hashes: Verify reads the parameters a hash
 // was made with, not the package's current defaults.
 const (
-	iterations = 600_000
-	saltLen    = 16
-	keyLen     = 32
+	argonMemory  = 19 * 1024 // KiB
+	argonTime    = 2
+	argonThreads = 1
+	saltLen      = 16
+	keyLen       = 32
 
-	// maxIterations caps what Verify will accept from a stored hash's
-	// own iter field — see Verify's comment.
-	maxIterations = 10_000_000
+	// Ceilings on what Verify will accept from a stored hash's own
+	// parameters — guards against a corrupted or hostile row pinning a
+	// request in a derivation for an unbounded amount of time, far above
+	// anything this package would ever encode.
+	maxArgonMemory = 1024 * 1024 // 1 GiB
+	maxArgonTime   = 64
+	maxIterations  = 10_000_000
+
+	// pbkdf2Iterations is the count earlier versions of this package
+	// encoded (the OWASP floor for PBKDF2-SHA256). Verify still honours
+	// those hashes; NeedsRehash reports them, and an app upgrades each
+	// at the one moment it holds the plaintext.
+	pbkdf2Iterations = 600_000
 )
 
-// Hash derives a PBKDF2-SHA256 hash of password and encodes it as
-// "pbkdf2$sha256$600000$<hex salt>$<hex dk>". PBKDF2-SHA256 at 600k
-// iterations is the current OWASP floor; it's chosen over argon2 here
-// to stay stdlib-only (Go's crypto/pbkdf2, added in 1.24).
+// Hash derives an Argon2id hash of password and encodes it as
+// "argon2id$v=19$m=19456,t=2,p=1$<b64 salt>$<b64 key>" — the PHC
+// string format, base64 without padding, so any other Argon2
+// implementation reads it.
 func Hash(password string) (string, error) {
 	salt := make([]byte, saltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", fmt.Errorf("rastrillo/password: generate salt: %w", err)
 	}
-	dk, err := pbkdf2.Key(sha256.New, password, salt, iterations, keyLen)
-	if err != nil {
-		return "", fmt.Errorf("rastrillo/password: derive key: %w", err)
-	}
-	return fmt.Sprintf("pbkdf2$sha256$%d$%s$%s", iterations, hex.EncodeToString(salt), hex.EncodeToString(dk)), nil
+	key := argon2.IDKey([]byte(password), salt, argonTime, argonMemory, argonThreads, keyLen)
+	return fmt.Sprintf("argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", argon2.Version, argonMemory, argonTime, argonThreads,
+		base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(key)), nil
 }
 
-// Verify reports whether password matches the PBKDF2 hash encoded in
-// encoded (Hash's format). Any malformed encoding — wrong field
-// count, unknown algorithm, unparseable iteration count, invalid hex
-// — is treated as a non-match: Verify never panics on garbage input.
-// The derived key comparison uses subtle.ConstantTimeCompare so a
-// mismatch takes the same time regardless of where the bytes diverge.
+// Verify reports whether password matches encoded — an Argon2id hash in
+// Hash's format, or a PBKDF2-SHA256 hash from an earlier version of
+// this package ("pbkdf2$sha256$<iter>$<hex salt>$<hex dk>"). Any
+// malformed encoding — wrong field count, unknown algorithm,
+// unparseable parameters, invalid encoding — is treated as a
+// non-match: Verify never panics on garbage input. The key comparison
+// uses subtle.ConstantTimeCompare so a mismatch takes the same time
+// regardless of where the bytes diverge.
 func Verify(encoded, password string) bool {
 	parts := strings.Split(encoded, "$")
 	if len(parts) != 5 {
 		return false
 	}
-	algo, hashName, iterStr, saltHex, dkHex := parts[0], parts[1], parts[2], parts[3], parts[4]
-	if algo != "pbkdf2" || hashName != "sha256" {
+	switch parts[0] {
+	case "argon2id":
+		return verifyArgon(parts, password)
+	case "pbkdf2":
+		return verifyPBKDF2(parts, password)
+	}
+	return false
+}
+
+func verifyArgon(parts []string, password string) bool {
+	if parts[1] != "v="+strconv.Itoa(argon2.Version) {
+		return false
+	}
+	var m, t, p int
+	for _, kv := range strings.Split(parts[2], ",") {
+		k, v, ok := strings.Cut(kv, "=")
+		if !ok {
+			return false
+		}
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			return false
+		}
+		switch k {
+		case "m":
+			m = n
+		case "t":
+			t = n
+		case "p":
+			p = n
+		default:
+			return false
+		}
+	}
+	if m == 0 || t == 0 || p == 0 || m > maxArgonMemory || t > maxArgonTime || p > 16 {
+		return false
+	}
+	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
+	if err != nil || len(salt) == 0 {
+		return false
+	}
+	want, err := base64.RawStdEncoding.DecodeString(parts[4])
+	if err != nil || len(want) == 0 {
+		return false
+	}
+	got := argon2.IDKey([]byte(password), salt, uint32(t), uint32(m), uint8(p), uint32(len(want)))
+	return subtle.ConstantTimeCompare(got, want) == 1
+}
+
+func verifyPBKDF2(parts []string, password string) bool {
+	hashName, iterStr, saltHex, dkHex := parts[1], parts[2], parts[3], parts[4]
+	if hashName != "sha256" {
 		return false
 	}
 	iter, err := strconv.Atoi(iterStr)
-	// The upper bound isn't a real-world iteration count — it's a
-	// guard against a corrupted or hostile stored row (a huge iter
-	// pinning a request thread in PBKDF2 for an unbounded amount of
-	// time); maxIterations is far above any value this package would
-	// ever encode.
 	if err != nil || iter <= 0 || iter > maxIterations {
 		return false
 	}
@@ -75,14 +139,7 @@ func Verify(encoded, password string) bool {
 		return false
 	}
 	wantDK, err := hex.DecodeString(dkHex)
-	if err != nil {
-		return false
-	}
-	if len(wantDK) == 0 {
-		// Belt-and-suspenders: an empty key would make pbkdf2.Key's
-		// keyLength argument 0, which happens to also be a non-match by
-		// construction — spelled out explicitly rather than relying on
-		// that stdlib behavior.
+	if err != nil || len(wantDK) == 0 {
 		return false
 	}
 	gotDK, err := pbkdf2.Key(sha256.New, password, salt, iter, len(wantDK))
@@ -93,22 +150,32 @@ func Verify(encoded, password string) bool {
 }
 
 // NeedsRehash reports whether encoded was made with weaker parameters
-// than the package currently uses — an older iteration count, or a
-// format this package no longer produces. The parameters are pinned in
-// each hash (see Hash), so old hashes keep verifying forever; this is
-// how an app notices them and upgrades opportunistically, at the one
-// moment it holds the plaintext:
+// than the package currently uses — a PBKDF2 hash from an earlier
+// version, an Argon2id hash below today's memory or time, or a format
+// this package never produced. Old hashes keep verifying forever; this
+// is how an app notices them and upgrades opportunistically, at the
+// one moment it holds the plaintext:
 //
 //	if Verify(stored, submitted) && NeedsRehash(stored) {
 //	    if h, err := Hash(submitted); err == nil { /* store h */ }
 //	}
 func NeedsRehash(encoded string) bool {
 	parts := strings.Split(encoded, "$")
-	if len(parts) != 5 || parts[0] != "pbkdf2" || parts[1] != "sha256" {
+	if len(parts) != 5 || parts[0] != "argon2id" {
 		return true
 	}
-	iter, err := strconv.Atoi(parts[2])
-	return err != nil || iter < iterations
+	var m, t int
+	for _, kv := range strings.Split(parts[2], ",") {
+		k, v, _ := strings.Cut(kv, "=")
+		n, _ := strconv.Atoi(v)
+		switch k {
+		case "m":
+			m = n
+		case "t":
+			t = n
+		}
+	}
+	return m < argonMemory || t < argonTime
 }
 
 // decoyHash is verified against when Lookup finds no user, so an

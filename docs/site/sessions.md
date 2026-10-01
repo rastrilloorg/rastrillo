@@ -85,9 +85,10 @@ have been verified within `maxAge`; past that, a `GET` or `HEAD` goes to
 and anything else answers 403.
 
 Re-signing in calls `SignIn`, which rotates the session with a fresh
-timestamp and satisfies the gate. So does a passkey assertion —
-[Passkeys](/docs/passkeys) covers using one for step-up instead of a
-full re-sign-in.
+timestamp and satisfies the gate. So does a passkey assertion or an
+authenticator-app code — [Passkeys](/docs/passkeys) and
+[Second factors](/docs/second-factors) cover using one for step-up
+instead of a full re-sign-in.
 
 Freshness is measured from `AuthTime` when the plugin records one, and
 from the session row's creation time otherwise. A session is only ever

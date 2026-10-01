@@ -101,11 +101,60 @@ func TestRejectsATamperedCeremony(t *testing.T) {
 	}
 }
 
-func TestRegistrationRequiresAVerifiedUser(t *testing.T) {
+func TestRegistrationRecordsWhetherTheUserWasVerified(t *testing.T) {
+	verified, err := register(t, auth(t), chal(t), good())
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	if !verified.UserVerified {
+		t.Error("a verified registration was recorded as unverified")
+	}
+	if len(verified.AAGUID) != 16 {
+		t.Errorf("AAGUID is %d bytes, want 16", len(verified.AAGUID))
+	}
 	o := good()
 	o.Flags = authtest.FlagUserPresent | authtest.FlagAttestedData
-	if _, err := register(t, auth(t), chal(t), o); !errors.Is(err, ErrNotVerified) {
-		t.Errorf("err = %v, want ErrNotVerified", err)
+	present, err := register(t, auth(t), chal(t), o)
+	if err != nil {
+		t.Fatalf("a presence-only registration was refused: %v", err)
+	}
+	if present.UserVerified {
+		t.Error("a presence-only registration was recorded as verified")
+	}
+}
+
+func TestAssertReportsVerificationWhereVerifyInsistsOnIt(t *testing.T) {
+	a := auth(t)
+	cred, err := register(t, a, chal(t), good())
+	if err != nil {
+		t.Fatal(err)
+	}
+	o := good()
+	o.Flags = authtest.FlagUserPresent
+	c := chal(t)
+	clientData, authData, sig, err := a.Get(c, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := cfg.Verify(cred, c, clientData, authData, sig); !errors.Is(err, ErrNotVerified) {
+		t.Errorf("Verify err = %v, want ErrNotVerified", err)
+	}
+	c2 := chal(t)
+	clientData, authData, sig, _ = a.Get(c2, o)
+	got, err := cfg.Assert(cred, c2, clientData, authData, sig)
+	if err != nil {
+		t.Fatalf("Assert: %v", err)
+	}
+	if got.UserVerified {
+		t.Error("Assert reported a presence-only assertion as verified")
+	}
+	// Nobody present is still a refusal, for both.
+	o.Flags = authtest.FlagUserVerified
+	c3 := chal(t)
+	clientData, authData, sig, _ = a.Get(c3, o)
+	if _, err := cfg.Assert(cred, c3, clientData, authData, sig); !errors.Is(err, ErrNotVerified) {
+		t.Errorf("Assert with nobody present: err = %v, want ErrNotVerified", err)
 	}
 }
 
