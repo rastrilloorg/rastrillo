@@ -13,13 +13,12 @@
 ## Global Constraints
 
 - **Where commands run:** from the worktree root `/home/paulca/amadan.net/rastrillo/rastrillo/.claude/worktrees/mobile-ergonomics`, branch `mobile-ergonomics`. Every `git`, `go`, `node`, `jq` and `make` command runs with the Bash sandbox disabled (`dangerouslyDisableSandbox: true`). Export `GOFLAGS=-mod=mod` for every `go` command (three scratch-module packages fail on go.sum without it). The shared repo has a stale read-only `.git/config.lock`: do not touch it. Push with `git push origin mobile-ergonomics` (no `-u`); the amadan remote occasionally answers 503, so retry.
-- **The task gate.** Every task ends GREEN on all three of these, run in this order, and a task is not done until they pass:
-  1. `GOFLAGS=-mod=mod go vet ./... && make gofmt && RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./... -count=1` (this is the operator's gate line `go vet && gofmt -l . && go test`, with `make gofmt` standing in for `gofmt -l .` because `gofmt -l` exits 0 even when it prints, and the Makefile target fails on output and prunes `.build/tmp`);
-  2. `make example-blog example-tickets` (the examples are separate modules with byte copies of `tokens.css`);
-  3. `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1` (the Makefile's `browser` package list, verbatim).
-  Task 14 runs `make ci` whole. Run `gofmt -w` on every Go file you write before the gate: code blocks in this plan are not guaranteed column-aligned.
+- **The task gate.** Every task ends GREEN, and is not pushed until it is, on both of these, in this order:
+  1. the operator's gate line, for fast feedback: `GOFLAGS=-mod=mod go vet ./... && make gofmt && RASTRILLO_TEST_REQUIRE_NODE=1 GOFLAGS=-mod=mod go test ./... -count=1` (`make gofmt` stands in for `gofmt -l .`: `gofmt -l` exits 0 even when it prints, and the Makefile target fails on output and skips `.build/tmp`);
+  2. the repository's whole gate, which AGENTS.md requires before every push: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp make ci`. It contains the line above (with `RASTRILLO_TEST_REQUIRE_NODE=1` as its default), all four example modules (blog and tickets carry byte copies of `tokens.css`), `race`, `chromedp-graph`, `gorm-free`, `generate-check`, `scaffold-smoke`, and `browser`, whose package list is `./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/`.
+  While iterating inside a task, the focused commands each step gives are enough; the gate is the end of the task. Run `gofmt -w` on every Go file you write before it: code blocks in this plan are not guaranteed column-aligned.
 - **Browser tests:** `//go:build browser`, `RASTRILLO_CHROME=/usr/bin/chromium`, `TMPDIR=/var/tmp`. Never set `RASTRILLO_BROWSER_OPTIONAL`: a skip is not a pass. New browser files live in `./ui/`, `./harness/` or `./internal/designsystem/`, which the Makefile list already covers; do not add packages to that list.
-- **Touch is a launch flag, not CDP emulation.** Measured on this machine's Chromium (2026-09-30): `Emulation.setTouchEmulationEnabled`, a mobile `setDeviceMetricsOverride` and `setEmulatedMedia` all leave `matchMedia("(pointer: coarse)")` false; `--blink-settings=primaryPointerType=2,availablePointerTypes=2,primaryHoverType=1,availableHoverTypes=1` makes it true. Task 2 adds `harness.WithCoarsePointer()`, and every touch leg asserts `matchMedia("(pointer: coarse)").matches` before it measures anything (spec §10's control).
+- **Touch is a launch flag, not CDP emulation.** Measured on this machine's Chromium (2026-09-30): `Emulation.setTouchEmulationEnabled`, a mobile `setDeviceMetricsOverride` and `setEmulatedMedia` all leave `matchMedia("(pointer: coarse)")` false; `--blink-settings=primaryPointerType=2,availablePointerTypes=2,primaryHoverType=1,availableHoverTypes=1` makes it true. Task 3 adds `harness.WithCoarsePointer()`, and every touch leg asserts `matchMedia("(pointer: coarse)").matches` before it measures anything (spec §10's control).
 - **Prerender in headless Chromium.** Measured: a `Speculation-Rules` header makes Chromium fetch the target with `Sec-Purpose: prefetch;prerender` on hover (mouse) and on pointer-down (coarse), but the prerender is never activated headless (the navigation is delivered as `deliveryType: "navigational-prefetch"`, `activationStart` 0), and enabling the CDP `Preload` domain disables prerendering outright (`PrerenderingDisabledByDevTools`). So the tests assert on the server-side `Sec-Purpose` request, never enable `Preload`, and the true prerender-activation leg of §10.3 moves to the by-hand list (Task 14).
 - **A page restored from the back/forward cache fires no load event and raises no `DOM.documentUpdated`**, so after any history traversal a drive uses `settle`-style polling of `chromedp.Evaluate` and clicks through the page (`el.click()`), never `chromedp.Click`/`WaitVisible`/`NavigateBack` (the pattern `ui/browser_test.go:2343-2375` already documents; re-measured for this plan).
 - **Examples are separate modules.** Any task that edits `ui/tokens.css` re-copies it in the same commit: `cp ui/tokens.css examples/blog/static/tokens.css && cp ui/tokens.css examples/tickets/static/tokens.css`.
@@ -28,7 +27,7 @@
 - **No inline styles and no inline scripts** in `ui/partials/*` or `ui/layouts/*` (`TestPartialsAndLayoutsEmitNoInlineStyles`). The default CSP (`serve.go:428-430`) is not widened.
 - **Catalogs:** the 12 files in `locales/` share one key set (`TestBaseCatalogsShareOneKeySet`), every key `rastrillo.ui.*`. Partials call `Tf` (never `T`) for a string with `{name}` in it: `T` ignores its extra arguments (`ui/funcs.go:163`).
 - **Struct callers stay working:** a new optional key read by a shipped partial goes through `opt` (`ui/funcs.go:389`), never `.Key` inline.
-- **Copy.** No user-facing English is written into a tracked file before the operator approved it in copy review, and **no em dashes in any new user-facing copy** (operator preference). Batch 1 (the six strings in `copy-review/strings.json`) is approved before execution starts; its result is `copy-review/result.json` (gitignored), `{"action":"approve","strings":[{"id":…,"text":…}]}`, which Task 1 keeps as `copy-review/batch1-result.json` because every later review run overwrites `result.json`; batches 2 and 3 are kept the same way as `batch2-result.json` and `batch3-result.json`. Batch 2 (Task 5) and batch 3 (Task 12) are run by the controller with the `copy-review` skill before the files they feed are written. Translations are not reviewed: draft the eleven from the approved English. English shown in a task is the DRAFT that went to review; the approved text from `result.json` replaces it wherever the two differ, and any translation drafted from a changed string is redrafted. Tests reference catalog keys (`defaultT("rastrillo.ui.row_menu")`) or prose keys through the same variable the renderer uses, never the English literally.
+- **Copy.** No user-facing English is written into a tracked file before the operator approved it in copy review, and **no em dashes in any new user-facing copy** (operator preference). Batch 1 (the six strings in `copy-review/strings.json`) is approved before execution starts; its result is `copy-review/result.json` (gitignored), `{"action":"approve","strings":[{"id":…,"text":…}]}`, which Task 1 keeps as `copy-review/batch1-result.json` because every later review run overwrites `result.json`; batches 2 and 3 are kept the same way as `batch2-result.json` and `batch3-result.json`. Batch 2 (Task 2) and batch 3 (Task 12) are run by the controller with the `copy-review` skill before the files they feed are written. Translations are not reviewed: draft the eleven from the approved English. English shown in a task is the DRAFT that went to review; the approved text from `result.json` replaces it wherever the two differ, and any translation drafted from a changed string is redrafted. Tests reference catalog keys (`defaultT("rastrillo.ui.row_menu")`) or prose keys through the same variable the renderer uses, never the English literally. Public documentation is user-facing copy too: exported Go doc comments and the `ui` package doc (pkg.go.dev), the data contracts of shipped partials, and every comment and message written into a scaffolded app. Comments that explain why to a maintainer of this repository (tokens.css, the scripts, the layouts, unexported Go, tests) are code comments, held to AGENTS.md's comment rule and reviewed with the code.
 - **Reference docs before batch 3.** A new exported symbol (`ui.ShellJS`, `ui.ShellCSS`, `harness.WithCoarsePointer`, `rastrillo.SpeculationRulesPath`) gets its signature line added to the existing Go code fence of its reference page in the task that adds it, because `TestExportedSymbolsAreDocumented` checks every task. A signature is code, not copy; the prose explaining it comes with batch 3.
 - **SKILL.md:** ≤ 30,000 bytes (`skillmd_test.go:124`); 26,577 today. Reviewed like code: no inaccurate line.
 - **Budgets:** `rastrillo.js` ≤ 16,384 bytes (`ui/shim_test.go:262`, 9,784 today); `shell.js` ≤ 8,192 (new test); gallery pages ≤ 128 KiB (`internal/designsystem/designsystem_test.go:76`).
@@ -58,7 +57,7 @@ Each is decided below; a reviewer who disagrees should say so before the task th
 - **Console gets the title `<h1>` in its rail too**, so its phone index has one h1 like the sidebar's. `view` and `up` sit in the console in source order; the back strip is after the bar.
 - **The gallery's demo is four documents**: `demo.html` (the index; desktop shows the dashboard), `demo-dashboard.html`, `demo-requests.html`, `demo-request.html`. The sidebar and console shell previews are `shells/<shell>.html` (the index, still the address the gallery links) and `shells/<shell>-page.html` (the content page), so every existing link keeps its target.
 - **The pre-H layouts are committed as test fixtures** (`ui/testdata/legacy/sidebar.html`, `console.html`), copied from `a7a24dd`, rather than read from git at test time, so the compatibility legs run on a checkout with no history.
-- **A mid-plan copy batch (Task 5).** The row menu's gallery sample needs a blurb and state labels, the demo's kebab a label, and the Getting Started page one line per new asset; all are prose keys that need eleven translations, and `buildFamilies`/`TestTheGettingStartedPageWeighsTheRealAssets` fail until they exist. Batch 3 keeps what the operator placed there: docs, SKILL.md, the changelog body and the gallery's shell blurbs. The shell blurbs therefore describe the drawer for Tasks 9 to 12 and are corrected in Task 13.
+- **An early second copy batch (Task 2), right after Task 1.** The operator placed the gallery's shell blurbs in the late batch, but the shells change in Task 9 and the blurbs would describe a drawer the gallery no longer shows for four tasks; gates also force the row menu's gallery words and the asset lines to exist in the task that adds the code, and the public Go documentation and partial contracts the code tasks write are user-facing too. So batch 2 runs before any code task and holds all of them; batch 3 keeps the docs site, SKILL.md and the changelog body, which describe the finished whole.
 - **The doctor advisory is printed as `  <layout path>: <approved sentence>`**, adding no words of its own beyond the path.
 - **`SKILL.md` gains "a GET never mutates"**: §4.6 says SKILL.md already states it, and it does not (verified). Prerender makes it load-bearing, so batch 3 adds it.
 
@@ -111,7 +110,7 @@ test -f copy-review/batch1-result.json || cp copy-review/result.json copy-review
 jq -r '.strings[] | "\(.id)\t\(.text)"' copy-review/batch1-result.json
 ```
 
-Expected: `true`, then six lines. The copy goes to `copy-review/batch1-result.json` because the next copy-review run (Task 5) overwrites `result.json`, and Tasks 10 and 13 read batch 1's other three strings from this copy. If `result.json` is missing or `.action` is not `approve`, stop and report to the controller: nothing in this plan writes unapproved copy. The drafts were `Sections`, `Back to {name}`, `Actions for {name}`; if the approved text differs, the translations in Step 3 are redrafted from it (keep `{name}` exactly once, no em dash).
+Expected: `true`, then six lines. The operator approved batch 1 unchanged on 2026-10-01: `Sections`, `Back to {name}`, `Actions for {name}`, `Overview`, the doctor advisory and the changelog heading, exactly as drafted. The copy goes to `copy-review/batch1-result.json` because the next copy-review run (Task 2) overwrites `result.json`, and Tasks 10 and 13 read batch 1's other three strings from this copy. If `result.json` is missing or `.action` is not `approve`, stop and report to the controller: nothing in this plan writes unapproved copy. The drafts were `Sections`, `Back to {name}`, `Actions for {name}`; if the approved text differs, the translations in Step 3 are redrafted from it (keep `{name}` exactly once, no em dash).
 
 - [ ] **Step 2: Write the failing test**
 
@@ -205,7 +204,7 @@ for code, (label, up, menu) in rows.items():
 Run: `GOFLAGS=-mod=mod go test -run 'TestTheShellAndRowMenuStringsAreInEveryCatalog|TestBaseCatalogsShareOneKeySet' -count=1 .`
 Expected: PASS.
 
-- [ ] **Step 6: Run the task gate** (Global Constraints, all three commands). Expected: all green.
+- [ ] **Step 6: Run the task gate** (Global Constraints: the gate line, then `make ci`). Expected: all green.
 
 - [ ] **Step 7: Commit and push**
 
@@ -225,7 +224,250 @@ git push origin mobile-ergonomics
 
 ---
 
-### Task 2: The type scale, the zoom floor, and a coarse pointer the rig can produce
+### Task 2: Copy review, batch 2: the gallery's words, the shell blurbs, and the public documentation the code tasks write (controller)
+
+Run by the controller with the `copy-review` skill right after Task 1, not by an implementer: the operator reviews the English, and nothing below is written into a tracked file by this task. Tasks 3, 4, 5, 6, 8, 9, 10 and 11 write the approved text. It holds every user-facing string a code task writes: the gallery's prose keys (the row menu's sample, the demo, the asset list, and the shell blurbs, which must change in the same task as the shells so the gallery never describes a drawer it no longer shows), and the public documentation (exported Go doc comments and the ui package doc on pkg.go.dev, the data contracts of shipped partials, and the comments and messages that land in every scaffolded app). Comments that explain why to a maintainer of this repository (tokens.css, the scripts, the layouts, unexported Go) are code comments, held to AGENTS.md's comment rule and reviewed with the code.
+
+**Files:**
+- Create (gitignored): `copy-review/strings.json` (batch 2), `copy-review/batch2-result.json`
+
+**Interfaces:**
+- Consumes: `copy-review/batch1-result.json` (kept by Task 1).
+- Produces: `copy-review/batch2-result.json`, `{"action":"approve","strings":[…]}` with the ids below. Every later task that writes one of these strings reads it from that file with `jq -r '.strings[] | select(.id=="<id>") | .text' copy-review/batch2-result.json`.
+
+- [ ] **Step 1: Keep batch 1's result**
+
+```bash
+test -f copy-review/batch1-result.json || cp copy-review/result.json copy-review/batch1-result.json
+jq -e '.action == "approve"' copy-review/batch1-result.json
+```
+
+- [ ] **Step 2: Write `copy-review/strings.json`**
+
+These are the drafts; no em dashes. The `gallery.*` ids are gallery prose keys (English is the key, eleven translations follow); the others are written in English only.
+
+```json
+[
+  {
+"id": "gallery.row_menu.blurb",
+"section": "Gallery: the row menu",
+"label": "Row menu, one-line description",
+"text": "A row's other actions, behind a ⋮ button. A destructive one links to its confirm page.",
+"context": "The description under the row-menu partial's name on the gallery's List screen page. The partial is new: a ⋮ button at the end of a list row that opens a small menu of actions for that row."
+},
+  {
+"id": "gallery.row_menu.state_mixed",
+"section": "Gallery: the row menu",
+"label": "First example's label",
+"text": "Links, a form and a destructive item",
+"context": "Label above the first example: a menu with an Edit link, an Archive button that posts a form, and a destructive 'Delete order…' link, separated by a rule."
+},
+  {
+"id": "gallery.row_menu.note_mixed",
+"section": "Gallery: the row menu",
+"label": "First example's note",
+"text": "Put the destructive item last and end its label with …. It opens a page that asks before anything is deleted.",
+"context": "A note under the first example, telling a developer how to order the items."
+},
+  {
+"id": "gallery.row_menu.state_links",
+"section": "Gallery: the row menu",
+"label": "Second example's label",
+"text": "Links only, for a list inside a selection form",
+"context": "Label above the second example: every item is a link. Used when the list sits inside the form that bulk selection submits."
+},
+  {
+"id": "gallery.row_menu.note_links",
+"section": "Gallery: the row menu",
+"label": "Second example's note",
+"text": "Inside a form, every item must be a link. An action that posts goes through a page of its own.",
+"context": "Why: a form cannot sit inside another form, so a posting item would submit the whole selection form instead."
+},
+  {
+"id": "gallery.demo.close_request",
+"section": "Gallery: the demo application",
+"label": "Row menu item in the demo's request list",
+"text": "Close request…",
+"context": "The destructive item in each row's ⋮ menu on the demo application's list of support requests. The other item is 'Reply', which the demo already says."
+},
+  {
+"id": "gallery.demo.callout_title",
+"section": "Gallery: the demo application",
+"label": "Callout title on the request screen",
+"text": "Every screen has its own address",
+"context": "Replaces 'Three screens, three addresses'. The demo used to be one page switching views with CSS; it is now four pages, like a real app, and on a phone its navigation is a list with a back control."
+},
+  {
+"id": "gallery.demo.callout_body",
+"section": "Gallery: the demo application",
+"label": "Callout body on the request screen",
+"text": "Each screen is a page of its own, like any rastrillo screen, and works the same with JavaScript off. On a phone, the sections are a list and each screen has a way back.",
+"context": "Replaces 'Every view has its own address, like any rastrillo screen. Turn JavaScript off and it behaves the same. Switching uses CSS.', which is no longer true."
+},
+  {
+"id": "gallery.assets.shell_js",
+"section": "Gallery: Getting started, the asset list",
+"label": "shell.js, one line",
+"text": "Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.",
+"context": "One line beside the new vendored file in the list of files every app gets. The existing lines read like 'The busy rule: while a form sends, its button shows a spinner…'."
+},
+  {
+"id": "gallery.assets.shell_css",
+"section": "Gallery: Getting started, the asset list",
+"label": "shell.css, one line",
+"text": "The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.",
+"context": "One line beside the new vendored stylesheet in the same list."
+},
+  {
+"id": "gallery.shell_blurb_sidebar",
+"section": "Gallery: the Shells page",
+"label": "sidebar blurb",
+"text": "A navigation rail beside the page. On a phone, the rail is an index page and every other page has a back control. No JavaScript needed.",
+"context": "Replaces 'A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.' Written in Task 9, when the shell changes, so the gallery never describes a drawer it no longer shows."
+},
+  {
+"id": "gallery.shell_blurb_console",
+"section": "Gallery: the Shells page",
+"label": "console blurb",
+"text": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. On a phone, the bar's menu opens as a card and the rail is an index page. No JavaScript needed.",
+"context": "Replaces '… Below 800px one disclosure folds both. No JavaScript.'"
+},
+  {
+"id": "gallery.idiom_blurb_sidebar",
+"section": "Gallery: UI primitives",
+"label": "shell-sidebar idiom blurb",
+"text": "The sidebar shell's chrome on a content page: on a phone, a back control to the index.",
+"context": "Replaces 'The sidebar shell's chrome, collapsing below 800px into a details disclosure.'"
+},
+  {
+"id": "godoc.harness.with_coarse_pointer",
+"section": "Go documentation (pkg.go.dev)",
+"label": "harness.WithCoarsePointer",
+"text": "WithCoarsePointer launches Chromium with a touch screen as its primary pointer, so (pointer: coarse) matches and (hover: hover) does not. It is a launch option because nothing later can do it: Emulation.setTouchEmulationEnabled, a mobile setDeviceMetricsOverride and setEmulatedMedia all leave matchMedia(\"(pointer: coarse)\") false in this Chromium, while these Blink settings, read once at launch, make it true. A phone drive that silently ran on a fine pointer would pass at desktop sizes, so check the media query before measuring.",
+"context": "The doc comment on a new exported option of the test harness."
+},
+  {
+"id": "godoc.ui.whole_rows",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui package doc: whole rows",
+"text": "A row with a primary link is clickable across its whole width: the identity link's ::after covers the row, and every other link, button, summary, label and form control in it sits above that overlay. A row with no link gets neither, so it never looks clickable. Give each row one identity link.",
+"context": "A paragraph of the ui package's doc comment, in the list-grid section."
+},
+  {
+"id": "godoc.ui.list_grid_kebab",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui package doc: kebab column",
+"text": "(trailing var(--rst-col-menu) reserved for a kebab)",
+"context": "Replaces '(trailing 32px reserved for a kebab)' in the list-grid paragraph."
+},
+  {
+"id": "godoc.ui.row_menu_sample",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui package doc: row menu",
+"text": "and the per-row overflow menu is the row-menu partial:",
+"context": "The end of the list-grid sentence, before a sample that now calls the partial."
+},
+  {
+"id": "godoc.ui.funcs_row_menu_items",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui.Funcs doc: rowMenuItems",
+"text": "rowMenuItems checks the row-menu partial's Items and hands the partial one ready-to-render item each, stopping the render on an item it cannot show.",
+"context": "A sentence in Funcs' doc comment, which lists every helper it registers."
+},
+  {
+"id": "godoc.ui.shell_js",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui.ShellJS",
+"text": "ShellJS returns shell.js: the sidebar and console shells' phone navigation. It types the slide between pages, makes the back control reuse history when it can prove what is behind it, and returns focus to the section the reader left. Delivered once by rastrillo new like ShimJS and app-owned from then on. Only the sidebar and console layouts link it, and it is optional there: without it the index and the back control are ordinary pages and links.",
+"context": "Doc comment on a new exported function."
+},
+  {
+"id": "godoc.ui.shell_css",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui.ShellCSS",
+"text": "ShellCSS returns shell.css: the slide between the index and a page on a phone. It is a stylesheet of its own because the slide's opt-in cannot be scoped from tokens.css, where it would opt every shell's pages in, the sign-in page included.",
+"context": "Doc comment on a new exported function."
+},
+  {
+"id": "godoc.ui.shells",
+"section": "Go documentation (pkg.go.dev)",
+"label": "ui package doc: shells",
+"text": "rst-shell-sidebar wraps a rst-shell-rail of rst-shell-group-labelled nav beside rst-shell-main. Below 800px it shows each URL in one of two ways, named by the page's view block: the index (rst-shell-sidebar=\"index\"), where the rail is the whole page under its rst-shell-title, and a content page (rst-shell-sidebar=\"page\", the default), which carries a rst-shell-back link to the page's up block. No JavaScript; shell.js adds a slide, history reuse and focus return. rst-shell-console is both at once: its bar's tail folds behind the one <details rst-shell-menu> as a card over the page, and its rail is an index like the sidebar's.",
+"context": "Replaces the sidebar and console sentences of the shell paragraph, which described the drawer."
+},
+  {
+"id": "godoc.rastrillo.speculation_rules_path",
+"section": "Go documentation (pkg.go.dev)",
+"label": "rastrillo.SpeculationRulesPath",
+"text": "SpeculationRulesPath is where Serve answers with its speculation rules, and what the Speculation-Rules header on every response names. The rules prerender the sidebar and console shells' navigation and back control, so a phone's next page is ready before it is tapped; they match nothing on any other page. Options.NoSpeculationRules turns both the header and the route off.",
+"context": "Doc comment on a new exported constant."
+},
+  {
+"id": "godoc.rastrillo.no_speculation_rules",
+"section": "Go documentation (pkg.go.dev)",
+"label": "Options.NoSpeculationRules",
+"text": "NoSpeculationRules turns off prerendering of shell navigation. By default every response carries a Speculation-Rules header naming SpeculationRulesPath, which Serve answers; with this set there is neither, and the path reaches the app like any other. An app whose pages are expensive to render turns it off here, or deletes the header in a handler or Options.Wrap. A CSP does not turn it off, because a header ruleset is not a script.",
+"context": "Doc comment on a new Options field."
+},
+  {
+"id": "partial.row_menu.contract",
+"section": "Partial data contracts (shipped in ui/partials)",
+"label": "row-menu's contract comment",
+"text": "row-menu: a row's secondary actions behind a kebab, in a native <details> in the shared menu group, so opening one closes any other menu, with no script. rastrillo.js closes it on an outside click and on Escape. Render it in a list grid row's last cell (--rst-cols ending in var(--rst-col-menu)) or through list-row-action's Menu.\n\nIts summary sits above the row's link, so tapping it never opens the row.\n\nA POST item is a one-button form: csrf.Protect checks the origin, so it carries no token. busy.js shows its spinner beside the label, in a slot tokens.css reserves so the item never changes size.\n\nINSIDE A BULK-SELECTION FORM, EVERY ITEM MUST BE A LINK (Href). A POST item is its own <form>, and a form inside a form is dropped by the parser: the button would submit the whole selection form, every checked box with it, to the wrong action. An action that must POST from such a list goes through a page of its own, as a destructive item does.\n\nKeys:\n  Name       string, required: the row's name, used only in the trigger's accessible name (\"Actions for {name}\")\n  Items      list, required, in the order they render:\n               Label   string, required\n               Href    string: a GET link, or\n               Action  string: a POST; exactly one of the two\n               Hidden  [][2]string, optional, POST only, in order\n               Danger  bool, optional, Href only: the destructive item, a link to its confirm page. Put it last, its label ending in \"…\"; a rule is drawn before the first one that follows a plain item.\n             An item that breaks these rules stops the render rather than being dropped.\n  MenuGroup  string, optional: the <details name> group; default rst-menus.",
+"context": "The data contract comment above the new partial's {{define}}; templates.md tells developers to read these."
+},
+  {
+"id": "partial.list_row_action.menu",
+"section": "Partial data contracts (shipped in ui/partials)",
+"label": "list-row-action's new Menu key",
+"text": "Menu         list, optional: row-menu's Items, rendered as a kebab after the status pill and the action pill (the pill for the one frequent action, the kebab for the rest). Its trigger is named for Main, so there is no second copy of the name to drift. Read through opt, so a struct written before Menu existed still renders.",
+"context": "One key added to list-row-action's contract comment."
+},
+  {
+"id": "scaffold.index_comment",
+"section": "Scaffolded app files",
+"label": "templates/index.html comment (sidebar and console apps)",
+"text": "index.html: the home page, and on a phone the list of sections: the view block says this page is the index, so below 800px the rail is the whole page and this content is hidden; on a desktop the rail sits beside it. Give each section a nav link with an id here, and give its page an up block naming /#<that id>, so a phone comes back to the row it left.",
+"context": "The comment at the top of the scaffolded index page."
+},
+  {
+"id": "scaffold.overview_comment",
+"section": "Scaffolded app files",
+"label": "templates/overview.html comment",
+"text": "overview.html: a section. up is its way back: the index, with this section's nav link as the fragment, which is where focus returns on a phone even with scripts off.",
+"context": "The comment at the top of the scaffolded section page."
+},
+  {
+"id": "scaffold.overview_test",
+"section": "Scaffolded app files",
+"label": "Scaffolded test failure messages",
+"text": "GET /overview: status %d, want 200 | GET /overview: no back control to the index's row:",
+"context": "Two failure messages in the scaffolded TestOverviewRenders, separated here by |."
+},
+  {
+"id": "scaffold.vendored_is_mine",
+"section": "Scaffolded app files",
+"label": "vendored_test.go comment",
+"text": "Only the sidebar and console shells link shell.js and shell.css. An app on another shell that deletes them records it here, or this test fails on the missing files:",
+"context": "A comment inside vendoredIsMine in every scaffolded app's vendored_test.go, above a commented-out example line."
+}
+]
+```
+
+- [ ] **Step 3: Run the review**
+
+Invoke the `copy-review` skill on `copy-review/strings.json` and follow it to the end (serve, wait for the operator, handle a reroll by rewriting and relaunching). On approve:
+
+```bash
+jq -e '.action == "approve"' copy-review/result.json && cp copy-review/result.json copy-review/batch2-result.json
+jq -r '.strings[] | "\(.id)\t\(.text)"' copy-review/batch2-result.json
+```
+
+Expected: one line per id above (29). No commit: `copy-review/` is gitignored and no tracked file changed, so the tree is exactly Task 1's green tree.
+
+---
+
+### Task 3: The type scale, the zoom floor, and a coarse pointer the rig can produce
 
 Spec §1.1–§1.3 and the type half of §1.5 and §10.1.
 
@@ -316,6 +558,9 @@ func WithCoarsePointer() Option {
 	return func(c *config) { c.coarsePointer = true }
 }
 ```
+
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `godoc.harness.with_coarse_pointer` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
 
 In `New`, after the `withScrollbars` block:
 
@@ -866,8 +1111,8 @@ func TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens(t *testing.T) {
 }
 
 // TestDesktopDensityIsPinned is §10.1's 1280×900 mouse leg: every value
-// below is today's, measured, and any change fails. Task 3 adds the
-// control sizes and Task 4 the whole-row changes the operator approved.
+// below is today's, measured, and any change fails. Task 4 adds the
+// control sizes and Task 5 the whole-row changes the operator approved.
 func TestDesktopDensityIsPinned(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("sizing", sizingFixture(t))})
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
@@ -907,7 +1152,7 @@ In `internal/designsystem/browser_test.go`, the `kMin` comment (lines 1340-1345)
 // only gets more legible there and the value stands.
 ```
 
-- [ ] **Step 14: Run the task gate** (all three commands).
+- [ ] **Step 14: Run the task gate** (the gate line, then `make ci`).
 
 The gallery drives now render the Mobile tab at 16px body text. If `TestPreviewFrameHeightsFitTheirContent` or `TestThePreviewWidgetIsUsableOnAPhone` fails, read its message: it names the sample and the measured height, and `heightOf` in `internal/designsystem/page.go:1342` is where a frame's height is set. Raise the named entry to what the drive measured and rerun; do not lower any floor in the test.
 
@@ -931,7 +1176,7 @@ git push origin mobile-ergonomics
 
 ---
 
-### Task 3: Tap targets, the docked calendar, and the desktop pins
+### Task 4: Tap targets, the docked calendar, and the desktop pins
 
 Spec §1.4, the control half of §1.5 and §10.1, the row checkbox and kebab sizes of §2.3, and `--rst-col-menu`.
 
@@ -943,10 +1188,10 @@ Spec §1.4, the control half of §1.5 and §10.1, the row checkbox and kebab siz
 - Test: the files above
 
 **Interfaces:**
-- Consumes: Task 2's `sizingFixture`, `sizingDoc`, `sizingRig`, `requirePointer`, `touchQuery`; `ui` test helpers `leafRules`, `splitSelectorList`, `stripCSSComments`.
+- Consumes: Task 3's `sizingFixture`, `sizingDoc`, `sizingRig`, `requirePointer`, `touchQuery`; `ui` test helpers `leafRules`, `splitSelectorList`, `stripCSSComments`.
 - Produces:
   - CSS: `--rst-col-menu` (`32px` at `:root`, `var(--rst-tap)` in the touch query); the touch block (`/* ── Tap targets on small or touch screens` … `}`), the last rules before the utilities. Later tasks add their own touch rules at the end of this block.
-  - Tests: `var tapInventory []tapEntry` with `type tapEntry struct{ Key, Idiom, Marker string }`, `var tapExempt map[string]string`, `func interactiveCSSRules(css string) []leafRule`, `const targetsJS`, `const overlayJS`, `const calJS`, `type targetReading struct{ Name, Hit string; W, H float64; Fits, Owns, Inline bool }`, `func readTargets(t *testing.T, ctx context.Context, js string) []targetReading`, `func assertTargets(t *testing.T, where string, got []targetReading)`, `func openCalendar(t *testing.T, ctx context.Context, url string, w, h int64) calReading`. Later tasks append inventory rows and reuse the drive.
+  - Tests: `var tapInventory []tapEntry` with `type tapEntry struct{ Key, Idiom, Marker, Probe string }`, `var tapExempt map[string]string`, `func interactiveCSSRules(css string) []leafRule`, `const targetsJS`, `const overlayJS`, `const calJS`, `type targetReading struct{ Name, Hit string; W, H float64; Fits, Owns, Inline bool }`, `func readTargets(t *testing.T, ctx context.Context, js string) []targetReading`, `func assertTargets(t *testing.T, where string, got []targetReading)`, `func openCalendar(t *testing.T, ctx context.Context, url string, w, h int64) calReading`. Later tasks append inventory rows and reuse the drive.
 
 - [ ] **Step 1: Write the failing inventory gate**
 
@@ -956,49 +1201,55 @@ Append to `ui/sizing_test.go`:
 // tapEntry is one row of spec §1.4's table: Key is a substring of the
 // attribute spelling of the rules that style the idiom, Marker a string
 // the sizing fixture (or the modal sample) must contain for the idiom to
-// be measured at all. For controls a script draws at run time, the
-// Marker is the attribute that asks for them.
-type tapEntry struct{ Key, Idiom, Marker string }
+// be measured at all (for controls a script draws at run time, the
+// attribute that asks for them), and Probe the selector of the element
+// the target drive measures for it. The drive fails if no element
+// matching Probe was measured, so an idiom cannot drop out of the
+// measurement silently. Probe may be prefixed "narrow:" (rendered only
+// below 800px, so not expected at 1024), "modal:" (on the modal page),
+// or be "elsewhere:<Test>" for a control a drive of its own measures in
+// a state the sizing page never reaches.
+type tapEntry struct{ Key, Idiom, Marker, Probe string }
 
 var tapInventory = []tapEntry{
-	{"[rst-btn]", "Buttons, all sizes", "rst-btn"},
-	{"[rst-input]", "Inputs and selects", "rst-input"},
-	{"[rst-textarea]", "Textareas", "rst-textarea"},
-	{"[rst-search]", "Search box", "rst-search"},
-	{"[rst-search-clear]", "Search box: its clear link", "rst-search-clear"},
-	{"[rst-ftok] a", "Filter chip's remove link", "rst-ftok"},
-	{"[rst-help]", "Help link", "rst-help"},
-	{"[rst-dropdown] > summary", "Dropdown summaries (list-bar, header, account, locale)", "rst-dropdown"},
-	{"[rst-menu-group] > summary", "Nested menu-group summaries", "rst-menu-group"},
-	{"[rst-dropdown-menu] a", "Menu items: dropdown", "rst-dropdown-menu"},
-	{"[rst-dropdown-menu] button", "Menu items: dropdown buttons", "rst-dropdown-menu"},
-	{"[rst-row-menu-panel] a", "Menu items: row menu", "rst-row-menu-panel"},
-	{"[rst-row-menu-panel] button", "Menu items: row menu buttons", "rst-row-menu-panel"},
-	{"[rst-locale] button", "Menu items: locale", "rst-locale"},
-	{"[rst-combo-option]", "Combobox options", "data-rst-select"},
-	{"[rst-dtp-row]", "Date-picker rows", "data-rst-date"},
-	{"[rst-dtp-pick]", "Date-picker pick button", "data-rst-date"},
-	{"[rst-cal-nav]", "Calendar nav", "data-rst-date"},
-	{"[rst-cal-day]", "Calendar days", "data-rst-date"},
-	{"[rst-row-action]", "Row action pill", "rst-row-action"},
-	{"[rst-row-menu] > summary", "Row kebab", "rst-row-menu"},
-	{"[rst-selbox]", "Row checkbox", "rst-selbox"},
-	{"[rst-person]", "Standalone person link", "rst-person"},
-	{"[rst-pagination] a", "Pagination chips", "rst-pagination"},
-	{"[rst-seg-tabs] a", "Segmented tabs", "rst-seg-tabs"},
-	{"[rst-switch]", "Switch", "rst-switch"},
-	{"[rst-choice-cards] label", "Choice cards", "rst-choice-cards"},
-	{"[rst-tblock-head]", "Toggle-block head", "rst-tblock-head"},
-	{"[rst-bulkbar-close]", "Bulk bar: close", "rst-bulkbar-close"},
-	{"[rst-bulkbar-escalate]", "Bulk bar: escalate link", "rst-bulkbar-escalate"},
-	{"[rst-modal-close]", "Modal close", "rst-modal-close"},
-	{"[rst-modal-panel] > nav a", "Modal panel nav links", "rst-modal-panel"},
-	{"[rst-back-nav] a", "Back-nav link", "rst-back-nav"},
-	{"[rst-shell-brand]", "Shell: brand", "rst-shell-brand"},
-	{"[rst-shell-nav] a", "Shell: nav links", "rst-shell-nav"},
-	{"[rst-shell-menu] > summary", "Shell: Menu summary", "rst-shell-menu"},
-	{"[rst-shell-chrome] > summary", "Legacy sidebar drawer summary", "rst-shell-chrome"},
-	{"a.rst-nm", "List grid identity link (its own box until Task 4 stretches it)", "rst-nm"},
+	{"[rst-btn]", "Buttons, all sizes", "rst-btn", "[rst-btn]"},
+	{"[rst-input]", "Inputs and selects", "rst-input", "[rst-input]"},
+	{"[rst-textarea]", "Textareas", "rst-textarea", "[rst-textarea]"},
+	{"[rst-search]", "Search box", "rst-search", "[rst-search] input[type=search]"},
+	{"[rst-search-clear]", "Search box: its clear link", "rst-search-clear", "[rst-search-clear]"},
+	{"[rst-ftok] a", "Filter chip's remove link", "rst-ftok", "[rst-ftok] a"},
+	{"[rst-help]", "Help link", "rst-help", "[rst-help]"},
+	{"[rst-dropdown] > summary", "Dropdown summaries (list-bar, header, account, locale)", "rst-dropdown", "[rst-dropdown] > summary"},
+	{"[rst-menu-group] > summary", "Nested menu-group summaries", "rst-menu-group", "[rst-menu-group] > summary"},
+	{"[rst-dropdown-menu] a", "Menu items: dropdown", "rst-dropdown-menu", "[rst-dropdown-menu] a"},
+	{"[rst-dropdown-menu] button", "Menu items: dropdown buttons", "rst-dropdown-menu", "[rst-dropdown-menu] button"},
+	{"[rst-row-menu-panel] a", "Menu items: row menu", "rst-row-menu-panel", "[rst-row-menu-panel] a"},
+	{"[rst-row-menu-panel] button", "Menu items: row menu buttons", "rst-row-menu-panel", "[rst-row-menu-panel] button"},
+	{"[rst-locale] button", "Menu items: locale", "rst-locale", "[rst-locale] button"},
+	{"[rst-combo-option]", "Combobox options", "data-rst-select", "[rst-combo-option]"},
+	{"[rst-dtp-row]", "Date-picker rows", "data-rst-date", "[rst-dtp-row]"},
+	{"[rst-dtp-pick]", "Date-picker pick button", "data-rst-date", "[rst-dtp-pick]"},
+	{"[rst-cal-nav]", "Calendar nav", "data-rst-date", "elsewhere:TestTheCalendarDocksAndItsDaysAreTaps"},
+	{"[rst-cal-day]", "Calendar days", "data-rst-date", "elsewhere:TestTheCalendarDocksAndItsDaysAreTaps"},
+	{"[rst-row-action]", "Row action pill", "rst-row-action", "[rst-row-action]"},
+	{"[rst-row-menu] > summary", "Row kebab", "rst-row-menu", "[rst-row-menu] > summary"},
+	{"[rst-selbox]", "Row checkbox", "rst-selbox", "[rst-selbox] input"},
+	{"[rst-person]", "Standalone person link", "rst-person", "a[rst-person]"},
+	{"[rst-pagination] a", "Pagination chips", "rst-pagination", "[rst-pagination] a"},
+	{"[rst-seg-tabs] a", "Segmented tabs", "rst-seg-tabs", "[rst-seg-tabs] a"},
+	{"[rst-switch]", "Switch", "rst-switch", "[rst-switch] input"},
+	{"[rst-choice-cards] label", "Choice cards", "rst-choice-cards", "[rst-choice-cards] input"},
+	{"[rst-tblock-head]", "Toggle-block head", "rst-tblock-head", "[rst-tblock-head] input"},
+	{"[rst-bulkbar-close]", "Bulk bar: close", "rst-bulkbar-close", "[rst-bulkbar-close]"},
+	{"[rst-bulkbar-escalate]", "Bulk bar: escalate link", "rst-bulkbar-escalate", "[rst-bulkbar-escalate]"},
+	{"[rst-modal-close]", "Modal close", "rst-modal-close", "modal:[rst-modal-close]"},
+	{"[rst-modal-panel] > nav a", "Modal panel nav links", "rst-modal-panel", "modal:[rst-modal-panel] > nav a"},
+	{"[rst-back-nav] a", "Back-nav link", "rst-back-nav", "[rst-back-nav] a"},
+	{"[rst-shell-brand]", "Shell: brand", "rst-shell-brand", "[rst-shell-brand]"},
+	{"[rst-shell-nav] a", "Shell: nav links", "rst-shell-nav", "[rst-shell-nav] a"},
+	{"[rst-shell-menu] > summary", "Shell: Menu summary", "rst-shell-menu", "narrow:[rst-shell-menu] > summary"},
+	{"[rst-shell-chrome] > summary", "Legacy sidebar drawer summary", "rst-shell-chrome", "narrow:[rst-shell-chrome] > summary"},
+	{"a.rst-nm", "List grid identity link (its own box until Task 5 stretches it)", "rst-nm", "a.rst-nm"},
 }
 
 // tapExempt are the interactive rules that are deliberately not held to
@@ -1078,7 +1329,7 @@ func TestEveryInteractiveRuleIsInTheTapInventory(t *testing.T) {
 }
 ```
 
-Add `"regexp"` to that file's imports if Task 2 did not already (it did).
+Add `"regexp"` to that file's imports if Task 3 did not already (it did).
 
 - [ ] **Step 2: Run it**
 
@@ -1091,7 +1342,10 @@ In `ui/sizing_fixture_test.go`, add to the end of `sizingExtras` (before its clo
 
 ```html
 <p data-extra="buttons"><button rst-btn="sm" type="button" id="sizing-btn-sm">Small</button> <button rst-btn type="button" id="sizing-btn">Default</button> <button rst-btn="lg" type="button" id="sizing-btn-lg">Large</button></p>
+<div rst-shell-sidebar data-extra="legacy-drawer"><details rst-shell-chrome><summary>Menu</summary></details><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-one">Legacy one</a><a href="#legacy-two">Legacy two</a></nav></aside><main rst-shell-main><p>The pre-H sidebar, which tokens.css keeps working for old layouts.</p></main></div>
 ```
+
+The legacy drawer is here, rather than borrowed from the `shell-sidebar` sample, because Task 9 turns that sample into the new content page and the drawer's rules stay in tokens.css for old layouts: they must stay measured. Its summary shows below 800px (measured closed), and opening it in the overlay pass reveals the rail's links (measured open).
 
 and in `sizingFixture`, after the extras and before the samples:
 
@@ -1226,7 +1480,7 @@ In `ui/tokens.css`:
 }
 ```
 
-(e) In `ui/styleguide.go` (`list-grid` sample) and `ui/ui.go` (package doc, lines 108 and 125) replace the literal `32px` kebab column with `var(--rst-col-menu)`: the sample becomes `<div rst-card style="--rst-cols: 2fr 110px var(--rst-col-menu)">`, the doc's CSS line `.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }` and its sentence `(trailing var(--rst-col-menu) reserved for a kebab)`.
+(e) In `ui/styleguide.go` (`list-grid` sample) and `ui/ui.go` (package doc, lines 108 and 125) replace the literal `32px` kebab column with `var(--rst-col-menu)`: the sample becomes `<div rst-card style="--rst-cols: 2fr 110px var(--rst-col-menu)">`, the doc's CSS line `.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }` and its sentence the approved `godoc.ui.list_grid_kebab` text from `copy-review/batch2-result.json` (draft: `(trailing var(--rst-col-menu) reserved for a kebab)`).
 
 Copy tokens.css into both examples.
 
@@ -1237,7 +1491,7 @@ Expected: PASS. Mutation check: delete the `[rst-cal-nav]` row from `tapInventor
 
 - [ ] **Step 6: Write the target drive**
 
-Append to `ui/sizing_browser_test.go` (add `"fmt"`, `"math"` and `"github.com/chromedp/chromedp/kb"` to its imports):
+Append to `ui/sizing_browser_test.go` (add `"fmt"`, `"math"`, `"strings"` and `"github.com/chromedp/chromedp/kb"` to its imports):
 
 ```go
 // targetReading is one control, measured as its activation area.
@@ -1256,8 +1510,9 @@ type targetReading struct {
 // scrolls every scrolling ancestor, a rail or a menu panel included) and
 // measured again after the scroll, and the point tested is the centre of
 // the part inside the viewport. elementFromPoint there must return the
-// control, its area, or a descendant of either (a switch's track, a
-// summary's icon): anything else is an occlusion failure, never a skip
+// control or a descendant of it (a switch's track, a summary's icon), or
+// for a labelled input its label: anything else is an occlusion failure,
+// never a skip
 // (review round 2, finding 11). Only a control that is not rendered at
 // all is skipped. An element marked data-sizing-not-an-idiom is an
 // app's own control on the fixture for the font test and is not an
@@ -1290,13 +1545,19 @@ const measureFn = `function measure(root, skip) {
     const a = area(el);
     if (seen.has(a) || !rendered(a)) return;
     seen.add(a);
+    el.setAttribute("data-measured", "");
     a.scrollIntoView({block: "center", inline: "center"});
     const r = a.getBoundingClientRect();
     const x0 = Math.max(r.left, 0), y0 = Math.max(r.top, 0), x1 = Math.min(r.right, innerWidth), y1 = Math.min(r.bottom, innerHeight);
     const hit = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
     out.push({Name: describe(el), W: r.width, H: r.height,
       Fits: r.left >= -0.5 && r.top >= -0.5 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5,
-      Owns: !!hit && (hit === el || hit === a || el.contains(hit) || a.contains(hit)),
+      // Ownership is the control, a descendant of it (a summary's icon,
+      // a switch's track), or, for a labelled input only, its label and
+      // what the label holds. Never "anything in the measured box": for a
+      // stretched link the box is the whole row, and a row holds other
+      // controls, so a hit on the kebab must not count for the name link.
+      Owns: !!hit && (hit === el || el.contains(hit) || (a !== el && a.tagName === "LABEL" && a.contains(hit))),
       Hit: hit ? describe(hit) : "nothing",
       Inline: el.tagName === "A" && !el.hasAttribute("rst-btn") && !!el.closest("p, [rst-field-help]") && !el.closest("nav")});
   });
@@ -1317,6 +1578,9 @@ const overlayJS = `((i) => { ` + measureFn + `;
   for (let p = d; p; p = p.parentElement && p.parentElement.closest("details")) p.open = true;
   const summary = d.querySelector(":scope > summary");
   const got = measure(d, el => el === summary);
+  // A shell disclosure reveals its next SIBLING (the topbar's tail, the
+  // old sidebar's rail), not its own content.
+  if (d.matches("[rst-shell-menu], [rst-shell-chrome]") && d.nextElementSibling) got.push(...measure(d.nextElementSibling));
   document.querySelectorAll("details[open]").forEach(x => { x.open = false; });
   return JSON.stringify({Done: false, Targets: got});
 })(%d)`
@@ -1414,6 +1678,38 @@ func settleUntil(t *testing.T, ctx context.Context, expr string) {
 	t.Fatalf("never became true within 10s: %s", expr)
 }
 
+// assertCovered is what makes "every control passed" mean something:
+// for every inventory row on this page, at least one element matching
+// its Probe was measured (measureFn marks each with data-measured). A
+// count of measurements would pass a page that lost a whole idiom.
+func assertCovered(t *testing.T, ctx context.Context, where, page string, wide bool) {
+	t.Helper()
+	for _, e := range tapInventory {
+		sel, entryPage := e.Probe, ""
+		switch {
+		case strings.HasPrefix(sel, "elsewhere:"):
+			continue
+		case strings.HasPrefix(sel, "narrow:"):
+			if wide {
+				continue
+			}
+			sel = strings.TrimPrefix(sel, "narrow:")
+		case strings.HasPrefix(sel, "modal:"):
+			sel, entryPage = strings.TrimPrefix(sel, "modal:"), "modal"
+		}
+		if entryPage != page {
+			continue
+		}
+		var n int
+		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`[...document.querySelectorAll(%q)].filter(e => e.hasAttribute("data-measured")).length`, sel), &n)); err != nil {
+			t.Fatalf("%s: counting %s: %v", where, sel, err)
+		}
+		if n == 0 {
+			t.Errorf("%s: no %s (%s) was measured; the idiom dropped out of the drive", where, sel, e.Idiom)
+		}
+	}
+}
+
 // TestEveryTapTargetIsAtLeast44Pixels is §10.1's target half, at 390
 // and 1024 with a coarse pointer and at 600 with a mouse, then the modal
 // on a page of its own.
@@ -1441,17 +1737,13 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 			requirePointer(t, ctx, leg.coarse)
 			n := measureEverything(t, ctx, leg.name)
 			t.Logf("%s: %d controls measured", leg.name, n)
-			if n < 100 {
-				t.Errorf("%s: measured only %d controls; the fixture is not the page this drive thinks it is", leg.name, n)
-			}
+			assertCovered(t, ctx, leg.name, "", leg.w >= 800)
 			if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/modal")); err != nil {
 				t.Fatal(err)
 			}
 			got := readTargets(t, ctx, targetsJS)
-			if len(got) < 3 {
-				t.Fatalf("%s: the modal page gave up %d controls, want its close link and two nav links", leg.name, len(got))
-			}
 			assertTargets(t, leg.name+", the modal", got)
+			assertCovered(t, ctx, leg.name+", the modal", "modal", leg.w >= 800)
 		})
 	}
 }
@@ -1674,7 +1966,7 @@ In `TestDesktopDensityIsPinned`, after the type assertions, add:
 Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestEveryTapTargetIsAtLeast44Pixels|TestTheKebabOverflowsIntoTheGapOnALiteralColumn|TestTheCalendarDocksAndItsDaysAreTaps|TestDesktopDensityIsPinned|TestTextControlsAreSixteenPixels' -count=1 -v ./ui/`
 Expected: PASS. If a control is reported under 44 or occluded, it is either missing from the touch block (add the rule and, if it is a new selector shape, its `tapInventory` row) or a real occlusion to fix in CSS; never widen `assertTargets`. Mutation checks, one at a time, each restored: delete `.rst-cal__day, [rst-cal-day] { block-size … }` → the calendar leg fails on day height; remove `scrollbar-gutter: stable` from the docking rule → the classic-scrollbar leg fails on day width; change `padding: 4px` on `[rst-selbox]` to `0` → the desktop pin fails.
 
-- [ ] **Step 10: Run the task gate** (all three commands). Note the axe and reflow drives in `internal/designsystem` now see 44px targets on the Mobile tab; if `TestA11yReflowsAt320` reports a page scrolling sideways at 320, the offender is named in its output: fix it in the touch block (a `min-inline-size` that should not apply, usually), not in the test.
+- [ ] **Step 10: Run the task gate** (the gate line, then `make ci`). Note the axe and reflow drives in `internal/designsystem` now see 44px targets on the Mobile tab; if `TestA11yReflowsAt320` reports a page scrolling sideways at 320, the offender is named in its output: fix it in the touch block (a `min-inline-size` that should not apply, usually), not in the test.
 
 - [ ] **Step 11: Commit and push**
 
@@ -1697,9 +1989,9 @@ git push origin mobile-ergonomics
 
 ---
 
-### Task 4: Whole-row targets
+### Task 5: Whole-row targets
 
-Spec §2 and §10.2. On desktop this lands two of the three approved changes: the whole-row target and its focus ring (the third, the 24×24 checkbox label, landed in Task 3).
+Spec §2 and §10.2. On desktop this lands two of the three approved changes: the whole-row target and its focus ring (the third, the 24×24 checkbox label, landed in Task 4).
 
 **Files:**
 - Modify: `ui/tokens.css`: the list-row-action block (lines 654-715: hover, focus, the status-pill lift), the list-grid block (lines 1043-1047: hover, overlay), and a new "controls above the overlay" rule after the list-grid block
@@ -1707,11 +1999,11 @@ Spec §2 and §10.2. On desktop this lands two of the three approved changes: th
 - Modify: `ui/sizing_test.go` (inventory: the list grid's identity links are now stretched)
 - Modify: `ui/ui.go` (package doc: the list grid paragraph gains one sentence on the whole-row rule; lines 101-126)
 - Modify: `ui/markup_v3_browser_test.go` (`extraFixture`: a person-identity row, a row with no link)
-- Create: `ui/rows_browser_test.go`
+- Create: `ui/rows_browser_test.go`, `ui/rows_test.go`
 
 **Interfaces:**
-- Consumes: Task 3's `measureFn`, `assertTargets`, `readTargets`, `settleUntil`, `sizingDoc`, `sizingRig`, `requirePointer`.
-- Produces: CSS vocabulary other tasks rely on: the primary link of a row is `[rst-row-main] > a`, `[rst-lrow] > a.rst-nm` or `[rst-lrow] > a[rst-person]`; every other `a[href]`, `button`, `summary`, `label`, `input`, `select`, `textarea` inside `[rst-row]`/`[rst-lrow]` is lifted to `z-index: 1` at zero weight. Test helpers: `func rowsFixture(t *testing.T) string`, `const kebabA string`, `func at(t *testing.T, ctx context.Context, js string, v any)`, `type point struct{ X, Y float64; Hit string }`, `func probe(t, ctx, sel string, fx, fy, dx, dy float64) point`, `func clickAndLand(t, ctx, p point) string`, `func home(t, ctx, origin string)`.
+- Consumes: Task 4's `measureFn`, `assertTargets`, `readTargets`, `settleUntil`, `sizingDoc`, `sizingRig`, `requirePointer`.
+- Produces: CSS vocabulary other tasks rely on: the primary link of a row is `[rst-row-main] > a`, `[rst-lrow] > a.rst-nm` or `[rst-lrow] > a[rst-person]`; every other `a[href]`, `button`, `summary`, `label`, `input`, `select`, `textarea` inside `[rst-row]`/`[rst-lrow]` is lifted to `z-index: 1` at zero weight. Test helpers: `func rowsFixture(t *testing.T) string`, `const kebabA string`, `func at(t *testing.T, ctx context.Context, js string, v any)`, `type point struct{ X, Y float64; Hit string }`, `func probe(t, ctx, sel string, fx, fy, dx, dy float64) point`, `func clickAndLand(t, ctx, p point, want string)` (waits for the landing page's `#landed` marker at `want`), `func clickAndStay(t, ctx, p point, arm, done string)` (waits for `done`, fails on any CDP-observed navigation request), `func home(t, ctx, origin string)`.
 
 - [ ] **Step 1: Write the failing drive**
 
@@ -1726,9 +2018,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 )
@@ -1812,22 +2107,65 @@ func probe(t *testing.T, ctx context.Context, sel string, fx, fy, dx, dy float64
 	return p
 }
 
-// clickAndLand clicks the page at p and reports the path it ends on.
-func clickAndLand(t *testing.T, ctx context.Context, p point) string {
+// clickAndLand clicks the page at p and waits for the landing page at
+// want: the URL is want AND the landing page's own marker, #landed, is
+// in the document. No page under test carries that marker, so a reading
+// taken in the departing document can never pass for the destination,
+// which reading location.pathname alone could.
+func clickAndLand(t *testing.T, ctx context.Context, p point, want string) {
 	t.Helper()
 	if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(300 * time.Millisecond)
-	var path string
-	settle := time.Now().Add(5 * time.Second)
-	for time.Now().Before(settle) {
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`location.pathname`, &path)); err == nil {
-			break
+	var last string
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`location.pathname + (document.getElementById("landed") ? " (landed)" : "")`, &last)); err == nil && last == want+" (landed)" {
+			return
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	return path
+	t.Errorf("a click at (%.0f, %.0f), over %s, did not land on %s; the page is at %q", p.X, p.Y, p.Hit, want, last)
+}
+
+// clickAndStay clicks the page at p, waits for done (a page expression
+// naming what the click should have done: a menu open, a box checked)
+// and fails if the click asked for any navigation. Navigation requests
+// are read off CDP's Page.frameRequestedNavigation, which the browser
+// sends for every navigation the page asks for, scripts on or off, and
+// in order before the reply to the evaluation that finds done true. So
+// "it did not navigate" is an observed absence, not a timed wait. arm is
+// an optional expression run before the click (to give a click with no
+// visible effect something to report).
+func clickAndStay(t *testing.T, ctx context.Context, p point, arm, done string) {
+	t.Helper()
+	var mu sync.Mutex
+	var asked []string
+	active := true
+	chromedp.ListenTarget(ctx, func(ev any) {
+		if e, ok := ev.(*page.EventFrameRequestedNavigation); ok {
+			mu.Lock()
+			if active {
+				asked = append(asked, e.URL)
+			}
+			mu.Unlock()
+		}
+	})
+	defer func() { mu.Lock(); active = false; mu.Unlock() }()
+	if arm != "" {
+		if err := chromedp.Run(ctx, chromedp.Evaluate(arm, nil)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
+		t.Fatal(err)
+	}
+	settleUntil(t, ctx, done)
+	mu.Lock()
+	defer mu.Unlock()
+	if len(asked) > 0 {
+		t.Errorf("a click at (%.0f, %.0f), over %s, asked to navigate to %v; it must not navigate", p.X, p.Y, p.Hit, asked)
+	}
 }
 
 func home(t *testing.T, ctx context.Context, origin string) {
@@ -1881,39 +2219,21 @@ func TestTheWholeRowIsTheTarget(t *testing.T) {
 				if p.Hit != c.link {
 					t.Errorf("%s: at %s the element under the pointer is %s, want the primary link %s", leg.name, c.where, p.Hit, c.link)
 				}
-				if got := clickAndLand(t, ctx, p); got != c.target {
-					t.Errorf("%s: a click at %s went to %q, want %q", leg.name, c.where, got, c.target)
-				}
+				clickAndLand(t, ctx, p, c.target)
 			}
 
 			// The row's own controls.
 			home(t, ctx, rig.Origin)
-			if got := clickAndLand(t, ctx, probe(t, ctx, "#lra [rst-row-action]", 0.5, 0.5, 0, 0)); got != "/go/lra-edit" {
-				t.Errorf("%s: the action pill went to %q, want its own href", leg.name, got)
-			}
+			clickAndLand(t, ctx, probe(t, ctx, "#lra [rst-row-action]", 0.5, 0.5, 0, 0), "/go/lra-edit")
 			home(t, ctx, rig.Origin)
-			if got := clickAndLand(t, ctx, probe(t, ctx, "#kebab-a", 0.5, 0.5, 0, 0)); got != "/" {
-				t.Errorf("%s: the kebab navigated to %q", leg.name, got)
-			}
-			var open bool
-			chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("menu-a").open`, &open))
-			if !open {
-				t.Errorf("%s: a click on the kebab did not open its menu", leg.name)
-			}
+			clickAndStay(t, ctx, probe(t, ctx, "#kebab-a", 0.5, 0.5, 0, 0), "", `document.getElementById("menu-a").open`)
 			for _, c := range []struct {
 				where      string
 				fx, fy, dx float64
 			}{{"the checkbox itself", 0.5, 0.5, 0}, {"its label's padding", 0, 0, 2}} {
 				home(t, ctx, rig.Origin)
 				p := probe(t, ctx, "#label-a", c.fx, c.fy, c.dx, c.dx)
-				if got := clickAndLand(t, ctx, p); got != "/" {
-					t.Errorf("%s: a click on %s navigated to %q", leg.name, c.where, got)
-				}
-				var checked bool
-				chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("check-a").checked`, &checked))
-				if !checked {
-					t.Errorf("%s: a click on %s did not toggle the checkbox (hit %s)", leg.name, c.where, p.Hit)
-				}
+				clickAndStay(t, ctx, p, "", `document.getElementById("check-a").checked`)
 			}
 
 			// Sizes: 44×44 for everything in the rows on a phone; on the
@@ -1977,37 +2297,64 @@ func TestAnOpenRowMenuStaysAboveTheRowsBelowIt(t *testing.T) {
 // :where(), so it gives a static control a position and never replaces
 // one a component chose (review round 2, finding 4). A switch's input
 // stays over its track, the date field's pick button inside its field,
-// select.js's native select out of flow; each works by a click at the
-// centre of what a person sees.
+// select.js's native select out of flow, each the same size in a row as
+// outside one. And each is OPERATED, at 1280 with a mouse and at 390
+// with a coarse pointer: the switch toggles, the calendar opens and a
+// day is picked into the native input, the combobox opens and an option
+// is picked into the native select, and none of it opens the row.
 func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
-	rig := sizingRig(t, false, rowsPages(t))
-	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
-	defer cancel()
-	chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900))
-	home(t, ctx, rig.Origin)
-	var g map[string]string
-	at(t, ctx, `(() => {
-	  const pos = el => getComputedStyle(el).position;
-	  const own = sel => { const el = document.querySelector(sel), r = el.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h && (h === el || el.contains(h)) ? "ok" : "hit " + (h ? h.tagName : "nothing"); };
-	  const pick = side => { const p = document.querySelector("#date-" + side + " [rst-dtp-pick]"), d = p.closest("[rst-dtp]"); return Math.round(d.getBoundingClientRect().right - p.getBoundingClientRect().right) + "px from the end"; };
-	  return JSON.stringify({
-	    switchIn: pos(document.querySelector("#switch-in input")), switchOut: pos(document.querySelector("#switch-out input")),
-	    pickIn: pos(document.querySelector("#date-in [rst-dtp-pick]")) + " " + pick("in"), pickOut: pos(document.querySelector("#date-out [rst-dtp-pick]")) + " " + pick("out"),
-	    selectIn: pos(document.querySelector("#combo_in")), selectOut: pos(document.querySelector("#combo_out")),
-	    switchHit: own("#switch-in"), dateHit: own("#date-in [role=combobox]"), pickHit: own("#date-in [rst-dtp-pick]"), comboHit: own("#combo-in [role=combobox]")});
-	})()`, &g)
-	for _, pair := range [][2]string{{"switchIn", "switchOut"}, {"pickIn", "pickOut"}, {"selectIn", "selectOut"}} {
-		if g[pair[0]] != g[pair[1]] {
-			t.Errorf("in a row %s is %q; outside one it is %q", pair[0], g[pair[0]], g[pair[1]])
-		}
-	}
-	if g["switchIn"] != "absolute" || g["selectIn"] != "absolute" {
-		t.Errorf("the lifting rule replaced a component's own position: switch input %q, native select %q", g["switchIn"], g["selectIn"])
-	}
-	for _, k := range []string{"switchHit", "dateHit", "pickHit", "comboHit"} {
-		if g[k] != "ok" {
-			t.Errorf("in a row, %s: %s", k, g[k])
-		}
+	for _, leg := range []struct {
+		name   string
+		w, h   int64
+		coarse bool
+	}{{"1280 mouse", 1280, 900, false}, {"390 touch", 390, 844, true}} {
+		t.Run(leg.name, func(t *testing.T) {
+			rig := sizingRig(t, leg.coarse, rowsPages(t))
+			ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+			defer cancel()
+			chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h))
+			home(t, ctx, rig.Origin)
+			requirePointer(t, ctx, leg.coarse)
+			var g map[string]string
+			at(t, ctx, `(() => {
+			  const pos = el => getComputedStyle(el).position;
+			  const size = el => { const r = el.getBoundingClientRect(); return Math.round(r.width) + "x" + Math.round(r.height); };
+			  const own = sel => { const el = document.querySelector(sel), r = el.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h && (h === el || el.contains(h)) ? "ok" : "hit " + (h ? h.tagName : "nothing"); };
+			  const pick = side => { const p = document.querySelector("#date-" + side + " [rst-dtp-pick]"), d = p.closest("[rst-dtp]"); return Math.round(d.getBoundingClientRect().right - p.getBoundingClientRect().right) + "px from the end"; };
+			  return JSON.stringify({
+			    switchIn: pos(document.querySelector("#switch-in input")) + " " + size(document.querySelector("#switch-in [rst-switch-track]")),
+			    switchOut: pos(document.querySelector("#switch-out input")) + " " + size(document.querySelector("#switch-out [rst-switch-track]")),
+			    pickIn: pos(document.querySelector("#date-in [rst-dtp-pick]")) + " " + size(document.querySelector("#date-in [rst-dtp-pick]")) + " " + pick("in"),
+			    pickOut: pos(document.querySelector("#date-out [rst-dtp-pick]")) + " " + size(document.querySelector("#date-out [rst-dtp-pick]")) + " " + pick("out"),
+			    selectIn: pos(document.querySelector("#combo_in")), selectOut: pos(document.querySelector("#combo_out")),
+			    switchHit: own("#switch-in"), dateHit: own("#date-in [role=combobox]"), pickHit: own("#date-in [rst-dtp-pick]"), comboHit: own("#combo-in [role=combobox]")});
+			})()`, &g)
+			for _, pair := range [][2]string{{"switchIn", "switchOut"}, {"pickIn", "pickOut"}, {"selectIn", "selectOut"}} {
+				if g[pair[0]] != g[pair[1]] {
+					t.Errorf("in a row %s is %q; outside one it is %q", pair[0], g[pair[0]], g[pair[1]])
+				}
+			}
+			if !strings.HasPrefix(g["switchIn"], "absolute") || g["selectIn"] != "absolute" {
+				t.Errorf("the lifting rule replaced a component's own position: switch input %q, native select %q", g["switchIn"], g["selectIn"])
+			}
+			for _, k := range []string{"switchHit", "dateHit", "pickHit", "comboHit"} {
+				if g[k] != "ok" {
+					t.Errorf("in a row, %s: %s", k, g[k])
+				}
+			}
+
+			// Operated. Each click must do its job and ask for no
+			// navigation (the row's link is under all of them).
+			clickAndStay(t, ctx, probe(t, ctx, "#switch-in", 0.5, 0.5, 0, 0), "", `document.querySelector("#switch-in input").checked`)
+			clickAndStay(t, ctx, probe(t, ctx, "#date-in [rst-dtp-pick]", 0.5, 0.5, 0, 0), "", `!!document.querySelector('[rst-cal] [data-rst-day="2026-08-12"]')`)
+			clickAndStay(t, ctx, probe(t, ctx, `[rst-cal] [data-rst-day="2026-08-12"]`, 0.5, 0.5, 0, 0), "", `document.querySelector('#date-in input[name="due_in"]').value === "2026-08-12"`)
+			clickAndStay(t, ctx, probe(t, ctx, "#combo-in [role=combobox]", 0.5, 0.5, 0, 0), "", `document.querySelectorAll("#combo-in [role=option]").length === 12 && document.querySelector("#combo-in [role=option]").checkVisibility()`)
+			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const o = [...document.querySelectorAll("#combo-in [role=option]")].find(o => o.textContent.trim() === "Option 7"); o.scrollIntoView({block: "center"}); return true; })()`, nil)); err != nil {
+				t.Fatal(err)
+			}
+			at(t, ctx, `JSON.stringify((() => { const o = [...document.querySelectorAll("#combo-in [role=option]")].find(o => o.textContent.trim() === "Option 7"); o.setAttribute("data-pick", ""); return true; })())`, new(bool))
+			clickAndStay(t, ctx, probe(t, ctx, "#combo-in [data-pick]", 0.5, 0.5, 0, 0), "", `document.getElementById("combo_in").value === "7"`)
+		})
 	}
 }
 
@@ -2036,9 +2383,8 @@ func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
 	if hovered := bg("#row-n"); hovered != restN {
 		t.Errorf("hovering a row with no link fills it (%s -> %s): it looks clickable and is not", restN, hovered)
 	}
-	if got := clickAndLand(t, ctx, probe(t, ctx, "#row-n", 0.5, 0.5, 0, 0)); got != "/" {
-		t.Errorf("a click on a row with no link went to %q", got)
-	}
+	clickAndStay(t, ctx, probe(t, ctx, "#row-n", 0.5, 0.5, 0, 0),
+		`document.getElementById("row-n").addEventListener("click", () => { window.rowClicked = true; }), true`, `window.rowClicked === true`)
 }
 
 // TestFocusDrawsTheRingAroundTheWholeRow: the primary link's ring moves
@@ -2197,12 +2543,96 @@ In `ui/ui.go`'s package doc, after the list-grid sentence ending `— no JavaScr
 // with no link gets neither, so it never looks clickable.
 ```
 
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `godoc.ui.whole_rows` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
+
+- [ ] **Step 4b: One identity link per row (spec §2.2)**
+
+Two identity links in one list-grid row give two overlays, and the later one wins: the earlier link becomes unreachable. Create `ui/rows_test.go`:
+
+```go
+package ui
+
+import (
+	"regexp"
+	"strings"
+	"testing"
+)
+
+var markupTag = regexp.MustCompile(`<(/?)([a-zA-Z][a-zA-Z0-9-]*)([^>]*?)(/?)>`)
+
+var voidElement = map[string]bool{"area": true, "br": true, "col": true, "hr": true, "img": true, "input": true, "link": true, "meta": true, "source": true, "wbr": true}
+
+// identityLinksPerRow returns, for every [rst-lrow] data row in markup,
+// how many of its DIRECT children are identity links (a.rst-nm or
+// a[rst-person]). A small depth-tracking reader is enough: the samples
+// are hand-written, well-formed markup.
+func identityLinksPerRow(markup string) []int {
+	var out []int
+	type frame struct {
+		row  bool
+		slot int
+	}
+	var stack []frame
+	for _, m := range markupTag.FindAllStringSubmatch(markup, -1) {
+		closing, name, attrs, self := m[1] == "/", strings.ToLower(m[2]), m[3], m[4] == "/"
+		if closing {
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
+			continue
+		}
+		parentRow := len(stack) > 0 && stack[len(stack)-1].row
+		if parentRow && name == "a" && (regexp.MustCompile(`class="[^"]*\brst-nm\b`).MatchString(attrs) || regexp.MustCompile(`(^|\s)rst-person(\s|=|$)`).MatchString(attrs)) {
+			out[stack[len(stack)-1].slot]++
+		}
+		if self || voidElement[name] {
+			continue
+		}
+		f := frame{}
+		if regexp.MustCompile(`(^|\s)rst-lrow(\s|>|$)`).MatchString(attrs+" ") && !strings.Contains(attrs, `rst-lrow="head"`) {
+			f = frame{row: true, slot: len(out)}
+			out = append(out, 0)
+		}
+		stack = append(stack, f)
+	}
+	return out
+}
+
+func TestEveryListGridRowHasOneIdentityLink(t *testing.T) {
+	rows := 0
+	for name, sample := range Styleguide() {
+		for i, n := range identityLinksPerRow(sample) {
+			rows++
+			if n > 1 {
+				t.Errorf("styleguide %q row %d has %d identity links; one per row, or the later overlay hides the earlier link", name, i, n)
+			}
+		}
+	}
+	if rows == 0 {
+		t.Fatal("found no list-grid data rows in the samples; the reader is broken")
+	}
+	// The reader itself, both ways.
+	two := `<div rst-lrow><a class="rst-nm" href="/a">A</a><a rst-person href="/p"><span rst-person-name>P</span></a></div>`
+	if got := identityLinksPerRow(two); len(got) != 1 || got[0] != 2 {
+		t.Errorf("a row with two identity links reads as %v, want [2]", got)
+	}
+	nested := `<div rst-lrow><span><a class="rst-nm" href="/a">A</a></span><a class="rst-nm" href="/b">B</a></div>`
+	if got := identityLinksPerRow(nested); len(got) != 1 || got[0] != 1 {
+		t.Errorf("a nested link counted as a direct child: %v, want [1]", got)
+	}
+}
+```
+
+Run: `GOFLAGS=-mod=mod go test -run TestEveryListGridRowHasOneIdentityLink -count=1 ./ui/`
+Expected: PASS. Mutation check: add `<a rst-person href="/p">x</a>` as a direct child of the `list-grid` sample's data row; the test fails naming it; restore. The authoring rule is stated for developers in the package doc (`godoc.ui.whole_rows`, "Give each row one identity link") and in templates.md (batch 3, `docs.templates.rows`).
+
 - [ ] **Step 5: Run the drives and the unit gates**
 
 Run the Step 2 command, then `GOFLAGS=-mod=mod go test -run 'TestEveryInteractiveRuleIsInTheTapInventory|TestEveryClassSelectorHasAnAttributeTwin|TestNoAttributeSelectorIsAnOrphan' -count=1 ./ui/`.
 Expected: PASS. Mutation checks, each restored: add a space before `:not(` in the attribute half of the lifting rule (the twin gate fails first; fix the class half too and the checkbox leg fails because the checkbox is covered); remove the list-grid `::after` rule (the far-edge legs fail with `DIV`).
 
-- [ ] **Step 6: Run the task gate** (all three commands). `TestBothSpellingsComputeTheSameStyles` compares the new rules in both spellings through `extraFixture`; `TestA11yWalksTheKeyboard` sees the underline on a focused row link.
+- [ ] **Step 6: Run the task gate** (the gate line, then `make ci`). `TestBothSpellingsComputeTheSameStyles` compares the new rules in both spellings through `extraFixture`; `TestA11yWalksTheKeyboard` sees the underline on a focused row link.
 
 - [ ] **Step 7: Commit and push**
 
@@ -2224,56 +2654,6 @@ git push origin mobile-ergonomics
 
 ---
 
-### Task 5: Copy review, batch 2: the gallery's words for the row menu, the demo and the two new assets (controller)
-
-Run by the controller with the `copy-review` skill, not by an implementer: the operator reviews the English, and nothing below is written into a tracked file by this task. Tasks 6, 8 and 9 write the approved text.
-
-**Files:**
-- Create (gitignored): `copy-review/strings.json` (batch 2), `copy-review/batch2-result.json`
-
-**Interfaces:**
-- Consumes: `copy-review/batch1-result.json` (kept by Task 1).
-- Produces: `copy-review/batch2-result.json`, `{"action":"approve","strings":[…]}` with the ids below. Every later task that writes one of these strings reads it from that file with `jq -r '.strings[] | select(.id=="<id>") | .text' copy-review/batch2-result.json`.
-
-- [ ] **Step 1: Keep batch 1's result**
-
-```bash
-test -f copy-review/batch1-result.json || cp copy-review/result.json copy-review/batch1-result.json
-jq -e '.action == "approve"' copy-review/batch1-result.json
-```
-
-- [ ] **Step 2: Write `copy-review/strings.json`**
-
-These are the drafts. Every one is a gallery prose key (English is the key, eleven translations follow), so short and plain; no em dashes.
-
-```json
-[
-  {"id": "gallery.row_menu.blurb", "section": "Gallery: the row menu", "label": "Row menu, one-line description", "text": "A row's other actions, behind a ⋮ button. A destructive one links to its confirm page.", "context": "The description under the row-menu partial's name on the gallery's List screen page. The partial is new: a ⋮ button at the end of a list row that opens a small menu of actions for that row."},
-  {"id": "gallery.row_menu.state_mixed", "section": "Gallery: the row menu", "label": "First example's label", "text": "Links, a form and a destructive item", "context": "Label above the first example: a menu with an Edit link, an Archive button that posts a form, and a destructive 'Delete order…' link, separated by a rule."},
-  {"id": "gallery.row_menu.note_mixed", "section": "Gallery: the row menu", "label": "First example's note", "text": "Put the destructive item last and end its label with …. It opens a page that asks before anything is deleted.", "context": "A note under the first example, telling a developer how to order the items."},
-  {"id": "gallery.row_menu.state_links", "section": "Gallery: the row menu", "label": "Second example's label", "text": "Links only, for a list inside a selection form", "context": "Label above the second example: every item is a link. Used when the list sits inside the form that bulk selection submits."},
-  {"id": "gallery.row_menu.note_links", "section": "Gallery: the row menu", "label": "Second example's note", "text": "Inside a form, every item must be a link. An action that posts goes through a page of its own.", "context": "Why: a form cannot sit inside another form, so a posting item would submit the whole selection form instead."},
-  {"id": "gallery.demo.close_request", "section": "Gallery: the demo application", "label": "Row menu item in the demo's request list", "text": "Close request…", "context": "The destructive item in each row's ⋮ menu on the demo application's list of support requests. The other item is 'Reply', which the demo already says."},
-  {"id": "gallery.demo.callout_title", "section": "Gallery: the demo application", "label": "Callout title on the request screen", "text": "Every screen has its own address", "context": "Replaces 'Three screens, three addresses'. The demo used to be one page switching views with CSS; it is now four pages, like a real app, and on a phone its navigation is a list with a back control."},
-  {"id": "gallery.demo.callout_body", "section": "Gallery: the demo application", "label": "Callout body on the request screen", "text": "Each screen is a page of its own, like any rastrillo screen, and works the same with JavaScript off. On a phone, the sections are a list and each screen has a way back.", "context": "Replaces 'Every view has its own address, like any rastrillo screen. Turn JavaScript off and it behaves the same. Switching uses CSS.', which is no longer true."},
-  {"id": "gallery.assets.shell_js", "section": "Gallery: Getting started, the asset list", "label": "shell.js, one line", "text": "Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.", "context": "One line beside the new vendored file in the list of files every app gets. The existing lines read like 'The busy rule: while a form sends, its button shows a spinner…'."},
-  {"id": "gallery.assets.shell_css", "section": "Gallery: Getting started, the asset list", "label": "shell.css, one line", "text": "The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.", "context": "One line beside the new vendored stylesheet in the same list."}
-]
-```
-
-- [ ] **Step 3: Run the review**
-
-Invoke the `copy-review` skill on `copy-review/strings.json` and follow it to the end (serve, wait for the operator, handle a reroll by rewriting and relaunching). On approve:
-
-```bash
-jq -e '.action == "approve"' copy-review/result.json && cp copy-review/result.json copy-review/batch2-result.json
-jq -r '.strings[] | "\(.id)\t\(.text)"' copy-review/batch2-result.json
-```
-
-Expected: ten lines. No commit: `copy-review/` is gitignored and no tracked file changed, so the tree is exactly Task 4's green tree.
-
----
-
 ### Task 6: The `row-menu` partial, `list-row-action`'s `Menu`, and the gallery sample
 
 Spec §3 and §10.5.
@@ -2285,7 +2665,7 @@ Spec §3 and §10.5.
 - Modify: `internal/designsystem/samples.go` (a `row-menu` doc after `list-row-action`), `internal/designsystem/prose.go` (the batch 2 strings this task uses), `internal/designsystem/page.go` (the demo's request list gains a kebab per row), `internal/designsystem/a11y_test.go` (`pickPreviewFrames` also scans the row menu's frame)
 
 **Interfaces:**
-- Consumes: `optKey`, `optString`, `optPairs`, `deref`, `menuGroup` (`ui/funcs.go`); catalog key `rastrillo.ui.row_menu` (Task 1); `copy-review/batch2-result.json` (Task 5); Task 3's `measureFn`, `assertTargets`; Task 4's `at`, `probe`, `clickAndLand`, `settleUntil`.
+- Consumes: `optKey`, `optString`, `optPairs`, `deref`, `menuGroup` (`ui/funcs.go`); catalog key `rastrillo.ui.row_menu` (Task 1); `copy-review/batch2-result.json` (Task 2); Task 4's `measureFn`, `assertTargets`; Task 5's `at`, `probe`, `clickAndLand`, `clickAndStay`, `settleUntil`.
 - Produces:
   - Partial `row-menu`, data: `Name string` (required), `Items` (required, list of `{Label string; Href string | Action string; Hidden [][2]string (POST only); Danger bool (Href only)}`), `MenuGroup string` (optional).
   - `list-row-action` key `Menu`: the `Items` list alone; the trigger is named for `Main`.
@@ -2383,6 +2763,17 @@ func TestRowMenuRefusesItemsItCannotRender(t *testing.T) {
 		err := tmpl.ExecuteTemplate(&strings.Builder{}, "row-menu", c.data)
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: err = %v, want one naming %q", c.name, err, c.want)
+		}
+	}
+}
+
+// An empty or nil Hidden is not "carrying Hidden": a struct caller has the
+// field on every item, link items included.
+func TestRowMenuAcceptsAnEmptyHiddenOnALink(t *testing.T) {
+	for _, hidden := range []any{nil, [][2]string(nil), [][2]string{}, []any{}} {
+		got := render(t, "row-menu", rowMenuData(map[string]any{"Label": "Edit", "Href": "/e", "Hidden": hidden}))
+		if !strings.Contains(got, `<a href="/e">Edit</a>`) {
+			t.Errorf("Hidden %#v on a link item: %s", hidden, got)
 		}
 	}
 }
@@ -2557,6 +2948,9 @@ In `ui/funcs.go`, add `"rowMenuItems": rowMenuItems,` to the map `Funcs` returns
 // cannot render (see its own comment).
 ```
 
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `godoc.ui.funcs_row_menu_items` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
+
 Then, after `opt`:
 
 ```go
@@ -2599,6 +2993,13 @@ func rowMenuItems(data any) ([]rowMenuItem, error) {
 		if d := optKey(it, "Danger"); d.IsValid() && d.Kind() == reflect.Bool {
 			m.Danger = d.Bool()
 		}
+		// Hidden counts as present only when it holds something: a struct
+		// caller's Hidden field is there, nil or empty, on every item, and
+		// a link item with nothing to send has broken no rule.
+		hidden := false
+		if h := optKey(it, "Hidden"); h.IsValid() && (h.Kind() == reflect.Slice || h.Kind() == reflect.Array) {
+			hidden = h.Len() > 0
+		}
 		switch {
 		case m.Label == "":
 			return nil, fmt.Errorf("ui: row-menu item %d has no Label", i)
@@ -2606,7 +3007,7 @@ func rowMenuItems(data any) ([]rowMenuItem, error) {
 			return nil, fmt.Errorf("ui: row-menu item %d (%q) wants exactly one of Href (a link) and Action (a POST)", i, m.Label)
 		case m.Danger && m.Href == "":
 			return nil, fmt.Errorf("ui: row-menu item %d (%q) is Danger, so it needs Href: a destructive item links to its confirm page", i, m.Label)
-		case optKey(it, "Hidden").IsValid() && m.Action == "":
+		case hidden && m.Action == "":
 			return nil, fmt.Errorf("ui: row-menu item %d (%q) carries Hidden, which only a POST (Action) item sends", i, m.Label)
 		}
 		if m.Danger && plain && !ruled {
@@ -2626,7 +3027,7 @@ func rowMenuItems(data any) ([]rowMenuItem, error) {
 Create `ui/partials/row-menu.html`:
 
 ```html
-{{/* row-menu — a row's secondary actions behind a kebab: a native
+{{/* row-menu: a row's secondary actions behind a kebab, in a native
      <details> in the shared menu group, so opening one closes any other
      menu, with no script. rastrillo.js closes it on an outside click and
      on Escape. Render it in a list grid row's last cell (--rst-cols
@@ -2649,12 +3050,12 @@ Create `ui/partials/row-menu.html`:
      own, the confirm-page pattern a destructive item already uses.
 
      Keys:
-       Name       string, required — the row's name, used only in the
+       Name       string, required: the row's name, used only in the
                   trigger's accessible name ("Actions for {name}")
-       Items      list, required — in the order they render:
+       Items      list, required, in the order they render:
                     Label   string, required
-                    Href    string — a GET link, or
-                    Action  string — a POST; exactly one of the two
+                    Href    string: a GET link, or
+                    Action  string: a POST; exactly one of the two
                     Hidden  [][2]string, optional, POST only, in order
                     Danger  bool, optional, Href only: the destructive
                             item, a link to its confirm page. Put it
@@ -2663,7 +3064,7 @@ Create `ui/partials/row-menu.html`:
                             plain item.
                   rowMenuItems fails Execute on an item that breaks
                   these rules rather than dropping it.
-       MenuGroup  string, optional — the <details name> group, read
+       MenuGroup  string, optional: the <details name> group, read
                   through menuGroup; default rst-menus. */}}
 {{define "row-menu"}}<details rst-row-menu name="{{menuGroup .}}">
   <summary aria-label="{{Tf "rastrillo.ui.row_menu" "name" .Name}}">{{icon "kebab"}}</summary>
@@ -2682,16 +3083,22 @@ Create `ui/partials/row-menu.html`:
 </details>{{end}}
 ```
 
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `partial.row_menu.contract` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
+
 In `ui/partials/list-row-action.html`, add to the Keys comment after `LeadInitial`:
 
 ```
-       Menu         list, optional — row-menu's Items, rendered as a
+       Menu         list, optional: row-menu's Items, rendered as a
                     kebab after the status pill and the action pill (the
                     pill for the one frequent action, the kebab for the
                     rest). Its trigger is named for Main, so there is no
                     second copy of the name to drift. Read through opt,
                     so a struct written before Menu existed still renders.
 ```
+
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `partial.list_row_action.menu` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
 
 and change the template's tail from
 
@@ -2743,7 +3150,7 @@ In `ui/styleguide.go`, replace the `list-grid` sample's `<details rst-row-menu �
     </details>
 ```
 
-(`Actions for Grace Hopper` is the draft; the approved batch-1 English goes there, which is what the test compares against.) Make the same change to the sample in `ui/ui.go`'s package doc (lines 116-118): the doc's `<details rst-row-menu>` becomes `{{template "row-menu" dict "Name" "Grace Hopper" "Items" (list (dict "Label" "View" "Href" "/orders/AB3PX") (dict "Label" "Refund order…" "Href" "/orders/AB3PX/refund" "Danger" true))}}`, with the sentence before it ending "and the per-row overflow menu is the row-menu partial:".
+(`Actions for Grace Hopper` is the draft; the approved batch-1 English goes there, which is what the test compares against.) Make the same change to the sample in `ui/ui.go`'s package doc (lines 116-118): the doc's `<details rst-row-menu>` becomes `{{template "row-menu" dict "Name" "Grace Hopper" "Items" (list (dict "Label" "View" "Href" "/orders/AB3PX") (dict "Label" "Refund order…" "Href" "/orders/AB3PX/refund" "Danger" true))}}`, with the sentence before it ending in the approved `godoc.ui.row_menu_sample` text from `copy-review/batch2-result.json` (draft: "and the per-row overflow menu is the row-menu partial:").
 
 In `ui/markup_v3_browser_test.go`'s `extraFixture`, change the hand-written row menu's `<button class="rst-danger" type="button">Delete…</button>` to `<button class="rst-danger" type="button"><span class="rst-spin" aria-hidden="true"></span>Delete…</button>`, so the spinner-slot rule is rendered in both spellings.
 
@@ -2935,9 +3342,7 @@ func TestRowMenuDismissesAndHandsFocusBack(t *testing.T) {
 		t.Errorf("after Escape: open %q, focus on %q; want none open and focus on row-a's summary", got, focus)
 	}
 	chromedp.Run(ctx, chromedp.Click("#row-a summary", chromedp.ByQuery))
-	if got := clickAndLand(t, ctx, probe(t, ctx, "#row-a [rst-row-menu-panel] a", 0.5, 0.5, 0, 0)); got != "/go/view-a" {
-		t.Errorf("clicking the View item went to %q, want the item's href, never the row's", got)
-	}
+	clickAndLand(t, ctx, probe(t, ctx, "#row-a [rst-row-menu-panel] a", 0.5, 0.5, 0, 0), "/go/view-a")
 }
 
 // TestARowMenuNearTheBottomOpensUpward: anchor positioning's flip-block
@@ -2969,7 +3374,17 @@ const postBusyJS = `((row) => {
   btn.click();
   const spin = btn.querySelector("[rst-spin]");
   const sr = spin ? spin.getBoundingClientRect() : null, br = btn.getBoundingClientRect();
-  return JSON.stringify({Before: before, After: [box(btn), box(panel)], Spin: !!spin,
+  // The label as it is drawn: every line box of its text. The spinner is
+  // out of flow, so the boxes above cannot see it sit on the words; this
+  // is the reading that can.
+  const range = document.createRange(), lines = [];
+  for (const n of btn.childNodes) {
+    if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+    range.selectNodeContents(n);
+    lines.push(...range.getClientRects());
+  }
+  const hits = sr ? lines.filter(l => l.right > sr.left + 0.5 && l.left < sr.right - 0.5 && l.bottom > sr.top + 0.5 && l.top < sr.bottom - 0.5).length : 0;
+  return JSON.stringify({Before: before, After: [box(btn), box(panel)], Spin: !!spin, Lines: lines.length, Overlap: hits,
     InSlot: !!sr && sr.left >= br.right - 40 && sr.right <= br.right + 0.5,
     Animation: spin ? getComputedStyle(spin).animationName : ""});
 })(%q)`
@@ -2995,9 +3410,10 @@ func TestAPostItemsSpinnerNeverMovesTheMenu(t *testing.T) {
 		acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery))
 		chromedp.Run(ctx, acts...)
 		var g struct {
-			Before, After [2][2]float64
-			Spin, InSlot  bool
-			Animation     string
+			Before, After  [2][2]float64
+			Spin, InSlot   bool
+			Lines, Overlap int
+			Animation      string
 		}
 		at(t, ctx, fmt.Sprintf(postBusyJS, leg.row), &g)
 		if !g.Spin {
@@ -3008,6 +3424,12 @@ func TestAPostItemsSpinnerNeverMovesTheMenu(t *testing.T) {
 		}
 		if !g.InSlot {
 			t.Errorf("%s: the spinner is not in the reserved slot at the item's inline end", leg.name)
+		}
+		if g.Lines == 0 {
+			t.Fatalf("%s: the label has no rendered text to compare with the spinner; the leg reads nothing", leg.name)
+		}
+		if g.Overlap > 0 {
+			t.Errorf("%s: the spinner sits on %d of the label's %d lines; the reserved slot is not keeping them apart", leg.name, g.Overlap, g.Lines)
 		}
 		if leg.reduced && g.Animation != "none" {
 			t.Errorf("%s: the spinner animates (%s) under reduced motion", leg.name, g.Animation)
@@ -3043,9 +3465,9 @@ func TestRowMenuTargetsAreTapsOnAPhone(t *testing.T) {
 - [ ] **Step 9: Run the drive**
 
 Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestRowMenu|TestARowMenuNearTheBottomOpensUpward|TestAPostItemsSpinnerNeverMovesTheMenu' -count=1 -v ./ui/`
-Expected: PASS. Mutation check: remove the `padding-inline-end` from the POST-button rule; the 320 long-label leg fails on the item's box; restore.
+Expected: PASS. Mutation check: remove the `padding-inline-end` from the POST-button rule; the long-label legs fail on the spinner overlapping the label (that label is the widest item, so its text reaches the item's content edge, where the spinner sits); restore.
 
-- [ ] **Step 10: Run the task gate** (all three commands). If `TestPreviewFrameHeightsFitTheirContent` names the new `partial-row-menu` frames, set their heights in `heightOf` to what it measured.
+- [ ] **Step 10: Run the task gate** (the gate line, then `make ci`). If `TestPreviewFrameHeightsFitTheirContent` names the new `partial-row-menu` frames, set their heights in `heightOf` to what it measured.
 
 - [ ] **Step 11: Commit and push**
 
@@ -3082,7 +3504,7 @@ Spec §5 and the topbar half of §10.4. The console's bar gets the same card in 
 - Create: `ui/card_browser_test.go`
 
 **Interfaces:**
-- Consumes: Task 2/3 helpers (`sizingMux`, `requirePointer`, `settleUntil`, `measureFn`, `assertTargets`, `readTargets`), Task 4's `at`, `probe`, `clickAndLand`, `classSpelling` (`ui/markup_v3_browser_test.go:468`).
+- Consumes: Task 3/4 helpers (`sizingMux`, `requirePointer`, `settleUntil`, `measureFn`, `assertTargets`, `readTargets`), Task 5's `at`, `probe`, `clickAndLand`, `clickAndStay`, `classSpelling` (`ui/markup_v3_browser_test.go:468`).
 - Produces:
   - JS: `MENUS` now includes `[rst-shell-menu][open],.rst-shell__menu[open]`; `var TAIL = "[rst-shell-tail],.rst-shell__tail"`; `function menuAround(node)`.
   - CSS: the card rules for `[rst-shell-topbar]` in `@media (max-width: 799.98px)`; `@keyframes rst-shell-drop`. Task 9 adds the same selectors for `[rst-shell-console]`.
@@ -3354,12 +3776,7 @@ func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 				}
 				// An outside tap over a link in the page closes the card
 				// and does not follow the link.
-				if got := clickAndLand(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0)); got != "/" {
-					t.Errorf("a tap outside the card followed the link under it to %q", got)
-				}
-				if c := readCard(t, ctx); c.MenuOpen {
-					t.Error("a tap outside the card did not close it")
-				}
+				clickAndStay(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "", `!document.querySelector("[rst-shell-menu]").open`)
 			})
 		}
 	}
@@ -3437,9 +3854,9 @@ func TestTheCardSurvivesAResize(t *testing.T) {
 	if underline != "2px" {
 		t.Errorf("widened: the current item's underline is %s, want today's 2px", underline)
 	}
-	if got := clickAndLand(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0)); got != "/go/main" {
-		t.Errorf("widened with the card open: a click on a link in the page went to %q; a leftover layer is swallowing clicks", got)
-	}
+	// A leftover layer would swallow this click; landing is the proof
+	// there is none.
+	clickAndLand(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "/go/main")
 
 	load()
 	chromedp.Run(ctx, chromedp.Click("[rst-shell-account] > summary", chromedp.ByQuery), chromedp.EmulateViewport(1280, 900))
@@ -3463,9 +3880,12 @@ func TestTheCardsControlsAreTaps(t *testing.T) {
 	defer cancel()
 	chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
 		chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
-	got := readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify(measure(document.querySelector("[rst-shell-bar]"))); })()`)
-	if len(got) < 6 {
-		t.Fatalf("measured %d controls in the open bar, want the brand, the Menu, three nav rows and two summaries", len(got))
+	// The Menu and the card, not the whole bar: while the card is open
+	// the brand is under the outside-tap layer on purpose, so a tap there
+	// closes the card instead of following it.
+	got := readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify([...measure(document.querySelector("[rst-shell-menu]")), ...measure(document.querySelector("[rst-shell-tail]"))]); })()`)
+	if len(got) != 6 {
+		t.Fatalf("measured %d controls in the open card, want exactly 6: the Menu summary, three nav rows, the account and language summaries", len(got))
 	}
 	assertTargets(t, "390 touch, the open card", got)
 }
@@ -3476,7 +3896,7 @@ Expected: FAIL: `opening the card moved the page`, `a tap outside the card follo
 
 - [ ] **Step 4: Write the card CSS**
 
-In `ui/tokens.css`, directly after the topbar's `@media (min-width: 800px) { … }` block (it ends at line 1772), add:
+In `ui/tokens.css`, after the console's `@media (min-width: 800px) { … }` block and before the `/* ── rst-signin: the shipped sign-in card` comment (line 1947), add the block below. It goes after BOTH shells' narrow rules, not straight after the topbar's: Task 9 extends these rules to the console, whose base rule for its open tail (`flex-basis: 100%`, a gap) has the same weight, so the card's rules must come later in the file to win.
 
 ```css
 /* The topbar's narrow menu is a floating card: it overlays the page and
@@ -3493,7 +3913,7 @@ In `ui/tokens.css`, directly after the topbar's `@media (min-width: 800px) { …
    box and nothing else, so the account panel would stay static, the nav
    would lose its underline, and the layer below would still swallow
    clicks on a desktop someone widened with the menu open. These rules
-   come after the narrow ones above and win at equal weight.
+   come after both shells' narrow rules above and win at equal weight.
 
    CLOSING ON AN OUTSIDE TAP, with and without scripts: while open, the
    summary grows an invisible ::before over the viewport, under the card
@@ -3536,8 +3956,8 @@ In the touch block, at its end, add:
 In `ui/sizing_test.go`'s `tapInventory`, add:
 
 ```go
-	{"[rst-shell-menu][open] > summary", "Shell: the open Menu summary", "rst-shell-menu"},
-	{"[rst-shell-account] > summary", "Shell: the account summary inside the card", "rst-shell-account"},
+	{"[rst-shell-menu][open] > summary", "Shell: the open Menu summary", "rst-shell-menu", "elsewhere:TestTheCardsControlsAreTaps"},
+	{"[rst-shell-account] > summary", "Shell: the account summary inside the card", "rst-shell-account", "[rst-shell-account] > summary"},
 ```
 
 In `ui/layouts/topbar.html`, replace the sentence `The sidebar collapses at the same width behind the same icon: two shells, one idiom.` in the comment at lines 26-33 with `Below 800px the open tail is a card over the page (tokens.css), which rastrillo.js closes on an outside tap and on Escape; the sidebar has no such control since H, its phone navigation is an index page.`
@@ -3598,7 +4018,7 @@ and in its doc comment's bug list replace "shell chrome or the toggle-block swep
 Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestTheTopbarMenuIsACardOverThePage|TestEscapeClosesTheWholeCard|TestTheCardSurvivesAResize|TestTheCardsControlsAreTaps|TestTheTopbarCollapsesItsTailBehindOneDisclosure|TestMenuExclusivityAndDropdownDismissDrive|TestLightDismissWorksInBothSpellings' -count=1 ./ui/`
 Expected: PASS. Mutation checks, each restored: delete the `getClientRects().length` condition from `menuAround` (leave `return d;`) → `TestTheCardSurvivesAResize` fails with focus on the hidden Menu summary; delete the summary `::before` rule → the no-script outside-tap leg follows the link.
 
-- [ ] **Step 7: Run the task gate** (all three commands).
+- [ ] **Step 7: Run the task gate** (the gate line, then `make ci`).
 
 - [ ] **Step 8: Commit and push**
 
@@ -3922,7 +4342,7 @@ var shellCSS []byte
 and after `CalendarJS`:
 
 ```go
-// ShellJS returns shell.js — the sidebar and console shells' phone
+// ShellJS returns shell.js: the sidebar and console shells' phone
 // navigation: the slide's direction, a back control that reuses history
 // when it can prove what is behind it, and focus returned to the section
 // the reader left. Delivered once by rastrillo new like ShimJS and
@@ -3931,12 +4351,15 @@ and after `CalendarJS`:
 // control are ordinary pages and links.
 func ShellJS() []byte { return shellJS }
 
-// ShellCSS returns shell.css — the slide between the index and a page
+// ShellCSS returns shell.css: the slide between the index and a page
 // on a phone. It is a stylesheet of its own because the cross-document
 // opt-in cannot be scoped from tokens.css, where it would opt every
 // shell's pages in, the sign-in page included.
 func ShellCSS() []byte { return shellCSS }
 ```
+
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `godoc.ui.shell_js and godoc.ui.shell_css` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
 
 In `ui/vendored.go`, set `vendoredNames` to `{"tokens.css", "theme.css", "shell.css", "rastrillo.js", "busy.js", "shell.js", "select.js", "datetime.js", "calendar.js"}`, add `"shell.css": ShellCSS(),` and `"shell.js": ShellJS(),` to `VendoredAssets`' map, and rewrite the order comment: "the structural stylesheet, the theme that colours it and the shells' slide, then the scripts: the shim and the busy rule beside it, the shells' navigation, and calendar.js last because it is the only one that is not an enhancement in its own right: it draws the month grid datetime.js asks it for."
 
@@ -3954,6 +4377,8 @@ var vendoredIsMine = map[string]bool{
 	// "shell.js": true, "shell.css": true,
 }
 ```
+
+The three new comment lines land in every scaffolded app, so they are the approved `scaffold.vendored_is_mine` text from `copy-review/batch2-result.json` (draft above).
 
 (Doctor strips comments before reading the map (`uncommented`, `doctor.go`), so the example entries are not read as claims.)
 
@@ -4128,10 +4553,16 @@ import (
 // shellDoc is a page in the vocabulary the layouts write (Task 9 makes
 // the real layouts write it; this drive is about shell.js, so the markup
 // is by hand): a root marked with its view, a back link, a rail of nav
-// links, and a main with a same-page link.
+// links, and a main with a same-page link. It links shell.css but NOT
+// tokens.css: at this point in the branch tokens.css still hides a
+// sidebar rail below 800px unless the old drawer is open (the index
+// rules arrive in Task 9), and a hidden link cannot take focus, so the
+// drive would be measuring the stylesheet instead of the script. Task
+// 9's TestThePhoneIndexWorksWithScripts runs the same journeys on the
+// real layouts and the real stylesheet.
 func shellDoc(view, up, nav, main string) string {
 	return `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>shell</title>` +
-		`<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/shell.css">` +
+		`<link rel="stylesheet" href="/shell.css">` +
 		`<script defer blocking="render" src="/shell.js"></script></head><body>` +
 		`<div rst-shell-sidebar="` + view + `"><div rst-shell-back><a id="back" href="` + up + `" rel="up">Sections</a></div>` +
 		`<aside rst-shell-rail><nav rst-shell-nav>` + nav + `</nav></aside>` +
@@ -4431,7 +4862,7 @@ func TestTheSlideKnowsWhichWayItIsGoing(t *testing.T) {
 Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind|TestTheSlideKnowsWhichWayItIsGoing' -count=1 -v ./ui/`
 Expected: PASS. Mutation checks, each restored: make `place()` return `href` unchanged (the query/absolute leg fails); drop `!prev.sameDocument` (the fragment leg fails with history unchanged); swap the order of the record and fragment lookups (the two-sections leg fails with focus on nav-invoices).
 
-- [ ] **Step 8: Run the task gate** (all three commands).
+- [ ] **Step 8: Run the task gate** (the gate line, then `make ci`).
 
 - [ ] **Step 9: Commit and push**
 
@@ -4809,7 +5240,7 @@ and the wide undo (lines 1929-1930) with the same two selectors (its comment unc
 
 Update the console block's opening comment ("TWO CHROMES, ONE CONTROL. …") to say the same as the layout's: one pattern per chrome; the tail folds behind the Menu as a card (the card block), the rail is an index (the index/back block), and the `:has()` pair below is legacy.
 
-(c) Give the card to the console too. In Task 7's card block, add the console spelling to every rule: each `.rst-shell-topbar X, [rst-shell-topbar] Y` gains `, .rst-shell-console X, [rst-shell-console] Y` (the bar, the open summary, its `::before`, the open tail, the account in the tail, its summary, the panels in the tail; the nav rules stay topbar-only, the console's nav is in its rail). Do the same to the reduced-motion rule after it. Add to the block's comment: "The console's bar folds the same way; its nav is in the rail, so its card holds the account and language menus only."
+(c) Give the card to the console too. In Task 7's card block, add the console spelling to every rule: each `.rst-shell-topbar X, [rst-shell-topbar] Y` gains `, .rst-shell-console X, [rst-shell-console] Y` (the bar, the open summary, its `::before`, the open tail, the account in the tail, its summary, the panels in the tail; the nav rules stay topbar-only, the console's nav is in its rail). Do the same to the reduced-motion rule after it and to the two card rules at the end of the touch block (the open Menu summary, the account summary in the tail). Add to the block's comment: "The console's bar folds the same way; its nav is in the rail, so its card holds the account and language menus only."
 
 (d) After the console's `@media (min-width: 800px) { … }` block (before `/* ── rst-signin`), add the index/back block:
 
@@ -4898,8 +5329,8 @@ Update the console block's opening comment ("TWO CHROMES, ONE CONTROL. …") to 
 and in `ui/sizing_test.go`'s `tapInventory`:
 
 ```go
-	{"[rst-shell-back] a", "Shell: the back control", "rst-shell-back"},
-	{"[rst-shell-nav] > a", "Shell: the index rows (3rem)", "rst-shell-nav"},
+	{"[rst-shell-back] a", "Shell: the back control", "rst-shell-back", "narrow:[rst-shell-back] a"},
+	{"[rst-shell-nav] > a", "Shell: the index rows (3rem)", "rst-shell-nav", "elsewhere:TestTheIndexRowsRoundEachRunOfLinks"},
 ```
 
 Copy tokens.css into both examples.
@@ -4939,6 +5370,9 @@ In `ui/ui.go`'s package doc, replace the `shell —` paragraph's sidebar and con
 // rst-shell-menu> as a card over the page, and its rail is an index like
 // the sidebar's.
 ```
+
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `godoc.ui.shells` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
 
 (and drop the `<details rst-shell-chrome>` and `:has()` wording from that paragraph).
 
@@ -5107,6 +5541,44 @@ func TestThePhoneIndexWorksWithNoScript(t *testing.T) {
 	}
 }
 
+// TestThePhoneIndexWorksWithScripts is §10.3's scripted journey on the
+// REAL layouts and the real stylesheet (Task 8 drove shell.js on
+// hand-written markup before these existed): both shells, LTR and RTL,
+// at 390 with a coarse pointer. Index, a section, the back control:
+// history is reused (its length unchanged), the URL is the index, and
+// focus is on the row the reader left. Then a deep link's back control,
+// which follows the link and still focuses the row from the record.
+func TestThePhoneIndexWorksWithScripts(t *testing.T) {
+	for _, shell := range []string{"sidebar", "console"} {
+		for _, dir := range []string{"ltr", "rtl"} {
+			t.Run(shell+" "+dir, func(t *testing.T) {
+				src, _ := Layout(shell)
+				pages := map[string]string{
+					"/":         shellLayoutPage(t, src, dir, `{{define "view"}}index{{end}}`),
+					"/invoices": shellLayoutPage(t, src, dir, `{{define "up"}}/#nav-invoices{{end}}`),
+					"/orders":   shellLayoutPage(t, src, dir, `{{define "up"}}/#nav-orders{{end}}`),
+				}
+				rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
+				ctx, done, thrown := tab(t, rig, "")
+				defer done()
+				visit(t, ctx, rig.Origin+"/")
+				requirePointer(t, ctx, true)
+				follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices" && document.querySelector("[rst-shell-back] a").checkVisibility()`)
+				before := state(t, ctx)
+				follow(t, ctx, "[rst-shell-back] a", `location.pathname === "/" && document.activeElement.id === "nav-invoices"`)
+				if after := state(t, ctx); after.Len != before.Len {
+					t.Errorf("the back control grew history %d -> %d; with scripts it reuses the entry behind it", before.Len, after.Len)
+				}
+				visit(t, ctx, rig.Origin+"/orders")
+				follow(t, ctx, "[rst-shell-back] a", `location.pathname === "/" && document.activeElement.id === "nav-orders"`)
+				if len(*thrown) > 0 {
+					t.Errorf("uncaught: %v", *thrown)
+				}
+			})
+		}
+	}
+}
+
 // boxesJS is the rail's and main's boxes, for comparing two layouts.
 const boxesJS = `(() => { const b = s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round).join(","); };
   return JSON.stringify({Rail: b("[rst-shell-rail]"), Main: b("[rst-shell-main]")}); })()`
@@ -5174,6 +5646,7 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 		"/one":         `<a href="/a">A</a>`,
 		"/no-groups":   `<a href="/a">A</a><a href="/b">B</a><a href="/c" aria-current="page">C</a>`,
 	}
+	rows := map[string]int{"/group-first": 3, "/one": 1, "/no-groups": 3}
 	pages := map[string]string{}
 	for path, nav := range navs {
 		pages[path] = shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`, `{{define "nav"}}`+nav+`{{end}}`)
@@ -5182,11 +5655,14 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	for path := range navs {
-		var bad []string
+		var got struct {
+			Rows int
+			Bad  []string
+		}
 		chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("body"))
 		at(t, ctx, `(() => {
-		  const bad = [];
-		  for (const a of document.querySelectorAll("[rst-shell-nav] > a")) {
+		  const bad = [], links = document.querySelectorAll("[rst-shell-nav] > a");
+		  for (const a of links) {
 		    const cs = getComputedStyle(a), prev = a.previousElementSibling, next = a.nextElementSibling;
 		    const first = !prev || prev.hasAttribute("rst-shell-group"), last = !next || next.hasAttribute("rst-shell-group");
 		    const px = v => parseFloat(v) || 0;
@@ -5196,10 +5672,13 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 		    if ((px(cs.borderEndStartRadius) > 0) !== last) bad.push(a.textContent + ": bottom corner " + cs.borderEndStartRadius);
 		    if (a.getBoundingClientRect().height < 47.5) bad.push(a.textContent + ": under 3rem");
 		  }
-		  return JSON.stringify(bad);
-		})()`, &bad)
-		if len(bad) > 0 {
-			t.Errorf("%s: %v", path, bad)
+		  return JSON.stringify({Rows: [...links].filter(a => a.getClientRects().length > 0).length, Bad: bad});
+		})()`, &got)
+		if got.Rows != rows[path] {
+			t.Fatalf("%s: %d index rows shown, want %d; the leg would be checking nothing", path, got.Rows, rows[path])
+		}
+		if len(got.Bad) > 0 {
+			t.Errorf("%s: %v", path, got.Bad)
 		}
 	}
 }
@@ -5275,8 +5754,12 @@ In `ui/card_browser_test.go`, add:
 // and one Escape from inside its account menu closes both.
 func TestTheConsoleBarIsTheSameCard(t *testing.T) {
 	src, _ := Layout("console")
-	for _, scripts := range []bool{false, true} {
-		page := shellLayoutPage(t, src, "ltr", `{{define "account"}}<a id="acct-profile" href="/go/profile">Profile</a>{{end}}`,
+	for _, c := range []struct {
+		dir     string
+		scripts bool
+	}{{"ltr", false}, {"ltr", true}, {"rtl", false}, {"rtl", true}} {
+		scripts := c.scripts
+		page := shellLayoutPage(t, src, c.dir, `{{define "account"}}<a id="acct-profile" href="/go/profile">Profile</a>{{end}}`,
 			`{{define "content"}}<h1>Invoices</h1><div style="block-size: 450px"></div><p><a id="main-link" href="/go/main">A link in the page</a></p>{{end}}`)
 		pages := map[string]string{"/": page}
 		rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
@@ -5287,18 +5770,28 @@ func TestTheConsoleBarIsTheSameCard(t *testing.T) {
 		}
 		acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
 		chromedp.Run(ctx, acts...)
-		var before, open struct{ Main string; Gap float64 }
-		read := `(() => { const m = document.querySelector("main").getBoundingClientRect(), t = document.querySelector("[rst-shell-tail]").getBoundingClientRect();
-		  return JSON.stringify({Main: [m.left, m.top, m.width].map(Math.round).join(","), Gap: document.documentElement.clientWidth - t.right}); })()`
+		var before, open struct {
+			Main, Basis, Inner string
+			Gap                float64
+		}
+		// Gap is the card's distance from the viewport's inline end, which
+		// is the left edge in RTL. Basis and Inner are the card's own box
+		// rules: the console's base rule for its open tail (flex-basis 100%
+		// and a gap) comes later in the file than a card rule written after
+		// the topbar would, so these prove the card's rules won.
+		read := `(() => { const m = document.querySelector("main").getBoundingClientRect(), tail = document.querySelector("[rst-shell-tail]"), t = tail.getBoundingClientRect(), cs = getComputedStyle(tail);
+		  const rtl = document.documentElement.dir === "rtl";
+		  return JSON.stringify({Main: [m.left, m.top, m.width].map(Math.round).join(","), Gap: rtl ? t.left : document.documentElement.clientWidth - t.right, Basis: cs.flexBasis, Inner: cs.rowGap}); })()`
 		at(t, ctx, read, &before)
 		chromedp.Run(ctx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
 		at(t, ctx, read, &open)
 		if open.Main != before.Main || open.Gap < 0 || open.Gap > 13 {
-			t.Errorf("scripts %v: main %s -> %s, card %.1fpx from the edge; want a card over a page that did not move", scripts, before.Main, open.Main, open.Gap)
+			t.Errorf("%s scripts %v: main %s -> %s, card %.1fpx from the edge; want a card over a page that did not move", c.dir, scripts, before.Main, open.Main, open.Gap)
 		}
-		if got := clickAndLand(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0)); got != "/" {
-			t.Errorf("scripts %v: a tap outside the card followed the link to %q", scripts, got)
+		if open.Basis != "auto" || open.Inner != "0px" {
+			t.Errorf("%s scripts %v: the console's open tail has flex-basis %s and gap %s; the card's auto and 0 lost to the console's own rule", c.dir, scripts, open.Basis, open.Inner)
 		}
+		clickAndStay(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "", `!document.querySelector("[rst-shell-menu]").open`)
 		if scripts {
 			chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
 				chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.Click("[rst-shell-account] > summary", chromedp.ByQuery),
@@ -5445,7 +5938,9 @@ func shellPageHref(mount, theme, locale, shell string) string {
 
 and its nav becomes `<a id="nav-posts" href="{{.PageHref}}" aria-current="page">Posts</a><a id="nav-comments" href="{{.PageHref}}">Comments</a><a id="nav-settings" href="{{.PageHref}}">Settings</a>` (the shells without a view never execute the two new defines). `Render` writes every returned file under `dir + "shells/"`.
 
-(g) Tests. In `designsystem_test.go`: `TestTreeShapeIsComplete` expects the three `demo-*.html` and `shells/sidebar-page.html`, `shells/console-page.html` in every directory; `TestNoTwoPageKindsShareAName` adds `"demo-dashboard.html", "demo-requests.html", "demo-request.html"` to its taken list.
+(g) The shell blurbs, in the same task as the shells, so the gallery never describes the drawer it stopped showing. In `page.go`, set `shellViews`' `"sidebar"` and `"console"` blurbs to the approved `gallery.shell_blurb_sidebar` and `gallery.shell_blurb_console`, and `idiomBlurbs["shell-sidebar"]` to `gallery.idiom_blurb_sidebar` (all from `copy-review/batch2-result.json`). In `prose.go`, delete the three entries keyed by the old English (`A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.`, the console's `… Below 800px one disclosure folds both. No JavaScript.`, and `The sidebar shell's chrome, collapsing below 800px into a details disclosure.`) and add the three approved strings, each with eleven translations drafted from the approved English. `TestEveryProseKeyIsTranslated` fails on a stale entry, so the deletions are not optional.
+
+(h) Tests. In `designsystem_test.go`: `TestTreeShapeIsComplete` expects the three `demo-*.html` and `shells/sidebar-page.html`, `shells/console-page.html` in every directory; `TestNoTwoPageKindsShareAName` adds `"demo-dashboard.html", "demo-requests.html", "demo-request.html"` to its taken list; and `TestNoEnglishProseReachesATranslatedPage`'s exact count (`designsystem_test.go:1465`) becomes `len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + 3 + len(ui.LayoutNames()) + 2)`, with its comment saying why: one page per kind, a modal demo, the demo's four documents (1 + 3), one page per shell and the two shells' content pages. Keep it exact: a sweep that quietly walked fewer pages is the failure it guards. `pageTemplates()` needs no change (the demo is still one `demoTemplate` constant), but `TestNoUnregisteredEnglishInThePageTemplates` reads its literals: the demo's new rows pass the four subjects as `"Name"` to `row-menu` (a `dictMachineArgs` name) and the rest are existing fixtures, so it stays green; if it names a string, it is sample data and goes in `dictFixtures` with a comment, never into prose.
 
 In `a11y_test.go`: add to the targets list (after the demo app entries)
 
@@ -5480,6 +5975,24 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 		chromedp.Run(ctx, chromedp.Evaluate(`(() => { const e = document.querySelector(`+"`"+sel+"`"+`); return !!e && e.getClientRects().length > 0; })()`, &b))
 		return b
 	}
+	// goTo clicks sel and waits until the URL ends with page AND the
+	// destination's own section is in the document: the rail is in every
+	// one of the four documents, so waiting for a rail link would pass in
+	// the page being left.
+	goTo := func(sel, page, marker string) {
+		t.Helper()
+		if err := chromedp.Run(ctx, chromedp.Click(sel, chromedp.ByQuery)); err != nil {
+			t.Fatalf("clicking %s: %v", sel, err)
+		}
+		cond := fmt.Sprintf(`location.pathname.endsWith(%q) && !!document.querySelector(%q)`, "/"+page, marker)
+		for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+			var ok bool
+			if chromedp.Run(ctx, chromedp.Evaluate(cond, &ok)) == nil && ok {
+				return
+			}
+		}
+		t.Fatalf("clicking %s never landed on %s", sel, page)
+	}
 	var ranScript, landed, list, detail, back string
 	if err := chromedp.Run(ctx,
 		emulation.SetScriptExecutionDisabled(true),
@@ -5487,18 +6000,18 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 		chromedp.Navigate(rig.Origin+demoHref(mountPath, RootTheme(), "en")), chromedp.WaitReady("body"),
 		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &ranScript),
 		chromedp.Evaluate(views, &landed),
-		chromedp.Click(`#nav-requests`, chromedp.ByQuery), chromedp.WaitReady("#view-requests", chromedp.ByQuery),
-		chromedp.Evaluate(views, &list),
-		chromedp.Click(`#view-requests [rst-lrow] a.rst-nm`, chromedp.ByQuery), chromedp.WaitReady("#view-request", chromedp.ByQuery),
-		chromedp.Evaluate(views, &detail),
-		chromedp.Click(`#view-request [rst-back-nav] a`, chromedp.ByQuery), chromedp.WaitReady("#view-requests", chromedp.ByQuery),
-		chromedp.Evaluate(views, &back),
 	); err != nil {
-		t.Fatalf("driving the demo at 1280: %v", err)
+		t.Fatalf("loading the demo at 1280: %v", err)
 	}
 	if ranScript != "(none)" {
 		t.Fatalf("gallery.js ran with script execution disabled (data-rst-js=%q); this drive proves nothing", ranScript)
 	}
+	goTo(`#nav-requests`, "demo-requests.html", "#view-requests")
+	chromedp.Run(ctx, chromedp.Evaluate(views, &list))
+	goTo(`#view-requests [rst-lrow] a.rst-nm`, "demo-request.html", "#view-request")
+	chromedp.Run(ctx, chromedp.Evaluate(views, &detail))
+	goTo(`#view-request [rst-back-nav] a`, "demo-requests.html", "#view-requests")
+	chromedp.Run(ctx, chromedp.Evaluate(views, &back))
 	for _, s := range []struct{ where, got, want string }{
 		{"landing on demo.html", landed, "view-dashboard"}, {"the rail to the list", list, "view-requests"},
 		{"a row into the request", detail, "view-request"}, {"the back link out", back, "view-requests"},
@@ -5512,13 +6025,13 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 	if !shown("#nav-requests") || shown("[rst-shell-main]") {
 		t.Errorf("demo.html at 390 is not the index (rail shown %v, main shown %v)", shown("#nav-requests"), shown("[rst-shell-main]"))
 	}
-	chromedp.Run(ctx, chromedp.Click("#nav-requests", chromedp.ByQuery), chromedp.WaitReady("#view-requests", chromedp.ByQuery))
+	goTo("#nav-requests", "demo-requests.html", "#view-requests")
 	if !shown("[rst-shell-back] a") || shown("#nav-requests") {
 		t.Errorf("the list at 390: back control shown %v, rail shown %v; want the back control and no rail", shown("[rst-shell-back] a"), shown("#nav-requests"))
 	}
+	goTo("[rst-shell-back] a", "demo.html", "#view-dashboard")
 	var target bool
-	chromedp.Run(ctx, chromedp.Click("[rst-shell-back] a", chromedp.ByQuery), chromedp.WaitReady("#nav-requests", chromedp.ByQuery),
-		chromedp.Evaluate(`document.getElementById("nav-requests").matches(":target")`, &target))
+	chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("nav-requests").matches(":target")`, &target))
 	if !target {
 		t.Error("back on the index, the Requests row is not the :target; the scriptless focus return has nothing to start from")
 	}
@@ -5528,7 +6041,7 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 Run: `GOFLAGS=-mod=mod go test -count=1 ./internal/designsystem/` then `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -count=1 ./internal/designsystem/`
 Expected: PASS. If `TestPreviewFrameHeightsFitTheirContent` or `TestThePreviewWidgetIsUsableOnAPhone` reports a frame (the demo preview frames `demo.html`, now the index with the dashboard beside the rail; the shell previews now index documents), set the heights it measured in `heightOf`; the drive's own messages say what to change.
 
-- [ ] **Step 8: Run the task gate** (all three commands).
+- [ ] **Step 8: Run the task gate** (the gate line, then `make ci`).
 
 - [ ] **Step 9: Commit and push**
 
@@ -5712,7 +6225,7 @@ const scaffoldOverview = "Overview"
 
 // sectionsIndexTemplate is templates/index.html for the two-page shells.
 // %[1]s is the section's name.
-const sectionsIndexTemplate = `{{/* index.html — the home page, and on a phone the list of
+const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone the list of
      sections: the view block says this page is the index, so below
      800px the rail is the whole page and this content is hidden; on a
      desktop the rail sits beside it. Give each section a nav link with
@@ -5726,7 +6239,7 @@ const sectionsIndexTemplate = `{{/* index.html — the home page, and on a phone
 `
 
 // overviewTemplate is templates/overview.html, the one section page.
-const overviewTemplate = `{{/* overview.html — a section. up is its way back: the index, with
+const overviewTemplate = `{{/* overview.html: a section. up is its way back: the index, with
      this section's nav link as the fragment, which is where focus
      returns on a phone even with scripts off. */}}
 {{define "up"}}/#nav-overview{{end}}
@@ -5757,6 +6270,8 @@ func TestOverviewRenders(t *testing.T) {
 }
 `
 ```
+
+The two template comments and `overviewTest`'s two failure messages land in every scaffolded sidebar and console app, so they were reviewed in copy batch 2: write the approved `scaffold.index_comment`, `scaffold.overview_comment` and `scaffold.overview_test` texts from `copy-review/batch2-result.json` (drafts above). The "Hello, World" heading is today's line, unchanged.
 
 Change the templates:
 
@@ -5840,7 +6355,7 @@ repo=$(pwd); tmp=$(mktemp -d)
 
 Expected: `ok` for every package.
 
-- [ ] **Step 6: Run the task gate** (all three commands).
+- [ ] **Step 6: Run the task gate** (the gate line, then `make ci`).
 
 - [ ] **Step 7: Commit and push**
 
@@ -6042,7 +6557,6 @@ import (
 // they match nothing on any other page. Options.NoSpeculationRules
 // turns both the header and the route off.
 const SpeculationRulesPath = "/_speculation-rules"
-
 // speculationRules is the whole ruleset: document rules scoped by a
 // selector, in both markup spellings, to shell navigation and the back
 // control. moderate prerenders on a 200ms hover on a desktop and on
@@ -6066,6 +6580,9 @@ func serveSpeculationRules(w http.ResponseWriter, _ *http.Request) {
 }
 ```
 
+`SpeculationRulesPath`'s doc comment is public documentation, reviewed in copy batch 2: write the approved `godoc.rastrillo.speculation_rules_path` text from `copy-review/batch2-result.json`, wrapped to the comment width. The rest of the file's comments are code comments.
+
+
 - [ ] **Step 3: Wire it into `serve.go`**
 
 In `Options`, after `CSP`:
@@ -6082,6 +6599,9 @@ In `Options`, after `CSP`:
 	// header ruleset is not a script.
 	NoSpeculationRules bool
 ```
+
+This comment is public documentation (pkg.go.dev, or a shipped partial's data contract), so it was reviewed in copy batch 2: write the approved `godoc.rastrillo.no_speculation_rules` text from `copy-review/batch2-result.json`, wrapped to the file's comment width. The draft above is what went to review.
+
 
 Change `securityHeaders`:
 
@@ -6317,7 +6837,7 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestShellNavigationIsPrerendered|TestAPrefetchedIndexStillReturnsFocus' -count=1 -v ./ui/`
 Expected: PASS (the Screen calls also prove no CSP violation and no 404 for `shell.js`/`shell.css` on a page served with the framework's own headers). Mutation check: drop `[rst-shell-back],.rst-shell__back` from the rules' selector; `TestAPrefetchedIndexStillReturnsFocus` fails on its premise; restore. (The control leg is the mutation check for the header itself.)
 
-- [ ] **Step 5: Run the task gate** (all three commands).
+- [ ] **Step 5: Run the task gate** (the gate line, then `make ci`).
 
 - [ ] **Step 6: Commit and push**
 
@@ -6339,7 +6859,7 @@ git push origin mobile-ergonomics
 
 ---
 
-### Task 12: Copy review, batch 3: the docs, SKILL.md, the changelog body and the gallery's shell blurbs (controller)
+### Task 12: Copy review, batch 3: the docs, SKILL.md and the changelog body (controller)
 
 Run by the controller with the `copy-review` skill once Tasks 1-11 are green, so every sentence describes code that exists. Nothing is written into a tracked file here; Task 13 writes the approved text.
 
@@ -6362,31 +6882,160 @@ The drafts. Every one is new user-facing copy: plain, short, an instruction wher
 
 ```json
 [
-  {"id": "docs.templates.funcs", "section": "templates.md: Template functions", "label": "The functions sentence", "text": "`ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt` and `rowMenuItems`.", "context": "Replaces the same sentence without rowMenuItems."},
-  {"id": "docs.templates.rows", "section": "templates.md: list rows", "label": "Whole-row rule", "text": "A row that stands for a record is a link across its whole width: its name link covers the row, and the row's other buttons, checkboxes and menus sit on top of it. Give each row one name link. A row with no link does not look or act clickable.", "context": "New paragraph after the one on rst-lrow being a layout grid (templates.md:137-146)."},
-  {"id": "docs.templates.row_menu", "section": "templates.md: list rows", "label": "The row menu", "text": "Put a row's other actions in `row-menu`, at the end of the row. Each item is a link (`Href`) or a form that posts (`Action`, with `Hidden` fields). Put a destructive item last: it links to its confirm page and its label ends with …. Inside a bulk-selection form, every item must be a link. `list-row-action` takes the same list as `Menu` and puts the menu after its action pill.", "context": "New paragraph after the whole-row rule."},
-  {"id": "docs.templates.cols", "section": "templates.md: Set a grid's columns", "label": "The kebab column", "text": "End `--rst-cols` with `var(--rst-col-menu)` when the rows have a ⋮ menu. The column is 32px on a desktop and 44px on a phone.", "context": "Added under the CSS sample, which changes to `.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }`."},
-  {"id": "docs.templates.menus_group", "section": "templates.md: Menus close each other", "label": "What stays out of the group", "text": "The toggle-block is outside the group: it is not a menu. So is the Menu button of the topbar and console on a phone: the account menu opens inside it, and in the same group it would close it.", "context": "Replaces 'The sidebar shell's rst-shell-chrome strip and the toggle-block are deliberately outside the group…' (templates.md:167-170)."},
-  {"id": "docs.templates.shells_sidebar", "section": "templates.md: Shells table", "label": "sidebar row", "text": "a rail of nav groups beside the page; on a phone, an index page of sections and a back control", "context": "The table cell for `sidebar`, replacing 'a left rail of nav groups, collapsing to a <details> chrome bar below 800px'."},
-  {"id": "docs.templates.shells_console", "section": "templates.md: Shells table", "label": "console row", "text": "both at once: a bar across the top with the rail beneath it down the side; on a phone, the bar's menu opens as a card and the rail is an index page", "context": "The table cell for `console`."},
-  {"id": "docs.templates.blocks", "section": "templates.md: Shells", "label": "The blocks sentence", "text": "The blocks are `title`, `lang`, `dir` and `head` in all five shells, plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and `console`, `view` and `up` in `sidebar` and `console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in `stage`.", "context": "Replaces the same sentence without view and up."},
-  {"id": "docs.templates.attributes", "section": "templates.md: Shells", "label": "The attributes paragraph", "text": "The chrome attributes live in `tokens.css` like every other idiom: `rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`, `rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the topbar, with `rst-shell-menu` and `rst-shell-tail` for its phone menu; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-group`, `rst-shell-main`, `rst-shell-title` and `rst-shell-back` for the sidebar; `rst-shell-console` for the console, which reuses the rest; and `rst-skip`, the skip link, in all five shells. None of it needs JavaScript.", "context": "Replaces templates.md:970-980, which ended with the sidebar drawer."},
-  {"id": "docs.templates.phone", "section": "templates.md: Shells", "label": "New section: On a phone", "text": "### On a phone: an index and a way back\n\nBelow 800px, `sidebar` and `console` show each page in one of two ways. Your index page is the list of sections. Every other page shows its content, with a back control at the top that returns to that list. There is no menu button to find.\n\nMark your index page with the `view` block:\n\n```html\n{{define \"view\"}}index{{end}}\n```\n\nGive every other page an `up` block that points back to its own row on the index, and give that row the matching id:\n\n```html\n{{define \"up\"}}/#nav-invoices{{end}}\n{{define \"nav\"}}<a id=\"nav-invoices\" href=\"/invoices\" aria-current=\"page\">Invoices</a>…{{end}}\n```\n\nWith JavaScript off, the fragment brings the reader back to the row they left. With `shell.js`, the back control uses the browser's history when it can, the pages slide, and focus returns to the row. A page with no `view` block is a content page, so a page you forget still shows its content and a way back.\n\nIn `topbar` and `console`, the Menu button on a phone opens a card over the page. A tap outside it, or Escape, closes it. The page underneath does not move.", "context": "A new section after the shells' attribute paragraph."},
-  {"id": "docs.templates.prerender", "section": "templates.md: Shells", "label": "Prerendering", "text": "`rastrillo.Serve` prerenders the pages your sidebar and console navigation link to, so the next page is ready when it is tapped. Nothing on other pages is prerendered. A prerender is a GET, so a GET must never change anything. To turn it off, set `Options.NoSpeculationRules`.", "context": "A paragraph at the end of the new section."},
-  {"id": "docs.templates.console", "section": "templates.md: The console", "label": "Console section, new heading and body", "text": "### The console on a phone\n\n`console` has two pieces of chrome to put away below 800px, and each goes the way it goes in the shell it comes from. The bar's account and language menus go behind the Menu button, which opens a card, as in `topbar`. The rail is an index page, as in `sidebar`: mark the index with `view` and give other pages `up`.\n\nNothing is reordered at any width. The DOM order, bar, rail, page, is the reading order and the focus order at 320px and at 1280px, in both directions of the language.", "context": "Replaces '### The console folds two chromes behind one control' and its three paragraphs (templates.md:990-1009)."},
-  {"id": "docs.templates.upgrading", "section": "templates.md: Upgrading", "label": "New section: Upgrading to the phone index", "text": "### Upgrading to the phone index\n\nA layout from before this release keeps working: its sidebar drawer still opens. To move to the index:\n\n1. Upgrade the module and run `rastrillo doctor --fix`. It re-copies `tokens.css` and adds `shell.js` and `shell.css`.\n2. Replace `templates/layout.html` with the new shell (`ui.Layout(\"sidebar\")` or `ui.Layout(\"console\")`), and carry your own edits across.\n3. Add `{{define \"view\"}}index{{end}}` to your index page, and an `up` block to every other page.\n4. If you already have a template called `view` or `up`, rename it. The shells use those names now.\n5. In a list grid, end `--rst-cols` with `var(--rst-col-menu)` instead of `32px`.\n\n`rastrillo new --shell=sidebar` and `--shell=console` now write two pages, an index and an Overview section, to show the shape.\n\nAn app on `topbar`, `column` or `stage` can delete `shell.js` and `shell.css`. Add both to `vendoredIsMine` in `vendored_test.go`, or that test fails on the missing files.", "context": "A new section before '### Upgrading: the topbar's tail is a level deeper'. rastrillo doctor's advisory points here ('See \"Upgrading\" in the templates guide')."},
-  {"id": "docs.icons.menu", "section": "icons.md", "label": "menu icon sentence", "text": "The topbar and console use `menu` for their phone menu.", "context": "Replaces 'The shells use `menu` when they collapse.' (icons.md:34)."},
-  {"id": "docs.ref.ui.shell", "section": "reference/ui.md", "label": "ShellJS and ShellCSS", "text": "`ShellJS` is `shell.js` and `ShellCSS` is `shell.css`: the sidebar and console shells' phone navigation, with the slide between pages, a back control that uses the browser's history when it can, and focus returned to the section you left. Only those two layouts link them, and both are optional.", "context": "After the vendored-assets code block."},
-  {"id": "docs.ref.ui.funcs", "section": "reference/ui.md", "label": "Funcs sentence", "text": "Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt` and `rowMenuItems`. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show.", "context": "Replaces the Funcs sentence."},
-  {"id": "docs.ref.rastrillo.speculation", "section": "reference/rastrillo.md: Options", "label": "NoSpeculationRules", "text": "**`NoSpeculationRules`**: turns off prerendering. By default every response names `SpeculationRulesPath`, where `Serve` answers with rules that prerender sidebar and console navigation. A content-security policy does not turn it off; this field does, or deleting the `Speculation-Rules` header in a handler.", "context": "A new Options entry, above the constant's code block."},
-  {"id": "docs.ref.harness.coarse", "section": "reference/harness.md: Options", "label": "WithCoarsePointer", "text": "`WithCoarsePointer` launches Chromium with a touch screen as its main pointer, so `(pointer: coarse)` matches. CDP's touch emulation does not do this, and a phone drive that ran on a mouse pointer would pass at desktop sizes.", "context": "After the WithScrollbars paragraph."},
-  {"id": "skill.shells", "section": "SKILL.md", "label": "Shells on a phone", "text": "Shells on a phone: `topbar` and `console` put their narrow chrome in the Menu card. `sidebar` and `console` rails become an index page: mark it `{{define \"view\"}}index{{end}}`; every other page names its way back with `{{define \"up\"}}/#nav-x{{end}}` and the nav link gets `id=\"nav-x\"`. Never build a hamburger drawer.", "context": "SKILL.md is what an LLM loads to build an app; near the shells paragraph (SKILL.md:369-373)."},
-  {"id": "skill.rows", "section": "SKILL.md", "label": "Rows and row menus", "text": "A row that stands for an item is a link across its whole width through its one name link; never link only the name. Row actions use `row-menu`, and a destructive one is a link to its confirm page. Inside a bulk-selection form, row-menu items are links only.", "context": "Near the menus sentence (SKILL.md:445-448)."},
-  {"id": "skill.get", "section": "SKILL.md", "label": "GET never mutates", "text": "A GET never changes anything: `Serve` prerenders shell navigation (turn it off with `Options.NoSpeculationRules`).", "context": "SKILL.md does not say this today, and prerendering makes it load-bearing."},
-  {"id": "changelog.body", "section": "CHANGELOG", "label": "Entry body", "text": "An app pinned below v0.26.0 zooms on every form on a phone. Upgrade the module, then run `rastrillo doctor --fix`: it re-copies `tokens.css` and adds `shell.js` and `shell.css`.\n\nOn a phone or a narrow window, text is one step bigger (16px body text) and every control is at least 44px. Desktops are unchanged, except three things: a list row is clickable across its width, its focus ring goes round the whole row, and a row's checkbox has a 24px target.\n\nThe sidebar and console shells have no menu button on a phone. The index page lists the sections, and every other page has a back control. Mark your index with `{{define \"view\"}}index{{end}}` and give other pages an `up` block; see \"Upgrading\" in the [templates guide](/docs/templates). Old layouts keep working, and `rastrillo doctor` tells you when yours is one. The topbar's menu opens as a card over the page and closes on a tap outside it or Escape.\n\nNew: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. `Serve` prerenders sidebar and console navigation by default.\n\nWatch for two things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it.", "context": "The body under the approved heading from batch 1. Its first paragraph leads with the upgrade, as the spec requires."},
-  {"id": "gallery.shell_blurb_sidebar", "section": "Gallery: the Shells page", "label": "sidebar blurb", "text": "A navigation rail beside the page. On a phone, the rail is an index page and every other page has a back control. No JavaScript needed.", "context": "Replaces 'A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.' Eleven translations follow."},
-  {"id": "gallery.shell_blurb_console", "section": "Gallery: the Shells page", "label": "console blurb", "text": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. On a phone, the bar's menu opens as a card and the rail is an index page. No JavaScript needed.", "context": "Replaces '… Below 800px one disclosure folds both. No JavaScript.'"},
-  {"id": "gallery.idiom_blurb_sidebar", "section": "Gallery: UI primitives", "label": "shell-sidebar idiom blurb", "text": "The sidebar shell's chrome on a content page: on a phone, a back control to the index.", "context": "Replaces 'The sidebar shell's chrome, collapsing below 800px into a details disclosure.'"}
+  {
+"id": "docs.templates.funcs",
+"section": "templates.md: Template functions",
+"label": "The functions sentence",
+"text": "`ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt` and `rowMenuItems`.",
+"context": "Replaces the same sentence without rowMenuItems."
+},
+  {
+"id": "docs.templates.rows",
+"section": "templates.md: list rows",
+"label": "Whole-row rule",
+"text": "A row that stands for a record is a link across its whole width: its name link covers the row, and the row's other buttons, checkboxes and menus sit on top of it. Give each row one name link. A row with no link does not look or act clickable.",
+"context": "New paragraph after the one on rst-lrow being a layout grid (templates.md:137-146)."
+},
+  {
+"id": "docs.templates.row_menu",
+"section": "templates.md: list rows",
+"label": "The row menu",
+"text": "Put a row's other actions in `row-menu`, at the end of the row. Each item is a link (`Href`) or a form that posts (`Action`, with `Hidden` fields). Put a destructive item last: it links to its confirm page and its label ends with …. Inside a bulk-selection form, every item must be a link. `list-row-action` takes the same list as `Menu` and puts the menu after its action pill.",
+"context": "New paragraph after the whole-row rule."
+},
+  {
+"id": "docs.templates.cols",
+"section": "templates.md: Set a grid's columns",
+"label": "The kebab column",
+"text": "End `--rst-cols` with `var(--rst-col-menu)` when the rows have a ⋮ menu. The column is 32px on a desktop and 44px on a phone.",
+"context": "Added under the CSS sample, which changes to `.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }`."
+},
+  {
+"id": "docs.templates.menus_group",
+"section": "templates.md: Menus close each other",
+"label": "What stays out of the group",
+"text": "The toggle-block is outside the group: it is not a menu. So is the Menu button of the topbar and console on a phone: the account menu opens inside it, and in the same group it would close it.",
+"context": "Replaces 'The sidebar shell's rst-shell-chrome strip and the toggle-block are deliberately outside the group…' (templates.md:167-170)."
+},
+  {
+"id": "docs.templates.shells_sidebar",
+"section": "templates.md: Shells table",
+"label": "sidebar row",
+"text": "a rail of nav groups beside the page; on a phone, an index page of sections and a back control",
+"context": "The table cell for `sidebar`, replacing 'a left rail of nav groups, collapsing to a <details> chrome bar below 800px'."
+},
+  {
+"id": "docs.templates.shells_console",
+"section": "templates.md: Shells table",
+"label": "console row",
+"text": "both at once: a bar across the top with the rail beneath it down the side; on a phone, the bar's menu opens as a card and the rail is an index page",
+"context": "The table cell for `console`."
+},
+  {
+"id": "docs.templates.blocks",
+"section": "templates.md: Shells",
+"label": "The blocks sentence",
+"text": "The blocks are `title`, `lang`, `dir` and `head` in all five shells, plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and `console`, `view` and `up` in `sidebar` and `console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in `stage`.",
+"context": "Replaces the same sentence without view and up."
+},
+  {
+"id": "docs.templates.attributes",
+"section": "templates.md: Shells",
+"label": "The attributes paragraph",
+"text": "The chrome attributes live in `tokens.css` like every other idiom: `rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`, `rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the topbar, with `rst-shell-menu` and `rst-shell-tail` for its phone menu; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-group`, `rst-shell-main`, `rst-shell-title` and `rst-shell-back` for the sidebar; `rst-shell-console` for the console, which reuses the rest; and `rst-skip`, the skip link, in all five shells. None of it needs JavaScript.",
+"context": "Replaces templates.md:970-980, which ended with the sidebar drawer."
+},
+  {
+"id": "docs.templates.phone",
+"section": "templates.md: Shells",
+"label": "New section: On a phone",
+"text": "### On a phone: an index and a way back\n\nBelow 800px, `sidebar` and `console` show each page in one of two ways. Your index page is the list of sections. Every other page shows its content, with a back control at the top that returns to that list. There is no menu button to find.\n\nMark your index page with the `view` block:\n\n```html\n{{define \"view\"}}index{{end}}\n```\n\nGive every other page an `up` block that points back to its own row on the index, and give that row the matching id:\n\n```html\n{{define \"up\"}}/#nav-invoices{{end}}\n{{define \"nav\"}}<a id=\"nav-invoices\" href=\"/invoices\" aria-current=\"page\">Invoices</a>…{{end}}\n```\n\nWith JavaScript off, the fragment brings the reader back to the row they left. With `shell.js`, the back control uses the browser's history when it can, the pages slide, and focus returns to the row. A page with no `view` block is a content page, so a page you forget still shows its content and a way back.\n\nIn `topbar` and `console`, the Menu button on a phone opens a card over the page. A tap outside it, or Escape, closes it. The page underneath does not move.",
+"context": "A new section after the shells' attribute paragraph."
+},
+  {
+"id": "docs.templates.prerender",
+"section": "templates.md: Shells",
+"label": "Prerendering",
+"text": "`rastrillo.Serve` prerenders the pages your sidebar and console navigation link to, so the next page is ready when it is tapped. Nothing on other pages is prerendered. A prerender is a GET, so a GET must never change anything. To turn it off, set `Options.NoSpeculationRules`.",
+"context": "A paragraph at the end of the new section."
+},
+  {
+"id": "docs.templates.console",
+"section": "templates.md: The console",
+"label": "Console section, new heading and body",
+"text": "### The console on a phone\n\n`console` has two pieces of chrome to put away below 800px, and each goes the way it goes in the shell it comes from. The bar's account and language menus go behind the Menu button, which opens a card, as in `topbar`. The rail is an index page, as in `sidebar`: mark the index with `view` and give other pages `up`.\n\nNothing is reordered at any width. The DOM order, bar, rail, page, is the reading order and the focus order at 320px and at 1280px, in both directions of the language.",
+"context": "Replaces '### The console folds two chromes behind one control' and its three paragraphs (templates.md:990-1009)."
+},
+  {
+"id": "docs.templates.upgrading",
+"section": "templates.md: Upgrading",
+"label": "New section: Upgrading to the phone index",
+"text": "### Upgrading to the phone index\n\nA layout from before this release keeps working: its sidebar drawer still opens. To move to the index:\n\n1. Upgrade the module and run `rastrillo doctor --fix`. It re-copies `tokens.css` and adds `shell.js` and `shell.css`.\n2. Replace `templates/layout.html` with the new shell (`ui.Layout(\"sidebar\")` or `ui.Layout(\"console\")`), and carry your own edits across.\n3. Add `{{define \"view\"}}index{{end}}` to your index page, and an `up` block to every other page.\n4. If you already have a template called `view` or `up`, rename it. The shells use those names now.\n5. In a list grid, end `--rst-cols` with `var(--rst-col-menu)` instead of `32px`.\n\n`rastrillo new --shell=sidebar` and `--shell=console` now write two pages, an index and an Overview section, to show the shape.\n\nAn app on `topbar`, `column` or `stage` can delete `shell.js` and `shell.css`. Add both to `vendoredIsMine` in `vendored_test.go`, or that test fails on the missing files.",
+"context": "A new section before '### Upgrading: the topbar's tail is a level deeper'. rastrillo doctor's advisory points here ('See \"Upgrading\" in the templates guide')."
+},
+  {
+"id": "docs.icons.menu",
+"section": "icons.md",
+"label": "menu icon sentence",
+"text": "The topbar and console use `menu` for their phone menu.",
+"context": "Replaces 'The shells use `menu` when they collapse.' (icons.md:34)."
+},
+  {
+"id": "docs.ref.ui.shell",
+"section": "reference/ui.md",
+"label": "ShellJS and ShellCSS",
+"text": "`ShellJS` is `shell.js` and `ShellCSS` is `shell.css`: the sidebar and console shells' phone navigation, with the slide between pages, a back control that uses the browser's history when it can, and focus returned to the section you left. Only those two layouts link them, and both are optional.",
+"context": "After the vendored-assets code block."
+},
+  {
+"id": "docs.ref.ui.funcs",
+"section": "reference/ui.md",
+"label": "Funcs sentence",
+"text": "Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt` and `rowMenuItems`. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show.",
+"context": "Replaces the Funcs sentence."
+},
+  {
+"id": "docs.ref.rastrillo.speculation",
+"section": "reference/rastrillo.md: Options",
+"label": "NoSpeculationRules",
+"text": "**`NoSpeculationRules`**: turns off prerendering. By default every response names `SpeculationRulesPath`, where `Serve` answers with rules that prerender sidebar and console navigation. A content-security policy does not turn it off; this field does, or deleting the `Speculation-Rules` header in a handler.",
+"context": "A new Options entry, above the constant's code block."
+},
+  {
+"id": "docs.ref.harness.coarse",
+"section": "reference/harness.md: Options",
+"label": "WithCoarsePointer",
+"text": "`WithCoarsePointer` launches Chromium with a touch screen as its main pointer, so `(pointer: coarse)` matches. CDP's touch emulation does not do this, and a phone drive that ran on a mouse pointer would pass at desktop sizes.",
+"context": "After the WithScrollbars paragraph."
+},
+  {
+"id": "skill.shells",
+"section": "SKILL.md",
+"label": "Shells on a phone",
+"text": "Shells on a phone: `topbar` and `console` put their narrow chrome in the Menu card. `sidebar` and `console` rails become an index page: mark it `{{define \"view\"}}index{{end}}`; every other page names its way back with `{{define \"up\"}}/#nav-x{{end}}` and the nav link gets `id=\"nav-x\"`. Never build a hamburger drawer.",
+"context": "SKILL.md is what an LLM loads to build an app; near the shells paragraph (SKILL.md:369-373)."
+},
+  {
+"id": "skill.rows",
+"section": "SKILL.md",
+"label": "Rows and row menus",
+"text": "A row that stands for an item is a link across its whole width through its one name link; never link only the name. Row actions use `row-menu`, and a destructive one is a link to its confirm page. Inside a bulk-selection form, row-menu items are links only.",
+"context": "Near the menus sentence (SKILL.md:445-448)."
+},
+  {
+"id": "skill.get",
+"section": "SKILL.md",
+"label": "GET never mutates",
+"text": "A GET never changes anything: `Serve` prerenders shell navigation (turn it off with `Options.NoSpeculationRules`).",
+"context": "SKILL.md does not say this today, and prerendering makes it load-bearing."
+},
+  {
+"id": "changelog.body",
+"section": "CHANGELOG",
+"label": "Entry body",
+"text": "An app pinned below v0.26.0 zooms on every form on a phone. Upgrade the module, then run `rastrillo doctor --fix`: it re-copies `tokens.css` and adds `shell.js` and `shell.css`.\n\nOn a phone or a narrow window, text is one step bigger (16px body text) and controls are at least 44px; on a 320px screen calendar days narrow to about 41px wide. Desktops are unchanged, except three things: a list row is clickable across its width, its focus ring goes round the whole row, and a row's checkbox has a 24px target.\n\nThe sidebar shell has no menu button on a phone, and neither does the console's navigation rail: the index page lists the sections, and every other page has a back control. Mark your index with `{{define \"view\"}}index{{end}}` and give other pages an `up` block; see \"Upgrading\" in the [templates guide](/docs/templates). Old layouts keep working, and `rastrillo doctor` tells you when yours is one. The topbar's and console's Menu button opens a card over the page that closes on a tap outside it or Escape.\n\nNew: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. `Serve` prerenders sidebar and console navigation by default.\n\nWatch for two things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it.",
+"context": "The body under the approved heading from batch 1. Its first paragraph leads with the upgrade, as the spec requires."
+}
 ]
 ```
 
@@ -6399,11 +7048,11 @@ jq -e '.action == "approve"' copy-review/result.json && cp copy-review/result.js
 jq -r '.strings[].id' copy-review/batch3-result.json | wc -l
 ```
 
-Expected: `25`. No commit.
+Expected: `22`. No commit.
 
 ---
 
-### Task 13: Write batch 3: the docs, SKILL.md, the changelog, and the gallery's shell blurbs
+### Task 13: Write batch 3: the docs, SKILL.md and the changelog
 
 Spec §6, the changelog half of §7, §11.
 
@@ -6411,7 +7060,6 @@ Spec §6, the changelog half of §7, §11.
 - Modify: `docs/site/templates.md`, `docs/site/icons.md`, `docs/site/reference/ui.md`, `docs/site/reference/rastrillo.md`, `docs/site/reference/harness.md`
 - Modify: `SKILL.md`
 - Modify: `CHANGELOG.md` (a new entry at the top of `## Unreleased`)
-- Modify: `internal/designsystem/page.go` (`shellViews`' sidebar and console blurbs; `idiomBlurbs["shell-sidebar"]`), `internal/designsystem/prose.go` (the three old entries replaced by the approved three, eleven translations each)
 
 **Interfaces:**
 - Consumes: `copy-review/batch3-result.json`, `copy-review/batch1-result.json` (`changelog.heading`).
@@ -6435,23 +7083,16 @@ Expected: PASS (`TestSkillMDStaysWithinBudget`, `TestInternalLinksResolve`, `Tes
 
 At the top of `## Unreleased` in `CHANGELOG.md`, add the approved heading (`jq -r '.strings[] | select(.id=="changelog.heading") | .text' copy-review/batch1-result.json`, which is already a `### …` line) followed by a blank line and the approved `changelog.body`.
 
-- [ ] **Step 3: The gallery's shell blurbs**
-
-In `internal/designsystem/page.go`, set `shellViews`' `"sidebar"` and `"console"` blurbs to `gallery.shell_blurb_sidebar` and `gallery.shell_blurb_console`, and `idiomBlurbs["shell-sidebar"]` to `gallery.idiom_blurb_sidebar`. In `internal/designsystem/prose.go`, delete the three entries keyed by the old English (`A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.`, the console's `… Below 800px one disclosure folds both. No JavaScript.`, and `The sidebar shell's chrome, collapsing below 800px into a details disclosure.`) and add the three approved strings, each with its eleven translations drafted from the approved English.
-
-Run: `GOFLAGS=-mod=mod go test -count=1 ./internal/designsystem/`
-Expected: PASS (`TestEveryProseKeyIsTranslated` finds no stale entry and every new key translated; the leak gate is clean).
-
-- [ ] **Step 4: A last read for truth**
+- [ ] **Step 3: A last read for truth**
 
 `grep -n "rst-shell-chrome\|chrome strip\|drawer\|hamburger" docs/site/*.md docs/site/reference/*.md SKILL.md ui/*.go ui/layouts/*.html` must show only: the legacy notes in `tokens.css`-adjacent comments, the gallery-frame sentence in `templates.md` (line 619), the upgrade section's "drawer still opens", and SKILL.md's "Never build a hamburger drawer". Any other hit is a sentence still describing the drawer as current: fix it in code comments directly (comments are code), or stop and take it to the controller if it is user-facing copy that batch 3 missed.
 
-- [ ] **Step 5: Run the task gate** (all three commands).
+- [ ] **Step 4: Run the task gate** (the gate line, then `make ci`).
 
-- [ ] **Step 6: Commit and push**
+- [ ] **Step 5: Commit and push**
 
 ```bash
-git add docs/site/templates.md docs/site/icons.md docs/site/reference/ui.md docs/site/reference/rastrillo.md docs/site/reference/harness.md SKILL.md CHANGELOG.md internal/designsystem/page.go internal/designsystem/prose.go
+git add docs/site/templates.md docs/site/icons.md docs/site/reference/ui.md docs/site/reference/rastrillo.md docs/site/reference/harness.md SKILL.md CHANGELOG.md
 git commit -m "Document the phone index, the card, whole rows, the row menu and prerendering
 
 The docs, SKILL.md and the gallery still described a sidebar drawer
@@ -6519,10 +7160,12 @@ git push origin mobile-ergonomics
 
 Run against the spec after writing; fixes are already folded into the tasks above.
 
-**Spec coverage.** §1.1-1.3 Task 2; §1.4 and the calendar Task 3; §1.5 Tasks 2-4 (desktop pins); §2 Task 4 (§2.3's sizes in Task 3); §3 Task 6; §4.1-4.4 Task 9; §4.5 Task 8 (script, stylesheet, gates, vendoring, gallery copies, upgrade leg); §4.6 Task 11; §4.7 Task 10; §4.8 Task 9 (and the card, Task 7's CSS extended); §4.9 Task 9; §5 Task 7; §6 Tasks 12-13; §7 Tasks 10 (doctor) and 13 (changelog); §8 twins (every task), budgets (Tasks 7, 8, 14), CSP (Tasks 6, 11), floor (no change); §8.1's gate matrix: each row is a step in the task that touches it; §9 every named test rewritten in Task 7 or 9; §10.1 Tasks 2-3; §10.2 Task 4; §10.3 Tasks 8 (scripted), 9 (scriptless, wide, compat, axe, reflow), 11 (the prefetched index), 14 (the activated prerender, by hand); §10.4 Tasks 7 and 9; §10.5 Task 6; §10.6 Tasks 8 and 10; §10.6a Task 11; §10.7 Tasks 7 and 8; §10.8 Task 14; §11 Tasks 1, 5, 12.
+**Spec coverage.** §1.1-1.3 Task 3; §1.4 and the calendar Task 4; §1.5 Tasks 3-5 (desktop pins); §2 Task 5 (§2.3's sizes in Task 4); §3 Task 6; §4.1-4.4 Task 9; §4.5 Task 8 (script, stylesheet, gates, vendoring, gallery copies, upgrade leg); §4.6 Task 11; §4.7 Task 10; §4.8 Task 9 (and the card, Task 7's CSS extended); §4.9 Task 9; §5 Task 7; §6 Tasks 12-13; §7 Tasks 10 (doctor) and 13 (changelog); §8 twins (every task), budgets (Tasks 7, 8, 14), CSP (Tasks 6, 11), floor (no change); §8.1's gate matrix: each row is a step in the task that touches it; §9 every named test rewritten in Task 7 or 9; §10.1 Tasks 3-4; §10.2 Task 5; §10.3 Tasks 8 (scripted), 9 (scriptless, wide, compat, axe, reflow), 11 (the prefetched index), 14 (the activated prerender, by hand); §10.4 Tasks 7 and 9; §10.5 Task 6; §10.6 Tasks 8 and 10; §10.6a Task 11; §10.7 Tasks 7 and 8; §10.8 Task 14; §11 Tasks 1, 2, 12.
 
-**Deliberate departures, each argued where it is made.** Touch through a launch flag (Global Constraints); the prerender-activation leg by hand (Global Constraints, Task 11); the index/back rules scoped rather than undone (decisions list); a mid-plan copy batch (decisions list); SKILL.md gaining "a GET never changes anything", which the spec assumed was already there.
+**Deliberate departures, each argued where it is made.** Touch through a launch flag (Global Constraints); the prerender-activation leg by hand (Global Constraints, Task 11); the index/back rules scoped rather than undone (decisions list); copy batch 2 run right after Task 1 and holding the gallery's shell blurbs, which the operator had placed in the late batch, so they change in the task that changes the shells (decisions list); SKILL.md gaining "a GET never changes anything", which the spec assumed was already there.
 
 **Placeholders.** The only text a task cannot contain is the operator's approved wording, which the task reads from `copy-review/batch*-result.json` by id; every such place shows the draft that went to review.
 
-**Names used across tasks.** `sizingFixture`, `sizingDoc`, `sizingMux`, `sizingRig`, `requirePointer`, `settleUntil`, `measureFn`, `targetsJS`, `readTargets`, `assertTargets` (Tasks 2-3); `at`, `probe`, `clickAndLand` (Task 4); `rowMenuItems`, `rowMenuItem`, `normaliseMarkup` (Task 6); `topbarPage`, `cardRig`, `readCard`, `menuAround`, `TAIL` (Task 7); `ShellJS`, `ShellCSS`, `assertReducedMotion`, `assertTwins`, `assertNoOrphans`, `tab`, `visit`, `follow`, `state`, `scaffoldWithReplace`, `goTestIn` (Task 8); `shellLayoutPage`, `shellAssets`, `legacyLayout`, `demoPageHref`, `shellPageHref` (Task 9); `twoPageShells`, `scaffoldOverview`, `oldShellLayout`, `doctorLayoutAdvisory` (Task 10); `SpeculationRulesPath`, `NoSpeculationRules`, `serveSpeculationRules` (Task 11).
+**Names used across tasks.** `sizingFixture`, `sizingDoc`, `sizingMux`, `sizingRig`, `requirePointer`, `settleUntil`, `measureFn`, `targetsJS`, `readTargets`, `assertTargets` (Tasks 3-4); `at`, `probe`, `clickAndLand`, `clickAndStay`, `home` (Task 5); `rowMenuItems`, `rowMenuItem`, `normaliseMarkup` (Task 6); `topbarPage`, `cardRig`, `readCard`, `menuAround`, `TAIL` (Task 7); `ShellJS`, `ShellCSS`, `assertReducedMotion`, `assertTwins`, `assertNoOrphans`, `tab`, `visit`, `follow`, `state`, `scaffoldWithReplace`, `goTestIn` (Task 8); `shellLayoutPage`, `shellAssets`, `legacyLayout`, `demoPageHref`, `shellPageHref` (Task 9); `twoPageShells`, `scaffoldOverview`, `oldShellLayout`, `doctorLayoutAdvisory` (Task 10); `SpeculationRulesPath`, `NoSpeculationRules`, `serveSpeculationRules` (Task 11).
+
+**Plan review round 1 (Astra, 2026-10-01): not ready; 4 Blockers, 10 Important, 2 Minor, all folded in.** rowMenuItems no longer treats a nil or empty `Hidden` as carried (Task 6); Task 8's drive links no tokens.css so the rail it focuses is visible before Task 9's index rules, and Task 9 runs the same journeys on the real layouts with scripts; the translated-page sweep's exact count gains the five new documents (Task 9); the legacy drawer gets a fixture of its own so its inventory row stays measured (Task 4); public Go docs, partial contracts and scaffolded-app text join copy batch 2, which moved to right after Task 1 with the shell blurbs; `clickAndLand` waits for the destination's own marker and `clickAndStay` observes navigation requests over CDP instead of timing them; the target drive's ownership no longer accepts any descendant of a stretched row, and every inventory row must have a measured element; the spinner test reads the label's line boxes; the controls in a row are operated at both widths; a unit test holds one identity link per row; every task runs `make ci` before it pushes; the card's rules sit after the console's own; the changelog draft no longer overclaims.
