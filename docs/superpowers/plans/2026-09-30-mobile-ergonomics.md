@@ -469,7 +469,7 @@ These are the drafts; no em dashes. The `gallery.*` ids are gallery prose keys (
 "id": "godoc.designsystem.render_tree",
 "section": "Go documentation",
 "label": "designsystem.Render's file list",
-"text": "<theme>/<locale>/demo.html            36 copies of the demo app's index, and\n<theme>/<locale>/demo-dashboard.html  its three section pages beside it\n<theme>/<locale>/demo-requests.html\n<theme>/<locale>/demo-request.html\n<theme>/<locale>/shells/<shell>.html  180 full-page shell demos: one per\n                                      shell, and a section page for the\n                                      sidebar and console\ntokens.css theme-<theme>.css shell.css  the stylesheets, once each\nrastrillo.js busy.js shell.js          the framework's scripts\nselect.js datetime.js calendar.js     (calendar.js draws the month grid\n                                      datetime.js opens)",
+"text": "<theme>/<locale>/demo.html            the demo app's index, and\n<theme>/<locale>/demo-dashboard.html  its three section pages beside it\n<theme>/<locale>/demo-requests.html\n<theme>/<locale>/demo-request.html\n<theme>/<locale>/shells/<shell>.html  one full-page demo per shell, and\n<theme>/<locale>/shells/<shell>-page.html  a section page for the sidebar\n                                      and console\ntokens.css theme-<theme>.css shell.css  the stylesheets, once each\nrastrillo.js busy.js shell.js          the framework's scripts\nselect.js datetime.js calendar.js     (calendar.js draws the month grid\n                                      datetime.js opens)",
 "context": "The tree listing in the doc comment of the gallery renderer (internal/designsystem). Task 8 adds the two shell files, Task 9 the demo and shell pages."
 }
 ]
@@ -1771,6 +1771,39 @@ func assertCovered(t *testing.T, ctx context.Context, where, page string, wide b
 	}
 }
 
+// fixtureCounts are controls the sizing fixture itself owns, with how
+// many of each must have been measured. Declared here, not read off the
+// page: a control that disappears from the fixture is absent from the
+// DOM too, so only a number written down independently can notice it,
+// even while another control of the same idiom survives.
+var fixtureCounts = []struct {
+	Sel string
+	N   int
+}{
+	{`[data-extra="buttons"] [rst-btn]`, 3},
+	{`[data-extra="locale"] [rst-locale] button`, 3},
+	{`[data-extra="combobox"] [role=option]`, 12},
+	{`[data-extra="legacy-drawer"] [rst-shell-nav] a`, 2},
+	{`[data-extra="small-parents"] :is(input, textarea)`, 7}, // the bare input is the app's own, not measured
+	{`[data-partial="pagination"] [rst-pagination] a`, 3},
+	{`[data-partial="bulk-bar"] [rst-dropdown-menu] button`, 2},
+	{`[data-partial="seg-tabs"] a`, 2},
+	{`[data-partial="dropdown"] [rst-dropdown-menu] a`, 1},
+}
+
+func assertFixtureCounts(t *testing.T, ctx context.Context, where string) {
+	t.Helper()
+	for _, c := range fixtureCounts {
+		var n int
+		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`[...document.querySelectorAll(%q)].filter(e => e.hasAttribute("data-measured")).length`, c.Sel), &n)); err != nil {
+			t.Fatalf("%s: counting %s: %v", where, c.Sel, err)
+		}
+		if n != c.N {
+			t.Errorf("%s: %d of %s were measured, want exactly %d", where, n, c.Sel, c.N)
+		}
+	}
+}
+
 // TestEveryTapTargetIsAtLeast44Pixels is §10.1's target half, at 390
 // and 1024 with a coarse pointer and at 600 with a mouse, then the modal
 // on a page of its own.
@@ -1799,6 +1832,7 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 			n := measureEverything(t, ctx, leg.name)
 			t.Logf("%s: %d controls measured", leg.name, n)
 			assertCovered(t, ctx, leg.name, "", leg.w >= 800)
+			assertFixtureCounts(t, ctx, leg.name)
 			if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/modal")); err != nil {
 				t.Fatal(err)
 			}
@@ -2025,7 +2059,7 @@ In `TestDesktopDensityIsPinned`, after the type assertions, add:
 - [ ] **Step 9: Run the drives**
 
 Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestEveryTapTargetIsAtLeast44Pixels|TestTheKebabOverflowsIntoTheGapOnALiteralColumn|TestTheCalendarDocksAndItsDaysAreTaps|TestDesktopDensityIsPinned|TestTextControlsAreSixteenPixels' -count=1 -v ./ui/`
-Expected: PASS. If a control is reported under 44 or occluded, it is either missing from the touch block (add the rule and, if it is a new selector shape, its `tapInventory` row) or a real occlusion to fix in CSS; never widen `assertTargets`. Mutation checks, one at a time, each restored: delete `.rst-cal__day, [rst-cal-day] { block-size … }` → the calendar leg fails on day height; remove `scrollbar-gutter: stable` from the docking rule → the classic-scrollbar leg fails on day width; change `padding: 4px` on `[rst-selbox]` to `0` → the desktop pin fails.
+Expected: PASS. If a control is reported under 44 or occluded, it is either missing from the touch block (add the rule and, if it is a new selector shape, its `tapInventory` row) or a real occlusion to fix in CSS; never widen `assertTargets`. Mutation checks, one at a time, each restored: drop the `ja` item from the sizing fixture's locale menu (`assertFixtureCounts` fails on 2 of 3 locale buttons while two remain); delete `.rst-cal__day, [rst-cal-day] { block-size … }` → the calendar leg fails on day height; remove `scrollbar-gutter: stable` from the docking rule → the classic-scrollbar leg fails on day width; change `padding: 4px` on `[rst-selbox]` to `0` → the desktop pin fails.
 
 - [ ] **Step 10: Run the task gate** (the gate line, then `make ci`). Note the axe and reflow drives in `internal/designsystem` now see 44px targets on the Mobile tab; if `TestA11yReflowsAt320` reports a page scrolling sideways at 320, the offender is named in its output: fix it in the touch block (a `min-inline-size` that should not apply, usually), not in the test.
 
@@ -2458,6 +2492,41 @@ func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
 		`document.getElementById("row-n").addEventListener("click", () => { window.rowClicked = true; }), true`, `window.rowClicked === true`)
 }
 
+// TestMeasureRejectsAHitOnAnotherPartOfTheRow pins the target drive's
+// ownership rule itself. A stretched link is measured over its whole
+// row, and the row holds other things; a hit at the row's centre on an
+// unrelated child (here a positioned span covering the row) must count
+// as occlusion, never as the link. The same row without the cover is
+// the control and must read as owned.
+func TestMeasureRejectsAHitOnAnotherPartOfTheRow(t *testing.T) {
+	row := func(cover string) string {
+		return `<div rst-card style="--rst-cols: minmax(0, 1fr) 110px"><div rst-lrow><a class="rst-nm" id="name" href="/go/x">Grace Hopper</a><span class="rst-cell-mut">Paid</span>` + cover + `</div></div>`
+	}
+	pages := map[string]string{
+		"/covered": sizingDoc("covered", `<div rst-page>`+row(`<span id="cover" style="position: absolute; inset: 0; z-index: 2"></span>`)+`</div>`),
+		"/clear":   sizingDoc("clear", `<div rst-page>`+row("")+`</div>`),
+	}
+	rig := sizingRig(t, false, pages)
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	read := func(path string) targetReading {
+		chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#name", chromedp.ByQuery))
+		for _, g := range readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify(measure(document)); })()`) {
+			if strings.Contains(g.Name, "#name") {
+				return g
+			}
+		}
+		t.Fatalf("%s: the stretched link was not measured", path)
+		return targetReading{}
+	}
+	if g := read("/clear"); !g.Owns {
+		t.Fatalf("CONTROL: an unobstructed stretched link reads as not owning its row (hit %s); the instrument is broken", g.Hit)
+	}
+	if g := read("/covered"); g.Owns {
+		t.Errorf("a hit on an unrelated child of the row (%s) counted as the stretched link's own; the ownership rule is accepting any descendant of the measured box", g.Hit)
+	}
+}
+
 // TestFocusDrawsTheRingAroundTheWholeRow: the primary link's ring moves
 // to its overlay, 2px inside the row, so the focused row is outlined
 // whole; the link itself also underlines, which is what the keyboard
@@ -2499,7 +2568,7 @@ func TestFocusDrawsTheRingAroundTheWholeRow(t *testing.T) {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestTheWholeRowIsTheTarget|TestAnOpenRowMenuStaysAboveTheRowsBelowIt|TestControlsInARowKeepTheirOwnBoxes|TestARowWithNoLinkLooksAndActsInert|TestFocusDrawsTheRingAroundTheWholeRow' -count=1 ./ui/`
+Run: `RASTRILLO_CHROME=/usr/bin/chromium TMPDIR=/var/tmp GOFLAGS=-mod=mod go test -tags browser -run 'TestTheWholeRowIsTheTarget|TestAnOpenRowMenuStaysAboveTheRowsBelowIt|TestControlsInARowKeepTheirOwnBoxes|TestARowWithNoLinkLooksAndActsInert|TestFocusDrawsTheRingAroundTheWholeRow|TestMeasureRejectsAHitOnAnotherPartOfTheRow' -count=1 ./ui/`
 Expected: FAIL: the list grid far edge hits `DIV`, not `link-a`; the status pill is `SPAN`; the ring is on the link, not its overlay; `TestARowWithNoLinkLooksAndActsInert` passes already on hover only if the `<span rst-person>` row does not fill (it does today: `:has(> [rst-person])`), so it fails too.
 
 - [ ] **Step 3: Write the CSS**
@@ -2748,7 +2817,7 @@ Expected: PASS. Mutation check: add `<a rst-person href="/p">x</a>` as a direct 
 - [ ] **Step 5: Run the drives and the unit gates**
 
 Run the Step 2 command, then `GOFLAGS=-mod=mod go test -run 'TestEveryInteractiveRuleIsInTheTapInventory|TestEveryClassSelectorHasAnAttributeTwin|TestNoAttributeSelectorIsAnOrphan' -count=1 ./ui/`.
-Expected: PASS. Mutation checks, each restored: add `style="position: relative; z-index: 2"` to `#cell-a` in `rowsFixture` (the 1280 "empty cell" leg fails: the element under the pointer is `cell-a`, not `link-a`, which the old any-descendant ownership rule would have accepted); add a space before `:not(` in the attribute half of the lifting rule (the twin gate fails first; fix the class half too and the checkbox leg fails because the checkbox is covered); remove the list-grid `::after` rule (the far-edge legs fail with `DIV`).
+Expected: PASS. Mutation checks, each restored: put the round-1 ownership expression back in `measureFn` (`Owns: !!hit && (hit === el || hit === a || el.contains(hit) || a.contains(hit))`) and `TestMeasureRejectsAHitOnAnotherPartOfTheRow` fails on the covered row; add a space before `:not(` in the attribute half of the lifting rule (the twin gate fails first; fix the class half too and the checkbox leg fails because the checkbox is covered); remove the list-grid `::after` rule (the far-edge legs fail with `DIV`).
 
 - [ ] **Step 6: Run the task gate** (the gate line, then `make ci`). `TestBothSpellingsComputeTheSameStyles` compares the new rules in both spellings through `extraFixture`; `TestA11yWalksTheKeyboard` sees the underline on a focused row link.
 
@@ -4946,10 +5015,15 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 
 // recordReveal logs every pagereveal's transition types into
 // sessionStorage, read after all listeners have run.
-const recordReveal = `addEventListener("pagereveal", e => { const vt = e.viewTransition; setTimeout(() => {
-  const log = JSON.parse(sessionStorage.getItem("reveal-log") || "[]");
-  log.push(location.pathname + ":" + (vt ? [...vt.types].join("+") || "untyped" : "none"));
-  sessionStorage.setItem("reveal-log", JSON.stringify(log)); }, 0); });`
+// It logs only once the reveal is over: after the transition's finished
+// promise settles, or at once when there is no transition. The drive
+// waits for each entry before it starts the next navigation, so no step
+// begins while the previous slide is still running.
+const recordReveal = `addEventListener("pagereveal", e => { const vt = e.viewTransition;
+  const types = vt ? [...vt.types].join("+") || "untyped" : "none";
+  const log = () => { const l = JSON.parse(sessionStorage.getItem("reveal-log") || "[]");
+    l.push(location.pathname + ":" + types); sessionStorage.setItem("reveal-log", JSON.stringify(l)); };
+  if (vt) vt.finished.then(log, log); else setTimeout(log, 0); });`
 
 // TestTheSlideKnowsWhichWayItIsGoing: forward going in, back coming out
 // through the back control, and no transition at all under reduced
@@ -4964,10 +5038,13 @@ func TestTheSlideKnowsWhichWayItIsGoing(t *testing.T) {
 			want = `["/:none","/invoices:none","/:none"]`
 		}
 		ctx, done, _ := tab(t, rig, recordReveal, media...)
+		logged := func(n int) string {
+			return fmt.Sprintf(`JSON.parse(sessionStorage.getItem("reveal-log") || "[]").length === %d`, n)
+		}
 		visit(t, ctx, rig.Origin+"/")
-		follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices"`)
-		follow(t, ctx, "#back", `location.pathname === "/"`)
-		time.Sleep(600 * time.Millisecond)
+		settleUntil(t, ctx, logged(1))
+		follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices" && `+logged(2))
+		follow(t, ctx, "#back", `location.pathname === "/" && `+logged(3))
 		var log string
 		chromedp.Run(ctx, chromedp.Evaluate(`sessionStorage.getItem("reveal-log")`, &log))
 		if log != want {
@@ -5401,12 +5478,11 @@ Update the console block's opening comment ("TWO CHROMES, ONE CONTROL. …") to 
      point: the page is navigation. */
   .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-brand] { display: none; }
   .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
-  /* The console's index is the bar, then the rail filling the rest of
-     the screen, then the foot: the root becomes a column at least the
-     viewport tall and the rail takes the slack, so a short nav does not
-     pull the foot up under it. */
-  .rst-shell-console--index, [rst-shell-console~="index"] { display: flex; flex-direction: column; min-block-size: 100dvh; }
-  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; flex: 1 0 auto; gap: 0; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  /* The console's index is the bar, then the rail full screen, then the
+     foot below it (spec §4.8): the rail is at least the viewport tall,
+     as the sidebar's is, so a short nav does not pull the foot up under
+     it. The console rail is already border-box. */
+  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
   .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { display: block; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); padding-inline: 0.25rem; }
   /* The rows: every link a full-width row, at least 3rem, 1rem text, a
      chevron at the end. The grouping is the markup apps already write,
@@ -5819,9 +5895,9 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 }
 
 // TestTheConsoleIndexRailFillsTheScreen: spec §4.8, the console's phone
-// index is the bar, then the rail full screen, then the foot. With a
-// two-link nav the rail must still reach the foot, and the foot the
-// bottom of the window.
+// index is the bar, then the rail full screen, then the foot below it.
+// With a two-link nav the rail is still at least the window's height
+// and the foot follows it.
 func TestTheConsoleIndexRailFillsTheScreen(t *testing.T) {
 	src, _ := Layout("console")
 	pages := map[string]string{"/": shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`,
@@ -5830,15 +5906,18 @@ func TestTheConsoleIndexRailFillsTheScreen(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	var g struct{ RailBottom, FootTop, FootBottom, VH, NavBottom float64 }
+	var g struct{ RailH, RailBottom, FootTop, FootBottom, VH, NavBottom float64 }
 	chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body"))
 	at(t, ctx, `(() => { const b = s => document.querySelector(s).getBoundingClientRect();
-	  return JSON.stringify({RailBottom: b("[rst-shell-rail]").bottom, NavBottom: b("[rst-shell-nav]").bottom, FootTop: b("[rst-shell-foot]").top, FootBottom: b("[rst-shell-foot]").bottom, VH: innerHeight}); })()`, &g)
+	  return JSON.stringify({RailH: b("[rst-shell-rail]").height, RailBottom: b("[rst-shell-rail]").bottom, NavBottom: b("[rst-shell-nav]").bottom, FootTop: b("[rst-shell-foot]").top, FootBottom: b("[rst-shell-foot]").bottom, VH: innerHeight}); })()`, &g)
 	if g.NavBottom > g.VH/2 {
 		t.Fatalf("the two-link nav ends at %.0f of %.0f; the short-nav case this leg is for has not arisen", g.NavBottom, g.VH)
 	}
-	if math.Abs(g.RailBottom-g.FootTop) > 1 || math.Abs(g.FootBottom-g.VH) > 1 {
-		t.Errorf("the console index: rail ends at %.0f, foot %.0f..%.0f, window %.0f; want the rail to reach the foot and the foot the window's bottom", g.RailBottom, g.FootTop, g.FootBottom, g.VH)
+	if g.RailH < g.VH-1 {
+		t.Errorf("the console index's rail is %.0fpx in a %.0fpx window; it is the page there, full screen", g.RailH, g.VH)
+	}
+	if math.Abs(g.FootTop-g.RailBottom) > 1 {
+		t.Errorf("the foot starts at %.0f and the rail ends at %.0f; the foot follows the rail", g.FootTop, g.RailBottom)
 	}
 }
 
@@ -5901,7 +5980,7 @@ and in its doc comment, replace the paragraph about the collapse with a sentence
 In `ui/console_shell_browser_test.go`:
 
 - `consolePage` takes extra defines: `func consolePage(t *testing.T, nav, dir string, defs ...string) (page, control string)`, parsing each after the existing ones; add `legacyConsolePage(t, nav, dir)` rendering `legacyLayout(t, "console")` the same way (factor the body into `consolePageFrom(t, src, nav, dir, defs...)`).
-- `TestTheConsoleFoldsBothChromesBehindOneControl` becomes `TestTheConsoleFoldsItsBarAndIndexesItsRail`: legs 1, 1b, 2, 2b, 5 and 6 unchanged in substance (leg 2's "one visible summary" still holds: the back control is a link); leg 3 becomes "one click reveals the tail card and not the rail" (wait for `[rst-shell-tail] [rst-shell-account] > summary`, assert `open.TailShown && !open.RailShown`, drop `TailAboveRail`); leg 4 keeps `MenuOpen`, `TailShown`, `AccountMenu` and asserts `!trap.RailShown`; a new leg 3b renders `consolePage(t, nav, "ltr", `{{define "view"}}index{{end}}`)` at 390 and asserts the rail is shown with the disclosure closed and exactly one visible summary. Rewrite the doc comment's claims 2-4 to match: one control for the bar, the rail follows the page's view.
+- `TestTheConsoleFoldsBothChromesBehindOneControl` becomes `TestTheConsoleFoldsItsBarAndIndexesItsRail`: legs 1, 1b, 2, 2b and 6 unchanged in substance (leg 2's "one visible summary" still holds: the back control is a link); leg 3 becomes "one click reveals the tail card and not the rail" (wait for `[rst-shell-tail] [rst-shell-account] > summary`, assert `open.TailShown && !open.RailShown`, drop `TailAboveRail`); leg 4 keeps `MenuOpen`, `TailShown`, `AccountMenu` and asserts `!trap.RailShown`; a new leg 3b renders `consolePage(t, nav, "ltr", `{{define "view"}}index{{end}}`)` at 390 and asserts the rail is shown with the disclosure closed and exactly one visible summary. Rewrite the doc comment's claims 2-4 to match: one control for the bar, the rail follows the page's view. Leg 5 (320×640, everything open) is rewritten too, because it waits for a rail link the content view now hides: after the Menu click it waits for `[rst-shell-tail] [rst-shell-account] > summary`, then asserts `TailShown`, the back control shown (add `BackShown: shown(document.querySelector("[rst-shell-back] a"))` to `consoleMeasure` and `BackShown bool` to `consoleReading`), `!RailShown`, and `Overflow <= 1`; a leg 5b loads the index view (`consolePage(t, nav, "ltr", `{{define "view"}}index{{end}}`)`) at 320×640 and asserts the rail shown with `Overflow <= 1`, which keeps the rail's reflow covered.
 - `TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas`: build its page with `legacyConsolePage` (the `:has()` gate now lives only for old markup, and the legs are about that gate); add at the end a new-markup leg: serve `consolePage(…)` (page view) and `consolePage(…, `{{define "view"}}index{{end}}`)` against the stripped stylesheet at 390, and assert the rail is hidden on the first and shown on the second: the new markup needs no `:has()` at all.
 
 In `ui/card_browser_test.go`, add:
@@ -7330,3 +7409,7 @@ Run against the spec after writing; fixes are already folded into the tasks abov
 **Plan review round 1 (Astra, 2026-10-01): not ready; 4 Blockers, 10 Important, 2 Minor, all folded in.** rowMenuItems no longer treats a nil or empty `Hidden` as carried (Task 6); Task 8's drive links no tokens.css so the rail it focuses is visible before Task 9's index rules, and Task 9 runs the same journeys on the real layouts with scripts; the translated-page sweep's exact count gains the five new documents (Task 9); the legacy drawer gets a fixture of its own so its inventory row stays measured (Task 4); public Go docs, partial contracts and scaffolded-app text join copy batch 2, which moved to right after Task 1 with the shell blurbs; `clickAndLand` waits for the destination's own marker and `clickAndStay` observes navigation requests over CDP instead of timing them; the target drive's ownership no longer accepts any descendant of a stretched row, and every inventory row must have a measured element; the spinner test reads the label's line boxes; the controls in a row are operated at both widths; a unit test holds one identity link per row; every task runs `make ci` before it pushes; the card's rules sit after the console's own; the changelog draft no longer overclaims.
 
 **Plan review round 2 (Astra, 2026-10-01): round-1 findings 1-4, 9, 13-16 resolved, the rest partly; 2 new Blockers, 5 Important, 2 Minor, all folded in.** The locale menu gets a fixture of its own (Task 4); the controls-in-a-row drive puts the three controls in one stacked cell so the narrow three-column grid cannot put a date field in the kebab column, `probe` scrolls its target into view, and the date input is hit-tested clear of its picker (Task 5); every rendered control must be measured, a menu inside a shell tail is opened with its sibling disclosure, and the type drive names its fixture fields (Task 4); the gallery's row-menu sample labels, the styleguide sample's items and the gallery renderer's doc listing join copy batch 2; `ui/rows_test.go` is staged; the real-layout deep link runs in a fresh tab and the wide comparison runs in both directions (Task 9); the console's phone index fills the screen down to its foot, with a drive (Task 9); the identity-link reader reads both spellings and exact class tokens; the phone docs no longer say the console has no menu button.
+
+**Plan review round 3 (Astra, 2026-10-01): 1 Blocker, 4 Important, 1 Minor, all folded in; no further plan round (per-task reviews during execution are the net).** The console fold drive's 320px leg is rewritten for the content view, with an index leg for the rail's reflow (Task 9); the sizing drive checks exact measured counts for the controls its fixture owns (Task 4); `TestMeasureRejectsAHitOnAnotherPartOfTheRow` pins the ownership rule with a covered row and a clear control (Task 5); the console's phone index gives the RAIL the viewport's height with the foot below it, as spec §4.8 says (Task 9); the slide-direction drive logs each reveal after its transition finishes and waits for each entry before navigating on (Task 8); the gallery renderer's doc listing names no total.
+
+**Operator answers, 2026-10-01.** Copy batch 2 as one early batch of 32 strings (Task 2) is approved. Adding "a GET never changes anything" to SKILL.md (batch 3, `skill.get`) is approved. Batch 1 was approved unchanged.
