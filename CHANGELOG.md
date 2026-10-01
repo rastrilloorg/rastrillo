@@ -10,6 +10,17 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Fixed: a date button that opens the browser's panel claims no popup
+
+Without calendar.js on the page, `datetime.js`'s date button hands over
+to the browser's own picker. It still said `aria-haspopup="listbox"` and
+`aria-expanded="false"`, and nothing ever set it to true, so a screen
+reader announced a collapsed list box that never opened. Only the popups
+`datetime.js` draws itself carry those attributes now: the calendar grid
+(`dialog`) and a time field's clock (`listbox`). This changes
+`datetime.js`, a vendored asset: run `rastrillo doctor --fix` to re-copy
+it.
+
 ### Changed: the sign-in email says how long its link lasts
 
 `auth`'s magic-link email said the link "expires shortly", keymaildev's

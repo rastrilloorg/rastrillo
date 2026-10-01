@@ -346,9 +346,14 @@ func datePage(t *testing.T, partial, field string) (http.Handler, chan string) {
 		var body strings.Builder
 		body.WriteString(`<!doctype html><html lang="en"><head><meta charset="utf-8">` +
 			`<title>date</title><link rel="stylesheet" href="/tokens.css">` +
-			`<link rel="stylesheet" href="/theme.css">` +
-			`<script defer src="/calendar.js"></script>` +
-			`<script defer src="/datetime.js"></script></head><body>` +
+			`<link rel="stylesheet" href="/theme.css">`)
+		// ?nocal leaves calendar.js off the page: the app that never
+		// adopted the overlay, whose date button opens the browser's
+		// own panel instead.
+		if !r.URL.Query().Has("nocal") {
+			body.WriteString(`<script defer src="/calendar.js"></script>`)
+		}
+		body.WriteString(`<script defer src="/datetime.js"></script></head><body>` +
 			`<form method="post" action="/submit">`)
 		if err := tmpl.ExecuteTemplate(&body, partial, map[string]any{
 			"Name": field, "Label": "Due",
@@ -2979,6 +2984,57 @@ func TestCalendarOverlayDrivesTheWholeJourney(t *testing.T) {
 	}
 
 	rig.Screen("body", "after the calendar journey")
+}
+
+// Without calendar.js a date field's button hands over to the browser's
+// own panel, which is not ours to describe: it is not a listbox, and
+// nothing on the page ever learns whether it is open. The button used to
+// say aria-haspopup="listbox" and aria-expanded="false" there — a popup
+// type that was wrong, and a state that was permanently "closed" even
+// while the browser's panel was up. A screen reader announced a
+// collapsed list box that never expanded. The button there is a plain
+// button; only the popups this file draws (the grid, the clock) carry
+// the popup attributes.
+func TestNativePickerButtonClaimsNoPopup(t *testing.T) {
+	mux, _ := datePage(t, "field-date", "due")
+	rig := harness.New(t, func(string) http.Handler { return mux })
+
+	ctx, cancelTimeout := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancelTimeout()
+
+	attrs := `(function () {
+	  var b = document.querySelector('[rst-dtp-pick]');
+	  if (!b) return 'no button';
+	  return 'haspopup=' + b.hasAttribute('aria-haspopup') + ' expanded=' + b.hasAttribute('aria-expanded');
+	})()`
+	var calendars int
+	var before, listOpen, pressed string
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(rig.Origin+"/?nocal"),
+		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]').length`, &calendars),
+		chromedp.Evaluate(attrs, &before),
+		// The suggestions opening is the combobox's popup, not the
+		// button's: it must not hand the button a state either.
+		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery),
+		chromedp.Evaluate(attrs, &listOpen),
+		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery),
+		chromedp.Evaluate(attrs, &pressed),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if calendars != 0 {
+		t.Fatalf("the page built %d calendars; this test needs calendar.js off the page", calendars)
+	}
+	want := "haspopup=false expanded=false"
+	for _, c := range []struct{ when, got string }{
+		{"on load", before}, {"with the suggestions open", listOpen}, {"after the press", pressed},
+	} {
+		if c.got != want {
+			t.Errorf("%s the native-picker button says %s, want %s: the browser's panel is neither a listbox nor a state this page can report", c.when, c.got, want)
+		}
+	}
 }
 
 // A time field has no calendar, so its button opens the clock instead:
