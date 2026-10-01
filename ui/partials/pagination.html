@@ -26,9 +26,9 @@
 {{define "pagination"}}<nav rst-pagination aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
   {{- if .Items}}{{range .Items}}
   {{- if .Gap}}<span rst-pagination-gap aria-hidden="true">…</span>
-  {{- else if .Current}}<span aria-current="page">{{.Label}}</span>
-  {{- else if .Disabled}}<span rst-pagination-disabled>{{.Label}}</span>
-  {{- else}}<a href="{{.Href}}">{{.Label}}</a>
+  {{- else if .Current}}<span aria-current="page">{{number .Label}}</span>
+  {{- else if .Disabled}}<span rst-pagination-disabled>{{number .Label}}</span>
+  {{- else}}<a href="{{.Href}}">{{number .Label}}</a>
   {{- end}}
   {{- end}}{{end}}
 </nav>{{end}}

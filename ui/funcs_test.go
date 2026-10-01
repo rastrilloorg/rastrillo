@@ -143,15 +143,15 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 
 func TestFuncsRegistersExactlyTheDocumentedHelpers(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 14 {
-		t.Errorf("Funcs() has %d entries, want exactly 14", len(f))
+	if len(f) != 16 {
+		t.Errorf("Funcs() has %d entries, want exactly 16", len(f))
 	}
 }
 
@@ -210,13 +210,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 14 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 14", len(f))
+	if len(f) != 16 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 16", len(f))
 	}
 	tFunc, ok := f["T"].(func(string, ...any) string)
 	if !ok {

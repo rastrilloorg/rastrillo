@@ -15,25 +15,28 @@ agent account, take a worktree and a branch before the first edit,
 no PR object), keep the plan in `amadan task`, and put anything you
 would otherwise sit on into `amadan discuss`.
 
-## Never merge to main directly, and never squash
+## Atomic commits on the branch; squash into main
 
-Every change lands on its own branch through `amadan branch merge`. That
-holds for changes that would merge cleanly on their own, for one-line
-fixes, and for documentation. Do not present merging locally as an option
-and do not ask which route to take — push the branch and describe it.
+Develop every change on its own branch. Make small, atomic commits: each
+commit contains one coherent change and keeps the branch working. Push
+the branch and describe it on amadan for review. This applies to one-line
+fixes and documentation too.
 
-**The squash is what broke this.** amadan decides a branch is merged by
-asking git whether its tip is an ancestor of the default tip. A squash
-rewrites the commits, so the answer comes back no and the branch stays
-open while its content is already in. That is not a display bug: #142 was
-squash-merged on the mirror, and three pieces of SKILL.md sat there for
-days looking landed while `main` here had never seen them. `amadan branch
-merge` makes an ordinary merge commit and will not squash and will not
-fast-forward, for exactly this reason. Do not work around it.
+When the branch is ready and the required checks pass, squash-merge it
+into `main` as a single commit. Always squash when merging a branch.
+Never push changes directly to `main` or substitute an ordinary merge.
+This repository's squash policy takes precedence over the amadan skill's
+merge instructions.
+
+The merge workflow must record the reviewed branch as merged even though
+its original commits are not ancestors of the squash commit. If the
+installed amadan merge operation cannot squash, report that limitation
+before landing; do not silently use its ordinary merge operation.
 
 Confirm first only where there is real doubt: the base branch is not
 `main`, the work depends on another branch that has not landed yet, or
-the change is not yours to ship.
+the change is not yours to ship. Do not ask whether to squash: it is
+required.
 
 ## The mirror
 
