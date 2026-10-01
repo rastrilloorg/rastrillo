@@ -285,13 +285,22 @@ func TestConfigurationAndSigner(t *testing.T) {
 	if _, e := NewVerifier(c.Issuer, c.Issuer, map[string][]byte{c.KeyID: k.SignPub()}); e != ErrConfig {
 		t.Fatal(e)
 	}
-	for _, key := range []*crypto.Keypair{nil, {}, {SignPriv: &*k.SignPriv}} {
+	// A genuine copy: &*k.SignPriv is not one, it is k.SignPriv, and the
+	// Curve write below would land on the shared keypair.
+	signCopy := *k.SignPriv
+	for _, key := range []*crypto.Keypair{nil, {}, {SignPriv: &signCopy}} {
 		if key != nil && key.SignPriv != nil {
 			key.SignPriv.Curve = elliptic.P384()
 		}
 		if _, e := Sign(key, c); e != ErrSigning {
 			t.Fatal(e)
 		}
+	}
+	// The loop above mutates the Curve of whatever key it is handed. It
+	// must be handed a copy: k is the shared keypair from setup, and a
+	// P-384 curve left on it silently invalidates every assertion below.
+	if k.SignPriv.Curve != elliptic.P256() {
+		t.Fatal("the invalid-key loop corrupted the shared keypair from setup")
 	}
 	var zero Verifier
 	refused(t, &zero, "", 0, ErrConfig)
