@@ -87,6 +87,12 @@
   --rst-sp-5: 1.5rem;
   --rst-sp-6: 2.5rem;
 
+  /* The tap floor on small or touch screens: 44px at the default root,
+     and it tracks a reader who raised their default size. Declared here
+     so an app's own CSS can use it; only rules inside the touch query
+     below read it, so desktop density never sees it. */
+  --rst-tap: 2.75rem;
+
   /* The scrollbar's gutter, reserved whether or not there is a
      scrollbar in it, so a short page and a long one are the same width
      and clicking between them does not slide the layout sideways.
@@ -112,6 +118,34 @@
      engine ignores the declaration and lands on the behaviour it has
      today. */
   --rst-scrollbar-gutter: stable;
+}
+
+/* ── Small or touch screens: the type scale moves up one step ───────
+   One query decides "a phone, a tablet, or a window too narrow to read
+   at desktop density", and every touch-only rule in this file sits in
+   it. pointer: coarse is the PRIMARY pointer, so a touchscreen laptop
+   driven by its trackpad keeps desktop density; any-pointer would
+   switch a mouse user's whole interface because a touchscreen exists.
+   max-width: 40rem catches a narrow desktop window and the design
+   gallery's 390px Mobile tab, a fine pointer showing what a phone
+   shows (a rem in a media query is the browser's initial size, not the
+   root's). The shells' 800px is a different axis: between 640 and
+   800px under a mouse is a split window, which gets the narrow LAYOUT
+   and keeps mouse DENSITY.
+
+   The four tokens move and nothing else: the root size, the rem
+   spacing and every px geometry stay, and controls grow because their
+   text grows and because the touch block at the end of this file gives
+   them a minimum box. Display sizes (page titles, stat numbers, avatar
+   initials) stay literal on purpose, so a 22px title sits over 16px
+   body text. ─────────────────────────────────────────────────────── */
+@media (pointer: coarse), (max-width: 40rem) {
+  :root {
+    --rst-fs-lg: 1.1875rem;    /* 19px */
+    --rst-fs-base: 1rem;       /* 16px */
+    --rst-fs-sm: 0.875rem;     /* 14px */
+    --rst-fs-xs: 0.8125rem;    /* 13px */
+  }
 }
 
 /* ── Base. Three rules, so a freshly scaffolded app looks finished
@@ -570,6 +604,15 @@ body {
   font-size: var(--rst-fs-sm);
   min-inline-size: 0;
   padding: 0.2rem 0;
+}
+/* The zoom floor for the search input. Mobile Safari zooms a page that
+   focuses a text control under 16px, and this input is set to
+   --rst-fs-sm, which is 14px even after the touch step: this is the one
+   floor that fires inside the rastrillo idioms. It sits directly after
+   the rule above because at equal weight the later rule wins; see the
+   input floor below for the rest of the reasoning. */
+@media (pointer: coarse), (max-width: 40rem) {
+  .rst-search input[type="search"], [rst-search] input[type="search"] { font-size: max(1rem, 1em); }
 }
 .rst-search input[type="search"]::placeholder, [rst-search] input[type="search"]::placeholder {
   color: var(--rst-text-faint);
@@ -1041,7 +1084,7 @@ body {
 .rst-card, [rst-card] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); }
 .rst-lrow, [rst-lrow] { align-items: center; border-bottom: 1px solid var(--rst-line); display: grid; gap: 0.85rem; grid-template-columns: var(--rst-cols, 1fr); padding: 0.68rem 1rem; position: relative; }
 .rst-lrow:last-child, [rst-lrow]:last-child { border-bottom: 0; }
-.rst-lrow--head, [rst-lrow~="head"] { color: var(--rst-text-faint); font-size: 0.71875rem; font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
+.rst-lrow--head, [rst-lrow~="head"] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
 .rst-lrow:not(.rst-lrow--head):has(> .rst-nm, > .rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> .rst-nm, > [rst-person]):hover { background: var(--rst-accent-soft); }
 .rst-nm { border-radius: var(--rst-radius-sm); color: inherit; font-weight: 550; min-width: 0; text-align: start; text-decoration: none; }
 a.rst-nm:hover { color: var(--rst-accent); }
@@ -1260,6 +1303,19 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
    out of its card, and a picker button anchored to the wrapper landing
    47px short of the input's visible end. */
 .rst-input, [rst-input] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
+/* The zoom floor for the input, and why it is HERE. `font: inherit` in
+   the rule above resets font-size, so a floor placed before it would be
+   reset with it; the primary rule below sizes the field on purpose, so
+   the floor must come before that or it wins the tie and pulls a 19px
+   field down to 16. max(1rem, 1em) lifts a field whose parent is small
+   (a bulk bar, a menu panel) to 16px; 1em in font-size is the PARENT's
+   size, which is exactly why it cannot also keep a large field large —
+   the bug the old single floor had. A :where() spelling was rejected: at
+   zero weight it loses to `font: inherit` above and switches itself off.
+   ui/sizing_test.go holds all three floors to their positions. */
+@media (pointer: coarse), (max-width: 40rem) {
+  .rst-input, [rst-input] { font-size: max(1rem, 1em); }
+}
 .rst-input:focus-visible, [rst-input]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 /* short is compact, not tiny: 8rem is a border-box width, so it renders
    within a pixel or two of the old 6.5rem content box plus its padding,
@@ -1283,6 +1339,12 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
    class; styled here so both field families render finished. */
 .rst-field__required, [rst-field-required] { color: var(--rst-tone-negative-fg); }
 .rst-textarea, [rst-textarea] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
+/* The textarea's zoom floor, directly after the rule whose `font:
+   inherit` would reset it (round 1's finding: a floor above that line
+   is dead). Reasoning as for the input floor above. */
+@media (pointer: coarse), (max-width: 40rem) {
+  .rst-textarea, [rst-textarea] { font-size: max(1rem, 1em); }
+}
 .rst-textarea:focus-visible, [rst-textarea]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 /* The three message lines under a control. display:block is load-bearing
    rather than cosmetic: the field partial emits them as <p>, and the
@@ -1483,7 +1545,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-help, [rst-help] { align-items: center; border: 1px solid var(--rst-line-strong); border-radius: 7px; color: var(--rst-text-muted); display: inline-flex; height: 28px; justify-content: center; position: relative; width: 28px; }
 .rst-help:hover, [rst-help]:hover { border-color: var(--rst-text-faint); color: var(--rst-text); }
 .rst-help svg, [rst-help] svg, .rst-help .icon, [rst-help] .icon { height: 15px; width: 15px; }
-.rst-tip::after, [rst-tip]::after { background: var(--rst-text); border-radius: var(--rst-radius-sm); color: var(--rst-bg); content: attr(data-tip); font-size: 0.71875rem; font-weight: 500; inset-inline-end: 0; opacity: 0; padding: 3px 8px; pointer-events: none; position: absolute; top: calc(100% + 6px); transition: opacity 0.12s; white-space: nowrap; z-index: 35; }
+.rst-tip::after, [rst-tip]::after { background: var(--rst-text); border-radius: var(--rst-radius-sm); color: var(--rst-bg); content: attr(data-tip); font-size: var(--rst-fs-xs); font-weight: 500; inset-inline-end: 0; opacity: 0; padding: 3px 8px; pointer-events: none; position: absolute; top: calc(100% + 6px); transition: opacity 0.12s; white-space: nowrap; z-index: 35; }
 .rst-tip:hover::after, [rst-tip]:hover::after, .rst-tip:focus-visible::after, [rst-tip]:focus-visible::after { opacity: 1; }
 
 /* bulk-bar + selbox — select mode as server-rendered state. */
@@ -2065,14 +2127,27 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    Touch: the two zooms nobody asked for.
 
    Mobile Safari zooms the whole page when it focuses a form control
-   whose text is under 16px, and this file's base type is 14px on
-   purpose. So every text-entry control comes back up to 16px where the
-   pointer is coarse, and stays 14px under a mouse. max() rather than a
-   flat 1rem, so a control deliberately set larger keeps its size; rem
-   rather than px, so a reader who raised the browser default keeps the
-   increase. This is the fix. The other one — user-scalable=no in the
-   viewport tag — buys the same quiet by taking pinch-zoom away from
-   everyone, which is a WCAG 1.4.4 failure and not on offer here.
+   whose text is under 16px. The touch step at the top of this file
+   makes body text 16px, but controls inherit their size and some sit in
+   a smaller parent, so every text-entry control still has a floor. It
+   is written twice, because one spelling cannot do both jobs:
+
+   - the component floors (.rst-input, .rst-textarea, the search input)
+     sit directly after the rule that resets each one's font, at that
+     rule's weight, and before any rule that sizes the field on purpose.
+     max(1rem, 1em) is the floor; 1em in font-size is the PARENT's size,
+     so a floor that came after the primary field's rule would shrink
+     it. That was this file's bug until H: the old single floor sat
+     here, after [rst-input~="primary"] at equal weight, and turned the
+     17px primary field into 16px.
+   - the floor below, for an app's own input with no rst- attribute,
+     is wholly inside :where(): the UA stylesheet is what sizes such a
+     field, any author rule beats it, and any rule the app writes to size
+     its own field still wins.
+
+   rem rather than px so a reader who raised the browser default keeps
+   the increase. user-scalable=no in the viewport tag would buy the same
+   quiet by taking pinch-zoom from everyone, which fails WCAG 1.4.4.
 
    Double-tap is the second zoom: tap a button or a row twice in quick
    succession and the second tap lands as a zoom gesture rather than a
@@ -2082,11 +2157,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    narrow column. :where() weighs nothing, so any rule can override it.
    --------------------------------------------------------------------- */
 
-@media (pointer: coarse) {
-  input, select, textarea,
-  .rst-input, [rst-input],
-  .rst-textarea, [rst-textarea],
-  .rst-search input[type="search"], [rst-search] input[type="search"] {
+@media (pointer: coarse), (max-width: 40rem) {
+  :where(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea) {
     font-size: max(1rem, 1em);
   }
 }

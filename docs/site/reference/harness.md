@@ -51,6 +51,7 @@ type Option func(*config)
 
 func WithoutPRFAtCreation() Option
 func WithScrollbars() Option
+func WithCoarsePointer() Option
 ```
 
 `New` takes a variadic list of `Option` values to adjust what it builds.
