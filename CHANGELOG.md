@@ -10,6 +10,20 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: the sign-in email says how long its link lasts
+
+`auth`'s magic-link email said the link "expires shortly", keymaildev's
+default, while the sign-in pages in front of it said 15 minutes. The
+default body now says "It works once and expires in 15 minutes." Any app
+that relies on `auth` without a `Body` sends this new wording.
+
+- `auth.LinkTTL` (15 minutes) is the link's lifetime. `New` now sets it
+  on the flow itself instead of inheriting signin's default, so the
+  number on the page can't drift from the link.
+- `auth.Config.Body func(link string) string` writes the email around
+  the link, so an app can name itself ("Here’s your link to sign in to
+  Docs: …"). Nil sends `auth.DefaultBody`.
+
 ### Added: `rastrillo doctor` finds an app still on the old module path
 
 An app that imports `github.com/carlosframework/rastrillo` is stuck at

@@ -60,6 +60,12 @@ redirects against.
 you get `mail.Logged` with a warning on every send: an emailed link is a
 live credential, so the fallback is development-only and says so.
 
+`Subject` and `Body` write the sign-in email. `Body` takes the link and
+returns the whole text, so the email can name your app. Leave it nil and
+you get `DefaultBody`, which says how long the link works. `LinkTTL` is
+that lifetime, 15 minutes. If your body says the number, take it from
+`LinkTTL`.
+
 `Authorize` is the admission gate: given a verified address, may it have
 a session? Nil admits every verified address. Membership tables, roles
 and admin bootstrap are your policy layered on this hook.

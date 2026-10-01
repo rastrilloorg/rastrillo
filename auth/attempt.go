@@ -10,10 +10,16 @@ import (
 	"amadan.net/rastrillo/rastrillo/internal/sealedcookie"
 )
 
-// attemptTTL is the magic link's own lifetime (signin's LinkTTL
-// default): the Sent page may name where a link went for exactly as
-// long as that link can work, and no longer.
-const attemptTTL = 15 * time.Minute
+// LinkTTL is how long an emailed sign-in link works. New sets it on the
+// flow explicitly rather than inheriting keymaildev/signin's default, so
+// the number the email and the apps' pages state is one this package
+// owns: a signin upgrade that moved its default cannot make them false.
+const LinkTTL = 15 * time.Minute
+
+// attemptTTL is the magic link's own lifetime: the Sent page may name
+// where a link went for exactly as long as that link can work, and no
+// longer.
+const attemptTTL = LinkTTL
 
 // The kinds of attempt: a link went out, Begin answered with a problem,
 // or a keymail round trip started.
