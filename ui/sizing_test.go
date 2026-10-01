@@ -117,3 +117,133 @@ func TestTheTypeScaleMovesUpOneStepOnSmallOrTouchScreens(t *testing.T) {
 		}
 	}
 }
+
+// tapEntry is one row of spec §1.4's table: Key is a substring of the
+// attribute spelling of the rules that style the idiom, Marker a string
+// the sizing fixture (or the modal sample) must contain for the idiom to
+// be measured at all (for controls a script draws at run time, the
+// attribute that asks for them), and Probe the selector of the element
+// the target drive measures for it. The drive fails if no element
+// matching Probe was measured, so an idiom cannot drop out of the
+// measurement silently. Probe may be prefixed "narrow:" (rendered only
+// below 800px, so not expected at 1024), "modal:" (on the modal page),
+// or be "elsewhere:<Test>" for a control a drive of its own measures in
+// a state the sizing page never reaches.
+type tapEntry struct{ Key, Idiom, Marker, Probe string }
+
+var tapInventory = []tapEntry{
+	{"[rst-btn]", "Buttons, all sizes", "rst-btn", "[rst-btn]"},
+	{"[rst-input]", "Inputs and selects", "rst-input", "[rst-input]"},
+	{"[rst-textarea]", "Textareas", "rst-textarea", "[rst-textarea]"},
+	{"[rst-search]", "Search box", "rst-search", "[rst-search] input[type=search]"},
+	{"[rst-search-clear]", "Search box: its clear link", "rst-search-clear", "[rst-search-clear]"},
+	{"[rst-ftok] a", "Filter chip's remove link", "rst-ftok", "[rst-ftok] a"},
+	{"[rst-help]", "Help link", "rst-help", "[rst-help]"},
+	{"[rst-dropdown] > summary", "Dropdown summaries (list-bar, header, account, locale)", "rst-dropdown", "[rst-dropdown] > summary"},
+	{"[rst-menu-group] > summary", "Nested menu-group summaries", "rst-menu-group", "[rst-menu-group] > summary"},
+	{"[rst-dropdown-menu] a", "Menu items: dropdown", "rst-dropdown-menu", "[rst-dropdown-menu] a"},
+	{"[rst-dropdown-menu] button", "Menu items: dropdown buttons", "rst-dropdown-menu", "[rst-dropdown-menu] button"},
+	{"[rst-row-menu-panel] a", "Menu items: row menu", "rst-row-menu-panel", "[rst-row-menu-panel] a"},
+	{"[rst-row-menu-panel] button", "Menu items: row menu buttons", "rst-row-menu-panel", "[rst-row-menu-panel] button"},
+	{"[rst-locale] button", "Menu items: locale", "rst-locale", "[rst-locale] button"},
+	{"[rst-combo-option]", "Combobox options", "data-rst-select", "[rst-combo-option]"},
+	{"[rst-dtp-row]", "Date-picker rows", "data-rst-date", "[rst-dtp-row]"},
+	{"[rst-dtp-pick]", "Date-picker pick button", "data-rst-date", "[rst-dtp-pick]"},
+	{"[rst-cal-nav]", "Calendar nav", "data-rst-date", "elsewhere:TestTheCalendarDocksAndItsDaysAreTaps"},
+	{"[rst-cal-day]", "Calendar days", "data-rst-date", "elsewhere:TestTheCalendarDocksAndItsDaysAreTaps"},
+	{"[rst-row-action]", "Row action pill", "rst-row-action", "[rst-row-action]"},
+	{"[rst-row-menu] > summary", "Row kebab", "rst-row-menu", "[rst-row-menu] > summary"},
+	{"[rst-selbox]", "Row checkbox", "rst-selbox", "[rst-selbox] input"},
+	{"[rst-person]", "Standalone person link", "rst-person", "a[rst-person]"},
+	{"[rst-pagination] a", "Pagination chips", "rst-pagination", "[rst-pagination] a"},
+	{"[rst-seg-tabs] a", "Segmented tabs", "rst-seg-tabs", "[rst-seg-tabs] a"},
+	{"[rst-switch]", "Switch", "rst-switch", "[rst-switch] input"},
+	{"[rst-choice-cards] label", "Choice cards", "rst-choice-cards", "[rst-choice-cards] input"},
+	{"[rst-tblock-head]", "Toggle-block head", "rst-tblock-head", "[rst-tblock-head] input"},
+	{"[rst-bulkbar-close]", "Bulk bar: close", "rst-bulkbar-close", "[rst-bulkbar-close]"},
+	{"[rst-bulkbar-escalate]", "Bulk bar: escalate link", "rst-bulkbar-escalate", "[rst-bulkbar-escalate]"},
+	{"[rst-modal-close]", "Modal close", "rst-modal-close", "modal:[rst-modal-close]"},
+	{"[rst-modal-panel] > nav a", "Modal panel nav links", "rst-modal-panel", "modal:[rst-modal-panel] > nav a"},
+	{"[rst-back-nav] a", "Back-nav link", "rst-back-nav", "[rst-back-nav] a"},
+	{"[rst-shell-brand]", "Shell: brand", "rst-shell-brand", "[rst-shell-brand]"},
+	{"[rst-shell-nav] a", "Shell: nav links", "rst-shell-nav", "[rst-shell-nav] a"},
+	{"[rst-shell-menu] > summary", "Shell: Menu summary", "rst-shell-menu", "narrow:[rst-shell-menu] > summary"},
+	{"[rst-shell-chrome] > summary", "Legacy sidebar drawer summary", "rst-shell-chrome", "narrow:[rst-shell-chrome] > summary"},
+	{"a.rst-nm", "List grid identity link (its own box until Task 5 stretches it)", "rst-nm", "a.rst-nm"},
+}
+
+// tapExempt are the interactive rules that are deliberately not held to
+// the floor, each with its reason. Nothing else may be added here: a
+// control that does not fit the floor gets a rule in the touch block.
+var tapExempt = map[string]string{
+	"[rst-row-main] > a":         "the stretched primary link: the tap target is the whole row (spec §2)",
+	"[rst-no-match] a":           "a link in running text, WCAG 2.5.8's inline exception (spec §1.4, Exempt)",
+	".rst-sr-only:focus-visible": "the hidden search submit: it exists for the keyboard and un-hides on focus; no pointer reaches it",
+}
+
+// endsOnControlElement reports whether a selector's last compound is an
+// a, button, summary or label: the rule styles that element.
+func endsOnControlElement(sel string) bool {
+	depth, last := 0, 0
+	for i := 0; i < len(sel); i++ {
+		switch c := sel[i]; c {
+		case '(', '[':
+			depth++
+		case ')', ']':
+			depth--
+		case ' ', '>', '+', '~':
+			if depth == 0 {
+				last = i + 1
+			}
+		}
+	}
+	return regexp.MustCompile(`^(a|button|summary|label)($|[^a-zA-Z0-9_-])`).MatchString(strings.TrimSpace(sel[last:]))
+}
+
+// interactiveCSSRules is every innermost rule in css that carries cursor:
+// pointer or styles an a, button, summary or label.
+func interactiveCSSRules(css string) []leafRule {
+	var out []leafRule
+	for _, r := range leafRules(stripCSSComments(css)) {
+		hit := strings.Contains(r.body, "cursor: pointer")
+		for _, s := range splitSelectorList(r.selector) {
+			hit = hit || endsOnControlElement(s)
+		}
+		if hit {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// TestEveryInteractiveRuleIsInTheTapInventory is §10.1's inventory
+// gate: a new control cannot arrive in tokens.css without a decision
+// about its touch size, because its rule has to name an idiom in the
+// table above (or an exemption with a reason), and every idiom in the
+// table has to be on the page the browser drive measures.
+func TestEveryInteractiveRuleIsInTheTapInventory(t *testing.T) {
+	rules := interactiveCSSRules(string(TokensCSS()))
+	if len(rules) < 40 {
+		t.Fatalf("found only %d interactive rules in tokens.css; the reader is broken, not the file", len(rules))
+	}
+	for _, r := range rules {
+		named := false
+		for _, s := range splitSelectorList(r.selector) {
+			for _, e := range tapInventory {
+				named = named || strings.Contains(s, e.Key)
+			}
+			for key := range tapExempt {
+				named = named || strings.Contains(s, key)
+			}
+		}
+		if !named {
+			t.Errorf("tokens.css styles a control no row of §1.4's inventory names:\n\t%s\n\tadd a touch rule and a tapInventory row, or say why it is exempt", r.selector)
+		}
+	}
+	page := sizingFixture(t) + Styleguide()["modal"]
+	for _, e := range tapInventory {
+		if !strings.Contains(page, e.Marker) {
+			t.Errorf("%s (%s): the sizing fixture renders nothing carrying %q, so the drive never measures it", e.Idiom, e.Key, e.Marker)
+		}
+	}
+}

@@ -1327,7 +1327,7 @@ var previewHeights = map[string]int{
 	"screen-signin-social":            290,
 	"screen-signin-password":          420,
 
-	"demo-app":      780,
+	"demo-app":      850, // the Mobile tab's 44px targets make it 1038px there
 	"shell-column":  780,
 	"shell-topbar":  780,
 	"shell-sidebar": 780,

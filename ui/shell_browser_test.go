@@ -1746,7 +1746,9 @@ func TestAMenuOpenedInsideAShortFrameIsStillUsable(t *testing.T) {
 
 		// A three-item menu is 103px and the floor is 8rem, so it must
 		// fit whole — in an 80px frame as much as a 260px one. This is
-		// the assertion that was 12-of-103 before the floor.
+		// the assertion that was 12-of-103 before the floor. These frames
+		// are 420px wide, inside the touch query, where the rows are
+		// 44px taps and the floor is three of them: the same claim.
 		if f.ShortClient < f.ShortScroll {
 			t.Errorf("in a %dpx frame a three-item menu shows %d of its %dpx: the cap has collapsed it, and a reader opening this menu sees a sliver", f.FrameHeight, f.ShortClient, f.ShortScroll)
 		}

@@ -105,11 +105,11 @@
 // content is a data table you want announced as one; this is for list
 // screens whose rows are links. The card sets its columns once: give it
 // a class and set the --rst-cols custom property in your stylesheet
-// (trailing 32px reserved for a kebab), never in a style attribute,
-// which the default CSP blocks. Rows only choose cells. A head row
-// carries rst-lrow="head"; a data row's identity cell is rst-nm, a
-// column hidden below 800px is rst-m-hide, and the per-row overflow
-// menu is a native <details rst-row-menu> — no JavaScript:
+// (trailing var(--rst-col-menu) reserved for a kebab), never in a style
+// attribute, which the default CSP blocks. Rows only choose cells. A
+// head row carries rst-lrow="head"; a data row's identity cell is
+// rst-nm, a column hidden below 800px is rst-m-hide, and the per-row
+// overflow menu is a native <details rst-row-menu> — no JavaScript:
 //
 //	<div rst-card class="orders">
 //	  <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
@@ -122,7 +122,7 @@
 //	  </div>
 //	</div>
 //
-//	.orders { --rst-cols: 2fr 110px 32px; }
+//	.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }
 //
 // dropdown — the details/summary menu vocabulary behind header overflow
 // menus and a list-bar's Filter/Sort controls. Only one menu is open at
