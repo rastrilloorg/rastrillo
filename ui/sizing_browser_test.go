@@ -73,6 +73,13 @@ func TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens(t *testing.T) {
 		for _, leg := range legs {
 			tr, fonts, primary := readType(t, ctx, rig.Origin+"/", leg.w, leg.h)
 			requirePointer(t, ctx, coarse)
+			// Each leg exists to exercise one half of the query: the 1024
+			// touch leg proves the pointer half only if the page really is
+			// wider than 40rem, and the 600 mouse leg the width half only if
+			// the pointer really is fine.
+			if tr.Width != int(leg.w) || tr.Coarse != coarse {
+				t.Fatalf("%s: the page read width %d, coarse %v; this leg needs width %d, coarse %v", leg.name, tr.Width, tr.Coarse, leg.w, coarse)
+			}
 			if tr.Lg != 19 || tr.Base != 16 || tr.Sm != 14 || tr.Xs != 13 || tr.Body != 16 {
 				t.Errorf("%s: tokens %v/%v/%v/%v body %v, want 19/16/14/13 body 16", leg.name, tr.Lg, tr.Base, tr.Sm, tr.Xs, tr.Body)
 			}
