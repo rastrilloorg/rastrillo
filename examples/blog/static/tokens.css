@@ -684,7 +684,9 @@ body {
 .rst-lbar + .rst-row, [rst-lbar] + [rst-row] {
   border-top: 0;
 }
-.rst-row:hover, [rst-row]:hover {
+/* Only a row that is a link looks like one: the fill follows the
+   primary link, so a hand-written row with nothing to open stays flat. */
+.rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover {
   background: var(--rst-surface-2);
 }
 .rst-row__lead, [rst-row-lead] {
@@ -720,8 +722,13 @@ body {
   flex: 1;
   min-inline-size: 0;
 }
-/* The name link's overlay makes the whole row clickable without nesting
-   one anchor inside another. The action pill sits above it. */
+/* A row with a destination has ONE primary link, and its ::after covers
+   the row, so the row is the target on every screen (spec §2): the
+   cursor, the status-bar URL, middle-click and "open in new tab" all
+   work across the whole width. Everything else in the row that can be
+   operated is lifted above the overlay by the :where() rule under the
+   list grid. The row is not a link, it contains one, so nested anchors
+   stay impossible. */
 .rst-row__main > a, [rst-row-main] > a {
   color: var(--rst-text);
   font-weight: 600;
@@ -732,6 +739,13 @@ body {
   inset: 0;
   position: absolute;
 }
+/* Focus draws the ring on the overlay, inset 2px so a card's corner
+   cannot cut it, so a keyboard user sees the whole row outlined. The
+   link also underlines: a check that reads the focused element and its
+   ancestors (the gallery's keyboard walk) never sees a pseudo-element,
+   and forced-colors mode keeps text decoration. */
+.rst-row__main > a:focus-visible, [rst-row-main] > a:focus-visible, .rst-lrow > a.rst-nm:focus-visible, [rst-lrow] > a.rst-nm:focus-visible, .rst-lrow > a.rst-person:focus-visible, [rst-lrow] > a[rst-person]:focus-visible { outline: none; text-decoration: underline; }
+.rst-row__main > a:focus-visible::after, [rst-row-main] > a:focus-visible::after, .rst-lrow > a.rst-nm:focus-visible::after, [rst-lrow] > a.rst-nm:focus-visible::after, .rst-lrow > a.rst-person:focus-visible::after, [rst-lrow] > a[rst-person]:focus-visible::after { border-radius: var(--rst-radius-sm); outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 .rst-row__main > a:hover, [rst-row-main] > a:hover {
   text-decoration: underline;
 }
@@ -758,12 +772,11 @@ body {
   color: var(--rst-accent);
 }
 
-/* A status pill inside a row sits above the name link's overlay, like
-   the action pill does. */
+/* A status pill inside a row is part of the row's target, not a
+   control: a dead spot inside a row you can tap is a mis-tap on a
+   phone. It was lifted above the overlay until H. */
 .rst-row .rst-status, [rst-row] [rst-status] {
   flex: none;
-  position: relative;
-  z-index: 1;
 }
 
 /* ── status-pill. The dot is decoration; the label is the state. ──── */
@@ -1094,7 +1107,12 @@ body {
 .rst-lrow, [rst-lrow] { align-items: center; border-bottom: 1px solid var(--rst-line); display: grid; gap: 0.85rem; grid-template-columns: var(--rst-cols, 1fr); padding: 0.68rem 1rem; position: relative; }
 .rst-lrow:last-child, [rst-lrow]:last-child { border-bottom: 0; }
 .rst-lrow--head, [rst-lrow~="head"] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
-.rst-lrow:not(.rst-lrow--head):has(> .rst-nm, > .rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> .rst-nm, > [rst-person]):hover { background: var(--rst-accent-soft); }
+.rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover { background: var(--rst-accent-soft); }
+/* The list grid's primary link is its identity cell: the rst-nm link,
+   or a person link when a person is who the row is. Its ::after covers
+   the row, as list-row-action's does. One identity cell per row: with
+   both, the later overlay wins and the earlier link is unreachable. */
+.rst-lrow > a.rst-nm::after, [rst-lrow] > a.rst-nm::after, .rst-lrow > a.rst-person::after, [rst-lrow] > a[rst-person]::after { content: ""; inset: 0; position: absolute; }
 .rst-nm { border-radius: var(--rst-radius-sm); color: inherit; font-weight: 550; min-width: 0; text-align: start; text-decoration: none; }
 a.rst-nm:hover { color: var(--rst-accent); }
 .rst-nm small { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); font-weight: 400; }
@@ -1102,6 +1120,26 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-no-match, [rst-no-match] { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding: 1.6rem 1rem; text-align: center; }
 .rst-no-match a, [rst-no-match] a { color: var(--rst-accent); }
 .rst-count-line, [rst-count-line] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); margin: 0.7rem 0 0; }
+/* Controls above the overlay. A positioned overlay paints above every
+   element that is not positioned, whatever the DOM order, so without
+   this a checkbox before the name link would be covered and a tap on it
+   would open the item.
+
+   It lifts the CONTROLS, never their containers: lifting a row menu's
+   <details> would make it a stacking context and trap its open panel
+   under the next row's lifted controls. The :not() is attached to the
+   :is() with no space, so it filters the controls themselves; with a
+   space it is a descendant combinator and lifts things inside them.
+   The primary link is excluded, or its ::after would measure against
+   the link instead of the row.
+
+   The whole selector is inside :where(), so it weighs nothing: its job
+   is to give an otherwise static control a position and a z-index, and
+   never to replace a position a component chose. The switch's input,
+   the date field's pick button and select.js's hidden native select are
+   all absolutely placed, and at zero weight their own rules win
+   position while z-index still applies (review round 2, finding 4). */
+:where(:is(.rst-row, .rst-lrow) :is(a[href], button, summary, label, input, select, textarea):not(.rst-row__main > a, .rst-lrow > a.rst-nm, .rst-lrow > a.rst-person)), :where(:is([rst-row], [rst-lrow]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person])) { position: relative; z-index: 1; }
 @media (max-width: 800px) {
   .rst-m-hide { display: none; }
   .rst-lrow, [rst-lrow], .rst-lrow--head, [rst-lrow~="head"] { grid-template-columns: minmax(0, 1fr) auto var(--rst-col-menu); }

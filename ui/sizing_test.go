@@ -169,7 +169,6 @@ var tapInventory = []tapEntry{
 	{"[rst-shell-nav] a", "Shell: nav links", "rst-shell-nav", "[rst-shell-nav] a"},
 	{"[rst-shell-menu] > summary", "Shell: Menu summary", "rst-shell-menu", "narrow:[rst-shell-menu] > summary"},
 	{"[rst-shell-chrome] > summary", "Legacy sidebar drawer summary", "rst-shell-chrome", "narrow:[rst-shell-chrome] > summary"},
-	{"a.rst-nm", "List grid identity link (its own box until Task 5 stretches it)", "rst-nm", "a.rst-nm"},
 }
 
 // tapExempt are the interactive rules that are deliberately not held to
@@ -177,6 +176,9 @@ var tapInventory = []tapEntry{
 // control that does not fit the floor gets a rule in the touch block.
 var tapExempt = map[string]string{
 	"[rst-row-main] > a":         "the stretched primary link: the tap target is the whole row (spec §2)",
+	"a.rst-nm":                   "the list grid's stretched identity link: the tap target is the whole row (spec §2)",
+	"[rst-lrow] > a[rst-person]": "the list grid's stretched person link: the tap target is the whole row (spec §2)",
+	".rst-lrow > a.rst-person":   "the class spelling of the same stretched person link",
 	"[rst-no-match] a":           "a link in running text, WCAG 2.5.8's inline exception (spec §1.4, Exempt)",
 	".rst-sr-only:focus-visible": "the hidden search submit: it exists for the keyboard and un-hides on focus; no pointer reaches it",
 }

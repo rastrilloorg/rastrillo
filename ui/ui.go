@@ -111,6 +111,12 @@
 // rst-nm, a column hidden below 800px is rst-m-hide, and the per-row
 // overflow menu is a native <details rst-row-menu> — no JavaScript:
 //
+// A row with a primary link is clickable across its whole width: the
+// identity link's ::after covers the row, and every other link, button,
+// summary, label and form control in it sits above that overlay. A row
+// with no link gets neither, so it never looks clickable. Give each row
+// one identity link.
+//
 //	<div rst-card class="orders">
 //	  <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
 //	  <div rst-lrow>

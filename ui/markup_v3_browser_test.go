@@ -105,6 +105,9 @@ const extraFixture = `
     <div class="rst-no-match">No match. <a href="#a">Clear</a></div>
   </div>
   <p class="rst-count-line">3 of 40</p>
+  <div class="rst-card"><div class="rst-lrow"><a class="rst-person" href="#a"><span class="rst-person__av">A</span><span class="rst-person__meta"><span class="rst-person__name">Ada</span></span></a><span class="rst-cell-mut">Owner</span></div></div>
+  <!-- A list-row-action row with no link: its hover rule must not match. -->
+  <div class="rst-list"><div class="rst-row"><div class="rst-row__main"><span>Archived</span><span class="rst-row__sub">No page</span></div></div></div>
 
   <p><span class="rst-ftok"><span class="rst-ftok__k">Status</span> Paid <a href="#a" aria-label="Remove">x</a></span></p>
 
