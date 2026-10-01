@@ -96,3 +96,44 @@ func TestIsBaseKey(t *testing.T) {
 		t.Error("unshipped keys must report false")
 	}
 }
+
+// The three strings the phone shells and the row menu say. They are
+// checked as a set rather than left to TestBaseCatalogsShareOneKeySet
+// because two of them carry {name}, and a translation that drops or
+// doubles the placeholder renders "Back to" with nothing after it on a
+// screen reader, which no visual check catches. The em-dash rule is the
+// operator's for all new copy; it is asserted here because a translator
+// reaching for one is the likeliest way it comes back.
+func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
+	keys := map[string]int{ // key -> how many {name} it must carry
+		"rastrillo.ui.shell_up_label": 0,
+		"rastrillo.ui.shell_up":       1,
+		"rastrillo.ui.row_menu":       1,
+	}
+	all := BaseCatalogs()
+	if len(all) != 12 {
+		t.Fatalf("%d base catalogs, want 12", len(all))
+	}
+	en := all["en"]
+	for code, c := range all {
+		for key, names := range keys {
+			v, ok := c[key]
+			if !ok || strings.TrimSpace(v) == "" {
+				t.Errorf("%s.toml: missing or empty %s", code, key)
+				continue
+			}
+			if got := strings.Count(v, "{name}"); got != names {
+				t.Errorf("%s.toml: %s = %q carries {name} %d times, want %d", code, key, v, got, names)
+			}
+			if names == 0 && strings.ContainsAny(v, "{}") {
+				t.Errorf("%s.toml: %s = %q has a placeholder brace in a string that takes no value", code, key, v)
+			}
+			if strings.Contains(v, "—") {
+				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, v)
+			}
+			if code != "en" && v == en[key] {
+				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
+			}
+		}
+	}
+}
