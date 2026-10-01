@@ -648,7 +648,17 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 	if len(got.Frames) != got.Articles {
 		t.Fatalf("%d partial sections on the %s page but only %d gave up a preview frame", got.Articles, kind, len(got.Frames))
 	}
-	return got.Frames[:1]
+	// The first frame, and the row menu's wherever it is: axe runs on that
+	// sample in every theme and scheme because it is a shipped control
+	// with a name built from a catalog pattern, and it is not first on its
+	// page, so the first-frame rule alone would never scan it.
+	picked := got.Frames[:1]
+	for _, f := range got.Frames[1:] {
+		if f.Of == anchorID("partial", "row-menu") {
+			picked = append(picked, f)
+		}
+	}
+	return picked
 }
 
 // previewPageKinds is every page kind that frames a sample worth

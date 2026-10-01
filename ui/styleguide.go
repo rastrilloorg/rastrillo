@@ -28,8 +28,9 @@ var styleguideSamples = map[string]string{
   <div rst-lrow>
     <a class="rst-nm" href="/orders/AB3PX"><bdi>Grace Hopper</bdi><small>AB3PX · <bdi>grace@example.com</bdi></small></a>
     <span class="rst-m-hide rst-cell-mut">Paid</span>
-    <details rst-row-menu name="rst-menus"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
-      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
+    <details rst-row-menu name="rst-menus">
+      <summary aria-label="Actions for Grace Hopper"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
+      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><a class="rst-danger" href="/orders/AB3PX/refund">Refund order…</a></div>
     </details>
   </div>
   <p rst-no-match>No orders match. <a href="/orders">Clear filters</a></p>

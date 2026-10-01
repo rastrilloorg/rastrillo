@@ -99,7 +99,7 @@ const extraFixture = `
   <div class="rst-card" style="--rst-cols: 2fr 110px 32px">
     <div class="rst-lrow rst-lrow--head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
     <div class="rst-lrow"><a class="rst-nm" href="#a">#1001<small>Yesterday</small></a><span class="rst-cell-mut">Paid</span>
-      <details class="rst-row-menu"><summary aria-label="Actions">…</summary><div class="rst-row-menu__panel"><a href="#a">Open</a><hr><button class="rst-danger" type="button">Delete…</button></div></details></div>
+      <details class="rst-row-menu"><summary aria-label="Actions">…</summary><div class="rst-row-menu__panel"><a href="#a">Open</a><form method="post" action="#a"><button type="button"><span class="rst-spin" aria-hidden="true"></span>Archive</button></form><hr><button class="rst-danger" type="button"><span class="rst-spin" aria-hidden="true"></span>Delete…</button></div></details></div>
     <div class="rst-lrow"><span class="rst-person rst-person--lg"><span class="rst-person__av">A</span><span class="rst-person__meta"><span class="rst-person__name">Ana</span><span class="rst-person__email">a@example.com</span></span></span><span class="rst-cell-mut">—</span><span></span></div>
     <div class="rst-lrow"><span class="rst-person"><span class="rst-person__av rst-person__av--empty"></span><span class="rst-person__meta"><span class="rst-person__name">Unassigned</span></span></span><span></span><span></span></div>
     <div class="rst-no-match">No match. <a href="#a">Clear</a></div>

@@ -106,8 +106,12 @@ func WithT(t func(key string, args ...any) string) Option {
 // stageArt draws the stage shell's default backdrop from a seed (see
 // its own comment).
 //
+// rowMenuItems checks the row-menu partial's Items and hands the partial
+// one ready-to-render item each, stopping the render on an item it
+// cannot show.
+//
 // An app is free to add its own entries on top; it must not drop these
-// twelve, or the shipped partials and shells stop parsing.
+// thirteen, or the shipped partials and shells stop parsing.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -123,7 +127,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
 		"dateWords": dateWords(c.t),
 		"opt":       opt, "Tbdi": tbdi(c.t),
-		"stageArt": stageArt,
+		"stageArt": stageArt, "rowMenuItems": rowMenuItems,
 	}
 }
 
@@ -392,6 +396,73 @@ func opt(data any, key string) any {
 		return nil
 	}
 	return v.Interface()
+}
+
+// rowMenuItem is one row-menu entry as the partial renders it. Rule is
+// set on the first destructive item that follows a plain one: the
+// partial draws its <hr> there and nowhere else.
+type rowMenuItem struct {
+	Label, Href, Action string
+	Hidden              [][2]string
+	Danger, Rule        bool
+}
+
+// rowMenuItems validates row-menu's Items, a dict-built list or a slice
+// of structs, and fails loudly (at Execute, the way dict does for an
+// odd argument count) on an item it cannot render:
+//
+//   - no Label;
+//   - both or neither of Href (a link) and Action (a POST);
+//   - Danger without Href. A destructive item is a link to its confirm
+//     page (SKILL.md §7: confirm-form on its own URL, never fired from the
+//     row), so Action alone has nowhere to confirm;
+//   - Hidden without Action. Hidden fields ride a POST.
+//
+// Silently dropping an item, or rendering a destructive POST, are the
+// two failures this exists to rule out.
+func rowMenuItems(data any) ([]rowMenuItem, error) {
+	v := optKey(data, "Items")
+	if !v.IsValid() || (v.Kind() != reflect.Slice && v.Kind() != reflect.Array) || v.Len() == 0 {
+		return nil, fmt.Errorf("ui: row-menu wants Items, a non-empty list of items")
+	}
+	out := make([]rowMenuItem, 0, v.Len())
+	plain, ruled := false, false
+	for i := 0; i < v.Len(); i++ {
+		item, ok := deref(v.Index(i))
+		if !ok {
+			return nil, fmt.Errorf("ui: row-menu item %d is nil", i)
+		}
+		it := item.Interface()
+		m := rowMenuItem{Label: optString(it, "Label"), Href: optString(it, "Href"), Action: optString(it, "Action"), Hidden: optPairs(it, "Hidden")}
+		if d := optKey(it, "Danger"); d.IsValid() && d.Kind() == reflect.Bool {
+			m.Danger = d.Bool()
+		}
+		// Hidden counts as present only when it holds something: a struct
+		// caller's Hidden field is there, nil or empty, on every item, and
+		// a link item with nothing to send has broken no rule.
+		hidden := false
+		if h := optKey(it, "Hidden"); h.IsValid() && (h.Kind() == reflect.Slice || h.Kind() == reflect.Array) {
+			hidden = h.Len() > 0
+		}
+		switch {
+		case m.Label == "":
+			return nil, fmt.Errorf("ui: row-menu item %d has no Label", i)
+		case (m.Href == "") == (m.Action == ""):
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) wants exactly one of Href (a link) and Action (a POST)", i, m.Label)
+		case m.Danger && m.Href == "":
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) is Danger, so it needs Href: a destructive item links to its confirm page", i, m.Label)
+		case hidden && m.Action == "":
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) carries Hidden, which only a POST (Action) item sends", i, m.Label)
+		}
+		if m.Danger && plain && !ruled {
+			m.Rule, ruled = true, true
+		}
+		if !m.Danger {
+			plain = true
+		}
+		out = append(out, m)
+	}
+	return out, nil
 }
 
 // tbdi returns the {{Tbdi}} helper bound to one translator, like T and

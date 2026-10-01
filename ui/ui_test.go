@@ -959,6 +959,14 @@ func allPartials() []struct {
 			"ActionAria": "Edit Release notes, August",
 			"Lead":       "accent", "LeadInitial": "RN",
 		}},
+		{"row-menu", map[string]any{
+			"Name": "Grace Hopper",
+			"Items": []any{
+				map[string]any{"Label": "Edit", "Href": "/orders/AB3PX/edit"},
+				map[string]any{"Label": "Archive", "Action": "/orders/AB3PX/archive", "Hidden": [][2]string{{"state", "archived"}}},
+				map[string]any{"Label": "Delete order…", "Href": "/orders/AB3PX/delete", "Danger": true},
+			},
+		}},
 		{"status-pill", map[string]any{"Tone": "positive", "Label": "Published"}},
 		{"empty-state", map[string]any{
 			"Title": "Nothing here yet", "Body": "No posts yet. Your first one is a good place to start.",
@@ -1187,15 +1195,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
-		"signin", "signin-title",
+		"signin", "signin-title", "row-menu",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 36 {
-		t.Fatalf("the shipped set is 36 partials, this list has %d", len(want))
+	if len(want) != 37 {
+		t.Fatalf("the shipped set is 37 partials, this list has %d", len(want))
 	}
 }
 
@@ -1326,6 +1334,10 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 	trackEnd := strings.Index(check, `</span>`)
 	if trackEnd == -1 || !strings.Contains(check[trackEnd:], "Email me about replies") {
 		t.Errorf("field-check's label text must render outside the aria-hidden track: %s", check)
+	}
+	menu := render(t, "row-menu", fixtureFor(t, "row-menu"))
+	if !strings.Contains(menu, `<summary aria-label="`+template.HTMLEscapeString(defaultTf("rastrillo.ui.row_menu", "name", "Grace Hopper"))+`">`) {
+		t.Errorf("the row menu's trigger has no name: %s", menu)
 	}
 }
 

@@ -33,7 +33,14 @@
                     back to the neutral tint.
        LeadInitial  string, optional — the one or two characters inside
                     it. The marker is aria-hidden: it repeats
-                    information the name already carries. */}}
+                    information the name already carries.
+       Menu         list, optional: row-menu's Items, rendered as a
+                    kebab after the status pill and the action pill (the
+                    pill for the one frequent action, the kebab for the
+                    rest). Its trigger is named for Main, so there is no
+                    second copy of the name to drift. Read through opt,
+                    so a struct written before Menu existed still
+                    renders. */}}
 {{define "list-row-action"}}<div rst-row>
   {{- if .Lead}}
   <span rst-row-lead data-lead="{{.Lead}}" aria-hidden="true">{{if .LeadInitial}}{{.LeadInitial}}{{end}}</span>
@@ -44,5 +51,8 @@
   {{- end}}
   {{- if .ActionHref}}
   <a rst-row-action href="{{.ActionHref}}"{{if .ActionAria}} aria-label="{{.ActionAria}}"{{end}}>{{.ActionLabel}}</a>
+  {{- end}}
+  {{- with opt . "Menu"}}
+  {{template "row-menu" dict "Name" $.Main "Items" .}}
   {{- end}}
 </div>{{end}}

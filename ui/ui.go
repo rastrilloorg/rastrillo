@@ -109,26 +109,24 @@
 // attribute, which the default CSP blocks. Rows only choose cells. A
 // head row carries rst-lrow="head"; a data row's identity cell is
 // rst-nm, a column hidden below 800px is rst-m-hide, and the per-row
-// overflow menu is a native <details rst-row-menu> — no JavaScript:
-//
-// A row with a primary link is clickable across its whole width: the
-// identity link's ::after covers the row, and every other link, button,
-// summary, label and form control in it sits above that overlay. A row
-// with no link gets neither, so it never looks clickable. Give each row
-// one identity link.
+// overflow menu is the row-menu partial:
 //
 //	<div rst-card class="orders">
 //	  <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
 //	  <div rst-lrow>
 //	    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
 //	    <span class="rst-m-hide rst-cell-mut">Paid</span>
-//	    <details rst-row-menu name="rst-menus"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
-//	      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
-//	    </details>
+//	    {{template "row-menu" dict "Name" "Grace Hopper" "Items" (list (dict "Label" "View" "Href" "/orders/AB3PX") (dict "Label" "Refund order…" "Href" "/orders/AB3PX/refund" "Danger" true))}}
 //	  </div>
 //	</div>
 //
 //	.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }
+//
+// A row with a primary link is clickable across its whole width: the
+// identity link's ::after covers the row, and every other link, button,
+// summary, label and form control in it sits above that overlay. A row
+// with no link gets neither, so it never looks clickable. Give each row
+// one identity link.
 //
 // dropdown — the details/summary menu vocabulary behind header overflow
 // menus and a list-bar's Filter/Sort controls. Only one menu is open at

@@ -56,12 +56,12 @@ They span the list-screen, display, form and route families:
 ```text
 back-nav      field            form-foot           pagination
 badge         field-check      job-status          person
-bulk-bar      field-date       list-bar            seg-tabs
-callout       field-daterange  list-bar-search     signin
-choice-field  field-datetime   list-row-action     signin-title
-confirm-form  field-select     list-search-submit  stat
-detail-list   field-text       locale-menu         status-pill
-dropdown      field-textarea   meter
+bulk-bar      field-date       list-bar            row-menu
+callout       field-daterange  list-bar-search     seg-tabs
+choice-field  field-datetime   list-row-action     signin
+confirm-form  field-select     list-search-submit  signin-title
+detail-list   field-text       locale-menu         stat
+dropdown      field-textarea   meter               status-pill
 empty-state   field-time       notice
 error-page    form-error       page-header
 ```

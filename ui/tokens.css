@@ -1175,6 +1175,15 @@ a.rst-nm:hover { color: var(--rst-accent); }
 [rst-locale] hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
 .rst-danger { color: var(--rst-tone-negative-fg); }
 .rst-row-menu__panel .rst-danger:hover, [rst-row-menu-panel] .rst-danger:hover { background: var(--rst-tone-negative-bg); }
+/* A POST item is a one-button form: no margin, so it lines up with a
+   link item. busy.js puts a spinner in front of a submit button's label,
+   and a menu item is not an [rst-btn], so the spinner sits BESIDE the
+   label; this reserves its slot at the inline end whether or not the
+   item is busy, so a long translated label can never widen the panel or
+   wrap mid-submit. The cost is 1.5rem of padding on POST items. */
+.rst-row-menu__panel form, [rst-row-menu-panel] form { margin: 0; }
+.rst-row-menu__panel button, [rst-row-menu-panel] button { padding-inline-end: calc(0.65rem + 1rem + var(--rst-sp-2)); position: relative; }
+.rst-row-menu__panel button > .rst-spin, [rst-row-menu-panel] button > [rst-spin] { inset-block: 0; inset-inline-end: 0.65rem; margin-block: auto; position: absolute; }
 
 /* dropdown — the details/summary menu vocabulary (header overflow,
    list-bar Filter/Sort). Exclusivity between siblings is the native
