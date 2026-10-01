@@ -450,6 +450,27 @@ These are the drafts; no em dashes. The `gallery.*` ids are gallery prose keys (
 "label": "vendored_test.go comment",
 "text": "Only the sidebar and console shells link shell.js and shell.css. An app on another shell that deletes them records it here, or this test fails on the missing files:",
 "context": "A comment inside vendoredIsMine in every scaffolded app's vendored_test.go, above a commented-out example line."
+},
+  {
+"id": "gallery.row_menu.sample_labels",
+"section": "Gallery: the row menu",
+"label": "The two samples' menu items (sample data, shown in English on every page)",
+"text": "Edit | Archive | Delete order…",
+"context": "The items in the row-menu samples on the List screen page, separated here by |. Sample data stays English in every language, like the names Grace Hopper and Alan Turing beside them. The second sample uses Edit and Delete order… only."
+},
+  {
+"id": "styleguide.list_grid.row_menu",
+"section": "Styleguide: the list-grid sample",
+"label": "The sample row's menu items",
+"text": "View | Refund order…",
+"context": "The ⋮ menu in the list-grid markup sample that developers copy (ui.Styleguide), separated here by |. It was 'View' and a 'Refund order…' button; the destructive item becomes a link to its confirm page."
+},
+  {
+"id": "godoc.designsystem.render_tree",
+"section": "Go documentation",
+"label": "designsystem.Render's file list",
+"text": "<theme>/<locale>/demo.html            36 copies of the demo app's index, and\n<theme>/<locale>/demo-dashboard.html  its three section pages beside it\n<theme>/<locale>/demo-requests.html\n<theme>/<locale>/demo-request.html\n<theme>/<locale>/shells/<shell>.html  180 full-page shell demos: one per\n                                      shell, and a section page for the\n                                      sidebar and console\ntokens.css theme-<theme>.css shell.css  the stylesheets, once each\nrastrillo.js busy.js shell.js          the framework's scripts\nselect.js datetime.js calendar.js     (calendar.js draws the month grid\n                                      datetime.js opens)",
+"context": "The tree listing in the doc comment of the gallery renderer (internal/designsystem). Task 8 adds the two shell files, Task 9 the demo and shell pages."
 }
 ]
 ```
@@ -463,7 +484,7 @@ jq -e '.action == "approve"' copy-review/result.json && cp copy-review/result.js
 jq -r '.strings[] | "\(.id)\t\(.text)"' copy-review/batch2-result.json
 ```
 
-Expected: one line per id above (29). No commit: `copy-review/` is gitignored and no tracked file changed, so the tree is exactly Task 1's green tree.
+Expected: one line per id above (32). No commit: `copy-review/` is gitignored and no tracked file changed, so the tree is exactly Task 1's green tree.
 
 ---
 
@@ -1064,8 +1085,17 @@ func readType(t *testing.T, ctx context.Context, url string, w, h int64) (typeRe
 	if err := json.Unmarshal([]byte(rawFonts), &fonts); err != nil {
 		t.Fatal(err)
 	}
-	if len(fonts) < 20 {
-		t.Fatalf("only %d text-entry controls on the sizing page; the fixture is not the one this drive measures", len(fonts))
+	// The small-parent fields and the bare and primary inputs are the
+	// cases this drive exists for; each is required by name, so losing
+	// one from the fixture fails here rather than shrinking the sweep.
+	named := map[string]bool{}
+	for _, f := range fonts {
+		named[f.Name] = true
+	}
+	for _, id := range []string{"sizing-bulk-search", "sizing-bulk-input", "sizing-bulk-note", "sizing-menu-search", "sizing-menu-input", "sizing-menu-note", "sizing-bare", "sizing-primary"} {
+		if !named[id] {
+			t.Fatalf("the sizing page has no %s; the fixture is not the one this drive measures", id)
+		}
 	}
 	return tr, fonts, primary
 }
@@ -1359,9 +1389,19 @@ and in `sizingFixture`, after the extras and before the samples:
 	b.WriteString(`<div rst-page data-extra="combobox">` + render(t, "field-select", map[string]any{
 		"ID": "sizing-combo", "Name": "sizing_combo", "Label": "Country", "Options": options,
 	}) + `</div>`)
+	// The language menu: allPartials has no locale-menu fixture and no
+	// sample carries one, and its buttons only render with Items.
+	b.WriteString(`<div rst-page data-extra="locale">` + render(t, "locale-menu", map[string]any{
+		"Return": "/orders",
+		"Items": []rastrillo.LocaleItem{
+			{Code: "en", Name: "English", Href: "/en/orders", Current: true},
+			{Code: "ga", Name: "Gaeilge", Href: "/ga/orders"},
+			{Code: "ja", Name: "日本語", Href: "/ja/orders"},
+		},
+	}) + `</div>`)
 ```
 
-(add `"fmt"` to the imports). Mark the bare input as an app's own control rather than an idiom, so the target drive skips it (its font size is the zoom floor's business, not the tap floor's): change `<input type="text" id="sizing-bare" name="sizing_bare">` in `sizingExtras` to `<input type="text" id="sizing-bare" name="sizing_bare" data-sizing-not-an-idiom>`.
+(add `"fmt"` and `"amadan.net/rastrillo/rastrillo"` to the imports). Mark the bare input as an app's own control rather than an idiom, so the target drive skips it (its font size is the zoom floor's business, not the tap floor's): change `<input type="text" id="sizing-bare" name="sizing_bare">` in `sizingExtras` to `<input type="text" id="sizing-bare" name="sizing_bare" data-sizing-not-an-idiom>`.
 
 - [ ] **Step 4: Write the touch block and the desktop changes**
 
@@ -1542,10 +1582,13 @@ const measureFn = `function measure(root, skip) {
   root.querySelectorAll(CONTROLS).forEach(el => {
     if (skip && skip(el)) return;
     if (el.closest("[data-sizing-not-an-idiom]")) return;
+    // Inert content (a modal's backdrop) is unreachable on purpose.
+    if (el.closest("[inert]")) return;
     const a = area(el);
     if (seen.has(a) || !rendered(a)) return;
     seen.add(a);
     el.setAttribute("data-measured", "");
+    a.setAttribute("data-measured-area", "");
     a.scrollIntoView({block: "center", inline: "center"});
     const r = a.getBoundingClientRect();
     const x0 = Math.max(r.left, 0), y0 = Math.max(r.top, 0), x1 = Math.min(r.right, innerWidth), y1 = Math.min(r.bottom, innerHeight);
@@ -1576,6 +1619,11 @@ const overlayJS = `((i) => { ` + measureFn + `;
   if (i >= all.length) return JSON.stringify({Done: true});
   const d = all[i];
   for (let p = d; p; p = p.parentElement && p.parentElement.closest("details")) p.open = true;
+  // A menu inside the topbar's or console's tail is behind a SIBLING
+  // disclosure (the tail is the shell menu's next sibling, not its
+  // content), which the ancestor walk above cannot see.
+  const tail = d.closest("[rst-shell-tail], .rst-shell__tail");
+  if (tail && tail.previousElementSibling && tail.previousElementSibling.matches("details")) tail.previousElementSibling.open = true;
   const summary = d.querySelector(":scope > summary");
   const got = measure(d, el => el === summary);
   // A shell disclosure reveals its next SIBLING (the topbar's tail, the
@@ -1678,12 +1726,25 @@ func settleUntil(t *testing.T, ctx context.Context, expr string) {
 	t.Fatalf("never became true within 10s: %s", expr)
 }
 
-// assertCovered is what makes "every control passed" mean something:
-// for every inventory row on this page, at least one element matching
-// its Probe was measured (measureFn marks each with data-measured). A
-// count of measurements would pass a page that lost a whole idiom.
+// assertCovered is what makes "every control passed" mean something,
+// in two halves. Every rendered control on the closed page was measured
+// (none skipped by a bug in measure itself), and for every inventory row
+// on this page at least one element matching its Probe was measured
+// (measureFn marks each with data-measured), so an idiom cannot drop out
+// of the drive because its only fixture went away. Each named fixture
+// control is also required by id in TestTextControlsAreSixteenPixels.
 func assertCovered(t *testing.T, ctx context.Context, where, page string, wide bool) {
 	t.Helper()
+	var missed []string
+	if err := chromedp.Run(ctx, chromedp.Evaluate(`[...document.querySelectorAll('a[href], button, summary, input:not([type=hidden]), select, textarea')]
+	  .filter(e => !e.hasAttribute("data-measured") && !e.closest("[data-sizing-not-an-idiom], [inert]") && e.checkVisibility({visibilityProperty: true}) && getComputedStyle(e).clipPath !== "inset(50%)" && e.getBoundingClientRect().width >= 2)
+	  .filter(e => !(e.matches("input[type=checkbox], input[type=radio]") && e.closest("label") && e.closest("label").hasAttribute("data-measured-area")))
+	  .map(e => e.outerHTML.slice(0, 80))`, &missed)); err != nil {
+		t.Fatalf("%s: listing unmeasured controls: %v", where, err)
+	}
+	if len(missed) > 0 {
+		t.Errorf("%s: %d rendered controls were never measured: %v", where, len(missed), missed)
+	}
 	for _, e := range tapInventory {
 		sel, entryPage := e.Probe, ""
 		switch {
@@ -2037,7 +2098,13 @@ const kebabA = `<details rst-row-menu name="rst-menus" id="menu-a"><summary id="
 // rowsFixture is every row idiom of spec §2.2 that has a primary link,
 // one that has none, and a row holding the three controls that
 // position themselves (a switch, a date field, an enhanced select) with
-// the same three outside any row to compare against.
+// the same three outside any row to compare against. The three sit in
+// one stacked cell of the same width in and out of the row: below 800px
+// the list grid becomes three columns whatever --rst-cols says
+// (tokens.css's narrow list-grid rule), and a fourth child would land a
+// date field in the 44px kebab column under its own picker. The
+// lifting rule reaches controls at any depth in a row, so a wrapper cell
+// is the honest test of it.
 func rowsFixture(t *testing.T) string {
 	t.Helper()
 	var opts []any
@@ -2060,12 +2127,13 @@ func rowsFixture(t *testing.T) string {
 </div>
 <div rst-card id="people" style="--rst-cols: minmax(0, 1fr) 110px"><div rst-lrow id="row-p"><a rst-person href="/go/person" id="link-p"><span rst-person-av aria-hidden="true">A</span><span rst-person-meta><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></span></a><span class="rst-cell-mut">Owner</span></div></div>
 <div rst-card id="inert" style="--rst-cols: minmax(0, 1fr) 110px"><div rst-lrow id="row-n"><span rst-person><span rst-person-av aria-hidden="true">B</span><span rst-person-meta><span rst-person-name>Barbara Liskov</span></span></span><span class="rst-cell-mut">Viewer</span></div></div>
-<div rst-card id="controls" style="--rst-cols: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.5fr)"><div rst-lrow id="row-c"><a class="rst-nm" href="/go/row-c" id="link-c">Settings</a>` +
-		sw("switch-in") + `<div id="date-in">` + render(t, "field-date", map[string]any{"Name": "due_in", "Label": "Due", "Value": "2026-08-28"}) + `</div>` +
-		`<div id="combo-in">` + render(t, "field-select", map[string]any{"ID": "combo_in", "Name": "combo_in", "Label": "Country", "Options": opts}) + `</div></div></div>
-<section rst-box id="outside"><div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.5fr); gap: 0.85rem"><span></span>` +
+<div rst-card id="controls" style="--rst-cols: minmax(0, 1fr) minmax(0, 2fr)"><div rst-lrow id="row-c"><a class="rst-nm" href="/go/row-c" id="link-c">Settings</a>` +
+		`<div class="ctl-stack" id="ctl-in">` + sw("switch-in") + `<div id="date-in">` + render(t, "field-date", map[string]any{"Name": "due_in", "Label": "Due", "Value": "2026-08-28"}) + `</div>` +
+		`<div id="combo-in">` + render(t, "field-select", map[string]any{"ID": "combo_in", "Name": "combo_in", "Label": "Country", "Options": opts}) + `</div></div></div></div>
+<section rst-box id="outside"><div class="ctl-stack" id="ctl-out">` +
 		sw("switch-out") + `<div id="date-out">` + render(t, "field-date", map[string]any{"Name": "due_out", "Label": "Due", "Value": "2026-08-28"}) + `</div>` +
 		`<div id="combo-out">` + render(t, "field-select", map[string]any{"ID": "combo_out", "Name": "combo_out", "Label": "Country", "Options": opts}) + `</div></div></section>
+<style>.ctl-stack { display: flex; flex-direction: column; gap: 0.5rem; min-inline-size: 0; inline-size: 100%; max-inline-size: 22rem; }</style>
 </div>`
 }
 
@@ -2101,7 +2169,7 @@ type point struct {
 func probe(t *testing.T, ctx context.Context, sel string, fx, fy, dx, dy float64) point {
 	t.Helper()
 	var p point
-	at(t, ctx, fmt.Sprintf(`(() => { const r = document.querySelector(%q).getBoundingClientRect();
+	at(t, ctx, fmt.Sprintf(`(() => { const el = document.querySelector(%q); el.scrollIntoView({block: "center", inline: "center"}); const r = el.getBoundingClientRect();
 	  const x = r.left + r.width * %v + %v, y = r.top + r.height * %v + %v; const h = document.elementFromPoint(x, y);
 	  return JSON.stringify({X: x, Y: y, Hit: h ? (h.id || h.tagName) : "nothing"}); })()`, sel, fx, dx, fy, dy), &p)
 	return p
@@ -2319,7 +2387,10 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 			at(t, ctx, `(() => {
 			  const pos = el => getComputedStyle(el).position;
 			  const size = el => { const r = el.getBoundingClientRect(); return Math.round(r.width) + "x" + Math.round(r.height); };
-			  const own = sel => { const el = document.querySelector(sel), r = el.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h && (h === el || el.contains(h)) ? "ok" : "hit " + (h ? h.tagName : "nothing"); };
+			  // fx is the fraction across the box to test: the date input is
+			  // tested a quarter of the way in, clear of the picker button
+			  // that sits over its inline end on purpose.
+			  const own = (sel, fx) => { const el = document.querySelector(sel); el.scrollIntoView({block: "center"}); const r = el.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width * (fx || 0.5), r.top + r.height / 2); return h && (h === el || el.contains(h)) ? "ok" : "hit " + (h ? h.tagName : "nothing"); };
 			  const pick = side => { const p = document.querySelector("#date-" + side + " [rst-dtp-pick]"), d = p.closest("[rst-dtp]"); return Math.round(d.getBoundingClientRect().right - p.getBoundingClientRect().right) + "px from the end"; };
 			  return JSON.stringify({
 			    switchIn: pos(document.querySelector("#switch-in input")) + " " + size(document.querySelector("#switch-in [rst-switch-track]")),
@@ -2327,7 +2398,7 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 			    pickIn: pos(document.querySelector("#date-in [rst-dtp-pick]")) + " " + size(document.querySelector("#date-in [rst-dtp-pick]")) + " " + pick("in"),
 			    pickOut: pos(document.querySelector("#date-out [rst-dtp-pick]")) + " " + size(document.querySelector("#date-out [rst-dtp-pick]")) + " " + pick("out"),
 			    selectIn: pos(document.querySelector("#combo_in")), selectOut: pos(document.querySelector("#combo_out")),
-			    switchHit: own("#switch-in"), dateHit: own("#date-in [role=combobox]"), pickHit: own("#date-in [rst-dtp-pick]"), comboHit: own("#combo-in [role=combobox]")});
+			    switchHit: own("#switch-in"), dateHit: own("#date-in [role=combobox]", 0.25), pickHit: own("#date-in [rst-dtp-pick]"), comboHit: own("#combo-in [role=combobox]")});
 			})()`, &g)
 			for _, pair := range [][2]string{{"switchIn", "switchOut"}, {"pickIn", "pickOut"}, {"selectIn", "selectOut"}} {
 				if g[pair[0]] != g[pair[1]] {
@@ -2345,7 +2416,7 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 
 			// Operated. Each click must do its job and ask for no
 			// navigation (the row's link is under all of them).
-			clickAndStay(t, ctx, probe(t, ctx, "#switch-in", 0.5, 0.5, 0, 0), "", `document.querySelector("#switch-in input").checked`)
+			clickAndStay(t, ctx, probe(t, ctx, "#switch-in [rst-switch-track]", 0.5, 0.5, 0, 0), "", `document.querySelector("#switch-in input").checked`)
 			clickAndStay(t, ctx, probe(t, ctx, "#date-in [rst-dtp-pick]", 0.5, 0.5, 0, 0), "", `!!document.querySelector('[rst-cal] [data-rst-day="2026-08-12"]')`)
 			clickAndStay(t, ctx, probe(t, ctx, `[rst-cal] [data-rst-day="2026-08-12"]`, 0.5, 0.5, 0, 0), "", `document.querySelector('#date-in input[name="due_in"]').value === "2026-08-12"`)
 			clickAndStay(t, ctx, probe(t, ctx, "#combo-in [role=combobox]", 0.5, 0.5, 0, 0), "", `document.querySelectorAll("#combo-in [role=option]").length === 12 && document.querySelector("#combo-in [role=option]").checkVisibility()`)
@@ -2554,6 +2625,7 @@ Two identity links in one list-grid row give two overlays, and the later one win
 package ui
 
 import (
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -2562,6 +2634,39 @@ import (
 var markupTag = regexp.MustCompile(`<(/?)([a-zA-Z][a-zA-Z0-9-]*)([^>]*?)(/?)>`)
 
 var voidElement = map[string]bool{"area": true, "br": true, "col": true, "hr": true, "img": true, "input": true, "link": true, "meta": true, "source": true, "wbr": true}
+
+var (
+	classValue = regexp.MustCompile(`class="([^"]*)"`)
+	attrNamed  = func(name string) *regexp.Regexp { return regexp.MustCompile(`(?:^|\s)` + name + `(?:="([^"]*)")?(?:\s|$)`) }
+	lrowAttr   = attrNamed("rst-lrow")
+	personAttr = attrNamed("rst-person")
+)
+
+// hasClass reports whether attrs carries class token c, exactly.
+func hasClass(attrs, c string) bool {
+	if m := classValue.FindStringSubmatch(attrs); m != nil {
+		for _, tok := range strings.Fields(m[1]) {
+			if tok == c {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isDataRow is a list-grid row in either spelling, not its head row.
+func isDataRow(attrs string) bool {
+	a := " " + attrs + " "
+	if m := lrowAttr.FindStringSubmatch(a); m != nil {
+		return !strings.Contains(" "+m[1]+" ", " head ")
+	}
+	return hasClass(attrs, "rst-lrow") && !hasClass(attrs, "rst-lrow--head")
+}
+
+// isIdentityLink is a.rst-nm or a person link, in either spelling.
+func isIdentityLink(attrs string) bool {
+	return hasClass(attrs, "rst-nm") || hasClass(attrs, "rst-person") || personAttr.MatchString(" "+attrs+" ")
+}
 
 // identityLinksPerRow returns, for every [rst-lrow] data row in markup,
 // how many of its DIRECT children are identity links (a.rst-nm or
@@ -2583,14 +2688,14 @@ func identityLinksPerRow(markup string) []int {
 			continue
 		}
 		parentRow := len(stack) > 0 && stack[len(stack)-1].row
-		if parentRow && name == "a" && (regexp.MustCompile(`class="[^"]*\brst-nm\b`).MatchString(attrs) || regexp.MustCompile(`(^|\s)rst-person(\s|=|$)`).MatchString(attrs)) {
+		if parentRow && name == "a" && isIdentityLink(attrs) {
 			out[stack[len(stack)-1].slot]++
 		}
 		if self || voidElement[name] {
 			continue
 		}
 		f := frame{}
-		if regexp.MustCompile(`(^|\s)rst-lrow(\s|>|$)`).MatchString(attrs+" ") && !strings.Contains(attrs, `rst-lrow="head"`) {
+		if isDataRow(attrs) {
 			f = frame{row: true, slot: len(out)}
 			out = append(out, 0)
 		}
@@ -2621,6 +2726,19 @@ func TestEveryListGridRowHasOneIdentityLink(t *testing.T) {
 	if got := identityLinksPerRow(nested); len(got) != 1 || got[0] != 1 {
 		t.Errorf("a nested link counted as a direct child: %v, want [1]", got)
 	}
+	for _, c := range []struct {
+		markup string
+		want   []int
+	}{
+		{`<div class="rst-lrow"><a class="rst-nm" href="/a">A</a><a class="rst-person" href="/p">P</a></div>`, []int{2}},
+		{`<div rst-lrow=""><a class="rst-nm" href="/a">A</a><a rst-person href="/p">P</a></div>`, []int{2}},
+		{`<div rst-lrow="head"><a class="rst-nm" href="/a">A</a></div><div class="rst-lrow rst-lrow--head"><a class="rst-nm" href="/a">A</a></div>`, nil},
+		{`<div rst-lrow><a class="rst-nm-extra" href="/a">A</a></div>`, []int{0}},
+	} {
+		if got := identityLinksPerRow(c.markup); !reflect.DeepEqual(got, c.want) {
+			t.Errorf("identityLinksPerRow(%s) = %v, want %v", c.markup, got, c.want)
+		}
+	}
 }
 ```
 
@@ -2630,14 +2748,15 @@ Expected: PASS. Mutation check: add `<a rst-person href="/p">x</a>` as a direct 
 - [ ] **Step 5: Run the drives and the unit gates**
 
 Run the Step 2 command, then `GOFLAGS=-mod=mod go test -run 'TestEveryInteractiveRuleIsInTheTapInventory|TestEveryClassSelectorHasAnAttributeTwin|TestNoAttributeSelectorIsAnOrphan' -count=1 ./ui/`.
-Expected: PASS. Mutation checks, each restored: add a space before `:not(` in the attribute half of the lifting rule (the twin gate fails first; fix the class half too and the checkbox leg fails because the checkbox is covered); remove the list-grid `::after` rule (the far-edge legs fail with `DIV`).
+Expected: PASS. Mutation checks, each restored: add `style="position: relative; z-index: 2"` to `#cell-a` in `rowsFixture` (the 1280 "empty cell" leg fails: the element under the pointer is `cell-a`, not `link-a`, which the old any-descendant ownership rule would have accepted); add a space before `:not(` in the attribute half of the lifting rule (the twin gate fails first; fix the class half too and the checkbox leg fails because the checkbox is covered); remove the list-grid `::after` rule (the far-edge legs fail with `DIV`).
 
 - [ ] **Step 6: Run the task gate** (the gate line, then `make ci`). `TestBothSpellingsComputeTheSameStyles` compares the new rules in both spellings through `extraFixture`; `TestA11yWalksTheKeyboard` sees the underline on a focused row link.
 
 - [ ] **Step 7: Commit and push**
 
 ```bash
-git add ui/tokens.css examples/blog/static/tokens.css examples/tickets/static/tokens.css ui/sizing_test.go ui/markup_v3_browser_test.go ui/ui.go ui/rows_browser_test.go
+git add ui/tokens.css examples/blog/static/tokens.css examples/tickets/static/tokens.css ui/sizing_test.go ui/markup_v3_browser_test.go ui/ui.go ui/rows_browser_test.go ui/rows_test.go
+git status --short ui/   # nothing under ui/ may be left untracked or unstaged
 git commit -m "Make every row with a destination clickable across its whole width
 
 The list grid, which most list screens use, filled on hover as if the
@@ -3141,7 +3260,7 @@ In `ui/tokens.css`, after the `.rst-row-menu__panel .rst-danger:hover` rule, add
 
 Copy tokens.css into both examples.
 
-In `ui/styleguide.go`, replace the `list-grid` sample's `<details rst-row-menu …>…</details>` (lines 31-33) with the partial's output for `Name: "Grace Hopper"` and items `View` → `/orders/AB3PX` and `Refund order…` → `/orders/AB3PX/refund` (Danger). Take the markup from the failure message of `TestTheListGridSampleCarriesTheRowMenuPartialsOutput` (its `partial:` line), which is exactly what must be pasted, indented to fit the sample:
+In `ui/styleguide.go`, replace the `list-grid` sample's `<details rst-row-menu …>…</details>` (lines 31-33) with the partial's output for `Name: "Grace Hopper"` and items `View` → `/orders/AB3PX` and `Refund order…` → `/orders/AB3PX/refund` (Danger); the two labels are the approved `styleguide.list_grid.row_menu` (drafts shown), and `TestTheListGridSampleCarriesTheRowMenuPartialsOutput` renders the partial with the same two labels. Take the markup from the failure message of `TestTheListGridSampleCarriesTheRowMenuPartialsOutput` (its `partial:` line), which is exactly what must be pasted, indented to fit the sample:
 
 ```
     <details rst-row-menu name="rst-menus">
@@ -3196,7 +3315,7 @@ In `internal/designsystem/samples.go`, after the `list-row-action` doc in the `l
 				},
 ```
 
-The sample data ("Edit", "Archive", "Delete order…", the names) stays English on every page and must not be a prose key: `grep -c '^	`Edit`: {' internal/designsystem/prose.go` and the same for the other three must print 0 (they do today).
+The sample data stays English on every page (the item labels are the approved `gallery.row_menu.sample_labels`, drafts shown; the names are existing samples' names) and must not be a prose key: `grep -c '^	`Edit`: {' internal/designsystem/prose.go` and the same for the other three must print 0 (they do today).
 
 In `internal/designsystem/page.go`'s `demoTemplate`, in `#view-requests`: change the card's `--rst-cols: minmax(0, 1fr) 120px 120px` to `--rst-cols: minmax(0, 1fr) 120px 120px var(--rst-col-menu)`, add `<span></span>` as the last cell of its head row, and end each of the four data rows (after the `Updated` cell) with, for that row's subject:
 
@@ -4495,7 +4614,7 @@ Expected: PASS already, if Step 4's vendoring is in (the test pins the upgrade p
 
 Read the two blurbs: `jq -r '.strings[] | select(.id=="gallery.assets.shell_js" or .id=="gallery.assets.shell_css") | "\(.id)\t\(.text)"' copy-review/batch2-result.json`.
 
-In `internal/designsystem/designsystem.go`'s `Render`, add `"shell.js": ui.ShellJS(), "shell.css": ui.ShellCSS(),` to `out`, and in the doc comment's tree listing replace the two lines `rastrillo.js select.js datetime.js    the framework's four scripts` / `calendar.js  (calendar.js draws…` with:
+In `internal/designsystem/designsystem.go`'s `Render`, add `"shell.js": ui.ShellJS(), "shell.css": ui.ShellCSS(),` to `out`, and in the doc comment's tree listing (the approved `godoc.designsystem.render_tree`; write its asset lines here and its demo and shell lines in Task 9) replace the two lines `rastrillo.js select.js datetime.js    the framework's four scripts` / `calendar.js  (calendar.js draws…` with:
 
 ```go
 //	shell.css                             the sidebar and console shells'
@@ -5282,7 +5401,12 @@ Update the console block's opening comment ("TWO CHROMES, ONE CONTROL. …") to 
      point: the page is navigation. */
   .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-brand] { display: none; }
   .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
-  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  /* The console's index is the bar, then the rail filling the rest of
+     the screen, then the foot: the root becomes a column at least the
+     viewport tall and the rail takes the slack, so a short nav does not
+     pull the foot up under it. */
+  .rst-shell-console--index, [rst-shell-console~="index"] { display: flex; flex-direction: column; min-block-size: 100dvh; }
+  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; flex: 1 0 auto; gap: 0; padding: var(--rst-sp-5) var(--rst-sp-4); }
   .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { display: block; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); padding-inline: 0.25rem; }
   /* The rows: every link a full-width row, at least 3rem, 1rem text, a
      chevron at the end. The grouping is the markup apps already write,
@@ -5402,6 +5526,7 @@ package ui
 import (
 	"context"
 	"html/template"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -5569,10 +5694,19 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				if after := state(t, ctx); after.Len != before.Len {
 					t.Errorf("the back control grew history %d -> %d; with scripts it reuses the entry behind it", before.Len, after.Len)
 				}
-				visit(t, ctx, rig.Origin+"/orders")
-				follow(t, ctx, "[rst-shell-back] a", `location.pathname === "/" && document.activeElement.id === "nav-orders"`)
 				if len(*thrown) > 0 {
 					t.Errorf("uncaught: %v", *thrown)
+				}
+				// A deep link: a fresh tab opened straight on a section, so
+				// nothing is behind it. The link is followed (history +1)
+				// and focus still comes back to the row, from the record.
+				deep, doneDeep, _ := tab(t, rig, "")
+				defer doneDeep()
+				visit(t, deep, rig.Origin+"/orders")
+				before = state(t, deep)
+				follow(t, deep, "[rst-shell-back] a", `location.pathname === "/" && document.activeElement.id === "nav-orders"`)
+				if after := state(t, deep); after.Len != before.Len+1 {
+					t.Errorf("a deep link's back control: history %d -> %d, want the link followed (+1)", before.Len, after.Len)
 				}
 			})
 		}
@@ -5583,16 +5717,17 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 const boxesJS = `(() => { const b = s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round).join(","); };
   return JSON.stringify({Rail: b("[rst-shell-rail]"), Main: b("[rst-shell-main]")}); })()`
 
-// TestTheWideLayoutIsUnchanged: at 1280 both views are exactly the
-// pre-H layout (the same markup rendered through the legacy layout is
+// TestTheWideLayoutIsUnchanged: at 1280, in both directions, both views
+// are exactly the pre-H layout (the same markup rendered through the legacy layout is
 // the golden), with no back control and no second h1.
 func TestTheWideLayoutIsUnchanged(t *testing.T) {
-	for _, shell := range []string{"sidebar", "console"} {
+	for _, c := range []struct{ shell, dir string }{{"sidebar", "ltr"}, {"sidebar", "rtl"}, {"console", "ltr"}, {"console", "rtl"}} {
+		shell := c.shell
 		src, _ := Layout(shell)
 		pages := map[string]string{
-			"/index":  shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`),
-			"/page":   shellLayoutPage(t, src, "ltr"),
-			"/legacy": shellLayoutPage(t, legacyLayout(t, shell), "ltr"),
+			"/index":  shellLayoutPage(t, src, c.dir, `{{define "view"}}index{{end}}`),
+			"/page":   shellLayoutPage(t, src, c.dir),
+			"/legacy": shellLayoutPage(t, legacyLayout(t, shell), c.dir),
 		}
 		rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
@@ -5608,7 +5743,7 @@ func TestTheWideLayoutIsUnchanged(t *testing.T) {
 		for _, path := range []string{"/index", "/page"} {
 			got, v := read(path)
 			if got["Rail"] != golden["Rail"] || got["Main"] != golden["Main"] {
-				t.Errorf("%s %s at 1280: rail %s main %s; the pre-H layout gives rail %s main %s", shell, path, got["Rail"], got["Main"], golden["Rail"], golden["Main"])
+				t.Errorf("%s %s %s at 1280: rail %s main %s; the pre-H layout gives rail %s main %s", shell, c.dir, path, got["Rail"], got["Main"], golden["Rail"], golden["Main"])
 			}
 			if v.Back || v.Title != "" || v.H1s != 1 {
 				t.Errorf("%s %s at 1280: back %v, title %q, %d h1s; want no back control and only the page's own h1", shell, path, v.Back, v.Title, v.H1s)
@@ -5680,6 +5815,30 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 		if len(got.Bad) > 0 {
 			t.Errorf("%s: %v", path, got.Bad)
 		}
+	}
+}
+
+// TestTheConsoleIndexRailFillsTheScreen: spec §4.8, the console's phone
+// index is the bar, then the rail full screen, then the foot. With a
+// two-link nav the rail must still reach the foot, and the foot the
+// bottom of the window.
+func TestTheConsoleIndexRailFillsTheScreen(t *testing.T) {
+	src, _ := Layout("console")
+	pages := map[string]string{"/": shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`,
+		`{{define "nav"}}<a id="nav-invoices" href="/invoices">Invoices</a><a id="nav-orders" href="/orders">Orders</a>{{end}}`,
+		`{{define "foot"}}<a href="/about">About</a>{{end}}`)}
+	rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	var g struct{ RailBottom, FootTop, FootBottom, VH, NavBottom float64 }
+	chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body"))
+	at(t, ctx, `(() => { const b = s => document.querySelector(s).getBoundingClientRect();
+	  return JSON.stringify({RailBottom: b("[rst-shell-rail]").bottom, NavBottom: b("[rst-shell-nav]").bottom, FootTop: b("[rst-shell-foot]").top, FootBottom: b("[rst-shell-foot]").bottom, VH: innerHeight}); })()`, &g)
+	if g.NavBottom > g.VH/2 {
+		t.Fatalf("the two-link nav ends at %.0f of %.0f; the short-nav case this leg is for has not arisen", g.NavBottom, g.VH)
+	}
+	if math.Abs(g.RailBottom-g.FootTop) > 1 || math.Abs(g.FootBottom-g.VH) > 1 {
+		t.Errorf("the console index: rail ends at %.0f, foot %.0f..%.0f, window %.0f; want the rail to reach the foot and the foot the window's bottom", g.RailBottom, g.FootTop, g.FootBottom, g.VH)
 	}
 }
 
@@ -5916,7 +6075,7 @@ Rewrite the demo's comment block above `demoShell` to say it is four documents, 
 
 In `internal/designsystem/prose.go`, replace the entries for `Three screens, three addresses` and `Every view has its own address, like any rastrillo screen. Turn JavaScript off and it behaves the same. Switching uses CSS.` with entries for the two approved strings, each with eleven translations (the gate fails on the stale keys otherwise).
 
-(e) In `designsystem.go`'s `Render`, write the demo's documents: `docs, err := renderDemo(mount, theme, locale)`; `for name, doc := range docs { out[dir+name] = doc }`. Update the doc comment's tree listing: `<theme>/<locale>/demo.html` and `demo-{dashboard,requests,request}.html`, "144 documents of the demo app, four per gallery".
+(e) In `designsystem.go`'s `Render`, write the demo's documents: `docs, err := renderDemo(mount, theme, locale)`; `for name, doc := range docs { out[dir+name] = doc }`. Update the doc comment's tree listing with the demo and shell lines of the approved `godoc.designsystem.render_tree`.
 
 (f) Shell previews. `shellData` gains `View, Up, PageHref string`; add
 
@@ -6949,7 +7108,7 @@ The drafts. Every one is new user-facing copy: plain, short, an instruction wher
 "id": "docs.templates.phone",
 "section": "templates.md: Shells",
 "label": "New section: On a phone",
-"text": "### On a phone: an index and a way back\n\nBelow 800px, `sidebar` and `console` show each page in one of two ways. Your index page is the list of sections. Every other page shows its content, with a back control at the top that returns to that list. There is no menu button to find.\n\nMark your index page with the `view` block:\n\n```html\n{{define \"view\"}}index{{end}}\n```\n\nGive every other page an `up` block that points back to its own row on the index, and give that row the matching id:\n\n```html\n{{define \"up\"}}/#nav-invoices{{end}}\n{{define \"nav\"}}<a id=\"nav-invoices\" href=\"/invoices\" aria-current=\"page\">Invoices</a>…{{end}}\n```\n\nWith JavaScript off, the fragment brings the reader back to the row they left. With `shell.js`, the back control uses the browser's history when it can, the pages slide, and focus returns to the row. A page with no `view` block is a content page, so a page you forget still shows its content and a way back.\n\nIn `topbar` and `console`, the Menu button on a phone opens a card over the page. A tap outside it, or Escape, closes it. The page underneath does not move.",
+"text": "### On a phone: an index and a way back\n\nBelow 800px, `sidebar` and `console` show each page in one of two ways. Your index page is the list of sections. Every other page shows its content, with a back control at the top that returns to that list. The sections are never behind a menu button: `sidebar` has none, and the console's Menu button holds only its account and language menus.\n\nMark your index page with the `view` block:\n\n```html\n{{define \"view\"}}index{{end}}\n```\n\nGive every other page an `up` block that points back to its own row on the index, and give that row the matching id:\n\n```html\n{{define \"up\"}}/#nav-invoices{{end}}\n{{define \"nav\"}}<a id=\"nav-invoices\" href=\"/invoices\" aria-current=\"page\">Invoices</a>…{{end}}\n```\n\nWith JavaScript off, the fragment brings the reader back to the row they left. With `shell.js`, the back control uses the browser's history when it can, the pages slide, and focus returns to the row. A page with no `view` block is a content page, so a page you forget still shows its content and a way back.\n\nIn `topbar` and `console`, the Menu button on a phone opens a card over the page. A tap outside it, or Escape, closes it. The page underneath does not move.",
 "context": "A new section after the shells' attribute paragraph."
 },
   {
@@ -7169,3 +7328,5 @@ Run against the spec after writing; fixes are already folded into the tasks abov
 **Names used across tasks.** `sizingFixture`, `sizingDoc`, `sizingMux`, `sizingRig`, `requirePointer`, `settleUntil`, `measureFn`, `targetsJS`, `readTargets`, `assertTargets` (Tasks 3-4); `at`, `probe`, `clickAndLand`, `clickAndStay`, `home` (Task 5); `rowMenuItems`, `rowMenuItem`, `normaliseMarkup` (Task 6); `topbarPage`, `cardRig`, `readCard`, `menuAround`, `TAIL` (Task 7); `ShellJS`, `ShellCSS`, `assertReducedMotion`, `assertTwins`, `assertNoOrphans`, `tab`, `visit`, `follow`, `state`, `scaffoldWithReplace`, `goTestIn` (Task 8); `shellLayoutPage`, `shellAssets`, `legacyLayout`, `demoPageHref`, `shellPageHref` (Task 9); `twoPageShells`, `scaffoldOverview`, `oldShellLayout`, `doctorLayoutAdvisory` (Task 10); `SpeculationRulesPath`, `NoSpeculationRules`, `serveSpeculationRules` (Task 11).
 
 **Plan review round 1 (Astra, 2026-10-01): not ready; 4 Blockers, 10 Important, 2 Minor, all folded in.** rowMenuItems no longer treats a nil or empty `Hidden` as carried (Task 6); Task 8's drive links no tokens.css so the rail it focuses is visible before Task 9's index rules, and Task 9 runs the same journeys on the real layouts with scripts; the translated-page sweep's exact count gains the five new documents (Task 9); the legacy drawer gets a fixture of its own so its inventory row stays measured (Task 4); public Go docs, partial contracts and scaffolded-app text join copy batch 2, which moved to right after Task 1 with the shell blurbs; `clickAndLand` waits for the destination's own marker and `clickAndStay` observes navigation requests over CDP instead of timing them; the target drive's ownership no longer accepts any descendant of a stretched row, and every inventory row must have a measured element; the spinner test reads the label's line boxes; the controls in a row are operated at both widths; a unit test holds one identity link per row; every task runs `make ci` before it pushes; the card's rules sit after the console's own; the changelog draft no longer overclaims.
+
+**Plan review round 2 (Astra, 2026-10-01): round-1 findings 1-4, 9, 13-16 resolved, the rest partly; 2 new Blockers, 5 Important, 2 Minor, all folded in.** The locale menu gets a fixture of its own (Task 4); the controls-in-a-row drive puts the three controls in one stacked cell so the narrow three-column grid cannot put a date field in the kebab column, `probe` scrolls its target into view, and the date input is hit-tested clear of its picker (Task 5); every rendered control must be measured, a menu inside a shell tail is opened with its sibling disclosure, and the type drive names its fixture fields (Task 4); the gallery's row-menu sample labels, the styleguide sample's items and the gallery renderer's doc listing join copy batch 2; `ui/rows_test.go` is staged; the real-layout deep link runs in a fresh tab and the wide comparison runs in both directions (Task 9); the console's phone index fills the screen down to its foot, with a drive (Task 9); the identity-link reader reads both spellings and exact class tokens; the phone docs no longer say the console has no menu button.
