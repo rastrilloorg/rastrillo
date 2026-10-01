@@ -2256,7 +2256,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-row-menu > summary, [rst-row-menu] > summary { block-size: var(--rst-tap); inline-size: var(--rst-tap); }
   .rst-selbox, [rst-selbox] { box-sizing: border-box; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); padding: 0; }
   .rst-lrow > .rst-nm, [rst-lrow] > .rst-nm { align-content: center; display: grid; min-block-size: var(--rst-tap); }
-  a.rst-person, a[rst-person] { min-block-size: var(--rst-tap); }
+  a.rst-person, a[rst-person] { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
 
   .rst-pagination a, [rst-pagination] a, .rst-pagination span, [rst-pagination] span { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
   .rst-seg-tabs a, [rst-seg-tabs] a { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
@@ -2265,7 +2265,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   /* flex: none because the bar is a flex row that, at 390, shrank the
      close link to 26px wide to make room for the escalate link's text. */
   .rst-bulkbar__close, [rst-bulkbar-close] { block-size: var(--rst-tap); flex: none; inline-size: var(--rst-tap); }
-  .rst-bulkbar__escalate, [rst-bulkbar-escalate] { align-items: center; display: inline-flex; min-block-size: var(--rst-tap); }
+  .rst-bulkbar__escalate, [rst-bulkbar-escalate] { align-items: center; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
   .rst-modal-close, [rst-modal-close] { align-items: center; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
   .rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-items: center; display: flex; min-block-size: var(--rst-tap); }
   .rst-back-nav a, [rst-back-nav] a { align-items: center; display: inline-flex; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }

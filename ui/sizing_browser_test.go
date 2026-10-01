@@ -433,6 +433,8 @@ var fixtureCounts = []struct {
 	{`[data-partial="bulk-bar"] [rst-dropdown-menu] button`, 2},
 	{`[data-partial="seg-tabs"] a`, 2},
 	{`[data-partial="dropdown"] [rst-dropdown-menu] a`, 1},
+	{`[data-extra="short-labels"] [rst-bulkbar-escalate]`, 1},
+	{`[data-extra="short-labels"] a[rst-person]`, 1},
 }
 
 func assertFixtureCounts(t *testing.T, ctx context.Context, where string) {
@@ -535,6 +537,7 @@ const calJS = `(() => {
   const r = cal.getBoundingClientRect(), g = cal.querySelector("[rst-cal-grid]").getBoundingClientRect(), cs = getComputedStyle(cal);
   return JSON.stringify({Open: true, Position: cs.position, InlineSize: cs.inlineSize, Left: r.left, Top: r.top, Right: r.right, Bottom: r.bottom, H: r.height,
     VW: document.documentElement.clientWidth, VH: innerHeight, GridW: g.width, ScrollH: cal.scrollHeight, ClientH: cal.clientHeight,
+    Gutter: cal.offsetWidth - cal.clientWidth - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth),
     Days: cal.querySelectorAll("[rst-cal-day]").length, Navs: cal.querySelectorAll("[rst-cal-nav]").length,
     MinDayW: minW, MinDayH: minH, Unhittable: unhittable});
 })()`
@@ -544,6 +547,7 @@ type calReading struct {
 	Position, InlineSize                      string
 	Left, Top, Right, Bottom, H, VW, VH       float64
 	GridW, ScrollH, ClientH, MinDayW, MinDayH float64
+	Gutter                                    float64
 	Days, Navs                                int
 	Unhittable                                []string
 }
@@ -610,14 +614,36 @@ func TestTheCalendarDocksAndItsDaysAreTaps(t *testing.T) {
 		t.Errorf("390 touch: the grid is %.1fpx, want seven taps (308)", c.GridW)
 	}
 
+	// The pointer half of the query alone: a tablet wider than 40rem
+	// docks too (spec §1.4), so a docking rule scoped to width only
+	// would leave it the anchored 18rem panel with 41px days.
+	c = openCalendar(t, ctx, touch.Origin+"/", 1024, 768)
+	if c.Position != "fixed" || !inViewport(c) {
+		t.Errorf("1024 touch: the calendar is %s at %.0f..%.0f × %.0f..%.0f in a %.0f×%.0f viewport; it is not docked inside it", c.Position, c.Left, c.Right, c.Top, c.Bottom, c.VW, c.VH)
+	}
+	if c.MinDayW < 43.5 || c.MinDayH < 43.5 {
+		t.Errorf("1024 touch: the smallest day is %.1f×%.1f, want 44×44", c.MinDayW, c.MinDayH)
+	}
+	if math.Abs(c.GridW-308) > 0.5 {
+		t.Errorf("1024 touch: the grid is %.1fpx, want seven taps (308)", c.GridW)
+	}
+
 	c = openCalendar(t, ctx, touch.Origin+"/", 640, 320)
 	if c.H > c.VH+0.5 || c.ScrollH <= c.ClientH || len(c.Unhittable) > 0 {
 		t.Errorf("640x320 touch: panel %.0fpx in a %.0fpx viewport, scrolls=%v, unreachable %v", c.H, c.VH, c.ScrollH > c.ClientH, c.Unhittable)
 	}
 
 	c = openCalendar(t, ctx, touch.Origin+"/", 320, 640)
-	if c.MinDayW < 24 || c.MinDayH < 43.5 || c.Right > c.VW+0.5 || c.Left < -0.5 {
-		t.Errorf("320 touch: days %.1f×%.1f, panel %.0f..%.0f in %.0f; the approved exception is ≥24 wide, 44 tall, no overflow", c.MinDayW, c.MinDayH, c.Left, c.Right, c.VW)
+	// 40, not 24: 24 is WCAG 2.5.8's floor, but the exception the
+	// operator approved is the geometry of a clamped panel, about 41px
+	// days, and a regression to anything narrower is a change to it.
+	// That is a phone's geometry, whose overlay scrollbar takes no
+	// width. Headless Chromium hides scrollbars without making them
+	// overlay ones, so scrollbar-gutter: stable still reserves a classic
+	// 15px here and takes a seventh of it from each day (38.7px); the
+	// gutter is measured and given back, so the floor is the phone's.
+	if phone := c.MinDayW + c.Gutter/7; phone < 40 || c.MinDayH < 43.5 || c.Right > c.VW+0.5 || c.Left < -0.5 {
+		t.Errorf("320 touch: days %.1f×%.1f (%.1f wide without the %.0fpx gutter), panel %.0f..%.0f in %.0f; the approved exception is about 41 wide, 44 tall, no overflow", c.MinDayW, c.MinDayH, phone, c.Gutter, c.Left, c.Right, c.VW)
 	}
 
 	c = openCalendar(t, ctx, touch.Origin+"/end", 390, 844)
@@ -652,6 +678,9 @@ func TestTheCalendarDocksAndItsDaysAreTaps(t *testing.T) {
 			}
 			if c.MinDayW < 43.5 {
 				t.Errorf("%s: a day is %.1fpx wide; the scrollbar's gutter came out of the days", where, c.MinDayW)
+			}
+			if c.MinDayH < 43.5 {
+				t.Errorf("%s: a day is %.1fpx tall, want 44", where, c.MinDayH)
 			}
 			if math.Abs(c.GridW-308) > 0.5 {
 				t.Errorf("%s: the grid is %.1fpx, want exactly seven taps (308)", where, c.GridW)

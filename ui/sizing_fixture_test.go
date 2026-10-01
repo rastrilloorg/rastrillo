@@ -60,6 +60,16 @@ func sizingFixture(t *testing.T) string {
 			{Code: "ja", Name: "日本語", Href: "/ja/orders"},
 		},
 	}) + `</div>`)
+	// Controls narrower than a tap by their content or their container,
+	// which only a min-inline-size lifts: an escalate link whose label is
+	// one short word, and a person link in a column narrower than a tap
+	// (its base rule's min-width: 0 lets the track shrink it).
+	b.WriteString(`<style>.sizing-narrow { display: grid; grid-template-columns: 36px; }</style><div rst-page data-extra="short-labels">` +
+		render(t, "bulk-bar", map[string]any{
+			"DoneHref": "/orders", "DoneLabel": "Done selecting", "Count": "3 selected",
+			"EscalateHref": "/orders?select=all", "EscalateLabel": "All", "MenuLabel": "Actions", "MenuGroup": "rst-sizing-short",
+		}) +
+		`<div class="sizing-narrow">` + render(t, "person", map[string]any{"Href": "/people/al", "Name": "Al", "Initial": "A"}) + `</div></div>`)
 	samples := Styleguide()
 	names := make([]string, 0, len(samples))
 	for name := range samples {
