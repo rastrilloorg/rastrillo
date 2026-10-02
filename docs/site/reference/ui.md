@@ -109,6 +109,24 @@ touch the layout when the delivery mode changes.
 
 `WithT` rebinds the `T` function.
 
+## WithLocale
+
+`WithLocale(locale string) Option` sets the locale used to format quantities. An empty or invalid locale uses English. Bind it with the other `ui.Funcs` options on each request's cloned template. Use `{{number .Count}}` for quantities in custom templates. It groups numeric Go values without rounding away decimal places. The helper also groups plain integer strings within the `int64` or `uint64` range. It leaves strings with leading zeros, decimal strings, currency or percent text, and abbreviations unchanged.
+
+`stat.Value` and pagination item labels call `number` automatically. Detail lists, badges, list rows and meters call `displayValue`, which formats numeric Go values and preserves strings. Detail-list entries with `DateTime` keep their existing formatting. Keep identifiers, years and versions as strings. Use these helpers for display text, leaving input values, URLs and machine-readable attributes unformatted. Both helpers work without JavaScript.
+
+```go
+page, err := base.Clone()
+if err != nil {
+    return err
+}
+page.Funcs(ui.Funcs(
+    ui.WithT(translate),
+    ui.WithIcons(icons.Icon, icons.Assets),
+    ui.WithLocale(rastrillo.LocaleFrom(r)),
+))
+```
+
 ## FuncsWith
 
 ```go

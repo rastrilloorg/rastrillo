@@ -308,7 +308,7 @@ func partialTree(locale string) (*template.Template, error) {
 // sets have different owners: an app can override a rastrillo.ui.* key,
 // and nothing outside this package has any business in prose.go.
 func galleryFuncs(locale string) template.FuncMap {
-	funcs := ui.Funcs(ui.WithT(translator(locale)))
+	funcs := ui.Funcs(ui.WithT(translator(locale)), ui.WithLocale(locale))
 	funcs["P"] = func(key string, args ...any) string { return proseIn(locale, key, args...) }
 	return funcs
 }

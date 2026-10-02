@@ -17,6 +17,7 @@ import (
 type Option func(*config)
 
 type config struct {
+	locale string
 	icon   func(string) template.HTML
 	assets func() template.HTML
 	t      func(key string, args ...any) string
@@ -116,7 +117,7 @@ func WithT(t func(key string, args ...any) string) Option {
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
 // An app is free to add its own entries on top; it must not drop these
-// fourteen. The shipped partials and shells stop parsing without most
+// sixteen. The shipped partials and shells stop parsing without most
 // of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -131,8 +132,10 @@ func Funcs(opts ...Option) template.FuncMap {
 	return template.FuncMap{
 		"dict": dict, "list": list, "menuGroup": menuGroup, "searchClear": searchClear,
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
-		"dateWords": dateWords(c.t),
-		"opt":       opt, "Tbdi": tbdi(c.t),
+		"dateWords":    dateWords(c.t),
+		"number":       func(v any) any { return formatNumber(v, c.locale, true) },
+		"displayValue": func(v any) any { return formatNumber(v, c.locale, false) },
+		"opt":          opt, "Tbdi": tbdi(c.t),
 		"stageArt":   stageArt,
 		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
 	}

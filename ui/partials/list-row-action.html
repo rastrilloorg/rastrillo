@@ -38,7 +38,7 @@
   {{- if .Lead}}
   <span rst-row-lead data-lead="{{.Lead}}" aria-hidden="true">{{if .LeadInitial}}{{.LeadInitial}}{{end}}</span>
   {{- end}}
-  <span rst-row-main><a href="{{.Href}}">{{.Main}}</a>{{if .Sub}}<small rst-row-sub>{{.Sub}}</small>{{end}}</span>
+  <span rst-row-main><a href="{{.Href}}">{{displayValue .Main}}</a>{{if .Sub}}<small rst-row-sub>{{displayValue .Sub}}</small>{{end}}</span>
   {{- if .StatusLabel}}
   {{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
   {{- end}}
