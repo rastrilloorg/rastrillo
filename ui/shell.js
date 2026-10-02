@@ -64,10 +64,15 @@
   // of storage taken before the reader left the page, and pagereveal at
   // activation is the first moment the fresh record is there. The record
   // wins over the fragment: after going back to /#nav-invoices and then
-  // visiting Orders, a history return restores the old fragment.
+  // visiting Orders, a history return restores the old fragment. The
+  // record is taken before the width test: an index revealed wide would
+  // otherwise leave it behind, and a later phone-width index reached some
+  // other way would focus a link the reader left long ago.
   function returnFocus() {
-    if (document.prerendering || !view(INDEX) || !matchMedia(NARROW).matches) return;
-    var rec = take(RETURN), links = document.querySelectorAll(NAV), hit = null, i, id;
+    if (document.prerendering || !view(INDEX)) return;
+    var rec = take(RETURN), links, hit = null, i, id;
+    if (!matchMedia(NARROW).matches) return;
+    links = document.querySelectorAll(NAV);
     for (i = 0; rec && !hit && i < links.length; i++) {
       if (place(links[i].href) === rec) hit = links[i];
     }
@@ -87,8 +92,11 @@
   function reveal(e) {
     var back = take(WENT_BACK) === "1", a = window.navigation && navigation.activation;
     if (!back && a && a.navigationType === "traverse" && a.from && a.entry) back = a.entry.index < a.from.index;
-    if (e.viewTransition) e.viewTransition.types.add(back ? "back" : "forward");
+    // Focus first, and the type only where there is a set to add it to:
+    // an engine with cross-document transitions but no types must not
+    // turn a cosmetic step into a throw that skips the focus return.
     returnFocus();
+    if (e.viewTransition && e.viewTransition.types) e.viewTransition.types.add(back ? "back" : "forward");
   }
   if ("onpagereveal" in window) window.addEventListener("pagereveal", reveal);
   else window.addEventListener("pageshow", returnFocus);

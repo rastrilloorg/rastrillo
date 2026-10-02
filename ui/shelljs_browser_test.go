@@ -319,6 +319,46 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 		settleUntil(t, ctx2, `document.activeElement.id === "nav-café"`)
 	})
 
+	// An engine with cross-document view transitions but no types: the
+	// stub, installed before shell.js's listener, hands every reveal a
+	// transition without a types set. The slide's direction is cosmetic;
+	// the focus return must still happen and nothing may throw.
+	t.Run("a transition with no types: focus still returns", func(t *testing.T) {
+		const untyped = `addEventListener("pagereveal", e => Object.defineProperty(e, "viewTransition", {value: {}}));`
+		ctx, done, thrown := tab(t, rig, untyped)
+		defer done()
+		visit(t, ctx, rig.Origin+"/")
+		follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices"`)
+		follow(t, ctx, "#back", `location.pathname === "/"`)
+		settleUntil(t, ctx, `document.activeElement.id === "nav-invoices"`)
+		if len(*thrown) > 0 {
+			t.Errorf("a transition without types broke the script: %v", *thrown)
+		}
+	})
+
+	// A record left by a content page is taken by the next index revealed,
+	// whatever its width. Left behind by a wide reveal, it would focus a
+	// stale link on the next phone-width index reached without leaving a
+	// page (here, a reload of the index).
+	t.Run("a wide reveal consumes the record", func(t *testing.T) {
+		ctx, done, _ := tab(t, rig, "")
+		defer done()
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 800)); err != nil {
+			t.Fatal(err)
+		}
+		visit(t, ctx, rig.Origin+"/b/invoices")
+		follow(t, ctx, "#back", `location.pathname === "/b/"`)
+		revealed(t, ctx)
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844)); err != nil {
+			t.Fatal(err)
+		}
+		visit(t, ctx, rig.Origin+"/b/")
+		revealed(t, ctx)
+		if s := state(t, ctx); s.Focus != "BODY" {
+			t.Errorf("a phone-width index reached by reload focused %q: a record from a wide reveal was left behind", s.Focus)
+		}
+	})
+
 	// An index left in the default page view carries a back control whose
 	// up is the page itself. After a same-page #fragment, the entry behind
 	// is that same URL but the same document, and going back to it would

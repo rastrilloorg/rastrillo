@@ -368,7 +368,7 @@ func TestSelectContract(t *testing.T) {
 	}
 }
 
-// No scaffolded script may reach off-origin: all five are vendored,
+// No scaffolded script may reach off-origin: all six are vendored,
 // first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
 	for name, js := range map[string]string{
