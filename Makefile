@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt root chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci gofmt root staticcheck chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -28,7 +28,7 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt money root chromedp-graph gorm-free race \
+ci: gofmt money root staticcheck chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
@@ -58,6 +58,28 @@ root:
 	go build ./...
 	go vet ./...
 	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) go test ./... -count=1
+
+# staticcheck catches what vet does not: deprecated APIs, values that are
+# never read, and the &*x that looks like a copy and is not (SA4001 found
+# exactly that in assertion's tests). staticcheck.conf at the root says
+# which checks; every module below inherits it.
+#
+# go run with a version, not a tool directive: rastrillo is a library, and
+# a tool's requirements in this go.mod would join every consuming app's
+# module graph. cmd/rastrillo's staticcheckVersion is the scaffold's copy
+# of this pin, and a test fails if the two disagree. Bump it alongside the
+# go directive - a staticcheck older than the Go it reads does not know
+# that release's deprecations, and says nothing.
+#
+# -tags browser because no file is excluded by it: it is a strict superset
+# of the plain build, and it is the only way the browser drives get read.
+# The examples' rastrillo_actions files stay out - they are generator
+# input, rewritten before they compile.
+STATICCHECK := honnef.co/go/tools/cmd/staticcheck@v0.7.0
+staticcheck:
+	go run $(STATICCHECK) -tags browser ./...
+	cd money && go run $(STATICCHECK) ./...
+	@for e in $(EXAMPLES); do echo "staticcheck examples/$$e"; (cd examples/$$e && go run $(STATICCHECK) ./...) || exit 1; done
 
 # The README promises chromedp stays out of the ordinary build graph.
 # This is that sentence, executable.
@@ -189,7 +211,7 @@ mirror-check:
 	echo "with an ordinary amadan branch merge (not -squash), then: make mirror"; \
 	exit 1
 
-root money chromedp-graph race build-cli browser: | $(BIN)/tmp
+root staticcheck money chromedp-graph race build-cli browser: | $(BIN)/tmp
 
 $(BIN)/tmp:
 	mkdir -p "$@"

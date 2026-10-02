@@ -101,7 +101,7 @@ func extractToolLit(lit *ast.CompositeLit) (rastrillo.Tool, error) {
 	for _, el := range lit.Elts {
 		kv, ok := el.(*ast.KeyValueExpr)
 		if !ok {
-			return t, fmt.Errorf("Tool literal must use Field: value form")
+			return t, fmt.Errorf("a rastrillo.Tool literal must use Field: value form")
 		}
 		var err error
 		switch keyName(kv.Key) {
@@ -146,7 +146,7 @@ func stringLit(e ast.Expr) (string, error) {
 func accessLit(e ast.Expr) (rastrillo.Access, error) {
 	sel, ok := e.(*ast.SelectorExpr)
 	if !ok {
-		return 0, fmt.Errorf("Access must be rastrillo.ToolRead or rastrillo.ToolWrite")
+		return 0, fmt.Errorf("the Access field must be rastrillo.ToolRead or rastrillo.ToolWrite")
 	}
 	switch sel.Sel.Name {
 	case "ToolRead":
@@ -160,13 +160,13 @@ func accessLit(e ast.Expr) (rastrillo.Access, error) {
 func stringMapLit(e ast.Expr) (map[string]string, error) {
 	cl, ok := e.(*ast.CompositeLit)
 	if !ok {
-		return nil, fmt.Errorf("Args must be a map[string]string literal")
+		return nil, fmt.Errorf("the Args field must be a map[string]string literal")
 	}
 	out := map[string]string{}
 	for _, el := range cl.Elts {
 		kv, ok := el.(*ast.KeyValueExpr)
 		if !ok {
-			return nil, fmt.Errorf("Args entries must be \"name\": \"description\"")
+			return nil, fmt.Errorf("each Args entry must be \"name\": \"description\"")
 		}
 		k, err := stringLit(kv.Key)
 		if err != nil {

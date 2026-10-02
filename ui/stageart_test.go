@@ -8,7 +8,12 @@ import (
 )
 
 func TestStageArtIsDeterministicPerSeed(t *testing.T) {
-	if stageArt("fichas") != stageArt("fichas") {
+	// Two separate calls, compared: written inline as
+	// stageArt("fichas") != stageArt("fichas") it reads as an expression
+	// compared with itself, which is the very thing this test exists to
+	// rule out at run time.
+	first, second := stageArt("fichas"), stageArt("fichas")
+	if first != second {
 		t.Fatal("one seed drew two pictures; an app's backdrop must not change between loads")
 	}
 	if stageArt("fichas") == stageArt("harbour") {

@@ -741,17 +741,6 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 	}
 }
 
-// themeLocaleOfPath reads a page's theme and locale out of its path.
-// The tree root is the default theme in English by definition, the same
-// way localeOfPath treats it.
-func themeLocaleOfPath(p string) (theme, locale string) {
-	parts := strings.Split(path.Clean(p), "/")
-	if len(parts) < 3 {
-		return RootTheme(), "en"
-	}
-	return parts[0], parts[1]
-}
-
 // Every theme × locale × page kind × shell combination is present, plus
 // the root index and the eight shared assets — the tree's shape is part
 // of its contract with the website's sync script. The page kinds come
@@ -2130,10 +2119,7 @@ func TestTheSectionTabsNameEveryPage(t *testing.T) {
 					t.Errorf("%s: no section tab strip", name)
 					continue
 				}
-				var links [][]string
-				for _, m := range regexp.MustCompile(`<a href="([^"]*)"([^>]*)>([^<]*)</a>`).FindAllStringSubmatch(found, -1) {
-					links = append(links, m)
-				}
+				links := regexp.MustCompile(`<a href="([^"]*)"([^>]*)>([^<]*)</a>`).FindAllStringSubmatch(found, -1)
 				if len(links) != len(pageKinds()) {
 					t.Errorf("%s: the section tabs have %d entries, want one per page kind (%d)", name, len(links), len(pageKinds()))
 					continue

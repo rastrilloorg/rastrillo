@@ -149,8 +149,7 @@ func loadPayload(dir string) (dump.Payload, error) {
 func openExistingDB(path string) (*db.DB, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("no database at %q: %w\n"+
-			"baseline and status both read a database that already exists — neither creates one. "+
-			"Check the path.", path, err)
+			"baseline and status read a database that already exists and never create one, so check the path", path, err)
 	}
 	return db.Open(path, nil)
 }

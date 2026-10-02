@@ -42,7 +42,7 @@ docs/site/templates.md
 The scaffolded `AGENTS.md` is the source of truth for that app's code;
 this file stays the framework's. `rastrillo generate` writes `gen/`
 from `manifest/` — commit it, never hand-edit; add `generate --check`
-to `make ci`. `rastrillo dev` watches, regenerates, rebuilds and
+to `make ci`. `make ci` also runs staticcheck, pinned in the Makefile; raise the pin when you raise the go directive. `rastrillo dev` watches, regenerates, rebuilds and
 restarts. docs/site/getting-started.md
 
 `rastrillo doctor [--fix]` compares `static/`'s vendored files with the

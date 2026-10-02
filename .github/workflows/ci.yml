@@ -55,6 +55,11 @@ jobs:
           go vet ./...
           go test ./... -count=1
 
+      # The Makefile target, not a copy of its commands: the pinned
+      # version and the module list live in one place.
+      - name: staticcheck
+        run: make staticcheck
+
       # The README promises that chromedp stays out of the ordinary
       # build graph. This is that sentence, executable.
       - name: chromedp stays out of the ordinary build graph

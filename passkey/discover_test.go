@@ -145,7 +145,7 @@ func TestListRenameRemove(t *testing.T) {
 	a, _ := authtest.New()
 	cookie = enroll(t, e, cookie, a)
 	b, _ := authtest.New()
-	cookie = enrollLabelled(t, e, cookie, b, "Work laptop")
+	enrollLabelled(t, e, cookie, b, "Work laptop")
 
 	list, err := e.h.List("alice")
 	if err != nil || len(list) != 2 {

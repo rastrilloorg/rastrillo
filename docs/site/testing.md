@@ -41,10 +41,9 @@ than migrating every time.
 make ci
 ```
 
-is `vet` + `fmt` + `test` + `rastrillo migration check`, and it is the
-one gate definition. `.amadan/ci` and `.amadan/ci.d/` are executable
-steps that delegate to it, so the CI runner and your terminal cannot
-disagree about what passing means.
+is `vet` + `fmt` + `staticcheck` + `test` + `rastrillo migration check`, and it is the one gate definition. `.amadan/ci` and `.amadan/ci.d/` are executable steps that delegate to it, so the CI runner and your terminal cannot disagree about what passing means.
+
+staticcheck runs at a pinned version through `go run`, so there is nothing to install. Raise that version in the Makefile when you raise the `go` line in go.mod: a staticcheck older than your Go does not know that release's deprecations, and says nothing about them.
 
 Keeping [`migration check`](/docs/migrations) in that gate is what stops
 models and migrations drifting apart between deploys. It touches no

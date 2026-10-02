@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: a new app's `make ci` runs staticcheck
+
+`rastrillo new` now gives an app a `staticcheck` target, runs it from `make ci`, and adds a `.amadan/ci.d/25-staticcheck` step. It goes through `go run` at the version rastrillo's own gate uses, so nothing needs installing. Apps scaffolded earlier keep their old gate; to add it, put this in the Makefile and add `staticcheck` to the `ci:` line:
+
+```make
+STATICCHECK := honnef.co/go/tools/cmd/staticcheck@v0.7.0
+staticcheck:
+	go run $(STATICCHECK) -tags browser ./...
+```
+
+A first run on an older app may report findings its gate never looked for. Rastrillo's own `make ci` runs staticcheck too.
+
 ### Fixed: a date button that opens the browser's panel claims no popup
 
 Without calendar.js on the page, `datetime.js`'s date button hands over

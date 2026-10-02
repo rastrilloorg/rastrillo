@@ -35,14 +35,14 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 
 	for _, rel := range []string{
 		"Makefile", "CLAUDE.md", "manifest/README.md",
-		".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/30-test",
+		".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test",
 	} {
 		if _, err := os.Stat(filepath.Join("demoapp", rel)); err != nil {
 			t.Errorf("scaffold missing %s: %v", rel, err)
 		}
 	}
 
-	for _, rel := range []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/30-test"} {
+	for _, rel := range []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test"} {
 		fi, err := os.Stat(filepath.Join("demoapp", rel))
 		if err != nil {
 			continue
@@ -53,8 +53,14 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	}
 
 	mk, _ := os.ReadFile(filepath.Join("demoapp", "Makefile"))
-	if !strings.Contains(string(mk), "ci: vet fmt-check test") {
+	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck test migration-check") {
 		t.Fatalf("Makefile must define the one ci gate:\n%s", mk)
+	}
+	if !strings.Contains(string(mk), "honnef.co/go/tools/cmd/staticcheck@"+staticcheckVersion) {
+		t.Fatalf("Makefile must pin staticcheck at %s, the version rastrillo's own gate runs:\n%s", staticcheckVersion, mk)
+	}
+	if step, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", "25-staticcheck")); !strings.Contains(string(step), "exec make staticcheck") {
+		t.Fatalf("the staticcheck step must exec its Makefile target:\n%s", step)
 	}
 	step, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", "10-vet"))
 	if !strings.Contains(string(step), "exec make vet") {
@@ -530,5 +536,21 @@ func apiVersion(t *testing.T, bin, dir string) string {
 			t.Fatalf("%s never answered %s: %v\napp stderr:\n%s", abs, url, err, stderr.String())
 		}
 		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// TestStaticcheckPinMatchesRastrillosGate keeps the two pins one pin. The
+// scaffold's Makefile and rastrillo's own are separate files that would
+// otherwise drift: bump one and a fresh app is linted by a different
+// release than the framework that generated it, so a finding can pass
+// one gate and fail the other.
+func TestStaticcheckPinMatchesRastrillosGate(t *testing.T) {
+	mk, err := os.ReadFile(filepath.Join("..", "..", "Makefile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "STATICCHECK := honnef.co/go/tools/cmd/staticcheck@" + staticcheckVersion + "\n"
+	if !strings.Contains(string(mk), want) {
+		t.Fatalf("rastrillo's Makefile does not pin staticcheck at %s (cmd/rastrillo's staticcheckVersion); want the line %q", staticcheckVersion, want)
 	}
 }

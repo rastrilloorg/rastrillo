@@ -40,13 +40,12 @@ const (
 	// anything this package would ever encode.
 	maxArgonMemory = 1024 * 1024 // 1 GiB
 	maxArgonTime   = 64
-	maxIterations  = 10_000_000
-
-	// pbkdf2Iterations is the count earlier versions of this package
-	// encoded (the OWASP floor for PBKDF2-SHA256). Verify still honours
-	// those hashes; NeedsRehash reports them, and an app upgrades each
-	// at the one moment it holds the plaintext.
-	pbkdf2Iterations = 600_000
+	// Earlier versions of this package encoded PBKDF2-SHA256 at 600,000
+	// iterations (the OWASP floor). Verify still honours those hashes,
+	// reading the count from the hash itself under this ceiling;
+	// NeedsRehash reports them, and an app upgrades each at the one
+	// moment it holds the plaintext.
+	maxIterations = 10_000_000
 )
 
 // Hash derives an Argon2id hash of password and encodes it as
