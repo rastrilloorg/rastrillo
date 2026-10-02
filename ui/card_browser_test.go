@@ -22,6 +22,12 @@ import (
 // page far enough down that the card never covers it.
 func topbarPage(t *testing.T, dir string) string {
 	t.Helper()
+	return topbarPageWith(t, dir, `<h1>Posts</h1><div class="spacer"></div><p><a id="main-link" href="/go/main">A link in the page</a></p><div class="spacer"></div>`)
+}
+
+// topbarPageWith is topbarPage with content of the caller's choosing.
+func topbarPageWith(t *testing.T, dir, content string) string {
+	t.Helper()
 	src, ok := Layout("topbar")
 	if !ok {
 		t.Fatal("no topbar layout")
@@ -35,7 +41,7 @@ func topbarPage(t *testing.T, dir string) string {
 		`{{define "nav"}}<a id="nav-posts" href="/go/posts" aria-current="page">Posts</a><a id="nav-drafts" href="/go/drafts">Drafts</a><a id="nav-settings" href="/go/settings">Settings</a>{{end}}`,
 		`{{define "account"}}<a id="acct-profile" href="/go/profile">Profile</a><a href="/go/signout">Sign out</a>{{end}}`,
 		`{{define "locale"}}<details rst-dropdown rst-locale id="bar-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="/go/en" lang="en">English</a><a href="/go/ga" lang="ga">Gaeilge</a></div></details>{{end}}`,
-		`{{define "content"}}<h1>Posts</h1><div class="spacer"></div><p><a id="main-link" href="/go/main">A link in the page</a></p><div class="spacer"></div>{{end}}`,
+		`{{define "content"}}` + content + `{{end}}`,
 		`{{define "head"}}<style>.spacer { block-size: 450px; }</style>{{end}}`,
 	} {
 		template.Must(tmpl.Parse(def))
@@ -268,4 +274,72 @@ func TestTheCardsControlsAreTaps(t *testing.T) {
 		t.Fatalf("measured %d controls in the open card, want exactly 6: the Menu summary, three nav rows, the account and language summaries", len(got))
 	}
 	assertTargets(t, "390 touch, the open card", got)
+}
+
+// TestAModalCoversTheTopbarOnAPhone: the bar is lifted above in-page
+// menu panels only while its card is open. Lifted for good, it painted
+// over a modal's scrim (fixed, z-index 10, inside main) on a phone: the
+// bar stayed undimmed and live, and its Menu could open a card over the
+// modal. Read at the brand and at the Menu summary, the two things a tap
+// on a phone's bar reaches.
+func TestAModalCoversTheTopbarOnAPhone(t *testing.T) {
+	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPageWith(t, "ltr", Styleguide()["modal"])}, true)
+	defer cancel()
+	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible("[rst-modal-overlay]", chromedp.ByQuery))
+	requirePointer(t, ctx, true)
+	for _, sel := range []string{"[rst-shell-brand]", "[rst-shell-menu] > summary"} {
+		var hit string
+		mustRun(t, ctx, chromedp.Evaluate(`(() => { const r = document.querySelector(`+"`"+sel+"`"+`).getBoundingClientRect();
+		  const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+		  return !h ? "nothing" : h.closest("[rst-modal-overlay]") ? "overlay" : h.tagName + (h.getAttributeNames().filter(n => n.startsWith("rst-")).map(n => "[" + n + "]").join("")); })()`, &hit))
+		if hit != "overlay" {
+			t.Errorf("a tap on %s with a modal open lands on %s, want the modal's overlay: the bar paints above the scrim", sel, hit)
+		}
+	}
+}
+
+// TestAClickOnTheDocumentItselfDoesNotThrow: a click whose target is the
+// document (a script's synthetic dispatch) has no closest(), and light
+// dismiss runs in a capture listener on every click, so a throw there
+// is an error on every such dispatch and leaves any open menu open.
+func TestAClickOnTheDocumentItselfDoesNotThrow(t *testing.T) {
+	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, "ltr")}, true)
+	defer cancel()
+	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+	// The shim is deferred; the drive starts once it has bound, which
+	// the account menu closing on an outside click shows.
+	settleUntil(t, ctx, `(() => { const a = document.querySelector("[rst-shell-account]"); a.open = true; document.body.click(); return !a.open; })()`)
+	var got string
+	mustRun(t, ctx, chromedp.Evaluate(`(() => { let err = "none"; addEventListener("error", e => { err = e.message; });
+	  const a = document.querySelector("[rst-shell-account]"); a.open = true;
+	  document.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	  return err + (a.open ? " (menu left open)" : ""); })()`, &got))
+	if got != "none" {
+		t.Errorf("a click dispatched on the document: %s; want no error and the open menu closed", got)
+	}
+}
+
+// TestTheCardFitsTheSmallestPhone: at 320, with this rig's classic
+// scrollbar gutter reserved, the card stays inside the page at its
+// inline start too. Sized from the viewport (100vw) it counted the
+// gutter as room and overhung the start edge by 3px.
+func TestTheCardFitsTheSmallestPhone(t *testing.T) {
+	for _, dir := range []string{"ltr", "rtl"} {
+		t.Run(dir, func(t *testing.T) {
+			rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, dir)}, true)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(320, 640), chromedp.Navigate(rig.Origin+"/"),
+				chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
+				chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
+			c := readCard(t, ctx)
+			if !c.MenuOpen {
+				t.Fatal("the Menu did not open")
+			}
+			if c.CardLeft < c.RootLeft-0.5 || c.CardRight > c.RootRight+0.5 {
+				t.Errorf("at 320 the card spans %.1f to %.1f and the page %.1f to %.1f; it overhangs", c.CardLeft, c.CardRight, c.RootLeft, c.RootRight)
+			}
+		})
+	}
 }

@@ -196,7 +196,7 @@
   // closing the thing being used.
   function closeMenus(except) {
     var keep = [], m;
-    for (m = except && menuAround(except); m; m = m.parentElement && menuAround(m.parentElement)) keep.push(m);
+    for (m = except && except.closest && menuAround(except); m; m = m.parentElement && menuAround(m.parentElement)) keep.push(m);
     document.querySelectorAll(MENUS).forEach(function (d) {
       if (keep.indexOf(d) < 0 && !(except && d.contains(except))) d.open = false;
     });

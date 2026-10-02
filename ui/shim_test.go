@@ -258,7 +258,7 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // widget; this is twenty-six lines that belong beside the form
 // vocabulary they extend.
 //
-// The topbar card joined light dismiss: 9,784 → 11,406 bytes, for two
+// The topbar card joined light dismiss: 9,784 → 11,424 bytes, for two
 // selector constants, menuAround, two call sites and their comments.
 // The busy.js split had freed the room; this did not come near the cap.
 //
