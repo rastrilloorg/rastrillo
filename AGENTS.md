@@ -28,10 +28,11 @@ Never push changes directly to `main` or substitute an ordinary merge.
 This repository's squash policy takes precedence over the amadan skill's
 merge instructions.
 
-The merge workflow must record the reviewed branch as merged even though
-its original commits are not ancestors of the squash commit. If the
-installed amadan merge operation cannot squash, report that limitation
-before landing; do not silently use its ordinary merge operation.
+Land with `amadan branch merge -squash`. It writes the one commit,
+carries every prompt from the branch's ledger into its message, and
+still records the branch as merged although the branch's own commits are
+not ancestors of the result. Do not substitute the ordinary merge; the
+one exception is carrying work across from the mirror (below).
 
 Confirm first only where there is real doubt: the base branch is not
 `main`, the work depends on another branch that has not landed yet, or
@@ -54,8 +55,13 @@ out before you build on a stale base, and the push after you land, so the
 window where the two disagree is seconds instead of days.
 
 If `make mirror` is rejected as a non-fast-forward, someone worked on the
-mirror. Do not force it. Read what is there, carry it across as a branch
-off `origin/main`, land it here, then mirror.
+mirror. Do not force it. Read what is there, then branch from the
+mirror's `main` rather than `origin/main`, merge `origin/main` into that
+branch, and land it with an ordinary `amadan branch merge`, without
+`-squash`. That is the one merge here that is not squashed: a squash
+copies the mirror's commits instead of adopting them, so they never
+become ancestors of `origin/main` and `make mirror` is rejected for
+good. Then mirror.
 
 ## The gate
 

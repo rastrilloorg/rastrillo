@@ -160,7 +160,9 @@ browser:
 # of anything origin had, and three pieces of SKILL.md sat there for
 # days looking merged. --force would paper over exactly that, so if this
 # target is rejected, do not reach for it: read what the mirror has that
-# origin does not, carry it across as a branch, and land it here.
+# origin does not, carry it across on a branch cut from the mirror's main,
+# and land that with an ordinary merge, never -squash - a squash copies the
+# mirror's commits instead of adopting them, and this push stays rejected.
 MIRROR_REMOTE ?= github
 
 mirror:
@@ -183,7 +185,8 @@ mirror-check:
 	echo "on the mirror and not on origin:"; \
 	git log --oneline refs/remotes/$(MIRROR_REMOTE)/main ^refs/remotes/origin/main | sed 's/^/  /'; \
 	echo; \
-	echo "carry those across as a branch and land them, then: make mirror"; \
+	echo "carry those across on a branch cut from the mirror's main, land it"; \
+	echo "with an ordinary amadan branch merge (not -squash), then: make mirror"; \
 	exit 1
 
 root money chromedp-graph race build-cli browser: | $(BIN)/tmp
