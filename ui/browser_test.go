@@ -970,7 +970,10 @@ func menuPage(t *testing.T) http.Handler {
 			`<details rst-dropdown rst-shell-account name="`+MenuGroupDefault+`" id="account">`+
 			`<summary id="account-summary">Account</summary>`+
 			`<div rst-dropdown-menu><a id="account-item" href="#settings">Settings</a></div>`+
-			`</details></header>`+
+			`</details>`+
+			`<details rst-shell-menu name="rst-shell-menu" id="shellmenu"><summary id="shellmenu-summary">Menu</summary></details>`+
+			`<div rst-shell-tail><a id="tail-link" href="#tail">Tail</a></div>`+
+			`</header>`+
 			// A list-bar filter dropdown with a nested submenu whose group
 			// is deliberately different. The search form is here for the
 			// same reason it is in a real list bar: it takes the strip's
@@ -1077,8 +1080,9 @@ const openStateJS = `["account","filter","submenu","rowmenu","chrome"].` +
 //     every menu item click misses;
 //   - light dismiss bound per element, so a menu that arrived after load
 //     never dismisses;
-//   - shell chrome or the toggle-block swept into the group or the
-//     dismiss, so the narrow-screen nav rail closes when a filter opens.
+//   - the old sidebar chrome strip or the toggle-block swept into the
+//     group or the dismiss, so the narrow-screen nav rail closes when a
+//     filter opens, or the shell menu card left out of the dismiss.
 func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return menuPage(t) })
 
@@ -1212,6 +1216,33 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	}
 	if !tblockOpenAfter {
 		t.Error("the toggle-block's switch was flipped by the menu handling; it is not a menu")
+	}
+
+	// The shell menu joined light dismiss when it became a card: an
+	// outside click closes it, and Escape from a link in its tail (its content, a sibling)
+	// closes it and hands focus to its summary. The legacy chrome strip
+	// is still left alone.
+	var shellOpened, shellAfterOutside, shellAfterEsc bool
+	var shellFocus string
+	if err := chromedp.Run(ctx,
+		chromedp.Click(`#shellmenu-summary`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellOpened),
+		chromedp.Click(`#elsewhere`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellAfterOutside),
+		chromedp.Click(`#shellmenu-summary`, chromedp.ByQuery),
+		chromedp.Focus(`#tail-link`, chromedp.ByQuery),
+		chromedp.KeyEvent(kb.Escape),
+		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellAfterEsc),
+		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &shellFocus),
+	); err != nil {
+		t.Fatalf("driving the shell menu: %v", err)
+	}
+	// The premise: a menu that never opened is closed after anything.
+	if !shellOpened {
+		t.Fatal("the shell menu did not open on its summary; the dismiss leg below proves nothing")
+	}
+	if shellAfterOutside || shellAfterEsc || shellFocus != "shellmenu-summary" {
+		t.Errorf("shell menu: open after an outside click %v, after Escape %v, focus %q; want closed, closed, shellmenu-summary", shellAfterOutside, shellAfterEsc, shellFocus)
 	}
 
 	rig.Screen("body", "after the menu journey")

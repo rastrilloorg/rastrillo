@@ -168,6 +168,8 @@ var tapInventory = []tapEntry{
 	{"[rst-shell-brand]", "Shell: brand", "rst-shell-brand", "[rst-shell-brand]"},
 	{"[rst-shell-nav] a", "Shell: nav links", "rst-shell-nav", "[rst-shell-nav] a"},
 	{"[rst-shell-menu] > summary", "Shell: Menu summary", "rst-shell-menu", "narrow:[rst-shell-menu] > summary"},
+	{"[rst-shell-menu][open] > summary", "Shell: the open Menu summary", "rst-shell-menu", "elsewhere:TestTheCardsControlsAreTaps"},
+	{"[rst-shell-account] > summary", "Shell: the account summary inside the card", "rst-shell-account", "[rst-shell-account] > summary"},
 	{"[rst-shell-chrome] > summary", "Legacy sidebar drawer summary", "rst-shell-chrome", "narrow:[rst-shell-chrome] > summary"},
 }
 

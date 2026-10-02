@@ -2076,6 +2076,50 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: var(--rst-sp-4); max-block-size: calc(100dvh - 2 * var(--rst-sp-4)); overflow-y: auto; position: sticky; }
 }
 
+/* The topbar's narrow menu is a floating card: it overlays the page and
+   never pushes it down. The open tail is placed against the bar, at its
+   inline end (logical insets, so an RTL page anchors it left), scrolling
+   itself if a long nav does not fit. The account and language menus
+   inside it expand in place: a popover inside a popover has nowhere good
+   to go on a phone. It is the menu panels' surface (9px, their border
+   and shadow), so every menu reads as one system. The current item is a
+   fill and weight, never a border or an inset bar.
+
+   EVERY rule here is scoped below 800px rather than written narrow and
+   undone at 800: the wide tail's display: contents removes the tail's
+   box and nothing else, so the account panel would stay static, the nav
+   would lose its underline, and the layer below would still swallow
+   clicks on a desktop someone widened with the menu open. These rules
+   come after both shells' narrow rules above and win at equal weight.
+
+   CLOSING ON AN OUTSIDE TAP, with and without scripts: while open, the
+   summary grows an invisible ::before over the viewport, under the card
+   and over the page. A tap anywhere outside the card lands on it, which
+   is a click on the summary, which closes the <details> natively, and
+   the tap never reaches the page. It is position: fixed inside the bar,
+   so it breaks if an app gives the bar or an ancestor a transform,
+   filter or backdrop-filter (each makes a containing block for fixed
+   descendants). The bar's z-index 45 is above the in-page panels
+   (dropdown 30, row menu 40), so a menu left open without scripts
+   cannot paint over the card, and below the skip link (60). rastrillo.js
+   adds Escape. */
+@media (max-width: 799.98px) {
+  .rst-shell-topbar .rst-shell__bar, [rst-shell-topbar] [rst-shell-bar] { position: relative; z-index: 45; }
+  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary { background: var(--rst-accent-soft); border-color: var(--rst-accent); }
+  .rst-shell-topbar .rst-shell__menu[open] > summary::before, [rst-shell-topbar] [rst-shell-menu][open] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
+  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail] { animation: rst-shell-drop 0.14s ease-out; background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); box-sizing: border-box; flex-basis: auto; gap: 0; inline-size: min(20rem, calc(100vw - 1.5rem)); inset-block-start: calc(100% + 6px); inset-inline-end: 0.75rem; max-block-size: calc(100dvh - 5rem); overflow-y: auto; overscroll-behavior: contain; padding: 0.35rem; position: absolute; z-index: 2; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] { align-items: stretch; gap: 0; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); padding-block: 0.55rem; padding-inline: 0.75rem; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); box-shadow: none; color: var(--rst-accent); font-weight: 600; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__account, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] { border-block-start: 1px solid var(--rst-line); margin-block-start: 0.35rem; padding-block-start: 0.35rem; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary { justify-content: space-between; padding-inline: 0.75rem; }
+  .rst-shell-topbar .rst-shell__tail .rst-dropdown__menu, [rst-shell-topbar] [rst-shell-tail] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
+}
+@keyframes rst-shell-drop { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail] { animation: none; }
+}
+
 /* ── rst-signin: the shipped sign-in card (partials/signin.html) ─────
    Brand at the start and the way in at the end, side by side from 48rem
    and stacked below it, so a phone reads the brand and then the door.
@@ -2327,6 +2371,10 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-items: center; box-sizing: border-box; display: flex; min-block-size: var(--rst-tap); }
   .rst-shell-topbar .rst-shell__menu > summary, [rst-shell-topbar] [rst-shell-menu] > summary, .rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
   .rst-shell-sidebar > .rst-shell__chrome > summary, [rst-shell-sidebar] > [rst-shell-chrome] > summary { min-block-size: var(--rst-tap); }
+  /* The card's own summaries: the open Menu (its pressed state is a
+     (0,3,1) rule) and the account menu inside it. */
+  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary { min-block-size: var(--rst-tap); }
 }
 
 /* ---------------------------------------------------------------------

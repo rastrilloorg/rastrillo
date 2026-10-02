@@ -547,6 +547,7 @@ type barReading struct {
 	AccountEndPx int  // gap from the account menu's inline end to the bar's
 	AccountMenu  bool // the account dropdown's panel is drawn
 	Overflow     int  // how far the document scrolls past its own client width
+	MainTop      int  // main's block-start edge: the page under the bar
 }
 
 // TestTheTopbarCollapsesItsTailBehindOneDisclosure is §9: the topbar
@@ -563,8 +564,8 @@ type barReading struct {
 //     account at the inline end, which is the layout that shipped before
 //     the collapse existed.
 //  2. Narrow, one control. Below 800px the tail is not drawn until the
-//     disclosure is opened, and opened it is a stack rather than a
-//     second wrapped row.
+//     disclosure is opened, and opened it is a card over the page: three
+//     stacked rows that push nothing down.
 //  3. THE TRAP. The account menu is <details name="rst-menus">. Opening
 //     it must not close the navigation it was opened from. <details
 //     name> exclusivity is document-wide rather than sibling-scoped, so
@@ -635,7 +636,8 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	    Rows: rows,
 	    AccountEndPx: Math.round(bar.getBoundingClientRect().right - account.getBoundingClientRect().right),
 	    AccountMenu: shown(panel),
-	    Overflow: de.scrollWidth - de.clientWidth
+	    Overflow: de.scrollWidth - de.clientWidth,
+	    MainTop: Math.round(document.querySelector("main").getBoundingClientRect().top)
 	  });
 	})()`
 
@@ -718,6 +720,11 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	}
 	if open.Rows != 3 {
 		t.Errorf("the opened tail puts its three blocks on %d rows, want 3 — collapsed, they stack; a wrapped row is the state this replaced", open.Rows)
+	}
+	// The opened tail is a card OVER the page, not a column in the
+	// bar's flow: the page under it does not move.
+	if open.MainTop != closed.MainTop {
+		t.Errorf("opening the disclosure moved the page down %dpx; the tail is a card that overlays it", open.MainTop-closed.MainTop)
 	}
 	if open.Overflow > 1 {
 		t.Errorf("the opened topbar spills %dpx sideways at 390px", open.Overflow)

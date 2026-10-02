@@ -35,6 +35,13 @@ func TestShimContract(t *testing.T) {
 		// shim has to pair them for the same window or an app's menus
 		// stop dismissing halfway through the upgrade we hand it.
 		`MENUS.replace(`,
+		// The topbar's and console's narrow Menu is a card over the page,
+		// so it is in the light-dismiss list, in both spellings written
+		// out (the rewrite above would give .rst-shell-menu, and the
+		// class is .rst-shell__menu), with its tail counted as inside it
+		// only while its summary is rendered.
+		`MENUS += ",[rst-shell-menu][open],.rst-shell__menu[open]"`,
+		`TAIL = "[rst-shell-tail],.rst-shell__tail"`, "menuAround", "getClientRects().length",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
@@ -68,8 +75,10 @@ func TestShimContract(t *testing.T) {
 	if n := strings.Count(js, "dismissMenus"); n != 3 {
 		t.Errorf("dismissMenus appears %d times, want 3 (one definition, two document listeners)", n)
 	}
-	// Shell chrome and the toggle-block stay out of it: neither is a
-	// menu, and dismissing them on an outside click would fight the user.
+	// The old sidebar drawer and the toggle-block stay out of it: neither
+	// is a menu, and dismissing them on an outside click would fight the
+	// user. (The topbar's Menu is in, above: it is a card that overlays
+	// the page now, which is what light dismiss is for.)
 	for _, bad := range []string{"rst-shell-chrome", "rst-tblock"} {
 		if strings.Contains(js, bad) {
 			t.Errorf("shim reaches for %q; light dismiss covers menus only", bad)
@@ -248,6 +257,10 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // app owner to find. select.js is split out because it is a whole
 // widget; this is twenty-six lines that belong beside the form
 // vocabulary they extend.
+//
+// The topbar card joined light dismiss: 9,784 → 11,406 bytes, for two
+// selector constants, menuAround, two call sites and their comments.
+// The busy.js split had freed the room; this did not come near the cap.
 //
 // The cap is still the point, and what it protects is the CODE: an app
 // owner owns this file from the moment it is scaffolded and has to be

@@ -38,10 +38,12 @@
    direct navigation. Reserved: the framework's own handlers do not
    read it today.
 
-   Menus: an open <details rst-dropdown>, <details rst-row-menu> or a
-   nested <details rst-menu-group> closes on an outside click and on
-   Escape, in EITHER spelling, so upgrading this file before running
-   `rastrillo markup` leaves no dead menus. Exclusivity stays native.
+   Menus: an open <details rst-dropdown>, <details rst-row-menu>, a
+   nested <details rst-menu-group>, or the topbar's and console's narrow
+   <details rst-shell-menu> card (whose content is its next sibling, the
+   tail) closes on an outside click and on Escape, in EITHER spelling,
+   so upgrading this file before running `rastrillo markup` leaves no
+   dead menus. Exclusivity stays native.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -157,19 +159,46 @@
   // clicking elsewhere INSIDE the parent closing the submenu — the
   // contains(except) test below already draws that line for free.
   //
-  // Shell chrome and the toggle-block are deliberately absent from
-  // MENUS. A sidebar's disclosure strip and a settings switch are not
-  // menus; closing them because a click landed elsewhere would fight the
-  // user rather than help.
+  // The old sidebar drawer and the toggle-block are deliberately absent
+  // from MENUS: neither is a menu, and closing one because a click
+  // landed elsewhere would fight the user. The topbar's and console's
+  // narrow Menu IS in, since it became a floating card: an overlay, which
+  // is what this list is for. It is not in the rst-menus name group,
+  // which is document-wide; there, opening the account menu inside the
+  // card would close the card around it.
   var MENUS = "[rst-dropdown][open],[rst-menu-group][open],[rst-row-menu][open]";
   MENUS += "," + MENUS.replace(/\[(rst[-\w]+)\]/g, ".$1");
+  // Written out rather than derived: the class spelling of rst-shell-menu
+  // is .rst-shell__menu, which the rewrite above would spell wrong.
+  MENUS += ",[rst-shell-menu][open],.rst-shell__menu[open]";
+  var TAIL = "[rst-shell-tail],.rst-shell__tail";
 
-  // except is the clicked node: the menu containing it stays open, which
-  // is what keeps a click on a menu item — or on the summary of a menu
-  // being opened right now — from closing the thing being used.
+  // menuAround is closest(MENUS) plus one logical parent. The card's
+  // content (the tail) is the shell menu's next SIBLING, not its child,
+  // so without this a click on the account menu inside the card would
+  // close the card, and Escape from a plain nav link in it would find no
+  // menu at all. Only while the Menu summary is rendered: at 800px and
+  // up it is display: none, while a <details> opened at 390 and then
+  // widened keeps [open], and climbing to it would hand focus to a
+  // summary nobody can see.
+  function menuAround(node) {
+    var d = node.closest(MENUS), t, s;
+    if (d) return d;
+    t = node.closest(TAIL);
+    d = t && t.previousElementSibling;
+    s = d && d.matches(MENUS) && d.querySelector("summary");
+    return s && s.getClientRects().length ? d : null;
+  }
+
+  // except is the clicked node: every menu around it, directly or through
+  // menuAround's climb, stays open, which is what keeps a click on a menu
+  // item, or on the summary of a menu being opened right now, from
+  // closing the thing being used.
   function closeMenus(except) {
+    var keep = [], m;
+    for (m = except && menuAround(except); m; m = m.parentElement && menuAround(m.parentElement)) keep.push(m);
     document.querySelectorAll(MENUS).forEach(function (d) {
-      if (!except || !d.contains(except)) d.open = false;
+      if (keep.indexOf(d) < 0 && !(except && d.contains(except))) d.open = false;
     });
   }
 
@@ -180,14 +209,14 @@
     // which strands a keyboard user at the top of the document. Hand it
     // back to the summary that opened the menu.
     var el = document.activeElement;
-    var host = el && el.closest ? el.closest(MENUS) : null;
-    // Climb to the OUTERMOST open menu around the focus. closest() finds
-    // the innermost, which for focus inside a submenu is the submenu —
-    // and its summary is inside the parent that is about to close too, so
-    // focusing it would hand focus to something no longer rendered, which
-    // is no hand-back at all.
-    while (host && host.parentElement && host.parentElement.closest(MENUS)) {
-      host = host.parentElement.closest(MENUS);
+    var host = el && el.closest ? menuAround(el) : null;
+    // Climb to the OUTERMOST open menu around the focus. menuAround
+    // finds the innermost, which for focus inside a submenu is the
+    // submenu, and for focus in the account menu inside the card is the
+    // account menu: their summaries are inside the thing about to close,
+    // so focusing one would hand focus to something no longer rendered.
+    while (host && host.parentElement && menuAround(host.parentElement)) {
+      host = menuAround(host.parentElement);
     }
     closeMenus(null);
     if (host) {

@@ -29,8 +29,10 @@
      three blocks generate no box of their own and lay out as flex
      items of the bar, exactly as they did before this element existed.
      Laid out as direct children, not made into them: see the depth
-     note at the foot of this comment. The sidebar collapses at the
-     same width behind the same icon: two shells, one idiom.
+     note at the foot of this comment. Below 800px the open tail is a
+     card over the page (tokens.css) that closes on an outside tap,
+     scripts or not, and on Escape through rastrillo.js; the sidebar has
+     no such control, its phone navigation is an index page.
 
      name="rst-shell-menu" — a group of its own, and NOT rst-menus,
      which is exactly the group this must not join. <details name>
@@ -43,10 +45,9 @@
      read this paragraph as the reason for them rather than as advice
      to change the attribute below.
 
-     The tail is also a SIBLING rather than this element's content,
-     which is how [rst-shell-chrome] does it: a closed <details> hides
-     its own content, and the wide layout cannot be recovered from
-     inside one.
+     The tail is also a SIBLING rather than this element's content: a
+     closed <details> hides its own content, and the wide layout cannot
+     be recovered from inside one.
 
      The three block names below are unchanged — nav, account, locale.
      Apps override them, and that contract is gated. What DID change is

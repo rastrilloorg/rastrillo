@@ -538,6 +538,17 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 					t.Fatalf("%s: clicking the disclosure did not bring %q on screen. axe would have scanned the COLLAPSED document and reported it as the disclosed one", where, sel)
 				}
 			}
+			// Settle first. The topbar's card fades in over 0.14s, and
+			// axe reading it straight after the click measured text at
+			// partial opacity: blended colours no reader sees once the
+			// card is open. Finite animations only: a spinner's never
+			// finishes, and waiting on it would hang the scan.
+			if err := chromedp.Run(ctx, chromedp.Evaluate(`Promise.all(document.getAnimations()
+			  .filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+			  .map(a => a.finished.catch(() => null))).then(() => true)`, nil,
+				func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+				t.Fatalf("%s: waiting for the disclosure's animations: %v", where, err)
+			}
 			if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
 				t.Fatalf("%s: loading axe: %v", where, err)
 			}
