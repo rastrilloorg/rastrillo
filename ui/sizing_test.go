@@ -171,6 +171,8 @@ var tapInventory = []tapEntry{
 	{"[rst-shell-menu][open] > summary", "Shell: the open Menu summary", "rst-shell-menu", "elsewhere:TestTheCardsControlsAreTaps"},
 	{"[rst-shell-account] > summary", "Shell: the account summary inside the card", "rst-shell-account", "[rst-shell-account] > summary"},
 	{"[rst-shell-chrome] > summary", "Legacy sidebar drawer summary", "rst-shell-chrome", "narrow:[rst-shell-chrome] > summary"},
+	{"[rst-shell-back] a", "Shell: the back control", "rst-shell-back", "narrow:[rst-shell-back] a"},
+	{"[rst-shell-nav] > a", "Shell: the index rows (3rem)", "rst-shell-nav", "elsewhere:TestTheIndexRowsRoundEachRunOfLinks"},
 }
 
 // tapExempt are the interactive rules that are deliberately not held to

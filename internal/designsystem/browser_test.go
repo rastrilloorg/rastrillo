@@ -925,6 +925,16 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	}
 }
 
+// overShoot is the frames whose document is taller than any frame by
+// design, and by how much more than the sidebar's 48px. The console's
+// phone index is the bar, then a rail as tall as the window, then the
+// foot below it: its document is always the window plus the bar and the
+// foot (126px measured in day/en), so, as with the sidebar, raising the
+// box raises the requirement by the same amount.
+var overShoot = map[string]int{
+	"shells Mobile shell-console": 100,
+}
+
 // The heights in previewHeights are measurements, and this is where
 // they were measured. Every frame on the page is asked what its
 // document actually needs and held to the box the renderer gave it: a
@@ -1081,8 +1091,9 @@ func measured(t *testing.T, tab, raw string) int {
 		// whatever window it is in plus the margin under its content.
 		// No frame height can fit it, and chasing one is a loop —
 		// raising the box raises the requirement by the same amount.
-		// Everything else fits with room to spare.
-		if need > box+48 {
+		// Everything else fits with room to spare, except the one frame
+		// in overShoot below.
+		if need > box+48+overShoot[name] {
 			t.Errorf("%s: its document needs %dpx and its frame is %dpx; raise previewHeights[%q] to at least %d", name, need, box, name, need+20)
 		}
 		if box > need*4 && box-need > 120 {
@@ -1094,83 +1105,94 @@ func measured(t *testing.T, tab, raw string) int {
 
 // ── The demo application ─────────────────────────────────────────────
 
-// The demo application is the page the Overview frames before it says a
-// word about a token, and its whole claim is that it is an application
-// with no JavaScript in it: three screens, three addresses, and the
-// switching done by CSS reading the address bar.
+// TestTheDemoApplicationWorksWithNoScript is the demo's claim: four
+// pages, each a real document, and with script execution DISABLED in
+// the engine every journey still works. At 1280 the rail and the pages:
+// land, follow the rail to the list, a row into the request, the back
+// link out. At 390 the phone index: the rail is the page, a row opens
+// the list with a back control and no rail, and the back control
+// returns to the index with the section it left as the :target.
 //
-// That claim cannot be checked in Go — a static reading of demo.html
-// sees three sections and a stylesheet, and every one of them is
-// present whether the rules work or not. So it is driven, with script
-// execution DISABLED in the engine, which is the strongest form of the
-// claim: not "the framework's scripts are not needed", but "no script
-// runs at all and the app still works".
-//
-// The journey is the one a reader takes. Land on it, and the dashboard
-// is what you get. Follow the rail to the list. Follow a row into the
-// record. Follow the back link out again. At every stop, exactly one
-// screen is on the page — a second visible view would be two <h1>s and
-// two page headers stacked, which reads as a broken build rather than
-// as an app.
-func TestTheDemoApplicationSwitchesViewsWithNoScript(t *testing.T) {
+// At every stop exactly one view is on the page, read off computed
+// style: a second visible view would be two <h1>s and two page headers
+// stacked, which reads as a broken build rather than as an app.
+func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
-
-	// Which of the three views the engine is actually painting, read
-	// off computed style rather than off the markup: display: none is
-	// the whole mechanism, so it is the thing to ask about.
-	const shown = `(() => {
-	  const out = [];
-	  for (const v of document.querySelectorAll(".app-view")) {
-	    if (getComputedStyle(v).display !== "none") out.push(v.id);
-	  }
-	  return out.join(",");
-	})()`
-
-	url := rig.Origin + demoHref(mountPath, RootTheme(), "en")
-	var landed, ranScript, list, detail, back, views string
-	if err := chromedp.Run(ctx,
-		emulation.SetScriptExecutionDisabled(true),
-		// Wide enough that the sidebar shell shows its rail: below
-		// 800px it folds behind a disclosure, and the rail's links are
-		// not clickable until a reader opens it. The app's navigation
-		// is what this drive follows, so it drives the width where the
-		// navigation is on screen.
-		chromedp.EmulateViewport(1280, 900),
-		chromedp.Navigate(url),
-		chromedp.WaitReady("body"),
-		chromedp.Evaluate(`document.querySelectorAll(".app-view").length + ""`, &views),
-		// gallery.js is the only script the page loads, and with
-		// execution disabled it has not run — so nothing below can be
-		// a script doing the work.
-		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &ranScript),
-		chromedp.Evaluate(shown, &landed),
-		chromedp.Click(`[rst-shell-nav] a[href="#view-requests"]`, chromedp.ByQuery),
-		chromedp.Evaluate(shown, &list),
-		chromedp.Click(`#view-requests [rst-lrow] a[href="#view-request"]`, chromedp.ByQuery),
-		chromedp.Evaluate(shown, &detail),
-		chromedp.Click(`#view-request [rst-back-nav] a`, chromedp.ByQuery),
-		chromedp.Evaluate(shown, &back),
-	); err != nil {
-		t.Fatalf("driving the demo application: %v", err)
-	}
-
-	if views != "3" {
-		t.Fatalf("the demo application has %s views, want 3 (a dashboard, a list and a record)", views)
-	}
-	if ranScript != "(none)" {
-		t.Fatalf("gallery.js ran with script execution disabled (data-rst-js=%q) — this drive proves nothing", ranScript)
-	}
-	for _, step := range []struct{ where, got, want string }{
-		{"landing on it with no fragment", landed, "view-dashboard"},
-		{"following the rail to the list", list, "view-requests"},
-		{"following a row into the record", detail, "view-request"},
-		{"following the back link out again", back, "view-requests"},
-	} {
-		if step.got != step.want {
-			t.Errorf("%s: the visible views are %q, want exactly %q", step.where, step.got, step.want)
+	const views = `[...document.querySelectorAll(".app-view")].filter(v => getComputedStyle(v).display !== "none").map(v => v.id).join(",")`
+	run := func(what string, acts ...chromedp.Action) {
+		t.Helper()
+		if err := chromedp.Run(ctx, acts...); err != nil {
+			t.Fatalf("%s: %v", what, err)
 		}
+	}
+	shown := func(sel string) bool {
+		t.Helper()
+		var b bool
+		run("reading "+sel, chromedp.Evaluate(`(() => { const e = document.querySelector(`+"`"+sel+"`"+`); return !!e && e.getClientRects().length > 0; })()`, &b))
+		return b
+	}
+	// goTo clicks sel and waits until the URL ends with page AND the
+	// destination's own section is in the document: the rail is in every
+	// one of the four documents, so waiting for a rail link would pass in
+	// the page being left. It also waits out the narrow slide between
+	// pages, because a click sent during a view transition lands on its
+	// snapshot and does nothing.
+	goTo := func(sel, page, marker string) {
+		t.Helper()
+		run("clicking "+sel, chromedp.Click(sel, chromedp.ByQuery))
+		cond := fmt.Sprintf(`location.pathname.endsWith(%q) && !!document.querySelector(%q) && document.readyState === "complete" && !document.activeViewTransition`, "/"+page, marker)
+		for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+			var ok bool
+			if chromedp.Run(ctx, chromedp.Evaluate(cond, &ok)) == nil && ok {
+				return
+			}
+		}
+		t.Fatalf("clicking %s never landed on %s", sel, page)
+	}
+	var ranScript, landed, list, detail, back string
+	run("loading the demo at 1280",
+		emulation.SetScriptExecutionDisabled(true),
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+demoHref(mountPath, RootTheme(), "en")), chromedp.WaitReady("body"),
+		// gallery.js is a script the page loads, and with execution
+		// disabled it has not run, so nothing below can be a script
+		// doing the work.
+		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &ranScript),
+		chromedp.Evaluate(views, &landed),
+	)
+	if ranScript != "(none)" {
+		t.Fatalf("gallery.js ran with script execution disabled (data-rst-js=%q); this drive proves nothing", ranScript)
+	}
+	goTo(`#nav-requests`, "demo-requests.html", "#view-requests")
+	run("reading the list", chromedp.Evaluate(views, &list))
+	goTo(`#view-requests [rst-lrow] a.rst-nm`, "demo-request.html", "#view-request")
+	run("reading the request", chromedp.Evaluate(views, &detail))
+	goTo(`#view-request [rst-back-nav] a`, "demo-requests.html", "#view-requests")
+	run("reading the list again", chromedp.Evaluate(views, &back))
+	for _, s := range []struct{ where, got, want string }{
+		{"landing on demo.html", landed, "view-dashboard"}, {"the rail to the list", list, "view-requests"},
+		{"a row into the request", detail, "view-request"}, {"the back link out", back, "view-requests"},
+	} {
+		if s.got != s.want {
+			t.Errorf("%s: the page shows %q, want exactly %q", s.where, s.got, s.want)
+		}
+	}
+
+	run("loading the demo at 390", chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+demoHref(mountPath, RootTheme(), "en")), chromedp.WaitReady("body"))
+	if !shown("#nav-requests") || shown("[rst-shell-main]") {
+		t.Errorf("demo.html at 390 is not the index (rail shown %v, main shown %v)", shown("#nav-requests"), shown("[rst-shell-main]"))
+	}
+	goTo("#nav-requests", "demo-requests.html", "#view-requests")
+	if !shown("[rst-shell-back] a") || shown("#nav-requests") {
+		t.Errorf("the list at 390: back control shown %v, rail shown %v; want the back control and no rail", shown("[rst-shell-back] a"), shown("#nav-requests"))
+	}
+	goTo("[rst-shell-back] a", "demo.html", "#view-dashboard")
+	var target bool
+	run("reading the target", chromedp.Evaluate(`document.getElementById("nav-requests").matches(":target")`, &target))
+	if !target {
+		t.Error("back on the index, the Requests row is not the :target; the scriptless focus return has nothing to start from")
 	}
 }
 

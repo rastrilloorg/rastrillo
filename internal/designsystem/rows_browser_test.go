@@ -22,8 +22,10 @@ import (
 // alone. At 1280 with a mouse and 390 with a coarse pointer, a click at
 // the row's far edge opens the request; at 1280, where the status and
 // updated columns are shown, so does a click on the pill and on the
-// time. The destination is read off the record view being painted, a
-// state only the click can produce, never off the address alone.
+// time. The destination is read off the request page's own section
+// being in the document, which only the click can produce, never off
+// the address alone. The list and the request are pages of their own,
+// so each click is followed by a load of the list again.
 func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 	for _, leg := range []struct {
 		name   string
@@ -38,7 +40,7 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 			rig := harness.New(t, func(string) http.Handler { return treeHandler(t) }, opts...)
 			ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 			defer cancel()
-			url := rig.Origin + demoHref(mountPath, RootTheme(), "en") + "#view-requests"
+			url := rig.Origin + demoPageHref(mountPath, RootTheme(), "en", "requests")
 			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(url)); err != nil {
 				t.Fatal(err)
 			}
@@ -64,9 +66,13 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 				if c.wideOnly && leg.coarse {
 					continue
 				}
-				// A same-document hop back to the list: a fragment change
-				// fires no load event for a Navigate to wait on.
-				demoUntil(t, ctx, `(location.hash = "#view-requests", getComputedStyle(document.getElementById("view-requests")).display !== "none" && getComputedStyle(document.getElementById("view-request")).display === "none")`)
+				// Back to the list, a page of its own, settled: a click sent
+				// during the narrow slide between pages lands on the
+				// transition's snapshot and does nothing.
+				if err := chromedp.Run(ctx, chromedp.Navigate(url)); err != nil {
+					t.Fatal(err)
+				}
+				demoUntil(t, ctx, `!!document.getElementById("view-requests") && document.readyState === "complete" && !document.activeViewTransition`)
 				var p struct {
 					X, Y float64
 					Hit  string
@@ -86,7 +92,7 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 				if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
 					t.Fatal(err)
 				}
-				if !demoPoll(ctx, `location.hash === "#view-request" && getComputedStyle(document.getElementById("view-request")).display !== "none"`) {
+				if !demoPoll(ctx, `location.pathname.endsWith("/demo-request.html") && !!document.getElementById("view-request")`) {
 					t.Errorf("%s: a click at %s (%.0f, %.0f) did not open the request", leg.name, c.where, p.X, p.Y)
 				}
 			}

@@ -1903,13 +1903,19 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a { padding-inline: 0; }
 }
 
-/* sidebar shell — a rail beside the page. Below 800px the rail is
-   hidden behind a <details> chrome strip and, opened, becomes an
-   full-width column above the content: the open state is the
-   native element's own, so the shell stays zero-JS like every idiom
-   above it. The main column carries min-inline-size: 0 so a wide child
-   (a list grid, a <pre>) scrolls itself instead of stretching the grid
-   track. */
+/* sidebar shell — a rail beside the page. Below 800px the rail is not
+   shown on a content page and IS the page on the index (the index/back
+   block after the console's). The main column carries min-inline-size:
+   0 so a wide child (a list grid, a <pre>) scrolls itself instead of
+   stretching the grid track.
+
+   LEGACY, kept for layouts written before the phone index: the
+   <details rst-shell-chrome> drawer, which opened the rail into the
+   page flow. Its rules are the ones naming rst-shell-chrome, below and
+   in the wide block; none of the index/back rules match an old
+   layout's root (it has no view), so an app that re-vendors tokens.css
+   and keeps its old layout keeps its drawer. Delete them together once no layout and no
+   gallery page writes rst-shell-chrome. */
 .rst-shell__main, [rst-shell-main] { min-inline-size: 0; }
 /* box-sizing on the rail, per this file's convention (see .rst-input
    above): set on the component that needs it, never in a `*` reset.
@@ -1922,8 +1928,11 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    was ever owed. Anything sized against the viewport has to be measured
    the way the viewport measures it. */
 .rst-shell-sidebar > .rst-shell__rail, [rst-shell-sidebar] > [rst-shell-rail] { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+/* LEGACY: the old drawer, see above. */
 .rst-shell-sidebar > .rst-shell__chrome > summary, [rst-shell-sidebar] > [rst-shell-chrome] > summary { align-items: center; border-block-end: 1px solid var(--rst-line); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.3rem; list-style: none; padding-block: 0.55rem; padding-inline: var(--rst-sp-4); }
+/* LEGACY: the old drawer, see above. */
 .rst-shell-sidebar > .rst-shell__chrome > summary::-webkit-details-marker, [rst-shell-sidebar] > [rst-shell-chrome] > summary::-webkit-details-marker { display: none; }
+/* LEGACY: the old drawer, see above. */
 .rst-shell-sidebar > .rst-shell__chrome[open] + .rst-shell__rail, [rst-shell-sidebar] > [rst-shell-chrome][open] + [rst-shell-rail] { display: flex; }
 .rst-shell__group, [rst-shell-group] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block: var(--rst-sp-3) 0.2rem; text-transform: uppercase; }
 .rst-shell-sidebar .rst-shell__nav, [rst-shell-sidebar] [rst-shell-nav] { flex-direction: column; gap: 2px; }
@@ -1935,21 +1944,20 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    whole mechanism: the rail is a column flex box, so the auto margin
    eats whatever height is left between the nav and the bottom.
 
-   Below 800px the disclosed rail is STILL a flex column — the media
-   query below only adds block-size: 100dvh, it does not change the
-   display — so the reason the foot stays put down there is not that the
-   layout changed but that the column is content-height and the auto
-   margin has no free space to distribute. That is a dependency, so name
-   it: give the disclosed rail a min-block-size or a height and the foot
-   floats back down to the bottom of it, silently. The 390px leg of
+   Below 800px the rail on the phone index is STILL a flex column, and
+   it has a min-block-size of the whole screen there, so this auto
+   margin would float the foot to the bottom of the screen, where the
+   language menu would open off it. The index rules replace it with a
+   fixed gap; the 390px leg of
    TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward
-   asserts the rail's own height for exactly that reason. */
+   measures that gap for exactly that reason. */
 .rst-shell__rail-foot, [rst-shell-rail-foot] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin-block-start: auto; }
 /* An un-overridden shell renders the wrapper with nothing in it; draw
    no gap for it, the same way .rst-shell__foot handles its own. */
 .rst-shell__rail-foot:empty, [rst-shell-rail-foot]:empty { display: none; }
 @media (min-width: 800px) {
   .rst-shell-sidebar, [rst-shell-sidebar] { display: grid; grid-template-columns: 15rem 1fr; }
+  /* LEGACY: the old drawer, see above. */
   .rst-shell-sidebar > .rst-shell__chrome, [rst-shell-sidebar] > [rst-shell-chrome] { display: none; }
   .rst-shell-sidebar > .rst-shell__rail, [rst-shell-sidebar] > [rst-shell-rail] { block-size: 100dvh; border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; overflow-y: auto; position: sticky; }
   /* A menu at the foot of a full-height rail is a DROPUP: the same
@@ -1983,18 +1991,18 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    sidebar without the bar is sidebar; this is the admin shape both of
    them were half of, and the one an app used to hand-write.
 
-   TWO CHROMES, ONE CONTROL. Below 800px the bar's tail and the rail
-   both have to go away, and two disclosures would be two things to
-   learn. So one <details rst-shell-menu> gates both: its own next
-   sibling with +, and the rail from the shell root with :has(). One
-   [open], two reveals, one summary on screen at 390px.
+   TWO CHROMES, ONE PATTERN EACH. Below 800px the bar's tail (the account
+   and language menus) folds behind the one <details rst-shell-menu> and
+   opens as a card over the page (the card block after this one); the
+   rail is an index page, like the sidebar's (the index/back block after
+   that). The :has() pair below is LEGACY: the rail gated on the Menu's
+   [open], kept for console layouts written before the phone index,
+   whose root has no view.
 
-   Both reveals are written as HIDE-WHEN-CLOSED rather than
-   show-when-open. In an engine without :has() the rail's hide rule
-   never matches and the rail renders as a column of links under the
-   bar — longer page, navigation intact. Spelled the other way round,
-   the same missing selector is a phone that cannot navigate. Choose
-   the failure. */
+   The legacy gate is written HIDE-WHEN-CLOSED rather than
+   show-when-open: in an engine without :has() its hide rule never
+   matches and the rail renders as a column of links under the bar,
+   longer page, navigation intact. */
 .rst-shell-console .rst-shell__bar, [rst-shell-console] [rst-shell-bar] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-4); padding-block: 0.5rem; padding-inline: var(--rst-sp-4); }
 .rst-shell-console .rst-shell__menu, [rst-shell-console] [rst-shell-menu] { margin-inline-start: auto; }
 .rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { align-items: center; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.35rem; list-style: none; min-block-size: 24px; padding-block: 0.3rem; padding-inline: 0.55rem; }
@@ -2010,9 +2018,12 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
 .rst-shell-console .rst-shell__nav a:hover, [rst-shell-console] [rst-shell-nav] a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-/* The two hide rules. Same [open], two combinators. */
 .rst-shell-console .rst-shell__menu:not([open]) + .rst-shell__tail, [rst-shell-console] [rst-shell-menu]:not([open]) + [rst-shell-tail] { display: none; }
-.rst-shell-console:has(.rst-shell__menu:not([open])) > .rst-shell__rail, [rst-shell-console]:has([rst-shell-menu]:not([open])) > [rst-shell-rail] { display: none; }
+/* LEGACY: the rail gated on the Menu's [open], for console layouts
+   written before the phone index. A root with a view is new markup,
+   where the rail follows the view and no :has() decides it; the :not()
+   keeps this rule out of that fight entirely. */
+.rst-shell-console:not(.rst-shell-console--page, .rst-shell-console--index):has(.rst-shell__menu:not([open])) > .rst-shell__rail, [rst-shell-console]:not([rst-shell-console~="page"], [rst-shell-console~="index"]):has([rst-shell-menu]:not([open])) > [rst-shell-rail] { display: none; }
 /* Disclosed, the tail is a column across the full width of the wrapped
    bar. The account's margin-inline-start: auto has to be undone by
    hand and stretch does not do it: in a column flex box the inline
@@ -2057,8 +2068,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      one declaration the narrow hide rule contests — rides on :has().
      That is the failure direction this shell chose, actually chosen
      rather than nearly chosen. */
-  .rst-shell-console:has(.rst-shell__menu:not([open])) > .rst-shell__rail,
-  [rst-shell-console]:has([rst-shell-menu]:not([open])) > [rst-shell-rail] { display: flex; }
+  .rst-shell-console:not(.rst-shell-console--page, .rst-shell-console--index):has(.rst-shell__menu:not([open])) > .rst-shell__rail,
+  [rst-shell-console]:not([rst-shell-console~="page"], [rst-shell-console~="index"]):has([rst-shell-menu]:not([open])) > [rst-shell-rail] { display: flex; }
   /* THE VIEWPORT. The rail itself is a grid item stretched to the row,
      which can be taller than the window — that is what makes the
      background reach the foot of a long page. So the thing that has to
@@ -2107,23 +2118,104 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    is positioned at z-index auto, which the scrim covers. The card is
    sized from the bar (100%), not the viewport, which counts a classic
    scrollbar's gutter as room and overhung the start edge at 320px.
-   rastrillo.js adds Escape. */
+   rastrillo.js adds Escape.
+
+   The console's bar folds the same way; its nav is in the rail, so its
+   card holds the account and language menus only. */
 @media (max-width: 799.98px) {
-  .rst-shell-topbar .rst-shell__bar, [rst-shell-topbar] [rst-shell-bar] { position: relative; }
-  .rst-shell-topbar .rst-shell__bar:has(> .rst-shell__menu[open]), [rst-shell-topbar] [rst-shell-bar]:has(> [rst-shell-menu][open]) { z-index: 45; }
-  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary { background: var(--rst-accent-soft); border-color: var(--rst-accent); }
-  .rst-shell-topbar .rst-shell__menu[open] > summary::before, [rst-shell-topbar] [rst-shell-menu][open] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
-  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail] { animation: rst-shell-drop 0.14s ease-out; background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); box-sizing: border-box; flex-basis: auto; gap: 0; inline-size: min(20rem, calc(100% - 1.5rem)); inset-block-start: calc(100% + 6px); inset-inline-end: 0.75rem; max-block-size: calc(100dvh - 5rem); overflow-y: auto; overscroll-behavior: contain; padding: 0.35rem; position: absolute; z-index: 2; }
+  .rst-shell-topbar .rst-shell__bar, [rst-shell-topbar] [rst-shell-bar], .rst-shell-console .rst-shell__bar, [rst-shell-console] [rst-shell-bar] { position: relative; }
+  .rst-shell-topbar .rst-shell__bar:has(> .rst-shell__menu[open]), [rst-shell-topbar] [rst-shell-bar]:has(> [rst-shell-menu][open]), .rst-shell-console .rst-shell__bar:has(> .rst-shell__menu[open]), [rst-shell-console] [rst-shell-bar]:has(> [rst-shell-menu][open]) { z-index: 45; }
+  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary, .rst-shell-console .rst-shell__menu[open] > summary, [rst-shell-console] [rst-shell-menu][open] > summary { background: var(--rst-accent-soft); border-color: var(--rst-accent); }
+  .rst-shell-topbar .rst-shell__menu[open] > summary::before, [rst-shell-topbar] [rst-shell-menu][open] > summary::before, .rst-shell-console .rst-shell__menu[open] > summary::before, [rst-shell-console] [rst-shell-menu][open] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
+  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail], .rst-shell-console .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-console] [rst-shell-menu][open] + [rst-shell-tail] { animation: rst-shell-drop 0.14s ease-out; background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); box-sizing: border-box; flex-basis: auto; gap: 0; inline-size: min(20rem, calc(100% - 1.5rem)); inset-block-start: calc(100% + 6px); inset-inline-end: 0.75rem; max-block-size: calc(100dvh - 5rem); overflow-y: auto; overscroll-behavior: contain; padding: 0.35rem; position: absolute; z-index: 2; }
   .rst-shell-topbar .rst-shell__tail > .rst-shell__nav, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] { align-items: stretch; gap: 0; }
   .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); padding-block: 0.55rem; padding-inline: 0.75rem; }
   .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); box-shadow: none; color: var(--rst-accent); font-weight: 600; }
+  /* Topbar only: the rule separates the account from the nav above it,
+     and in the console's card the account is first, under nothing. */
   .rst-shell-topbar .rst-shell__tail > .rst-shell__account, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] { border-block-start: 1px solid var(--rst-line); margin-block-start: 0.35rem; padding-block-start: 0.35rem; }
-  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary { justify-content: space-between; padding-inline: 0.75rem; }
-  .rst-shell-topbar .rst-shell__tail .rst-dropdown__menu, [rst-shell-topbar] [rst-shell-tail] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary, .rst-shell-console .rst-shell__tail > .rst-shell__account > summary, [rst-shell-console] [rst-shell-tail] > [rst-shell-account] > summary { justify-content: space-between; padding-inline: 0.75rem; }
+  .rst-shell-topbar .rst-shell__tail .rst-dropdown__menu, [rst-shell-topbar] [rst-shell-tail] [rst-dropdown-menu], .rst-shell-console .rst-shell__tail .rst-dropdown__menu, [rst-shell-console] [rst-shell-tail] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
 }
 @keyframes rst-shell-drop { from { opacity: 0; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) {
-  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail] { animation: none; }
+  .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail], .rst-shell-console .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-console] [rst-shell-menu][open] + [rst-shell-tail] { animation: none; }
+}
+
+/* ── Sidebar and console on a phone: the index and the back control ──
+   Below 800px these two shells are two views of every URL, and the page
+   says which with the view block the layout writes into the root:
+   [rst-shell-sidebar~="index"] is the rail as a full-screen page of
+   sections at a real URL; [rst-shell-sidebar~="page"] is the content,
+   with a back control at the top inline-start whose href is the page's
+   up block. No hamburger. The console is the same for its rail, under
+   its bar.
+
+   An old layout's root has no view, so none of these rules match it and
+   it keeps its drawer (the legacy rules above). Scoped below 800px, like
+   the card: at 800 and up both views are the rail beside the page, the
+   back strip and the title are hidden by the rule just below, and
+   nothing here needs undoing. ─────────────────────────────────────── */
+.rst-shell__back, [rst-shell-back], .rst-shell__title, [rst-shell-title] { display: none; }
+@media (max-width: 799.98px) {
+  /* The content view: a sticky strip of its own at the top, first in
+     the reading order after the skip link. */
+  .rst-shell-sidebar--page > .rst-shell__back, [rst-shell-sidebar~="page"] > [rst-shell-back], .rst-shell-console--page > .rst-shell__back, [rst-shell-console~="page"] > [rst-shell-back] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; min-block-size: 2.75rem; padding-inline: var(--rst-sp-1); position: sticky; z-index: 20; }
+  .rst-shell__back a, [rst-shell-back] a { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-accent); display: inline-flex; font-size: 1rem; font-weight: 500; gap: 0.5rem; min-block-size: 2.75rem; padding-inline: 0.75rem; text-decoration: none; }
+  /* The chevron is drawn, not an icon: there is no left chevron in the
+     set and no icon mirroring, and a drawn one stays out of the
+     accessible name. Two borders of a small square, turned; physical on
+     purpose, like the switch's knob, because it is a drawing, and
+     mirrored by the rule after it. */
+  .rst-shell__back a::before, [rst-shell-back] a::before { block-size: 0.55rem; border-left: 2px solid currentColor; border-top: 2px solid currentColor; content: ""; flex: none; inline-size: 0.55rem; transform: rotate(-45deg); }
+  [dir="rtl"] .rst-shell__back a::before, [dir="rtl"] [rst-shell-back] a::before { transform: rotate(135deg); }
+  .rst-shell__back a:focus-visible, [rst-shell-back] a:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+  .rst-shell-console--page > .rst-shell__rail, [rst-shell-console~="page"] > [rst-shell-rail] { display: none; }
+
+  /* The index view: the rail is the page. main and the skip link go with
+     it, so the skip link never points at nothing; the sidebar's brand,
+     which would link to this very page, gives way to the title, the one
+     h1 here. On the index a page has no main landmark, which is the
+     point: the page is navigation. */
+  .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-brand] { display: none; }
+  .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  /* The console's index is the bar, then the rail full screen, then the
+     foot below it: the rail is at least the viewport tall, as the
+     sidebar's is, so a short nav does not pull the foot up under it.
+     The console rail is already border-box. */
+  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { display: block; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); padding-inline: 0.25rem; }
+  /* The rows: every link a full-width row, at least 3rem, 1rem text, a
+     chevron at the end. The grouping is the markup apps already write,
+     a group label and then its links: a run of rows is rounded at its
+     first link (the nav's first, or the one after a label) and its last
+     (the nav's last, or the one before a label). The :has() half is a
+     rule of its own, so an engine without :has() drops only it and a
+     run's last corner is square, which is cosmetic. aria-current is not
+     marked here: the index is its own page, where "current" is not
+     true. */
+  .rst-shell-sidebar--index .rst-shell__nav, [rst-shell-sidebar~="index"] [rst-shell-nav], .rst-shell-console--index .rst-shell__nav, [rst-shell-console~="index"] [rst-shell-nav] { gap: 0; }
+  .rst-shell-sidebar--index .rst-shell__nav > a, [rst-shell-sidebar~="index"] [rst-shell-nav] > a, .rst-shell-sidebar--index .rst-shell__nav > a[aria-current], [rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current], .rst-shell-console--index .rst-shell__nav > a, [rst-shell-console~="index"] [rst-shell-nav] > a, .rst-shell-console--index .rst-shell__nav > a[aria-current], [rst-shell-console~="index"] [rst-shell-nav] > a[aria-current] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line); border-block-start-width: 0; border-radius: 0; box-sizing: border-box; color: var(--rst-text); display: flex; font-size: 1rem; font-weight: 450; gap: var(--rst-sp-3); min-block-size: 3rem; padding-block: 0; padding-inline: 1rem 0.75rem; }
+  .rst-shell-sidebar--index .rst-shell__nav > a:first-child, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:first-child, .rst-shell-sidebar--index .rst-shell__nav > .rst-shell__group + a, [rst-shell-sidebar~="index"] [rst-shell-nav] > [rst-shell-group] + a, .rst-shell-console--index .rst-shell__nav > a:first-child, [rst-shell-console~="index"] [rst-shell-nav] > a:first-child, .rst-shell-console--index .rst-shell__nav > .rst-shell__group + a, [rst-shell-console~="index"] [rst-shell-nav] > [rst-shell-group] + a { border-block-start-width: 1px; border-start-end-radius: var(--rst-radius); border-start-start-radius: var(--rst-radius); }
+  .rst-shell-sidebar--index .rst-shell__nav > a:last-child, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:last-child, .rst-shell-console--index .rst-shell__nav > a:last-child, [rst-shell-console~="index"] [rst-shell-nav] > a:last-child { border-end-end-radius: var(--rst-radius); border-end-start-radius: var(--rst-radius); }
+  .rst-shell-sidebar--index .rst-shell__nav > a:has(+ .rst-shell__group), [rst-shell-sidebar~="index"] [rst-shell-nav] > a:has(+ [rst-shell-group]), .rst-shell-console--index .rst-shell__nav > a:has(+ .rst-shell__group), [rst-shell-console~="index"] [rst-shell-nav] > a:has(+ [rst-shell-group]) { border-end-end-radius: var(--rst-radius); border-end-start-radius: var(--rst-radius); }
+  .rst-shell-sidebar--index .rst-shell__nav > a::after, [rst-shell-sidebar~="index"] [rst-shell-nav] > a::after, .rst-shell-console--index .rst-shell__nav > a::after, [rst-shell-console~="index"] [rst-shell-nav] > a::after { block-size: 0.5rem; border-right: 2px solid var(--rst-text-faint); border-top: 2px solid var(--rst-text-faint); content: ""; flex: none; inline-size: 0.5rem; margin-inline-start: auto; transform: rotate(45deg); }
+  [dir="rtl"] .rst-shell-sidebar--index .rst-shell__nav > a::after, [dir="rtl"] [rst-shell-sidebar~="index"] [rst-shell-nav] > a::after, [dir="rtl"] .rst-shell-console--index .rst-shell__nav > a::after, [dir="rtl"] [rst-shell-console~="index"] [rst-shell-nav] > a::after { transform: rotate(-135deg); }
+  .rst-shell-sidebar--index .rst-shell__nav > a:hover, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:hover, .rst-shell-sidebar--index .rst-shell__nav > a:active, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:active, .rst-shell-console--index .rst-shell__nav > a:hover, [rst-shell-console~="index"] [rst-shell-nav] > a:hover, .rst-shell-console--index .rst-shell__nav > a:active, [rst-shell-console~="index"] [rst-shell-nav] > a:active { background: var(--rst-accent-soft); }
+  .rst-shell-sidebar--index .rst-shell__nav > a:focus-visible, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:focus-visible, .rst-shell-console--index .rst-shell__nav > a:focus-visible, [rst-shell-console~="index"] [rst-shell-nav] > a:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+  /* "You came from here": the back link points at #nav-<section>, and
+     that row flashes once as the index comes back. */
+  .rst-shell-sidebar--index .rst-shell__nav > a:target, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:target, .rst-shell-console--index .rst-shell__nav > a:target, [rst-shell-console~="index"] [rst-shell-nav] > a:target { animation: rst-shell-flash 1.4s ease-out; }
+  .rst-shell-sidebar--index .rst-shell__group, [rst-shell-sidebar~="index"] [rst-shell-group], .rst-shell-console--index .rst-shell__group, [rst-shell-console~="index"] [rst-shell-group] { margin-block: var(--rst-sp-5) var(--rst-sp-2); padding-inline: 1rem; }
+  /* The foot FOLLOWS the nav on the index, by a fixed gap, never auto:
+     the rail has a min-height here, and an auto margin would float the
+     foot to the bottom of the screen, where the language menu would open
+     off it (the rail-foot comment above has the long version). */
+  .rst-shell-sidebar--index .rst-shell__rail-foot, [rst-shell-sidebar~="index"] [rst-shell-rail-foot] { margin-block-start: var(--rst-sp-6); }
+}
+@keyframes rst-shell-flash { from { background: var(--rst-accent-soft); } }
+@media (prefers-reduced-motion: reduce) {
+  .rst-shell-sidebar--index .rst-shell__nav > a:target, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:target, .rst-shell-console--index .rst-shell__nav > a:target, [rst-shell-console~="index"] [rst-shell-nav] > a:target { animation: none; }
 }
 
 /* ── rst-signin: the shipped sign-in card (partials/signin.html) ─────
@@ -2376,11 +2468,19 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell__brand, [rst-shell-brand] { align-items: center; display: inline-flex; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
   .rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-items: center; box-sizing: border-box; display: flex; min-block-size: var(--rst-tap); }
   .rst-shell-topbar .rst-shell__menu > summary, [rst-shell-topbar] [rst-shell-menu] > summary, .rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
+  /* LEGACY: the old drawer's summary. */
   .rst-shell-sidebar > .rst-shell__chrome > summary, [rst-shell-sidebar] > [rst-shell-chrome] > summary { min-block-size: var(--rst-tap); }
   /* The card's own summaries: the open Menu (its pressed state is a
      (0,3,1) rule) and the account menu inside it. */
-  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary { min-block-size: var(--rst-tap); }
+  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary, .rst-shell-console .rst-shell__menu[open] > summary, [rst-shell-console] [rst-shell-menu][open] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary, .rst-shell-console .rst-shell__tail > .rst-shell__account > summary, [rst-shell-console] [rst-shell-tail] > [rst-shell-account] > summary { min-block-size: var(--rst-tap); }
+  /* The back control (its strip is 2.75rem already; the link is the
+     target) and the index rows, which are 3rem: the nav-link floor above
+     weighs the same as the index's row rule and comes later, so without
+     this it would shrink the rows to 44px on exactly the screens the
+     index is for. */
+  .rst-shell__back a, [rst-shell-back] a { min-inline-size: var(--rst-tap); }
+  .rst-shell-sidebar--index .rst-shell__nav > a, [rst-shell-sidebar~="index"] [rst-shell-nav] > a, .rst-shell-console--index .rst-shell__nav > a, [rst-shell-console~="index"] [rst-shell-nav] > a { min-block-size: 3rem; }
 }
 
 /* ---------------------------------------------------------------------

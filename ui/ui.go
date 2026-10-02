@@ -226,17 +226,21 @@
 // rst-shell-bar holding rst-shell-brand, rst-shell-nav,
 // rst-shell-account and, below the page, rst-shell-foot;
 // rst-shell-sidebar wraps a rst-shell-rail of rst-shell-group-labelled
-// nav beside rst-shell-main, collapsing below 800px into a
-// <details rst-shell-chrome> — no JavaScript. rst-shell-console is
-// both at once: the bar's tail and the rail collapse behind the ONE
-// <details rst-shell-menu>, which gates its sibling tail with + and
-// the rail with :has(). rst-stage has no chrome at all: one card over
-// a rst-stage-scene backdrop, for a screen that stands alone. All five
-// carry rst-skip, the skip link — column and stage included. The
-// canonical markup is Styleguide's "shell-topbar" and "shell-sidebar",
-// and an app does not usually write any of it by hand: Layout ships
-// the five shells as whole templates and rastrillo new writes the
-// chosen one as templates/layout.html.
+// nav beside rst-shell-main. Below 800px it shows each URL in one of
+// two ways, named by the page's view block: the index
+// (rst-shell-sidebar="index"), where the rail is the whole page under
+// its rst-shell-title, and a content page (rst-shell-sidebar="page",
+// the default), which carries a rst-shell-back link to the page's up
+// block. No JavaScript; shell.js adds a slide, history reuse and focus
+// return. rst-shell-console is both at once: its bar's tail folds
+// behind the one <details rst-shell-menu> as a card over the page, and
+// its rail is an index like the sidebar's. rst-stage has no chrome at
+// all: one card over a rst-stage-scene backdrop, for a screen that
+// stands alone. All five carry rst-skip, the skip link — column and
+// stage included. The canonical markup is Styleguide's "shell-topbar"
+// and "shell-sidebar", and an app does not usually write any of it by
+// hand: Layout ships the five shells as whole templates and rastrillo
+// new writes the chosen one as templates/layout.html.
 package ui
 
 import (

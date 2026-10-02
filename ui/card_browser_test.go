@@ -4,6 +4,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -339,6 +340,72 @@ func TestTheCardFitsTheSmallestPhone(t *testing.T) {
 			}
 			if c.CardLeft < c.RootLeft-0.5 || c.CardRight > c.RootRight+0.5 {
 				t.Errorf("at 320 the card spans %.1f to %.1f and the page %.1f to %.1f; it overhangs", c.CardLeft, c.CardRight, c.RootLeft, c.RootRight)
+			}
+		})
+	}
+}
+
+// TestTheConsoleBarIsTheSameCard: the console's tail folds into the same
+// card as the topbar's: the page does not move, the card sits at the
+// inline end, an outside tap closes it with and without scripts, and
+// one Escape from inside its account menu closes both.
+func TestTheConsoleBarIsTheSameCard(t *testing.T) {
+	src, _ := Layout("console")
+	for _, c := range []struct {
+		dir     string
+		scripts bool
+	}{{"ltr", false}, {"ltr", true}, {"rtl", false}, {"rtl", true}} {
+		scripts := c.scripts
+		t.Run(fmt.Sprintf("%s scripts %v", c.dir, scripts), func(t *testing.T) {
+			page := shellLayoutPage(t, src, c.dir, `{{define "account"}}<a id="acct-profile" href="/go/profile">Profile</a>{{end}}`,
+				`{{define "content"}}<h1>Invoices</h1><div style="block-size: 450px"></div><p><a id="main-link" href="/go/main">A link in the page</a></p>{{end}}`)
+			pages := map[string]string{"/": page}
+			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
+			ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+			defer cancel()
+			acts := []chromedp.Action{chromedp.EmulateViewport(390, 844)}
+			if !scripts {
+				acts = append(acts, emulation.SetScriptExecutionDisabled(true))
+			}
+			acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+			mustRun(t, ctx, acts...)
+			var before, open struct {
+				Main, Basis, Inner string
+				Gap                float64
+			}
+			// Gap is the card's distance from the page's inline end, which is
+			// the left edge in RTL, measured against the root element's box:
+			// tokens.css reserves a stable scrollbar gutter, so the viewport's
+			// edge is not the page's. Basis and Inner are the card's own box
+			// rules: the console's base rule for its open tail (flex-basis 100%
+			// and a gap) comes earlier in the file than the card's, at the same
+			// weight, so these prove the card's rules won.
+			read := `(() => { const m = document.querySelector("main").getBoundingClientRect(), tail = document.querySelector("[rst-shell-tail]"), t = tail.getBoundingClientRect(), cs = getComputedStyle(tail);
+			  const rtl = document.documentElement.dir === "rtl", h = document.documentElement.getBoundingClientRect();
+			  return JSON.stringify({Main: [m.left, m.top, m.width].map(Math.round).join(","), Gap: rtl ? t.left - h.left : h.right - t.right, Basis: cs.flexBasis, Inner: cs.rowGap}); })()`
+			at(t, ctx, read, &before)
+			mustRun(t, ctx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-tail] [rst-shell-account] > summary", chromedp.ByQuery))
+			at(t, ctx, read, &open)
+			if open.Main != before.Main || open.Gap < 0 || open.Gap > 13 {
+				t.Errorf("main %s -> %s, card %.1fpx from the edge; want a card over a page that did not move", before.Main, open.Main, open.Gap)
+			}
+			if open.Basis != "auto" || open.Inner != "0px" {
+				t.Errorf("the console's open tail has flex-basis %s and gap %s; the card's auto and 0 lost to the console's own rule", open.Basis, open.Inner)
+			}
+			clickAndStay(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "", `!document.querySelector("[rst-shell-menu]").open`)
+			if scripts {
+				mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
+					chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-tail] [rst-shell-account] > summary", chromedp.ByQuery),
+					chromedp.Click("[rst-shell-account] > summary", chromedp.ByQuery), chromedp.WaitVisible("#acct-profile", chromedp.ByQuery),
+					chromedp.Focus("#acct-profile", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+				var s struct {
+					Menu, Acct bool
+					Focus      string
+				}
+				at(t, ctx, `JSON.stringify({Menu: document.querySelector("[rst-shell-menu]").open, Acct: document.querySelector("[rst-shell-account]").open, Focus: document.activeElement.closest("[rst-shell-menu]") ? "menu" : document.activeElement.tagName})`, &s)
+				if s.Menu || s.Acct || s.Focus != "menu" {
+					t.Errorf("Escape from the account menu in the console's card: %+v; want both closed and focus on the Menu summary", s)
+				}
 			}
 		})
 	}

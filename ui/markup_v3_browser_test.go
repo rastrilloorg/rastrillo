@@ -169,6 +169,10 @@ const extraFixture = `
   <div class="rst-shell-topbar"><div class="rst-shell__bar"><a class="rst-shell__brand" href="#a">Brand</a><nav class="rst-shell__nav"><a href="#a" aria-current="page">Home</a><a href="#a">Away</a></nav><details class="rst-shell__menu" name="rst-fixture-menus3"><summary>Menu</summary></details><div class="rst-shell__tail"><nav class="rst-shell__nav"><a href="#a">Tail</a></nav><details class="rst-shell__account rst-dropdown" name="rst-fixture-menus4"><summary class="rst-btn">Ana</summary><div class="rst-dropdown__menu"><a href="#a">Sign out</a></div></details></div></div><div class="rst-shell__foot"></div></div>
   <div class="rst-shell-sidebar"><details class="rst-shell__chrome" name="rst-fixture-menus5"><summary>Menu</summary></details><div class="rst-shell__rail"><div class="rst-shell__group">Group</div><nav class="rst-shell__nav"><a href="#a" aria-current="page">Home</a></nav><div class="rst-shell__rail-foot"><details class="rst-dropdown" name="rst-fixture-menus6"><summary class="rst-btn">Ana</summary><div class="rst-dropdown__menu"><a href="#a">Sign out</a></div></details></div></div><main class="rst-shell__main">Main</main></div>
   <div class="rst-shell-console"><div class="rst-shell__bar"><a class="rst-shell__brand" href="#a">Brand</a><details class="rst-shell__menu" name="rst-fixture-menus7"><summary>Menu</summary></details><div class="rst-shell__tail"><details class="rst-shell__account rst-dropdown" name="rst-fixture-menus8"><summary class="rst-btn">Ana</summary><div class="rst-dropdown__menu"><a href="#a">Sign out</a></div></details></div></div><div class="rst-shell__rail"><nav class="rst-shell__nav"><a href="#a" aria-current="page">Home</a><a href="#a">Away</a></nav></div><main class="rst-shell__main">Main</main><div class="rst-shell__foot">Foot</div></div>
+  <div class="rst-shell-sidebar rst-shell-sidebar--index"><div class="rst-shell__back"><a href="#a">Sections</a></div><div class="rst-shell__rail"><h1 class="rst-shell__title">App</h1><a class="rst-shell__brand" href="#a">App</a><nav class="rst-shell__nav"><p class="rst-shell__group">Work</p><a href="#a">One</a><a href="#a">Two</a><p class="rst-shell__group">More</p><a href="#a">Three</a></nav><div class="rst-shell__rail-foot"></div></div><main class="rst-shell__main">Main</main></div>
+  <div class="rst-shell-sidebar rst-shell-sidebar--page"><div class="rst-shell__back"><a href="#a">Sections</a></div><div class="rst-shell__rail"><h1 class="rst-shell__title">App</h1><nav class="rst-shell__nav"><a href="#a">One</a></nav></div><main class="rst-shell__main">Main</main></div>
+  <div class="rst-shell-console rst-shell-console--index"><div class="rst-shell__bar"><a class="rst-shell__brand" href="#a">App</a><details class="rst-shell__menu" name="rst-fixture-menus9" open><summary>Menu</summary></details><div class="rst-shell__tail"><details class="rst-shell__account rst-dropdown" name="rst-fixture-menus10"><summary class="rst-btn">Ana</summary><div class="rst-dropdown__menu"><a href="#a">Sign out</a></div></details></div></div><div class="rst-shell__back"><a href="#a">Sections</a></div><div class="rst-shell__rail"><h1 class="rst-shell__title">App</h1><nav class="rst-shell__nav"><a href="#a">One</a><a href="#a">Two</a></nav></div><main class="rst-shell__main">Main</main></div>
+  <div class="rst-shell-console rst-shell-console--page"><div class="rst-shell__bar"><a class="rst-shell__brand" href="#a">App</a></div><div class="rst-shell__back"><a href="#a">Sections</a></div><div class="rst-shell__rail"><nav class="rst-shell__nav"><a href="#a">One</a></nav></div><main class="rst-shell__main">Main</main></div>
   <!-- The sign-in card's parts the fixture's Ask state does not render:
        the Keymail one-tap's address, the passkey pair both shown
        with a message and hidden with none, and the "or" beside a shown
@@ -363,100 +367,110 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 	}
 	t.Logf("comparing %d computed properties, over the element and its ::before and ::after", len(props))
 
-	read := func(spelling string) []string {
+	// The width is a parameter because the shells' phone rules (the
+	// index, the back control, the card) are scoped below 800px: read
+	// only at the default width they would be paired on paper and never
+	// computed.
+	read := func(spelling string, width int64) []string {
 		t.Helper()
 		var got []string
 		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(width, 900),
 			chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
 			chromedp.WaitVisible("#fixture", chromedp.ByQuery),
 			chromedp.Evaluate(fmt.Sprintf(digestJS, propsJSON), &got),
 		); err != nil {
-			t.Fatalf("reading the %s pass: %v", spelling, err)
+			t.Fatalf("reading the %s pass at %dpx: %v", spelling, width, err)
 		}
 		if len(got) == 0 {
-			t.Fatalf("the %s pass found no elements under #fixture", spelling)
+			t.Fatalf("the %s pass at %dpx found no elements under #fixture", spelling, width)
 		}
 		return got
 	}
 
-	byClass, byAttr, bare := read("class"), read("attr"), read("bare")
-	t.Logf("%d elements in the fixture", len(byClass))
+	// Both passes must agree: 1280 for the wide rules, 390 for the
+	// narrow ones.
+	for _, width := range []int64{1280, 390} {
+		byClass, byAttr, bare := read("class", width), read("attr", width), read("bare", width)
+		t.Logf("at %dpx: %d elements in the fixture", width, len(byClass))
 
-	if len(byClass) != len(byAttr) {
-		t.Fatalf("the two spellings render different DOMs: %d elements in classes, %d in attributes — "+
-			"the translation lost or gained markup, so nothing below is comparable", len(byClass), len(byAttr))
-	}
+		if len(byClass) != len(byAttr) {
+			t.Fatalf("at %dpx: the two spellings render different DOMs: %d elements in classes, %d in attributes — "+
+				"the translation lost or gained markup, so nothing below is comparable", width, len(byClass), len(byAttr))
+		}
 
-	// The control first: if the stylesheet is not reaching the fixture,
-	// class == attr is worth nothing.
-	if len(bare) != len(byClass) {
-		t.Fatalf("the bare pass renders %d elements against the class pass's %d", len(bare), len(byClass))
-	}
-	styled := 0
-	for i := range bare {
-		if bare[i] != byClass[i] {
-			styled++
+		// The control first: if the stylesheet is not reaching the fixture,
+		// class == attr is worth nothing.
+		if len(bare) != len(byClass) {
+			t.Fatalf("at %dpx: the bare pass renders %d elements against the class pass's %d", width, len(bare), len(byClass))
 		}
-	}
-	if styled < len(byClass)/4 {
-		t.Fatalf("stripping every rst- class and attribute changed only %d of %d elements: "+
-			"tokens.css is not reaching this fixture, so an agreement between the two spellings proves nothing",
-			styled, len(byClass))
-	}
-	t.Logf("the control pass differs on %d of %d elements, so the stylesheet is reaching the fixture", styled, len(byClass))
-
-	var differ []int
-	for i := range byClass {
-		if byClass[i] != byAttr[i] {
-			differ = append(differ, i)
-		}
-	}
-	if len(differ) == 0 {
-		rig.Screen("#fixture", "the fixture in both spellings")
-		return
-	}
-
-	// Something disagrees. Go back for the values, and say which
-	// property moved rather than which element did.
-	show := differ
-	if len(show) > 6 {
-		show = show[:6]
-	}
-	wantJSON, err := json.Marshal(show)
-	if err != nil {
-		t.Fatalf("marshalling the element list: %v", err)
-	}
-	detail := func(spelling string) map[string]styleDetail {
-		var got map[string]styleDetail
-		if err := chromedp.Run(ctx,
-			chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
-			chromedp.WaitVisible("#fixture", chromedp.ByQuery),
-			chromedp.Evaluate(fmt.Sprintf(detailJS, propsJSON, wantJSON), &got),
-		); err != nil {
-			t.Fatalf("reading the %s detail: %v", spelling, err)
-		}
-		return got
-	}
-	classDetail, attrDetail := detail("class"), detail("attr")
-	for _, i := range show {
-		key := fmt.Sprint(i)
-		c, a := classDetail[key], attrDetail[key]
-		var moved []string
-		names := make([]string, 0, len(c.Style))
-		for name := range c.Style {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			if c.Style[name] != a.Style[name] {
-				moved = append(moved, fmt.Sprintf("%s: class %q, attribute %q", name, c.Style[name], a.Style[name]))
+		styled := 0
+		for i := range bare {
+			if bare[i] != byClass[i] {
+				styled++
 			}
 		}
-		t.Errorf("element %d (<%s>) computes differently in the two spellings:\n\tclass markup:     %s\n\tattribute markup: %s\n\t%s",
-			i, strings.ToLower(c.Tag), c.HTML, a.HTML, strings.Join(moved, "\n\t"))
+		if styled < len(byClass)/4 {
+			t.Fatalf("at %dpx: stripping every rst- class and attribute changed only %d of %d elements: "+
+				"tokens.css is not reaching this fixture, so an agreement between the two spellings proves nothing",
+				width, styled, len(byClass))
+		}
+		t.Logf("at %dpx: the control pass differs on %d of %d elements, so the stylesheet is reaching the fixture", width, styled, len(byClass))
+
+		var differ []int
+		for i := range byClass {
+			if byClass[i] != byAttr[i] {
+				differ = append(differ, i)
+			}
+		}
+		if len(differ) == 0 {
+			rig.Screen("#fixture", fmt.Sprintf("the fixture in both spellings at %dpx", width))
+			continue
+		}
+
+		// Something disagrees. Go back for the values, and say which
+		// property moved rather than which element did.
+		show := differ
+		if len(show) > 6 {
+			show = show[:6]
+		}
+		wantJSON, err := json.Marshal(show)
+		if err != nil {
+			t.Fatalf("marshalling the element list: %v", err)
+		}
+		detail := func(spelling string) map[string]styleDetail {
+			var got map[string]styleDetail
+			if err := chromedp.Run(ctx,
+				chromedp.EmulateViewport(width, 900),
+				chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
+				chromedp.WaitVisible("#fixture", chromedp.ByQuery),
+				chromedp.Evaluate(fmt.Sprintf(detailJS, propsJSON, wantJSON), &got),
+			); err != nil {
+				t.Fatalf("reading the %s detail at %dpx: %v", spelling, width, err)
+			}
+			return got
+		}
+		classDetail, attrDetail := detail("class"), detail("attr")
+		for _, i := range show {
+			key := fmt.Sprint(i)
+			c, a := classDetail[key], attrDetail[key]
+			var moved []string
+			names := make([]string, 0, len(c.Style))
+			for name := range c.Style {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+			for _, name := range names {
+				if c.Style[name] != a.Style[name] {
+					moved = append(moved, fmt.Sprintf("%s: class %q, attribute %q", name, c.Style[name], a.Style[name]))
+				}
+			}
+			t.Errorf("at %dpx: element %d (<%s>) computes differently in the two spellings:\n\tclass markup:     %s\n\tattribute markup: %s\n\t%s",
+				width, i, strings.ToLower(c.Tag), c.HTML, a.HTML, strings.Join(moved, "\n\t"))
+		}
+		t.Errorf("at %dpx: %d of %d elements compute differently in the two spellings; the first %d are above",
+			width, len(differ), len(byClass), len(show))
 	}
-	t.Errorf("%d of %d elements compute differently in the two spellings; the first %d are above",
-		len(differ), len(byClass), len(show))
 }
 
 // classSpelling translates markup the other way — rst- attributes back
