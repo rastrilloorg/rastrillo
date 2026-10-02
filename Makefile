@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt root staticcheck chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci gofmt root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -19,6 +19,20 @@ export GOFLAGS = -mod=mod
 # target is the single deliberate exception, scoped to its own command.
 export CGO_ENABLED = 0
 
+# The gate runs on one known Go, not whichever release the machine has.
+# govulncheck reports the standard library's vulnerabilities for the
+# toolchain doing the scan, so a runner one patch release behind would
+# fail the gate for code nobody changed, and a laptop and a runner on
+# different patches would disagree about what passing means. go fetches
+# this release through the module proxy on first use.
+#
+# A plain =, not ?=: Go's own container images set GOTOOLCHAIN=local, and
+# ?= would quietly keep whatever Go they ship. Override on the command
+# line if you must: make ci GOTOOLCHAIN=local. Raise it with each Go
+# security release; govulncheck naming a stdlib package "Found in" this
+# version is the signal.
+export GOTOOLCHAIN = go1.26.6
+
 BIN := $(CURDIR)/.build
 
 # Keep compiler/linker scratch on the checkout filesystem when shared /tmp is full.
@@ -28,7 +42,7 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt money root staticcheck chromedp-graph gorm-free race \
+ci: gofmt money root staticcheck govulncheck gitleaks chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
@@ -80,6 +94,27 @@ staticcheck:
 	go run $(STATICCHECK) -tags browser ./...
 	cd money && go run $(STATICCHECK) ./...
 	@for e in $(EXAMPLES); do echo "staticcheck examples/$$e"; (cd examples/$$e && go run $(STATICCHECK) ./...) || exit 1; done
+
+# govulncheck reports only vulnerabilities this code can reach, so a
+# finding is a real call path, not a dependency merely present in go.sum.
+# It reads the live vulnerability database, so it can go red with no
+# change here: that is the point of running it on every push. A module
+# finding is fixed by raising the requirement; a standard-library one by
+# raising GOTOOLCHAIN above.
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.8.0
+govulncheck:
+	go run $(GOVULNCHECK) ./...
+	cd money && go run $(GOVULNCHECK) ./...
+	@for e in $(EXAMPLES); do echo "govulncheck examples/$$e"; (cd examples/$$e && go run $(GOVULNCHECK) ./...) || exit 1; done
+
+# The whole git history, not only the tree: a key committed and deleted
+# a year ago is still in every clone, and on the public GitHub mirror.
+# .gitleaks.toml allows the committed test vectors by directory and two
+# single non-secrets by value. --redact keeps anything it does find out
+# of the CI log.
+GITLEAKS := github.com/zricethezav/gitleaks/v8@v8.30.1
+gitleaks:
+	go run $(GITLEAKS) git --no-banner --redact .
 
 # The README promises chromedp stays out of the ordinary build graph.
 # This is that sentence, executable.
@@ -211,7 +246,7 @@ mirror-check:
 	echo "with an ordinary amadan branch merge (not -squash), then: make mirror"; \
 	exit 1
 
-root staticcheck money chromedp-graph race build-cli browser: | $(BIN)/tmp
+root staticcheck govulncheck gitleaks money chromedp-graph race build-cli browser: | $(BIN)/tmp
 
 $(BIN)/tmp:
 	mkdir -p "$@"

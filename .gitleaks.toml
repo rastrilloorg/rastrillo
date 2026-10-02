@@ -1,0 +1,37 @@
+# gitleaks' default rules, minus the fixtures this repository commits on
+# purpose. Every key under these directories exists to be published: they
+# are pinned cross-implementation vectors (crypto/testdata/golden.json is
+# byte-for-byte amadan's own fixture, invites.json is eleven's, and
+# keyring's is replayed by its JavaScript twin), so they must stay exactly
+# what the other side checks against and cannot be swapped for fakes.
+#
+# A path, not a pattern: anything else that looks like a key, anywhere,
+# still fails the gate.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "committed test vectors"
+paths = [
+  '''^crypto/testdata/''',
+  '''^keyring/testdata/''',
+]
+
+# Two single values that look like keys and are not, allowed by their
+# content so the rest of their files stays covered. Not by fingerprint in
+# .gitleaksignore: a fingerprint names a commit, and the amadan runner's
+# shallow checkout re-adds the whole tree at every graft point, so the
+# same line turns up under commits no fingerprint names.
+
+# The SHA-256 checksums this test freezes (e3b0c442... is the hash of the
+# empty string). AND: a 64-hex value, and only in this file.
+[[allowlists]]
+description = "migration checksums the frozen-checksum test pins"
+condition = "AND"
+paths = ['''^migrate/frozen_checksums_test\.go$''']
+regexes = ['''^[0-9a-f]{64}$''']
+
+# RFC 6238's published TOTP test key: base32 for "12345678901234567890".
+[[allowlists]]
+description = "RFC 6238 test key"
+regexes = ['''^GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ$''']
