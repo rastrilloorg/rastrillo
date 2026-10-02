@@ -91,6 +91,20 @@ func centre(t *testing.T, ctx context.Context, sel string) (float64, float64) {
 	return p.X, p.Y
 }
 
+// landsOn is centre plus the check centre skips: a negative leg proves
+// nothing if the pointer never reached the element it claims to have
+// missed, so these assert the probe's hit before trusting a "no
+// prerender" reading. wantID is the element's id attribute, which is
+// what probe reports for an element that has one.
+func landsOn(t *testing.T, ctx context.Context, sel, wantID string) (float64, float64) {
+	t.Helper()
+	p := probe(t, ctx, sel, 0.5, 0.5, 0, 0)
+	if p.Hit != wantID {
+		t.Fatalf("the probe point for %s landed on %q, not %q; a hover there proves nothing", sel, p.Hit, wantID)
+	}
+	return p.X, p.Y
+}
+
 // TestShellNavigationIsPrerendered drives the two ways a browser starts
 // a speculation: a hover on a nav link (desktop) and a pointer-down on
 // one (phone) start a prerender of it, with no CSP violation; a link
@@ -111,7 +125,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	if h := waitFor(hits, "/invoices", 4*time.Second); !strings.Contains(h, "prerender") {
 		t.Errorf("a hover on a nav link started no prerender (got %q)", h)
 	}
-	x, y = centre(t, ctx, "#plain")
+	x, y = landsOn(t, ctx, "#plain", "plain")
 	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
 	if h := waitFor(hits, "/plain", 2*time.Second); h != "" {
 		t.Errorf("a link outside the shell's navigation was prerendered: %q", h)
@@ -119,7 +133,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	rig.Run(chromedp.Navigate(rig.Origin + "/signin"))
 	rig.Screen("#stage-link", "the stage page")
 	drain(hits)
-	x, y = centre(t, ctx, "#stage-link")
+	x, y = landsOn(t, ctx, "#stage-link", "stage-link")
 	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
 	if h := waitFor(hits, "/orders", 2*time.Second); h != "" {
 		t.Errorf("a stage page prerendered %q; the rules match nothing outside the sidebar and console", h)
@@ -146,7 +160,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	defer ocancel()
 	off.Run(chromedp.EmulateViewport(1280, 900), chromedp.Navigate(off.Origin+"/"))
 	drain(offHits)
-	x, y = centre(t, octx, "#nav-invoices")
+	x, y = landsOn(t, octx, "#nav-invoices", "nav-invoices")
 	mustRun(t, octx, chromedp.MouseEvent(input.MouseMoved, x, y))
 	if h := waitFor(offHits, "/invoices", 3*time.Second); h != "" {
 		t.Errorf("CONTROL: with NoSpeculationRules a hover still fetched %q, so the header is not what the legs above measured", h)
@@ -164,7 +178,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 	hits := make(chan string, 64)
 	rig := harness.New(t, prerenderSite(t, false, hits), harness.WithCoarsePointer())
-	ctx, done, _ := tab(t, rig, "")
+	ctx, done, thrown := tab(t, rig, "")
 	defer done()
 	visit(t, ctx, rig.Origin+"/invoices")
 	settleUntil(t, ctx, `!!document.querySelector("[rst-shell-back] a")`)
@@ -181,4 +195,7 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 		t.Fatalf("the index was delivered as %q, not from the speculation; the leg has not arisen", delivery)
 	}
 	settleUntil(t, ctx, `document.activeElement.id === "nav-invoices"`)
+	if len(*thrown) > 0 {
+		t.Errorf("uncaught: %v", *thrown)
+	}
 }

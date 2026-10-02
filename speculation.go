@@ -15,9 +15,14 @@ const SpeculationRulesPath = "/_speculation-rules"
 
 // speculationRules is the whole ruleset: document rules scoped by a
 // selector, in both markup spellings, to shell navigation and the back
-// control. moderate prerenders on a 200ms hover on a desktop and on
-// pointer-down on a phone. A GET never mutates, and a handler can tell a
-// prerender from its Sec-Purpose: prefetch;prerender request header.
+// control. On desktop, moderate fires on a roughly 200ms hover or
+// pointer-down; on Android Chrome it instead fires around 500ms after
+// scrolling stops, for an anchor near the last pointer-down that is at
+// least half the size of the largest anchor in view
+// (https://developer.chrome.com/docs/web-platform/prerender-pages). A
+// GET reachable from a shell's nav must not mutate — a handler can
+// still tell a prerender apart from an ordinary navigation by its
+// Sec-Purpose: prefetch;prerender request header.
 //
 // It is delivered by the header rather than inline because the default
 // CSP refuses an inline <script type="speculationrules">, and a header
