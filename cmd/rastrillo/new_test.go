@@ -277,7 +277,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 // at) and registers "errors" as a page, so render(w, "errors", …)
 // resolves.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
-	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp")
+	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
 	if !strings.Contains(src, `[]string{"index", "errors"}`) {
 		t.Errorf("render.go's pages init loop does not include \"errors\":\n%s", src)
 	}

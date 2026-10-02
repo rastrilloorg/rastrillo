@@ -142,18 +142,19 @@ type vendoredFile struct {
 // report is everything doctor found, separated from printing it so the
 // finding and the wording can be tested apart.
 type report struct {
-	dir        string
-	staticDir  string // relative to dir, for display
-	module     string
-	cliVersion string
-	cliTagged  bool   // the CLI's version came from an install tag, not the fallback
-	appVersion string // what the app's go.mod requires; empty if unreadable
-	replaced   string // the target of a replace directive, if any
-	theme      string // the theme the comparison used; empty when unidentified
-	themeFrom  string // how the theme was decided, for the one-line explanation
-	pinFile    string // relative path of the app's vendored_test.go, if it has one
-	pinLegacy  bool   // that pin is the older map-literal shape, with no vendoredIsMine
-	files      []vendoredFile
+	dir          string
+	staticDir    string // relative to dir, for display
+	module       string
+	cliVersion   string
+	cliTagged    bool   // the CLI's version came from an install tag, not the fallback
+	appVersion   string // what the app's go.mod requires; empty if unreadable
+	replaced     string // the target of a replace directive, if any
+	theme        string // the theme the comparison used; empty when unidentified
+	themeFrom    string // how the theme was decided, for the one-line explanation
+	pinFile      string // relative path of the app's vendored_test.go, if it has one
+	pinLegacy    bool   // that pin is the older map-literal shape, with no vendoredIsMine
+	files        []vendoredFile
+	layoutAdvice string // relative path of an old shell layout, if the app has one
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -199,6 +200,33 @@ func (r *report) exit() error {
 	return nil
 }
 
+// doctorLayoutAdvisory is the one line doctor prints for a shell layout
+// written before the phone index shipped (copy review, batch 1).
+// "Upgrading" is the section of docs/site/templates.md that gives the
+// edit.
+const doctorLayoutAdvisory = `This layout still has the old mobile menu. See "Upgrading" in the templates guide.`
+
+// templateCommentRE matches a Go template comment action, including its
+// trim forms ({{- /* ... */ -}}), so oldShellLayout can strip one before
+// looking for markup: a note explaining the old shell to the next
+// reader must not be read as the shell itself.
+var templateCommentRE = regexp.MustCompile(`(?s)\{\{-?\s*/\*.*?\*/\s*-?\}\}`)
+
+// oldShellLayout reports whether an app's layout.html predates the phone
+// index: the drawer is in it, or it is a sidebar or console layout with
+// no view block. Doctor cannot diff a layout, which is the app's own and
+// edited from day one, but it can recognise these two shapes, and an app
+// that re-vendored tokens.css keeps working on them (the legacy rules),
+// so it is advice and never a failure.
+func oldShellLayout(src string) bool {
+	src = templateCommentRE.ReplaceAllString(src, "")
+	if strings.Contains(src, "rst-shell-chrome") {
+		return true
+	}
+	shell := strings.Contains(src, "rst-shell-sidebar") || strings.Contains(src, "rst-shell-console")
+	return shell && !strings.Contains(src, `{{block "view"`)
+}
+
 // diagnose does the reading: where the app keeps its vendored files,
 // what version it is on, which theme it chose, and how each file
 // compares. It writes nothing.
@@ -220,6 +248,11 @@ func diagnose(dir, themeFlag string) (*report, error) {
 		return nil, err
 	}
 	r.staticDir = rel(dir, staticDir)
+
+	layout := filepath.Join(filepath.Dir(staticDir), "templates", "layout.html")
+	if b, err := os.ReadFile(layout); err == nil && oldShellLayout(string(b)) {
+		r.layoutAdvice = rel(dir, layout)
+	}
 
 	pinPath, pin := readPin(dir, pkg)
 	r.pinFile, r.pinLegacy = rel(dir, pinPath), pin.legacy
@@ -512,6 +545,10 @@ func (r *report) print(w io.Writer, fixing bool) {
 		}
 	}
 	fmt.Fprintln(w)
+
+	if r.layoutAdvice != "" {
+		fmt.Fprintf(w, "%s: %s\n\n", r.layoutAdvice, doctorLayoutAdvisory)
+	}
 
 	// The summary counts what was compared, not what exists: a file the
 	// app has claimed was never a candidate for drift, and saying "5

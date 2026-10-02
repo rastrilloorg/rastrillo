@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // scaffoldWithReplace runs rastrillo new with args, points the app at
@@ -103,5 +105,70 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 	}
 	if out, err := run(); err != nil {
 		t.Fatalf("deleting the shell files and listing them in vendoredIsMine still fails:\n%s", out)
+	}
+}
+
+// A sidebar or console app opens on a phone to its index, whose content
+// is hidden there, so the scaffold writes an index with one section in
+// its nav and the section page it opens, with its way back. The other
+// shells keep today's one page.
+func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
+	t.Chdir(t.TempDir())
+	for _, shell := range ui.LayoutNames() {
+		name := "app" + shell
+		if err := runNew([]string{"--shell=" + shell, name}); err != nil {
+			t.Fatalf("%s: runNew: %v", shell, err)
+		}
+		dir := filepath.Join(name, "internal", name)
+		index := readScaffold(t, dir, "templates", "index.html")
+		app := readScaffold(t, dir, "app.go")
+		handlers := readScaffold(t, dir, "handlers.go")
+		render := readScaffold(t, dir, "render.go")
+		overview, err := os.ReadFile(filepath.Join(dir, "templates", "overview.html"))
+		if !twoPageShells[shell] {
+			if err == nil || strings.Contains(app, "/overview") || index != indexTemplate {
+				t.Errorf("%s: the one-page shells keep today's single page", shell)
+			}
+			continue
+		}
+		for _, c := range []struct{ file, got, want string }{
+			{"index.html", index, `{{define "view"}}index{{end}}`},
+			{"index.html", index, `<a id="nav-overview" href="/overview">` + scaffoldOverview + `</a>`},
+			{"overview.html", string(overview), `{{define "up"}}/#nav-overview{{end}}`},
+			{"overview.html", string(overview), `<a id="nav-overview" href="/overview" aria-current="page">` + scaffoldOverview + `</a>`},
+			{"app.go", app, `r.Get("/overview", a.overview)`},
+			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
+			{"render.go", render, `[]string{"index", "overview", "errors"}`},
+		} {
+			if !strings.Contains(c.got, c.want) {
+				t.Errorf("%s: %s lacks %q", shell, c.file, c.want)
+			}
+		}
+		if err != nil {
+			t.Errorf("%s: no overview.html: %v", shell, err)
+		}
+	}
+}
+
+// The two-page scaffold builds, vets under the browser tag, and passes
+// its own tests, the new overview test among them.
+func TestAScaffoldedSidebarAppPassesItsOwnTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	setSandboxGoEnv(t)
+	t.Chdir(t.TempDir())
+	dir := scaffoldWithReplace(t, "phoneapp", "--shell=sidebar")
+	out, err := goTestIn(dir, "-v", "./...")
+	if err != nil {
+		t.Fatalf("the scaffolded sidebar app's tests fail:\n%s", out)
+	}
+	if !strings.Contains(out, "--- PASS: TestOverviewRenders") {
+		t.Errorf("the scaffolded suite did not run TestOverviewRenders:\n%s", out)
+	}
+	vet := exec.Command("go", "vet", "-tags", "browser", "./...")
+	vet.Dir = dir
+	if b, err := vet.CombinedOutput(); err != nil {
+		t.Fatalf("go vet -tags browser:\n%s", b)
 	}
 }
