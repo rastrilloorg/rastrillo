@@ -513,15 +513,16 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 			t.Fatalf("%s: waiting for animations: %v", where, err)
 		}
 	}
-	// axe scans target, a JavaScript expression for the node to scan.
-	axe := func(where, scheme, target string) {
+	// axe scans the document with engine, a JavaScript expression for
+	// an object with axe's run method.
+	axe := func(where, scheme, engine string) {
 		t.Helper()
 		settle(where)
 		if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
 			t.Fatalf("%s: loading axe: %v", where, err)
 		}
 		paint(t, ctx, scheme)
-		total += report(t, where, scan(t, ctx, where, "window.axe", target, "false"))
+		total += report(t, where, scan(t, ctx, where, engine, "document", "false"))
 		scans++
 	}
 	// box is a control's size and visible label.
@@ -568,7 +569,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		where := "day/en topbar shell at 390px, card open (" + scheme + ")"
 		load(where, shellHref(mountPath, "day", "en", "topbar"), "[rst-shell-menu] > summary")
 		open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-nav] a")
-		axe(where, scheme, "document")
+		axe(where, scheme, "window.axe")
 		w, h, text := box(where, "[rst-shell-menu] > summary")
 		if w < 24 || h < 24 {
 			t.Errorf("%s: the disclosure's target is %d×%dpx, under WCAG 2.2 SC 2.5.8's 24×24", where, w, h)
@@ -589,19 +590,19 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 					t.Fatalf("%s: not the index (rail shown %v, main shown %v); axe would scan the wrong view", where,
 						shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a"), shownIn(t, ctx, where, "[rst-shell-main]"))
 				}
-				axe(where, scheme, "document")
+				axe(where, scheme, "window.axe")
 				if shell == "console" {
-					// The card scan is the bar, which holds the card: the
-					// rest of this document was scanned just above, and with
-					// the card open all of it lies under the summary's
-					// ::before light-dismiss layer, which axe cannot see (it
-					// works out what obscures a target from element boxes).
-					// Scanned whole, a rail row half under the card reads as
-					// a target cut to 22px (signal's measure) when no tap can
-					// reach it at all.
+					// The whole document with the card open, every rule but
+					// target-size. With the card open everything outside it
+					// lies under the summary's ::before light-dismiss layer,
+					// which axe cannot see (it works out what obscures a
+					// target from element boxes): a rail row half under the
+					// card read as a target cut to 22px (signal's measure)
+					// when no tap can reach it at all. The rows' size is
+					// measured with the card closed, just above.
 					where := theme + "/en console index at 390px, card open (" + scheme + ")"
 					open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-account] > summary")
-					axe(where, scheme, `document.querySelector("[rst-shell-bar]")`)
+					axe(where, scheme, `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`)
 				}
 
 				where = theme + "/en " + shell + " content page at 390px (" + scheme + ")"
@@ -609,7 +610,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 				if shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a") {
 					t.Fatalf("%s: the rail's nav is on screen on a content page; axe would scan the index", where)
 				}
-				axe(where, scheme, "document")
+				axe(where, scheme, "window.axe")
 				w, h, text := box(where, "[rst-shell-back] a")
 				if w < 44 || h < 44 {
 					t.Errorf("%s: the back control is %d×%dpx; the touch block promises 44×44", where, w, h)

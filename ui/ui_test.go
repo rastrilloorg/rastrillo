@@ -2008,8 +2008,8 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	}
 
 	// And the two <details> that are NOT menus stay out of it. The
-	// sidebar has no disclosure of its own since H; it must not grow one
-	// in the menus' group.
+	// sidebar has no disclosure of its own since the phone index; it
+	// must not grow one in the menus' group.
 	sidebar, ok := Layout("sidebar")
 	if !ok {
 		t.Fatal(`Layout("sidebar") reports no such layout`)
@@ -2080,7 +2080,7 @@ func TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer(t *testin
 	for _, c := range []struct{ layout, class string }{
 		{"topbar", "rst-shell-menu"},
 		// console reuses the topbar's control for its bar; its rail is an
-		// index page since H, like the sidebar's.
+		// index page, like the sidebar's.
 		{"console", "rst-shell-menu"},
 	} {
 		src, ok := Layout(c.layout)
@@ -2106,7 +2106,7 @@ func TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer(t *testin
 			t.Errorf(`layouts/%s.html spends "kebab" on navigation; kebab means "more actions on this row"`, c.layout)
 		}
 	}
-	// The sidebar has no disclosure at all since H: on a phone its
+	// The sidebar has no disclosure at all: on a phone its
 	// navigation is an index page, and every other page carries a back
 	// link to it. A drawer control here would be the hamburger the
 	// guidance now discourages.

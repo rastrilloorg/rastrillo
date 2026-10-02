@@ -39,8 +39,12 @@ func TestShimContract(t *testing.T) {
 		// so it is in the light-dismiss list, in both spellings written
 		// out (the rewrite above would give .rst-shell-menu, and the
 		// class is .rst-shell__menu), with its tail counted as inside it
-		// only while its summary is rendered.
-		`MENUS += ",[rst-shell-menu][open],.rst-shell__menu[open]"`,
+		// only while its summary is rendered. Scoped to a topbar or a
+		// console that names its view: an old console's Menu also
+		// reveals its rail, which must not close on a tap at a group
+		// label.
+		`[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]`,
+		`.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]`,
 		`TAIL = "[rst-shell-tail],.rst-shell__tail"`, "menuAround", "getClientRects().length",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
@@ -261,6 +265,8 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // The topbar card joined light dismiss: 9,784 → 11,424 bytes, for two
 // selector constants, menuAround, two call sites and their comments.
 // The busy.js split had freed the room; this did not come near the cap.
+// Scoping that Menu to a topbar or a console that names its view, so an
+// old console's rail is never dismissed: 11,424 → 11,957.
 //
 // The cap is still the point, and what it protects is the CODE: an app
 // owner owns this file from the moment it is scaffolded and has to be

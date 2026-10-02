@@ -169,8 +169,13 @@
   var MENUS = "[rst-dropdown][open],[rst-menu-group][open],[rst-row-menu][open]";
   MENUS += "," + MENUS.replace(/\[(rst[-\w]+)\]/g, ".$1");
   // Written out rather than derived: the class spelling of rst-shell-menu
-  // is .rst-shell__menu, which the rewrite above would spell wrong.
-  MENUS += ",[rst-shell-menu][open],.rst-shell__menu[open]";
+  // is .rst-shell__menu, which the rewrite above would spell wrong. Only
+  // in a topbar, or a console whose root names its view: a console
+  // layout from before the phone index gates its RAIL on this [open],
+  // and dismissing it there closed the whole navigation on a tap at a
+  // group label. No :is(), so an older engine still parses the list.
+  MENUS += ",[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]";
+  MENUS += ",.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]";
   var TAIL = "[rst-shell-tail],.rst-shell__tail";
 
   // menuAround is closest(MENUS) plus one logical parent. The card's

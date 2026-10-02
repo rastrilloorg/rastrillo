@@ -101,7 +101,8 @@ func settled(t *testing.T, ctx context.Context) {
 // skips a cross-document view transition before the new page reveals.
 const skippedTransition = `AbortError: Transition was skipped`
 
-// scriptErrors is every uncaught exception except a skipped transition.
+// scriptErrors is every uncaught exception except a skipped transition,
+// and how many skipped transitions it set aside.
 // Measured on this machine's Chromium with the real layouts: on roughly
 // one navigation in five the incoming transition is skipped before
 // pagereveal (the event carries no viewTransition, so no script ever saw
@@ -109,18 +110,19 @@ const skippedTransition = `AbortError: Transition was skipped`
 // happens with every deferred script the layouts load and not with
 // shell.js alone, and navigation, history and focus are unaffected: the
 // page simply arrives without the slide. Anything else thrown is still a
-// failure.
-func scriptErrors(t *testing.T, thrown []string) []string {
+// failure, and so is every navigation in a drive being skipped: that is
+// no longer a race, it is a slide that never runs.
+func scriptErrors(t *testing.T, thrown []string) (errs []string, skipped int) {
 	t.Helper()
-	var errs []string
 	for _, e := range thrown {
 		if strings.Contains(e, skippedTransition) && strings.Contains(e, "Uncaught (in promise)") {
 			t.Logf("the browser skipped a transition (no slide this time): %s", e)
+			skipped++
 			continue
 		}
 		errs = append(errs, e)
 	}
-	return errs
+	return errs, skipped
 }
 
 type viewReading struct {
@@ -220,7 +222,8 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				if after := state(t, ctx); after.Len != before.Len {
 					t.Errorf("the back control grew history %d -> %d; with scripts it reuses the entry behind it", before.Len, after.Len)
 				}
-				if errs := scriptErrors(t, *thrown); len(errs) > 0 {
+				errs, skipped := scriptErrors(t, *thrown)
+				if len(errs) > 0 {
 					t.Errorf("uncaught: %v", errs)
 				}
 				// A deep link: a fresh tab opened straight on a section, so
@@ -236,8 +239,28 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				if after := state(t, deep); after.Len != before.Len+1 {
 					t.Errorf("a deep link's back control: history %d -> %d, want the link followed (+1)", before.Len, after.Len)
 				}
-				if errs := scriptErrors(t, *deepThrown); len(errs) > 0 {
-					t.Errorf("uncaught in the deep-link tab: %v", errs)
+				deepErrs, deepSkipped := scriptErrors(t, *deepThrown)
+				if len(deepErrs) > 0 {
+					t.Errorf("uncaught in the deep-link tab: %v", deepErrs)
+				}
+				// Three navigations slide in this drive: to the section,
+				// back, and the deep link's back.
+				if skipped+deepSkipped >= 3 {
+					t.Errorf("every one of the drive's 3 navigations skipped its transition (%d skips); the slide never ran", skipped+deepSkipped)
+				}
+
+				// The console's index with rastrillo.js loaded: the card
+				// opens over the rail and an outside tap closes it, and
+				// the rail, which no longer follows the Menu, stays.
+				if shell == "console" {
+					idx, doneIdx, _ := tab(t, rig, "")
+					defer doneIdx()
+					visit(t, idx, rig.Origin+"/")
+					settled(t, idx)
+					mustRun(t, idx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery),
+						chromedp.WaitVisible("[rst-shell-tail] #rail-locale > summary", chromedp.ByQuery))
+					clickAndStay(t, idx, probe(t, idx, "[rst-shell-rail]", 0.5, 0.8, 0, 0), "",
+						`!document.querySelector("[rst-shell-menu]").open && document.querySelector("#nav-team").checkVisibility()`)
 				}
 			})
 		}
@@ -393,5 +416,55 @@ func TestAWhitespaceViewIsTheIndexInTheBrowser(t *testing.T) {
 	at(t, ctx, viewJS, &v)
 	if !v.Rail || v.Main {
 		t.Errorf("a view written as \"\\n  index\\n\" renders rail %v main %v; want the index", v.Rail, v.Main)
+	}
+}
+
+// TestAnOldConsoleLayoutKeepsItsRailOpen: an app that re-vendors
+// rastrillo.js and tokens.css but keeps a console layout from before
+// the phone index still has a rail it can use at 390. Its rail is gated
+// on the Menu's [open], so dismissing that Menu on an outside click, or
+// covering the page with the card's tap-to-close layer, would close the
+// whole navigation on a tap at a group label or the rail's empty space.
+// The control: a dropdown in the page IS dismissed by the same click,
+// so rastrillo.js is running and saw it. It is in the page rather than
+// in the bar's tail because the tail's open panel would lie over the
+// rail and take the click itself.
+func TestAnOldConsoleLayoutKeepsItsRailOpen(t *testing.T) {
+	pages := map[string]string{"/": shellLayoutPage(t, legacyLayout(t, "console"), "ltr",
+		`{{define "nav"}}<p rst-shell-group id="group">Sales</p><a id="nav-invoices" href="/invoices">Invoices</a><a id="nav-orders" href="/orders">Orders</a>{{end}}`,
+		`{{define "content"}}<h1>Invoices</h1><details rst-dropdown id="page-menu" name="rst-menus"><summary>Sort</summary><div rst-dropdown-menu><a href="/go/new">Newest</a></div></details>{{end}}`)}
+	rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	type reading struct {
+		Menu, Dropdown, Rail bool
+	}
+	const read = `JSON.stringify({Menu: document.querySelector("[rst-shell-menu]").open, Dropdown: document.querySelector("#page-menu").open,
+	  Rail: document.querySelector("#nav-invoices").getClientRects().length > 0})`
+	for _, c := range []struct {
+		where  string
+		fx, fy float64
+		sel    string
+	}{
+		{"a group label", 0.5, 0.5, "#group"},
+		// The rail's padding under its last link: rail, and nothing else.
+		{"the rail's empty space", 0.5, 1, "[rst-shell-rail]"},
+	} {
+		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+		requirePointer(t, ctx, true)
+		mustRun(t, ctx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("#nav-invoices", chromedp.ByQuery),
+			chromedp.Click("#page-menu > summary", chromedp.ByQuery), chromedp.WaitVisible("#page-menu [rst-dropdown-menu]", chromedp.ByQuery))
+		dy := 0.0
+		if c.fy == 1 {
+			dy = -6
+		}
+		p := probe(t, ctx, c.sel, c.fx, c.fy, 0, dy)
+		mustRun(t, ctx, chromedp.MouseClickXY(p.X, p.Y))
+		settleUntil(t, ctx, `!document.querySelector("#page-menu").open`)
+		var got reading
+		at(t, ctx, read, &got)
+		if !got.Menu || !got.Rail {
+			t.Errorf("a tap on %s (over %s) in an old console layout: Menu open %v, rail shown %v; want both, the rail is that layout's only navigation", c.where, p.Hit, got.Menu, got.Rail)
+		}
 	}
 }

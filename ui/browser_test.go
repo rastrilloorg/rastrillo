@@ -965,15 +965,17 @@ func menuPage(t *testing.T) http.Handler {
 			`<title>menus</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
 			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
-			// The header dropdown, in the shared group.
-			`<header rst-shell-bar>`+
+			// The header dropdown, in the shared group. In a topbar root,
+			// because rastrillo.js dismisses the shell Menu only in a
+			// topbar or a console that names its view.
+			`<div rst-shell-topbar><header rst-shell-bar>`+
 			`<details rst-dropdown rst-shell-account name="`+MenuGroupDefault+`" id="account">`+
 			`<summary id="account-summary">Account</summary>`+
 			`<div rst-dropdown-menu><a id="account-item" href="#settings">Settings</a></div>`+
 			`</details>`+
 			`<details rst-shell-menu name="rst-shell-menu" id="shellmenu"><summary id="shellmenu-summary">Menu</summary></details>`+
 			`<div rst-shell-tail><a id="tail-link" href="#tail">Tail</a></div>`+
-			`</header>`+
+			`</header></div>`+
 			// A list-bar filter dropdown with a nested submenu whose group
 			// is deliberately different. The search form is here for the
 			// same reason it is in a real list bar: it takes the strip's
@@ -1221,10 +1223,13 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	// The shell menu joined light dismiss when it became a card: an
 	// outside click closes it, and Escape from a link in its tail (its content, a sibling)
 	// closes it and hands focus to its summary. The legacy chrome strip
-	// is still left alone.
+	// is still left alone. At 390, where the topbar has its Menu: at the
+	// default width tokens.css hides it.
 	var shellOpened, shellAfterOutside, shellAfterEsc bool
 	var shellFocus string
 	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(390, 844),
+		chromedp.WaitVisible(`#shellmenu-summary`, chromedp.ByQuery),
 		chromedp.Click(`#shellmenu-summary`, chromedp.ByQuery),
 		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellOpened),
 		chromedp.Click(`#elsewhere`, chromedp.ByQuery),
