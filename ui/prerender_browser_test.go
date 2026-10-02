@@ -195,7 +195,13 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 		t.Fatalf("the index was delivered as %q, not from the speculation; the leg has not arisen", delivery)
 	}
 	settleUntil(t, ctx, `document.activeElement.id === "nav-invoices"`)
-	if len(*thrown) > 0 {
-		t.Errorf("uncaught: %v", *thrown)
+	// scriptErrors, not a raw length check: the back-control navigation
+	// is the same shape as TestThePhoneIndexWorksWithScripts's, which
+	// headless Chromium itself skips the incoming transition for on
+	// roughly one navigation in five (see scriptErrors's comment) —
+	// an unfiltered check would flake on exactly that.
+	errs, _ := scriptErrors(t, *thrown)
+	if len(errs) > 0 {
+		t.Errorf("uncaught: %v", errs)
 	}
 }
