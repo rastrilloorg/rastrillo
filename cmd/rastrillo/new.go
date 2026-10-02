@@ -165,8 +165,13 @@ func runNew(args []string) error {
 	//	theme.css      the colour, type family and shape tokens
 	//	               tokens.css paints its classes with; swap it for
 	//	               another of ui.ThemeNames() or edit it freely
+	//	shell.css      the sidebar and console shells' slide between
+	//	               the index and a page on a phone
 	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
 	//	busy.js        the busy rule: every submit button, data-busy opts out
+	//	shell.js       the same two shells' phone navigation: the slide's
+	//	               direction, a back control that reuses history,
+	//	               focus returned to the section the reader left
 	//	select.js      field-select's searchable enhancement, inert
 	//	               until a <select> opts in with data-rst-select
 	//	datetime.js    the date fields' natural-language combobox,
@@ -178,7 +183,11 @@ func runNew(args []string) error {
 	// that script and its tag; nothing else changes. The date fields are
 	// two files, and deleting one of the pair is the awkward case: drop
 	// calendar.js alone and the field still works, with its button
-	// falling back to the browser's own picker.
+	// falling back to the browser's own picker. shell.js and shell.css
+	// are written for every shell like the rest (select.js and calendar.js
+	// already ship to apps that never link them), and are deletable where
+	// the shell does not link them; the app's vendoring test then needs
+	// them in vendoredIsMine, or it fails on the missing files.
 	for name, content := range vendored {
 		files[filepath.Join(appDir, "static", name)] = string(content)
 	}
@@ -749,6 +758,11 @@ const vendoredTheme = "%[2]s"
 // upgrade) can tell it from drift.
 var vendoredIsMine = map[string]bool{
 	// "tokens.css": true,
+	//
+	// Only the sidebar and console shells link shell.js and shell.css.
+	// An app on another shell that deletes them records it here, or this
+	// test fails on the missing files:
+	// "shell.js": true, "shell.css": true,
 }
 
 // The scaffold delivered these files once; they are app-owned from

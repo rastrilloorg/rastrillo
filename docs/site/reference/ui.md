@@ -455,6 +455,8 @@ func BusyJS() []byte
 func SelectJS() []byte
 func DatetimeJS() []byte
 func CalendarJS() []byte
+func ShellJS() []byte
+func ShellCSS() []byte
 ```
 
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once

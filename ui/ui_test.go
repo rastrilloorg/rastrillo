@@ -366,10 +366,21 @@ func buildReduceIndex(blocks []string) reduceIndex {
 // comma-split selector match in selectorList/buildReduceIndex rather than
 // a substring check.
 func TestReducedMotionDisablesEveryTransition(t *testing.T) {
-	css := string(TokensCSS())
+	assertReducedMotion(t, "tokens.css", string(TokensCSS()))
+}
+
+// shell.css is the other stylesheet a shell links, and every rule in it
+// animates: the gate holds it to the same exact-selector rule, unchanged
+// in what it accepts, so the slide cannot escape it.
+func TestShellCSSReducedMotionDisablesEveryAnimation(t *testing.T) {
+	assertReducedMotion(t, "shell.css", string(ShellCSS()))
+}
+
+func assertReducedMotion(t *testing.T, name, css string) {
+	t.Helper()
 	reduceBlocks, rest := reducedMotionBlocks(css)
 	if len(reduceBlocks) == 0 {
-		t.Fatal("tokens.css declares no @media (prefers-reduced-motion: reduce) block at all")
+		t.Fatal(name + " declares no @media (prefers-reduced-motion: reduce) block at all")
 	}
 	idx := buildReduceIndex(reduceBlocks)
 
@@ -397,7 +408,7 @@ func TestReducedMotionDisablesEveryTransition(t *testing.T) {
 		}
 	}
 	if tested == 0 {
-		t.Fatal("found no transition/animation declarations to check outside reduce blocks — the parser likely broke, not that tokens.css lost every transition")
+		t.Fatal("found no transition/animation declarations to check outside reduce blocks — the parser likely broke, not that " + name + " lost every transition")
 	}
 }
 

@@ -271,6 +271,12 @@ var datetimeJS []byte
 //go:embed calendar.js
 var calendarJS []byte
 
+//go:embed shell.js
+var shellJS []byte
+
+//go:embed shell.css
+var shellCSS []byte
+
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
 // layout:
@@ -395,6 +401,21 @@ func DatetimeJS() []byte { return datetimeJS }
 // screen arrive translated on data-rst-date-calendar,
 // data-rst-date-prev-month and data-rst-date-next-month.
 func CalendarJS() []byte { return calendarJS }
+
+// ShellJS returns shell.js: the sidebar and console shells' phone
+// navigation. It types the slide between pages, makes the back control
+// reuse history when it can prove what is behind it, and returns focus
+// to the section the reader left. Delivered once by rastrillo new like
+// ShimJS and app-owned from then on. Only the sidebar and console
+// layouts link it, and it is optional there: without it the index and
+// the back control are ordinary pages and links.
+func ShellJS() []byte { return shellJS }
+
+// ShellCSS returns shell.css: the slide between the index and a page on
+// a phone. It is a stylesheet of its own because the slide's opt-in
+// cannot be scoped from tokens.css, where it would opt every shell's
+// pages in, the sign-in page included.
+func ShellCSS() []byte { return shellCSS }
 
 // layoutNames lists the shipped shells, column first: it is the plain
 // centred page every scaffolded app starts on, the three chrome shells

@@ -753,7 +753,7 @@ func themeLocaleOfPath(p string) (theme, locale string) {
 }
 
 // Every theme × locale × page kind × shell combination is present, plus
-// the root index and the eight shared assets — the tree's shape is part
+// the root index and the ten shared assets — the tree's shape is part
 // of its contract with the website's sync script. The page kinds come
 // off pageKinds(), so a sixth page is expected in every directory the
 // moment its row lands and nothing here has to be remembered.
@@ -761,7 +761,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "busy.js", "select.js", "datetime.js", "calendar.js",
+		"tokens.css", "rastrillo.js", "busy.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js",
 		"gallery.js", "gallery.css",
 	}
 	for _, theme := range ui.ThemeNames() {

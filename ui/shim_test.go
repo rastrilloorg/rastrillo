@@ -377,6 +377,7 @@ func TestScriptsAreSelfContained(t *testing.T) {
 		"select.js":    string(SelectJS()),
 		"datetime.js":  string(DatetimeJS()),
 		"calendar.js":  string(CalendarJS()),
+		"shell.js":     string(ShellJS()),
 	} {
 		for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
 			if strings.Contains(js, bad) {
@@ -417,5 +418,38 @@ func TestBusyContract(t *testing.T) {
 	}
 	if n := len(js); n > 16*1024 {
 		t.Fatalf("busy.js is %d bytes; keep it readable in one sitting", n)
+	}
+}
+
+// shell.js holds to the contract every scaffolded script does, with an
+// 8 KiB cap of its own (busy.js's precedent): the three behaviours it
+// exists for, named; both spellings of what it reads; the storage guard;
+// the prerender and pageswap facts its ordering depends on.
+func TestShellContract(t *testing.T) {
+	js := string(ShellJS())
+	for _, want := range []string{
+		// 1. Direction.
+		"pagereveal", "viewTransition.types.add", `"back"`, `"forward"`, "navigationType", `"traverse"`,
+		// 2. History reuse, only when proven. The Navigation API is read
+		// through a local (nav), so the call is spelled nav.entries().
+		"history.back()", "nav.entries()", "sameDocument", "e.button !== 0", "defaultPrevented",
+		// 3. Focus return, record first, never while prerendering.
+		"rst-shell-return", "pageswap", "pagehide", "document.prerendering", "decodeURIComponent", "sessionStorage",
+		// Both spellings.
+		"[rst-shell-back]", ".rst-shell__back", `[rst-shell-sidebar~="index"]`, ".rst-shell-sidebar--index",
+		`[rst-shell-console~="page"]`, ".rst-shell-console--page",
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("shell.js does not mention %q", want)
+		}
+	}
+	if !strings.HasPrefix(strings.TrimSpace(js), "/*") || !strings.Contains(js, "(function () {") || !strings.HasSuffix(strings.TrimSpace(js), "})();") {
+		t.Error("shell.js should be its contract comment and a single IIFE")
+	}
+	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") || strings.Contains(js, "\t") {
+		t.Error("shell.js must stay CSP-clean and use two-space indentation")
+	}
+	if n := len(js); n > 8*1024 {
+		t.Fatalf("shell.js is %d bytes; keep it readable in one sitting (8 KiB)", n)
 	}
 }

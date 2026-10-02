@@ -113,10 +113,10 @@ const DefaultMount = "/design-system"
 //	<theme>/<locale>/modal.html           36 modal demos, one per gallery
 //	<theme>/<locale>/demo.html            36 copies of the demo app
 //	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
-//	tokens.css theme-<theme>.css          the stylesheets, once each
-//	rastrillo.js select.js datetime.js    the framework's four scripts
-//	calendar.js                           (calendar.js draws the month
-//	                                      grid datetime.js opens)
+//	tokens.css theme-<theme>.css shell.css  the stylesheets, once each
+//	rastrillo.js busy.js shell.js          the framework's scripts
+//	select.js datetime.js calendar.js     (calendar.js draws the month grid
+//	                                      datetime.js opens)
 //	gallery.js gallery.css                the gallery's own furniture,
 //	                                      once each
 //
@@ -136,6 +136,8 @@ func Render(mount string) (map[string][]byte, error) {
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
 		"busy.js":      ui.BusyJS(),
+		"shell.js":     ui.ShellJS(),
+		"shell.css":    ui.ShellCSS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
 		"calendar.js":  ui.CalendarJS(),
