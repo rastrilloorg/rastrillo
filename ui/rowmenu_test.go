@@ -82,11 +82,23 @@ func TestRowMenuRefusesItemsItCannotRender(t *testing.T) {
 		{"neither", rowMenuData(map[string]any{"Label": "Edit"}), `item 0 ("Edit") wants exactly one of Href`},
 		{"Danger with Action", rowMenuData(map[string]any{"Label": "Delete…", "Action": "/d", "Danger": true}), `item 0 ("Delete…") is Danger`},
 		{"Hidden without Action", rowMenuData(map[string]any{"Label": "Edit", "Href": "/e", "Hidden": [][2]string{{"a", "b"}}}), `item 0 ("Edit") carries Hidden`},
+		{"Hidden a flat list", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": []string{"state", "archived"}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
+		{"Hidden a non-string pair", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": []any{[]any{"state", "archived"}, []any{"n", 1}}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
+		{"Hidden a short pair", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": [][]string{{"state"}}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
 	} {
 		err := tmpl.ExecuteTemplate(&strings.Builder{}, "row-menu", c.data)
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: err = %v, want one naming %q", c.name, err, c.want)
 		}
+	}
+}
+
+// A dict caller's Hidden, a []any of []any pairs of strings, is as good
+// as [][2]string: the pair check refuses malformed pairs, not this shape.
+func TestRowMenuAcceptsHiddenBuiltFromLists(t *testing.T) {
+	got := render(t, "row-menu", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": []any{[]any{"state", "archived"}, []string{"from", "list"}}}))
+	if !strings.Contains(got, `<input type="hidden" name="state" value="archived"><input type="hidden" name="from" value="list">`) {
+		t.Errorf("Hidden built from lists lost a field: %s", got)
 	}
 }
 

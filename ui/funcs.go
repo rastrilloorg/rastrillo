@@ -440,9 +440,9 @@ func rowMenuItems(data any) ([]rowMenuItem, error) {
 		// Hidden counts as present only when it holds something: a struct
 		// caller's Hidden field is there, nil or empty, on every item, and
 		// a link item with nothing to send has broken no rule.
-		hidden := false
+		hidden, sent := false, 0
 		if h := optKey(it, "Hidden"); h.IsValid() && (h.Kind() == reflect.Slice || h.Kind() == reflect.Array) {
-			hidden = h.Len() > 0
+			hidden, sent = h.Len() > 0, h.Len()
 		}
 		switch {
 		case m.Label == "":
@@ -453,6 +453,11 @@ func rowMenuItems(data any) ([]rowMenuItem, error) {
 			return nil, fmt.Errorf("ui: row-menu item %d (%q) is Danger, so it needs Href: a destructive item links to its confirm page", i, m.Label)
 		case hidden && m.Action == "":
 			return nil, fmt.Errorf("ui: row-menu item %d (%q) carries Hidden, which only a POST (Action) item sends", i, m.Label)
+		// optPairs skips a pair that is not two strings, which suits a
+		// search box carrying parameters along; here it would post the
+		// action with a field missing, so a short count is an error.
+		case len(m.Hidden) != sent:
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) has a Hidden entry that is not a pair of strings", i, m.Label)
 		}
 		if m.Danger && plain && !ruled {
 			m.Rule, ruled = true, true

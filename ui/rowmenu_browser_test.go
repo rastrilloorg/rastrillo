@@ -131,16 +131,28 @@ func TestARowMenuNearTheBottomOpensUpward(t *testing.T) {
 	rig, _ := rowMenuRig(t, false)
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	var g struct{ PanelBottom, SummaryTop, VH float64 }
+	var g struct {
+		Open                                          bool
+		PanelTop, PanelBottom, PanelH, SummaryTop, VH float64
+	}
 	mustRun(t, ctx, chromedp.EmulateViewport(1280, 700), chromedp.Navigate(rig.Origin+"/bottom"), chromedp.WaitReady("#list", chromedp.ByQuery),
 		chromedp.Evaluate(`window.scrollTo(0, document.documentElement.scrollHeight), true`, nil),
 		chromedp.Evaluate(`document.querySelector("#row-c summary").click(), true`, nil))
-	at(t, ctx, `(() => { const p = document.querySelector("#row-c [rst-row-menu-panel]").getBoundingClientRect(), s = document.querySelector("#row-c summary").getBoundingClientRect(); return JSON.stringify({PanelBottom: p.bottom, SummaryTop: s.top, VH: innerHeight}); })()`, &g)
+	at(t, ctx, `(() => { const d = document.querySelector("#row-c [rst-row-menu]"), p = d.querySelector("[rst-row-menu-panel]").getBoundingClientRect(), s = d.querySelector("summary").getBoundingClientRect(); return JSON.stringify({Open: d.open, PanelTop: p.top, PanelBottom: p.bottom, PanelH: p.height, SummaryTop: s.top, VH: innerHeight}); })()`, &g)
+	// A closed menu's panel is display: none, an all-zero box whose
+	// bottom (0) is above any summary: without this the leg would pass on
+	// a click that opened nothing.
+	if !g.Open || g.PanelH <= 0 {
+		t.Fatalf("the last row's menu did not open (open %v, panel %.0fpx tall); this leg proves nothing", g.Open, g.PanelH)
+	}
 	if g.SummaryTop < g.VH-200 {
 		t.Fatalf("the last row's kebab is at %.0f in a %.0fpx viewport; it is not near the bottom and this leg proves nothing", g.SummaryTop, g.VH)
 	}
 	if g.PanelBottom > g.SummaryTop+0.5 {
 		t.Errorf("the panel ends at %.0f, below its summary's top (%.0f): it opened downward off the screen", g.PanelBottom, g.SummaryTop)
+	}
+	if g.PanelTop < 0 {
+		t.Errorf("the panel starts at %.0f, above the viewport: it flipped upward and was cut off at the top", g.PanelTop)
 	}
 }
 
@@ -183,18 +195,21 @@ const postBusyJS = `((row) => {
 // happen to fit in.
 func TestAPostItemsSpinnerNeverMovesTheMenu(t *testing.T) {
 	for _, leg := range []struct {
-		name    string
-		w       int64
-		row     string
-		reduced bool
+		name            string
+		w               int64
+		row             string
+		reduced, coarse bool
 	}{
-		{"1280, a short label", 1280, "a", false},
-		{"1280, a long label on one line", 1280, "c", false},
-		{"320, a long label", 320, "c", false},
-		{"320, reduced motion", 320, "c", true},
+		{"1280, a short label", 1280, "a", false, false},
+		{"1280, a long label on one line", 1280, "c", false, false},
+		{"320, a long label", 320, "c", false, false},
+		{"320, reduced motion", 320, "c", true, false},
+		// On a touch screen the item is a 44px flex row, a different
+		// layout for the spinner to sit in.
+		{"320 touch, a long label", 320, "c", false, true},
 	} {
 		t.Run(leg.name, func(t *testing.T) {
-			rig, posted := rowMenuRig(t, false)
+			rig, posted := rowMenuRig(t, leg.coarse)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			acts := []chromedp.Action{chromedp.EmulateViewport(leg.w, 800)}
@@ -207,6 +222,7 @@ func TestAPostItemsSpinnerNeverMovesTheMenu(t *testing.T) {
 			// handler would post with no spinner and read as a failure of
 			// the slot rather than of the wait.
 			settleUntil(t, ctx, `document.readyState === "complete"`)
+			requirePointer(t, ctx, leg.coarse)
 			var g struct {
 				Before, After  [2][2]float64
 				Spin, InSlot   bool
