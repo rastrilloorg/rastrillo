@@ -42,10 +42,11 @@ var styleguideSamples = map[string]string{
 	// rst-menu-group carries a DIFFERENT name on purpose: <details name>
 	// exclusivity is document-wide, not sibling-scoped, so a submenu
 	// sharing its parent's group would close the parent the instant it
-	// opened — the submenu would flash and vanish. Shell chrome (the
-	// topbar's and console's Menu) and the toggle-block stay out of the
-	// group entirely: neither is a menu, and closing the navigation
-	// because someone opened a filter would be absurd.
+	// opened — the submenu would flash and vanish. The toggle-block
+	// stays out of the group because it is not a menu. The topbar's and
+	// console's Menu on a phone is one (rastrillo.js light-dismisses it
+	// with the rest) but stays out too: the account menu opens inside
+	// it, and in the same group opening the account menu would close it.
 	"dropdown": `<details rst-dropdown name="rst-menus">
   <summary>Filter<span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">Filter orders: Paid</span></summary>
   <div rst-dropdown-menu>
