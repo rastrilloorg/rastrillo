@@ -1,7 +1,8 @@
 # Test, CI, directory-size and screen-time budgets
 
-**Date:** 2026-10-03, revised the same day after an adversarial review
-(Astra; findings resolved in place, listed in § Review record)
+**Date:** 2026-10-03, revised the same day after two rounds of
+adversarial review (Astra; findings resolved in place, listed in § Review
+record)
 **Decided by:** Paul (scope, the 5k/8k ceiling, the feature split, keeping
 Go's test cache on, screen budgets in scope); the measurements are from
 the apps on this machine, cited below.
@@ -56,14 +57,18 @@ remembered.
    `Mount(r chi.Router, deps)`. Rejected: splitting by layer (`store/`,
    `web/`), because every handler edit still recompiles and retests the
    whole web layer.
-4. **Go's test cache stays on, and the time budget is enforced inside the
-   test binary so the cache cannot erase it.** Go caches only passing
-   runs. A package whose binary fails its own budget is never cached, so a
-   retry of the same commit fails again. Rejected: judging time from the
-   `go test -json` stream, because a cached replay of an over-budget
-   package passes (review finding 2); and `-count=1` everywhere (amadan's
-   choice, ~95s against ~9s cached), because it pays for the whole suite
-   on every push.
+4. **Go's test cache stays on, and the measurement travels with the
+   cached result.** Each test binary prints its own `m.Run` time; Go
+   caches a passing package's output and replays it byte for byte on a
+   hit, so the wrapper judges a cached package on the time it took when
+   it actually ran, and a retry of the same commit cannot turn an
+   over-budget package green (review finding 2). The verdict stays in the
+   wrapper, outside the binary: Go records a test's file and environment
+   reads only between `m.Run`'s `before` and `after` (Go
+   `testing.go:2434`), so a binary that read `budgets.txt` or an
+   environment variable from `TestMain` would leave both out of its cache
+   key. Rejected: `-count=1` everywhere (amadan's choice, ~95s against ~9s
+   cached), because it pays for the whole suite on every push.
 5. **Screen time runs in its own serial, uncached lane**, never inside the
    ordinary suite: parallel tests skew it, and its sweep would consume the
    package-time budget by construction (review findings 9 and 13).
@@ -79,7 +84,7 @@ remembered.
 | Budget | Default | Gated? | Where it is enforced |
 |---|---|---|---|
 | Directory size | 5,000 non-test / 8,000 test lines | Yes | `rastrillo budget size` |
-| Package test time | 10s per test binary's `m.Run` | Yes, in CI | `budget.Main` inside each test binary |
+| Package test time | 10s per test binary's `m.Run` | Yes, in CI | measured by `budget.Main`, judged by `rastrillo budget test` |
 | Warm screen | 150ms time-to-first-byte, median of 8 | Yes | `budget.Screens`, perf lane |
 | Cold boot | 500ms, process start to first byte | Yes | `budget.Boot`, perf lane |
 | Test step | 60s on the CI runner | **No**, reported | `rastrillo budget test` receipt |
@@ -89,8 +94,11 @@ shared runner is a flake generator, and Tito Go's gate already goes red a
 fifth of the time on flakes alone. It covers only the `go test` step; the
 whole gate's time is the runner's own figure.
 
-**Timing budgets mean the CI runner.** Local runs report against the same
-numbers and never fail on them; a loaded laptop is not evidence.
+**Timing budgets mean the CI runner.** `rastrillo budget test` fails on
+package time only when `AMADAN_CI` (which the amadan runner sets) or `CI`
+is non-empty; elsewhere, `make ci` included, it reports against the same
+numbers and never fails on them. A loaded laptop is not evidence. The perf
+lane is CI-gated the same way.
 
 ## The exemptions file
 
@@ -103,27 +111,37 @@ Grammar, one record per line; `#` starts a comment; blank lines ignored;
 fields are whitespace-separated and the reason is the rest of the line:
 
 ```
-size  <dir>               <src-lines> <test-lines>  <reason>
-time  <dir>               <duration>                <reason>
-perf  <METHOD> <pattern>  <duration>|skip           <reason>
-boot                      <duration>                <reason>
+size  <dir>               <src-lines>|-  <test-lines>|-  <reason>
+time  <dir>               <duration>                     <reason>
+perf  <METHOD> <screen>   <duration>|skip                <reason>
+boot                      <duration>                     <reason>
 ```
 
-- `<dir>` is slash-separated, relative to the module root (`internal/notes`,
-  `.` for the root). `<duration>` is a Go duration (`25s`, `1200ms`).
-  `<pattern>` is the chi pattern exactly as `chi.Walk` reports it.
-- A `size` record states both ceilings; the default fills neither in.
+- `<dir>` is the canonical form `path.Clean` gives a slash-separated path
+  relative to the module root: `internal/notes`, or `.` for the root. A
+  leading `./` or `/`, a trailing `/`, a `..` element, or anything
+  `path.Clean` would rewrite is refused rather than normalised, so one
+  directory has exactly one spelling.
+- `<duration>` is a Go duration (`25s`, `1200ms`).
+- `<screen>` is a chi pattern exactly as `chi.Walk` reports it (`/notes/{id}`),
+  or the key of a screen declared inside an opaque group (§4), which uses
+  the same pattern syntax.
+- In a `size` record, `-` means "the default" for that column. A stated
+  column must exceed its default, and only stated columns are ratcheted,
+  so a test-heavy directory with no source to speak of is expressible.
 - **Refused, with the line number:** an unknown kind, a missing or empty
-  reason, an unparseable number or duration, a zero or negative value, two
-  records for the same key, a `size` record no larger than the defaults on
-  both counts.
-- **Stale records fail.** `budget size` fails a `size` or `time` record
-  whose directory no longer exists or holds no Go files. `budget.Screens`
-  fails a `perf` record naming a route it did not find, because it is the
-  complete inventory (one call per module; see § `budget.Screens`).
-- **The ratchet, on size only:** a directory measuring under 60% of its
-  exemption on either count fails with "measured 3,100, exemption says
-  7,200: lower it". Timing has no ratchet; runner noise would make it
+  reason, an unparseable number or duration, a zero or negative value, a
+  non-canonical `<dir>`, two records for the same key, a `size` record
+  with both columns `-`, a stated `size` column not above its default.
+- **Stale records fail, each where the complete inventory lives.** `budget
+  size` fails a `size` record whose directory no longer exists or holds no
+  Go files. `rastrillo budget test` fails a `time` record naming no
+  package it saw, on a `./...` run (§3). `budget.Screens` fails a `perf`
+  record naming a route it did not find (one call per module; see §4).
+- **The ratchet, on size only, per stated column:** a directory measuring
+  under 60% of a stated ceiling fails with "measured 3,100, exemption
+  says 7,200: lower it". A column measuring at or under its default fails
+  with "no longer needs an exemption: write `-`". Timing has no ratchet; runner noise would make it
   flake. `budget.Screens` prints an advisory line instead when a route
   measures under 60% of its exemption.
 
@@ -150,7 +168,7 @@ into `_test.go` and the rest.
 - Exit 0 clean, 1 on any violation, 2 on a malformed `budgets.txt`.
   Output lists every violation, then a one-line summary.
 
-### 2. `budget.Main`, the in-binary time budget
+### 2. `budget.Main`, the in-binary measurement
 
 New public package `amadan.net/rastrillo/rastrillo/budget`, GORM-free
 (joins `GORM_FREE` in the Makefile).
@@ -159,21 +177,19 @@ New public package `amadan.net/rastrillo/rastrillo/budget`, GORM-free
 func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }
 ```
 
-- Times `m.Run()` and finds this package's `time` record (default 10s) by
-  locating the module root from the test's working directory, which `go
-  test` sets to the package directory.
-- Prints `rastrillo budget: armed internal/notes 10s` before running, and
-  after: `rastrillo budget: internal/notes 2.4s of 10s`.
-- **Enforces only when `RASTRILLO_BUDGET=enforce`**, which the scaffold's
-  CI targets set. Over budget there, it prints `rastrillo budget: FAIL
-  internal/notes took 12.3s, budget 10s` and returns 1, so the package
-  fails and Go does not cache it. Without the variable it reports and
-  returns `m.Run`'s code. Go records environment variables a test reads in
-  its cache key, so local and CI runs never share a cached verdict.
-- `budgets.txt` is read through `os.ReadFile`, which Go's test cache also
-  records, so editing an exemption re-runs the packages it affects.
+- Times `m.Run()`, returns its code unchanged, and after it prints one
+  line, `rastrillo-budget/v1 ran 2.413s` (the version lets the parser
+  refuse a format it does not know). It judges nothing, reads no file
+  and no environment variable, so it adds nothing to the cache key and
+  cannot make a package fail.
+- Because the line is part of the binary's output, a cached replay
+  carries the time from the run that was cached. That is what lets the
+  wrapper judge cached packages (Decision 4).
 - An app that already has a `TestMain` calls `budget.Main(m)` in place of
-  `m.Run()` and does its own teardown after (`dbtest`'s `Remove`).
+  `m.Run()` and does its own teardown after it (`dbtest`'s `Remove`).
+- It reads `budget.Boot`'s child variable only to stay silent in a child
+  process (§4); the child's line would otherwise be judged as a second
+  package run.
 
 ### 3. `rastrillo budget test`
 
@@ -188,76 +204,174 @@ rastrillo budget test [go test flags and packages]
   child's stderr unchanged.
 - Parses both event schemas: test events keyed by `Package`, and build
   events (`build-output`, `build-fail`) keyed by `ImportPath`.
-- **Requires the marker:** a package that ran tests (any test-level event)
-  without printing `rastrillo budget: armed` fails the step, naming the
-  package and the one line to add. Packages that end in `skip` (no test
-  files) are counted and exempt. Cached packages replay their output, the
-  marker included, so they pass this check honestly.
+- **Reassembles output before reading it.** test2json may split a long
+  line across `output` events, so the package-level output (events with
+  no `Test`) is concatenated in order and split on newlines; the
+  measurement is an exact whole-line match of
+  `^rastrillo-budget/v1 ran (\S+)$`, parsed with `time.ParseDuration`.
+  Two such lines in one package, or an unknown version, fail the step.
+- **Classifies cached packages** from the package summary output, which
+  ends `(cached)` on a hit, never from `Elapsed` (on a hit it measures
+  the replay).
+- **Judges package time.** For each package, the measurement line gives
+  its time, cached or not; the package's `time` record in
+  `budgets.txt` (default 10s, keyed by directory: the import path minus
+  the module path from `go.mod`) gives its limit. Over the limit fails
+  the step when `AMADAN_CI` or `CI` is set and is reported otherwise.
+  `-no-time` turns judging off, for the perf lane.
+- **Requires the measurement:** a package that passed with test-level
+  events but no measurement line fails the step, naming the package and
+  the one line to add. A package that failed is already a failure and is
+  reported as one; a package ending in `skip` (no test files) or with no
+  test-level events (`-run` matched nothing) is counted and exempt.
+- **`-require Name,…`** names tests that must each end in `pass` at least
+  once in the run; a missing, skipped or failed one fails the step. The
+  perf lane uses it, so deleting or renaming the perf tests cannot leave
+  a lane that runs nothing and reports green.
+- **Owns `time` staleness.** It fails a `time` record whose directory is
+  not among the packages that reported test-level events, but only when
+  the run's package argument was exactly `./...`, the one case where that
+  list is complete. A `time` record for a directory with no tests is
+  therefore stale too.
 - **Readable output**, so the log of a red run leads with what failed:
   every failed test's output in full; the full output of a package that
-  failed without a failing named test (setup failure, panic, timeout,
-  `budget.Main` refusal); every build failure's `build-output`. Passing
+  failed without a failing named test (setup failure, panic, timeout);
+  every build failure's `build-output`; every budget refusal. Passing
   output is dropped.
 - **The receipt**, printed every run: test-step wall time against the 60s
   target; packages run, cached, skipped and failed; the five slowest
-  packages that ran (from their `budget.Main` lines) and the five slowest
-  tests. Labelled as the test step, not the gate.
+  packages (from their `budget.Main` lines) and the five slowest tests.
+  Labelled as the test step, not the gate.
 - A malformed JSON line is passed through as output and counted; more than
   none fails the step after `go test` exits, because it means something
   else wrote to stdout.
 
 ### 4. `budget.Screens` and `budget.Boot`, screen time
 
-In the same `budget` package, in a file the perf lane compiles: the
-scaffold puts the app's perf test under `//go:build perf`.
+In the same `budget` package. The scaffold puts the app's perf tests in a
+file under `//go:build perf`, so the ordinary suite never compiles them.
 
 ```go
-budget.Screens(t, budget.Screen{
-	Routes:  r,              // chi.Routes: the app's router
-	Handler: h,              // the assembled handler requests go through
+budget.Screens(t, budget.ScreenConfig{
+	Routes:  r,       // chi.Routes: the app's router, for the inventory
+	Handler: h,       // rastrillo.Handler(opts): what production serves
 	Paths:   map[string]string{"/notes/{id}": "/notes/1"},
-	Signin:  func(req *http.Request) { ... }, // adds the session cookie
-	Extra:   []string{"/bookmarks/new"},        // routes inside opaque mounts
+	Expect:  map[string]int{"/export": http.StatusOK},
+	Signin:  func(c *http.Client, base string) { ... }, // signs c in once
+	Opaque: []budget.Opaque{{
+		Patterns: []string{"/bookmarks", "/bookmarks/*"},
+		Screens: []budget.OpaqueScreen{
+			{Key: "/bookmarks", Path: "/bookmarks"},
+			{Key: "/bookmarks/{id}", Path: "/bookmarks/1"},
+		},
+	}},
 })
-budget.Boot(t, budget.BootConfig{Path: "/", Expect: 200})
+
+budget.Boot(t, budget.BootConfig{
+	DBPath: schema.Path(t), // prepared by the parent, copied per child
+	Build:  func(dbPath string) (http.Handler, func(), error) { ... },
+	Path:   "/",
+})
 ```
 
-- **Inventory.** `chi.Walk` over `Routes`, GET only. A mounted handler
-  that is not a `chi.Routes` (a generated `http.ServeMux`, as
-  `examples/notes` mounts at `/bookmarks`) is opaque: its mount pattern
-  fails the inventory unless it appears in a `perf … skip` record or its
-  concrete screens are listed in `Extra`. Framework routes (`/healthz`,
-  `/api/version`) and the app's `/static/` are not screens and are never
-  required. `Screens` is the complete inventory for the module, so it is
-  where stale `perf` records fail; a second call in the same module is an
-  error.
-- **Requests go through `Handler`**, the assembled handler, so middleware,
-  CSRF and sessions are what production runs.
-- **A screen must succeed to be measured.** Each request must answer 200
-  (or the status the route's `Expect` names). A 303 to sign-in or a 404
-  for a missing row fails with "not measuring an error page"; seeding the
-  rows `Paths` names is the test's job, in the same file.
+**Inventory.** `chi.Walk` over `Routes`, GET only.
+
+- A route whose handler is not a `chi.Routes` and whose pattern ends in
+  `/*`, or that appears in an `Opaque` group's `Patterns`, is an opaque
+  mount: something chi cannot see inside, such as the generated
+  `http.ServeMux` `examples/notes` registers at `/bookmarks` and
+  `/bookmarks/*`. Every opaque pattern must belong to exactly one
+  `Opaque` group or carry a `perf GET <pattern> skip` record. The group's
+  `Screens` are the inventory inside it; each has a stable `Key` in
+  pattern syntax, which is what its `perf` record names, a concrete
+  `Path`, and an optional `Expect`.
+- A group pattern that `chi.Walk` did not report is an error: the group
+  has gone stale.
+- Framework routes (`/healthz`, `/api/version`) and the app's `/static/`
+  live outside the chi router, so they are not in the inventory.
+- `Screens` is the module's complete inventory, so stale `perf` records
+  fail here: any record naming neither a walked pattern nor a declared
+  `Key`. A second `Screens` call in one test binary is an error.
+- A pattern with a `{param}` and no `Paths` entry fails rather than being
+  skipped.
+
+**Measurement is over real HTTP.** `Handler` is served by
+`httptest.NewServer`, and the client is an ordinary `http.Client`. TTFB is
+the moment `httptrace.ClientTrace.GotFirstResponseByte` fires, measured
+from just before the request is written: what a client actually observes,
+so a handler that calls `WriteHeader` early and then works for a second is
+charged the second. A `1xx` informational response also fires that hook;
+the docs say so, and no scaffolded handler sends one.
+
+- **A screen must succeed to be measured.** Each response must carry 200,
+  or the status `Expect` names for that pattern or key. A 303 to sign-in
+  or a 404 for a missing row fails with "not measuring an error page";
+  seeding the rows `Paths` names is the test's job, in the same file.
 - **Protocol:** 10 requests, discard 2, hold the median of 8 to 150ms (or
-  the exemption), and fail any single request over 3× that. TTFB is
-  stamped at the first `WriteHeader` or `Write`; the wrapper keeps
-  `Flush`, `Hijack` and `Unwrap`, so `http.ResponseController` and SSE
-  work. Each request carries a context deadline of 3× the budget plus 1s;
-  a handler still running at the deadline is cancelled, and a streaming
-  route (`text/event-stream`) is measured to first byte and then
-  cancelled. `perf … skip` exempts a route outright, with its reason.
-- **`Boot` is process-cold.** It re-executes the test binary with
-  `-test.run` naming a child test and an environment flag; the child
-  opens a `dbtest` copy, builds the app, serves one request to `Path`
-  and prints the first-byte moment. The parent's clock runs from exec to
-  that line, so process start, runtime and package init, `db.Open`,
-  migrate (a no-op on the copy) and template parsing are all inside it.
-  One measurement per run of a cold process cannot be repeated without a
-  new process, so `Boot` runs it 3 times and holds the median to 500ms.
-- **The perf lane:** `make perf` runs `go test -tags perf -count=1 -p 1
-  -run '^TestPerf' ./...` through `rastrillo budget test`, without
-  `RASTRILLO_BUDGET=enforce` so its sweep is never charged to the package
-  time budget. `-count=1` because a cached screen measurement is not one;
-  `-p 1` so no other package's binary shares the machine.
+  the record), and fail any single request over 3× that. The body is read
+  to EOF and closed, so the connection is reused cleanly, except for a
+  `text/event-stream` response, which is measured to first byte and then
+  closed.
+- **A handler that will not finish stops the sweep.** Each request has a
+  client deadline of 3× the budget plus 1s. Cancelling a request does not
+  stop a handler that ignores its context, so on a deadline `Screens`
+  fails the test, closes client connections, and measures nothing further:
+  a goroutine still running would contaminate every later number. The
+  server is closed with a 2s bound, and a server that still will not
+  close is reported, not waited on.
+- Over budget fails only when `AMADAN_CI` or `CI` is set; otherwise every
+  result is reported and the test passes. `Screens` reads those variables
+  inside the test. A route measuring under 60% of its record gets an
+  advisory line, never a failure.
+- `Screens` never calls `t.Parallel()`, and the perf lane's `-parallel 1`
+  keeps sibling perf tests apart: a perf test sharing the machine with
+  its siblings measures them, not itself.
+
+**`Boot` is process-cold.** The parent prepares the database and the
+child does nothing but start:
+
+- The parent copies `DBPath` once per child run, so no child migrates or
+  builds a `dbtest` template.
+- It re-executes its own test binary (`os.Args[0]`) with
+  `-test.run=^<this test's name>$`, `-test.count=1`, and
+  `RASTRILLO_BOOT_CHILD=<copy path>` in the environment. The same
+  `TestMain` runs; `budget.Main` sees the variable and stays silent;
+  `m.Run` selects the same test.
+- Inside that test, `Boot` sees the variable and takes the child branch:
+  it calls `Build(path)`, serves the handler on a loopback listener,
+  requests `Path` over HTTP, prints `rastrillo-budget/v1 boot-first-byte`
+  the moment the first response byte arrives, calls the returned
+  cleanup, and returns. The child branch never spawns, which is the
+  recursion guard.
+- The parent's clock runs from `exec` to the moment it reads that line on
+  the child's stdout, so process start, runtime and package init,
+  `db.Open`, the app's migrate (a no-op on the copy) and template parsing
+  are all inside it. The child must print the line and then exit 0 within
+  10s, or it is killed and the test fails with its output.
+- Three children, run one after another; the median is held to 500ms (or
+  the `boot` record). Over budget fails only under `AMADAN_CI` or `CI`,
+  as for `Screens`.
+
+### 4a. The lanes
+
+| Lane | Make target | Flags | Time judged | Cached | In `ci` |
+|---|---|---|---|---|---|
+| Suite | `test` | `./...` | package time | yes | yes |
+| Perf | `perf` | `-tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf'` | screens and boot | no | yes |
+| Browser | none | `-tags browser`, as today | no | as today | no, unchanged |
+| Edit loop | none | `-short`, chosen packages | reported only | yes | no |
+
+- The perf lane runs through `rastrillo budget test -no-time -require
+  TestPerfScreens,TestPerfBoot`, so its sweep is never charged to package
+  time, and it cannot pass having run neither test.
+- `-p 1` keeps other packages' binaries off the machine; `-parallel 1`
+  keeps the perf package's own tests apart.
+- Under `-short` the perf tests skip; the perf lane never passes `-short`,
+  and `-require` would fail it if it did.
+- The scaffold's Makefile declares `.NOTPARALLEL:`, so `make -j ci` cannot
+  run the perf lane beside the suite.
+- Perf numbers mean the CI runner. Locally they are reported, so `make
+  ci` on a laptop prints them and never fails on them.
 
 ### 5. Scaffold changes (`rastrillo new`)
 
@@ -265,26 +379,41 @@ budget.Boot(t, budget.BootConfig{Path: "/", Expect: 200})
   is split inside `app.go` into `Router(d, origin, logger) (chi.Router,
   error)`, which migrates and builds the routes exactly as `App` does
   today, and `Mux(r http.Handler) *http.ServeMux`, which mounts static
-  files and the router. `App` is `Router` then `Mux`. The perf test calls
-  `Router` once and passes it as both `Routes` and, through `Mux`, as
-  `Handler`.
+  files and the router. `App` is `Router` then `Mux`.
+- **One place sets the serving options.** A new `Configure(opts
+  *rastrillo.Options, mux *http.ServeMux)` in `app.go` sets `Mux` and
+  `ErrorPage`; `main.go` calls it between `Resolve` and `Serve`, and the
+  perf test calls it on a fresh `rastrillo.Options` and passes the result
+  to `rastrillo.Handler`. Measured requests therefore go through the
+  production chrome (`Options.Wrap`, locale handling, security headers,
+  panic recovery), and the chi router from `Router` is used only for the
+  inventory.
 - **Harness:** `var schema = dbtest.FromSet(BootSchema)`; `newApp` opens
-  `db.Open(schema.Path(t), logger)`; a `TestMain` calls `budget.Main` and
-  then `schema.Remove()`. Every example test starts with `t.Parallel()`.
+  `db.Open(schema.Path(t), logger)` (the copy is made before either pool
+  opens); a `TestMain` saves `budget.Main(m)`'s code, calls
+  `schema.Remove()`, then `os.Exit`s with the code. Every example test
+  starts with `t.Parallel()`; the perf tests do not.
 - **`internal/<app>test/perf_test.go`** (`//go:build perf`):
   `TestPerfScreens` and `TestPerfBoot`, passing out of the box against
   the placeholder index.
 - **`.rastrillo/budgets.txt`**, written empty except for a header giving
   the grammar and saying every line needs a reason.
-- **Makefile** (module path `amadan.net/rastrillo/rastrillo`; `RASTRILLO :=
-  go run amadan.net/rastrillo/rastrillo/cmd/rastrillo`):
+- **Makefile** (`RASTRILLO := go run
+  amadan.net/rastrillo/rastrillo/cmd/rastrillo`, the module path the
+  scaffold's `tool` directive already declares):
+  - `.NOTPARALLEL:`
   - `budget: $(RASTRILLO) budget size`
-  - `test: RASTRILLO_BUDGET=enforce $(RASTRILLO) budget test ./...`
-  - `perf: $(RASTRILLO) budget test -tags perf -count=1 -p 1 -run '^TestPerf' ./...`
+  - `test: $(RASTRILLO) budget test ./...`
+  - `perf: $(RASTRILLO) budget test -no-time -require TestPerfScreens,TestPerfBoot -tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf' ./...`
+  - `staticcheck` gains the tag: `-tags browser,perf`, so the perf files
+    are analysed.
   - `ci: vet fmt-check staticcheck budget test perf migration-check`
 - **`.amadan/ci.d/`** gains `15-budget` and `35-perf`, one per target as
   `AGENTS.md` requires; staticcheck's step stays. `budget` runs before
   `test` because it is cheap and structural.
+- **Existing scaffold assertions move with it:** the exact `ci:` string,
+  the step list and the executable checks in
+  `TestNewScaffoldsCIAndManifest`.
 - **Scaffolded `AGENTS.md`** gains the loop: while editing, `go test
   -short ./internal/<app>/... ./internal/<app>test/`; before pushing,
   `make ci`; if `make ci` is too slow to run before every push, a budget
@@ -292,10 +421,15 @@ budget.Boot(t, budget.BootConfig{Path: "/", Expect: 200})
 
 ### 6. Rastrillo's own gate
 
-- Runs `budget size` over its own module. Today two directories are over:
-  `internal/designsystem` (9,720 / 7,789) and `ui` (2,885 / 19,251). Both
-  get `size` records with reasons in Rastrillo's own `budgets.txt`; the
-  ratchet then holds them.
+- A new `budget` target runs `go run ./cmd/rastrillo budget size` over
+  its own module, joins `ci`, and gets its own step,
+  `.amadan/ci.d/12-budget`, per the target/step parity rule. Today two
+  directories are over: `internal/designsystem` (9,720 source; its 7,789
+  test lines are under) and `ui` (19,251 test; its 2,885 source lines
+  are under). Their records state only the column that is over:
+  `size internal/designsystem 10500 - <reason>` and `size ui - 20500
+  <reason>`, numbers set in the implementation from the counts on the
+  day, with a reason each. The ratchet then holds them.
 - The `example-%` targets add `budget size` per example module. Their test
   targets are unchanged: the examples are reference apps, not budgeted
   ones, until one adopts the scaffold's harness.
@@ -336,27 +470,46 @@ assertion.
   line number; a valid file round-trips.
 - **`budget size`:** a fixture tree with 5,001 non-test lines fails; at
   exactly 5,000 it passes; 8,001 test lines fails; a stale record fails; a
-  record under 60% fails; a nested module is not counted into its parent
-  and is budgeted from its own root.
-- **`budget.Main`:** run through a fixture module's real `go test`: over
-  budget with enforce fails and a second identical run fails again (the
-  cache did not keep it); over budget without enforce passes and reports;
-  an exemption raises the limit; editing the exemption re-runs the
-  package.
+  stated column under 60% fails; a stated column back at its default
+  fails asking for `-`; a test-only directory with `- 9500` passes; a
+  nested module is not counted into its parent and is budgeted from its
+  own root.
+- **`budget.Main` and time judging,** through a fixture module's real `go
+  test` with a sleeping test: under `AMADAN_CI=1` the step fails, and a
+  second identical run, now served from the cache, fails again with the
+  same measured time; without it the step passes and reports; a `time`
+  record raises the limit, and lowering that record fails the next run
+  with the package still cached; `budget.Main` returns `m.Run`'s code
+  unchanged.
 - **`rastrillo budget test`:** against real `go test` output from fixture
   modules, not only canned streams: a passing suite; a failing test; a
   build failure; a vet failure during `go test`; a `TestMain` setup
-  failure; a panic; a `-timeout`; a package without the marker; a package
-  with no test files; a cached rerun; a child killed mid-run (exit status
-  wins). Each asserts the exit code and what the output leads with.
+  failure; a panic; a `-timeout`; a package without the measurement line;
+  a package that prints the line twice; stdout written before `m.Run`; a
+  package with no test files; `-run` matching nothing; a cached rerun
+  classified as cached; `-require` naming a test that is missing, skipped
+  or failed; a stale `time` record on a `./...` run and the same record
+  ignored on a narrower run; a child killed mid-run (exit status wins).
+  Each asserts the exit code and what the output leads with.
 - **`budget.Screens`:** a fixture router with a 200ms route fails; one
-  slow request inside a passing median fails on the 3× ceiling; a route
-  answering 303 fails; an opaque `ServeMux` mount fails until listed or
-  skipped; a stale `perf` record fails; an SSE route is measured to first
-  byte and cancelled without hanging; a parameterised route with no
-  `Paths` entry fails.
-- **`budget.Boot`:** a fixture whose init sleeps 600ms fails; the child
-  is a fresh process (a package-level counter reads zero in it).
+  slow request inside a passing median fails on the 3× ceiling; a handler
+  that writes its header at once and its body 300ms later fails (TTFB is
+  what the client sees); a route answering 303 fails; an `Expect` entry
+  accepts its status; an opaque `ServeMux` mount fails until grouped or
+  skipped; a group pattern chi did not report fails; a `perf` record
+  naming a group `Key` is honoured, and one naming nothing fails; an SSE
+  route is measured to first byte and closed without hanging; a handler
+  that ignores its context fails the test and stops the sweep within the
+  deadline; a parameterised route with no `Paths` entry fails; without
+  `CI` an over-budget route reports and passes.
+- **`budget.Boot`:** a fixture whose init sleeps 600ms fails under `CI`;
+  the child is a fresh process (a package-level counter reads zero in
+  it); a child that never prints the line is killed at 10s and its output
+  reported; a child that prints the line and exits non-zero fails; the
+  child never spawns a grandchild.
+- **Scaffold files:** the Makefile declares `.NOTPARALLEL:`; staticcheck
+  runs with `-tags browser,perf`; the `ci:` string and step list match;
+  `main.go` and the perf test both call `Configure`.
 - **Scaffold, end to end:** a new test runs the scaffold's whole `make
   ci` on a fresh app with only the Go toolchain on `PATH`,
   `GOFLAGS=-mod=readonly`, `GOPROXY=off` and a populated module cache:
@@ -367,9 +520,17 @@ assertion.
 ## Platforms
 
 Linux and macOS, the platforms the scaffold's `make` gate already
-assumes. Temporary files follow `os.MkdirTemp`, so `$TMPDIR` is honoured.
+assumes; GNU make or BSD make, both of which honour `.NOTPARALLEL:`.
 Windows is not supported by the make gate today and this does not change
 that.
+
+**Runner prerequisites**, stated in `docs/site/testing.md`: a persistent
+`GOCACHE` (the test cache is the speed this design is built on); `TMPDIR`
+set to a disk-backed directory, since `os.MkdirTemp` falls back to `/tmp`
+when it is unset and `/tmp` may be RAM; `AMADAN_CI` or `CI` set, or the
+timing budgets only report. The timing numbers were chosen for the amadan
+runner class Tito Go's measurements came from; an app on a slower runner
+raises them with records, and says so in the reason.
 
 ## Rollout
 
@@ -392,12 +553,34 @@ ratchet walk them down.
 
 ## Review record
 
-Astra's review of the first draft, and where each finding went:
+Astra reviewed this design twice. Round two re-verdicted round one (14
+resolved, 8 partial) and raised 11 new findings; the partials and the new
+findings are resolved as follows.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 2, 23 | Reads around `m.Run` are outside Go's cache window | `budget.Main` reads nothing; the wrapper judges (Decision 4) |
+| 2 | Cache classification unspecified | From the `(cached)` package summary (§3) |
+| 9, 25 | `-p 1` does not serialise tests; `make -j` | `-parallel 1`, no `t.Parallel` in perf, `.NOTPARALLEL:` (§4a) |
+| 10, 29 | Opaque routes lack identity | `Opaque` groups with patterns and keyed screens (§4) |
+| 11 | No `Expect`; context-ignoring handlers hang | `Expect` map; deadline fails and stops the sweep (§4) |
+| 12, 24 | Boot child protocol; template rebuilt in child | Parent-prepared copy, child branch, recursion guard, 10s kill (§4) |
+| 14 | Canonical keys; `time` for test-less dirs | `path.Clean` form only; such records are stale (§3, file grammar) |
+| 21, 30 | Lane matrix; perf lane can run nothing | § 4a; `-require` (§3) |
+| 22 | Runner prerequisites | § Platforms |
+| 26 | Local reporting contradicts the recipes | One control, `AMADAN_CI`/`CI`, read by the wrapper and inside tests |
+| 27 | Two-column ratchet impossible for one-sided dirs | `-` columns; ratchet per stated column |
+| 28 | `Mux(Router())` is not production | `Configure` + `rastrillo.Handler` (§5) |
+| 31 | Scaffold assertions; perf files unanalysed; Rastrillo's step | §5; `-tags browser,perf`; `12-budget` (§6) |
+| 32 | First `WriteHeader` is not TTFB | Measured over HTTP with `GotFirstResponseByte` (§4) |
+| 33 | Marker framing | Reassembled output, versioned exact-line match (§3) |
+
+Round one, and where each finding went:
 
 | # | Finding | Resolution |
 |---|---|---|
 | 1 | A pipe cannot carry `go test`'s exit status | `budget test` runs `go test` itself (§3) |
-| 2 | A cached rerun erases a budget failure | Enforced in-binary by `budget.Main` (Decision 4, §2) |
+| 2 | A cached rerun erases a budget failure | The binary prints its time, the cache replays it, the wrapper judges every run (Decision 4, §§2–3) |
 | 3 | Build, setup and package-level failures dropped | Both event schemas, package output kept (§3) |
 | 4–8 | New `dbtest` design: cleanup, WAL, GORM-free, identity, comparison | Dropped; the existing `dbtest` is adopted unchanged |
 | 9, 13 | Perf in the parallel suite; perf eats package time | Separate serial uncached lane (Decision 5, §4) |
