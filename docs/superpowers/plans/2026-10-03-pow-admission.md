@@ -1370,10 +1370,12 @@ func TestAttemptsSurviveCommitAndRollback(t *testing.T) {
 // that passed every check, then stalled before its INSERT ran.
 type stalledExec struct {
 	ex      pow.Execer
+	entered chan struct{} // closed when Commit has handed over its statement
 	release chan struct{}
 }
 
 func (s stalledExec) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
+	close(s.entered)
 	<-s.release
 	return s.ex.ExecContext(ctx, q, args...)
 }
@@ -1400,10 +1402,21 @@ func TestACommitStalledPastExpiryAndASweepIsRefused(t *testing.T) {
 	if err := a.Commit(ctx, nil); err != nil {
 		t.Fatal(err)
 	}
-	st := stalledExec{ex: d.Writer(), release: make(chan struct{})}
+	st := stalledExec{ex: d.Writer(), entered: make(chan struct{}), release: make(chan struct{})}
 	done := make(chan error, 1)
 	go func() { done <- b.Commit(ctx, st) }()
-	time.Sleep(400 * time.Millisecond) // past the 300ms lifetime
+	// Commit must have passed any check of its own and reached the
+	// executor BEFORE expiry, or a Go-side expiry check would refuse B
+	// for the wrong reason and this test would pass against it.
+	select {
+	case <-st.entered:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("Commit did not reach the executor within 200ms")
+	}
+	if !time.Now().Before(f.Expires) {
+		t.Fatal("the executor was reached after expiry; the test proves nothing")
+	}
+	time.Sleep(time.Until(f.Expires) + 100*time.Millisecond)
 	if _, err := d.Writer().ExecContext(ctx, `DELETE FROM pow_spent_nonces`); err != nil {
 		t.Fatal(err) // the sweep, without waiting out its margin
 	}
@@ -2508,6 +2521,22 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 	}
 }
 
+func TestBrowserARemovedSubmitterCancelsTheHold(t *testing.T) {
+	// Released without its button, the form would post to its default
+	// action with the button's name and value missing.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.MinAge = 1500 * time.Millisecond },
+		page: powPage(false, false, ""),
+	})
+	fr.waitReady(t)
+	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery),
+		chromedp.Evaluate(`document.getElementById("go").remove()`, nil))
+	time.Sleep(2500 * time.Millisecond)
+	if n := fr.posts.Load(); n != 0 {
+		t.Fatalf("%d POSTs after the submitter was removed during the hold, want 0", n)
+	}
+}
+
 func TestBrowserSubmitOutsideTheForm(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, true, "")})
 	fr.waitReady(t)
@@ -2565,9 +2594,9 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.WorkerURL = "/bad-worker.js" }, page: powPage(false, false, "")})
 		fr.waitReady(t)
 		var got string
-		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), &got, awaitPromise))
-		if !strings.HasPrefix(got, "rejected:") {
-			t.Fatalf("whenSolved with a failing worker = %s, want rejected", got)
+		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{timeout: 60000}"), &got, awaitPromise))
+		if !strings.Contains(got, "worker failed") {
+			t.Fatalf("whenSolved with a failing worker = %s, want rejected because the worker failed (not a timeout)", got)
 		}
 	})
 	t.Run("leaving the page rejects", func(t *testing.T) {
@@ -2845,6 +2874,15 @@ function hold(st, submitter) {
   if (submitter) {
     submitter.setAttribute("aria-busy", "true");
     if (st.held.idle !== null) submitter.textContent = label;
+    // The same spinner busy.js draws, so a held pow button and a held
+    // busy.js button look alike; aria-busy alone only changes the cursor.
+    if (submitter.tagName === "BUTTON") {
+      const spin = document.createElement("span");
+      spin.setAttribute("rst-spin", "");
+      spin.setAttribute("aria-hidden", "true");
+      submitter.insertBefore(spin, submitter.firstChild);
+      st.held.spin = spin;
+    }
   }
   wait(st);
 }
@@ -2865,8 +2903,13 @@ function release(st) {
     return;
   }
   endHold(st);
+  // The submitter may have left the form during the hold (removed, or
+  // its form= changed). Sending without it would drop its name and
+  // value and its formaction/formmethod, and post somewhere the visitor
+  // did not choose. Hand the form back instead, as busy.js does.
+  if (h.submitter && (!h.submitter.isConnected || h.submitter.form !== st.form)) return;
   st.counter.value = st.solution.counter;
-  const sub = h.submitter && h.submitter.isConnected && h.submitter.form === st.form ? h.submitter : undefined;
+  const sub = h.submitter || undefined;
   const wasDisabled = sub ? sub.disabled : false;
   if (sub) sub.disabled = false;
   // busy.js reads this during the submit event requestSubmit fires
@@ -2890,6 +2933,7 @@ function endHold(st) {
   removeEventListener("beforeunload", h.onLeave);
   if (h.submitter) {
     h.submitter.removeAttribute("aria-busy");
+    if (h.spin) h.spin.remove();
     if (h.idle !== null) h.submitter.textContent = h.idle;
   }
 }
