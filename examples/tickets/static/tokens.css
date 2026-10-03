@@ -723,7 +723,7 @@ body {
   min-inline-size: 0;
 }
 /* A row with a destination has ONE primary link, and its ::after covers
-   the row, so the row is the target on every screen (spec §2): the
+   the row, so the row is the target on every screen: the
    cursor, the status-bar URL, middle-click and "open in new tab" all
    work across the whole width. Everything else in the row that can be
    operated is lifted above the overlay by the :where() rule under the
@@ -1402,8 +1402,8 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
 .rst-field__required, [rst-field-required] { color: var(--rst-tone-negative-fg); }
 .rst-textarea, [rst-textarea] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
 /* The textarea's zoom floor, directly after the rule whose `font:
-   inherit` would reset it (round 1's finding: a floor above that line
-   is dead). Reasoning as for the input floor above. */
+   inherit` would reset it: a floor above that line is dead, undone by
+   the reset. Reasoning as for the input floor above. */
 @media (pointer: coarse), (max-width: 40rem) {
   .rst-textarea, [rst-textarea] { font-size: max(1rem, 1em); }
 }
@@ -1622,12 +1622,12 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-bulkbar .rst-dropdown > summary, [rst-bulkbar] [rst-dropdown] > summary { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; font-size: var(--rst-fs-xs); font-weight: 550; padding: 0.22rem 0.6rem; }
 /* The row checkbox's target is its LABEL, padded so the unchanged 16px
    box sits in a 24×24 target (WCAG 2.5.8) on every screen. Inside a row
-   whose whole width is a link (spec §2) the spacing exception cannot
-   rescue a 16px target, so this is one of the three desktop changes the
-   operator approved. inline-flex and justify-self: start keep the label
-   its own size in a grid cell and in a line, where display: flex made
-   it as wide as either. A larger invisible hit area was rejected: it
-   would overlap the row's own overlay and take clicks meant for it. */
+   whose whole width is a link, WCAG's spacing exception cannot rescue a
+   16px target, since the row's link covers the space around it, so
+   the padding applies on a desktop too, not only on touch. inline-flex
+   and justify-self: start keep the label its own size in a grid cell
+   and in a line, where display: flex made it as wide as either. A
+   larger invisible hit area was rejected: it would overlap the row's own overlay and take clicks meant for it. */
 .rst-selbox, [rst-selbox] { align-items: center; display: inline-flex; justify-self: start; margin: 0; padding: 4px; }
 .rst-selbox input, [rst-selbox] input { accent-color: var(--rst-accent); cursor: pointer; height: 16px; margin: 0; width: 16px; }
 .rst-selbox input:focus-visible, [rst-selbox] input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
@@ -2356,7 +2356,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      rule's weight, and before any rule that sizes the field on purpose.
      max(1rem, 1em) is the floor; 1em in font-size is the PARENT's size,
      so a floor that came after the primary field's rule would shrink
-     it. That was this file's bug until H: the old single floor sat
+     it. That was a bug here once: a single floor sat
      here, after [rst-input~="primary"] at equal weight, and turned the
      17px primary field into 16px.
    - the floor below, for an app's own input with no rst- attribute,
@@ -2440,9 +2440,10 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      width; docked, it is always inside the viewport. The grid asks for
      seven taps and the panel is fit-content around it, with the
      scrollbar gutter reserved, so a classic scrollbar widens the PANEL
-     and never narrows the DAYS (review round 4). Both max sizes clamp to
-     the viewport: below a 342px viewport the days narrow to about 41px
-     and stay 44px tall, the design exception the operator approved. The
+     and never narrows the DAYS. Both max sizes clamp to the viewport:
+     below a 342px viewport the days narrow to about 41px and stay 44px
+     tall, a deliberate exception to the 44px target, because seven full
+     days and the panel's padding do not fit a narrower screen. The
      height cap is why the panel scrolls itself: six weeks of 44px rows
      are taller than a phone in landscape, and a fixed panel's clipped
      top cannot be reached by scrolling the page. top: auto because the
@@ -2452,7 +2453,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   :is(.rst-cal, .rst-dtp .rst-cal, .rst-dtp.is-above .rst-cal), :is([rst-cal], [rst-dtp] [rst-cal], [rst-dtp].is-above [rst-cal]) { box-sizing: border-box; inline-size: fit-content; inset-block-end: var(--rst-sp-2); inset-block-start: auto; inset-inline: 0; margin: 0 auto; max-block-size: calc(100dvh - 2 * var(--rst-sp-2)); max-inline-size: calc(100vw - 2 * var(--rst-sp-2)); overflow-y: auto; overscroll-behavior: contain; position: fixed; scrollbar-gutter: stable; top: auto; }
   :is(.rst-cal, .rst-dtp .rst-cal) .rst-cal__grid, :is([rst-cal], [rst-dtp] [rst-cal]) [rst-cal-grid] { inline-size: calc(7 * var(--rst-tap)); max-inline-size: 100%; }
 
-  /* The row's own controls (spec §2.3). The checkbox's label grows by
+  /* The row's own controls. The checkbox's label grows by
      padding, so the 16px box stays 16px and the label is 44×44. */
   .rst-row__action, [rst-row-action] { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); padding-inline: 1rem; }
   .rst-row-menu > summary, [rst-row-menu] > summary { block-size: var(--rst-tap); inline-size: var(--rst-tap); }

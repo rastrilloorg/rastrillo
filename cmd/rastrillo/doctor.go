@@ -213,7 +213,8 @@ func (r *report) exit() error {
 }
 
 // doctorLayoutAdvisory is the one line doctor prints for a shell layout
-// written before the phone index shipped (copy review, batch 1).
+// written before the phone index shipped. It is user-facing copy, so a
+// change to it goes through the copy review.
 // "Upgrading" is the section of docs/site/templates.md that gives the
 // edit.
 const doctorLayoutAdvisory = `This layout still has the old mobile menu. See "Upgrading" in the templates guide.`

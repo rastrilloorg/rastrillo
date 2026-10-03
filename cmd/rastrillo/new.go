@@ -665,7 +665,8 @@ const indexTemplate = `{{define "content"}}
 // section and the page it opens.
 var twoPageShells = map[string]bool{"sidebar": true, "console": true}
 
-// scaffoldOverview is the one section's name (copy review, batch 1).
+// scaffoldOverview is the one section's name. It is user-facing copy, so
+// a change to it goes through the copy review.
 const scaffoldOverview = "Overview"
 
 // sectionsIndexTemplate is templates/index.html for the two-page shells.
