@@ -468,9 +468,10 @@ on its own URL at step 2, never a modal fired from the row.
   is a link across its whole width through its one name link; never
   link only the name. Row actions use `row-menu`, and a destructive one
   is a link to its confirm page. Inside a bulk-selection form, row-menu
-  items are links only. A GET handler never changes anything: `Serve`
-  prerenders shell navigation, on a phone before it is tapped (turn it
-  off with `Options.NoSpeculationRules`). Full vocabulary:
+  items are links only. A GET handler never changes anything, and no
+  script changes anything while `document.prerendering` is true:
+  `Serve` prerenders shell navigation, on a phone before it is tapped
+  (turn it off with `Options.NoSpeculationRules`). Full vocabulary:
   rastrillo.org/design-system (built from `ui` by `cmd/dsgen`, not
   committed); `go generate ./...` renders a local copy into
   `.design-system/`. docs/site/templates.md

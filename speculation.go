@@ -7,10 +7,11 @@ import (
 
 // SpeculationRulesPath is where Serve answers with its speculation
 // rules, and what the Speculation-Rules header on every response names.
-// The rules prerender the sidebar and console shells' navigation and
-// back control, so a phone's next page is ready before it is tapped;
-// they match nothing on any other page. Options.NoSpeculationRules
-// turns both the header and the route off.
+// The rules prerender the navigation and back control of the sidebar
+// and console layouts that mark their index, so a phone's next page is
+// ready before it is tapped; they match nothing in an older layout or
+// on any other page. Options.NoSpeculationRules turns both the header
+// and the route off.
 const SpeculationRulesPath = "/_speculation-rules"
 
 // speculationRules is the whole ruleset: document rules scoped by a

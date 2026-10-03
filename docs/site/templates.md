@@ -1074,12 +1074,16 @@ In `topbar` and `console`, the Menu button on a phone opens a card over
 the page. A tap outside it, or Escape, closes it. The page underneath
 does not move.
 
-`rastrillo.Serve` prerenders the pages your sidebar and console
-navigation link to, so the next page is ready when it is tapped. On a
-phone, Chrome may prerender a section as soon as its row is on screen,
-before anyone taps it. Nothing on other pages is prerendered. A
-prerender is a GET, so a GET handler must never change anything. To
-turn it off, set `Options.NoSpeculationRules`.
+In this release's `sidebar` and `console` layouts, `rastrillo.Serve`
+prerenders the pages your navigation links to, so the next page is ready
+when it is tapped. On a phone, Chrome may prerender a section as soon as
+its row is on screen, before anyone taps it; on a desktop, when the
+pointer rests on a link. Older layouts and other pages are not
+prerendered. A prerendered page is fetched with a GET and runs its
+scripts before anyone sees it, so a GET handler must never change
+anything, and a script that changes something as the page opens must
+wait until `document.prerendering` is false. To turn it off, set
+`Options.NoSpeculationRules`.
 
 ### The console on a phone
 

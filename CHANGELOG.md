@@ -14,13 +14,13 @@ backwards from commits is a guess wearing a date.
 
 Until it takes this release's `tokens.css`, an app zooms in on every form on a phone. Upgrade the module, then run `rastrillo doctor --fix`: it re-copies `tokens.css` and adds `shell.js` and `shell.css`.
 
-On a phone or a narrow window, text is one step bigger (16px body text) and controls are at least 44px; on a 320px screen calendar days narrow to about 41px wide. Desktops are unchanged, except three things: a list row is clickable across its width, its focus ring goes round the whole row, and a row's checkbox has a 24px target.
+On a phone or a narrow window, text is one step bigger (16px body text) and controls are at least 44px; on a 320px screen calendar days narrow to about 41px wide. Desktops change in a few places: a list row is clickable across its width and its focus ring goes round the whole row, a row with no link no longer lights up on hover, a row's checkbox has a 24px target, and a form button in a row's menu has a little more room at its end.
 
 The sidebar shell has no menu button on a phone, and neither does the console's navigation rail: the index page lists the sections, and every other page has a back control. Mark your index with `{{define "view"}}index{{end}}` and give other pages an `up` block; see "Upgrading" in the [templates guide](/docs/templates). Old layouts keep working, and `rastrillo doctor` tells you when yours is one. The topbar's and console's Menu button opens a card over the page that closes on a tap outside it or Escape.
 
-New: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. `Serve` prerenders sidebar and console navigation by default.
+New: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. In this release's sidebar and console layouts, `Serve` prerenders the navigation by default.
 
-Watch for two things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it.
+Watch for three things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it. And once you move to the new layouts, a page linked from the navigation may be prerendered: its scripts run before anyone sees it, so a script that changes something as the page opens must wait until `document.prerendering` is false.
 
 ### Changed: a new app's `make ci` runs staticcheck
 

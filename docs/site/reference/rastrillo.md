@@ -112,9 +112,9 @@ hand-written handler doing the same job.
 
 **`NoSpeculationRules`**: turns off prerendering. By default every
 response names `SpeculationRulesPath`, where `Serve` answers with rules
-that prerender sidebar and console navigation. A content-security
-policy does not turn it off; this field does, or deleting the
-`Speculation-Rules` header in a handler.
+that prerender the navigation in this release's sidebar and console
+layouts. A content-security policy does not turn it off; this field
+does, or deleting the `Speculation-Rules` header in a handler.
 
 ```go
 const SpeculationRulesPath = "/_speculation-rules"
