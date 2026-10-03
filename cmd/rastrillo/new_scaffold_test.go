@@ -33,16 +33,15 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 		t.Fatalf("runNew: %v", err)
 	}
 
-	for _, rel := range []string{
-		"Makefile", "CLAUDE.md", "manifest/README.md",
-		".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test",
-	} {
+	steps := []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/15-budget", ".amadan/ci.d/20-fmt",
+		".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test", ".amadan/ci.d/35-perf"}
+	for _, rel := range append([]string{"Makefile", "CLAUDE.md", "manifest/README.md", ".rastrillo/budgets.txt"}, steps...) {
 		if _, err := os.Stat(filepath.Join("demoapp", rel)); err != nil {
 			t.Errorf("scaffold missing %s: %v", rel, err)
 		}
 	}
 
-	for _, rel := range []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test"} {
+	for _, rel := range steps {
 		fi, err := os.Stat(filepath.Join("demoapp", rel))
 		if err != nil {
 			continue
@@ -53,8 +52,24 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	}
 
 	mk, _ := os.ReadFile(filepath.Join("demoapp", "Makefile"))
-	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck test migration-check") {
+	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck budget test perf migration-check") {
 		t.Fatalf("Makefile must define the one ci gate:\n%s", mk)
+	}
+	for _, want := range []string{
+		".NOTPARALLEL:",
+		"$(RASTRILLO) budget size",
+		"$(RASTRILLO) budget test ./...",
+		"$(RASTRILLO) budget test -no-time -require TestPerfScreens,TestPerfBoot -tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf' ./...",
+		"go run $(STATICCHECK) -tags browser,perf ./...",
+	} {
+		if !strings.Contains(string(mk), want) {
+			t.Errorf("Makefile missing %q", want)
+		}
+	}
+	for step, target := range map[string]string{"15-budget": "budget", "35-perf": "perf"} {
+		if b, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", step)); !strings.Contains(string(b), "exec make "+target+"\n") {
+			t.Errorf("%s must exec make %s:\n%s", step, target, b)
+		}
 	}
 	if !strings.Contains(string(mk), "honnef.co/go/tools/cmd/staticcheck@"+staticcheckVersion) {
 		t.Fatalf("Makefile must pin staticcheck at %s, the version rastrillo's own gate runs:\n%s", staticcheckVersion, mk)
