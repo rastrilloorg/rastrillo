@@ -18,8 +18,9 @@ import (
 
 // prerenderSite is a sidebar app served through rastrillo.Handler, so
 // the headers are the framework's own (the CSP included): the index,
-// two sections, a plain link in the index's content, and a stage page
-// with a link on it. Every document request is reported with its
+// two sections, a plain link in the index's content, a stage page with
+// a link on it, and a page in a sidebar layout copied before the phone
+// index. Every document request is reported with its
 // Sec-Purpose, which is how a prerender is seen (headless Chromium
 // fetches the page for it; enabling CDP's Preload domain would switch
 // prerendering off, measured).
@@ -34,6 +35,7 @@ func prerenderSite(t *testing.T, noRules bool, hits chan<- string) func(string) 
 			"/team":     shellLayoutPage(t, src, "ltr", `{{define "up"}}/#nav-team{{end}}`),
 			"/plain":    shellLayoutPage(t, src, "ltr"),
 			"/signin":   shellLayoutPage(t, stage, "ltr", `{{define "content"}}<p><a id="stage-link" href="/orders">Orders</a></p>{{end}}`),
+			"/legacy":   shellLayoutPage(t, legacyLayout(t, "sidebar"), "ltr"),
 		}
 		mux := shellAssets(t, pages)
 		h, closeAll, err := rastrillo.Handler(rastrillo.Options{Mux: recordDocuments(mux, hits), NoSpeculationRules: noRules})
@@ -109,7 +111,7 @@ func landsOn(t *testing.T, ctx context.Context, sel, wantID string) (float64, fl
 // a speculation: a hover on a nav link (desktop) and a pointer-down on
 // one (phone) start a prerender of it, with no CSP violation; a link
 // outside the shell's nav and back control starts none; a stage page
-// prerenders nothing; and with Options.NoSpeculationRules the same
+// and an old layout's nav prerender nothing; and with Options.NoSpeculationRules the same
 // hover starts nothing, which is the control that says the header is
 // what did it.
 func TestShellNavigationIsPrerendered(t *testing.T) {
@@ -137,6 +139,18 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
 	if h := waitFor(hits, "/orders", 2*time.Second); h != "" {
 		t.Errorf("a stage page prerendered %q; the rules match nothing outside the sidebar and console", h)
+	}
+	// An app's own layout.html, copied before the phone index, has no
+	// view on its root, and its pages were written with no thought of
+	// running before they are shown: a startup script there would run on
+	// a hover. Its nav links must start nothing.
+	rig.Run(chromedp.Navigate(rig.Origin + "/legacy"))
+	rig.Screen("[rst-shell-nav]", "a sidebar layout copied before the phone index")
+	drain(hits)
+	x, y = landsOn(t, ctx, "#nav-team", "nav-team")
+	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
+	if h := waitFor(hits, "/team", 3*time.Second); h != "" {
+		t.Errorf("a layout copied before the phone index prerendered %q; only a root that names its view may", h)
 	}
 
 	touchHits := make(chan string, 64)
