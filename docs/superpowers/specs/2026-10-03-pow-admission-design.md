@@ -1,7 +1,7 @@
 # pow grows up: admission that commits with the write, and sign-in behind it by default
 
 Status: design approved in conversation 2026-10-03, section by section,
-with the operator's decisions marked **(Paul)**. Revised after four rounds
+with the operator's decisions marked **(Paul)**. Revised after five rounds
 of adversarial review by Astra (see "Review log"). Nothing is
 implemented.
 
@@ -194,7 +194,8 @@ package doc and SKILL.md, `auth` already writes `no-store` through
 
 ```go
 func (g *Guard) Recovery(now time.Time, scope string) Form
-func (a Admission) Recovered() bool // the posted token was a recovery token (sealed flag; refused posts too, once the seal verified)
+func (a Admission) Recovered() bool   // the posted token was a recovery token (sealed flag; refused posts too, once the seal verified)
+func (a Admission) Recoverable() bool // a preserved-answer recovery cannot duplicate a success (below)
 ```
 
 The form to re-render after a refusal. It is **always** trapless and
@@ -209,6 +210,34 @@ later re-render of that form for them is a recovery form too. A handler
 that re-renders asks `adm.Recovered()`; `auth`, which redirects, carries
 it in the query (§2). Otherwise a trapless attempt that fails on a wrong
 password re-renders with the trap back and the visitor is refused again.
+
+**Only a `Recoverable()` refusal gets a recovery form with the
+visitor's answers kept.** Any refusal can hide an earlier success: repost
+a token that already went through, with the honeypot filled, and the
+honeypot check refuses it before the spent check runs; a recovery form
+with the answers preserved then submits the same thing twice (Astra,
+round 5, reproduced against Tito's portal registration,
+T/internal/instance/portals.go:1876, 1971). So `pow`, not each handler,
+decides. `Recoverable()` is true only when:
+
+- the seal verified (the token is one we minted, so it has an identity);
+- the reason is honeypot, too fast, expired or attempts exhausted;
+- one lookup confirms the token was never spent. This is the single
+  database read `Admit` makes after a failure, and only behind a
+  verified seal, so a script cannot drive it without first fetching a
+  page we served.
+
+Everything else — spent, missing fields, a bad seal, a token past the
+retention window below — gets a fresh form and no preserved answers:
+"this form may already have been sent; start again". Forms where
+repeating a submission is harmless (sign-in) may ignore the rule;
+`auth` and `password` do, and say so in a comment.
+
+So that "expired" can still be answered, spent rows are kept for a
+**recovery window** (default 24 hours) past their sealed expiry rather
+than ten minutes. A token older than its expiry plus that window cannot
+be shown unspent and is not `Recoverable()`. The rows are tiny; a day of
+them is cheap.
 
 The cost, stated: a bot can ask for a recovery form. The honeypot is a
 free filter for the dumbest scripts, not the control; the proof of work
@@ -257,7 +286,8 @@ sealed) → seal and scope → clock → proof of work (skipped at `NoProof`)
 `ReasonBusy` at capacity). It writes nothing. Free checks come first and
 the signature before the timestamp it vouches for (pow/guard.go:123-133).
 After the first failure the remaining cheap checks still run into
-`Also`; nothing that reads the database runs after a failure.
+`Also`. The only database read after a failure is `Recoverable()`'s
+spent lookup, and only when the seal verified.
 
 `ReasonMissing` means something different from a bad proof: the form was
 never wired, or it predates this release. It is the one an operator
@@ -274,10 +304,11 @@ should see first after an upgrade.
   SELECT ?, ? WHERE CAST(unixepoch('subsec') * 1000 AS INTEGER) <= ?
   ```
 
-  and `Sweep` deletes only rows whose `expires_ms` is more than ten
-  minutes behind the same clock. Both statements run on the one writer,
+  and `Sweep` deletes only rows whose `expires_ms` is more than the
+  recovery window (24 hours, at least ten minutes) behind the same
+  clock. Both statements run on the one writer,
   so they are serialised. For a sweep to have removed A's row, the
-  database's clock had passed expiry plus the margin; any later insert
+  database's clock had passed expiry plus the recovery window; any later insert
   of the same nonce reads that clock or a later one, and its `WHERE`
   fails. No delay between the handler's checks and the statement's
   execution can reopen replay. An earlier draft checked expiry in Go
@@ -378,8 +409,8 @@ type NonceStore interface {
 
 - `SQLNonces` spends on `ex` when given one and its own handle when `ex`
   is nil, with the expiry predicate above.
-- `Sweep` deletes at most 500 rows per call, ten minutes past expiry on
-  the database's clock. Unbounded, a sweep on wake holds the single
+- `Sweep` deletes at most 500 rows per call, past expiry plus the
+  recovery window on the database's clock. Unbounded, a sweep on wake holds the single
   writer while the first visitor waits (Tito bounds its own,
   T/internal/instance/intake_store.go:157, 232-248). Call it from a tick.
 - `MemoryNonces` applies the same rules under its mutex and ignores
@@ -600,8 +631,11 @@ plan owns the detail; these are the constraints this design must meet.
 - Checkout details, confirm screens and their validation re-renders are
   issued with `FollowOn`, as `shop.go:8288` and `postback.go:122` do
   today.
-- The step-up screen re-renders with `Recovery`, and calls `init` after
-  replacing the document.
+- The step-up screen offers preserved answers only for
+  `adm.Recoverable()`, re-renders with `Recovery`, and calls `init`
+  after replacing the document. Its own reason table
+  (T/internal/instance/intake_stepup.go:36) gives way to that one
+  answer.
 - Upload callers must handle `whenSolved` rejecting: Tito's helper
   resolves on timeout (T/internal/instance/static/intake-proof.js:26-36)
   and `file-field.js` relies on that, with uncaught awaits and cleanup
@@ -614,7 +648,9 @@ plan owns the detail; these are the constraints this design must meet.
   with a plain 429 today (T/internal/instance/intake_stepup.go:124). For
   one release, a POST carrying `intake_token` and no `pow_*` fields gets
   the step-up screen with the visitor's answers preserved and a
-  `Recovery` form; the plan tests it per door.
+  `Recovery` form, but only after checking Tito's old `intake_tokens`
+  ledger shows that token unspent — the same rule as `Recoverable()`;
+  the plan tests it per door.
 - Deleted after that release: `internal/intake/`, `static/intake-pow*.js`,
   `intake-proof.js`, the node parity test, `intake_tokens`.
 - Stays in Tito: the step-up screens, the preview bypass, the refusal
@@ -647,7 +683,10 @@ plan owns the detail; these are the constraints this design must meet.
   redeploy with a longer one; a Guard with a shorter `MaxAge` refuses a
   longer-lived token;
 - `ErrSpent` / `ReasonSpent` never yields a preserved-answer recovery in
-  the Tito-shaped test handler;
+  the Tito-shaped test handler; a spent token reposted with the honeypot
+  filled, or too fast, or after expiry, is not `Recoverable()`; an
+  unspent one refused for each of those reasons is; a token past expiry
+  plus the recovery window is not;
 - seal: scopes containing NUL and length-like bytes do not
   collide; a non-hex or wrong-length nonce is refused before HMAC; a v1
   seal is refused; issue on both sides of a second boundary honours a
@@ -815,3 +854,12 @@ majors, all accepted:
 36. A proof refusal drops sign-in's `force=1` and can loop through a
     failing keymail provider → `force` carried through refusals and
     rendered from state, not from the problem.
+
+**Astra, round 5 (2026-10-03): not ready.** 34 and 36 resolved; 35
+partial. One new major, accepted:
+
+37. A refusal that fires before the spent check hides an earlier
+    success, so preserved-answer recovery can duplicate it → `pow`
+    decides with `Recoverable()`: verified seal, recoverable reason, and
+    a lookup confirming the token unspent; spent rows kept for a 24-hour
+    recovery window past expiry.
