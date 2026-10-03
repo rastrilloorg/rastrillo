@@ -225,6 +225,13 @@ const doctorLayoutAdvisory = `This layout still has the old mobile menu. See "Up
 // reader must not be read as the shell itself.
 var templateCommentRE = regexp.MustCompile(`(?s)\{\{-?\s*/\*.*?\*/\s*-?\}\}`)
 
+// viewBlockRE matches the opening of a view block in any spelling
+// text/template accepts: spaces inside the braces and a trim marker
+// (which must be followed by a space) are the same block. Matched
+// literally, {{ block "view" . }} read as no view block, and doctor told
+// an app with a current layout that it still had the old menu.
+var viewBlockRE = regexp.MustCompile(`\{\{(?:-\s+|\s*)block\s+"view"`)
+
 // oldShellLayout reports whether an app's layout.html predates the phone
 // index: the drawer is in it, or it is a sidebar or console layout with
 // no view block. Doctor cannot diff a layout, which is the app's own and
@@ -237,7 +244,7 @@ func oldShellLayout(src string) bool {
 		return true
 	}
 	shell := strings.Contains(src, "rst-shell-sidebar") || strings.Contains(src, "rst-shell-console")
-	return shell && !strings.Contains(src, `{{block "view"`)
+	return shell && !viewBlockRE.MatchString(src)
 }
 
 // diagnose does the reading: where the app keeps its vendored files,

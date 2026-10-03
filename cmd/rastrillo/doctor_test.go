@@ -1145,3 +1145,26 @@ func TestOldShellLayoutIgnoresTemplateComments(t *testing.T) {
 		}
 	}
 }
+
+// A view block written with spaces inside the braces or with trim
+// markers is the same block: gofmt does not touch templates, and an app
+// that spaces its actions out must not be told its layout is old.
+func TestOldShellLayoutReadsAViewBlockInAnySpelling(t *testing.T) {
+	for _, block := range []string{
+		`{{block "view" .}}page{{end}}`,
+		`{{ block "view" . }}page{{ end }}`,
+		`{{- block "view" . -}}page{{- end -}}`,
+		"{{-\tblock  \"view\" .}}page{{end}}",
+	} {
+		for _, shell := range []string{"rst-shell-sidebar", "rst-shell-console"} {
+			src := `<div ` + shell + `>` + block + `</div>`
+			if oldShellLayout(src) {
+				t.Errorf("a layout with a view block reads as old: %s", src)
+			}
+		}
+	}
+	// And a block of another name is still no view block.
+	if !oldShellLayout(`<div rst-shell-sidebar>{{ block "views" . }}page{{ end }}</div>`) {
+		t.Error(`a sidebar layout whose only block is "views" reads as having a view block`)
+	}
+}
