@@ -1,7 +1,7 @@
 # pow grows up: admission that commits with the write, and sign-in behind it by default
 
 Status: design approved in conversation 2026-10-03, section by section,
-with the operator's decisions marked **(Paul)**. Revised after five rounds
+with the operator's decisions marked **(Paul)**. Revised after six rounds
 of adversarial review by Astra (see "Review log"). Nothing is
 implemented.
 
@@ -119,7 +119,7 @@ const NoProof = -1
 ### The seal (v2)
 
 ```
-HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || u64(issuedMillis) || u64(expiresMillis) || i32(difficulty) || u8(flags))
+HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || lp(root) || u64(issuedMillis) || u64(expiresMillis) || i32(difficulty) || u8(flags))
 ```
 
 `lp` is a uvarint length followed by the bytes; integers are big-endian
@@ -151,6 +151,11 @@ identifier: one token, one string.
   same nonce, a later computed expiry, and the insert's predicate passes
   (Astra, round 4, reproduced). The same rule makes `Verify` across
   Guards with different lifetimes well defined.
+- **Root** is the submission this token belongs to: empty on an
+  original token (its root is its own nonce), and the original's nonce
+  on every recovery token descended from it — recovery of a recovery
+  keeps the same root. It is posted (`pow_root`) and sealed, so it
+  cannot be swapped. See "One submission, one success" below.
 - **Flags:** bit 0 is "trap omitted" (§ "Recovery"); bit 1 is "bound".
   `Verify` refuses a bound token (below).
 - A scope mismatch, a bad nonce format, a v1 seal: all
@@ -193,7 +198,7 @@ package doc and SKILL.md, `auth` already writes `no-store` through
 ### Recovery
 
 ```go
-func (g *Guard) Recovery(now time.Time, scope string) Form
+func (g *Guard) Recovery(now time.Time, scope string, from Admission) Form // inherits from's root
 func (a Admission) Recovered() bool   // the posted token was a recovery token (sealed flag; refused posts too, once the seal verified)
 func (a Admission) Recoverable() bool // a preserved-answer recovery cannot duplicate a success (below)
 ```
@@ -232,6 +237,20 @@ retention window below — gets a fresh form and no preserved answers:
 "this form may already have been sent; start again". Forms where
 repeating a submission is harmless (sign-in) may ignore the rule;
 `auth` and `password` do, and say so in a comment.
+
+**One submission, one success.** Checking that the token is unspent
+is not enough on its own: a request still holding the original can
+commit after the recovery form was issued, and two refusals of the same
+token yield two recovery forms (Astra, round 6, reproduced). So a
+recovery token carries its original's nonce as `root`, and `Commit`
+spends **both** its own nonce and its root, in the same statement batch
+on the caller's `ex`; either already present is `ErrSpent`, and the
+caller's rollback undoes the half that succeeded. The original spends
+its root by spending itself. Whichever of the original and its
+recoveries commits first wins; every other one meets its root already
+spent. `Check`, which has no caller transaction, wraps the two inserts in
+one of its own. The root row takes the later of the two expiries, so it
+outlives every token that could still carry it.
 
 So that "expired" can still be answered, spent rows are kept for a
 **recovery window** (default 24 hours) past their sealed expiry rather
@@ -648,9 +667,16 @@ plan owns the detail; these are the constraints this design must meet.
   with a plain 429 today (T/internal/instance/intake_stepup.go:124). For
   one release, a POST carrying `intake_token` and no `pow_*` fields gets
   the step-up screen with the visitor's answers preserved and a
-  `Recovery` form, but only after checking Tito's old `intake_tokens`
-  ledger shows that token unspent — the same rule as `Recoverable()`;
-  the plan tests it per door.
+  `Recovery` form, under the same rule as `Recoverable()` but with
+  Tito's own retention, not pow's: Tito deletes consumed rows two token
+  lifetimes after minting (T/internal/instance/intake_store.go:177-182)
+  and reads a missing row as unspent (intake_gate.go:299-305), so only a
+  legacy token still inside its own two-hour lifetime — whose spend, if
+  any, is guaranteed still on record — can be shown unspent. Older ones
+  get a fresh form. The 24-hour window cannot be applied retroactively
+  to rows already deleted (Astra, round 6). The recovery token's root is
+  `legacy:<token id>`, so two recoveries of one legacy token cannot both
+  succeed. The plan tests it per door.
 - Deleted after that release: `internal/intake/`, `static/intake-pow*.js`,
   `intake-proof.js`, the node parity test, `intake_tokens`.
 - Stays in Tito: the step-up screens, the preview bypass, the refusal
@@ -703,6 +729,10 @@ plan owns the detail; these are the constraints this design must meet.
   back; at capacity a new token is `ReasonBusy` and tracked tokens are
   unaffected; cycling capacity + 1 tokens restores no allowance; `Check`
   succeeds while another scope has filled the Guard's map;
+- one submission, one success: the original committing after its
+  recovery was issued, the recovery committing after the original, and
+  two recovery forms from one refused token — in each, exactly one
+  business write; recovery of a recovery keeps the root;
 - `Commit` returning `ErrSpent` inside a transaction on a one-connection
   pool returns promptly (no second statement outside the transaction);
 - `Recovery` is trapless and admissible at once; only recovery tokens
@@ -863,3 +893,14 @@ partial. One new major, accepted:
     decides with `Recoverable()`: verified seal, recoverable reason, and
     a lookup confirming the token unspent; spent rows kept for a 24-hour
     recovery window past expiry.
+
+**Astra, round 6 (2026-10-03): not ready.** 37 resolved for the
+reported sequence; 35 partial. Two new majors, accepted:
+
+38. An unspent check cannot stop the original or a second recovery
+    committing alongside a recovery → recovery tokens carry a sealed
+    `root`; `Commit` spends token and root together, so one submission
+    has one success.
+39. Tito's legacy ledger has already deleted rows the new 24-hour window
+    assumes → legacy recovery limited to tokens still inside their own
+    lifetime, rooted at `legacy:<id>`.
