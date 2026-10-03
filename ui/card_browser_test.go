@@ -282,21 +282,46 @@ func TestTheCardsControlsAreTaps(t *testing.T) {
 // over a modal's scrim (fixed, z-index 10, inside main) on a phone: the
 // bar stayed undimmed and live, and its Menu could open a card over the
 // modal. Read at the brand and at the Menu summary, the two things a tap
-// on a phone's bar reaches.
+// on a phone's bar reaches. The sidebar's and console's content pages
+// have the same exposure through their sticky back strip: above the
+// scrim, Back stayed live under an open modal.
 func TestAModalCoversTheTopbarOnAPhone(t *testing.T) {
-	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPageWith(t, "ltr", Styleguide()["modal"])}, true)
-	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible("[rst-modal-overlay]", chromedp.ByQuery))
-	requirePointer(t, ctx, true)
-	for _, sel := range []string{"[rst-shell-brand]", "[rst-shell-menu] > summary"} {
-		var hit string
-		mustRun(t, ctx, chromedp.Evaluate(`(() => { const r = document.querySelector(`+"`"+sel+"`"+`).getBoundingClientRect();
-		  const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-		  return !h ? "nothing" : h.closest("[rst-modal-overlay]") ? "overlay" : h.tagName + (h.getAttributeNames().filter(n => n.startsWith("rst-")).map(n => "[" + n + "]").join("")); })()`, &hit))
-		if hit != "overlay" {
-			t.Errorf("a tap on %s with a modal open lands on %s, want the modal's overlay: the bar paints above the scrim", sel, hit)
+	hits := func(t *testing.T, ctx context.Context, sels ...string) {
+		t.Helper()
+		for _, sel := range sels {
+			var hit string
+			mustRun(t, ctx, chromedp.Evaluate(`(() => { const r = document.querySelector(`+"`"+sel+"`"+`).getBoundingClientRect();
+			  const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+			  return !h ? "nothing" : h.closest("[rst-modal-overlay]") ? "overlay" : h.tagName + (h.getAttributeNames().filter(n => n.startsWith("rst-")).map(n => "[" + n + "]").join("")); })()`, &hit))
+			if hit != "overlay" {
+				t.Errorf("a tap on %s with a modal open lands on %s, want the modal's overlay: it paints above the scrim", sel, hit)
+			}
 		}
+	}
+	t.Run("topbar", func(t *testing.T) {
+		rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPageWith(t, "ltr", Styleguide()["modal"])}, true)
+		defer cancel()
+		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
+			chromedp.WaitVisible("[rst-modal-overlay]", chromedp.ByQuery))
+		requirePointer(t, ctx, true)
+		hits(t, ctx, "[rst-shell-brand]", "[rst-shell-menu] > summary")
+	})
+	for _, name := range []string{"sidebar", "console"} {
+		t.Run(name+" content page", func(t *testing.T) {
+			src, ok := Layout(name)
+			if !ok {
+				t.Fatalf("no %s layout", name)
+			}
+			pages := map[string]string{"/": shellLayoutPage(t, src, "ltr", `{{define "up"}}/#nav-invoices{{end}}`,
+				`{{define "content"}}`+Styleguide()["modal"]+`{{end}}`)}
+			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
+			ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
+				chromedp.WaitVisible("[rst-modal-overlay]", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-back] a", chromedp.ByQuery))
+			requirePointer(t, ctx, true)
+			hits(t, ctx, "[rst-shell-back] a")
+		})
 	}
 }
 

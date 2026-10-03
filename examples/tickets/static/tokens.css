@@ -2163,8 +2163,11 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell__back, [rst-shell-back], .rst-shell__title, [rst-shell-title] { display: none; }
 @media (max-width: 799.98px) {
   /* The content view: a sticky strip of its own at the top, first in
-     the reading order after the skip link. */
-  .rst-shell-sidebar--page > .rst-shell__back, [rst-shell-sidebar~="page"] > [rst-shell-back], .rst-shell-console--page > .rst-shell__back, [rst-shell-console~="page"] > [rst-shell-back] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; min-block-size: 2.75rem; padding-inline: var(--rst-sp-1); position: sticky; z-index: 20; }
+     the reading order after the skip link. Its z-index 9 sits above the
+     sticky form bar (5), so a long form scrolled under the strip does
+     not paint over Back, and below a modal's scrim (10): above it, Back
+     stayed undimmed and live under an open modal on a phone. */
+  .rst-shell-sidebar--page > .rst-shell__back, [rst-shell-sidebar~="page"] > [rst-shell-back], .rst-shell-console--page > .rst-shell__back, [rst-shell-console~="page"] > [rst-shell-back] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; min-block-size: 2.75rem; padding-inline: var(--rst-sp-1); position: sticky; z-index: 9; }
   .rst-shell__back a, [rst-shell-back] a { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-accent); display: inline-flex; font-size: 1rem; font-weight: 500; gap: 0.5rem; min-block-size: 2.75rem; padding-inline: 0.75rem; text-decoration: none; }
   /* The chevron is drawn, not an icon: there is no left chevron in the
      set and no icon mirroring, and a drawn one stays out of the
