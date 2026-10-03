@@ -32,6 +32,8 @@ func main() {
 		err = runDoctor(os.Args[2:])
 	case "markup":
 		err = runMarkup(os.Args[2:])
+	case "budget":
+		err = runBudget(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -86,5 +88,9 @@ Usage:
   rastrillo vectors [flags] [dir]               Go↔JS parity vectors: run cmd/genvectors, write test/vectors.json (default dir: .)
        -init                                     scaffold cmd/genvectors, the test/ parity suite, and the go-test belt (once)
        -check                                    pre-ship gate: regenerate + byte-compare, then node --test test/parity.test.mjs
+  rastrillo budget size [dir]                   hold each directory to 5,000 source and 8,000 test lines (default dir: .)
+                                                exits 1 over budget, 2 for a malformed .rastrillo/budgets.txt
+  rastrillo budget test [-no-time] [-require T,...] [go test args]
+                                                run go test -json, judge each package's time, print a receipt
 `)
 }
