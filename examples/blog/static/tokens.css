@@ -2186,11 +2186,18 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      point: the page is navigation. */
   .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-brand] { display: none; }
   .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
-  /* The console's index is the bar, then the rail full screen, then the
-     foot below it: the rail is at least the viewport tall, as the
-     sidebar's is, so a short nav does not pull the foot up under it.
-     The console rail is already border-box. */
-  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  /* The console's index is the bar, then the rail, then the foot below
+     it. The bar and the rail share the window: the root is a column at
+     least the window tall and the rail takes what the bar leaves. A rail
+     a whole window tall under the bar made every index scroll by the
+     bar's height, however short its nav; a long nav still grows the rail
+     and the page scrolls. The foot is hung from the root's end, out of
+     that column: inside it, the foot would take its height from the
+     rail and sit on screen under a short nav, where the sidebar's index
+     keeps it below the rail. The console rail is already border-box. */
+  .rst-shell-console--index, [rst-shell-console~="index"] { display: flex; flex-direction: column; min-block-size: 100dvh; position: relative; }
+  .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; flex: 1 0 auto; gap: 0; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  .rst-shell-console--index > .rst-shell__foot, [rst-shell-console~="index"] > [rst-shell-foot] { inset-block-start: 100%; inset-inline: 0; position: absolute; }
   .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { display: block; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); padding-inline: 0.25rem; }
   /* The rows: every link a full-width row, at least 3rem, 1rem text, a
      chevron at the end. The grouping is the markup apps already write,

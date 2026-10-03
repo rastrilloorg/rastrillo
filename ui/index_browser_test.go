@@ -4,6 +4,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"math"
 	"net/http"
@@ -377,29 +378,84 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 }
 
 // TestTheConsoleIndexRailFillsTheScreen: the console's phone index is
-// the bar, then the rail full screen, then the foot below it. With a
-// two-link nav the rail is still at least the window's height and the
-// foot follows it.
+// the bar, then the rail, then the foot below it. The bar and the rail
+// share the window between them: a rail a whole window tall under the
+// bar made every index scroll by the bar's height, however short its
+// nav. With a short nav the two fill the window exactly, the foot
+// follows the rail, and the document ends at the foot; with no foot
+// nothing scrolls at all; with a long nav the rail grows, the page
+// scrolls, and every row can still be reached and hit.
 func TestTheConsoleIndexRailFillsTheScreen(t *testing.T) {
 	src, _ := Layout("console")
-	pages := map[string]string{"/": shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`,
-		`{{define "nav"}}<a id="nav-invoices" href="/invoices">Invoices</a><a id="nav-orders" href="/orders">Orders</a>{{end}}`,
-		`{{define "foot"}}<a href="/about">About</a>{{end}}`)}
+	short := `<a id="nav-invoices" href="/invoices">Invoices</a><a id="nav-orders" href="/orders">Orders</a>`
+	var long strings.Builder
+	for i := 1; i <= 30; i++ {
+		fmt.Fprintf(&long, `<a id="nav-%d" href="/s%d">Section %d</a>`, i, i, i)
+	}
+	foot := `{{define "foot"}}<a href="/about">About</a>{{end}}`
+	pages := map[string]string{
+		"/short":  shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`, `{{define "nav"}}`+short+`{{end}}`, foot),
+		"/nofoot": shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`, `{{define "nav"}}`+short+`{{end}}`),
+		"/long":   shellLayoutPage(t, src, "ltr", `{{define "view"}}index{{end}}`, `{{define "nav"}}`+long.String()+`{{end}}`, foot),
+	}
 	rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	var g struct{ RailH, RailBottom, FootTop, FootBottom, VH, NavBottom float64 }
-	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body"))
-	at(t, ctx, `(() => { const b = s => document.querySelector(s).getBoundingClientRect();
-	  return JSON.stringify({RailH: b("[rst-shell-rail]").height, RailBottom: b("[rst-shell-rail]").bottom, NavBottom: b("[rst-shell-nav]").bottom, FootTop: b("[rst-shell-foot]").top, FootBottom: b("[rst-shell-foot]").bottom, VH: innerHeight}); })()`, &g)
-	if g.NavBottom > g.VH/2 {
-		t.Fatalf("the two-link nav ends at %.0f of %.0f; the short-nav case this leg is for has not arisen", g.NavBottom, g.VH)
+	type geometry struct {
+		BarTop, BarH, RailTop, RailH, RailBottom, NavBottom float64
+		FootShown                                           bool
+		FootTop, FootBottom, DocH, VH                       float64
 	}
-	if g.RailH < g.VH-1 {
-		t.Errorf("the console index's rail is %.0fpx in a %.0fpx window; it is the page there, full screen", g.RailH, g.VH)
+	read := func(path string) geometry {
+		t.Helper()
+		var g geometry
+		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("body"))
+		// Every box in document coordinates, so a scrolled page reads the
+		// same as one at the top.
+		at(t, ctx, `(() => { const b = s => { const r = document.querySelector(s).getBoundingClientRect(); return {top: r.top + scrollY, bottom: r.bottom + scrollY, h: r.height}; };
+		  const bar = b("[rst-shell-bar]"), rail = b("[rst-shell-rail]"), foot = b("[rst-shell-foot]"), nav = b("[rst-shell-nav]");
+		  return JSON.stringify({BarTop: bar.top, BarH: bar.h, RailTop: rail.top, RailH: rail.h, RailBottom: rail.bottom, NavBottom: nav.bottom,
+		    FootShown: foot.h > 0, FootTop: foot.top, FootBottom: foot.bottom, DocH: document.documentElement.scrollHeight, VH: innerHeight}); })()`, &g)
+		return g
 	}
-	if math.Abs(g.FootTop-g.RailBottom) > 1 {
-		t.Errorf("the foot starts at %.0f and the rail ends at %.0f; the foot follows the rail", g.FootTop, g.RailBottom)
+	near := func(a, b float64) bool { return math.Abs(a-b) <= 1 }
+
+	g := read("/short")
+	if g.NavBottom > g.VH/2 || !g.FootShown {
+		t.Fatalf("/short: the nav ends at %.0f of %.0f, foot shown %v; the short-nav-with-a-foot case this leg is for has not arisen", g.NavBottom, g.VH, g.FootShown)
+	}
+	if !near(g.BarTop, 0) || !near(g.RailTop, g.BarTop+g.BarH) || !near(g.BarH+g.RailH, g.VH) {
+		t.Errorf("/short: the bar is %.0fpx at %.0f and the rail %.0fpx at %.0f in a %.0fpx window; together they fill the window exactly", g.BarH, g.BarTop, g.RailH, g.RailTop, g.VH)
+	}
+	if !near(g.FootTop, g.RailBottom) || !near(g.DocH, g.FootBottom) {
+		t.Errorf("/short: the rail ends at %.0f, the foot spans %.0f to %.0f and the document is %.0fpx; the foot follows the rail and the document ends with it", g.RailBottom, g.FootTop, g.FootBottom, g.DocH)
+	}
+
+	g = read("/nofoot")
+	if g.FootShown {
+		t.Fatal("/nofoot: an empty foot is drawn; the no-foot case has not arisen")
+	}
+	if !near(g.BarH+g.RailH, g.VH) || !near(g.DocH, g.VH) {
+		t.Errorf("/nofoot: bar %.0f + rail %.0f in a %.0fpx window, document %.0fpx; with no foot the index is exactly the window and nothing scrolls", g.BarH, g.RailH, g.VH, g.DocH)
+	}
+
+	g = read("/long")
+	if g.NavBottom < g.VH {
+		t.Fatalf("/long: thirty rows end at %.0f in a %.0fpx window; the long-nav case has not arisen", g.NavBottom, g.VH)
+	}
+	if !near(g.FootTop, g.RailBottom) || !near(g.DocH, g.FootBottom) {
+		t.Errorf("/long: the rail ends at %.0f, the foot spans %.0f to %.0f and the document is %.0fpx; the foot follows a long rail too", g.RailBottom, g.FootTop, g.FootBottom, g.DocH)
+	}
+	var missed []string
+	at(t, ctx, `(() => { const out = [];
+	  for (const a of document.querySelectorAll("[rst-shell-nav] a")) {
+	    a.scrollIntoView({block: "center"});
+	    const r = a.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+	    if (!(h === a || a.contains(h))) out.push(a.id + " -> " + (h ? h.tagName : "nothing"));
+	  }
+	  return JSON.stringify(out); })()`, &missed)
+	if len(missed) > 0 {
+		t.Errorf("/long: rows that cannot be scrolled to and hit: %v", missed)
 	}
 }
 
