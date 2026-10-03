@@ -19,9 +19,7 @@ import (
 const testDifficulty = 10
 
 // solveFor is the Go twin of browser/powcore.js's search, for tests
-// that need a solution. It is not exported and never will be: shipping
-// a Go solver would invite a caller to solve challenges server-side,
-// which is the one thing the price is meant to prevent.
+// that need a solution. It is not exported. powtest ships one for other packages' tests; see that package's doc for why a test-named import path is the only acceptable home.
 func solveFor(t *testing.T, nonce, binding string, difficulty int) string {
 	t.Helper()
 	for i := 0; i < 1<<24; i++ {
