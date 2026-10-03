@@ -962,7 +962,10 @@ block:
 The blocks are `title`, `lang`, `dir` and `head` in all five shells,
 plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
 `console`, `view` and `up` in `sidebar` and `console`, `foot` in
-`topbar`, `console` and `stage`, and `backdrop` in `stage`.
+`topbar`, `console` and `stage`, and `backdrop` in `stage`. None of them
+reads a field off the data, so a shell renders whether your handler
+passes a struct, a `dict`-built map or nil. A shell can never break
+because a page's view model changed shape.
 
 `head` is the odd one out: it is not chrome, it is your slot in
 `<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
