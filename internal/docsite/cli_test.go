@@ -61,6 +61,12 @@ func TestCLICommandsAreDocumented(t *testing.T) {
 // flag name in the CLI's package.
 func cliSurface(dir string) (commands, flags []string, err error) {
 	fset := token.NewFileSet()
+	// ParseDir is deprecated because it ignores build tags when grouping
+	// files into packages. That cannot matter here: the CLI's own
+	// package has no tagged files, and moving to x/tools/go/packages
+	// would put golang.org/x/tools in the root go.mod of a framework
+	// whose consumers read that file.
+	//lint:ignore SA1019 the directory parsed has no build-tagged files
 	pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool {
 		return !strings.HasSuffix(fi.Name(), "_test.go")
 	}, parser.SkipObjectResolution)

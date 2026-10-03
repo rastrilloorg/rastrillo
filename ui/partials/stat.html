@@ -9,10 +9,9 @@
 
      Keys:
        Label  string, required — the eyebrow over the number
-       Value  string, required — the number as a person reads it,
-              already formatted and localised by the caller. The
-              framework does not format numbers: a thousands separator
-              is a locale's business and the caller has the locale.
+       Value  number or string, required — numbers and plain integer
+              strings use the locale set by ui.WithLocale (English by
+              default). Other strings keep the caller's formatting.
        Exact  string, optional — the unrounded figure, emitted as
               <data value>. Set it only when Value is an abbreviation
               ("4.1k" for 4120). See the warning below.
@@ -49,4 +48,4 @@
      something a person needs, the fix is a fuller Value or an
      accessible name — never Exact. And a date or a duration takes
      <time>, not <data>; that is the distinction most often got wrong. */}}
-{{define "stat"}}<div rst-stat{{if .Lead}}="lead"{{end}}><span rst-stat-label>{{.Label}}</span><span rst-stat-num>{{if .Exact}}<data value="{{.Exact}}">{{.Value}}</data>{{else}}{{.Value}}{{end}}</span>{{with .Delta}}<span rst-stat-delta rst-tone="{{if $.Tone}}{{$.Tone}}{{else}}neutral{{end}}">{{.}}</span>{{end}}{{with .Note}}<span rst-stat-note>{{.}}</span>{{end}}</div>{{end}}
+{{define "stat"}}<div rst-stat{{if .Lead}}="lead"{{end}}><span rst-stat-label>{{.Label}}</span><span rst-stat-num>{{if .Exact}}<data value="{{.Exact}}">{{number .Value}}</data>{{else}}{{number .Value}}{{end}}</span>{{with .Delta}}<span rst-stat-delta rst-tone="{{if $.Tone}}{{$.Tone}}{{else}}neutral{{end}}">{{.}}</span>{{end}}{{with .Note}}<span rst-stat-note>{{.}}</span>{{end}}</div>{{end}}

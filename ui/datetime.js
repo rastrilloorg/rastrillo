@@ -1365,13 +1365,24 @@
       }
 
       var pick = null;
+      var ownsPopup = !!cal || kind === "time";
+      function pickExpanded(open) {
+        if (pick && ownsPopup) pick.setAttribute("aria-expanded", open ? "true" : "false");
+      }
       if (cal || kind === "time" || canPick(native)) {
         pick = document.createElement("button");
         pick.type = "button";
         pick.setAttribute("rst-dtp-pick", "");
         pick.setAttribute("aria-label", kind === "time" ? clockLabel : pickLabel);
-        pick.setAttribute("aria-expanded", "false");
-        pick.setAttribute("aria-haspopup", cal ? "dialog" : "listbox");
+        // Popup attributes only where the popup is ours: the grid is a
+        // dialog and the clock is a listbox. Without either, the button
+        // hands over to the browser's own panel, which is not a
+        // listbox and whose open state this page never learns, so it
+        // is announced as the plain button it is.
+        if (ownsPopup) {
+          pick.setAttribute("aria-expanded", "false");
+          pick.setAttribute("aria-haspopup", cal ? "dialog" : "listbox");
+        }
         pick.innerHTML = kind === "time" ? CLOCK_SVG : CAL_SVG;
         wrap.insertBefore(pick, list);
       }
@@ -1401,7 +1412,7 @@
         input.setAttribute("aria-controls", listId);
         input.removeAttribute("aria-activedescendant");
         if (cal) cal.close();
-        if (pick) pick.setAttribute("aria-expanded", "false");
+        pickExpanded(false);
         wrap.classList.remove("is-above");
       }
 
@@ -1426,7 +1437,7 @@
         list.hidden = false;
         input.setAttribute("aria-expanded", "true");
         input.setAttribute("aria-controls", listId);
-        if (pick) pick.setAttribute("aria-expanded", "false");
+        pickExpanded(false);
         rebuild(input.value);
         place();
       }
@@ -1442,7 +1453,7 @@
         cal.open(previewOf(input.value));
         input.setAttribute("aria-expanded", "true");
         input.setAttribute("aria-controls", cal.el.id);
-        if (pick) pick.setAttribute("aria-expanded", "true");
+        pickExpanded(true);
         place();
       }
 
@@ -1469,7 +1480,7 @@
         }
         input.setAttribute("aria-expanded", "true");
         input.setAttribute("aria-controls", listId);
-        if (pick) pick.setAttribute("aria-expanded", "true");
+        pickExpanded(true);
         status.textContent = manyFmt.replace("{n}", String(rows.length));
         setActive(near);
         place();

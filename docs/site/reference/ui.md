@@ -43,15 +43,22 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt` and
-`rowMenuItems`. `rowMenuItems` checks `row-menu`'s items and stops the
-render on one it cannot show.
+`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`,
+`displayURL`, `safeHref` and `rowMenuItems`. `rowMenuItems` checks
+`row-menu`'s items and stops the render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
 sentence that shows back something a visitor typed: each value is
 escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's
 backdrop from a word; the same word always draws the same picture.
+
+`displayURL` and `safeHref` are `form.DisplayURL` and `form.SafeHref`,
+for showing an address that `field-url` collected. `displayURL` is the
+address without its scheme or trailing slash. `safeHref` is the address
+if it is an http or https URL with no username or password in it, and
+`""` otherwise, so wrap the link in `{{with safeHref .Site}}`. See
+[Templates](/docs/templates#web-address-fields).
 
 `dict` builds a partial's single data value at the call site:
 
@@ -102,6 +109,24 @@ vendored-inline default, so you can call it unconditionally and never
 touch the layout when the delivery mode changes.
 
 `WithT` rebinds the `T` function.
+
+## WithLocale
+
+`WithLocale(locale string) Option` sets the locale used to format quantities. An empty or invalid locale uses English. Bind it with the other `ui.Funcs` options on each request's cloned template. Use `{{number .Count}}` for quantities in custom templates. It groups numeric Go values without rounding away decimal places. The helper also groups plain integer strings within the `int64` or `uint64` range. It leaves strings with leading zeros, decimal strings, currency or percent text, and abbreviations unchanged.
+
+`stat.Value` and pagination item labels call `number` automatically. Detail lists, badges, list rows and meters call `displayValue`, which formats numeric Go values and preserves strings. Detail-list entries with `DateTime` keep their existing formatting. Keep identifiers, years and versions as strings. Use these helpers for display text, leaving input values, URLs and machine-readable attributes unformatted. Both helpers work without JavaScript.
+
+```go
+page, err := base.Clone()
+if err != nil {
+    return err
+}
+page.Funcs(ui.Funcs(
+    ui.WithT(translate),
+    ui.WithIcons(icons.Icon, icons.Assets),
+    ui.WithLocale(rastrillo.LocaleFrom(r)),
+))
+```
 
 ## FuncsWith
 

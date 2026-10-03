@@ -1,9 +1,12 @@
 package rastrillo
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/form"
 )
 
 // TestBaseCatalogResolvesThroughLocales exercises the base layer through
@@ -134,6 +137,29 @@ func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 			if code != "en" && v == en[key] {
 				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
 			}
+		}
+	}
+}
+
+// form cannot import this package, so its errors carry their English as
+// a literal beside the catalog key. A caller that ignores Key prints
+// that literal; one that resolves Key prints en.toml's. Holding the two
+// equal here is what stops an English reader seeing different wording
+// depending on which path their handler took.
+func TestFormErrorsMatchTheEnglishCatalog(t *testing.T) {
+	en := BaseCatalog()
+	_, moneyInvalid := form.ParseCents("abc")
+	_, moneyPrecision := form.ParseCents("1.234")
+	_, urlInvalid := form.NormaliseURL("javascript:alert(1)")
+	_, urlCredentials := form.NormaliseURL("https://me:pw@example.com")
+	for _, err := range []error{moneyInvalid, moneyPrecision, urlInvalid, urlCredentials} {
+		var fe *form.Error
+		if !errors.As(err, &fe) {
+			t.Errorf("%v is not a *form.Error", err)
+			continue
+		}
+		if got, ok := en[fe.Key]; !ok || got != fe.Msg {
+			t.Errorf("en.toml has %s = %q, but form says %q", fe.Key, got, fe.Msg)
 		}
 	}
 }

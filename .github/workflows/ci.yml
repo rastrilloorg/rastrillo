@@ -33,7 +33,11 @@ jobs:
       # can't quietly satisfy a build that would fail without one.
       CGO_ENABLED: 0
     steps:
+      # The whole history, for gitleaks: the default single-commit
+      # checkout would scan one commit and call the repository clean.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -54,6 +58,19 @@ jobs:
           go build ./...
           go vet ./...
           go test ./... -count=1
+
+      # The Makefile target, not a copy of its commands: the pinned
+      # version and the module list live in one place.
+      - name: staticcheck
+        run: make staticcheck
+
+      # Through make, so both run on the Makefile's pinned GOTOOLCHAIN
+      # rather than the Go setup-go installed from go.mod.
+      - name: govulncheck
+        run: make govulncheck
+
+      - name: gitleaks
+        run: make gitleaks
 
       # The README promises that chromedp stays out of the ordinary
       # build graph. This is that sentence, executable.

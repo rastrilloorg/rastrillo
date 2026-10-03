@@ -69,7 +69,7 @@ func goEval(moduleRoot, dir string) ([]source, error) {
 		return nil, fmt.Errorf("decode Go manifest driver output: %w", err)
 	}
 	if len(resources) != len(vars) {
-		return nil, fmt.Errorf("Go manifest driver returned %d resource(s), expected %d", len(resources), len(vars))
+		return nil, fmt.Errorf("the Go manifest driver returned %d resource(s), expected %d", len(resources), len(vars))
 	}
 
 	sources := make([]source, len(resources))

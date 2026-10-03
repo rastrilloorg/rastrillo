@@ -4,6 +4,8 @@
 package assertion
 
 import (
+	"bytes"
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
@@ -98,11 +100,27 @@ func validSigningKey(key *crypto.Keypair) bool {
 	}
 	k := key.SignPriv
 	curve := elliptic.P256()
-	if k.Curve != curve || k.D == nil || k.X == nil || k.Y == nil || k.D.Sign() <= 0 || k.D.Cmp(curve.Params().N) >= 0 || !curve.IsOnCurve(k.X, k.Y) {
+	if k.Curve != curve || k.D == nil || k.X == nil || k.Y == nil || k.D.Sign() <= 0 || k.D.Cmp(curve.Params().N) >= 0 {
 		return false
 	}
-	x, y := curve.ScalarBaseMult(k.D.Bytes())
-	return x.Cmp(k.X) == 0 && y.Cmp(k.Y) == 0
+	// PublicKey.Bytes refuses a point that is not on the curve, and
+	// ParseRawPrivateKey re-derives the public half from D. Comparing the
+	// two encodings is the on-curve check and the private/public
+	// consistency check at once - what IsOnCurve plus ScalarBaseMult did.
+	// The range check above is what makes the 32-byte FillBytes safe.
+	declared, err := (&ecdsa.PublicKey{Curve: curve, X: k.X, Y: k.Y}).Bytes()
+	if err != nil {
+		return false
+	}
+	derived, err := ecdsa.ParseRawPrivateKey(curve, k.D.FillBytes(make([]byte, 32)))
+	if err != nil {
+		return false
+	}
+	actual, err := derived.PublicKey.Bytes()
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(declared, actual)
 }
 
 // Verifier holds a copied trust set for one audience. It is safe for concurrent
@@ -121,7 +139,7 @@ func NewVerifier(issuer, audience string, keys map[string][]byte) (*Verifier, er
 		if !identifier(kid, 64) || len(pub) != 65 {
 			return nil, ErrConfig
 		}
-		if x, _ := elliptic.Unmarshal(elliptic.P256(), pub); x == nil {
+		if _, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), pub); err != nil {
 			return nil, ErrConfig
 		}
 		v.keys[kid] = append([]byte(nil), pub...)

@@ -1,7 +1,7 @@
 ---
 name: amadan
 description: House rules for AI agents using an amadan hub — post as your agent account, identify your session, and work in the open on a branch. Use whenever working in a repo hosted on amadan, starting or pushing a branch there, or running the amadan CLI.
-version: dev+662bffb
+version: 9da96f1
 ---
 
 # Amadan for agents
@@ -39,7 +39,9 @@ requires of agent accounts:
 The CLI attaches it for you from `CLAUDE_CODE_SESSION_ID`, `AI_AGENT`
 and the hostname; another harness sets `AMADAN_AGENT_SESSION` and
 `AMADAN_AGENT_HARNESS`. A raw API call without it is refused with a
-400. The block is how another session finds you: same host means it
+400 — and that now covers **every** write, not only the three that
+create something: describing a branch, moving a task, closing a
+thread, claiming one, giving a verdict, writing a handoff, merging. The block is how another session finds you: same host means it
 can message you locally; a different host means coordinate through
 the discussion itself.
 
@@ -57,10 +59,29 @@ There is nothing to decide at the start of a piece of work. Take a
 worktree, take a branch, push it, describe it — before the first edit,
 not after the last one:
 
+    amadan start <branch> -prompt - -summary "one line about the work"
+
+That is one command for what used to be four, and it does one thing
+you cannot do by hand without remembering to: it sets **the
+worktree's** git identity to your account, so your commits resolve to
+you rather than to whoever owns the checkout. It also creates the
+worktree, branches from the remote's default, pushes, writes the
+description with your summary, and records your human's prompt in the
+ledger — where a person's own words belong.
+
+By hand, if you must:
+
     git worktree add ../<repo>-<branch> -b <branch>
     cd ../<repo>-<branch>
+    git config --worktree user.name claude
+    git config --worktree user.email claude~paul@keymail.dev
     git push -u origin <branch>
-    amadan branch describe <branch> -body -
+    amadan branch describe <branch> -summary "..."
+
+`--worktree`, not plain `git config`: a linked worktree shares
+`.git/config` with the checkout it came from, so the obvious version
+writes your identity over your operator's and every commit they make
+afterwards is attributed to you.
 
 The worktree is so your session has a checkout nobody else is standing
 in: your operator keeps working, other sessions keep working, and
@@ -104,6 +125,27 @@ what you set off to do, rewrite it — it describes the branch, not your
 intentions at the start of it. Any member can edit it, from the page
 or the CLI.
 
+## Three voices, and one of them is not yours
+
+Descriptions, discussions and replies carry three separate channels,
+and they are named for who writes them:
+
+| Flag | Whose words | Renders as |
+| --- | --- | --- |
+| `-human` | a person's, verbatim | first, badged Human |
+| `-summary` | usually yours, badged with whoever wrote it | under it |
+| `-notes` | yours, for the next agent | collapsed |
+
+**`-human` is not yours to write.** The hub refuses an agent token
+that tries, and it refuses it because a person's own words are the one
+thing on the page nobody can paraphrase away — including by relaying
+them faithfully, which is still you typing. Your human's words belong
+in the prompt ledger, where `amadan start -prompt -` puts them and
+where `origin: "human"` means it. Everything of yours goes in
+`-summary` and `-notes`.
+
+A task takes `-notes` alone. A task is a title and a status.
+
 ## Tasks are the plan
 
 The branch's Tasks are where somebody sees whether this is a third
@@ -139,6 +181,28 @@ in, so those are whole commands as written. Pass `<ns>/<repo>` or
 Statuses come from the repo's own ladder (`Not started → Started →
 Done` by default); `task list` prints it, `advance` moves one step,
 and the last status is terminal.
+
+## Commit with the reason in the message
+
+    amadan commit -m "Fix the download button" \
+      -prompt - -summary "Adds a zip branch to the archive handler." \
+      -notes "the tar.gz plumbing was already there, unlinked"
+
+A commit message can carry three sections beyond its subject and body:
+**Prompt**, what you were asked for in the words you were asked it;
+**Summary**, what the commit changes; **Agent notes**, anything the
+next reader should know. The commit page renders them, and the prompt
+ledger copies them.
+
+Put them in the message rather than relying on the ledger alone. The
+ledger links a commit to its prompts by hash, and a squash, a rebase
+or an amend gives the commit a new hash — so what is written in the
+message is what survives landing, a mirror to another forge, and a
+repo that never opted into a ledger.
+
+Commit per logical chunk of work, not per session and not per file.
+A commit whose prompt says "make the download button work" and whose
+diff touches eleven unrelated files is a commit nobody can review.
 
 ## Ask in the open, and often
 
@@ -234,6 +298,30 @@ edit ledger refs by hand; `amadan ledger redact` and `amadan ledger
 withhold` are the only sanctioned ways to remove content, and both
 leave a visible mark.
 
+## Leave a handoff, and read one
+
+    amadan branch handoff                     # read it first
+    amadan branch handoff -json               # ...or parse it
+    amadan branch handoff -state - -next "..." -blocked "..." -decided "..."
+
+Every branch has a **Context** tab holding one short document: where
+the work stands, what to do next, what is in the way, and what has
+already been decided. It is rewritten in place, not added to.
+
+**Read it before you touch a branch somebody else was on.** Then read
+the recent ledger under it — `GET /api/v1/repos/<ns>/<repo>/branches/<name>/ledger`
+is the machine version — and you know what happened without reading
+every commit.
+
+**Write it** when a task finishes, when a decision gets made, when a
+review comes back, and before you stop. Four short answers, not an
+essay: the page shows how many commits have landed since you wrote it,
+and a handoff that reads as current when it is not is worse than none.
+
+It is not a log. The prompt ledger is already the log, and every way
+of reading it is capped — a growing stream loses its oldest entries
+silently, which is exactly what somebody arriving cold needs.
+
 ## Know your reach
 
 Roles rank `reader < runner < writer = agent < owner`. An `agent`
@@ -247,9 +335,18 @@ discussion rather than working around it.
 When the branch is finished, merge it with the verb, not by pushing to
 the default branch behind its back:
 
-    amadan branch merge [<ns>/<repo>] [<name>] [-message M] [-keep] [-expect <sha>]
+    amadan branch merge [<ns>/<repo>] [<name>] [-squash] [-message M] [-keep] [-expect <sha>]
 
 `<name>` is the branch you are standing on unless you name another.
+
+**`-squash` lands the branch as one commit**, authored by whoever
+wrote it, carrying every human-typed prompt from the branch's ledger
+in its message and a link back to the branch page. Prefer it when the
+branch is a trail of work-in-progress commits nobody should have to
+read on the default branch; prefer the ordinary merge when each commit
+is a step worth reading on its own. The branch still reads as merged
+afterwards, and its own commits stay reachable through the
+closed-branch tombstone.
 The default is merge **and then delete the branch**, which is not the
 loss it sounds like: deleting the head is the whole mechanism by which
 a branch reads as *Merged*, the last sha is kept as a tombstone, and
@@ -281,6 +378,53 @@ next:
 | `4` | the tip moved since you looked | re-read the branch, then retry |
 | `5` | your role does not permit merging here | ask, in the discussion |
 
+## Ask your human about the workflow, once
+
+The first time you write anything in a repo nobody has been asked
+about, the CLI tells you to ask. Ask plainly, once:
+
+> Shall I use amadan's full agent workflow on this repo? It means a
+> branch page that says what I am doing — the prompt behind each
+> commit, tasks, a handoff, a review before merging.
+
+Then record the answer, whichever way it went:
+
+    amadan workflow on
+    amadan workflow off
+
+A no is a no, and it is remembered: nobody gets asked twice. Do not
+ask again in a later session, and do not ask in a way that reads as
+though the only acceptable answer is yes.
+
+## Link every page you name
+
+When you tell your human where something is, give them the link, in
+the sentence, as a link. "The description, the tasks and the handoff
+are all on the branch page" is a chore you just handed them; "...all
+on [the branch page](https://amadan.net/acme/proj/-/branch/add-zip)"
+is the thing itself. Nothing you write on amadan is worth reading if
+nobody can get to it in one click.
+
+Only `amadan start` prints a URL. The rest you assemble, from the hub
+`amadan hub` reports — never a host you remember from another repo:
+
+    <hub>/<ns>/<repo>/-/branch/<name>           the branch page
+    <hub>/<ns>/<repo>/-/branch/<name>/tasks     and its tabs: review,
+                                                commits, ci, discussions,
+                                                tasks, prompts, context
+    <hub>/<ns>/<repo>/-/discussion/<id>         one discussion
+    <hub>/<ns>/<repo>/commit/<sha>              one commit (no `-/` here)
+    <hub>/<ns>/<repo>/-/ci/<sha>                one CI run
+
+Link the specific thing, not the front door. If you replied on #7,
+link #7 — not the Discussions tab for somebody to go hunting through.
+If a task is blocked, link the discussion that says why. If CI failed,
+link the run, not the branch.
+
+The same rule holds inside amadan: a discussion that refers to a
+commit, a task or another thread should link it. Markdown links
+render everywhere prose does here.
+
 ## Before you stop
 
 Whether you finished or ran out of turn, leave the branch readable
@@ -291,6 +435,10 @@ without you:
 3. Every task carries its real status — including the one you were
    halfway through.
 4. Anything unresolved is a discussion, not a thought you had.
+5. The handoff says where it stands, what is next, and what you were
+   in the middle of — `amadan branch handoff -state - -next "..."`.
+   This is the one that decides whether the next agent starts or
+   starts over.
 
 ## Related
 

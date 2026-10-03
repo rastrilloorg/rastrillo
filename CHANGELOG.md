@@ -22,6 +22,73 @@ New: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.
 
 Watch for two things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it.
 
+### Changed: a new app's `make ci` runs staticcheck
+
+`rastrillo new` now gives an app a `staticcheck` target, runs it from `make ci`, and adds a `.amadan/ci.d/25-staticcheck` step. It goes through `go run` at the version rastrillo's own gate uses, so nothing needs installing. Apps scaffolded earlier keep their old gate; to add it, put this in the Makefile and add `staticcheck` to the `ci:` line:
+
+```make
+STATICCHECK := honnef.co/go/tools/cmd/staticcheck@v0.7.0
+staticcheck:
+	go run $(STATICCHECK) -tags browser ./...
+```
+
+A first run on an older app may report findings its gate never looked for. Rastrillo's own `make ci` runs staticcheck too.
+
+### Fixed: a date button that opens the browser's panel claims no popup
+
+Without calendar.js on the page, `datetime.js`'s date button hands over
+to the browser's own picker. It still said `aria-haspopup="listbox"` and
+`aria-expanded="false"`, and nothing ever set it to true, so a screen
+reader announced a collapsed list box that never opened. Only the popups
+`datetime.js` draws itself carry those attributes now: the calendar grid
+(`dialog`) and a time field's clock (`listbox`). This changes
+`datetime.js`, a vendored asset: run `rastrillo doctor --fix` to re-copy
+it.
+
+### Changed: the sign-in email says how long its link lasts
+
+`auth`'s magic-link email said the link "expires shortly", keymaildev's
+default, while the sign-in pages in front of it said 15 minutes. The
+default body now says "It works once and expires in 15 minutes." Any app
+that relies on `auth` without a `Body` sends this new wording.
+
+- `auth.LinkTTL` (15 minutes) is the link's lifetime. `New` now sets it
+  on the flow itself instead of inheriting signin's default, so the
+  number on the page can't drift from the link.
+- `auth.Config.Body func(link string) string` writes the email around
+  the link, so an app can name itself ("Here’s your link to sign in to
+  Docs: …"). Nil sends `auth.DefaultBody`.
+
+### Added: `rastrillo doctor` finds an app still on the old module path
+
+An app that imports `github.com/carlosframework/rastrillo` is stuck at
+v0.23.0 and gets no fix released since. Nothing told it: its vendored
+test checks against the same old module, and `go get ...@upgrade` fails
+with a module-path error. Five of six Oficina apps were in this state a
+month after the iOS zoom fix shipped.
+
+Run a current `doctor` against your app:
+
+```sh
+go run amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest doctor
+```
+
+If the app is on the old path, it says so, prints the steps to move it
+and exits 5. `--fix` refuses until the app has moved. The steps are also
+in [the CLI reference](/docs/cli#an-app-on-the-old-module-path). They
+replace the v0.25.0 note below, which missed apps that require both
+paths.
+
+### Added — a web address field that does not care about `https://`
+
+`ui` ships a `field-url` partial, and `form` a `URL` kind to read it with. A person can type `example.com`, `www.Example.com/` or `http://example.com/pricing`, and you store an http or https address with a lowercase host. The field is a text input with the URL keyboard, because browsers refuse `example.com` in `<input type="url">`.
+
+`form.URL` refuses any scheme but http and https, a username or password in the address, a host with no dot, and whitespace. It reports the catalog keys `rastrillo.ui.url_invalid` and `rastrillo.ui.url_credentials`, so wrap the error in `T` as you do for dates. `form.NormaliseURL` does the same work outside `Parse`.
+
+To show a stored address, the new `displayURL` and `safeHref` template functions (`form.DisplayURL` and `form.SafeHref`) give you the address without its scheme and a link target that is `""` for anything not http or https. `form.URLKey` tells you when two addresses are the same site. The `field` partial also takes `Inputmode` now, to pick a phone keyboard without the validation a `Type` brings.
+
+Nothing to re-vendor: the partial and the functions come from the module.
+
 ### Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`
 
 `ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it, whether that is an emailed link or Keymail. It offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.
@@ -69,6 +136,61 @@ uses `--rst-text-muted`.
 
 Both changes are in `tokens.css`, which your app has its own copy of.
 Run `rastrillo doctor --fix` to take the new one.
+
+### Changed — times are stored in UTC, in SQLite's layout, and read back in UTC; back-fill old rows for SQL date maths
+
+`db.Open` now opens SQLite with `_time_format=sqlite&_timezone=UTC`.
+
+**Layout.** A `time.Time` is written as `2026-09-30 11:03:07.457+00:00`.
+Before, the driver wrote Go's `time.Time.String()`:
+`2026-09-30 11:03:07.457 +0000 UTC`, and for a bare `time.Now()` that an
+app assigns itself, a monotonic-clock reading after that, `m=+6980.25`.
+SQLite's own date functions cannot read that. `julianday`, `date` and
+`strftime` returned NULL for every row, so raw SQL doing date arithmetic
+silently got nothing back. A time in a bare numeric zone (`+0100`, as
+`mail.ParseDate` returns) was also written in a form that failed to scan
+back into a `time.Time`.
+
+**Zone.** Every time is converted to UTC before it is written, whatever
+zone it carries. Before, only GORM's own stamps were UTC (`NowFunc` is
+`time.Now().UTC()`). A `time.Now()` on a machine not in UTC, or a parsed
+Date header's `+0900`, was stored in its own zone. SQL that compares
+stored times as text (`WHERE at < ?`, `ORDER BY at`) agrees with the
+instants only while every row is in one zone.
+
+**Reading back.** Every time now comes back in `time.UTC`, where before
+it came back in `time.Local` or a fixed zone. The instant is the same,
+and on a machine that runs in UTC nothing prints differently. On a
+machine that does not, code that formats a time from the database
+without calling `.In(loc)` or `.Local()` now prints it in UTC. Convert
+before you format.
+
+Rows written before this keep scanning into a `time.Time`, because the
+driver reads both layouts. Until you rewrite them, SQL date functions
+return NULL for them, and text comparison against new rows is right only
+where both are UTC and only to the second. If your app does SQL date
+maths or compares times in SQL, rewrite the old rows once, in a
+migration, with these two statements for each `DATETIME` column you
+own. The first takes the old layout to the new one and keeps its zone.
+The second takes every time not in UTC to UTC:
+
+```sql
+UPDATE t SET c = substr(c, 1, instr(substr(c, 12), ' ') + 10)
+       || substr(c, instr(substr(c, 12), ' ') + 12, 3) || ':'
+       || substr(c, instr(substr(c, 12), ' ') + 15, 2)
+ WHERE c GLOB '????-??-?? ??:??:??* [+-][0-9][0-9][0-9][0-9] *';
+
+UPDATE t SET c = strftime('%Y-%m-%d %H:%M:%S', substr(c, 1, 19) || substr(c, -6))
+       || substr(c, 20, length(c) - 25) || '+00:00'
+ WHERE c GLOB '????-??-?? ??:??:??*[+-][0-9][0-9]:[0-9][0-9]'
+   AND substr(c, -6) <> '+00:00';
+```
+
+Each row ends up with exactly the text the driver now writes for the
+same instant. No digit of the fraction is lost. The second statement
+converts the whole seconds on their own and puts the fraction back as
+it was, because `strftime` rounds to the millisecond and would carry
+`.9999999` into the next second.
 
 ### Added — `rastrillo/perf`, request timing and budgets
 

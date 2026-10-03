@@ -1097,6 +1097,13 @@ func allPartials() []struct {
 			"Start": map[string]any{"Name": "starts_at", "Label": "Starts", "Value": "2026-08-28T19:30"},
 			"End":   map[string]any{"Name": "ends_at", "Label": "Ends", "Error": "The end comes before the start."},
 		}},
+		{"field-url", map[string]any{
+			// No scheme in the Value: TestRenderedPartialsAreSelfContained
+			// fails on any "https://" in rendered output, and an echo of
+			// what was typed is the common re-render anyway.
+			"Name": "website", "Label": "Website", "Value": "brightwater.example/pricing",
+			"Required": true, "Hint": "Where people can read more.", "Error": "Enter a web address, like example.com.",
+		}},
 		{"signin", map[string]any{
 			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
 			"Brand": map[string]any{
@@ -1206,15 +1213,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
-		"signin", "signin-title", "row-menu",
+		"field-url", "signin", "signin-title", "row-menu",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 37 {
-		t.Fatalf("the shipped set is 37 partials, this list has %d", len(want))
+	if len(want) != 38 {
+		t.Fatalf("the shipped set is 38 partials, this list has %d", len(want))
 	}
 }
 
@@ -3571,4 +3578,59 @@ func TestAViewBlockWithWhitespaceIsStillTheIndex(t *testing.T) {
 	if words := strings.Fields(html.UnescapeString(m[1])); len(words) != 1 || words[0] != "index" {
 		t.Errorf("the root's view is %q, want the one word index", m[1])
 	}
+}
+
+// field-url is a text input, never type="url": browsers refuse
+// "example.com" for lacking a scheme, which is exactly what the field
+// exists to accept. The rest of the attributes are what make a phone
+// offer the URL keyboard and stop it "correcting" an address into a
+// sentence.
+func TestFieldURLIsAForgivingTextInput(t *testing.T) {
+	got := render(t, "field-url", fixtureFor(t, "field-url"))
+	for _, want := range []string{
+		`<div rst-field>`,
+		`<label rst-field-label for="website">Website <span rst-field-required aria-hidden="true">*</span></label>`,
+		`id="website"`, `name="website"`, `type="text"`, `inputmode="url"`,
+		`autocomplete="url"`, `autocapitalize="none"`, `autocorrect="off"`,
+		`spellcheck="false"`, `value="brightwater.example/pricing"`,
+		" required", ` aria-invalid="true"`,
+		`aria-describedby="website-hint website-error"`,
+		`<small rst-field-hint id="website-hint">Where people can read more.</small>`,
+		`<small rst-field-error id="website-error">Enter a web address, like example.com.</small>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("field-url is missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `type="url"`) {
+		t.Errorf("field-url rendered the native url type, which refuses example.com:\n%s", got)
+	}
+
+	// A field for someone else's site (a customer's, a supplier's) must
+	// not offer the visitor's own homepage, so Autocomplete overrides.
+	got = render(t, "field-url", map[string]any{"Name": "supplier_site", "Label": "Supplier", "Autocomplete": "off"})
+	if !strings.Contains(got, `autocomplete="off"`) || strings.Contains(got, `autocomplete="url"`) {
+		t.Errorf("Autocomplete did not override the default:\n%s", got)
+	}
+	if strings.Contains(got, "aria-describedby") || strings.Contains(got, "aria-invalid") || strings.Contains(got, " required") {
+		t.Errorf("a bare field-url carries state it was not given:\n%s", got)
+	}
+}
+
+// Inputmode on field chooses the on-screen keyboard without changing
+// what the browser validates. It is read through opt, so a struct
+// caller written before the key existed still renders.
+func TestFieldInputmode(t *testing.T) {
+	got := render(t, "field", map[string]any{"ID": "code", "Name": "code", "Label": "Code", "Inputmode": "numeric"})
+	if !strings.Contains(got, ` inputmode="numeric"`) {
+		t.Errorf("Inputmode not emitted:\n%s", got)
+	}
+	if got := render(t, "field", fixtureFor(t, "field")); strings.Contains(got, "inputmode") {
+		t.Errorf("inputmode emitted without being asked for:\n%s", got)
+	}
+	type oldCaller struct {
+		ID, Name, Label, Type, Value, Placeholder, Autocomplete, Maxlength, Min, Max, Pattern, Hint, Help, Error string
+		Required, Short, Primary, Autofocus                                                                      bool
+	}
+	render(t, "field", oldCaller{ID: "x", Name: "x", Label: "X"})
 }

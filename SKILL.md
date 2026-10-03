@@ -42,12 +42,14 @@ docs/site/templates.md
 The scaffolded `AGENTS.md` is the source of truth for that app's code;
 this file stays the framework's. `rastrillo generate` writes `gen/`
 from `manifest/` — commit it, never hand-edit; add `generate --check`
-to `make ci`. `rastrillo dev` watches, regenerates, rebuilds and
+to `make ci`. `make ci` also runs staticcheck, pinned in the Makefile; raise the pin when you raise the go directive. `rastrillo dev` watches, regenerates, rebuilds and
 restarts. docs/site/getting-started.md
 
 `rastrillo doctor [--fix]` compares `static/`'s vendored files with the
 CLI's own copies. The scaffolded pin test, not doctor, is the standing
-gate. docs/site/cli.md
+gate. An app importing `github.com/carlosframework/rastrillo` (the
+pre-move path) is frozen at v0.23.0 and its pin test cannot see it: a
+current doctor exits 5 and prints the migration. docs/site/cli.md
 
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens — field kinds text, textarea, money; no
@@ -235,6 +237,10 @@ all read back as the zero time — ask `p.OK()`, never `IsZero`; their
 error values are `rastrillo.ui.*` **keys**, not sentences, so render
 `"Error" (T (index .Errors "Starts"))`; and `field-daterange`'s two
 halves need distinct `Name`s. docs/site/forms.md
+
+A web address is `form.URL` + `field-url` (scheme optional; errors are
+keys too). Link a stored one only through `{{with safeHref .Site}}`,
+show it with `displayURL`; never `<input type="url">`.
 
 After a mutation: `flash.Set(w, "notice", "...")`, then 303; the render
 helper calls `flash.Take(w, r)` once per page and the layout renders it.
@@ -446,8 +452,14 @@ on its own URL at step 2, never a modal fired from the row.
   headline component. Put the sign in `Delta` and pass `Tone` yourself —
   a fall is good news about half the time.
   A name inline with other content needs `<bdi>`, or an RTL name draws
-  the number beside it to its LEFT. Group a QUANTITY's digits for the
-  locale; never an identifier, year or version — order 4471, not 4,471.
+  the number beside it to its LEFT. Format every displayed quantity with `{{number .Count}}`, including
+  stats, tables, totals and chart labels. Bind `ui.WithLocale(rastrillo.LocaleFrom(r))`
+  with the other `ui.Funcs` options on each request's cloned template;
+  no locale means English. `stat.Value` formats numbers and plain integer
+  strings automatically; `detail-list.Value` formats numeric types. Pass
+  quantities as numbers, identifiers/years/versions as strings; never
+  group IDs, input values, URLs or machine attributes. Keep currency and
+  percent formatting explicit and locale-aware.
   `detail-list` takes `DateTime` beside `Value` for a moment (`<time>`). Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`

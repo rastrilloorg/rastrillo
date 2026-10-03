@@ -177,3 +177,31 @@ func TestErrorsCarryPackagePrefix(t *testing.T) {
 		t.Fatalf("error %v does not carry the rastrillo/crypto: prefix", err)
 	}
 }
+
+// TestUnmarshalKeypairAcceptsShortSignPrivD pins the leniency the
+// cross-implementation contract depends on. MarshalKeypair always writes
+// a 32-byte FillBytes scalar, but this package is the shared envelope
+// implementation for amadan, keymail and seapointish — a sibling that
+// hex-encodes its scalar with leading zeros stripped has always parsed
+// here, because ScalarBaseMult accepts any length. ecdsa.ParseRawPrivateKey
+// requires exactly the curve's byte size, so anything that reaches it must
+// be left-padded first or roughly one key in 256 stops loading.
+func TestUnmarshalKeypairAcceptsShortSignPrivD(t *testing.T) {
+	const boxD = "0000000000000000000000000000000000000000000000000000000000000001"
+
+	short, err := UnmarshalKeypair([]byte(`{"sign_priv_d":"01","box_priv_d":"` + boxD + `"}`))
+	if err != nil {
+		t.Fatalf("UnmarshalKeypair with a stripped sign_priv_d: %v", err)
+	}
+	padded, err := UnmarshalKeypair([]byte(`{"sign_priv_d":"` + strings.Repeat("0", 62) + `01","box_priv_d":"` + boxD + `"}`))
+	if err != nil {
+		t.Fatalf("UnmarshalKeypair with a padded sign_priv_d: %v", err)
+	}
+	if !bytes.Equal(short.SignPub(), padded.SignPub()) {
+		t.Fatalf("stripped and padded sign_priv_d derived different public keys:\n stripped %x\n padded   %x",
+			short.SignPub(), padded.SignPub())
+	}
+	if short.SignPriv.D.Int64() != 1 {
+		t.Fatalf("stripped sign_priv_d parsed to D = %v, want 1", short.SignPriv.D)
+	}
+}

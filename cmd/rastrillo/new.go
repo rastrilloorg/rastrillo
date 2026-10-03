@@ -160,7 +160,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg+"test", "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
 		filepath.Join(name, "README.md"):                               fmt.Sprintf(readmeTemplate, name, pkg),
 		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name),
+		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name, staticcheckVersion),
 		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
@@ -223,6 +223,7 @@ func runNew(args []string) error {
 		filepath.Join(name, ".amadan", "ci"):                         amadanCI,
 		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
 		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
+		filepath.Join(name, ".amadan", "ci.d", "25-staticcheck"):     amadanStep("staticcheck"),
 		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
 		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
 	}
@@ -246,7 +247,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + test + migration check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + test + migration check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -787,6 +788,10 @@ func get(t *testing.T, h http.Handler, target string) *httptest.ResponseRecorder
 	return rec
 }
 
+// post is here before anything calls it: the first form test you write
+// needs the Origin header below, and nothing about a 403 says so.
+//
+//lint:ignore U1000 kept for the app's first form test; see above
 func post(t *testing.T, h http.Handler, target string, form url.Values) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
@@ -1029,9 +1034,7 @@ func TestBrowserWalk(t *testing.T) {
 // app's own call.
 const readmeTemplate = `# %[1]s
 
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + `
-is the gate — vet, gofmt, tests, migration check, one definition for
-CI and for you. AGENTS.md carries the working conventions.
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
 
 ## Browser drive
 
@@ -1248,6 +1251,14 @@ screen over by hand, write your own action file at the same computed
 path under actions/ — the generator skips that one from then on.
 `
 
+// staticcheckVersion is the staticcheck release a scaffolded app's gate
+// runs, and the one rastrillo's own Makefile pins;
+// TestStaticcheckPinMatchesRastrillosGate holds the two together.
+// v0.7.0 (2026.1) is the newest release whose own go directive (1.25)
+// the toolchain go.mod asks for can build; v0.8.x needs 1.26 and finds
+// nothing more here.
+const staticcheckVersion = "v0.7.0"
+
 // makefileTemplate is the one gate definition: CI steps exec these
 // targets, never their own copies of the commands (amadan's own rule).
 const makefileTemplate = `APP := %[1]s
@@ -1274,7 +1285,7 @@ RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
 #   make release VERSION=v0.1.0
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 
-.PHONY: build release version-check test vet fmt-check migration-check ci
+.PHONY: build release version-check test vet fmt-check staticcheck migration-check ci
 
 # build is the compile check: with more than one package matched, go
 # build discards the output, so this catches a broken package without
@@ -1339,6 +1350,23 @@ vet:
 fmt-check:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
+# staticcheck catches what vet does not: deprecated APIs, values that are
+# never read, a &*x that looks like a copy and is not.
+#
+# go run with a version, not a tool directive in go.mod. A tool's
+# requirements join the app's own module graph and can move the versions
+# of modules the app shares with it (golang.org/x/tools, which sqlc also
+# needs); go run resolves the tool in a graph of its own. The version is
+# the one rastrillo's own gate runs. Bump it when you raise the go
+# directive: a staticcheck older than your Go does not know that
+# release's deprecations, and says nothing.
+#
+# -tags browser so the browser drive is read too; no file is left out by
+# it, so it covers everything the plain build does.
+STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
+staticcheck:
+	go run $(STATICCHECK) -tags browser ./...
+
 # A step of its own, not folded into another target's recipe: ci.d/
 # steps each exec one make target, so migration-check needs its own
 # name to get its own reported step on a runner with step support.
@@ -1362,7 +1390,7 @@ migration-check:
 # fails the build the moment models.go and migrations/ disagree,
 # instead of at boot on whatever machine notices next. If the app
 # declares manifest resources, also add: rastrillo generate --check
-ci: vet fmt-check test migration-check
+ci: vet fmt-check staticcheck test migration-check
 `
 
 const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
@@ -1428,9 +1456,7 @@ mechanically.
   be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is ` + "`make ci`" + ` (vet + gofmt + tests) — the same definition
-  CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the
-  stack is cgo-free by design.
+- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, tests and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design.
 - Two of the scaffolded tests are about the **placeholder index page**
   and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
   ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in

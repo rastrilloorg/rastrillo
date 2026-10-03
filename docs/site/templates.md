@@ -22,8 +22,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 ## Template functions
 
 `ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
-`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`
-and `rowMenuItems`.
+`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`,
+`stageArt`, `displayURL`, `safeHref` and `rowMenuItems`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -54,16 +54,16 @@ a partial's built-in strings resolve in the request's locale. See
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      field            form-foot           pagination
-badge         field-check      job-status          person
-bulk-bar      field-date       list-bar            row-menu
-callout       field-daterange  list-bar-search     seg-tabs
-choice-field  field-datetime   list-row-action     signin
-confirm-form  field-select     list-search-submit  signin-title
-detail-list   field-text       locale-menu         stat
-dropdown      field-textarea   meter               status-pill
-empty-state   field-time       notice
-error-page    form-error       page-header
+back-nav      field            form-error          page-header
+badge         field-check      form-foot           pagination
+bulk-bar      field-date       job-status          person
+callout       field-daterange  list-bar            row-menu
+choice-field  field-datetime   list-bar-search     seg-tabs
+confirm-form  field-select     list-row-action     signin
+detail-list   field-text       list-search-submit  signin-title
+dropdown      field-textarea   locale-menu         stat
+empty-state   field-time       meter               status-pill
+error-page    field-url        notice
 ```
 
 `locale-menu` is the language switcher; see
@@ -430,6 +430,48 @@ confidently wrong about half your deltas. `callout` with `Alert`
 adds `role="alert"`, which interrupts a screen reader mid-sentence:
 reserve it for a problem happening now, and leave ambient notes as the
 ordinary tones.
+
+## Web address fields
+
+`field-url` takes a web address and does not care whether the person
+types `https://`. It has `field-text`'s keys, `Name`, `Label`, `Value`,
+`Required`, `Hint` and `Error`, plus `Autocomplete`:
+
+```html
+{{template "field-url" dict "Name" "Website" "Label" "Website"
+	"Value" .Fields.Website "Error" (T (index .Errors "Website"))}}
+```
+
+It is a text input, not `<input type="url">`, because browsers refuse
+`example.com` in a url input until it has a scheme. It still asks a
+phone for the URL keyboard, and it turns off autocapitalise and
+autocorrect so the phone leaves the address alone.
+
+`Autocomplete` defaults to `url`, which offers the visitor their own
+homepage. For a field about someone else's site, such as a customer's,
+pass `"off"`.
+
+Read it on the server with `form.URL`. It turns `example.com` into
+`https://example.com` and refuses anything that is not an http or https
+address, so what you store is safe to link. See
+[Forms](/docs/forms#web-addresses).
+
+To show a stored address, use `displayURL` for the text and `safeHref`
+for the link:
+
+```html
+{{with safeHref .Website}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
+```
+
+`displayURL` drops the scheme and the trailing slash. `safeHref` gives
+back the address unchanged if it is an http or https URL, and `""` for
+anything else, so a bad value from before validation shows no link at
+all. On its own, `html/template` would let a stored `mailto:` into the
+`href`.
+
+Seed the form with the stored value as it is, not with `displayURL`.
+Dropping the scheme would turn a stored `http://` address into
+`https://` the next time the form is saved.
 
 ## Date and time fields
 

@@ -76,7 +76,15 @@ func Generate() (*Keypair, error) {
 
 // SignPub returns the 65-byte uncompressed public signing key.
 func (kp *Keypair) SignPub() []byte {
-	return elliptic.Marshal(elliptic.P256(), kp.SignPriv.X, kp.SignPriv.Y)
+	// Bytes reports an error only for a key that is not on one of the
+	// four NIST curves; every Keypair this package hands out is P-256.
+	// Callers treat a non-65-byte result as invalid, so nil is the
+	// honest answer for a key someone corrupted behind our back.
+	b, err := kp.SignPriv.PublicKey.Bytes()
+	if err != nil {
+		return nil
+	}
+	return b
 }
 
 // BoxPub returns the 65-byte uncompressed public box (ECDH) key.
@@ -179,11 +187,10 @@ func Verify(signPub []byte, context string, msg, sig []byte) bool {
 	if len(signPub) != pubKeyLen || len(sig) != sigHalfLen*2 {
 		return false
 	}
-	x, y := elliptic.Unmarshal(elliptic.P256(), signPub)
-	if x == nil {
+	pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), signPub)
+	if err != nil {
 		return false
 	}
-	pub := &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}
 
 	r := new(big.Int).SetBytes(sig[:sigHalfLen])
 	s := new(big.Int).SetBytes(sig[sigHalfLen:])
@@ -251,12 +258,17 @@ func UnmarshalKeypair(b []byte) (*Keypair, error) {
 		return nil, fmt.Errorf("rastrillo/crypto: decode box_priv_d: %w", err)
 	}
 
-	curve := elliptic.P256()
-	d := new(big.Int).SetBytes(signD)
-	x, y := curve.ScalarBaseMult(signD)
-	signPriv := &ecdsa.PrivateKey{
-		PublicKey: ecdsa.PublicKey{Curve: curve, X: x, Y: y},
-		D:         d,
+	// ParseRawPrivateKey demands exactly the curve's 32 bytes, where the
+	// ScalarBaseMult it replaces accepted any length. MarshalKeypair always
+	// writes 32, but this package is the shared envelope implementation for
+	// amadan, keymail and seapointish, and a sibling that strips leading
+	// zeros has always loaded here — left-pad so it still does.
+	if len(signD) < 32 {
+		signD = append(make([]byte, 32-len(signD)), signD...)
+	}
+	signPriv, err := ecdsa.ParseRawPrivateKey(elliptic.P256(), signD)
+	if err != nil {
+		return nil, fmt.Errorf("rastrillo/crypto: reconstruct sign key: %w", err)
 	}
 
 	boxPriv, err := ecdh.P256().NewPrivateKey(boxD)

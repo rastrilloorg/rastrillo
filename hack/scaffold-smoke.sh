@@ -28,6 +28,10 @@ go mod edit -replace amadan.net/rastrillo/rastrillo="$repo"
 go mod tidy
 go build ./...
 go vet ./...
+# The app's own staticcheck target, not a copy of it: a fresh scaffold
+# once failed this check on its first run (an unused test helper) while
+# build and vet stayed green, because nothing ran it.
+make staticcheck
 go build -o smokeapp ./cmd/smokeapp
 
 ./smokeapp -addr 127.0.0.1:8199 &

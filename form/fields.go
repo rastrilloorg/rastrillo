@@ -36,6 +36,12 @@ const (
 	// Date. The echo keeps the raw text; an empty optional DateTime is
 	// the zero time.Time, never an error.
 	DateTime Kind = "datetime"
+	// URL reads a web address through NormaliseURL: the scheme is
+	// optional and the stored value is an http(s) URL, read back with
+	// String. The echo keeps the raw text; an empty optional URL is "",
+	// never an error. A refused value reads back as "", so nothing that
+	// failed validation can reach storage by a handler forgetting OK.
+	URL Kind = "url"
 )
 
 // Field declares one form field for Parse.
@@ -87,6 +93,11 @@ type Parsed struct {
 //     key "rastrillo.ui.field_required", unlike Text/Textarea/Money's
 //     humanized English above — a deliberate, scoped-to-these-three
 //     behaviour change (see form/datetime.go).
+//   - URL goes through NormaliseURL. Required is checked against the
+//     trimmed text and reports "rastrillo.ui.field_required", like the
+//     date kinds; a refused value reports its *Error's Key
+//     ("rastrillo.ui.url_invalid" or "rastrillo.ui.url_credentials"),
+//     also a catalog key for the renderer's T.
 //
 // Parse reads via r.PostFormValue (which parses the form on first
 // use); callers that want a body-size cap or a 400 on a malformed
@@ -152,6 +163,25 @@ func Parse(r *http.Request, fields ...Field) *Parsed {
 			} else {
 				p.dates[f.Name] = t
 			}
+		case URL:
+			p.echo[f.Name] = raw
+			if strings.TrimSpace(raw) == "" {
+				if f.Required {
+					p.errs[f.Name] = fieldRequiredKey
+				}
+				continue
+			}
+			v, err := NormaliseURL(raw)
+			if err != nil {
+				// Every refusal is an *Error today; the fallback keeps
+				// a future one from reading as success.
+				p.errs[f.Name] = urlInvalidKey
+				if fe, ok := err.(*Error); ok {
+					p.errs[f.Name] = fe.Key
+				}
+				continue
+			}
+			p.strings[f.Name] = v
 		case Textarea:
 			p.strings[f.Name] = raw
 			p.echo[f.Name] = raw
@@ -176,8 +206,9 @@ func (p *Parsed) OK() bool { return len(p.errs) == 0 }
 // Errors is the per-field problem map — empty (never nil) when OK.
 func (p *Parsed) Errors() Errors { return p.errs }
 
-// String returns a Text or Textarea field's value (trimmed for Text,
-// raw for Textarea). Unknown names return "".
+// String returns a Text, Textarea or URL field's value (trimmed for
+// Text, raw for Textarea, normalised for URL). Unknown names, and a URL
+// that was refused, return "".
 func (p *Parsed) String(name string) string { return p.strings[name] }
 
 // Cents returns a Money field's parsed value — 0 for an empty
@@ -186,8 +217,8 @@ func (p *Parsed) String(name string) string { return p.strings[name] }
 func (p *Parsed) Cents(name string) int64 { return p.cents[name] }
 
 // Echo is the map a validation re-render seeds the form with: what
-// was typed, per field — trimmed for Text, raw for Textarea and
-// Money — so nobody retypes a whole form over one bad field.
+// was typed, per field — trimmed for Text, raw for Textarea, Money
+// and URL — so nobody retypes a whole form over one bad field.
 func (p *Parsed) Echo() map[string]string { return p.echo }
 
 // Humanize turns a Go-ish field name into the label its default

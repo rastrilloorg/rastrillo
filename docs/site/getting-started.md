@@ -26,7 +26,7 @@ cmd/notes/main.go       Resolve -> db.Open -> App -> Serve
 internal/notes/         models, migrations, app, handlers, render, templates, static
 internal/notestest/     harness + example tests, passing out of the box
 manifest/               the declarative path: drop a <name>.toml here
-Makefile                make ci = vet + fmt + test + migration check
+Makefile                make ci = vet + fmt + staticcheck + test + migration check
 .amadan/ci, ci.d/       amadan runner CI, delegating to make
 internal/notes/icons/   app-owned icons, edit freely
 AGENTS.md               instructions + UX conventions, the source of truth

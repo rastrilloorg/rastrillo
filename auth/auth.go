@@ -56,6 +56,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -183,6 +184,11 @@ type Config struct {
 	// link".
 	Subject string
 
+	// Body writes the magic-link email around the link, so an app can
+	// name itself and speak in its own voice. Nil sends DefaultBody. A
+	// Body that states the lifetime should take it from LinkTTL.
+	Body func(link string) string
+
 	// SessionTTL is the minted session's lifetime. Default
 	// DefaultSessionTTL.
 	SessionTTL time.Duration
@@ -269,6 +275,15 @@ type Auth struct {
 	exchangeHTTP *http.Client
 }
 
+// DefaultBody is the magic-link email when Config.Body is nil. It
+// replaces keymaildev/signin's own default, which says the link "expires
+// shortly": every sign-in page in front of it says how long, and the
+// email has to agree with them.
+func DefaultBody(link string) string {
+	return "Open this link to sign in:\n\n" + link + "\n\nIt works once and expires in " +
+		strconv.Itoa(int(LinkTTL/time.Minute)) + " minutes. If you didn’t ask for it, you can ignore this email."
+}
+
 // ErrEmptyInstanceKey means Config.InstanceKey was empty — see the
 // field's comment for why this is fatal rather than defaulted.
 var ErrEmptyInstanceKey = errors.New("rastrillo/auth: Config.InstanceKey must not be empty")
@@ -303,6 +318,9 @@ func New(cfg Config) (*Auth, error) {
 	}
 	if cfg.Subject == "" {
 		cfg.Subject = "Your sign-in link"
+	}
+	if cfg.Body == nil {
+		cfg.Body = DefaultBody
 	}
 	if cfg.SessionTTL == 0 {
 		cfg.SessionTTL = DefaultSessionTTL
@@ -370,6 +388,8 @@ func New(cfg Config) (*Auth, error) {
 		Origin:   cfg.Origin,
 		LinkPath: "/auth/verify",
 		Subject:  cfg.Subject,
+		Body:     cfg.Body,
+		LinkTTL:  LinkTTL,
 	}
 	return a, nil
 }

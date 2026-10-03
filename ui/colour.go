@@ -1195,19 +1195,12 @@ func checkWash(in Intent, ink string, sw Swatch) []error {
 // than pulled in: this is thirty lines of arithmetic and the framework
 // takes no dependency for it.
 
-// oklchToLinear converts OKLCh (lightness 0..1, chroma, hue in degrees)
-// to linear-light sRGB, which may fall outside 0..1 — that is what being
-// out of gamut looks like, and the caller decides what to do about it.
-func oklchToLinear(l, c, hue float64) [3]float64 {
-	rad := hue * math.Pi / 180
-	return oklabToLinear(l, c*math.Cos(rad), c*math.Sin(rad))
-}
-
-// oklabToLinear is the same conversion with the hue already resolved into
-// its two rectangular components. It is the one the gamut bisection calls,
-// which is why it is separate: the bisection varies only the chroma, so
-// the hue's sine and cosine are computed once per colour instead of once
-// per iteration.
+// oklabToLinear converts oklab to linear-light sRGB, which may fall
+// outside 0..1 — that is what being out of gamut looks like, and the
+// caller decides what to do about it. It takes the hue already resolved
+// into its two rectangular components rather than OKLCh's degrees
+// because the gamut bisection varies only the chroma: the hue's sine and
+// cosine are computed once per colour instead of once per iteration.
 func oklabToLinear(l, a, b float64) [3]float64 {
 	lc := l + 0.3963377774*a + 0.2158037573*b
 	mc := l - 0.1055613458*a - 0.0638541728*b

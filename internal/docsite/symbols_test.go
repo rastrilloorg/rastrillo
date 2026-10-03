@@ -215,6 +215,11 @@ func identByte(b byte) bool {
 // types, constants and variables.
 func exportedSymbols(dir string) ([]string, error) {
 	fset := token.NewFileSet()
+	// ParseDir is deprecated for ignoring build tags, and here that is
+	// the point: harness declares most of its API in browser-tagged
+	// files, and its reference page has to cover them. go/packages
+	// loads one build configuration and would silently drop them.
+	//lint:ignore SA1019 reading every file regardless of build tags is what this check needs
 	pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool {
 		return !strings.HasSuffix(fi.Name(), "_test.go")
 	}, parser.SkipObjectResolution)

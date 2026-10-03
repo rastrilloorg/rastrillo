@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
 )
 
 // Option configures Funcs. No options is the framework's own behaviour,
@@ -16,6 +17,7 @@ import (
 type Option func(*config)
 
 type config struct {
+	locale string
 	icon   func(string) template.HTML
 	assets func() template.HTML
 	t      func(key string, args ...any) string
@@ -110,8 +112,17 @@ func WithT(t func(key string, args ...any) string) Option {
 // one ready-to-render item each, stopping the render on an item it
 // cannot show.
 //
+// displayURL and safeHref are form.DisplayURL and form.SafeHref, the
+// read side of field-url: a stored address shown without its scheme,
+// and linked only when it is http(s). They are here rather than left
+// to each app because a template is where the link gets written, and
+// html/template alone would pass a stored mailto: straight into href:
+//
+//	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
+//
 // An app is free to add its own entries on top; it must not drop these
-// thirteen, or the shipped partials and shells stop parsing.
+// seventeen. The shipped partials and shells stop parsing without most
+// of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -125,9 +136,13 @@ func Funcs(opts ...Option) template.FuncMap {
 	return template.FuncMap{
 		"dict": dict, "list": list, "menuGroup": menuGroup, "searchClear": searchClear,
 		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
-		"dateWords": dateWords(c.t),
-		"opt":       opt, "Tbdi": tbdi(c.t),
-		"stageArt": stageArt, "rowMenuItems": rowMenuItems,
+		"dateWords":    dateWords(c.t),
+		"number":       func(v any) any { return formatNumber(v, c.locale, true) },
+		"displayValue": func(v any) any { return formatNumber(v, c.locale, false) },
+		"opt":          opt, "Tbdi": tbdi(c.t),
+		"stageArt":   stageArt,
+		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
+		"rowMenuItems": rowMenuItems,
 	}
 }
 

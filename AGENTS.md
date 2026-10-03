@@ -15,25 +15,29 @@ agent account, take a worktree and a branch before the first edit,
 no PR object), keep the plan in `amadan task`, and put anything you
 would otherwise sit on into `amadan discuss`.
 
-## Never merge to main directly, and never squash
+## Atomic commits on the branch; squash into main
 
-Every change lands on its own branch through `amadan branch merge`. That
-holds for changes that would merge cleanly on their own, for one-line
-fixes, and for documentation. Do not present merging locally as an option
-and do not ask which route to take — push the branch and describe it.
+Develop every change on its own branch. Make small, atomic commits: each
+commit contains one coherent change and keeps the branch working. Push
+the branch and describe it on amadan for review. This applies to one-line
+fixes and documentation too.
 
-**The squash is what broke this.** amadan decides a branch is merged by
-asking git whether its tip is an ancestor of the default tip. A squash
-rewrites the commits, so the answer comes back no and the branch stays
-open while its content is already in. That is not a display bug: #142 was
-squash-merged on the mirror, and three pieces of SKILL.md sat there for
-days looking landed while `main` here had never seen them. `amadan branch
-merge` makes an ordinary merge commit and will not squash and will not
-fast-forward, for exactly this reason. Do not work around it.
+When the branch is ready and the required checks pass, squash-merge it
+into `main` as a single commit. Always squash when merging a branch.
+Never push changes directly to `main` or substitute an ordinary merge.
+This repository's squash policy takes precedence over the amadan skill's
+merge instructions.
+
+Land with `amadan branch merge -squash`. It writes the one commit,
+carries every prompt from the branch's ledger into its message, and
+still records the branch as merged although the branch's own commits are
+not ancestors of the result. Do not substitute the ordinary merge; the
+one exception is carrying work across from the mirror (below).
 
 Confirm first only where there is real doubt: the base branch is not
 `main`, the work depends on another branch that has not landed yet, or
-the change is not yours to ship.
+the change is not yours to ship. Do not ask whether to squash: it is
+required.
 
 ## The mirror
 
@@ -51,8 +55,13 @@ out before you build on a stale base, and the push after you land, so the
 window where the two disagree is seconds instead of days.
 
 If `make mirror` is rejected as a non-fast-forward, someone worked on the
-mirror. Do not force it. Read what is there, carry it across as a branch
-off `origin/main`, land it here, then mirror.
+mirror. Do not force it. Read what is there, then branch from the
+mirror's `main` rather than `origin/main`, merge `origin/main` into that
+branch, and land it with an ordinary `amadan branch merge`, without
+`-squash`. That is the one merge here that is not squashed: a squash
+copies the mirror's commits instead of adopting them, so they never
+become ancestors of `origin/main` and `make mirror` is rejected for
+good. Then mirror.
 
 ## The gate
 
