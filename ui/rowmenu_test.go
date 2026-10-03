@@ -85,6 +85,19 @@ func TestRowMenuRefusesItemsItCannotRender(t *testing.T) {
 		{"Hidden a flat list", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": []string{"state", "archived"}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
 		{"Hidden a non-string pair", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": []any{[]any{"state", "archived"}, []any{"n", 1}}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
 		{"Hidden a short pair", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": [][]string{{"state"}}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
+		// A map has no order and no pairs: read as a list it was nothing,
+		// and the archive posted without its version field.
+		{"Hidden a map", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": map[string]string{"version": "7"}}), `item 0 ("Archive") has Hidden that is not a list of pairs`},
+		{"Hidden a string", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": "version=7"}), `item 0 ("Archive") has Hidden that is not a list of pairs`},
+		// The third string would be dropped without a word.
+		{"Hidden a long pair", rowMenuData(map[string]any{"Label": "Archive", "Action": "/a", "Hidden": [][]string{{"state", "archived", "now"}}}), `item 0 ("Archive") has a Hidden entry that is not a pair`},
+		// "Actions for " and nothing after it is what a screen reader
+		// would announce for every row.
+		{"no Name", map[string]any{"Items": []any{map[string]any{"Label": "Edit", "Href": "/e"}}}, "wants Name"},
+		{"empty Name", map[string]any{"Name": "", "Items": []any{map[string]any{"Label": "Edit", "Href": "/e"}}}, "wants Name"},
+		// "true" as a string would render a destructive item as a plain
+		// one, without its rule or its colour.
+		{"Danger a string", rowMenuData(map[string]any{"Label": "Delete…", "Href": "/d", "Danger": "true"}), `item 0 ("Delete…") has a Danger that is not a bool`},
 	} {
 		err := tmpl.ExecuteTemplate(&strings.Builder{}, "row-menu", c.data)
 		if err == nil || !strings.Contains(err.Error(), c.want) {
