@@ -222,21 +222,35 @@ type Config struct {
 	// be told apart from unset.
 	Remember *bool
 
-	// KeymailServers, when set, is the closed set of keymail servers (host
-	// or host:port, compared ignoring case, one trailing dot and an
+	// KeymailServers is the closed set of keymail servers (host or
+	// host:port, compared ignoring case, one trailing dot and an
 	// explicit :443) this app will classify against or exchange a code
 	// with. An IPv6 host must be written in brackets ("[::1]" or
 	// "[::1]:8443"); unbracketed, its colons collide with the port
 	// separator and let one entry match more than the operator wrote.
-	// Empty means any server an address's own _keymail delegation
-	// names — which is keymail's protocol: the domain's owner chooses its
-	// server, the same party that controls its MX and could receive a
-	// magic link anyway, and a server cannot vouch for anyone else's
-	// address because Callback compares the address it returns with the
-	// one the flow started for. An address whose server is not listed gets
-	// a magic link and its server is never contacted. Copied at New;
-	// changing it means a restart, which also empties the classifier's
-	// caches. It applies whether or not SigninScreen is on.
+	//
+	// Nil (the default, unset) means any server an address's own
+	// _keymail delegation names — which is keymail's protocol: the
+	// domain's owner chooses its server, the same party that controls
+	// its MX and could receive a magic link anyway, and a server cannot
+	// vouch for anyone else's address because Callback compares the
+	// address it returns with the one the flow started for. An address
+	// whose server is not listed gets a magic link and its server is
+	// never contacted.
+	//
+	// A non-nil empty slice ([]string{}) means none: every address
+	// classifies as "not keymail" without a server ever being dialed —
+	// no DNS delegation lookup, no HTTPS probe, to the address's own
+	// domain or anywhere else. Every sign-in is plain magic-link. Set
+	// this, not nil, for an app with no real keymail federation
+	// partners: left unset, the classifier still probes each address's
+	// own domain before giving up, and a domain that accepts the
+	// connection without ever answering costs the classifier's full
+	// timeout on every single sign-in.
+	//
+	// Copied at New; changing it means a restart, which also empties
+	// the classifier's caches. It applies whether or not SigninScreen
+	// is on.
 	KeymailServers []string
 
 	Logger *slog.Logger
@@ -371,6 +385,19 @@ func New(cfg Config) (*Auth, error) {
 		a.guard = &hostGuard{allow: servers}
 		classifier.HTTP = &http.Client{Transport: a.guard, Timeout: classifyTimeout}
 		a.exchangeHTTP = &http.Client{Transport: a.guard, Timeout: exchangeTimeout}
+		if len(servers) == 0 {
+			// An empty allow set refuses every server the guard could
+			// ever be shown, so nothing a real _keymail TXT lookup
+			// found would survive it. Short-circuit the lookup itself
+			// instead: neverDelegates answers with a plain (non-"not
+			// found") error, which classify.go's delegate() reads as
+			// "names nothing" and skips the well-known probe outright
+			// — neither a DNS query nor an HTTP request is ever built.
+			// Relying on the guard alone would still be correct, but
+			// would pay a real DNS round trip whose answer can never
+			// matter.
+			classifier.LookupTXT = neverDelegates
+		}
 	}
 
 	a.flow = &signin.Flow{

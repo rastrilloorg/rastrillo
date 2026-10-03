@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -110,6 +111,50 @@ func TestWithoutKeymailServersBothClientsAreToday(t *testing.T) {
 	}
 	if k := a.flow.Keymail("keymail.test"); k.RedirectPath != callbackPath || k.HTTP != nil {
 		t.Fatalf("Keymail = %+v; RedirectPath must be callbackPath, set explicitly", k)
+	}
+}
+
+// A non-nil empty list is not "unset": it means no server is ever
+// dialed, for any address, which is how an app with no real keymail
+// federation partners says so. Before this fix keymailServers read
+// len(list) == 0 rather than list == nil, so KeymailServers: []string{}
+// silently fell back to the default "any delegated server" behavior —
+// continuation.go's own predicate ("a.servers == nil") already knew
+// the difference; only the parser did not.
+func TestEmptyKeymailServersMeansNone(t *testing.T) {
+	a, m := newTestAuth(t, func(c *Config) { c.KeymailServers = []string{} })
+	if a.guard == nil {
+		t.Fatal("KeymailServers: []string{} must still install the guard — a non-nil empty list means \"no servers\", not \"unset\"")
+	}
+	f := kayFake()
+	wireKeymail(a, f)
+	res := beginKeymail(a, newBrowser(), "kay@example.org")
+	if loc := res.Header.Get("Location"); loc != "/signin?sent=1" {
+		t.Fatalf("a claimed address with KeymailServers: []string{} → %q, want a magic link", loc)
+	}
+	if n := f.hits("keymail.test", ""); n != 0 {
+		t.Fatalf("keymail.test received %d requests; with no servers listed, none may ever be contacted", n)
+	}
+	if m.sentTo() != "kay@example.org" {
+		t.Fatalf("the link went to %q", m.sentTo())
+	}
+}
+
+// wireKeymail always overwrites Classifier.LookupTXT with the fake's
+// own, so TestEmptyKeymailServersMeansNone — which calls it — never
+// exercises New's own short-circuit; it only proves the guard refuses
+// the HTTP probe a real (or fake) delegation names. This test checks
+// the short-circuit itself, directly, before anything can overwrite
+// it: without it, KeymailServers: []string{} would still issue a real
+// DNS query for every sign-in's domain, pointlessly, since its answer
+// can never survive the guard either way.
+func TestEmptyKeymailServersNeverResolvesADomain(t *testing.T) {
+	a, _ := newTestAuth(t, func(c *Config) { c.KeymailServers = []string{} })
+	if a.flow.Classifier.LookupTXT == nil {
+		t.Fatal("KeymailServers: []string{} left LookupTXT at its default (net.DefaultResolver) — every sign-in still pays a real DNS round trip whose answer can never matter")
+	}
+	if _, err := a.flow.Classifier.LookupTXT(context.Background(), "example.org"); err == nil {
+		t.Fatal("the short-circuited lookup must refuse every domain, not resolve one")
 	}
 }
 
