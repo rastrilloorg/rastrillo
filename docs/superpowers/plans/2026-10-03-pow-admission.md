@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- The gate, before every push: `GOFLAGS=-mod=mod go vet ./... && gofmt -l . && GOFLAGS=-mod=mod go test ./...` (`gofmt -l` prints nothing). `GOFLAGS=-mod=mod` is needed locally only (three scratch-module packages); CI does not set it.
+- The gate before every push is `make ci`, the same definition the forge runs (the Makefile exports `GOFLAGS=-mod=mod` and `CGO_ENABLED=0`). Inside a task, the quick loop is `GOFLAGS=-mod=mod go vet ./... && test -z "$(gofmt -l .)" && GOFLAGS=-mod=mod go test ./...`; note `gofmt -l` exits 0 even when it lists files, hence the `test -z`.
 - Browser tests: `TMPDIR="${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./pow/ ./auth/ ./ui/ -count=1`. They are part of `make ci` (`browser` target); a red browser test is a red gate.
 - Examples are separate modules: test `examples/notes` from `examples/notes/` (`cd examples/notes && GOFLAGS=-mod=mod go test ./...`).
 - Run git and `go run`-based tooling with the sandbox off in this checkout (sandboxed git sees phantom dotfiles; the module cache is read-only inside it).
@@ -885,7 +885,7 @@ Delete `FormAttrs`, `verifySeal` and `Challenge.expiry` (replaced by `Form.Attrs
 
 - [ ] **Step 1: Write the failing tests**
 
-In `pow/pow_test.go`: keep `testDifficulty`, `solveFor`, `TestNormalizeOnlyFoldsASCII`, `TestVerifyAcceptsASolution`, `TestVerifyRefusesAnEmptyCounter`, `TestSolutionDoesNotTransferToAnotherBinding`, `TestSolutionDoesNotTransferToAnotherNonce`, `TestFieldsCarriesTheHoneypotContract`, `TestHoneypotStyleHashMatchesTheStyle`, `TestAssetsCarriesBothHalvesOfTheBrowserSide`. Delete every other test in it (they test `Check(r, binding)`, `FormAttrs`, `verifySeal` and the v1 seal, all removed); their properties are re-pinned below. Replace `newTestGuard` and add helpers:
+In `pow/pow_test.go`: keep `testDifficulty`, `solveFor`, `TestNormalizeOnlyFoldsASCII`, `TestVerifyAcceptsASolution`, `TestVerifyRefusesAnEmptyCounter`, `TestSolutionDoesNotTransferToAnotherBinding`, `TestSolutionDoesNotTransferToAnotherNonce`, `TestFieldsCarriesTheHoneypotContract`, `TestHoneypotStyleHashMatchesTheStyle`, `TestAssetsCarriesBothHalvesOfTheBrowserSide`. Delete every other test in it (they test `Check(r, binding)`, `FormAttrs`, `verifySeal` and the v1 seal, all removed); their properties are re-pinned below. Migrate the two kept tests that touch the old API, and delete the old `submit` helper (it reads `c.IssuedAt`). In `TestFieldsCarriesTheHoneypotContract` and `TestHoneypotStyleHashMatchesTheStyle`, replace `newTestGuard(t, nil).Issue(time.Now()).Fields()` with `newTestGuard(t, nil).Issue(t0, "s").Fields()`; in the former, replace the name list `[]string{fieldNonce, fieldIssuedAt, fieldDifficulty, fieldSeal, fieldCounter}` with `[]string{fieldScope, fieldNonce, fieldIssued, fieldExpires, fieldDifficulty, fieldFlags, fieldSeal, fieldCounter}`. Then replace `newTestGuard` and add helpers:
 
 ```go
 // t0 is a fixed clock: every Guard-level test sets g.now so ages are
@@ -1069,9 +1069,28 @@ func TestBoundGuardsNeedTheBinding(t *testing.T) {
 	if a := g.Admit(post(t, f, "a@example.com", nil), Want{Scope: scope, Binding: "A@Example.com "}); !a.OK {
 		t.Fatalf("bound submission refused: %s", a.Reason)
 	}
-	f2 := g.Form(t0, scope)
-	if a := g.Admit(post(t, f2, "a@example.com", nil), Want{Scope: scope, Binding: "b@example.com"}); a.Reason != ReasonShort {
+	// A counter solved for a@ also satisfies b@ about one time in 1024
+	// at 10 bits; pick a challenge where it does not, so the test cannot
+	// pass or fail by luck.
+	var f2 Form
+	var counter string
+	for {
+		f2 = g.Form(t0, scope)
+		counter = solveFor(t, f2.Nonce, "a@example.com", f2.Difficulty)
+		if !Verify(f2.Nonce, "b@example.com", counter, f2.Difficulty) {
+			break
+		}
+	}
+	r := post(t, f2, "a@example.com", func(v url.Values) { v.Set(fieldCounter, counter) })
+	if a := g.Admit(r, Want{Scope: scope, Binding: "b@example.com"}); a.Reason != ReasonShort {
 		t.Fatalf("proof for another address = %s, want pow_short", a.Reason)
+	}
+	// A bound Guard handed no binding refuses rather than quietly
+	// checking the work against the empty string: a caller that forgot
+	// Want.Binding has an unbound form it believes is bound.
+	f3 := g.Form(t0, scope)
+	if a := g.Admit(post(t, f3, "", nil), Want{Scope: scope}); a.Reason != ReasonShort {
+		t.Fatalf("bound guard without Want.Binding = %s, want pow_short", a.Reason)
 	}
 	unbound := newTestGuard(t, nil)
 	if a := unbound.Admit(post(t, f2, "a@example.com", nil), Want{Scope: scope}); a.Reason != ReasonSealInvalid {
@@ -1079,17 +1098,16 @@ func TestBoundGuardsNeedTheBinding(t *testing.T) {
 	}
 }
 
-func TestAttemptsAreCappedAcrossRollbacks(t *testing.T) {
+func TestAttemptsAreCapped(t *testing.T) {
+	// The rollback case, which is the one that matters, is
+	// TestAttemptsSurviveCommitAndRollback in store_test.go: it needs a
+	// real transaction.
 	g := newTestGuard(t, func(c *Config) { c.Attempts = 3 })
 	f := g.Form(t0, scope)
 	for i := 0; i < 3; i++ {
-		a := g.Admit(post(t, f, "", nil), Want{Scope: scope})
-		if !a.OK {
+		if a := g.Admit(post(t, f, "", nil), Want{Scope: scope}); !a.OK {
 			t.Fatalf("attempt %d refused: %s", i+1, a.Reason)
 		}
-		// Admission spent and the caller's transaction rolled back:
-		// MemoryNonces cannot roll back, so model it by not committing.
-		// Either way the attempt entry must not be released.
 	}
 	if a := g.Admit(post(t, f, "", nil), Want{Scope: scope}); a.Reason != ReasonAttempts {
 		t.Fatalf("fourth attempt = %s, want attempts", a.Reason)
@@ -1317,6 +1335,84 @@ func TestCommitRollsBackWithTheCallersTransaction(t *testing.T) {
 	}
 }
 
+func TestAttemptsSurviveCommitAndRollback(t *testing.T) {
+	// Admit, spend inside the caller's transaction, business refusal,
+	// rollback: if a successful insert released the attempt entry, this
+	// loop would run forever on one solve.
+	_, d := newTestStore(t)
+	g, err := pow.New(pow.Config{InstanceKey: "k", Nonces: pow.SQLNonces(d.Writer()), Difficulty: pow.NoProof,
+		MinAge: time.Millisecond, Attempts: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := g.Form(time.Now().Add(-time.Second), "s")
+	ctx := context.Background()
+	for i := 0; i < 2; i++ {
+		a := g.Admit(formPost(f), pow.Want{Scope: "s"})
+		if !a.OK {
+			t.Fatalf("cycle %d refused: %s", i+1, a.Reason)
+		}
+		tx, err := d.Writer().BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := a.Commit(ctx, tx); err != nil {
+			t.Fatalf("cycle %d Commit: %v", i+1, err)
+		}
+		tx.Rollback()
+	}
+	if a := g.Admit(formPost(f), pow.Want{Scope: "s"}); a.Reason != pow.ReasonAttempts {
+		t.Fatalf("third admission after two commit-and-rollback cycles = %s, want attempts", a.Reason)
+	}
+}
+
+// stalledExec holds ExecContext until release is closed: a request
+// that passed every check, then stalled before its INSERT ran.
+type stalledExec struct {
+	ex      pow.Execer
+	release chan struct{}
+}
+
+func (s stalledExec) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
+	<-s.release
+	return s.ex.ExecContext(ctx, q, args...)
+}
+
+func TestACommitStalledPastExpiryAndASweepIsRefused(t *testing.T) {
+	// A and B are admitted before expiry. A commits. B stalls; the token
+	// expires and its row is swept. B's INSERT then runs. Checked in Go
+	// before the executor, B would pass and write a second time; checked
+	// in the INSERT on the database clock, it cannot.
+	_, d := newTestStore(t)
+	g, err := pow.New(pow.Config{InstanceKey: "k", Nonces: pow.SQLNonces(d.Writer()), Difficulty: pow.NoProof,
+		MinAge: time.Millisecond, MaxAge: 300 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := g.Form(time.Now(), "s")
+	time.Sleep(5 * time.Millisecond)
+	ctx := context.Background()
+	a := g.Admit(formPost(f), pow.Want{Scope: "s"})
+	b := g.Admit(formPost(f), pow.Want{Scope: "s"})
+	if !a.OK || !b.OK {
+		t.Fatalf("admissions: %s %s", a.Reason, b.Reason)
+	}
+	if err := a.Commit(ctx, nil); err != nil {
+		t.Fatal(err)
+	}
+	st := stalledExec{ex: d.Writer(), release: make(chan struct{})}
+	done := make(chan error, 1)
+	go func() { done <- b.Commit(ctx, st) }()
+	time.Sleep(400 * time.Millisecond) // past the 300ms lifetime
+	if _, err := d.Writer().ExecContext(ctx, `DELETE FROM pow_spent_nonces`); err != nil {
+		t.Fatal(err) // the sweep, without waiting out its margin
+	}
+	close(st.release)
+	if err := <-done; !errors.Is(err, pow.ErrSpent) {
+		t.Fatalf("stalled commit after expiry and sweep = %v, want ErrSpent", err)
+	}
+}
+
 func TestConcurrentCommitsHaveOneWinner(t *testing.T) {
 	_, d := newTestStore(t)
 	g := newSQLGuard(t, d)
@@ -1392,7 +1488,7 @@ func TestErrSpentInsideATransactionReturnsPromptly(t *testing.T) {
 }
 ```
 
-(Add `errors`, `html`, `net/http`, `net/http/httptest`, `net/url`, `regexp`, `strings` and `gorm.io/gorm` to that file's imports. `d.G` is the `*gorm.DB` that `db.Open` returns alongside the writer pool.)
+(Add `database/sql`, `errors`, `html`, `net/http`, `net/http/httptest`, `net/url`, `regexp`, `strings` and `gorm.io/gorm` to that file's imports. `d.G` is the `*gorm.DB` that `db.Open` returns alongside the writer pool.)
 
 - [ ] **Step 2: Run them to see them fail**
 
@@ -1720,7 +1816,11 @@ func (g *Guard) admit(r *http.Request, w Want, count bool) Admission {
 		if g.bind {
 			binding = w.Binding
 		}
-		if !Verify(c.Nonce, binding, r.PostFormValue(fieldCounter), c.Difficulty) {
+		// A bound Guard with no binding is a caller that forgot
+		// Want.Binding. Checking the work against "" would accept a
+		// client that solved unbound: refuse instead.
+		if g.bind && strings.TrimSpace(binding) == "" ||
+			!Verify(c.Nonce, binding, r.PostFormValue(fieldCounter), c.Difficulty) {
 			a.fail(ReasonShort)
 		}
 	}
@@ -1965,7 +2065,7 @@ Replace the comment above `package pow` (keep everything below it):
 - [ ] **Step 7: Run the package tests**
 
 Run: `GOFLAGS=-mod=mod go test ./pow/ -count=1`
-Expected: PASS. Then `GOFLAGS=-mod=mod go vet ./pow/ && gofmt -l pow/` prints nothing.
+Expected: PASS. Then `GOFLAGS=-mod=mod go vet ./pow/ && test -z "$(gofmt -l pow/)"` succeeds.
 
 Also run: `GOFLAGS=-mod=mod go test . -run Honeypot -count=1` (root `buildhandler_test.go` still checks `pow.HoneypotStyleHash`). Expected: PASS.
 
@@ -2135,7 +2235,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: Task 4's `Form.Attrs` attributes (`data-pow-form`, `data-pow-nonce`, `data-pow-difficulty`, `data-pow-worker`, `data-pow-min-age`, `data-pow-bound`), `[data-pow-counter]`, `[data-pow-status]`, `[data-pow-submit]`, `[data-pow-binding]`; `asciiLower` from `powcore.js`.
-- Produces (module exports): `init(root = document)`, `whenSolved(form, { timeout = 10000 } = {}) → Promise<{ fields: Record<string,string> }>`. Events on the form: `pow:solved` (`detail.fields`), `pow:failed` (`detail.error`). Attributes it sets: `data-pow-ready` on a wired form, `data-pow-released` on the form for the duration of its own `requestSubmit` (Task 7's `busy.js` reads it).
+- Produces (module exports): `init(root = document)`, `whenSolved(form, { timeout = 10000 } = {}) → Promise<{ fields: Record<string,string> }>`. Events on the form: `pow:solved` (`detail.fields`), `pow:failed` (`detail.error`). Attributes it sets: `data-pow-ready` on a wired form, `data-pow-released` on the form for the duration of its own `requestSubmit` (Task 7's `busy.js` reads it), `aria-busy="true"` on the held submitter. It reads busy.js's `data-busy-label` (button, then form) for the held label. Every submit of a `form[data-pow-form]` is cancelled and re-sent by pow; busy.js must not arm or hold such a form except during that re-send.
 
 - [ ] **Step 1: Write the failing browser tests**
 
@@ -2203,6 +2303,9 @@ func newFormRig(t *testing.T, o rigOpts) *formRig {
 			}
 			fr.last.Store(res)
 			io.WriteString(w, "<!doctype html><title>done</title><p id=result>"+res+"</p>")
+		})
+		mux.HandleFunc("GET /elsewhere", func(w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, "<!doctype html><title>elsewhere</title><p id=elsewhere>elsewhere</p>")
 		})
 		mux.HandleFunc("GET /slow", func(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(3 * time.Second)
@@ -2356,6 +2459,55 @@ func TestBrowserInitAfterDocumentWrite(t *testing.T) {
 	}
 }
 
+func TestBrowserNavigationIsStillCancelledAfterDocumentWrite(t *testing.T) {
+	// document.open erases the window's listeners. init has to put the
+	// lifecycle back, or after a step-up screen nothing stops a held
+	// submit from replacing the navigation the visitor chose.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.MinAge = 2 * time.Second },
+		page: powPage(false, false, `<a id=slow href=/slow>elsewhere</a>`),
+	})
+	fr.waitReady(t)
+	fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+		const html = await (await fetch("/again")).text();
+		document.open(); document.write(html); document.close();
+		(await import(%q)).init(document);
+	})()`, fr.scriptURL), nil, awaitPromise))
+	fr.Run(chromedp.WaitReady(`form[data-pow-ready]`, chromedp.ByQuery),
+		chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#slow`, chromedp.ByQuery))
+	time.Sleep(3500 * time.Millisecond)
+	if n := fr.posts.Load(); n != 0 {
+		t.Fatalf("%d POSTs after navigating away from a replaced document, want 0", n)
+	}
+}
+
+func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
+	// The synthetic-event test above pins the handlers; this one leaves
+	// for real while a submit is held and comes back. The hold is the
+	// minimum age, not a slow solve: a solve long enough to be sure of
+	// would make the return trip wait for it too. Headless Chrome may or
+	// may not restore from the back-forward cache: either way the held
+	// submit must never fire and the form must work again.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.MinAge = 3 * time.Second },
+		page: powPage(false, false, `<a id=away href=/elsewhere>away</a><script>addEventListener("pageshow", e => { window.restored = e.persisted })</script>`),
+	})
+	fr.waitReady(t)
+	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#away`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#elsewhere`, chromedp.ByQuery), chromedp.NavigateBack(),
+		chromedp.WaitReady(`form[data-pow-ready]`, chromedp.ByQuery))
+	var restored bool
+	fr.Run(chromedp.Evaluate(`window.restored === true`, &restored))
+	t.Logf("restored from the back-forward cache: %v", restored)
+	if n := fr.posts.Load(); n != 0 {
+		t.Fatalf("%d POSTs: the submit held when the visitor left fired anyway", n)
+	}
+	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	if res := fr.result(t); res != "ok" {
+		t.Fatalf("after coming back = %s", res)
+	}
+}
+
 func TestBrowserSubmitOutsideTheForm(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, true, "")})
 	fr.waitReady(t)
@@ -2407,6 +2559,29 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), &got, awaitPromise))
 		if !strings.HasPrefix(got, "rejected:") {
 			t.Fatalf("whenSolved on a bound form = %s, want rejected", got)
+		}
+	})
+	t.Run("worker failure rejects", func(t *testing.T) {
+		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.WorkerURL = "/bad-worker.js" }, page: powPage(false, false, "")})
+		fr.waitReady(t)
+		var got string
+		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), &got, awaitPromise))
+		if !strings.HasPrefix(got, "rejected:") {
+			t.Fatalf("whenSolved with a failing worker = %s, want rejected", got)
+		}
+	})
+	t.Run("leaving the page rejects", func(t *testing.T) {
+		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Difficulty = 40 }, page: powPage(false, false, "")})
+		fr.waitReady(t)
+		var got string
+		fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+			const m = await import(%q);
+			const p = m.whenSolved(document.getElementById("f"));
+			dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}));
+			try { await p; return "resolved"; } catch (e) { return "rejected: " + e.message; }
+		})()`, fr.scriptURL), &got, awaitPromise))
+		if !strings.Contains(got, "page was left") {
+			t.Fatalf("whenSolved across pagehide = %s, want rejected because the page was left", got)
 		}
 	})
 	t.Run("timeout rejects", func(t *testing.T) {
@@ -2506,8 +2681,17 @@ const states = new Map();
 // document (document.open/write) must call it again, because a module
 // URL that has already run is never evaluated a second time.
 export function init(root = document) {
-  for (const form of states.keys()) {
-    if (!form.isConnected) states.delete(form);
+  // document.open erases every listener on the document and the window,
+  // so a page that replaced its document has lost these too. Adding the
+  // same function twice is a no-op, so this is safe on every call.
+  addEventListener("pagehide", onPageHide);
+  addEventListener("pageshow", onPageShow);
+  for (const [form, st] of states) {
+    if (!form.isConnected) {
+      endHold(st);
+      stopWorker(st, new Error("pow: the form was removed"));
+      states.delete(form);
+    }
   }
   for (const form of root.querySelectorAll("form[data-pow-form]")) setup(form);
 }
@@ -2627,20 +2811,21 @@ function failed(st, err) {
   st.form.dispatchEvent(new CustomEvent("pow:failed", { detail: { error: err } }));
 }
 
+// Every submit of a protected form goes out through release, even one
+// with nothing left to wait for (then the hold lasts one tick). One
+// path means one owner: busy.js steps aside for a pow form until pow
+// releases it, so the two never hold the same submit and never fight
+// over the button. A submit cannot be re-sent from inside its own
+// submit event, which is why even the zero wait is asynchronous.
 function onSubmit(st, e) {
   if (st.releasing) return; // our own requestSubmit
-  if (st.held) { e.preventDefault(); return; } // a second click while held changes nothing
+  e.preventDefault();
+  if (st.held) return; // a second click while held changes nothing
   const value = st.bound ? st.binding.value : "";
   if (st.bound && !value.trim()) {
-    e.preventDefault();
     st.binding.reportValidity();
     return;
   }
-  if (st.solution && st.solution.key === keyOf(value) && performance.now() >= st.readyAt) {
-    st.counter.value = st.solution.counter;
-    return; // nothing to wait for: an ordinary submit
-  }
-  e.preventDefault();
   hold(st, e.submitter || null);
 }
 
@@ -2649,13 +2834,17 @@ function onSubmit(st, e) {
 // only once a navigation commits, and until then a solve finishing
 // would submit over the navigation the visitor chose. Only while
 // holding, so ordinary pages stay eligible for the back-forward cache.
+// The feedback uses busy.js's vocabulary (aria-busy on the button, and
+// data-busy-label on the button or the form) so an app styles one busy
+// state, whichever script is holding.
 function hold(st, submitter) {
   const onLeave = () => endHold(st);
-  st.held = { submitter, onLeave, label: submitter ? submitter.textContent : null };
+  const label = submitter && (submitter.getAttribute("data-busy-label") || st.form.getAttribute("data-busy-label"));
+  st.held = { submitter, onLeave, idle: label && submitter.tagName === "BUTTON" ? submitter.textContent : null };
   addEventListener("beforeunload", onLeave);
   if (submitter) {
     submitter.setAttribute("aria-busy", "true");
-    if (submitter.dataset.workingLabel) submitter.textContent = submitter.dataset.workingLabel;
+    if (st.held.idle !== null) submitter.textContent = label;
   }
   wait(st);
 }
@@ -2681,8 +2870,8 @@ function release(st) {
   const wasDisabled = sub ? sub.disabled : false;
   if (sub) sub.disabled = false;
   // busy.js reads this during the submit event requestSubmit fires
-  // synchronously, and does not hold a submit the visitor has already
-  // watched wait.
+  // synchronously: it is the one submit of a pow form busy.js arms (the
+  // spinner and the double-submit guard), and it never holds it.
   st.form.setAttribute("data-pow-released", "");
   st.releasing = true;
   try {
@@ -2701,7 +2890,7 @@ function endHold(st) {
   removeEventListener("beforeunload", h.onLeave);
   if (h.submitter) {
     h.submitter.removeAttribute("aria-busy");
-    if (h.submitter.dataset.workingLabel && h.label !== null) h.submitter.textContent = h.label;
+    if (h.idle !== null) h.submitter.textContent = h.idle;
   }
 }
 
@@ -2719,22 +2908,22 @@ function fieldsOf(st) {
 // Leaving the page ends every hold and stops every worker; a timer or a
 // solve surviving into the back-forward cache would otherwise submit
 // on the visitor's return.
-addEventListener("pagehide", () => {
+function onPageHide() {
   for (const st of states.values()) {
     endHold(st);
     stopWorker(st, new Error("pow: the page was left"));
   }
-});
+}
 
 // The cache restores the DOM as it was left. Hand every form back and
 // restart unfinished unbound work.
-addEventListener("pageshow", (e) => {
+function onPageShow(e) {
   if (!e.persisted) return;
   for (const st of states.values()) {
     for (const b of st.submits) b.disabled = false;
     if (!st.bound && !st.solution) solve(st, "").catch(() => {});
   }
-});
+}
 
 init(document);
 ```
@@ -2790,6 +2979,29 @@ func TestBrowserBusyDoesNotHoldAPowRelease(t *testing.T) {
 	}
 }
 
+func TestBrowserBusyAndPowShareTheButton(t *testing.T) {
+	// During pow's hold the button stays busy (busy.js must not hand it
+	// back a tick later), and a binding changed mid-hold still submits:
+	// the deadlock this guards against left the form busy and the button
+	// disabled for good.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.Bind = true; c.MinAge = 1500 * time.Millisecond },
+		page: powPage(true, false, `<script defer src="/busy.js"></script>`),
+	})
+	fr.waitReady(t)
+	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	time.Sleep(500 * time.Millisecond)
+	var busy string
+	fr.Run(chromedp.Evaluate(`document.getElementById("go").getAttribute("aria-busy") || ""`, &busy))
+	if busy != "true" {
+		t.Fatalf("aria-busy during pow's hold = %q, want true", busy)
+	}
+	fr.Run(chromedp.Evaluate(`document.getElementById("email").value = "b@example.com"`, nil))
+	if res := fr.result(t); res != "ok" {
+		t.Fatalf("binding changed during the hold, with busy.js loaded = %s", res)
+	}
+}
+
 func TestBrowserBusyHoldIsCancelledByNavigation(t *testing.T) {
 	// busy.js on its own had the same race: its 650ms hold cancelled only
 	// on pagehide, which fires after a slow destination commits.
@@ -2813,13 +3025,27 @@ Expected: both FAIL (a POST about 650ms later than pow's release; one POST after
 
 - [ ] **Step 3: Change `ui/busy.js`**
 
+In `busySubmit` (the document capture listener), directly after the form and submitter are resolved and before the `formtarget`/`dialog` checks, add:
+
+```js
+    // pow.js owns every submit of a form it protects: it cancels it,
+    // shows its own busy state (this file's vocabulary) while it waits,
+    // and re-sends it marked data-pow-released. Arming here before that
+    // would hand the form back a tick later and wipe pow's feedback, and
+    // a guard armed here would refuse pow's re-send. Arm on the re-send
+    // only.
+    if (form.hasAttribute("data-pow-form") && !form.hasAttribute("data-pow-released")) return;
+```
+
 In the window `submit` listener, directly after `if (form === releasing) { releasing = null; return; }`, add:
 
 ```js
-    // pow.js has already held this submit while it solved, with the
-    // working state showing; a second hold here is a second wait for
-    // nothing. It marks its own release for exactly this check.
-    if (form.hasAttribute("data-pow-released")) return;
+    // Never hold a pow form: pow has already held it while it solved,
+    // and a second hold is a second wait for nothing. Worse, holding it
+    // here and re-sending later would send it back through pow, which
+    // would hold it again with busy.js's guard still armed, and the form
+    // could never submit.
+    if (form.hasAttribute("data-pow-form")) return;
 ```
 
 Replace `pending.set(form, setTimeout(function () { release(form, btn); }, HOLD_MS));` with:
@@ -2860,7 +3086,7 @@ Add this function after `release`:
 
 Replace the `pagehide` listener's body with `dropHeld();`.
 
-In the header comment, after "a submit still being held when the page is left is dropped rather than sent later.", add: "Left means a navigation has started, not that it has finished. A submit pow.js has already held is not held again."
+In the header comment, after "a submit still being held when the page is left is dropped rather than sent later.", add: "Left means a navigation has started, not that it has finished. A form pow.js protects is pow's to hold: this file arms only pow's re-send and never holds it."
 
 - [ ] **Step 4: Run them**
 
@@ -3142,13 +3368,16 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
 	}
-	force := r.FormValue("force") != ""
 	recovered := false
 	if a.cfg.Proof != nil {
-		// First, and with Check rather than Admit: every outcome below
-		// redirects, the next GET mints a new challenge, and the spend
-		// must land before a probe or a mail does.
+		// First, before any FormValue: FormValue swallows a parse error
+		// and a later ParseForm does not repeat it, so reading a field
+		// first would let a malformed body past the guard's bounds check.
+		// Check rather than Admit: every outcome below redirects, the
+		// next GET mints a new challenge, and the spend must land before
+		// a probe or a mail does.
 		adm := a.cfg.Proof.Check(r, pow.Want{Scope: ProofScope})
+		force := r.PostFormValue("force") != ""
 		if !adm.OK {
 			a.cfg.Logger.Debug("rastrillo/auth: sign-in refused at the front door", "reason", adm.Reason, "also", adm.Also)
 			a.noteAttempt(w, attemptProblem, r.FormValue("address"), false)
@@ -3157,6 +3386,7 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		}
 		recovered = adm.Recovered()
 	}
+	force := r.FormValue("force") != ""
 	address := r.FormValue("address")
 	var method signin.Method
 	if force {
@@ -3206,7 +3436,7 @@ func (a *Auth) problemURL(problem string, rec, force bool) string {
 
 (add `net/url` and the `pow` import to `handlers.go`.)
 
-`auth/signin.go`: add to the `SigninProblem` constants:
+`auth/signin.go`: add `"amadan.net/rastrillo/rastrillo/pow"` to its imports, and add to the `SigninProblem` constants:
 
 ```go
 	// ProblemCheck: the front door refused the submission. The page
@@ -3354,7 +3584,7 @@ func TestSigninForceComesFromState(t *testing.T) {
 
 (Add `time` and `amadan.net/rastrillo/rastrillo/pow` to the imports.)
 
-For `form-foot`, append to `ui/ui_test.go`:
+For `form-foot`, append to `ui/ui_test.go` (adding `time` and `amadan.net/rastrillo/rastrillo/pow` to that file's imports too):
 
 ```go
 func TestFormFootRendersTheProofSubmit(t *testing.T) {
@@ -3410,7 +3640,7 @@ Add to its Keys comment: `Proof  *pow.Form, optional: when it needs a script, th
 
 - [ ] **Step 6: Wire the auth browser test**
 
-In `auth/signinscreen_browser_test.go` around line 67, build a Guard over the same database before `New` and serve the assets:
+In `auth/signinscreen_browser_test.go` around line 67, build a Guard over the same database before `New`; register the assets on that function's mux **after** the mux is declared (it is declared below `New`, around line 90, so move the `mux.Handle` line there):
 
 ```go
 		powAssets := rastrillo.NewAssets(pow.Assets())
@@ -3753,7 +3983,7 @@ func (cl *client) filled(path string, form url.Values) url.Values {
 }
 ```
 
-and change `signup` and `signin` to post `cl.filled("/signup", …)` / `cl.filled("/signin", …)` instead of the bare values. Add one test:
+and change `signup` and `signin` to post `cl.filled("/signup", …)` / `cl.filled("/signin", …)` instead of the bare values. `examples/notes/internal/notestest/auth_test.go:92` (`TestReturnToAfterSignin`) posts to `/signup` directly; change it to `cl.postForm("/signup", cl.filled("/signup?return_to="+url.QueryEscape(returnTo), url.Values{…the same three fields…}))` so it keeps its `return_to`. Grep for any other direct `postForm("/signup"` or `postForm("/signin"` in that directory and treat it the same. Add one test:
 
 ```go
 func TestSignupWithoutTheChallengeIsRefused(t *testing.T) {
@@ -3990,12 +4220,10 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ```bash
 cd /home/paulca/amadan.net/rastrillo/rastrillo-pow-admission
-GOFLAGS=-mod=mod go vet ./... && gofmt -l . && GOFLAGS=-mod=mod go test ./... -count=1
-TMPDIR="${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1
-(cd examples/notes && GOFLAGS=-mod=mod go test ./... -count=1)
+make ci
 ```
 
-Expected: all PASS, `gofmt -l` prints nothing. Also run `make ci` if time allows; it is what the forge runs.
+Expected: PASS. This is required, not optional: it is the gate the forge runs, and it includes the examples, the browser drive, staticcheck, govulncheck and the generate check that the per-task loops skip.
 
 - [ ] **Step 2: Whole-branch review by Astra**
 
