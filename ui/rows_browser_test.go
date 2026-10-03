@@ -260,42 +260,44 @@ func TestTheWholeRowIsTheTarget(t *testing.T) {
 // a click on an item lying over row B's kebab hits the item.
 func TestAnOpenRowMenuStaysAboveTheRowsBelowIt(t *testing.T) {
 	for _, coarse := range []bool{false, true} {
-		rig := sizingRig(t, coarse, rowsPages(t))
-		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
-		defer cancel()
-		w := int64(1280)
-		if coarse {
-			w = 390
-		}
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(w, 844)); err != nil {
-			t.Fatal(err)
-		}
-		home(t, ctx, rig.Origin)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil)); err != nil {
-			t.Fatal(err)
-		}
-		var got struct {
-			Overlapping int
-			Wrong       []string
-		}
-		at(t, ctx, `(() => {
-		  const k = document.getElementById("kebab-b").getBoundingClientRect(), wrong = []; let n = 0;
-		  for (const item of document.querySelectorAll("#panel-a a")) {
-		    const r = item.getBoundingClientRect();
-		    const x0 = Math.max(r.left, k.left), x1 = Math.min(r.right, k.right), y0 = Math.max(r.top, k.top), y1 = Math.min(r.bottom, k.bottom);
-		    if (x1 - x0 < 2 || y1 - y0 < 2) continue;
-		    n++;
-		    const h = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
-		    if (!(h === item || item.contains(h))) wrong.push(item.textContent + " -> " + (h ? (h.id || h.tagName) : "nothing"));
-		  }
-		  return JSON.stringify({Overlapping: n, Wrong: wrong});
-		})()`, &got)
-		if got.Overlapping == 0 {
-			t.Fatalf("coarse=%v: no item of row A's open menu lies over row B's kebab; the case this leg is for has not arisen", coarse)
-		}
-		if len(got.Wrong) > 0 {
-			t.Errorf("coarse=%v: over row B's kebab, a click on row A's menu lands elsewhere: %v", coarse, got.Wrong)
-		}
+		t.Run(fmt.Sprintf("coarse %v", coarse), func(t *testing.T) {
+			rig := sizingRig(t, coarse, rowsPages(t))
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			w := int64(1280)
+			if coarse {
+				w = 390
+			}
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(w, 844)); err != nil {
+				t.Fatal(err)
+			}
+			home(t, ctx, rig.Origin)
+			if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil)); err != nil {
+				t.Fatal(err)
+			}
+			var got struct {
+				Overlapping int
+				Wrong       []string
+			}
+			at(t, ctx, `(() => {
+			  const k = document.getElementById("kebab-b").getBoundingClientRect(), wrong = []; let n = 0;
+			  for (const item of document.querySelectorAll("#panel-a a")) {
+			    const r = item.getBoundingClientRect();
+			    const x0 = Math.max(r.left, k.left), x1 = Math.min(r.right, k.right), y0 = Math.max(r.top, k.top), y1 = Math.min(r.bottom, k.bottom);
+			    if (x1 - x0 < 2 || y1 - y0 < 2) continue;
+			    n++;
+			    const h = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
+			    if (!(h === item || item.contains(h))) wrong.push(item.textContent + " -> " + (h ? (h.id || h.tagName) : "nothing"));
+			  }
+			  return JSON.stringify({Overlapping: n, Wrong: wrong});
+			})()`, &got)
+			if got.Overlapping == 0 {
+				t.Fatalf("coarse=%v: no item of row A's open menu lies over row B's kebab; the case this leg is for has not arisen", coarse)
+			}
+			if len(got.Wrong) > 0 {
+				t.Errorf("coarse=%v: over row B's kebab, a click on row A's menu lands elsewhere: %v", coarse, got.Wrong)
+			}
+		})
 	}
 }
 
