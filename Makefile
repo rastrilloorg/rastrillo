@@ -203,8 +203,12 @@ scaffold-smoke: build-cli
 # stays unset on purpose: a skip is not a pass, so a machine that loses
 # its browser fails loudly instead of reporting green.
 # Chromium profiles also need room when the shared /tmp tmpfs fills.
+# -timeout 20m: the design system's package drives every preview at
+# phone and desktop widths and takes 7-8 minutes on a quiet machine, so
+# go test's default 10 minutes killed it whenever the box was shared
+# with other builds. The limit is per package; a real hang still dies.
 browser:
-	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1
+	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 -timeout 20m ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a
