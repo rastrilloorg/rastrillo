@@ -431,6 +431,10 @@ func TestBrowserBackForwardRestoresTheForm(t *testing.T) {
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("a held submit fired after pagehide: %d POSTs", n)
 	}
+	// The cache restores the DOM as it was left, and a page can leave a
+	// submit disabled (busy.js does while it holds). Without disabling it
+	// here, "enabled" below would be true whether or not pageshow ran.
+	fr.Run(chromedp.Evaluate(`document.getElementById("go").disabled = true`, nil))
 	var enabled bool
 	fr.Run(chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true})); !document.getElementById("go").disabled`, &enabled))
 	if !enabled {
@@ -439,6 +443,33 @@ func TestBrowserBackForwardRestoresTheForm(t *testing.T) {
 	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("after restore = %s", res)
+	}
+}
+
+func TestBrowserPageshowRestartsUnfinishedWork(t *testing.T) {
+	// Difficulty 40 never finishes, so the solve is certainly unfinished at
+	// pagehide and the only thing that can start another worker is the
+	// pageshow handler. (A difficulty that merely "usually" outlasts
+	// pagehide would leave the restart branch unreached whenever it won
+	// the race, which is how it went unpinned.) Counting Worker
+	// constructions observes the restart without waiting for a result.
+	fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Difficulty = 40 }, page: powPage(false, false, "")})
+	fr.waitReady(t)
+	var started int
+	fr.Run(chromedp.Evaluate(`(() => {
+		window.workersStarted = 0;
+		const W = window.Worker;
+		window.Worker = class extends W { constructor(...a) { super(...a); window.workersStarted++; } };
+		dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}));
+		dispatchEvent(new PageTransitionEvent("pageshow", {persisted: false}));
+		return window.workersStarted;
+	})()`, &started))
+	if started != 0 {
+		t.Fatalf("a pageshow that was not a cache restore started %d workers, want 0", started)
+	}
+	fr.Run(chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true})); window.workersStarted`, &started))
+	if started != 1 {
+		t.Fatalf("pageshow from the back-forward cache started %d workers, want 1: unfinished unbound work must restart", started)
 	}
 }
 
@@ -484,6 +515,30 @@ func TestBrowserNavigationIsStillCancelledAfterDocumentWrite(t *testing.T) {
 	}
 }
 
+func TestBrowserPagehideStillEndsAHoldAfterDocumentWrite(t *testing.T) {
+	// The test above is covered by the hold's own beforeunload listener,
+	// which proves nothing about the window listeners init re-attaches.
+	// A synthetic pagehide fires no beforeunload, so only the re-attached
+	// pagehide handler can end this hold.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.MinAge = 2 * time.Second },
+		page: powPage(false, false, ""),
+	})
+	fr.waitReady(t)
+	fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+		const html = await (await fetch("/again")).text();
+		document.open(); document.write(html); document.close();
+		(await import(%q)).init(document);
+	})()`, fr.scriptURL), nil, awaitPromise))
+	fr.Run(chromedp.WaitReady(`form[data-pow-ready]`, chromedp.ByQuery),
+		chromedp.Click(`#go`, chromedp.ByQuery),
+		chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}))`, nil))
+	time.Sleep(2500 * time.Millisecond)
+	if n := fr.posts.Load(); n != 0 {
+		t.Fatalf("%d POSTs: a hold survived pagehide on a replaced document", n)
+	}
+}
+
 func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 	// The synthetic-event test above pins the handlers; this one leaves
 	// for real while a submit is held and comes back. The hold is the
@@ -521,6 +576,12 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 	t.Logf("restored from the back-forward cache: %v", restored)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs: the submit held when the visitor left fired anyway", n)
+	}
+	// The check above runs well before the minimum age. A hold that
+	// survived the trip would fire when it elapses, so wait that out.
+	time.Sleep(3500 * time.Millisecond)
+	if n := fr.posts.Load(); n != 0 {
+		t.Fatalf("%d POSTs after the minimum age: the submit held when the visitor left resumed on return", n)
 	}
 	fr.Run(chromedp.Evaluate(`document.getElementById("go").click()`, nil))
 	if res := fr.result(t); res != "ok" {
