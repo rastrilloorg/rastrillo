@@ -64,7 +64,7 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, passkey.Schema, secondfactor.Schema)); err != nil {
 			t.Fatal(err)
 		}
-		a, err := New(Config{DB: d.Writer(), Origin: origin, InstanceKey: "browser-instance-key", Mailer: app.mail, SigninScreen: true})
+		a, err := New(Config{DB: d.Writer(), Origin: origin, InstanceKey: "browser-instance-key", Mailer: app.mail, SigninScreen: true, ProofOff: true})
 		if err != nil {
 			t.Fatal(err)
 		}

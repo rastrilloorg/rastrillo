@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"amadan.net/rastrillo/rastrillo/lastsignin"
+	"amadan.net/rastrillo/rastrillo/pow"
 )
 
 // SigninStep is which screen the sign-in page shows. A string, not an
@@ -36,6 +37,9 @@ const (
 	// sign-in, and the page says so above whichever door it would
 	// otherwise show.
 	ProblemReauth SigninProblem = "reauth"
+	// ProblemCheck: the front door refused the submission. The page
+	// shows it on the ask step with a recovery challenge.
+	ProblemCheck SigninProblem = "check"
 )
 
 // SigninState is everything ui's signin partial needs, as plain data.
@@ -67,6 +71,15 @@ type SigninState struct {
 	ContinueURL string
 	BeginPath   string
 	ForgetPath  string
+	// Force carries force=1 from the query: the partial renders the
+	// send-a-link-instead input from it rather than from the problem,
+	// because a refusal replaces the keymail problem and the visitor
+	// would otherwise loop back to a provider that just failed them.
+	Force bool
+	// Proof is the challenge the Begin form carries; nil with
+	// Config.ProofOff. A recovery challenge when the query has rec=1.
+	// Minting writes nothing, so SigninState still touches no database.
+	Proof *pow.Form
 	// Passkey is set by the app, which knows whether and where it
 	// mounted passkey discovery; auth cannot. Nil means no passkey door.
 	Passkey *PasskeyDoor
@@ -123,8 +136,16 @@ const advisoryText = "rastrillo/auth: SigninScreen is off: under the default CSP
 // With SigninScreen off it reads only the query, marks nothing, and
 // logs the advisory once per process.
 func (a *Auth) SigninState(r *http.Request) SigninState {
-	st := SigninState{BeginPath: a.cfg.BeginPath, ForgetPath: a.cfg.ForgetPath}
 	q := r.URL.Query()
+	st := SigninState{BeginPath: a.cfg.BeginPath, ForgetPath: a.cfg.ForgetPath, Force: q.Get("force") == "1"}
+	if a.cfg.Proof != nil {
+		now := a.now()
+		f := a.cfg.Proof.Form(now, ProofScope)
+		if q.Get("rec") == "1" {
+			f = a.cfg.Proof.Recovery(now, ProofScope)
+		}
+		st.Proof = &f
+	}
 	if !a.cfg.SigninScreen {
 		advisoryOnce.Do(func() { a.cfg.Logger.Warn(advisoryText) })
 		st.Step, st.Problem = outcome(q, false)
@@ -188,6 +209,8 @@ func outcome(q url.Values, remembered bool) (SigninStep, SigninProblem) {
 		return StepAsk, ProblemExpired
 	case "keymail":
 		return StepAsk, ProblemKeymail
+	case "check":
+		return StepAsk, ProblemCheck
 	case "1":
 		return StepAsk, ProblemGeneric
 	}

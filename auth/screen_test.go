@@ -188,11 +188,14 @@ func TestScreenOffIsToday(t *testing.T) {
 
 			want("a link", post(a.Begin, "ada@example.com", url.Values{"expect": {"keymail"}}), "/signin?sent=1", nil)
 			adaLink := linkRE.FindString(m.sentBody())
-			want("a bad address", post(a.Begin, "not an address", nil), "/signin?err=address", nil)
+			// These posts all carry force=1, and an error redirect now keeps
+			// it (problemURL): a visitor who chose the link must not be
+			// classified back to a provider by their next typo.
+			want("a bad address", post(a.Begin, "not an address", nil), "/signin?err=address&force=1", nil)
 			for i := 0; i < 5; i++ {
 				post(a.Begin, "bea@example.com", nil)
 			}
-			want("over budget", post(a.Begin, "bea@example.com", nil), "/signin?err=rate", nil)
+			want("over budget", post(a.Begin, "bea@example.com", nil), "/signin?err=rate&force=1", nil)
 			want("AnswerAsSent", post(a.AnswerAsSent, "cal@example.com", nil), "/signin?sent=1", nil)
 
 			want("admit", b.do(a.Verify, http.MethodGet, pathOf(adaLink), nil), "/", []string{"rastrillo_session"})
@@ -203,7 +206,7 @@ func TestScreenOffIsToday(t *testing.T) {
 				"/signin/confirm", []string{"rastrillo_secondfactor"})
 
 			a.flow.Mailer = failingMailer{}
-			want("a failure", post(a.Begin, "eve@example.com", nil), "/signin?err=1", nil)
+			want("a failure", post(a.Begin, "eve@example.com", nil), "/signin?err=1&force=1", nil)
 		})
 	}
 }
@@ -246,7 +249,7 @@ func TestBeginWritesTheAttempt(t *testing.T) {
 		t.Fatal("expect=keymail with a link sent did not record the surprise")
 	}
 
-	if w := post(url.Values{"address": {"not an address"}, "force": {"1"}}); w.Header().Get("Location") != "/signin?err=address" {
+	if w := post(url.Values{"address": {"not an address"}, "force": {"1"}}); w.Header().Get("Location") != "/signin?err=address&force=1" { // force survives the error: see problemURL
 		t.Fatalf("bad address → %q", w.Header().Get("Location"))
 	}
 	if at := current(); at.K != attemptProblem || at.A != "not an address" {
@@ -263,7 +266,7 @@ func TestBeginWritesTheAttempt(t *testing.T) {
 	for i := 0; i < 6; i++ {
 		rated = post(url.Values{"address": {"fay@example.com"}, "force": {"1"}})
 	}
-	if rated.Header().Get("Location") != "/signin?err=rate" {
+	if rated.Header().Get("Location") != "/signin?err=rate&force=1" { // force survives the error: see problemURL
 		t.Fatalf("sixth try → %q, want ?err=rate", rated.Header().Get("Location"))
 	}
 	if at := current(); at.K != attemptProblem || at.A != "fay@example.com" {

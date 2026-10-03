@@ -67,6 +67,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/mail"
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -104,6 +105,18 @@ type Config struct {
 	// blob naming their own keymail server, silently defeating signin's
 	// own all-zero-key guard. (seapointish's reasoning, kept verbatim.)
 	InstanceKey string
+
+	// Proof is sign-in's front door: Begin runs it before the rate
+	// limiter, classification and any mail, so an anonymous visitor
+	// cannot make the server probe a domain of their choosing, send a
+	// link, or spend another address's budget without solving. Build one
+	// pow.Guard and share it with password; scope keeps their tokens
+	// apart. Required unless ProofOff: an app that upgraded without
+	// wiring it must fail at boot, not refuse every visitor in
+	// production.
+	Proof *pow.Guard
+	// ProofOff runs sign-in without the front door.
+	ProofOff bool
 
 	// Mailer delivers magic links. Nil falls back to mail.Logged with a
 	// warning — the emailed link is a live credential, so the fallback
@@ -302,6 +315,19 @@ func DefaultBody(link string) string {
 // field's comment for why this is fatal rather than defaulted.
 var ErrEmptyInstanceKey = errors.New("rastrillo/auth: Config.InstanceKey must not be empty")
 
+// ErrProofUnset: Config has neither Proof nor ProofOff.
+var ErrProofUnset = errors.New("rastrillo/auth: Config.Proof is unset: build a pow.Guard (serve pow.Assets(), apply pow.Schema) and set Config.Proof, or set Config.ProofOff")
+
+// ErrProofMode: the Guard binds its work to an input, and the sign-in
+// forms carry the address in three different shapes (two hidden
+// inputs and a field), none of them bound.
+var ErrProofMode = errors.New("rastrillo/auth: Config.Proof is a bound pow.Guard; sign-in needs an unbound one")
+
+// ProofScope is the scope Begin's challenges are issued and checked
+// under. A Guard shared with other forms keeps their tokens apart by
+// it.
+const ProofScope = "rastrillo/auth/begin"
+
 // New wires the one long-lived flow: explicit in-memory rate limiter,
 // derived pending key, the keymail client bound to Origin, the link
 // store over cfg.DB, and a stock classifier (signin v0.1.1 probes
@@ -316,6 +342,14 @@ func New(cfg Config) (*Auth, error) {
 	}
 	if cfg.DB == nil {
 		return nil, errors.New("rastrillo/auth: Config.DB is required")
+	}
+	switch {
+	case cfg.Proof == nil && !cfg.ProofOff:
+		return nil, ErrProofUnset
+	case cfg.Proof != nil && cfg.ProofOff:
+		return nil, errors.New("rastrillo/auth: Config.Proof and Config.ProofOff are both set; choose one")
+	case cfg.Proof != nil && cfg.Proof.Bound():
+		return nil, ErrProofMode
 	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
