@@ -237,9 +237,18 @@
     document.querySelectorAll("[data-poll]").forEach(poll);
   }
 
+  // A prerendered page runs this before anyone is looking at it, and
+  // may never be shown: polling there would fetch on a timer, or hold an
+  // EventSource open, for a page the reader only hovered a link to. It
+  // starts when the page is activated instead.
+  function start() {
+    if (document.prerendering) document.addEventListener("prerenderingchange", scan, { once: true });
+    else scan();
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scan);
+    document.addEventListener("DOMContentLoaded", start);
   } else {
-    scan();
+    start();
   }
 })();

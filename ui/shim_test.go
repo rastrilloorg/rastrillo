@@ -2,15 +2,19 @@ package ui
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
-// The shim has no browser harness — JS behavior is verified by hand
-// and by the notes example's no-JS end-to-end path. What a Go test can
-// hold honest is the contract the docs promise: the vocabulary the
-// file answers to, its inert-by-default IIFE shape, and the absence of
-// anything a CSP would reject.
+// The shim has no browser harness — JS behavior is verified by hand, by
+// the notes example's no-JS end-to-end path, and for how polling starts
+// by shim_node.mjs in Node. What a Go test can hold honest is the
+// contract the docs promise: the vocabulary the file answers to, its
+// inert-by-default IIFE shape, and the absence of anything a CSP would
+// reject.
 func TestShimContract(t *testing.T) {
 	js := string(ShimJS())
 	for _, want := range []string{
@@ -266,7 +270,8 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // selector constants, menuAround, two call sites and their comments.
 // The busy.js split had freed the room; this did not come near the cap.
 // Scoping that Menu to a topbar or a console that names its view, so an
-// old console's rail is never dismissed: 11,424 → 11,957.
+// old console's rail is never dismissed: 11,424 → 11,957. Holding a
+// prerendered page's polling until it is shown: 11,957 → 12,368.
 //
 // The cap is still the point, and what it protects is the CODE: an app
 // owner owns this file from the moment it is scaffolded and has to be
@@ -457,5 +462,33 @@ func TestShellContract(t *testing.T) {
 	}
 	if n := len(js); n > 8*1024 {
 		t.Fatalf("shell.js is %d bytes; keep it readable in one sitting (8 KiB)", n)
+	}
+}
+
+// A prerendered page runs its scripts before anyone is looking at it,
+// and may never be looked at: a data-poll there would fetch every two
+// seconds (or hold an EventSource open) for a page the reader only
+// hovered a link to. Polling starts when the page is shown: at once on
+// a page being viewed, at activation on a prerendered one.
+func TestPollingWaitsForAPrerenderedPageToBeShown(t *testing.T) {
+	type count struct{ Timers, Sources int }
+	var got map[string]struct {
+		Viewed      count
+		Prerendered struct{ Before, After count }
+	}
+	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"shim_node.mjs"}}), &got); err != nil {
+		t.Fatal(err)
+	}
+	for kind, want := range map[string]count{"timer": {Timers: 1}, "push": {Sources: 1}} {
+		g := got[kind]
+		if g.Viewed != want {
+			t.Errorf("%s polling on a page being viewed started %+v, want %+v", kind, g.Viewed, want)
+		}
+		if g.Prerendered.Before != (count{}) {
+			t.Errorf("%s polling on a prerendered page nobody is viewing started %+v, want nothing", kind, g.Prerendered.Before)
+		}
+		if g.Prerendered.After != want {
+			t.Errorf("%s polling on a prerendered page, once activated, started %+v, want %+v", kind, g.Prerendered.After, want)
+		}
 	}
 }
