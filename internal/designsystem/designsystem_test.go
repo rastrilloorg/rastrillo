@@ -94,7 +94,16 @@ const maxPageBytes = 128 << 10
 // the first attempt — the entry was marked used because a page of that
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
-var pageBudgetDebt = map[string]int{}
+var pageBudgetDebt = map[string]int{
+	// The form page in Hindi, the widest locale, is about 225 bytes over:
+	// field-url's three samples brought it to within 75 bytes of the
+	// budget, and every page's index now links shell.css, shell.js and
+	// row-menu. Neither is padding, and cutting a sample or an index
+	// link to fit would hide a component from the page that documents
+	// it. The fix is to make the form page lighter, at which point this
+	// entry fails the unused-entry check and must go.
+	"form.html": 132 << 10,
+}
 
 // pageKinds() is built from two sources since the split — the sections
 // written out in the table, and one row per family read off samples.go —
@@ -434,8 +443,8 @@ func TestEveryPageStaysUnderItsBudget(t *testing.T) {
 // not: it marked an entry used because a page of that name existed, so
 // `"tokens.html": 400 << 10` — for a page of at most 32,930 bytes —
 // passed, and a fixed components.html would have kept its 3× permission
-// slip forever. It is empty now, and this holds the property that let it
-// empty itself.
+// slip forever. It emptied itself once, and this holds the property
+// that let it.
 //
 // So this asserts the property rather than the wiring: at the budget an
 // entry is not consumed, above it the entry is what raises the ceiling,
