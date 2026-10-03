@@ -1,7 +1,7 @@
 # pow grows up: admission that commits with the write, and sign-in behind it by default
 
 Status: design approved in conversation 2026-10-03, section by section,
-with the operator's decisions marked **(Paul)**. Revised after six rounds
+with the operator's decisions marked **(Paul)**. Revised after seven rounds
 of adversarial review by Astra (see "Review log"). Nothing is
 implemented.
 
@@ -119,7 +119,7 @@ const NoProof = -1
 ### The seal (v2)
 
 ```
-HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || lp(root) || u64(issuedMillis) || u64(expiresMillis) || i32(difficulty) || u8(flags))
+HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || lp(root) || u64(rootDeadlineMillis) || u64(issuedMillis) || u64(expiresMillis) || i32(difficulty) || u8(flags))
 ```
 
 `lp` is a uvarint length followed by the bytes; integers are big-endian
@@ -156,6 +156,10 @@ identifier: one token, one string.
   on every recovery token descended from it — recovery of a recovery
   keeps the same root. It is posted (`pow_root`) and sealed, so it
   cannot be swapped. See "One submission, one success" below.
+- **Root deadline** is fixed when the original is issued — its expiry
+  plus the recovery window — and copied unchanged into every
+  descendant. Nothing descended from a root is valid, recoverable or
+  retained differently after it.
 - **Flags:** bit 0 is "trap omitted" (§ "Recovery"); bit 1 is "bound".
   `Verify` refuses a bound token (below).
 - A scope mismatch, a bad nonce format, a v1 seal: all
@@ -249,14 +253,20 @@ caller's rollback undoes the half that succeeded. The original spends
 its root by spending itself. Whichever of the original and its
 recoveries commits first wins; every other one meets its root already
 spent. `Check`, which has no caller transaction, wraps the two inserts in
-one of its own. The root row takes the later of the two expiries, so it
-outlives every token that could still carry it.
+one of its own.
 
-So that "expired" can still be answered, spent rows are kept for a
-**recovery window** (default 24 hours) past their sealed expiry rather
-than ten minutes. A token older than its expiry plus that window cannot
-be shown unspent and is not `Recoverable()`. The rows are tiny; a day of
-them is cheap.
+Every token's expiry is capped at its root deadline; `Recoverable()`
+is false past it; and **every spent row is kept until its root
+deadline**, not its own expiry. A root anchored only to its own expiry
+was swept while a recovery descended from it was still inside its own,
+later window, and a second recovery then found nothing spent (Astra,
+round 7, reproduced). Anchored to one immutable deadline, the record
+that a submission succeeded outlives every token that could repeat it.
+
+So that "expired" can still be answered, the recovery window (default
+24 hours) sets the root deadline above, and spent rows live until it.
+A token past its root deadline cannot be shown unspent and is not
+`Recoverable()`. The rows are tiny; a day of them is cheap.
 
 The cost, stated: a bot can ask for a recovery form. The honeypot is a
 free filter for the dumbest scripts, not the control; the proof of work
@@ -319,15 +329,16 @@ should see first after an upgrade.
 - **Expiry is enforced by the spend itself, on the database's clock:**
 
   ```sql
-  INSERT OR IGNORE INTO pow_spent_nonces (nonce, expires_ms)
-  SELECT ?, ? WHERE CAST(unixepoch('subsec') * 1000 AS INTEGER) <= ?
+  INSERT OR IGNORE INTO pow_spent_nonces (nonce, keep_until_ms)
+  SELECT ?, ? WHERE CAST(unixepoch('subsec') * 1000 AS INTEGER) <= ?  -- sealed token expiry
   ```
 
-  and `Sweep` deletes only rows whose `expires_ms` is more than the
-  recovery window (24 hours, at least ten minutes) behind the same
-  clock. Both statements run on the one writer,
+  and `Sweep` deletes only rows whose `keep_until_ms` — the sealed root
+  deadline, stored with the row and always at least ten minutes past
+  the token's expiry — is behind the same clock. Both statements run on the one writer,
   so they are serialised. For a sweep to have removed A's row, the
-  database's clock had passed expiry plus the recovery window; any later insert
+  database's clock had passed the row's root deadline, which is never
+  before the token's expiry; any later insert
   of the same nonce reads that clock or a later one, and its `WHERE`
   fails. No delay between the handler's checks and the statement's
   execution can reopen replay. An earlier draft checked expiry in Go
@@ -428,15 +439,17 @@ type NonceStore interface {
 
 - `SQLNonces` spends on `ex` when given one and its own handle when `ex`
   is nil, with the expiry predicate above.
-- `Sweep` deletes at most 500 rows per call, past expiry plus the
-  recovery window on the database's clock. Unbounded, a sweep on wake holds the single
+- `Sweep` deletes at most 500 rows per call whose `keep_until_ms` (the
+  root deadline) has passed on the database's clock. Unbounded, a sweep on wake holds the single
   writer while the first visitor waits (Tito bounds its own,
   T/internal/instance/intake_store.go:157, 232-248). Call it from a tick.
 - `MemoryNonces` applies the same rules under its mutex and ignores
   `ex`, so a spend inside a transaction that rolls back stays spent. Its
   doc says so; it stays a test and single-process tool.
-- **Schema change:** `pow_spent_nonces` gains `expires_ms INTEGER`
+- **Schema change:** `pow_spent_nonces` gains `keep_until_ms INTEGER`
   (milliseconds, comparable in SQL) and drops the RFC 3339 `expires_at`.
+  The token's own expiry is not stored; the insert's predicate takes it
+  as a parameter.
   The table is empty everywhere that matters — no app has shipped `pow`
   — so the migration recreates it.
 
@@ -732,7 +745,11 @@ plan owns the detail; these are the constraints this design must meet.
 - one submission, one success: the original committing after its
   recovery was issued, the recovery committing after the original, and
   two recovery forms from one refused token — in each, exactly one
-  business write; recovery of a recovery keeps the root;
+  business write; recovery of a recovery keeps the root and its
+  deadline; the round-7 schedule (original succeeds, root's own expiry
+  passes, a recovery inside its window re-recovers) is refused because
+  the root's row lives to the root deadline and no descendant outlives
+  it;
 - `Commit` returning `ErrSpent` inside a transaction on a one-connection
   pool returns promptly (no second statement outside the transaction);
 - `Recovery` is trapless and admissible at once; only recovery tokens
@@ -904,3 +921,11 @@ reported sequence; 35 partial. Two new majors, accepted:
 39. Tito's legacy ledger has already deleted rows the new 24-hour window
     assumes → legacy recovery limited to tokens still inside their own
     lifetime, rooted at `legacy:<id>`.
+
+**Astra, round 7 (2026-10-03): not ready.** 38 and 39 resolved. One new
+major, accepted:
+
+40. A root's spend was swept while a descendant recovery was still
+    inside its own window → an immutable root deadline is sealed into
+    every descendant; it caps validity and recoverability, and every
+    spent row is kept until it.
