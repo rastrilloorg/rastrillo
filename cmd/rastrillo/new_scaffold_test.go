@@ -569,3 +569,77 @@ func TestStaticcheckPinMatchesRastrillosGate(t *testing.T) {
 		t.Fatalf("rastrillo's Makefile does not pin staticcheck at %s (cmd/rastrillo's staticcheckVersion); want the line %q", staticcheckVersion, want)
 	}
 }
+
+// TestScaffoldWholeGatePassesOffline is the end-to-end proof the budgets
+// spec asks for: a fresh app's entire make ci (vet, fmt, staticcheck,
+// budget, test, perf, migration-check) passes with only the Go toolchain
+// on PATH, a readonly module graph, and no network. Anything a step
+// fetched at run time, or a step that quietly did nothing, fails here.
+//
+// No network, not GOPROXY=off: a versioned go run asks its proxy for
+// the module's latest version, so the proxy here is the local module
+// cache, and every variable that would route around it is cleared.
+func TestScaffoldWholeGatePassesOffline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs a scaffolded app's whole gate")
+	}
+	setSandboxGoEnv(t)
+	root := repoRoot(t)
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"gateapp"}); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.OpenFile(filepath.Join("gateapp", "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n")
+	f.Close()
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = "gateapp"
+	if out, err := tidy.CombinedOutput(); err != nil {
+		t.Fatalf("go mod tidy: %v\n%s", err, out)
+	}
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	modcache, err := exec.Command("go", "env", "GOMODCACHE").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	mk := exec.Command("make", "ci")
+	mk.Dir = "gateapp"
+	mk.Env = append(os.Environ(),
+		"PATH="+filepath.Dir(goBin)+":/usr/bin:/bin",
+		// -buildvcs=false: the scaffold sits in a temp directory with no
+		// repository of its own, and a .git above $TMPDIR (there is one on
+		// this machine) would otherwise fail staticcheck's VCS stamping.
+		"GOFLAGS=-mod=readonly -buildvcs=false",
+		"GOPROXY=file://"+strings.TrimSpace(string(modcache))+"/cache/download",
+		"GOPRIVATE=", "GONOPROXY=", "GONOSUMDB=", "GOSUMDB=off",
+		// Timing reports rather than fails here: this proves the gate's
+		// wiring, and a dev box's load is not evidence about speed.
+		"AMADAN_CI=", "CI=",
+	)
+	out, err := mk.CombinedOutput()
+	if err != nil {
+		t.Fatalf("make ci on a fresh scaffold:\n%s", out)
+	}
+	if !strings.Contains(string(out), "budget size:") {
+		t.Errorf("make ci did not run budget size:\n%s", out)
+	}
+	// One receipt from the suite and one from the perf lane: both steps
+	// ran through budget test, and -require passed in the perf lane.
+	if n := strings.Count(string(out), "receipt: test step"); n != 2 {
+		t.Errorf("want 2 receipts (test, perf), got %d:\n%s", n, out)
+	}
+	for _, want := range []string{"perf: GET /: median", "perf: cold boot: median"} {
+		if !strings.Contains(string(out), want) {
+			t.Errorf("the perf lane did not report %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(string(out), "required test") {
+		t.Errorf("the perf lane's required tests did not both pass:\n%s", out)
+	}
+}
