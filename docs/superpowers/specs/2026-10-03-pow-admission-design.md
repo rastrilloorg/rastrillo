@@ -1,7 +1,7 @@
 # pow grows up: admission that commits with the write, and sign-in behind it by default
 
 Status: design approved in conversation 2026-10-03, section by section,
-with the operator's decisions marked **(Paul)**. Revised after one round
+with the operator's decisions marked **(Paul)**. Revised after two rounds
 of adversarial review by Astra (see "Review log"). Nothing is
 implemented.
 
@@ -92,7 +92,8 @@ type Config struct {
 	Bind        bool       // bind the work to [data-pow-binding]; default false
 	MinAge      time.Duration
 	MaxAge      time.Duration
-	Attempts    int        // admitted-but-uncommitted posts per token; default 20
+	Attempts    int        // admissions per token through Admit; default 20
+	Tracked     int        // tokens Admit tracks at once; default 100,000
 	ScriptURL   string     // fingerprinted pow.js; required unless NoProof
 	WorkerURL   string     // fingerprinted pow-worker.js; required unless NoProof
 }
@@ -107,9 +108,10 @@ const NoProof = -1
 - `New` asks the store whether it is ready: `SQLNonces` probes
   `pow_spent_nonces` and `New` returns `ErrNoSchema` if the table is
   missing. Otherwise a forgotten `pow.Schema` is `ReasonUnavailable` on
-  every post, found by the first visitor. Every documented wiring runs
-  `migrate.Apply` before constructing anything; the plan checks that
-  `examples/` and SKILL.md agree.
+  every post, found by the first visitor. This requires `migrate.Apply`
+  before `pow.New`, which `docs/site/reference/pow.md` gets backwards
+  today (Guard at :26, migration at :43); every documented boot is
+  reordered.
 - There is no `Name`. Scope (below) does the isolating, and difficulty is
   already sealed and compared, so a token from a 12-bit or `NoProof`
   Guard is refused by an 18-bit one sharing the key.
@@ -124,38 +126,50 @@ HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || u64(issuedMillis) || i32(difficu
 fixed width. Length-prefixing makes the encoding injective. The v1 string
 `nonce\x00issued\x00difficulty` was not once a caller-chosen scope joined
 it: `(scope "a\x00b", nonce N)` and `(scope "a", nonce "b\x00"+N)` sign
-the same bytes (Astra, reproduced). The posted nonce must also be
-exactly 32 lowercase hex characters, checked before the HMAC is computed;
-anything else is `ReasonSealInvalid`.
+the same bytes (Astra, reproduced). The posted nonce must be exactly 32
+lowercase hex characters, checked before the HMAC is computed; anything
+else is `ReasonSealInvalid`. That also makes the nonce a canonical token
+identifier: one token, one string.
 
-- **Scope** is not posted. The server supplies the scope it expects, so a
-  token minted for one form or event does not verify on another, and the
-  form carries nothing the submitter could edit. Callers namespace it:
-  `auth` uses `rastrillo/auth/begin`, `password` uses
-  `rastrillo/password/signin` and `…/signup`, Tito uses `apply:41`.
+- **Scope is posted and sealed** (`pow_scope`). `Admit` and `Check`
+  compare it to the scope the server expects (`Want.Scope`), so a token
+  minted for one form or event does not verify on another. `Verify`
+  instead *returns* it, authenticated, for the caller to authorise — a
+  subordinate endpoint has to learn which parent form it is serving
+  (§ "Verify"). Callers namespace it: `rastrillo/auth/begin`,
+  `rastrillo/password/signin` and `…/signup`, Tito's `apply:41`.
 - **Milliseconds,** not `Unix()` seconds. With second resolution a token
   issued late in a second already reads as over 500 ms old, and a script
   skips the minimum age for free (pow/challenge.go:85, 105; Tito uses
   milliseconds for this reason, T/internal/intake/token.go:53-57).
-- **Flags:** bit 0 is "trap omitted" (§1 "Recovery").
-- A name or scope mismatch, a bad nonce format, a v1 seal: all
+- **Flags:** bit 0 is "trap omitted" (§ "Recovery").
+- A scope mismatch, a bad nonce format, a v1 seal: all
   `ReasonSealInvalid`, so a prober learns nothing from the difference.
 
-### Issue and Form
+### Issue, Form, FollowOn
 
 ```go
 func (g *Guard) Issue(now time.Time, scope string) Challenge // writes nothing, as today
 func (g *Guard) Form(now time.Time, scope string) Form
+func (g *Guard) FollowOn(now time.Time, scope string) Form   // already age-eligible
 
 type Form struct { /* Challenge + the Guard's URLs, mode and min age */ }
-func (f Form) Fields() template.HTML    // hidden fields + honeypot (+ status notice when proof is on)
+func (f Form) Fields() template.HTML    // hidden fields + honeypot (+ status line when proof is on)
 func (f Form) Attrs() template.HTMLAttr // data-pow-* for the <form>; empty under NoProof
 func (f Form) Script() template.HTML    // <script type="module">; empty under NoProof
+func (f Form) NeedsScript() bool        // false under NoProof: render the submit enabled
 ```
 
 `Issue` writes nothing (pow/challenge.go:19-25: a row per render makes
 every crawler a write stream). `Form` is what templates render, so
 `auth`, `password` and Tito share one shape.
+
+**`FollowOn`** issues a token backdated by `MinAge`, for a form the
+visitor reaches with nothing left to type: a prefilled checkout details
+form, a confirm screen, and the re-render of either after a validation
+error. That is how Tito keeps checkout usable the instant it renders
+(T/internal/instance/shop.go:8288; postback.go:122), which is Paul's
+decision for that door. It keeps the trap; only `Recovery` drops it.
 
 **A challenge-bearing response must not be cached.** One token on a
 shared cached page is one token for every visitor, and the first
@@ -169,22 +183,26 @@ package doc and SKILL.md, `auth` already writes `no-store` through
 ### Recovery
 
 ```go
-func (g *Guard) Recovery(now time.Time, scope string, why Reason) Form
+func (g *Guard) Recovery(now time.Time, scope string) Form
+func (a Admission) Recovered() bool // the posted token was a recovery token (sealed flag; refused posts too, once the seal verified)
 ```
 
-The form to re-render after a refusal, so that retrying can change the
-answer:
+The form to re-render after a refusal. It is **always** trapless and
+**always** follow-on, whatever the reason — Tito's step-up does exactly
+this (T/internal/instance/intake_stepup.go:57, 147). An earlier draft
+varied recovery by reason; Astra showed the reasons then undo each other
+(a fast visitor with a trap-filling password manager alternates
+`honeypot` and `too_fast` forever under `NoProof`).
 
-| `why` | What `Recovery` changes |
-|---|---|
-| `honeypot` | Omits the trap and seals the "trap omitted" flag, so `Admit` skips the honeypot for that token only. Proof, scope and single use still apply. |
-| `too_fast` | Backdates issue by `MinAge` (Tito's follow-on token, intake_gate.go:143-174): the visitor has already spent the time. |
-| anything else | A fresh challenge. |
+Recovery is sticky: once a visitor has been given a recovery token, every
+later re-render of that form for them is a recovery form too. A handler
+that re-renders asks `adm.Recovered()`; `auth`, which redirects, carries
+it in the query (§2). Otherwise a trapless attempt that fails on a wrong
+password re-renders with the trap back and the visitor is refused again.
 
-The cost, stated: a bot that trips the honeypot can ask for a trapless
-form. The honeypot is a free filter for the dumbest scripts, not the
-control; the proof of work and single use are. Recovery forms are never
-issued unprompted.
+The cost, stated: a bot can ask for a recovery form. The honeypot is a
+free filter for the dumbest scripts, not the control; the proof of work
+and single use are, and recovery changes neither.
 
 ### Admit, Commit, Check, Verify
 
@@ -200,10 +218,17 @@ type Admission struct {
 	Also   []Reason // every other cheap failure, for the log
 }
 
+type Parent struct {
+	Scope      string // authenticated: from the seal
+	Nonce      string // canonical token identifier
+	Difficulty int
+	Issued     time.Time
+}
+
 func (g *Guard) Admit(r *http.Request, w Want) Admission
 func (a Admission) Commit(ctx context.Context, ex Execer) error
-func (g *Guard) Check(r *http.Request, w Want) (Reason, bool)
-func (g *Guard) Verify(r *http.Request, w Want) (Reason, bool)
+func (g *Guard) Check(r *http.Request, w Want) Admission // already spent when OK
+func (g *Guard) Verify(r *http.Request) (Parent, Reason, bool)
 
 type Execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -218,12 +243,12 @@ var (
 
 **`Admit`** runs, in order: body bounds → challenge fields present
 (`ReasonMissing`, new) → honeypot (unless the trap-omitted flag is
-sealed) → seal → clock → proof of work (skipped at `NoProof`) →
-already-spent lookup → attempt allowance (`ReasonAttempts`; `ReasonBusy`
-at capacity). It writes nothing. Free checks come first and the signature
-before the timestamp it vouches for (pow/guard.go:123-133). After the
-first failure the remaining cheap checks still run into `Also`; nothing
-that reads the database runs after a failure.
+sealed) → seal and scope → clock → proof of work (skipped at `NoProof`)
+→ already-spent lookup → attempt allowance (`ReasonAttempts`;
+`ReasonBusy` at capacity). It writes nothing. Free checks come first and
+the signature before the timestamp it vouches for (pow/guard.go:123-133).
+After the first failure the remaining cheap checks still run into
+`Also`; nothing that reads the database runs after a failure.
 
 `ReasonMissing` means something different from a bad proof: the form was
 never wired, or it predates this release. It is the one an operator
@@ -233,36 +258,59 @@ should see first after an upgrade.
 `*sql.Tx`, `*sql.DB`, `*sql.Conn`, or — inside a GORM transaction —
 `tx.Statement.ConnPool` (not `tx` itself), so `pow` does not import GORM.
 
-- Zero rows affected is `ErrSpent`: the handler lost a race to an
-  identical request and must refuse, not 500.
-- A commit after the token's expiry is `ErrExpired`, checked at commit
-  time, immediately before the insert. Without it: two posts admitted
-  just before expiry, A commits, a sweep deletes A's now-expired row, B
-  commits into the empty slot — one token, two writes (Astra,
-  reproduced). Sweeping only rows past expiry **plus a 10-minute margin**
-  closes the gap: for the sweep to have removed A's row, B's commit is
-  already past expiry and refused.
+- **Expiry is enforced by the spend itself, on the database's clock:**
+
+  ```sql
+  INSERT OR IGNORE INTO pow_spent_nonces (nonce, expires_ms)
+  SELECT ?, ? WHERE CAST(unixepoch('subsec') * 1000 AS INTEGER) <= ?
+  ```
+
+  and `Sweep` deletes only rows whose `expires_ms` is more than ten
+  minutes behind the same clock. Both statements run on the one writer,
+  so they are serialised. For a sweep to have removed A's row, the
+  database's clock had passed expiry plus the margin; any later insert
+  of the same nonce reads that clock or a later one, and its `WHERE`
+  fails. No delay between the handler's checks and the statement's
+  execution can reopen replay. An earlier draft checked expiry in Go
+  before calling the executor, which a stalled request defeats (Astra,
+  reproduced). Zero rows is then `ErrSpent` if `Spent` finds the row and
+  `ErrExpired` otherwise.
+- `ErrSpent`: the handler lost a race to an identical request and must
+  refuse, not 500.
 - `Commit` on a refused admission is `ErrNotAdmitted`. Tito's returns nil
   there (intake_gate.go:321-326) and relies on no door going on past a
   refusal; a door that did would create its row with nothing consumed.
-- A successful `Commit` drops the token's attempt entry.
+- `Commit` does **not** release the token's attempt entry. The insert
+  succeeding says nothing about whether the caller's transaction will;
+  releasing on it let admit → spend → business refusal → rollback repeat
+  forever on one solve (Astra, reproduced against Tito's portal
+  registration, T/internal/instance/portals.go:1865, 1891-1899).
 
 Each consequence is a test: a validation failure never reaches `Commit`
-so the token survives the retry; a rollback rolls the spend back; two
-concurrent posts produce exactly one success; the delayed-commit
-sequence above is refused.
+so the token survives the retry; a rollback rolls the spend back and
+keeps the attempt count; two concurrent posts produce exactly one
+success; a commit stalled past expiry and a sweep is refused.
 
-**`Check`** is `Admit` then `Commit` on the store's own handle, for a
-handler that redirects after every POST or has no transaction of its
-own. Spending first is right there: the next GET mints a new challenge,
-and the spend must land before mail or a probe does.
+**`Check`** verifies and spends in one step on the store's own handle,
+and **does not touch the attempt map**: it spends at once, so there is no
+uncommitted state to count. For a handler that redirects after every POST
+or has no transaction of its own. Spending first is right there: the
+next GET mints a new challenge, and the spend must land before mail or a
+probe does. Because `Check` bypasses the map, a Guard's capacity filled
+through `Admit` by one form cannot make another form's `Check` answer
+busy.
 
-**`Verify`** checks seal, maximum age, proof and not-spent, and neither
-counts nor spends. It is for a subordinate request made on a parent
-form's behalf — Tito's email check and file upload verify the parent
-token without consuming it and keep their own allowances
-(T/internal/instance/intake_subordinate.go:118-180). The allowances stay
-Tito's.
+**`Verify`** checks seal, maximum age, proof at the *sealed* difficulty,
+and not-spent; it neither counts nor spends, and it returns the
+authenticated `Parent`. It is for a subordinate request made on a parent
+form's behalf. Tito's email check accepts a parent from any door and
+event in the account, and an upload a parent for its own event only
+(T/internal/instance/intake_subordinate.go:132-180); with `Parent` the
+caller makes that decision on authenticated data, rejects difficulties
+it does not accept, and keys its own allowances by `Parent.Nonce`, the
+canonical identifier. Any Guard sharing the instance key can `Verify`
+any of the app's tokens, so the email check needs no knowledge of which
+Guard minted its parent.
 
 ### The attempt allowance
 
@@ -272,16 +320,20 @@ admissions per nonce in process. Default 20, as Tito's
 (intake_gate.go:104-107): an honest visitor correcting a form several
 times is ordinary.
 
-The map holds at most 10,000 live entries per Guard and **never evicts a
-live one**; at capacity a new token is refused with `ReasonBusy` until an
-entry expires or commits, and tokens already tracked keep their
-allowance. Evicting the oldest instead would let an attacker cycling
-10,001 tokens restore every allowance without a single new solve
-(Astra). This is Tito's rule (intake_subordinate.go:81-84). The trade it
-makes, stated: an attacker holding 10,000 admitted, uncommitted tokens
-can make that form answer "busy" until they expire — 10,000 solves under
-proof, 10,000 page loads under `NoProof`. `Check` callers (auth,
-password) never occupy the map, because `Check` commits at once.
+Entries live until their token expires — not until commit (above). The
+map holds at most `Tracked` entries per Guard (default 100,000, a few
+megabytes) and **never evicts a live one**: at capacity a new token is
+refused with `ReasonBusy` until an entry expires, and tokens already
+tracked keep their allowance. Evicting the oldest would let an attacker
+cycling one more token than capacity restore every allowance without a
+new solve (Astra). Tito's rule (intake_subordinate.go:81-84).
+
+The trade it makes, stated: an attacker holding `Tracked` admitted tokens
+can make that form answer "busy" until they expire — 100,000 solves under
+proof, 100,000 page loads under `NoProof`. And because committed tokens
+also hold an entry until expiry, an honest form taking more than
+`Tracked` submissions in `MaxAge` meets the same ceiling; raise `Tracked`
+for such a form. Forms using only `Check` are unaffected either way.
 
 It resets on restart. That bounds handler work, not replay; replay is
 the durable ledger's job.
@@ -298,15 +350,18 @@ type NonceStore interface {
 ```
 
 - `SQLNonces` spends on `ex` when given one and its own handle when `ex`
-  is nil.
-- `Sweep` deletes at most 500 rows per call, past expiry plus the
-  10-minute margin. Unbounded, a sweep on wake holds the single writer
-  while the first visitor waits (Tito bounds its own,
+  is nil, with the expiry predicate above.
+- `Sweep` deletes at most 500 rows per call, ten minutes past expiry on
+  the database's clock. Unbounded, a sweep on wake holds the single
+  writer while the first visitor waits (Tito bounds its own,
   T/internal/instance/intake_store.go:157, 232-248). Call it from a tick.
-- `MemoryNonces` ignores `ex`, so a spend inside a transaction that rolls
-  back stays spent. Its doc says so; it stays a test and single-process
-  tool.
-- No schema change: `pow_spent_nonces` already has what this needs.
+- `MemoryNonces` applies the same rules under its mutex and ignores
+  `ex`, so a spend inside a transaction that rolls back stays spent. Its
+  doc says so; it stays a test and single-process tool.
+- **Schema change:** `pow_spent_nonces` gains `expires_ms INTEGER`
+  (milliseconds, comparable in SQL) and drops the RFC 3339 `expires_at`.
+  The table is empty everywhere that matters — no app has shipped `pow`
+  — so the migration recreates it.
 
 ### Browser
 
@@ -337,12 +392,17 @@ halves agree in both modes.
   one-tap sign-in buttons autofocus (ui/partials/signin.html:50, 57), and
   a returning visitor can be quicker than any minimum. Network latency
   only makes the server's measured age longer than the client's.
-- **Navigation.** `pagehide` cancels a held submit and terminates the
-  worker; `pageshow` from the back-forward cache restores the controls
-  `pow` disabled and restarts the solve if it never finished. Without
-  this a visitor who leaves during the hold and comes back finds a dead
-  button, or a submit firing on a page they left (`ui/busy.js:237-250`
-  treats the same boundary, but cannot cancel another module's worker).
+- **Navigation.** While a submit is held, a temporary `beforeunload`
+  listener cancels it the moment the visitor starts navigating away —
+  `pagehide` fires only once the destination commits, and until then a
+  solve finishing would submit over the navigation the visitor chose
+  (Tito handles the same window this way,
+  T/internal/instance/static/spinner.js:133-152). The listener exists
+  only during a hold, so it does not keep ordinary pages out of the
+  back-forward cache. `pagehide` terminates the worker; `pageshow` from
+  the back-forward cache restores the controls `pow` disabled and
+  restarts the solve if it never finished (`ui/busy.js:237-250` treats
+  the same boundary, but cannot cancel another module's worker).
 - **Submit controls outside the form.** The module finds the submit by
   `form.elements` and `[data-pow-submit][form=<id>]`, not only
   `form.querySelector` — Tito's checkout button sits outside its form
@@ -350,22 +410,34 @@ halves agree in both modes.
 - **Failure is visible with JavaScript on.** `<noscript>` covers only
   JavaScript off. With it on, the module can be blocked by CSP, 404, or
   throw, and the worker can fail to construct. `Fields` renders a status
-  notice the visitor sees if the form has not become ready within three
-  seconds — revealed without JavaScript, removed by the module when it
-  marks the form ready — saying the form could not be prepared and
-  offering a reload. Worker construction is wrapped; it and a later
-  worker error show the same notice in place. The plan chooses the
-  CSS mechanism (it must pass the default CSP); tests cover a missing
-  asset, a restrictive CSP and a throwing worker.
-- **`pow:solved`.** Fired on the form with the solution, and
-  `whenSolved(form)` returns a promise of it, so a subordinate request
-  can carry the parent's proof (Tito's `intake-proof.js` contract,
-  T/internal/instance/static/email-check.js:18, 154; file-field.js:15,
-  91).
-- **`NoProof` needs no JavaScript.** `Attrs` and `Script` render nothing,
-  the submit is rendered enabled, and the minimum age is the server's
-  alone — a fast visitor meets `too_fast` and `Recovery`. That is what
-  Paul chose for Tito's checkout: a token usable the instant the page is.
+  line beside the submit, **visible from the start**, whose words are
+  true whether or not the module ever runs — along the lines of "If this
+  form does not respond, reload the page" (final copy through
+  copy-review). The module hides it when it marks the form ready, and
+  shows it again, with a reload link, on worker failure. No stylesheet,
+  no timer and no CSP change: if nothing runs, the line is simply still
+  there and still right. Worker construction is wrapped in the same
+  handling. Tests cover a missing asset, a restrictive CSP and a
+  throwing worker.
+- **`whenSolved(form, {timeout})`** lets a subordinate request carry
+  the parent's proof, replacing Tito's `intake-proof.js`
+  (T/internal/instance/static/intake-proof.js:10-35, awaited by
+  email-check.js:154 and file-field.js:91). Its contract:
+  - resolves with `{fields}` — the `pow_*` name/value pairs a request
+    must carry for `Verify`;
+  - a form with no `data-pow-form` (`NoProof`, or not a pow form)
+    resolves immediately with the challenge fields it has;
+  - already solved: resolves immediately;
+  - bound: starts a solve for the binding's current value if none is
+    running for it;
+  - rejects on worker failure, on navigation cancelling the solve, and
+    after `timeout` (default 10 s, Tito's bound). Never pending forever.
+  `pow:solved` fires on the form as well.
+- **`NoProof` needs no JavaScript.** `Attrs` and `Script` render
+  nothing, `NeedsScript` is false so the submit is rendered enabled, and
+  the minimum age is the server's alone. A form the visitor reaches
+  already filled in is issued with `FollowOn`, so it is usable the
+  instant it renders — Paul's decision for Tito's checkout.
 
 ## 2. `auth`
 
@@ -379,52 +451,73 @@ ProofOff bool
   unset: build a pow.Guard (serve pow.Assets(), merge pow.Schema) and set
   it, or set ProofOff". The Guard's own `New` has already refused missing
   assets URLs and a missing table.
+- **A bound Guard is `ErrProofMode`.** The sign-in forms carry the
+  address in three different shapes (two hidden inputs, one field
+  partial, signin.html:47-67) and binding them is not worth a second
+  contract when unbound is the default. A `NoProof` Guard is accepted and
+  renders correctly: the partial disables the submit only when
+  `NeedsScript` is true, so it never leaves a disabled button with no
+  script to enable it.
 - **`Begin` checks first,** after the same-origin check and before the
   rate limiter and classification (auth/handlers.go:41-57), with `Check`
   at scope `rastrillo/auth/begin`. An anonymous visitor can no longer
   make the server resolve and probe a domain of their choosing, send
   mail, or spend another address's rate budget without solving.
-- **A refusal redirects to `?err=check&why=<reason>`,** a new problem the
+- **A refusal redirects to `?err=check&rec=1`,** a new problem the
   screen shows on the ask step. Its copy goes through copy-review and
   into every locale's catalog (`rastrillo.ui.signin_problem_check`)
-  before it is written into a template. `why` is attacker-controllable
-  and only selects which `Recovery` form the next render gets; that is
-  the cost already stated under "Recovery".
+  before it is written into a template. Every other error redirect from
+  `Begin` also carries `rec=1` when the posted token was a recovery token
+  (`adm.Recovered()`), so recovery stays sticky across a mistyped
+  address. `rec` is attacker-controllable and only selects a recovery
+  form — the cost already stated under "Recovery".
 - **`SigninState.Proof *pow.Form`,** filled whenever `Proof` is set,
-  screen or no screen, from `Form` or, after a refusal, `Recovery`.
+  screen or no screen: `Recovery` when the query carries `rec=1`, `Form`
+  otherwise.
   Neither writes, so `SigninState` stays free of database access
   (auth/signin.go:116-125).
 - **The shipped partial** (ui/partials/signin.html) renders exactly one
   `Begin` form per render — the keymail one-tap, the link one-tap, or the
   ask form are mutually exclusive branches (signin.html:47-67). Whichever
-  renders carries `Fields` and `Attrs`, its submit rendered disabled with
-  `data-pow-submit`, plus a `<noscript>` line and `Script` once. The
+  renders carries `Fields` and `Attrs`; when `NeedsScript`, its submit is
+  rendered disabled with `data-pow-submit`, with a `<noscript>` line and
+  `Script` once. The
   Forget form is not gated: it deletes cookies and nothing else.
 
 ## 3. `password`
 
-- `Config.Proof *pow.Guard` / `ProofOff bool`, the same `ErrProofUnset`.
-  The app can pass the same Guard it gave `auth`; scope keeps them apart.
-- `PageData.Proof *pow.Form`, filled from `Form` or `Recovery`, so the
-  app's `RenderSignin` / `RenderSignup` render it.
+- `Config.Proof *pow.Guard` / `ProofOff bool`, the same `ErrProofUnset`
+  and `ErrProofMode` for a bound Guard. The app can pass the same Guard
+  it gave `auth`; scope keeps their tokens apart, and `Check` keeps them
+  out of each other's capacity.
+- `PageData.Proof *pow.Form`, so the app's `RenderSignin` /
+  `RenderSignup` render it: `Recovery` after a refusal or after any
+  failure whose posted token was a recovery token, `Form` otherwise.
 - `SigninPage`, `SignupPage` and every re-render set `Cache-Control:
   no-store` before the callback.
 - `Signin` and `Signup` `Check` before the limiter
   (password/handlers.go:193, 287) at scopes `rastrillo/password/signin`
-  and `…/signup`. A refusal re-renders with a new `ErrCheck` message and
-  the `Recovery` form; the email is kept, the password is not (as for any
-  failure today).
+  and `…/signup`. A refusal re-renders with a new `ErrCheck` message; the
+  email is kept, the password is not (as for any failure today).
 - `Check`, not `Admit`/`Commit`: a wrong password must not leave a solved
   token reusable for more guesses, and the re-render's fresh challenge
   solves while the visitor retypes.
-- `ui/partials/form-foot.html` gains an optional `Proof` key that renders
-  its submit disabled with `data-pow-submit` plus the `<noscript>` line.
+- `ui/partials/form-foot.html` gains an optional `Proof` key that, when
+  `NeedsScript`, renders its submit disabled with `data-pow-submit` plus
+  the `<noscript>` line.
 
 ## 4. Docs and the example
 
-- `examples/notes` wires it end to end: one Guard, assets mounted,
-  `pow.Schema` merged, `Proof` on both packages, templates rendering
-  `.Proof`, `Sweep` on the existing tick.
+- `examples/notes` (password sign-in, examples/notes/internal/notes/app.go:65)
+  wires it end to end: a stable instance key, `pow.Schema` merged and
+  applied before `pow.New`, one Guard, assets mounted, `Proof` on
+  `password`, templates rendering `.Proof`, and a periodic `Sweep` — the
+  example has no tick today, so it gains one on rastrillo's background
+  group. `auth` is shown in the docs rather than the example.
+- **Constructor inventory.** Every `auth.New` and `password.New` call
+  must choose `Proof` or `ProofOff`: in `auth/`, `password/`, `ui/`,
+  `examples/`, and `passkey/signinscreen_test.go:201`. The plan lists
+  them all by grep before the first change.
 - SKILL.md: the auth, password and public-forms paragraphs, within the
   byte budget (`skillmd_test.go`). Load-bearing facts: default on; the
   boot errors and their fixes; the app owns the Guard and sweeps it;
@@ -449,9 +542,14 @@ plan owns the detail; these are the constraints this design must meet.
 - Tito's stored key becomes `InstanceKey`; it is already stored, not per
   process (T/internal/instance/intake_store.go:21-29).
 - `intakeAdmit` becomes `Admit`; `adm.Commit(tx)` becomes
-  `adm.Commit(ctx, tx)`. `intakeConsume` becomes `Check`. The email check
-  and uploads use `Verify` plus Tito's own allowances and read the proof
-  through `whenSolved`.
+  `adm.Commit(ctx, tx)`. `intakeConsume` becomes `Check`.
+- The email check and uploads call `Verify`, authorise the returned
+  `Parent` (any scope in the account for the email check; the upload's
+  own event for uploads), key their 50 and 25 allowances by
+  `Parent.Nonce`, and read the proof in the browser through `whenSolved`.
+- Checkout details, confirm screens and their validation re-renders are
+  issued with `FollowOn`, as `shop.go:8288` and `postback.go:122` do
+  today.
 - The step-up screen re-renders with `Recovery`, and calls `init` after
   replacing the document.
 - **Old forms at deploy** post `intake_token` / `intake_nonce`, which the
@@ -488,37 +586,47 @@ plan owns the detail; these are the constraints this design must meet.
 
 `pow`:
 
-- seal: names and scopes containing NUL and length-like bytes do not
+- seal: scopes containing NUL and length-like bytes do not
   collide; a non-hex or wrong-length nonce is refused before HMAC; a v1
   seal is refused; issue on both sides of a second boundary honours a
   500 ms minimum;
 - `Commit`: concurrent commits give exactly one nil; rollback leaves the
   token admissible; an un-committed admission leaves it admissible;
-  admit → commit → expiry → sweep → delayed second commit is
-  `ErrExpired`; `ErrNotAdmitted` on a refused admission; GORM through
+  an executor stalled after the handler's checks until past expiry and a
+  sweep is `ErrExpired` (the predicate is on the database clock);
+  a rolled-back commit keeps the attempt count; `ErrNotAdmitted` on a refused admission; GORM through
   `tx.Statement.ConnPool`;
 - `Admit`: scope mismatch is `ReasonSealInvalid`; `ReasonMissing` with no
   challenge fields; `Also` carries cheap failures only;
-- attempts: the 21st admission is refused; at capacity a new token is
-  `ReasonBusy` and tracked tokens are unaffected; cycling 10,001 tokens
-  does not restore any allowance; commit frees the entry;
-- `Recovery`: the trap-omitted form passes with the trap absent and only
-  that token skips the honeypot; `too_fast` recovery is admissible at
-  once;
-- `Verify` neither counts nor spends; `Sweep` is bounded and respects the
+- attempts: the 21st admission is refused, across commits that roll
+  back; at capacity a new token is `ReasonBusy` and tracked tokens are
+  unaffected; cycling capacity + 1 tokens restores no allowance; `Check`
+  succeeds while another scope has filled the Guard's map;
+- `Recovery` is trapless and admissible at once; only recovery tokens
+  skip the honeypot; a `NoProof` fast visitor with a trap-filling
+  password manager gets through on the first recovery; `Recovered()` is
+  true on a refused recovery token;
+- `FollowOn` is admissible at once and keeps the trap;
+- `Verify` neither counts nor spends, returns the sealed scope, and
+  accepts a token from any Guard sharing the key at its sealed
+  difficulty; `Sweep` is bounded and respects the
   margin; `New` refuses a missing table and missing asset URLs;
 - Chromium: shipped solver satisfies the Go verifier in both modes; an
   unbound form solves before submit; a fast click is held, not refused;
   a bound form whose binding changes mid-solve re-solves; leave and
-  return via bfcache during both holds; `init` after `document.write`; a
-  submit control outside the form; missing asset, restrictive CSP and a
-  throwing worker each show the notice; `NoProof` posts with JavaScript
-  disabled.
+  return via bfcache during both holds; start navigating to a slow
+  destination during a hold and the held submit never fires; `init`
+  after `document.write`; a submit control outside the form; missing
+  asset, restrictive CSP and a throwing worker each leave the status line
+  showing; `whenSolved` resolves at once for `NoProof` and when solved,
+  starts a bound solve, and rejects on failure, navigation and timeout;
+  `NoProof` posts with JavaScript disabled.
 
 `auth` / `password`:
 
-- neither `Proof` nor `ProofOff` is `ErrProofUnset`; `ProofOff` boots and
-  gates nothing;
+- neither `Proof` nor `ProofOff` is `ErrProofUnset`; a bound Guard is
+  `ErrProofMode`; `ProofOff` boots and gates nothing; a `NoProof` Guard
+  renders an enabled submit;
 - `Begin` with no challenge redirects to `?err=check` and sends no mail,
   writes no link, makes no DNS lookup (the fakes record none) and spends
   no rate budget;
@@ -526,10 +634,11 @@ plan owns the detail; these are the constraints this design must meet.
   trapless form that then succeeds;
 - each rendered sign-in state (keymail one-tap, link one-tap, ask,
   passkey + ask) carries the fields on its one `Begin` form and none on
-  Forget; existing screen tests pass with Proof on;
+  Forget; existing screen tests pass with Proof on; a recovered token
+  that then fails on the address keeps `rec=1`;
 - `password`: pages and re-renders are `no-store`; a wrong password
-  re-renders with a fresh challenge; signup without a challenge creates
-  no row.
+  re-renders with a fresh challenge, a recovery one if the post was a
+  recovery; signup without a challenge creates no row.
 
 ## Open questions
 
@@ -542,6 +651,9 @@ plan owns the detail; these are the constraints this design must meet.
 - **Existing tests.** Every `auth`/`password` test builds a Config
   without `Proof`. The plan picks per test: anything exercising Begin's
   ordering or the screen wires a Guard, the rest set `ProofOff`.
+- **`unixepoch('subsec')`** needs SQLite 3.42; the plan confirms the
+  version bundled with `modernc.org/sqlite` v1.55.0 and falls back to
+  `julianday('now')` arithmetic if not.
 
 ## Review log
 
@@ -578,3 +690,32 @@ accepted:
     Tito's cap is 20, `Commit` gains `ctx` and GORM passes
     `tx.Statement.ConnPool` (minor) → corrected; the shared-solve feature
     is dropped as unneeded.
+
+**Astra, round 2 (2026-10-03): not ready.** Round one re-verdicted ten
+resolved, six partial; eleven new findings, all accepted:
+
+17. Expiry checked in Go before the executor is defeated by a stalled
+    request (blocker) → expiry predicate inside the insert, on the
+    database clock; sweep on the same clock.
+18. Subordinate endpoints cannot learn or authorise the parent's scope
+    (blocker) → scope posted and sealed; `Verify` returns an
+    authenticated `Parent` with the canonical nonce.
+19. `Commit` releasing the attempt entry lets rollbacks reset it (major)
+    → entries live until expiry; `Tracked` raised to 100,000 and
+    configurable, trade-off stated.
+20. A shared Guard's full map blocks `Check` callers (major) → `Check`
+    bypasses the map.
+21. Per-reason recovery properties undo each other (major) → recovery is
+    always trapless and follow-on, and sticky via `Recovered()`.
+22. Initial checkout lost immediate eligibility (major, Paul's decision)
+    → `FollowOn` for prefilled forms and their re-renders.
+23. `whenSolved` had no completion contract (major) → defined, bounded,
+    never pending forever.
+24. Guard modes the shipped forms cannot render (major) → bound Guards
+    refused; `NeedsScript` drives the disabled submit.
+25. `pagehide` fires too late to cancel a held submit (major) →
+    `beforeunload` during holds only.
+26. The failure notice needed an unshipped stylesheet (minor) → a status
+    line visible from the start whose words are true either way; no CSS.
+27. Migration inventory wrong (minor) → example wiring corrected,
+    constructor inventory listed, boot order fixed in the reference doc.
