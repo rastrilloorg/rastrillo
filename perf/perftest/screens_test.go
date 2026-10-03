@@ -279,3 +279,49 @@ func TestHandlerIgnoringItsContextStopsTheSweep(t *testing.T) {
 		})
 	}
 }
+
+// A sign-in that never answers must fail the sweep in bounded time, not
+// hang the lane until go test's own timeout.
+func TestHangingSigninStopsTheSweep(t *testing.T) {
+	t.Parallel()
+	block := make(chan struct{})
+	defer close(block)
+	r := router(map[string]http.HandlerFunc{"/": ok})
+	r.Post("/signin", func(w http.ResponseWriter, req *http.Request) { <-block })
+	c := cfg(r)
+	c.Signin = func(cl *http.Client, base string) { cl.PostForm(base+"/signin", nil) }
+	start := time.Now()
+	ft := run(c, "", true)
+	if !ft.failed || !strings.Contains(errs(ft), "Signin") {
+		t.Fatalf("a hanging sign-in did not fail the sweep: %v", errs(ft))
+	}
+	if time.Since(start) > signinBound+5*time.Second {
+		t.Fatalf("took %s", time.Since(start))
+	}
+}
+
+// A stream that has answered but ignores its cancellation keeps running
+// after the client lets go; it must stop the sweep like any other hung
+// handler, before anything else is measured beside it.
+func TestStreamIgnoringCancellationStopsTheSweep(t *testing.T) {
+	t.Parallel()
+	block := make(chan struct{})
+	defer close(block)
+	var later atomic.Int32
+	r := router(map[string]http.HandlerFunc{
+		"/events": func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(200)
+			w.(http.Flusher).Flush()
+			<-block
+		},
+		"/zzz": func(w http.ResponseWriter, req *http.Request) { later.Add(1); w.Write([]byte("ok")) },
+	})
+	ft := run(cfg(r), "", true)
+	if !ft.failed {
+		t.Fatal("a stream that never finished passed")
+	}
+	if n := later.Load(); n != 0 {
+		t.Fatalf("measured %d request(s) beside a stream still running", n)
+	}
+}

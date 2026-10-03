@@ -92,16 +92,36 @@ func screens(t testing.TB, cfg ScreenConfig, f *budgetfile.File, enforce bool) {
 		t.FailNow()
 	}
 
-	srv := httptest.NewServer(cfg.Handler)
+	// Count handlers still running, so one that outlives its request (a
+	// stream ignoring cancellation, a handler past its deadline) is caught
+	// before anything else is measured beside it.
+	var inflight atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		inflight.Add(1)
+		defer inflight.Add(-1)
+		cfg.Handler.ServeHTTP(w, r)
+	}))
 	defer closeBounded(srv)
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	if cfg.Signin != nil {
-		cfg.Signin(client, srv.URL)
+		client.Timeout = signinBound
+		done := make(chan struct{})
+		go func() { defer close(done); cfg.Signin(client, srv.URL) }()
+		select {
+		case <-done:
+		case <-time.After(signinBound + time.Second):
+		}
+		client.Timeout = 0
+		if !idle(&inflight, time.Second) {
+			srv.CloseClientConnections()
+			t.Errorf("Signin did not finish within %s, or left a handler running: nothing can be measured behind it", signinBound)
+			t.FailNow()
+		}
 	}
 
 	for _, tg := range targets {
-		med, worst, err := measure(client, srv.URL+tg.path, tg.expect, tg.limit)
+		med, worst, err := measure(client, srv.URL+tg.path, tg.expect, tg.limit, &inflight)
 		if errors.Is(err, errHung) {
 			// The handler is still running and nothing can stop it; every
 			// number after this one would include its goroutine.
@@ -234,15 +254,24 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 
 var errHung = errors.New("handler did not finish")
 
+// signinBound caps ScreenConfig.Signin: a sign-in handler that never
+// answers would otherwise hang the lane until go test's own timeout.
+const signinBound = 10 * time.Second
+
 // measure makes 10 requests, discards 2, and returns the median and the
 // worst of the other 8. TTFB is httptrace's GotFirstResponseByte: what a
 // client observes, so a header the server buffered buys nothing.
-func measure(c *http.Client, url string, expect int, limit time.Duration) (time.Duration, time.Duration, error) {
+func measure(c *http.Client, url string, expect int, limit time.Duration, inflight *atomic.Int32) (time.Duration, time.Duration, error) {
 	var got []time.Duration
 	for i := 0; i < 10; i++ {
 		ttfb, err := once(c, url, expect, 3*limit+time.Second)
 		if err != nil {
 			return 0, 0, err
+		}
+		// The response is over for the client; the handler must be over
+		// too, or it is still running when the next request is timed.
+		if !idle(inflight, time.Second) {
+			return 0, 0, errHung
 		}
 		if i >= 2 {
 			got = append(got, ttfb)
@@ -285,6 +314,18 @@ func once(c *http.Client, url string, expect int, deadline time.Duration) (time.
 		}
 	}
 	return first.Sub(start), nil
+}
+
+// idle waits up to grace for every handler to return.
+func idle(inflight *atomic.Int32, grace time.Duration) bool {
+	deadline := time.Now().Add(grace)
+	for inflight.Load() > 0 {
+		if time.Now().After(deadline) {
+			return false
+		}
+		time.Sleep(time.Millisecond)
+	}
+	return true
 }
 
 // closeBounded closes the test server without waiting forever on a
