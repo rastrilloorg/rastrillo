@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"bytes"
 	"html/template"
 	"regexp"
 	"strings"
@@ -274,5 +275,21 @@ func TestTheListGridSampleCarriesTheRowMenuPartialsOutput(t *testing.T) {
 	)))
 	if got != want {
 		t.Errorf("the list-grid sample's kebab is not the partial's output.\nsample:  %s\npartial: %s", got, want)
+	}
+}
+
+// list-row-action shows a numeric Main through displayValue, which the
+// reference documents, so its kebab must be named the same way. Handing
+// the raw number to row-menu's Name stopped the render, because Name is
+// read as a string, and a row that displayed fine lost its whole list.
+func TestListRowActionMenuNamesANumericMainAsItIsShown(t *testing.T) {
+	page := template.Must(template.New("").Funcs(Funcs(WithLocale("de"))).ParseFS(Templates(), "*.html"))
+	var out bytes.Buffer
+	data := map[string]any{"Href": "/1169772", "Main": 1169772, "Menu": []any{map[string]any{"Label": "Edit", "Href": "/e"}}}
+	if err := page.ExecuteTemplate(&out, "list-row-action", data); err != nil {
+		t.Fatal(err)
+	}
+	if !regexp.MustCompile(`aria-label="[^"]*1\.169\.772[^"]*"`).MatchString(out.String()) {
+		t.Errorf("the kebab is not named for the row as shown: %s", out.String())
 	}
 }

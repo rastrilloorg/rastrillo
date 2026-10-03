@@ -53,6 +53,6 @@
   <a rst-row-action href="{{.ActionHref}}"{{if .ActionAria}} aria-label="{{.ActionAria}}"{{end}}>{{.ActionLabel}}</a>
   {{- end}}
   {{- with opt . "Menu"}}
-  {{template "row-menu" dict "Name" $.Main "Items" .}}
+  {{template "row-menu" dict "Name" (print (displayValue $.Main)) "Items" .}}
   {{- end}}
 </div>{{end}}

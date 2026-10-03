@@ -11,8 +11,9 @@ import (
 // commits. When the reader then cancels the leave-page prompt and
 // follows some other link, the next page must slide forward: the record
 // was for a navigation that never happened. The real Back still slides
-// back. A browser drive cannot cancel a beforeunload prompt on cue, so
-// this runs shell.js itself against stub pages in Node.
+// back. Here cancelling the prompt is one stub call; a browser drive
+// would have to dismiss the dialog over CDP and race the next click
+// against it, so this runs shell.js itself against stub pages in Node.
 func TestACancelledBackDoesNotSlideTheNextPageBack(t *testing.T) {
 	var got struct{ Taken, Cancelled string }
 	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"shell_node.mjs"}}), &got); err != nil {
