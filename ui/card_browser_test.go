@@ -119,7 +119,7 @@ func resolvedColor(t *testing.T, ctx context.Context, prop string) string {
 	return s
 }
 
-// TestTheTopbarMenuIsACardOverThePage is §10.4 for the topbar, with
+// TestTheTopbarMenuIsACardOverThePage checks the topbar's card with
 // scripts off and on, LTR and RTL, at 390 with a coarse pointer.
 func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 	for _, dir := range []string{"ltr", "rtl"} {

@@ -22,17 +22,19 @@ import (
 const kebabA = `<details rst-row-menu name="rst-menus" id="menu-a"><summary id="kebab-a" aria-label="Actions for Grace Hopper">⋮</summary>` +
 	`<div rst-row-menu-panel id="panel-a"><a href="/go/a-view">View</a><a href="/go/a-edit">Edit</a><a href="/go/a-copy">Duplicate</a><a href="/go/a-move">Move</a><hr><a class="rst-danger" href="/go/a-delete">Delete…</a></div></details>`
 
-// rowsFixture is every row idiom of spec §2.2 that has a primary link
-// (the list grid's status-pill row among them, §10.2), a row with none
-// in each of the two idioms, and a row holding the three controls that
-// position themselves (a switch, a date field, an enhanced select) with
-// the same three outside any row to compare against. The three sit in
-// one stacked cell of the same width in and out of the row: below 800px
-// the list grid becomes three columns whatever --rst-cols says
-// (tokens.css's narrow list-grid rule), and a fourth child would land a
-// date field in the 44px kebab column under its own picker. The
-// lifting rule reaches controls at any depth in a row, so a wrapper cell
-// is the honest test of it.
+// rowsFixture is every row idiom of §2.2 of the mobile ergonomics
+// design spec
+// (docs/superpowers/specs/2026-09-30-mobile-ergonomics-design.md) that
+// has a primary link (the list grid's status-pill row among them,
+// §10.2), a row with none in each of the two idioms, and a row holding
+// the three controls that position themselves (a switch, a date field,
+// an enhanced select) with the same three outside any row to compare
+// against. The three sit in one stacked cell of the same width in and
+// out of the row: below 800px the list grid becomes three columns
+// whatever --rst-cols says (tokens.css's narrow list-grid rule), and a
+// fourth child would land a date field in the 44px kebab column under
+// its own picker. The lifting rule reaches controls at any depth in a
+// row, so a wrapper cell is the honest test of it.
 func rowsFixture(t *testing.T) string {
 	t.Helper()
 	var opts []any
@@ -303,7 +305,7 @@ func TestAnOpenRowMenuStaysAboveTheRowsBelowIt(t *testing.T) {
 
 // TestControlsInARowKeepTheirOwnBoxes: the lifting rule is wholly inside
 // :where(), so it gives a static control a position and never replaces
-// one a component chose (review round 2, finding 4). A switch's input
+// one a component chose. A switch's input
 // stays over its track, the date field's pick button inside its field,
 // select.js's native select out of flow, each the same size in a row as
 // outside one. And each is OPERATED, at 1280 with a mouse and at 390

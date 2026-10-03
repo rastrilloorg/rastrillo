@@ -15,17 +15,18 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 )
 
-// TestTheDemoRequestsRowsAreClickableEdgeToEdge is spec §10.2's demo
-// leg. The Requests list is a list grid with a status pill in every
-// row, written with no markup of its own for the whole-row rule, so it
-// is the check that the rule reaches a real screen from tokens.css
-// alone. At 1280 with a mouse and 390 with a coarse pointer, a click at
-// the row's far edge opens the request; at 1280, where the status and
-// updated columns are shown, so does a click on the pill and on the
-// time. The destination is read off the request page's own section
-// being in the document, which only the click can produce, never off
-// the address alone. The list and the request are pages of their own,
-// so each click is followed by a load of the list again.
+// TestTheDemoRequestsRowsAreClickableEdgeToEdge is the whole-row
+// target's demo leg. The Requests list is a list grid with a status
+// pill in every row, written with no markup of its own for the
+// whole-row rule, so it is the check that the rule reaches a real
+// screen from tokens.css alone. At 1280 with a mouse and 390 with a
+// coarse pointer, a click at the row's far edge opens the request; at
+// 1280, where the status and updated columns are shown, so does a click
+// on the pill and on the time. The destination is read off the request
+// page's own section being in the document, which only the click can
+// produce, never off the address alone. The list and the request are
+// pages of their own, so each click is followed by a load of the list
+// again.
 func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 	for _, leg := range []struct {
 		name   string

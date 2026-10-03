@@ -28,21 +28,21 @@ const sizingExtras = `<style>.sizing-small { font-size: var(--rst-fs-xs); }</sty
 <div rst-field><label rst-field-label for="sizing-bare">Bare</label><input type="text" id="sizing-bare" name="sizing_bare" data-sizing-not-an-idiom></div>
 <div rst-field><label rst-field-label for="sizing-primary">Title</label><input rst-input="primary" type="text" id="sizing-primary" name="sizing_primary"></div>
 <p data-extra="buttons"><button rst-btn="sm" type="button" id="sizing-btn-sm">Small</button> <button rst-btn type="button" id="sizing-btn">Default</button> <button rst-btn="lg" type="button" id="sizing-btn-lg">Large</button></p>
-<div rst-shell-sidebar data-extra="legacy-drawer"><details rst-shell-chrome><summary>Menu</summary></details><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-one">Legacy one</a><a href="#legacy-two">Legacy two</a></nav></aside><main rst-shell-main><p>The pre-H sidebar, which tokens.css keeps working for old layouts.</p></main></div>
+<div rst-shell-sidebar data-extra="legacy-drawer"><details rst-shell-chrome><summary>Menu</summary></details><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-one">Legacy one</a><a href="#legacy-two">Legacy two</a></nav></aside><main rst-shell-main><p>The legacy sidebar, which tokens.css keeps working for old layouts.</p></main></div>
 </div>`
 
 // sizingFixture is one page body with every partial (each with its own
 // test data, the set TestRenderEverythingSmoke renders), every
 // styleguide sample except the modal, and the extras above. The modal
 // is its own page: its overlay is fixed over the whole viewport and
-// would occlude every hit test on this one (spec §10.1: overlays are
-// measured in their own states, one at a time).
+// would occlude every hit test on this one, so overlays are measured
+// in their own states, one at a time.
 func sizingFixture(t *testing.T) string {
 	t.Helper()
 	var b strings.Builder
 	b.WriteString(sizingExtras)
 	// An enhanced select: select.js arms a field past ten options, and
-	// the combobox options it draws are a row of §1.4's table.
+	// the combobox options it draws are a row of tapInventory.
 	var options []any
 	for i := 1; i <= 12; i++ {
 		options = append(options, map[string]any{"Value": fmt.Sprint(i), "Label": fmt.Sprintf("Option %d", i)})

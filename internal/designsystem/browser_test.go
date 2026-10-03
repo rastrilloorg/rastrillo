@@ -1363,12 +1363,12 @@ const minShownSample = 32.0
 
 // kMin is the least the frame may be scaled to, and it mirrors
 // --ds-kmin in gallery.css. 12.5px is the type that dominates most
-// pages of this gallery (--rst-fs-sm) and 12.5 × 0.72 = 9.0px, which
-// is about where rendered text stops being read and starts being
-// texture. Everything else follows from it, including stageThreshold.
-// Rechecked for H: the Mobile tab is a 390px frame, inside the touch
-// query, where --rst-fs-sm is 14px and 14 × 0.72 is 10.1px, so the floor
-// only gets more legible there and the value stands.
+// pages of this gallery (--rst-fs-sm) and 12.5 × 0.72 = 9.0px, which is
+// about where rendered text stops being read and starts being texture.
+// Everything else follows from it, including stageThreshold. Rechecked
+// for phones: the Mobile tab is a 390px frame, inside the touch query,
+// where --rst-fs-sm is 14px and 14 × 0.72 is 10.1px, so the floor only
+// gets more legible there and the value stands.
 const kMin = 0.72
 
 // scrollbarGutter is what a classic scrollbar takes out of a box's

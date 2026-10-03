@@ -104,9 +104,9 @@ func TestIsBaseKey(t *testing.T) {
 // checked as a set rather than left to TestBaseCatalogsShareOneKeySet
 // because two of them carry {name}, and a translation that drops or
 // doubles the placeholder renders "Back to" with nothing after it on a
-// screen reader, which no visual check catches. The em-dash rule is the
-// operator's for all new copy; it is asserted here because a translator
-// reaching for one is the likeliest way it comes back.
+// screen reader, which no visual check catches. New copy carries no em
+// dashes; that is asserted here because a translator reaching for one
+// is the likeliest way it comes back.
 func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 	keys := map[string]int{ // key -> how many {name} it must carry
 		"rastrillo.ui.shell_up_label": 0,

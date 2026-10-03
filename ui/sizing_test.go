@@ -6,9 +6,11 @@ import (
 	"testing"
 )
 
-// touchQuery is the one media query every touch-only rule sits in (spec
-// §1.1). Written once so a typo in one floor cannot quietly scope it to
-// a query nothing matches.
+// touchQuery is the one media query every touch-only rule sits in (§1.1
+// of the mobile ergonomics design spec,
+// docs/superpowers/specs/2026-09-30-mobile-ergonomics-design.md).
+// Written once so a typo in one floor cannot quietly scope it to a
+// query nothing matches.
 const touchQuery = "@media (pointer: coarse), (max-width: 40rem) {"
 
 // zoomFloorRule finds a floor: the touch query holding exactly one rule
@@ -24,11 +26,11 @@ const bareZoomFloor = ":where(input:not([type=checkbox]):not([type=radio]):not([
 // TestTheZoomFloorsSitWhereTheyCannotBeResetOrWin is §1.3's position
 // gate. Each component floor must come DIRECTLY after the rule that
 // resets its font (`font: inherit` resets font-size, so a floor before
-// it is switched off — round 1's textarea finding) and, for the input,
-// before the rule that makes the primary field big (at equal weight the
-// later rule wins, and max(1rem, 1em) would pull the 19px field down to
-// 16px — the 1em trap this rewrite exists to remove). Moving any floor
-// one rule up or down fails here.
+// it is switched off) and, for the input, before the rule that makes
+// the primary field big (at equal weight the later rule wins, and
+// max(1rem, 1em) would pull the 19px field down to 16px — the 1em trap
+// this rewrite exists to remove). Moving any floor one rule up or down
+// fails here.
 func TestTheZoomFloorsSitWhereTheyCannotBeResetOrWin(t *testing.T) {
 	css := stripCSSComments(string(TokensCSS()))
 	floors := map[string][2]int{}

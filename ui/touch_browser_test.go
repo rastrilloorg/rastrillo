@@ -65,8 +65,9 @@ func sizingRig(t *testing.T, coarse bool, pages map[string]string, opts ...harne
 	return harness.New(t, func(string) http.Handler { return sizingMux(t, pages) }, opts...)
 }
 
-// requirePointer is §10's control: a touch leg that is really running
-// on a fine pointer would pass on desktop sizes, so it fails first.
+// requirePointer is every touch leg's control: a touch leg that is
+// really running on a fine pointer would pass on desktop sizes, so it
+// fails first.
 func requirePointer(t *testing.T, ctx context.Context, coarse bool) {
 	t.Helper()
 	var got bool

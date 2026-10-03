@@ -55,9 +55,11 @@ func readType(t *testing.T, ctx context.Context, url string, w, h int64) (typeRe
 	return tr, fonts, primary
 }
 
-// TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens is §10.1's type
-// half: at 390 with touch, at 1024 with touch (the pointer half of the
-// query alone) and at 600 with a mouse (the width half alone), the four
+// TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens is the type
+// half of §10.1 of the mobile ergonomics design spec
+// (docs/superpowers/specs/2026-09-30-mobile-ergonomics-design.md): at
+// 390 with touch, at 1024 with touch (the pointer half of the query
+// alone) and at 600 with a mouse (the width half alone), the four
 // tokens are one step up, every text-entry control is at least 16px —
 // including the ones in a bulk bar and a menu panel — and the primary
 // field is exactly --rst-fs-lg, 19px (the 1em bug gave 16).
@@ -104,9 +106,9 @@ func TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens(t *testing.T) {
 
 // TestDesktopDensityIsPinned is §10.1's 1280×900 mouse leg: every value
 // below is today's, measured, and any change fails, except the
-// deliberate desktop changes the operator approved (spec §1.5), pinned
-// at their new values: the row checkbox's 24×24 label here, and the
-// whole-row target from Task 5.
+// deliberate desktop changes (§1.5), pinned at their new values: the
+// row checkbox's 24×24 label here, and the whole-row target, which
+// TestTheWholeRowIsTheTarget holds.
 func TestDesktopDensityIsPinned(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("sizing", sizingFixture(t))})
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
@@ -144,8 +146,9 @@ func TestDesktopDensityIsPinned(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &d); err != nil {
 		t.Fatal(err)
 	}
-	// Measured before H: 27.69, 33.88 and 43.97 (the "about 28/34/44"
-	// of tokens.css's header), a 26×26 kebab, a 16px checkbox.
+	// Measured before the touch rules existed: 27.69, 33.88 and 43.97
+	// (the "about 28/34/44" of tokens.css's header), a 26×26 kebab, a
+	// 16px checkbox.
 	if math.Round(d.Sm) != 28 || math.Round(d.Md) != 34 || math.Round(d.Lg) != 44 {
 		t.Errorf("desktop button heights %v/%v/%v, want 28/34/44", d.Sm, d.Md, d.Lg)
 	}
@@ -174,16 +177,15 @@ type targetReading struct {
 // a checkbox or radio is measured as its label, a stretched link (an
 // absolutely positioned ::after with content) as its positioned
 // ancestor, the row. Each area is scrolled into view (scrollIntoView
-// scrolls every scrolling ancestor, a rail or a menu panel included) and
-// measured again after the scroll, and the point tested is the centre of
-// the part inside the viewport. elementFromPoint there must return the
-// control or a descendant of it (a switch's track, a summary's icon), or
-// for a labelled input its label: anything else is an occlusion failure,
-// never a skip
-// (review round 2, finding 11). Only a control that is not rendered at
-// all is skipped. An element marked data-sizing-not-an-idiom is an
-// app's own control on the fixture for the font test and is not an
-// idiom this floor covers.
+// scrolls every scrolling ancestor, a rail or a menu panel included)
+// and measured again after the scroll, and the point tested is the
+// centre of the part inside the viewport. elementFromPoint there must
+// return the control or a descendant of it (a switch's track, a
+// summary's icon), or for a labelled input its label: anything else is
+// an occlusion failure, never a skip. Only a control that is not
+// rendered at all is skipped. An element marked
+// data-sizing-not-an-idiom is an app's own control on the fixture for
+// the font test and is not an idiom this floor covers.
 const measureFn = `function measure(root, skip) {
   const CONTROLS = 'a[href], button, summary, input:not([type=hidden]), select, textarea, [rst-cal-day], [role="option"]';
   const describe = el => el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") +
@@ -243,9 +245,9 @@ const targetsJS = `(() => { ` + measureFn + `; return JSON.stringify(measure(doc
 // overlayJS opens the i-th <details> on the page (and every <details>
 // around it), measures what it revealed — its own summary was measured
 // closed — and closes everything again, so one open overlay never
-// counts as occluding the next (review round 3, finding 2). It is a
-// function the caller applies to i, not a Sprintf format: measureFn
-// holds "inset(50%)", which a format would mangle into a script error.
+// counts as occluding the next. It is a function the caller applies to
+// i, not a Sprintf format: measureFn holds "inset(50%)", which a format
+// would mangle into a script error.
 const overlayJS = `(async (i) => { ` + measureFn + `;
   const all = document.querySelectorAll("details");
   if (i >= all.length) return JSON.stringify({Done: true});
@@ -588,10 +590,10 @@ func inViewport(c calReading) bool {
 // landscape phone and scrolling itself at 640×320, with every day and
 // both month buttons reachable; with classic scrollbars at 600×320 and
 // 390×320, mouse and touch, still scrolling, days still 44 wide, the
-// grid exactly seven taps (round 4: the gutter widens the panel, never
-// narrows a day); at 320 the approved exception (days ≥24 wide, 44
-// tall, no overflow); and with the field at the inline end of a field
-// row, still inside the viewport.
+// grid exactly seven taps (the gutter widens the panel, never narrows a
+// day); at 320 the deliberate exception (days ≥24 wide, 44 tall, no
+// overflow); and with the field at the inline end of a field row, still
+// inside the viewport.
 func TestTheCalendarDocksAndItsDaysAreTaps(t *testing.T) {
 	field := render(t, "field-date", map[string]any{"Name": "due", "Label": "Due", "Value": "2026-08-28"})
 	pages := map[string]string{
@@ -634,8 +636,8 @@ func TestTheCalendarDocksAndItsDaysAreTaps(t *testing.T) {
 	}
 
 	c = openCalendar(t, ctx, touch.Origin+"/", 320, 640)
-	// 40, not 24: 24 is WCAG 2.5.8's floor, but the exception the
-	// operator approved is the geometry of a clamped panel, about 41px
+	// 40, not 24: 24 is WCAG 2.5.8's floor, but the deliberate
+	// exception is the geometry of a clamped panel, about 41px
 	// days, and a regression to anything narrower is a change to it.
 	// That is a phone's geometry, whose overlay scrollbar takes no
 	// width. Headless Chromium hides scrollbars without making them
@@ -651,8 +653,8 @@ func TestTheCalendarDocksAndItsDaysAreTaps(t *testing.T) {
 		t.Errorf("390 touch, field at the row's end: the calendar is at %.0f..%.0f in %.0f", c.Left, c.Right, c.VW)
 	}
 
-	// Classic scrollbars, which the harness hides by default: the leg
-	// round 4 found, where the gutter came out of the days.
+	// Classic scrollbars, which the harness hides by default: the case
+	// where the gutter once came out of the days.
 	for _, coarse := range []bool{false, true} {
 		rig := sizingRig(t, coarse, pages, harness.WithScrollbars())
 		sctx, scancel := context.WithTimeout(rig.Context(), 90*time.Second)
