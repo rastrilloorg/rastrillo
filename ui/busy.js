@@ -13,7 +13,10 @@
    HOLD_MS: a response faster than that is held back until then, so a
    quick save reads as a deliberate beat rather than a flicker. Going
    Back to the page hands every busy form back, and a submit still being
-   held when the page is left is dropped rather than sent later.
+   held when the page is left is dropped rather than sent later. Left
+   means a navigation has started, not that it has finished. A form
+   pow.js protects is pow's to hold: this file arms only pow's re-send
+   and never holds it.
 
    Vocabulary:
      data-busy="false"     on a <form> or on one submit button: opt OUT
@@ -88,6 +91,13 @@
   function busySubmit(e) {
     var form = e.target;
     if (!form || form.tagName !== "FORM") return;
+    // pow.js owns every submit of a form it protects: it cancels it,
+    // shows its own busy state (this file's vocabulary) while it waits,
+    // and re-sends it marked data-pow-released. Arming here before that
+    // would hand the form back a tick later and wipe pow's feedback, and
+    // a guard armed here would refuse pow's re-send. Arm on the re-send
+    // only.
+    if (form.hasAttribute("data-pow-form") && !form.hasAttribute("data-pow-released")) return;
     if (form.getAttribute("data-busy") === "false") return;
     // The button the browser submitted with: the one clicked, or — for
     // Enter in a field — the default one it implicitly clicked. Only
@@ -174,6 +184,12 @@
     var form = e.target;
     if (!form || form.tagName !== "FORM") return;
     if (form === releasing) { releasing = null; return; }
+    // Never hold a pow form: pow has already held it while it solved,
+    // and a second hold is a second wait for nothing. Worse, holding it
+    // here and re-sending later would send it back through pow, which
+    // would hold it again with busy.js's guard still armed, and the form
+    // could never submit.
+    if (form.hasAttribute("data-pow-form")) return;
     if (e.defaultPrevented || form.getAttribute("aria-busy") !== "true") return;
     // Only a submit with a spinner to show is held: the hold is for the
     // spinner. A script's requestSubmit() with no submitter, or a button
@@ -184,6 +200,13 @@
     e.preventDefault();
     held.add(e);
     pending.set(form, setTimeout(function () { release(form, btn); }, HOLD_MS));
+    // pagehide fires only once a navigation commits, and a slow
+    // destination leaves the hold running until then: a held submit
+    // released meanwhile replaces the navigation the visitor chose.
+    // beforeunload fires as the navigation starts. Attached only while
+    // something is held, so it keeps no page out of the back-forward
+    // cache.
+    if (pending.size === 1) window.addEventListener("beforeunload", dropHeld);
   });
 
   // Send the held submit. The submitter goes with it, so its name and
@@ -195,6 +218,7 @@
   // must be handed back with its errors showing, not left spinning.
   function release(form, btn) {
     pending.delete(form);
+    if (pending.size === 0) window.removeEventListener("beforeunload", dropHeld);
     if (!form.isConnected) return;
     var skip = form.hasAttribute("novalidate") ||
       (btn && btn.hasAttribute("formnovalidate"));
@@ -234,13 +258,23 @@
     }
   }
 
+  // A navigation started while a submit was held: drop every held
+  // submit and hand the forms back, so a navigation that is then
+  // cancelled (a download, a beforeunload prompt) leaves no form
+  // spinning.
+  function dropHeld() {
+    pending.forEach(function (timer, form) {
+      clearTimeout(timer);
+      busyOff(form);
+    });
+    pending.clear();
+    window.removeEventListener("beforeunload", dropHeld);
+  }
+
   // Leaving the page — a link, Back — while a submit is held drops it:
   // the visitor has gone somewhere else, and a timer surviving into the
   // back/forward cache would otherwise send it on their return.
-  window.addEventListener("pagehide", function () {
-    pending.forEach(function (timer) { clearTimeout(timer); });
-    pending.clear();
-  });
+  window.addEventListener("pagehide", function () { dropHeld(); });
 
   // The back/forward cache restores a page's DOM exactly as it was left
   // — busy buttons still disabled, still wearing the busy label and the

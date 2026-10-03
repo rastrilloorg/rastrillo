@@ -735,3 +735,62 @@ func TestBrowserEnterBeforeReadyPostsNothing(t *testing.T) {
 		t.Fatal("the status line is not showing while the form is not ready")
 	}
 }
+
+func TestBrowserBusyDoesNotHoldAPowRelease(t *testing.T) {
+	// The visitor already watched pow's hold; busy.js adding its own
+	// 650ms after it is a second wait for nothing.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.MinAge = time.Second },
+		page: powPage(false, false, `<script defer src="/busy.js"></script>`),
+	})
+	fr.waitReady(t)
+	clicked := time.Now()
+	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	if res := fr.result(t); res != "ok" {
+		t.Fatalf("with busy.js loaded = %s", res)
+	}
+	if n := fr.posts.Load(); n != 1 {
+		t.Fatalf("%d POSTs, want 1", n)
+	}
+	if d := time.UnixMilli(fr.postedAt.Load()).Sub(clicked); d > 1500*time.Millisecond {
+		t.Fatalf("POST %v after the click: busy.js held a submit pow had already held", d)
+	}
+}
+
+func TestBrowserBusyAndPowShareTheButton(t *testing.T) {
+	// During pow's hold the button stays busy (busy.js must not hand it
+	// back a tick later), and a binding changed mid-hold still submits:
+	// the deadlock this guards against left the form busy and the button
+	// disabled for good.
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(c *pow.Config) { c.Bind = true; c.MinAge = 1500 * time.Millisecond },
+		page: powPage(true, false, `<script defer src="/busy.js"></script>`),
+	})
+	fr.waitReady(t)
+	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	time.Sleep(500 * time.Millisecond)
+	var busy string
+	fr.Run(chromedp.Evaluate(`document.getElementById("go").getAttribute("aria-busy") || ""`, &busy))
+	if busy != "true" {
+		t.Fatalf("aria-busy during pow's hold = %q, want true", busy)
+	}
+	fr.Run(chromedp.Evaluate(`document.getElementById("email").value = "b@example.com"`, nil))
+	if res := fr.result(t); res != "ok" {
+		t.Fatalf("binding changed during the hold, with busy.js loaded = %s", res)
+	}
+}
+
+func TestBrowserBusyHoldIsCancelledByNavigation(t *testing.T) {
+	// busy.js on its own had the same race: its 650ms hold cancelled only
+	// on pagehide, which fires after a slow destination commits.
+	fr := newFormRig(t, rigOpts{page: func(*formRig) string {
+		return `<!doctype html><title>busy</title><form method=post action=/submit>` +
+			`<button id=go type=submit>Send</button></form><a id=slow href=/slow>elsewhere</a>` +
+			`<script defer src="/busy.js"></script>`
+	}})
+	fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#slow`, chromedp.ByQuery))
+	time.Sleep(3500 * time.Millisecond)
+	if n := fr.posts.Load(); n != 0 {
+		t.Fatalf("%d POSTs after navigating away during busy.js's hold, want 0", n)
+	}
+}
