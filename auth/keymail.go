@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,13 +28,17 @@ const (
 )
 
 // keymailServers parses Config.KeymailServers into a set of
-// serverKeys; nil means any delegated server. An entry that could never
-// equal a URL's host — a scheme, a path, userinfo, a port that is not a
-// port, an unclosed IPv6 bracket, a control character — is refused
-// here, because accepted it would match nothing and every keymail user
-// would quietly be sent a link instead.
+// serverKeys; nil means any delegated server, and a non-nil empty slice
+// means none. The empty case must come back as a non-nil empty map, not
+// nil: New and continuation.go both test the set against nil, so
+// collapsing it would read as "any server" and leave an app with no
+// federation partners no way to turn probing off. An entry that
+// could never equal a URL's host — a scheme, a path, userinfo, a port
+// that is not a port, an unclosed IPv6 bracket, a control character —
+// is refused here, because accepted it would match nothing and every
+// keymail user would quietly be sent a link instead.
 func keymailServers(list []string) (map[string]bool, error) {
-	if len(list) == 0 {
+	if list == nil {
 		return nil, nil
 	}
 	set := make(map[string]bool, len(list))
@@ -44,6 +50,24 @@ func keymailServers(list []string) (map[string]bool, error) {
 		set[serverKey(h)] = true
 	}
 	return set, nil
+}
+
+// errNeverDelegates is a plain, non-"not found" error: classify.go's
+// delegate() treats "not found" (NXDOMAIN) as an answer — no
+// delegation, the domain itself is the candidate — and proceeds to
+// probe it. Any other resolver error "names nothing", and delegate()
+// gives up without a candidate. neverDelegates wants the second
+// reading: with KeymailServers: []string{} there is no candidate worth
+// naming, because every candidate is refused.
+var errNeverDelegates = errors.New("rastrillo/auth: KeymailServers is empty — no server is ever delegated to")
+
+// neverDelegates is the LookupTXT New installs when KeymailServers is
+// a non-nil empty slice. It never touches the network: every domain's
+// _keymail delegation "fails" the same way, which skips the
+// well-known probe that would otherwise follow a real DNS answer,
+// before the guard would refuse it anyway.
+func neverDelegates(context.Context, string) ([]string, error) {
+	return nil, errNeverDelegates
 }
 
 // serverKey is the one spelling of a keymail server that the list and

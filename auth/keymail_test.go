@@ -113,6 +113,67 @@ func TestWithoutKeymailServersBothClientsAreToday(t *testing.T) {
 	}
 }
 
+// A non-nil empty list is not "unset": it means no server is ever
+// dialed, for any address, which is how an app with no real keymail
+// federation partners says so. Before this fix keymailServers read
+// len(list) == 0 rather than list == nil, so KeymailServers: []string{}
+// silently fell back to the default "any delegated server" behavior —
+// continuation.go's own predicate ("a.servers == nil") already knew
+// the difference; only the parser did not.
+func TestEmptyKeymailServersMeansNone(t *testing.T) {
+	a, m := newTestAuth(t, func(c *Config) { c.KeymailServers = []string{} })
+	if a.guard == nil {
+		t.Fatal("KeymailServers: []string{} must still install the guard — a non-nil empty list means \"no servers\", not \"unset\"")
+	}
+	f := kayFake()
+	wireKeymail(a, f)
+	res := beginKeymail(a, newBrowser(), "kay@example.org")
+	if loc := res.Header.Get("Location"); loc != "/signin?sent=1" {
+		t.Fatalf("a claimed address with KeymailServers: []string{} → %q, want a magic link", loc)
+	}
+	if n := f.hits("keymail.test", ""); n != 0 {
+		t.Fatalf("keymail.test received %d requests; with no servers listed, none may ever be contacted", n)
+	}
+	if m.sentTo() != "kay@example.org" {
+		t.Fatalf("the link went to %q", m.sentTo())
+	}
+}
+
+// wireKeymail always overwrites Classifier.LookupTXT with the fake's
+// own, so TestEmptyKeymailServersMeansNone never exercises New's own
+// short-circuit; it only proves the guard refuses the HTTP probe a
+// delegation names. This test keeps New's lookup and takes the guard
+// away instead, putting the fake straight under the classifier: the
+// guard refuses a probe before its transport sees it, so behind the
+// guard a lookup that answered "not found" (which upstream reads as
+// "probe the domain itself") would look exactly like one that names
+// nothing. Without the guard, any probe the classifier builds lands
+// on the fake and is counted.
+func TestEmptyKeymailServersNeverProbes(t *testing.T) {
+	a, m := newTestAuth(t, func(c *Config) { c.KeymailServers = []string{} })
+	// Checked first so a missing short-circuit fails here rather than
+	// sending the test out to the real resolver.
+	if a.flow.Classifier.LookupTXT == nil {
+		t.Fatal("KeymailServers: []string{} left LookupTXT at its default (net.DefaultResolver), so every sign-in still pays a real DNS round trip whose answer can never matter")
+	}
+	f := kayFake()
+	f.servers["example.org"] = true
+	a.flow.Classifier.HTTP = &http.Client{Transport: f}
+	res := beginKeymail(a, newBrowser(), "kay@example.org")
+	if loc := res.Header.Get("Location"); loc != "/signin?sent=1" {
+		t.Fatalf("a claimed address with KeymailServers: []string{} → %q, want a magic link", loc)
+	}
+	f.mu.Lock()
+	seen := f.seen
+	f.mu.Unlock()
+	if len(seen) != 0 {
+		t.Fatalf("the classifier built %d probes (%v); with no servers listed it must not build one", len(seen), seen)
+	}
+	if m.sentTo() != "kay@example.org" {
+		t.Fatalf("the link went to %q", m.sentTo())
+	}
+}
+
 func TestKeymailServersKeepBothTimeouts(t *testing.T) {
 	a, _ := newTestAuth(t, listed("keymail.test"))
 	if a.flow.Classifier.HTTP == nil || a.flow.Classifier.HTTP.Timeout != 5*time.Second {
