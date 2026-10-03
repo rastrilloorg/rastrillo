@@ -96,7 +96,7 @@ func TestBootFixtureRedirect(t *testing.T) {
 
 // runFixture runs this test binary as the named fixture's parent, bounded
 // so a broken kill path fails this test instead of hanging it.
-func runFixture(t *testing.T, name string, env ...string) (string, error, time.Duration) {
+func runFixture(t *testing.T, name string, env ...string) (string, time.Duration, error) {
 	t.Helper()
 	if testing.Short() || os.Getenv(budgetfile.BootChildEnv) != "" || os.Getenv(fixtureEnv) != "" {
 		t.Skip("spawns processes")
@@ -111,12 +111,12 @@ func runFixture(t *testing.T, name string, env ...string) (string, error, time.D
 	if ctx.Err() != nil {
 		t.Fatalf("fixture %s ran past 90s:\n%s", name, out)
 	}
-	return string(out), err, time.Since(start)
+	return string(out), time.Since(start), err
 }
 
 func TestBootMeasuresAFreshProcess(t *testing.T) {
 	t.Parallel()
-	out, err, _ := runFixture(t, "fresh", "CI=true")
+	out, _, err := runFixture(t, "fresh", "CI=true")
 	if err != nil || !strings.Contains(out, "cold boot: median") {
 		t.Fatalf("err=%v\n%s", err, out)
 	}
@@ -124,11 +124,11 @@ func TestBootMeasuresAFreshProcess(t *testing.T) {
 
 func TestBootCountsPackageInit(t *testing.T) {
 	t.Parallel()
-	out, err, _ := runFixture(t, "slow-init", "CI=true")
+	out, _, err := runFixture(t, "slow-init", "CI=true")
 	if err == nil || !strings.Contains(out, "over budget") {
 		t.Fatalf("a 600ms init passed a 500ms cold budget under CI: err=%v\n%s", err, out)
 	}
-	out, err, _ = runFixture(t, "slow-init")
+	out, _, err = runFixture(t, "slow-init")
 	if err != nil || !strings.Contains(out, "reported only") {
 		t.Fatalf("without CI a slow start must only report: err=%v\n%s", err, out)
 	}
@@ -140,7 +140,7 @@ const hungSleep = "617"
 
 func TestBootKillsAHungChildAndItsDescendants(t *testing.T) {
 	t.Parallel()
-	out, err, took := runFixture(t, "hung")
+	out, took, err := runFixture(t, "hung")
 	if err == nil || !strings.Contains(out, "killed after 10s") {
 		t.Fatalf("err=%v\n%s", err, out)
 	}
@@ -159,7 +159,7 @@ func TestBootKillsAHungChildAndItsDescendants(t *testing.T) {
 
 func TestBootJudgesTheFirstResponseNotARedirect(t *testing.T) {
 	t.Parallel()
-	out, err, _ := runFixture(t, "redirect")
+	out, _, err := runFixture(t, "redirect")
 	if err == nil || !strings.Contains(out, "after its first byte") || !strings.Contains(out, "303") {
 		t.Fatalf("err=%v\n%s", err, out)
 	}

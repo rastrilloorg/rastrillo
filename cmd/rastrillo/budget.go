@@ -17,7 +17,7 @@ import (
 
 func runBudget(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: rastrillo budget <size|test> ...")
+		return errors.New("usage: rastrillo budget size [dir], or rastrillo budget test [go test args]")
 	}
 	switch args[0] {
 	case "size":
