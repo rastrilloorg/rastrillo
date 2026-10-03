@@ -378,13 +378,12 @@ func TestTheIndexRowsRoundEachRunOfLinks(t *testing.T) {
 }
 
 // TestTheConsoleIndexRailFillsTheScreen: the console's phone index is
-// the bar, then the rail, then the foot below it. The bar and the rail
-// share the window between them: a rail a whole window tall under the
-// bar made every index scroll by the bar's height, however short its
-// nav. With a short nav the two fill the window exactly, the foot
-// follows the rail, and the document ends at the foot; with no foot
-// nothing scrolls at all; with a long nav the rail grows, the page
-// scrolls, and every row can still be reached and hit.
+// the bar, then the rail, then the foot. The three share the window: a
+// rail a whole window tall under the bar made every index scroll by the
+// bar's and the foot's height, however short its nav. With a short nav
+// they fill the window exactly and nothing scrolls, with a foot or
+// without one; with a long nav the rail grows, the page scrolls, and
+// every row can still be reached and hit.
 func TestTheConsoleIndexRailFillsTheScreen(t *testing.T) {
 	src, _ := Layout("console")
 	short := `<a id="nav-invoices" href="/invoices">Invoices</a><a id="nav-orders" href="/orders">Orders</a>`
@@ -424,11 +423,11 @@ func TestTheConsoleIndexRailFillsTheScreen(t *testing.T) {
 	if g.NavBottom > g.VH/2 || !g.FootShown {
 		t.Fatalf("/short: the nav ends at %.0f of %.0f, foot shown %v; the short-nav-with-a-foot case this leg is for has not arisen", g.NavBottom, g.VH, g.FootShown)
 	}
-	if !near(g.BarTop, 0) || !near(g.RailTop, g.BarTop+g.BarH) || !near(g.BarH+g.RailH, g.VH) {
-		t.Errorf("/short: the bar is %.0fpx at %.0f and the rail %.0fpx at %.0f in a %.0fpx window; together they fill the window exactly", g.BarH, g.BarTop, g.RailH, g.RailTop, g.VH)
+	if !near(g.BarTop, 0) || !near(g.RailTop, g.BarTop+g.BarH) || !near(g.FootTop, g.RailBottom) || !near(g.FootBottom, g.VH) {
+		t.Errorf("/short: the bar is %.0fpx at %.0f, the rail %.0fpx at %.0f and the foot %.0f to %.0f in a %.0fpx window; together they fill the window exactly", g.BarH, g.BarTop, g.RailH, g.RailTop, g.FootTop, g.FootBottom, g.VH)
 	}
-	if !near(g.FootTop, g.RailBottom) || !near(g.DocH, g.FootBottom) {
-		t.Errorf("/short: the rail ends at %.0f, the foot spans %.0f to %.0f and the document is %.0fpx; the foot follows the rail and the document ends with it", g.RailBottom, g.FootTop, g.FootBottom, g.DocH)
+	if !near(g.DocH, g.VH) {
+		t.Errorf("/short: the document is %.0fpx in a %.0fpx window; a short index does not scroll", g.DocH, g.VH)
 	}
 
 	g = read("/nofoot")

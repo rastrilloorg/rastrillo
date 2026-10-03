@@ -925,18 +925,6 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	}
 }
 
-// overShoot is the frames whose document is taller than any frame by
-// design, and by how much more than the sidebar's 48px. The console's
-// phone index is the bar and the rail sharing the window, then the foot
-// below them: its document is always the window plus the foot (53px
-// measured in day/en, 1028px in a 975px frame), so, as with the
-// sidebar, raising the box raises the requirement by the same amount.
-// 10 is those 5px past 48 with room for a type family whose small line
-// is a few pixels taller.
-var overShoot = map[string]int{
-	"shells Mobile shell-console": 10,
-}
-
 // The heights in previewHeights are measurements, and this is where
 // they were measured. Every frame on the page is asked what its
 // document actually needs and held to the box the renderer gave it: a
@@ -1093,9 +1081,10 @@ func measured(t *testing.T, tab, raw string) int {
 		// whatever window it is in plus the margin under its content.
 		// No frame height can fit it, and chasing one is a loop —
 		// raising the box raises the requirement by the same amount.
-		// Everything else fits with room to spare, except the one frame
-		// in overShoot below.
-		if need > box+48+overShoot[name] {
+		// Everything else fits with room to spare: the console's phone
+		// index shares the window between bar, rail and foot, so it fits
+		// its frame like any other.
+		if need > box+48 {
 			t.Errorf("%s: its document needs %dpx and its frame is %dpx; raise previewHeights[%q] to at least %d", name, need, box, name, need+20)
 		}
 		if box > need*4 && box-need > 120 {
