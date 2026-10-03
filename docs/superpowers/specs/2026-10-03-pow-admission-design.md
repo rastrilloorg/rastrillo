@@ -1,7 +1,7 @@
 # pow grows up: admission that commits with the write, and sign-in behind it by default
 
 Status: design approved in conversation 2026-10-03, section by section,
-with the operator's decisions marked **(Paul)**. Revised after three rounds
+with the operator's decisions marked **(Paul)**. Revised after four rounds
 of adversarial review by Astra (see "Review log"). Nothing is
 implemented.
 
@@ -119,7 +119,7 @@ const NoProof = -1
 ### The seal (v2)
 
 ```
-HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || u64(issuedMillis) || i32(difficulty) || u8(flags))
+HMAC(key, "pow/v2" || lp(scope) || lp(nonce) || u64(issuedMillis) || u64(expiresMillis) || i32(difficulty) || u8(flags))
 ```
 
 `lp` is a uvarint length followed by the bytes; integers are big-endian
@@ -142,6 +142,15 @@ identifier: one token, one string.
   issued late in a second already reads as over 500 ms old, and a script
   skips the minimum age for free (pow/challenge.go:85, 105; Tito uses
   milliseconds for this reason, T/internal/intake/token.go:53-57).
+- **Expiry is sealed, absolute.** `MaxAge` is read once, at issue, to
+  compute `expiresMillis`; verifying, spending and sweeping all use the
+  sealed value. A Guard accepting a token may shorten its life (refuse
+  one whose sealed expiry is beyond issue plus its own current
+  `MaxAge`) but never extend it. Otherwise a deploy that raises `MaxAge`
+  revives tokens already spent and swept under the shorter lifetime —
+  same nonce, a later computed expiry, and the insert's predicate passes
+  (Astra, round 4, reproduced). The same rule makes `Verify` across
+  Guards with different lifetimes well defined.
 - **Flags:** bit 0 is "trap omitted" (§ "Recovery"); bit 1 is "bound".
   `Verify` refuses a bound token (below).
 - A scope mismatch, a bad nonce format, a v1 seal: all
@@ -275,8 +284,18 @@ should see first after an upgrade.
   before calling the executor, which a stalled request defeats (Astra,
   reproduced).
 - Zero rows is `ErrSpent`, whether the token was spent by an identical
-  request or expired in the meantime. The handler refuses either way,
-  never 500s, and the visitor gets a recovery form. `Commit` does not
+  request or expired in the meantime. The handler refuses either way and
+  never 500s. **It does not offer a recovery form with the visitor's
+  answers preserved** unless resubmitting is harmless or guarded by the
+  business write's own idempotency: the likeliest cause is that the same
+  submission already succeeded, and a preserved-answer Continue would
+  create a second order or registration (Tito refuses recovery for a
+  spent token for this reason, T/internal/instance/intake_stepup.go:42).
+  The visitor is told the form may already have been sent and is offered
+  a fresh start. `Admit`'s own already-spent result (`ReasonSpent`)
+  follows the same rule. Sign-in is the harmless case: a second `Begin`
+  sends another link under the rate limit, so `auth` and `password`
+  recover from it like any refusal. `Commit` does not
   look further to tell the two apart: `Execer` cannot query, and a
   lookup through the store's own handle while the caller's transaction
   holds the only connection (serve.go:635; Tito's T/internal/instance/serve.go:1548)
@@ -491,6 +510,17 @@ ProofOff bool
   (`adm.Recovered()`), so recovery stays sticky across a mistyped
   address. `rec` is attacker-controllable and only selects a recovery
   form — the cost already stated under "Recovery".
+- **The magic-link fallback survives a refusal.** After a failed keymail
+  exchange the screen offers "send a link instead" with a hidden
+  `force=1`, rendered only while the problem is `keymail`
+  (auth/handlers.go:180; signin.html:65). A proof refusal replaces the
+  problem with `check`, so the recovered form would drop `force`,
+  `Begin` would classify the address back to keymail, and a visitor with
+  a failing provider and a trap-filling password manager would loop
+  without ever getting a link (Astra, round 4). So every refusal and
+  error redirect from `Begin` carries `force=1` when the post did, and
+  the partial renders the hidden input from `SigninState.Force` rather
+  than from the problem.
 - **`SigninState.Proof *pow.Form`,** filled whenever `Proof` is set,
   screen or no screen: `Recovery` when the query carries `rec=1`, `Form`
   otherwise.
@@ -613,6 +643,11 @@ plan owns the detail; these are the constraints this design must meet.
 
 `pow`:
 
+- a token spent and swept under a short `MaxAge` is refused after a
+  redeploy with a longer one; a Guard with a shorter `MaxAge` refuses a
+  longer-lived token;
+- `ErrSpent` / `ReasonSpent` never yields a preserved-answer recovery in
+  the Tito-shaped test handler;
 - seal: scopes containing NUL and length-like bytes do not
   collide; a non-hex or wrong-length nonce is refused before HMAC; a v1
   seal is refused; issue on both sides of a second boundary honours a
@@ -664,7 +699,9 @@ plan owns the detail; these are the constraints this design must meet.
 - each rendered sign-in state (keymail one-tap, link one-tap, ask,
   passkey + ask) carries the fields on its one `Begin` form and none on
   Forget; existing screen tests pass with Proof on; a recovered token
-  that then fails on the address keeps `rec=1`;
+  that then fails on the address keeps `rec=1`; keymail failure → send a
+  link instead → honeypot refusal → recovery → a link is sent (force
+  survives);
 - `password`: pages and re-renders are `no-store`; a wrong password
   re-renders with a fresh challenge, a recovery one if the post was a
   recovery; signup without a challenge creates no row.
@@ -765,3 +802,16 @@ accepted:
 32. Follow-on forms still held for the full minimum age (minor) →
     `data-pow-min-age` is the remaining age.
 33. Legacy recovery used `Form` (minor) → `Recovery`.
+
+**Astra, round 4 (2026-10-03): not ready.** 28-33 resolved. Three new
+majors, all accepted:
+
+34. Expiry computed from the accepting Guard's `MaxAge` lets a longer
+    `MaxAge` revive spent tokens → absolute expiry sealed at issue;
+    acceptance may shorten, never extend.
+35. Recovery after `ErrSpent` can duplicate a successful submission →
+    no preserved-answer recovery for spent or expired tokens except
+    where resubmission is harmless (sign-in).
+36. A proof refusal drops sign-in's `force=1` and can loop through a
+    failing keymail provider → `force` carried through refusals and
+    rendered from state, not from the problem.
