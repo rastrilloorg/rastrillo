@@ -36,9 +36,13 @@ and the scaffold is pointing them there.
   platform's `buildCarlos` runs `go build` at 41 call sites; amadan fixed
   the same shape with `sync.Once` plus `t.Parallel()` and took its root
   package from 26.85s to ~8.5s.
-- **Screen time has a budget in two apps and none in the framework.**
-  Seapointish and Tito Go both hold GET screens to 150ms warm and boot to
-  500ms cold (titogo `docs/superpowers/specs/2026-08-31-performance-budget-design.md`).
+- **Screen time is measured in production but never gated.** Rastrillo's
+  `perf` middleware already holds GET and HEAD to 150ms to first byte and
+  the first request after start to 500ms (`perf.DefaultBudget`,
+  `perf.DefaultColdBudget`), logging what is over. The scaffold does not
+  mount it, and nothing fails a branch that makes a screen slow.
+  Seapointish and Tito Go gate the same numbers in CI (titogo
+  `docs/superpowers/specs/2026-08-31-performance-budget-design.md`).
 
 The goal is a scaffolded app whose gate stays near a minute as it grows,
 because the budgets that keep it there are mechanical rather than
@@ -85,8 +89,8 @@ remembered.
 |---|---|---|---|
 | Directory size | 5,000 non-test / 8,000 test lines | Yes | `rastrillo budget size` |
 | Package test time | 10s per test binary's `m.Run` | Yes, in CI | measured by `budget.Main`, judged by `rastrillo budget test` |
-| Warm screen | 150ms time-to-first-byte, median of 8 | Yes | `budget.Screens`, perf lane |
-| Cold boot | 500ms, process start to first byte | Yes | `budget.Boot`, perf lane |
+| Warm screen | 150ms time-to-first-byte, median of 8 | Yes | `perftest.Screens`, perf lane |
+| Cold boot | 500ms, process start to first byte | Yes | `perftest.Boot`, perf lane |
 | Test step | 60s on the CI runner | **No**, reported | `rastrillo budget test` receipt |
 
 The test-step figure is reported, never gated: a wall-clock gate on a
@@ -113,7 +117,7 @@ fields are whitespace-separated and the reason is the rest of the line:
 ```
 size  <dir>               <src-lines>|-  <test-lines>|-  <reason>
 time  <dir>               <duration>                     <reason>
-perf  <METHOD> <screen>   <duration>|skip                <reason>
+perf  <screen>            <duration>|skip                <reason>
 boot                      <duration>                     <reason>
 ```
 
@@ -123,9 +127,10 @@ boot                      <duration>                     <reason>
   `path.Clean` would rewrite is refused rather than normalised, so one
   directory has exactly one spelling.
 - `<duration>` is a Go duration (`25s`, `1200ms`).
-- `<screen>` is a chi pattern exactly as `chi.Walk` reports it (`/notes/{id}`),
-  or the key of a screen declared inside an opaque group (§4), which uses
-  the same pattern syntax.
+- `<screen>` is two fields, a method and a path pattern, the name the
+  `perf` package gives a route in production: `GET /notes/{id}`. The
+  pattern is a chi pattern exactly as `chi.Walk` reports it, or the `Key`
+  of a screen declared inside an opaque group (§4).
 - In a `size` record, `-` means "the default" for that column. A stated
   column must exceed its default, and only stated columns are ratcheted,
   so a test-heavy directory with no source to speak of is expressible.
@@ -136,13 +141,13 @@ boot                      <duration>                     <reason>
 - **Stale records fail, each where the complete inventory lives.** `budget
   size` fails a `size` record whose directory no longer exists or holds no
   Go files. `rastrillo budget test` fails a `time` record naming no
-  package it saw, on a `./...` run (§3). `budget.Screens` fails a `perf`
+  package it saw, on a `./...` run (§3). `perftest.Screens` fails a `perf`
   record naming a route it did not find (one call per module; see §4).
 - **The ratchet, on size only, per stated column:** a directory measuring
   under 60% of a stated ceiling fails with "measured 3,100, exemption
   says 7,200: lower it". A column measuring at or under its default fails
   with "no longer needs an exemption: write `-`". Timing has no ratchet; runner noise would make it
-  flake. `budget.Screens` prints an advisory line instead when a route
+  flake. `perftest.Screens` prints an advisory line instead when a route
   measures under 60% of its exemption.
 
 One parser, `internal/budgetfile`, serves the CLI and the public package.
@@ -187,7 +192,7 @@ func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }
   wrapper judge cached packages (Decision 4).
 - An app that already has a `TestMain` calls `budget.Main(m)` in place of
   `m.Run()` and does its own teardown after it (`dbtest`'s `Remove`).
-- It reads `budget.Boot`'s child variable only to stay silent in a child
+- It reads `perftest.Boot`'s child variable only to stay silent in a child
   process (§4); the child's line would otherwise be judged as a second
   package run.
 
@@ -246,28 +251,33 @@ rastrillo budget test [go test flags and packages]
   none fails the step after `go test` exits, because it means something
   else wrote to stdout.
 
-### 4. `budget.Screens` and `budget.Boot`, screen time
+### 4. `perftest.Screens` and `perftest.Boot`, screen time
 
-In the same `budget` package. The scaffold puts the app's perf tests in a
-file under `//go:build perf`, so the ordinary suite never compiles them.
+A new package, `amadan.net/rastrillo/rastrillo/perf/perftest`: the CI
+half of the existing `perf` package, as `httptest` is to `net/http`. It
+uses `perf.DefaultBudget` and `perf.DefaultColdBudget` rather than its
+own numbers, and names screens the way `perf` groups them in production
+(`GET /notes/{id}`), so a slow screen has one name in CI and in the logs.
+GORM-free. The scaffold puts the app's perf tests in a file under
+`//go:build perf`, so the ordinary suite never compiles them.
 
 ```go
-budget.Screens(t, budget.ScreenConfig{
+perftest.Screens(t, perftest.ScreenConfig{
 	Routes:  r,       // chi.Routes: the app's router, for the inventory
 	Handler: h,       // rastrillo.Handler(opts): what production serves
 	Paths:   map[string]string{"/notes/{id}": "/notes/1"},
 	Expect:  map[string]int{"/export": http.StatusOK},
 	Signin:  func(c *http.Client, base string) { ... }, // signs c in once
-	Opaque: []budget.Opaque{{
+	Opaque: []perftest.Opaque{{
 		Patterns: []string{"/bookmarks", "/bookmarks/*"},
-		Screens: []budget.OpaqueScreen{
-			{Key: "/bookmarks", Path: "/bookmarks"},
-			{Key: "/bookmarks/{id}", Path: "/bookmarks/1"},
+		Screens: []perftest.OpaqueScreen{
+			{Key: "GET /bookmarks", Path: "/bookmarks"},
+			{Key: "GET /bookmarks/{id}", Path: "/bookmarks/1"},
 		},
 	}},
 })
 
-budget.Boot(t, budget.BootConfig{
+perftest.Boot(t, perftest.BootConfig{
 	DBPath: schema.Path(t), // prepared by the parent, copied per child
 	Build:  func(dbPath string) (http.Handler, func(), error) { ... },
 	Path:   "/",
@@ -283,8 +293,10 @@ budget.Boot(t, budget.BootConfig{
   `/bookmarks/*`. Every opaque pattern must belong to exactly one
   `Opaque` group or carry a `perf GET <pattern> skip` record. The group's
   `Screens` are the inventory inside it; each has a stable `Key` in
-  pattern syntax, which is what its `perf` record names, a concrete
-  `Path`, and an optional `Expect`.
+  screen syntax (`GET /bookmarks/{id}`), which is what its `perf` record
+  names, a concrete `Path`, and an optional `Expect`.
+- A walked route's screen name is `GET ` plus its chi pattern, the name
+  `perf` gives it in production.
 - A group pattern that `chi.Walk` did not report is an error: the group
   has gone stale.
 - Framework routes (`/healthz`, `/api/version`) and the app's `/static/`
@@ -381,13 +393,16 @@ child does nothing but start:
   today, and `Mux(r http.Handler) *http.ServeMux`, which mounts static
   files and the router. `App` is `Router` then `Mux`.
 - **One place sets the serving options.** A new `Configure(opts
-  *rastrillo.Options, mux *http.ServeMux)` in `app.go` sets `Mux` and
-  `ErrorPage`; `main.go` calls it between `Resolve` and `Serve`, and the
-  perf test calls it on a fresh `rastrillo.Options` and passes the result
-  to `rastrillo.Handler`. Measured requests therefore go through the
-  production chrome (`Options.Wrap`, locale handling, security headers,
-  panic recovery), and the chi router from `Router` is used only for the
-  inventory.
+  *rastrillo.Options, mux *http.ServeMux, started time.Time)` in `app.go`
+  sets `Mux`, `ErrorPage`, and `Wrap` to `perf.Middleware` with `Started:
+  started`, so a new app gets production screen timing (a `Server-Timing`
+  header and over-budget warnings) from its first deploy. `main.go`
+  records `started := time.Now()` first thing and calls `Configure`
+  between `Resolve` and `Serve`; the perf test calls it on a fresh
+  `rastrillo.Options` and passes the result to `rastrillo.Handler`.
+  Measured requests therefore go through the production chrome
+  (`Options.Wrap`, locale handling, security headers, panic recovery),
+  and the chi router from `Router` is used only for the inventory.
 - **Harness:** `var schema = dbtest.FromSet(BootSchema)`; `newApp` opens
   `db.Open(schema.Path(t), logger)` (the copy is made before either pool
   opens); a `TestMain` saves `budget.Main(m)`'s code, calls
@@ -441,8 +456,14 @@ child does nothing but start:
   `t.Parallel()` first, the cache rule, edit loop against pre-push) and
   one line in §1: past 5,000 lines, split `internal/<app>` by feature.
   The ceiling does not move.
-- **`docs/site/testing.md`** gets the full treatment, and
-  `docs/site/reference/budget.md` the API:
+- **Reference pages** `docs/site/reference/budget.md` and
+  `docs/site/reference/perftest.md` document every exported symbol, and
+  both packages join `referencePages` in `internal/docsite`
+  (`TestExportedSymbolsAreDocumented` holds them to it). `perf.md` gains
+  a line pointing at `perftest` for the CI half.
+- **`CHANGELOG.md`** gets an Unreleased entry: what a new app's gate now
+  runs, and the adoption recipe for an existing one.
+- **`docs/site/testing.md`** gets the full treatment:
   - each budget, its reasoning and its exemptions;
   - the feature-split recipe, including what to do about generated code;
   - `t.Parallel()` as the first statement (anything before it runs
@@ -491,7 +512,7 @@ assertion.
   or failed; a stale `time` record on a `./...` run and the same record
   ignored on a narrower run; a child killed mid-run (exit status wins).
   Each asserts the exit code and what the output leads with.
-- **`budget.Screens`:** a fixture router with a 200ms route fails; one
+- **`perftest.Screens`:** a fixture router with a 200ms route fails; one
   slow request inside a passing median fails on the 3× ceiling; a handler
   that writes its header at once and its body 300ms later fails (TTFB is
   what the client sees); a route answering 303 fails; an `Expect` entry
@@ -502,7 +523,7 @@ assertion.
   that ignores its context fails the test and stops the sweep within the
   deadline; a parameterised route with no `Paths` entry fails; without
   `CI` an over-budget route reports and passes.
-- **`budget.Boot`:** a fixture whose init sleeps 600ms fails under `CI`;
+- **`perftest.Boot`:** a fixture whose init sleeps 600ms fails under `CI`;
   the child is a fresh process (a package-level counter reads zero in
   it); a child that never prints the line is killed at 10s and its output
   reported; a child that prints the line and exits non-zero fails; the
@@ -535,7 +556,7 @@ raises them with records, and says so in the reason.
 ## Rollout
 
 One branch, in order: `internal/budgetfile` and `budget size`;
-`budget.Main` and `budget test`; `budget.Screens` and `budget.Boot`; the
+`budget.Main` and `budget test`; `perftest.Screens` and `perftest.Boot`; the
 scaffold; Rastrillo's own gate; the docs. Nothing changes for an existing
 app until it opts in. The adoption recipe in `docs/site/testing.md`:
 add `budget.Main` to each test package, run `budget size`, write each
