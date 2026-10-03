@@ -1,7 +1,7 @@
 # pow grows up: admission that commits with the write, and sign-in behind it by default
 
 Status: design approved in conversation 2026-10-03, section by section,
-with the operator's decisions marked **(Paul)**. Revised after two rounds
+with the operator's decisions marked **(Paul)**. Revised after three rounds
 of adversarial review by Astra (see "Review log"). Nothing is
 implemented.
 
@@ -142,7 +142,8 @@ identifier: one token, one string.
   issued late in a second already reads as over 500 ms old, and a script
   skips the minimum age for free (pow/challenge.go:85, 105; Tito uses
   milliseconds for this reason, T/internal/intake/token.go:53-57).
-- **Flags:** bit 0 is "trap omitted" (§ "Recovery").
+- **Flags:** bit 0 is "trap omitted" (§ "Recovery"); bit 1 is "bound".
+  `Verify` refuses a bound token (below).
 - A scope mismatch, a bad nonce format, a v1 seal: all
   `ReasonSealInvalid`, so a prober learns nothing from the difference.
 
@@ -235,8 +236,7 @@ type Execer interface {
 }
 
 var (
-	ErrSpent       = errors.New("rastrillo/pow: challenge already spent")
-	ErrExpired     = errors.New("rastrillo/pow: challenge expired before commit")
+	ErrSpent       = errors.New("rastrillo/pow: challenge spent or expired")
 	ErrNotAdmitted = errors.New("rastrillo/pow: commit of a refused admission")
 )
 ```
@@ -273,10 +273,14 @@ should see first after an upgrade.
   fails. No delay between the handler's checks and the statement's
   execution can reopen replay. An earlier draft checked expiry in Go
   before calling the executor, which a stalled request defeats (Astra,
-  reproduced). Zero rows is then `ErrSpent` if `Spent` finds the row and
-  `ErrExpired` otherwise.
-- `ErrSpent`: the handler lost a race to an identical request and must
-  refuse, not 500.
+  reproduced).
+- Zero rows is `ErrSpent`, whether the token was spent by an identical
+  request or expired in the meantime. The handler refuses either way,
+  never 500s, and the visitor gets a recovery form. `Commit` does not
+  look further to tell the two apart: `Execer` cannot query, and a
+  lookup through the store's own handle while the caller's transaction
+  holds the only connection (serve.go:635; Tito's T/internal/instance/serve.go:1548)
+  waits forever for itself (Astra, round 3).
 - `Commit` on a refused admission is `ErrNotAdmitted`. Tito's returns nil
   there (intake_gate.go:321-326) and relies on no door going on past a
   refusal; a door that did would create its row with nothing consumed.
@@ -309,8 +313,12 @@ event in the account, and an upload a parent for its own event only
 caller makes that decision on authenticated data, rejects difficulties
 it does not accept, and keys its own allowances by `Parent.Nonce`, the
 canonical identifier. Any Guard sharing the instance key can `Verify`
-any of the app's tokens, so the email check needs no knowledge of which
-Guard minted its parent.
+any of the app's *unbound* tokens, so the email check needs no knowledge
+of which Guard minted its parent. A bound token is refused
+(`ReasonSealInvalid`): its proof cannot be checked without the binding,
+and a subordinate request does not carry one. Tito's parents are all
+unbound; an app that needs subordinate requests on a bound form is a
+later change, not a silent pass.
 
 ### The attempt allowance
 
@@ -387,8 +395,11 @@ halves agree in both modes.
   binding changed by autofill or a correction while the worker ran is
   solved again; today's `solved = true` latch would release a stale
   proof (pow/browser/pow.js:71-79).
-- **Minimum age, client side.** `Attrs` carries `data-pow-min-age`; the
-  module holds a submit until that long after it initialised. The
+- **Minimum age, client side.** `Attrs` carries `data-pow-min-age`: the
+  age the token still lacks at render, `MinAge` minus time since issue,
+  never below zero — so a `FollowOn` or `Recovery` form, issued already
+  eligible, carries zero and is never held. The module holds a submit
+  until that long after it initialised. The
   one-tap sign-in buttons autofocus (ui/partials/signin.html:50, 57), and
   a returning visitor can be quicker than any minimum. Network latency
   only makes the server's measured age longer than the client's.
@@ -399,7 +410,17 @@ halves agree in both modes.
   (Tito handles the same window this way,
   T/internal/instance/static/spinner.js:133-152). The listener exists
   only during a hold, so it does not keep ordinary pages out of the
-  back-forward cache. `pagehide` terminates the worker; `pageshow` from
+  back-forward cache.
+- **`ui/busy.js` holds too.** The shipped busy script, loaded by the
+  default stage layout (ui/layouts/stage.html:10) and the notes example,
+  adds its own 650 ms hold before submitting and cancels only on
+  `pagehide` (ui/busy.js:186, 227, 240-243) — the same slow-destination
+  race, independent of `pow`. Two changes: `busy.js` gains the same
+  `beforeunload` cancellation during its hold, and it skips its hold
+  for a submit `pow` has just released (the form carries
+  `data-pow-released`), since the visitor has already watched the
+  working state. `busy.js` is vendored into apps once, so the CHANGELOG
+  tells existing apps to refresh it; tests load both scripts together. `pagehide` terminates the worker; `pageshow` from
   the back-forward cache restores the controls `pow` disabled and
   restarts the solve if it never finished (`ui/busy.js:237-250` treats
   the same boundary, but cannot cancel another module's worker).
@@ -428,8 +449,7 @@ halves agree in both modes.
   - a form with no `data-pow-form` (`NoProof`, or not a pow form)
     resolves immediately with the challenge fields it has;
   - already solved: resolves immediately;
-  - bound: starts a solve for the binding's current value if none is
-    running for it;
+  - bound: rejects at once — a bound proof cannot be `Verify`'d (above);
   - rejects on worker failure, on navigation cancelling the solve, and
     after `timeout` (default 10 s, Tito's bound). Never pending forever.
   `pow:solved` fires on the form as well.
@@ -552,12 +572,19 @@ plan owns the detail; these are the constraints this design must meet.
   today.
 - The step-up screen re-renders with `Recovery`, and calls `init` after
   replacing the document.
+- Upload callers must handle `whenSolved` rejecting: Tito's helper
+  resolves on timeout (T/internal/instance/static/intake-proof.js:26-36)
+  and `file-field.js` relies on that, with uncaught awaits and cleanup
+  only on success (file-field.js:91, 149-177). The migration catches the
+  rejection, shows a retryable upload error, and clears the input and
+  required state in `finally`; the plan tests a timeout followed by
+  choosing the same file again.
 - **Old forms at deploy** post `intake_token` / `intake_nonce`, which the
   new Guard sees as `ReasonMissing` — and Tito answers a missing token
   with a plain 429 today (T/internal/instance/intake_stepup.go:124). For
   one release, a POST carrying `intake_token` and no `pow_*` fields gets
-  the step-up screen with the visitor's answers preserved and a fresh
-  `Form`; the plan tests it per door.
+  the step-up screen with the visitor's answers preserved and a
+  `Recovery` form; the plan tests it per door.
 - Deleted after that release: `internal/intake/`, `static/intake-pow*.js`,
   `intake-proof.js`, the node parity test, `intake_tokens`.
 - Stays in Tito: the step-up screens, the preview bypass, the refusal
@@ -593,7 +620,7 @@ plan owns the detail; these are the constraints this design must meet.
 - `Commit`: concurrent commits give exactly one nil; rollback leaves the
   token admissible; an un-committed admission leaves it admissible;
   an executor stalled after the handler's checks until past expiry and a
-  sweep is `ErrExpired` (the predicate is on the database clock);
+  sweep is `ErrSpent` (the predicate is on the database clock);
   a rolled-back commit keeps the attempt count; `ErrNotAdmitted` on a refused admission; GORM through
   `tx.Statement.ConnPool`;
 - `Admit`: scope mismatch is `ReasonSealInvalid`; `ReasonMissing` with no
@@ -602,6 +629,8 @@ plan owns the detail; these are the constraints this design must meet.
   back; at capacity a new token is `ReasonBusy` and tracked tokens are
   unaffected; cycling capacity + 1 tokens restores no allowance; `Check`
   succeeds while another scope has filled the Guard's map;
+- `Commit` returning `ErrSpent` inside a transaction on a one-connection
+  pool returns promptly (no second statement outside the transaction);
 - `Recovery` is trapless and admissible at once; only recovery tokens
   skip the honeypot; a `NoProof` fast visitor with a trap-filling
   password manager gets through on the first recovery; `Recovered()` is
@@ -719,3 +748,20 @@ resolved, six partial; eleven new findings, all accepted:
     line visible from the start whose words are true either way; no CSS.
 27. Migration inventory wrong (minor) → example wiring corrected,
     constructor inventory listed, boot order fixed in the reference doc.
+
+**Astra, round 3 (2026-10-03): not ready.** Findings 1-27 re-verdicted
+resolved, except 8 and 25 partial (busy.js, below). Six new, all
+accepted:
+
+28. Classifying a zero-row spend with a second lookup deadlocks a
+    one-connection pool (blocker) → one `ErrSpent` for spent or expired;
+    `ErrExpired` removed.
+29. `Verify` cannot check a bound proof (major) → "bound" sealed;
+    `Verify` refuses bound tokens; `whenSolved` rejects on bound forms.
+30. A rejecting `whenSolved` breaks Tito's upload recovery (major) →
+    migration requirement and test.
+31. `busy.js`'s own hold re-opens the navigation race (major) →
+    `beforeunload` in busy.js, and no second hold after a `pow` release.
+32. Follow-on forms still held for the full minimum age (minor) →
+    `data-pow-min-age` is the remaining age.
+33. Legacy recovery used `Form` (minor) → `Recovery`.
