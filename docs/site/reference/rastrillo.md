@@ -110,6 +110,12 @@ the user saw to what you grep for. The alphabet has no `0`, `1`, `8` or
 `l` or a `B`. `view.Fail` mints one too; `NewRef` is exported for a
 hand-written handler doing the same job.
 
+**`NoSpeculationRules`**: turns off prerendering. By default every
+response names `SpeculationRulesPath`, where `Serve` answers with rules
+that prerender sidebar and console navigation. A content-security
+policy does not turn it off; this field does, or deleting the
+`Speculation-Rules` header in a handler.
+
 ```go
 const SpeculationRulesPath = "/_speculation-rules"
 ```

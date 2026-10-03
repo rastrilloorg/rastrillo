@@ -142,9 +142,10 @@
 // so a submenu sharing its parent's group closes that parent the instant
 // it opens — the submenu flashes and the whole menu vanishes.
 //
-// Shell chrome and the toggle-block stay out of the group on purpose:
-// neither is a menu, and closing the narrow-screen nav rail because
-// someone opened a filter would take the navigation away.
+// The toggle-block stays out of the group on purpose: it is not a menu.
+// So does the Menu button of the topbar and console on a phone: the
+// account menu opens inside it, and in the same group opening the
+// account menu would close it.
 //
 // rst-caret is the disclosure arrow that flips on [open]:
 //

@@ -43,7 +43,9 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and `stageArt`.
+`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt` and
+`rowMenuItems`. `rowMenuItems` checks `row-menu`'s items and stops the
+render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -464,7 +466,15 @@ into the app's `static/`. `ShimJS` is `rastrillo.js` — the
 progressive-enhancement shim. It drives `data-poll` and
 `data-poll-push` ([Background jobs](/docs/jobs)), and it closes an open
 `<details>` menu on an outside click or Escape, which is the one part of
-the menu idiom the native element cannot express. `BusyJS` is `busy.js`,
+the menu idiom the native element cannot express.
+
+`ShellJS` is `shell.js` and `ShellCSS` is `shell.css`: the sidebar and
+console shells' phone navigation, with the slide between pages, a back
+control that uses the browser's history when it can, and focus returned
+to the section you left. Only those two layouts link them, and both are
+optional.
+
+`BusyJS` is `busy.js`,
 the busy rule: every submit button's label gives way to a spinner for
 at least 650ms, the button disables and the form refuses a second
 submit, and Back hands the form back — by default, with

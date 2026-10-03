@@ -377,6 +377,12 @@ framework fixes remain easy to adopt. Follow an explicit user design
 requirement when it calls for more, but reuse the system wherever it fits.
 docs/site/templates.md
 
+Shells on a phone: `topbar` and `console` put their narrow chrome in
+the Menu card. `sidebar` and `console` rails become an index page: mark
+it `{{define "view"}}index{{end}}`; every other page names its way back
+with `{{define "up"}}/#nav-x{{end}}` and the nav link gets
+`id="nav-x"`. Never build a hamburger drawer.
+
 **One screen, one job.** A screen shows a thing, or asks for one thing —
 never both. The failure it prevents is stacking: a list page that also
 carries a create form, an import panel and a dropzone, so the first
@@ -446,7 +452,13 @@ on its own URL at step 2, never a modal fired from the row.
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
   names another group, and a nested `rst-menu-group` MUST name a
-  different one or it closes its parent. Full vocabulary:
+  different one or it closes its parent. A row that stands for an item
+  is a link across its whole width through its one name link; never
+  link only the name. Row actions use `row-menu`, and a destructive one
+  is a link to its confirm page. Inside a bulk-selection form, row-menu
+  items are links only. A GET handler never changes anything: `Serve`
+  prerenders shell navigation, on a phone before it is tapped (turn it
+  off with `Options.NoSpeculationRules`). Full vocabulary:
   rastrillo.org/design-system (built from `ui` by `cmd/dsgen`, not
   committed); `go generate ./...` renders a local copy into
   `.design-system/`. docs/site/templates.md

@@ -22,8 +22,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 ## Template functions
 
 `ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
-`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi` and
-`stageArt`.
+`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`
+and `rowMenuItems`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -145,6 +145,18 @@ the same reason — it lives in a `rst-list` card your own page markup
 writes, and a `<li>` needs a list around it that the partial does not
 own.
 
+A row that stands for a record is a link across its whole width: its
+name link covers the row, and the row's other buttons, checkboxes and
+menus sit on top of it. Give each row one name link. A row with no link
+does not look or act clickable.
+
+Put a row's other actions in `row-menu`, at the end of the row. Each
+item is a link (`Href`) or a form that posts (`Action`, with `Hidden`
+fields). Put a destructive item last: it links to its confirm page and
+its label ends with …. Inside a bulk-selection form, every item must be
+a link. `list-row-action` takes the same list as `Menu` and puts the
+menu after its action pill.
+
 `job-status`'s `rst-job` is the third, and the reason is behaviour
 rather than structure: the shim replaces that element **wholesale** on
 every poll, and whether a live region whose host node keeps being
@@ -164,10 +176,9 @@ around it. `<details name>` exclusivity is document-wide, not
 sibling-scoped, so a submenu sharing its parent's group closes that
 parent the moment it opens.
 
-The sidebar shell's `rst-shell-chrome` strip and the toggle-block are
-deliberately outside the group: neither is a menu, and closing the
-narrow-screen nav rail because someone opened a filter would take the
-navigation away.
+The toggle-block is outside the group: it is not a menu. So is the Menu
+button of the topbar and console on a phone: the account menu opens
+inside it, and in the same group it would close it.
 
 Closing an open menu on a click elsewhere, or on Escape, is the one part
 native `<details>` cannot express, so `rastrillo.js` does it — two
@@ -310,8 +321,11 @@ back to one column.
 ```
 
 ```css
-.orders { --rst-cols: 2fr 110px 32px; }
+.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }
 ```
+
+End `--rst-cols` with `var(--rst-col-menu)` when the rows have a ⋮
+menu. The column is 32px on a desktop and 44px on a phone.
 
 ### Screens stack vertically
 
@@ -924,8 +938,8 @@ The shell is the page frame — `templates/layout.html`, written once by
 |-----------|----------------------------------------------------------------------------|
 | `column`  | a centred content column, no chrome (default)                              |
 | `topbar`  | header bar: brand, nav, account menu, locale switcher, footer              |
-| `sidebar` | a left rail of nav groups, collapsing to a `<details>` chrome bar below 800px |
-| `console` | both at once: a brand-and-account bar across the top with the rail beneath it down the side, the two folding behind one disclosure below 800px |
+| `sidebar` | a rail of nav groups beside the page; on a phone, an index page of sections and a back control |
+| `console` | both at once: a bar across the top with the rail beneath it down the side; on a phone, the bar's menu opens as a card and the rail is an index page |
 
 Every shell defines `layout`, renders `{{template "content" .}}` for the
 page's own body, and puts each piece of chrome in a block with a working
@@ -947,10 +961,8 @@ block:
 
 The blocks are `title`, `lang`, `dir` and `head` in all five shells,
 plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
-`console`, `foot` in `topbar`, `console` and `stage`, and `backdrop` in
-`stage`. None of them reads a field off the data, so a shell renders
-whether your handler passes a struct, a `dict`-built map or nil. A shell
-can never break because a page's view model changed shape.
+`console`, `view` and `up` in `sidebar` and `console`, `foot` in
+`topbar`, `console` and `stage`, and `backdrop` in `stage`.
 
 `head` is the odd one out: it is not chrome, it is your slot in
 `<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
@@ -970,14 +982,12 @@ between `topbar` and `console` and nothing changes; move it to or from
 The chrome attributes live in `tokens.css` like every other idiom:
 `rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`,
 `rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the
-topbar; `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-chrome`,
-`rst-shell-group` and `rst-shell-main` for the sidebar;
-`rst-shell-console` for the console, which reuses the bar, the rail and
-the topbar's `rst-shell-menu` rather than naming anything of its own;
-and `rst-skip`, the skip link, which all five shells carry — `column`
-and `stage` included. The sidebar's mobile collapse is that
-`<details rst-shell-chrome>` and nothing else — no JavaScript,
-like every other idiom here.
+topbar, with `rst-shell-menu` and `rst-shell-tail` for its phone menu;
+`rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-group`,
+`rst-shell-main`, `rst-shell-title` and `rst-shell-back` for the
+sidebar; `rst-shell-console` for the console, which reuses the rest;
+and `rst-skip`, the skip link, in all five shells. None of it needs
+JavaScript.
 
 `stage` has no chrome. It centres one card, usually the sign-in screen,
 over a full-page backdrop drawn by `{{stageArt "rastrillo"}}` unless you
@@ -987,26 +997,80 @@ SVG replaces it outright. Its attributes are `rst-stage`,
 `rst-stage-scene`, `rst-stage-art` and `rst-stage-foot`, and it carries
 `rst-skip` like the others.
 
-### The console folds two chromes behind one control
+### On a phone: an index and a way back
 
-`console` is the only shell with two pieces of chrome to put away below
-800px: the bar's tail and the rail. It puts them away with **one**
-`<details rst-shell-menu>` rather than two, because two disclosures on a
-phone is two things to learn. The disclosure gates its own next sibling
-— the tail — with `+`, and gates the rail from the shell root with
-`:has()`.
+Below 800px, `sidebar` and `console` show each page in one of two ways.
+Your index page is the list of sections. Every other page shows its
+content, with a back control at the top that returns to that list. The
+sections are never behind a menu button: `sidebar` has none, and the
+console's Menu button holds only its account and language menus.
 
-Both rules are written as *hide when closed* rather than *show when
-open*, which is worth copying if you write chrome of your own. In a
-browser without `:has()` the rail's rule never matches, so the rail
-renders as a plain column of links under the bar: a longer page, and the
-navigation still reachable. Written the other way round, the same
-missing selector would be a phone with no way to navigate.
+Mark your index page with the `view` block:
 
-Nothing is reordered at any width. Grid places the bar and the rail by
-named area, so the DOM order — bar, rail, page — is the reading order
-and the focus order at 320px and at 1280px, in both directions of the
-language.
+```html
+{{define "view"}}index{{end}}
+```
+
+Give every other page an `up` block that points back to its own row on
+the index, and give that row the matching id:
+
+```html
+{{define "up"}}/#nav-invoices{{end}}
+{{define "nav"}}<a id="nav-invoices" href="/invoices" aria-current="page">Invoices</a>…{{end}}
+```
+
+With JavaScript off, the fragment brings the reader back to the row
+they left. With `shell.js`, the back control uses the browser's history
+when it can, the pages slide, and focus returns to the row. A page with
+no `view` block is a content page, so a page you forget still shows its
+content and a way back.
+
+In `topbar` and `console`, the Menu button on a phone opens a card over
+the page. A tap outside it, or Escape, closes it. The page underneath
+does not move.
+
+`rastrillo.Serve` prerenders the pages your sidebar and console
+navigation link to, so the next page is ready when it is tapped. On a
+phone, Chrome may prerender a section as soon as its row is on screen,
+before anyone taps it. Nothing on other pages is prerendered. A
+prerender is a GET, so a GET handler must never change anything. To
+turn it off, set `Options.NoSpeculationRules`.
+
+### The console on a phone
+
+`console` has two pieces of chrome to put away below 800px, and each
+goes the way it goes in the shell it comes from. The bar's account and
+language menus go behind the Menu button, which opens a card, as in
+`topbar`. The rail is an index page, as in `sidebar`: mark the index
+with `view` and give other pages `up`.
+
+Nothing is reordered at any width. The DOM order, bar, rail, page, is
+the reading order and the focus order at 320px and at 1280px, in both
+directions of the language.
+
+### Upgrading to the phone index
+
+A layout from before this release keeps working: its sidebar drawer
+still opens. To move to the index:
+
+1. Upgrade the module and run `rastrillo doctor --fix`. It re-copies
+   `tokens.css` and adds `shell.js` and `shell.css`.
+2. Replace `templates/layout.html` with the new shell
+   (`ui.Layout("sidebar")` or `ui.Layout("console")`), and carry your
+   own edits across.
+3. Add `{{define "view"}}index{{end}}` to your index page, and an `up`
+   block to every other page.
+4. If you already have a template called `view` or `up`, rename it.
+   The shells use those names now.
+5. In a list grid, end `--rst-cols` with `var(--rst-col-menu)` instead
+   of `32px`.
+
+`rastrillo new --shell=sidebar` and `--shell=console` now write two
+pages, an index and an Overview section, to show the shape.
+
+An app on `topbar`, `column` or `stage` can delete `shell.js` and
+`shell.css`. Add both to `vendoredIsMine` in `vendored_test.go`, or
+that test fails on the missing files.
 
 ### Upgrading: the topbar's tail is a level deeper
 

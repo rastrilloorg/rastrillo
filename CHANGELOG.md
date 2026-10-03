@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed — phones get 16px type and 44px targets, sidebar shells an index and a back control; re-vendor `tokens.css`, add `shell.js` and `shell.css`, and update your layout
+
+Until it takes this release's `tokens.css`, an app zooms in on every form on a phone. Upgrade the module, then run `rastrillo doctor --fix`: it re-copies `tokens.css` and adds `shell.js` and `shell.css`.
+
+On a phone or a narrow window, text is one step bigger (16px body text) and controls are at least 44px; on a 320px screen calendar days narrow to about 41px wide. Desktops are unchanged, except three things: a list row is clickable across its width, its focus ring goes round the whole row, and a row's checkbox has a 24px target.
+
+The sidebar shell has no menu button on a phone, and neither does the console's navigation rail: the index page lists the sections, and every other page has a back control. Mark your index with `{{define "view"}}index{{end}}` and give other pages an `up` block; see "Upgrading" in the [templates guide](/docs/templates). Old layouts keep working, and `rastrillo doctor` tells you when yours is one. The topbar's and console's Menu button opens a card over the page that closes on a tap outside it or Escape.
+
+New: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. `Serve` prerenders sidebar and console navigation by default.
+
+Watch for two things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it.
+
 ### Added — a sign-in screen, and a browser that remembers how you got in; re-vendor `tokens.css`
 
 `ui` ships a sign-in screen: the `signin` and `signin-title` partials, and a `stage` shell to put them in, with a generated backdrop (`stageArt`) you can replace. It asks for an address and then does the right thing for it, whether that is an emailed link or Keymail. It offers a one-tap to someone coming back, a passkey button where you have passkeys, and plain words for every problem. Every string is in all twelve languages.
