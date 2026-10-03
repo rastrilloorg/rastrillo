@@ -139,9 +139,10 @@ func TestARowMenuNearTheBottomOpensUpward(t *testing.T) {
 		chromedp.Evaluate(`window.scrollTo(0, document.documentElement.scrollHeight), true`, nil),
 		chromedp.Evaluate(`document.querySelector("#row-c summary").click(), true`, nil))
 	at(t, ctx, `(() => { const d = document.querySelector("#row-c [rst-row-menu]"), p = d.querySelector("[rst-row-menu-panel]").getBoundingClientRect(), s = d.querySelector("summary").getBoundingClientRect(); return JSON.stringify({Open: d.open, PanelTop: p.top, PanelBottom: p.bottom, PanelH: p.height, SummaryTop: s.top, VH: innerHeight}); })()`, &g)
-	// A closed menu's panel is display: none, an all-zero box whose
-	// bottom (0) is above any summary: without this the leg would pass on
-	// a click that opened nothing.
+	// The panel keeps a box while its menu is closed (Chromium reports a
+	// non-zero height for it), so the height proves nothing and the Open
+	// check is what matters: without it the leg would pass on a click
+	// that opened nothing.
 	if !g.Open || g.PanelH <= 0 {
 		t.Fatalf("the last row's menu did not open (open %v, panel %.0fpx tall); this leg proves nothing", g.Open, g.PanelH)
 	}
