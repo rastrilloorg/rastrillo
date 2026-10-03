@@ -223,3 +223,72 @@ func TestBudgetSizeExitCodes(t *testing.T) {
 		t.Fatalf("malformed file: err = %v, want exit 2", err)
 	}
 }
+
+// writeModule writes a fixture module replacing rastrillo with this
+// checkout, and tidies it.
+func writeModule(t *testing.T, files map[string]string) string {
+	t.Helper()
+	setSandboxGoEnv(t)
+	dir := t.TempDir()
+	files["go.mod"] = "module example.com/fx\n\ngo 1.25.0\n\nrequire amadan.net/rastrillo/rastrillo v0.0.0\n\nreplace amadan.net/rastrillo/rastrillo => " + repoRoot(t) + "\n"
+	for name, body := range files {
+		p := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = dir
+	if out, err := tidy.CombinedOutput(); err != nil {
+		t.Fatalf("go mod tidy: %v\n%s", err, out)
+	}
+	return dir
+}
+
+const measuredMain = `
+func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }
+`
+
+const testImports = `import (
+	"fmt"
+	"os"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo/budget"
+)
+
+var _, _ = fmt.Sprint, time.Second
+`
+
+// The failures go test really produces, not hand-written events: a red
+// run must lead with each one's own explanation, whatever the event
+// attribution of the Go release doing the run.
+func TestBudgetTestReportsRealFailures(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs go test on a fixture module")
+	}
+	dir := writeModule(t, map[string]string{
+		"vetbad/v_test.go": "package vetbad\n\n" + testImports + measuredMain +
+			"func TestV(t *testing.T) { t.Log(fmt.Sprintf(\"%d\", \"not a number\")) }\n",
+		"setup/s_test.go": "package setup\n\n" + testImports +
+			"func TestMain(m *testing.M) { fmt.Println(\"setup boom\"); _ = budget.Prefix; os.Exit(1) }\n\nfunc TestS(t *testing.T) {}\n",
+		"panics/p_test.go": "package panics\n\n" + testImports + measuredMain +
+			"func TestP(t *testing.T) { panic(\"kaboom\") }\n",
+		"slow/w_test.go": "package slow\n\n" + testImports + measuredMain +
+			"func TestA(t *testing.T) { t.Error(\"first failure\") }\n\nfunc TestB(t *testing.T) { time.Sleep(time.Minute) }\n",
+	})
+	var out bytes.Buffer
+	err := budgetTest([]string{"-timeout", "5s", "./..."}, dir, &out, &out, env())
+	if err == nil {
+		t.Fatalf("a run with four failing packages passed:\n%s", out.String())
+	}
+	for _, want := range []string{"Sprintf format %d has arg", "setup boom", "kaboom", "first failure", "test timed out"} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("the report lost %q:\n%s", want, out.String())
+		}
+	}
+}

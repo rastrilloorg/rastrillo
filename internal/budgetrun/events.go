@@ -31,9 +31,11 @@ type Package struct {
 	Measured   int
 	BadLine    string
 	HasTests   bool
-	Output     string   // package-level output, reassembled
-	All        string   // every output event of the package, in order
-	Failed     []string // every failed test identity, subtests included
+	Output     string            // package-level output, reassembled
+	All        string            // every output event of the package, in order
+	Failed     []string          // every failed test identity, subtests included
+	Tests      []string          // every test identity, in the order first seen
+	Results    map[string]string // test identity -> pass, fail, skip; absent if it never finished
 }
 
 type TestTime struct {
@@ -121,6 +123,15 @@ func Read(r io.Reader, raw io.Writer) (*Report, error) {
 			continue
 		}
 		p.HasTests = true
+		if p.Results == nil {
+			p.Results = map[string]string{}
+		}
+		if _, seen := p.Results[e.Test]; !seen && !contains(p.Tests, e.Test) {
+			p.Tests = append(p.Tests, e.Test)
+		}
+		if e.Action == "pass" || e.Action == "fail" || e.Action == "skip" {
+			p.Results[e.Test] = e.Action
+		}
 		key := e.Package + " " + e.Test
 		top := !strings.Contains(e.Test, "/")
 		switch e.Action {
@@ -192,3 +203,12 @@ func perfLines(s string) []string {
 }
 
 func seconds(f float64) time.Duration { return time.Duration(f * float64(time.Second)) }
+
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
+	return false
+}

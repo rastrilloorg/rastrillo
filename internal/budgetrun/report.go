@@ -18,14 +18,25 @@ func Print(w io.Writer, r *Report, v Verdict, wall time.Duration) {
 	}
 	for _, name := range r.Order {
 		p := r.Packages[name]
-		for _, test := range p.Failed {
-			fmt.Fprintf(w, "--- FAIL %s %s\n%s\n", name, test, r.TestOut[name+" "+test])
+		if p.Result != "fail" && len(p.Failed) == 0 {
+			continue
 		}
-		if p.Result == "fail" && len(p.Failed) == 0 {
-			// Setup failure, panic, timeout: no test reported failing, and
-			// the explanation may sit in a test that was still running,
-			// so the package's whole output, in order, is printed.
-			fmt.Fprintf(w, "--- FAIL %s (no failing test named)\n%s\n", name, p.All)
+		// Every test that failed, and every test that never finished: a
+		// timeout or panic is reported inside whichever test was running,
+		// and a package can lose one test to an assertion and another to
+		// the timeout in the same run.
+		for _, test := range p.Tests {
+			switch p.Results[test] {
+			case "fail":
+				fmt.Fprintf(w, "--- FAIL %s %s\n%s\n", name, test, r.TestOut[name+" "+test])
+			case "":
+				fmt.Fprintf(w, "--- FAIL %s %s (never finished)\n%s\n", name, test, r.TestOut[name+" "+test])
+			}
+		}
+		// Then the package's own output: a setup failure in TestMain, or
+		// the timeout panic, can sit outside every test.
+		if strings.TrimSpace(p.Output) != "" {
+			fmt.Fprintf(w, "--- FAIL %s (package output)\n%s\n", name, p.Output)
 		}
 	}
 	for _, msg := range v.Problems {
