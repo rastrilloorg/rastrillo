@@ -84,13 +84,18 @@
     if (hit) hit.focus();
   }
 
-  // 1. Direction. Back when the page being left set the one-shot flag
-  // because its back control was used, or when the Navigation API
-  // reports a traverse to an earlier entry (the browser's own Back);
-  // forward otherwise. A URL pattern cannot decide it: the new page
-  // cannot know which URL is the index, and the pattern is the app's.
+  // 1. Direction. Back when the page being left recorded that its back
+  // control was used AND this page is where it pointed, or when the
+  // Navigation API reports a traverse to an earlier entry (the browser's
+  // own Back); forward otherwise. The record is written on the click,
+  // before anything commits, so a Back whose leave-page prompt was
+  // cancelled leaves it behind: scoped to its destination, the next link
+  // followed still slides forward. Taken on every reveal, matched or not,
+  // so a stale one never waits for its URL to come round. A URL pattern
+  // cannot decide it: the new page cannot know which URL is the index,
+  // and the pattern is the app's.
   function reveal(e) {
-    var back = take(WENT_BACK) === "1", a = window.navigation && navigation.activation;
+    var back = take(WENT_BACK) === location.pathname + location.search, a = window.navigation && navigation.activation;
     if (!back && a && a.navigationType === "traverse" && a.from && a.entry) back = a.entry.index < a.from.index;
     // Focus first, and the type only where there is a set to add it to:
     // an engine with cross-document transitions but no types must not
@@ -125,11 +130,11 @@
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest(BACK), nav = window.navigation, cur, prev, want;
     if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-    store(function (s) { s.setItem(WENT_BACK, "1"); });
+    want = place(a.href);
+    if (want !== null) store(function (s) { s.setItem(WENT_BACK, want); });
     cur = nav && nav.currentEntry;
     if (!cur || cur.index < 1) return;
     prev = nav.entries()[cur.index - 1];
-    want = place(a.href);
     if (want !== null && prev && !prev.sameDocument && prev.url && place(prev.url) === want) {
       e.preventDefault();
       history.back();
