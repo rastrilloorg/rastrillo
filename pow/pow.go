@@ -1,28 +1,30 @@
 // Package pow is the front door for a form anyone on the internet can
-// post to: an address-bound proof of work, a sealed challenge, a
-// single-use nonce and a honeypot, with the browser half of the proof
-// of work shipped alongside the Go half that verifies it.
+// post to: a sealed, single-use challenge, a honeypot, and a proof of
+// work, with the browser half shipped alongside the Go half that
+// verifies it.
 //
-// It is movement's front door, extracted at the point a second app
-// needed it. The extraction is not about saving the lines. The two
-// halves of the proof of work have to build a byte-identical preimage,
-// nothing in a copied file enforces that, and a disagreement fails
-// silently in the browser for a subset of addresses — so the framework,
-// which is the only place that can ship both halves and keep them in
-// step, is where they belong.
+// The browser half is here because the solver in the page and the
+// verifier in Go must build a byte-identical preimage; nothing in a
+// copied file enforces that, and a disagreement fails silently for
+// some visitors. pow/browser_test.go runs the shipped solver in
+// Chromium against this verifier.
 //
 // The shape:
 //
-//	g, err := pow.New(pow.Config{InstanceKey: key, Nonces: pow.SQLNonces(db)})
-//	...
-//	c := g.Issue(time.Now())         // render: c.Fields(), c.FormAttrs(workerURL)
-//	reason, ok := g.Check(r, email)  // on POST, before anything that writes
+//	g, err := pow.New(pow.Config{InstanceKey: key, Nonces: pow.SQLNonces(db),
+//		ScriptURL: assets.Path("pow.js"), WorkerURL: assets.Path("pow-worker.js")})
+//	f := g.Form(time.Now(), "apply:41")       // render f.Fields, f.Attrs, f.Script
+//	adm := g.Admit(r, pow.Want{Scope: "apply:41"})
+//	... validate, then in the handler's transaction:
+//	err = adm.Commit(ctx, tx)                 // spends with the business write
 //
-// What this does not do: 2^18 SHA-256 is under a millisecond on a
-// commodity GPU. Proof of work prices out casual and scripted abuse and
-// nothing more. Against a serious bulk attack the defence is a
-// persisted budget on whatever the form spends — mail, rows, money —
-// not this.
+// Check is Admit and Commit at once, for a handler that redirects after
+// every POST. Never cache a page that carries a challenge: one token on
+// a shared page is one token for every visitor.
+//
+// What this does not do: proof of work prices out scripted abuse and
+// nothing more. Against a bulk attacker who pays for the solves the
+// defence is a persisted budget on what the form spends.
 package pow
 
 import (
