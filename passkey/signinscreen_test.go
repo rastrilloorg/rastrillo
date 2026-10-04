@@ -198,7 +198,7 @@ func TestAPasskeySignInLeavesNoTypedAddressBehind(t *testing.T) {
 	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, auth.Schema, passkey.Schema, secondfactor.Schema)); err != nil {
 		t.Fatal(err)
 	}
-	au, err := auth.New(auth.Config{DB: d.Writer(), Origin: testOrigin, InstanceKey: "test-instance-key", Mailer: &discardMailer{}, SigninScreen: true})
+	au, err := auth.New(auth.Config{DB: d.Writer(), Origin: testOrigin, InstanceKey: "test-instance-key", Mailer: &discardMailer{}, SigninScreen: true, ProofOff: true})
 	if err != nil {
 		t.Fatal(err)
 	}

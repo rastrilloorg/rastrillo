@@ -15,6 +15,7 @@ import (
 	"os"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/db"
 
 	"notes/internal/notes"
@@ -30,6 +31,15 @@ func main() {
 		// the CSRF origin check, so silently defaulting it in a real
 		// deployment would mean http-grade cookies on an https app.
 		logger.Warn("NOTES_ORIGIN not set; defaulting", "origin", origin)
+	}
+
+	instanceKey := os.Getenv("NOTES_INSTANCE_KEY")
+	if instanceKey == "" {
+		// Loud for the same reason as the origin: the key seals every
+		// sign-in challenge, and a default shared by every copy of this
+		// example is a key anybody can read.
+		instanceKey = "notes-development-only-instance-key"
+		logger.Warn("NOTES_INSTANCE_KEY not set; using a development-only key")
 	}
 
 	// Resolve the platform's activation argv/env ourselves (Resolve's
@@ -52,7 +62,8 @@ func main() {
 	}
 	defer d.Close()
 
-	mux, err := notes.App(d, origin, logger)
+	bg := &background.Group{}
+	mux, err := notes.App(d, origin, instanceKey, bg, logger)
 	if err != nil {
 		logger.Error("build app", "err", err)
 		os.Exit(1)
@@ -60,6 +71,9 @@ func main() {
 
 	opts.Mux = mux
 	opts.DBPath = ""
+	// Serve stops the group after draining requests and before the
+	// deferred d.Close(), so a sweep never runs against a closed database.
+	opts.Background = bg
 	if err := rastrillo.Serve(opts); err != nil {
 		logger.Error("serve failed", "err", err)
 		os.Exit(1)

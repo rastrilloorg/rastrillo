@@ -89,9 +89,9 @@ func TestReturnToAfterSignin(t *testing.T) {
 
 	// Sign up carrying that return_to along, exactly as the hidden
 	// form field in signin.html/signup.html would.
-	signup := cl.postForm("/signup", url.Values{
+	signup := cl.postForm("/signup", cl.filled("/signup?return_to="+url.QueryEscape(returnTo), url.Values{
 		"email": {"bob@example.com"}, "password": {"hunter2222"}, "return_to": {returnTo},
-	})
+	}))
 	defer signup.Body.Close()
 	loc := signup.Header.Get("Location")
 	if loc != "/notes/new" {
@@ -154,5 +154,17 @@ func TestSignoutRevokesServerSide(t *testing.T) {
 	defer resp.Body.Close()
 	if got, want := resp.Request.URL.Path, "/signin"; got != want {
 		t.Fatalf("replayed cookie landed at %s, want %s (session should be revoked)", got, want)
+	}
+}
+
+// TestSignupWithoutTheChallengeIsRefused: the sign-up form carries a
+// proof-of-work challenge, and a POST that skips the page is refused.
+func TestSignupWithoutTheChallengeIsRefused(t *testing.T) {
+	ts := newApp(t)
+	cl := newClient(t, ts)
+	resp := cl.postForm("/signup", url.Values{"email": {"bot@example.com"}, "password": {"long enough pw"}})
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("signup without a challenge: %d, want 422", resp.StatusCode)
 	}
 }
