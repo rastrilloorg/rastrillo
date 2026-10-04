@@ -222,7 +222,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + test + migration check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + test + migration check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -947,7 +947,7 @@ func TestBrowserWalk(t *testing.T) {
 // app's own call.
 const readmeTemplate = `# %[1]s
 
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
 
 ## Browser drive
 
@@ -1413,7 +1413,7 @@ mechanically.
   be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, tests and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design.
+- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
 - Two of the scaffolded tests are about the **placeholder index page**
   and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
   ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in

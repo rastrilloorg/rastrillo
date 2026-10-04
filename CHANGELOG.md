@@ -10,6 +10,24 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: a new app's `make ci` runs govulncheck and gitleaks, on a pinned Go
+
+`rastrillo new` now adds `govulncheck` and `gitleaks` to `make ci`, as `.amadan/ci.d` steps 26 and 27, and the Makefile exports `GOTOOLCHAIN` so the gate and `make release` run on one named Go release, fetched on first use. Both tools go through `go run` at the versions rastrillo's own gate uses. Apps scaffolded earlier keep their old gate; to add these, put this in the Makefile and add `govulncheck gitleaks` to the `ci:` line after `staticcheck`:
+
+```make
+export GOTOOLCHAIN = go1.26.6
+
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.8.0
+govulncheck:
+	go run $(GOVULNCHECK) ./...
+
+GITLEAKS := github.com/zricethezav/gitleaks/v8@v8.30.1
+gitleaks:
+	go run $(GITLEAKS) git --no-banner --redact .
+```
+
+On an older app the first govulncheck run reports whatever its code can already reach; the standard-library findings go away with the pinned Go alone. Rastrillo's own `make ci` runs both too.
+
 ### Fixed: `KeymailServers: []string{}` now means no server, ever — a behaviour change for anyone already passing it
 
 `auth.Config.KeymailServers` is meant to be nil for "any delegated server" (the default) and non-nil for a closed allowlist. But `keymailServers` read `len(list) == 0` rather than `list == nil`, so a non-nil *empty* slice silently fell back to "any server" too — continuation.go's own predicate already checked `a.servers == nil`, not `len() == 0`; only the parser disagreed with it. An app with no real keymail federation partners had no way to say so. Sign-in still looked up the domain's `_keymail` delegation, then made an HTTPS request to `.well-known/keymail` on the server it named, or on the domain itself when it named none. A server that accepts the TCP connection but never answers costs the classifier's full 5s timeout, and the classifier remembers that "not keymail" answer for only a minute, so in a quiet app the wait comes back on nearly every sign-in from that domain.
