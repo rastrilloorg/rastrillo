@@ -42,7 +42,7 @@ docs/site/templates.md
 The scaffolded `AGENTS.md` is the source of truth for that app's code;
 this file stays the framework's. `rastrillo generate` writes `gen/`
 from `manifest/` — commit it, never hand-edit; add `generate --check`
-to `make ci`. `make ci` also runs staticcheck, pinned in the Makefile; raise the pin when you raise the go directive. `rastrillo dev` watches, regenerates, rebuilds and
+to `make ci`. `make ci` also runs staticcheck, govulncheck and gitleaks, pinned in the Makefile along with the Go release (`GOTOOLCHAIN`); raise the tool pins with the go directive, and `GOTOOLCHAIN` with each Go security release. `rastrillo dev` watches, regenerates, rebuilds and
 restarts. docs/site/getting-started.md
 
 `rastrillo doctor [--fix]` compares `static/`'s vendored files with the
@@ -70,12 +70,13 @@ Imports: `amadan.net/rastrillo/rastrillo` and subpackages `db`,
 `migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
 `jobs`; `github.com/go-chi/chi/v5`; `gorm.io/gorm`.
 
-`cmd/<app>/main.go`, in order:
+`cmd/<app>/main.go`, in order: `started := time.Now()`;
 `opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "notes.db",
 Logger: logger})`; `d, err := db.Open(opts.DBPath, logger)` (`*db.DB`,
 §2); `defer d.Close()`; `mux, err := notes.App(d, origin, logger)`;
-`opts.Mux = mux`; `opts.DBPath = ""`; `rastrillo.Serve(opts)`. On any
-err: `logger.Error`, `os.Exit(1)`.
+`notes.Configure(&opts, mux, started)` (sets `Mux`, `ErrorPage`, and
+`perf.Middleware` as `Wrap`); `opts.DBPath = ""`; `rastrillo.Serve(opts)`.
+On any err: `logger.Error`, `os.Exit(1)`.
 
 **Use `Resolve` + `Serve`, never `Run`, when the app opens its own
 database:** `Run` re-parses argv and repopulates `Options.DBPath`, so
@@ -86,7 +87,8 @@ LISTEN_FDS, $STATE_DIRECTORY, /healthz, /api/version, SIGTERM drain,
 baseline security headers (your own Set wins). Never hand-roll any of it.
 
 `App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux,
-error)` in `app.go`, in order:
+error)` in `app.go` is `Router` (returns the `chi.Router`) then `Mux`
+(adds `/static/`), split so the perf test walks the routes. `Router`, in order:
 `migrate.Apply(context.Background(), d, BootSchema)`; writer `*sql.DB`
 via `d.G.DB()` (sessions wants it);
 `sessions.New(sessions.Config{DB: writer, Origin: origin, Logger:
@@ -96,9 +98,11 @@ chi.NewRouter()`; `r.Use(csrf.Protect(origin))`; `ph`'s handlers at
 GET+POST `/signin`, `/signup` and POST `/signout` (§5); owned-model
 CRUD (§3/§4) inside
 `r.Group(func(r chi.Router) { r.Use(sess.Require); ... })`; return
-`http.NewServeMux()` with `mux.Handle("/", r)`. `render.go` parses one
+`r`. `render.go` parses one
 `*template.Template` per page (layout + page), so two pages can both
-define `"content"`.
+define `"content"`. Past 5,000 lines in `internal/<app>`, split by
+feature: `internal/<app>/<feature>` exposing `Mount(r chi.Router, deps)`,
+called from `Router`; `make budget` enforces it.
 
 Locales: `Options.Locales`/`DefaultLocale`/`LocaleFS`, flat TOML per
 code; twelve ship translated. **Any locale you add must translate the
@@ -286,9 +290,8 @@ docs/site/passwords.md
 **Magic links** (`rastrillo/auth`: sign-in by emailed link, upgrading
 to the keymail ceremony where the address has one): `auth.New` with
 `Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, same
-`sessions` core. `New` needs `Proof` (an unbound `*pow.Guard`, else
-`ErrProofMode`) or `ProofOff`, else `ErrProofUnset`; `Begin` checks it
-before the limiter, refuses to `?err=check&rec=1`, and
+`sessions` core, `Proof`/`ProofOff` as for `password`. `Begin` checks
+the proof before the limiter, refuses to `?err=check&rec=1`, and
 `SigninState(r).Proof` is the challenge to render. **Under `auth`, never
 `sessions.UserID`:** the Subject is the verified email, so it returns
 `(0, false)` and the §3 seam would scope every query to `user_id = 0`.
@@ -318,30 +321,27 @@ https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
 servers are trusted; other addresses get a link.
 
 **Public forms** (`rastrillo/pow`: sealed single-use challenge,
-honeypot, proof of work). Apply `pow.Schema` BEFORE `pow.New`, which
-checks the table (`ErrNoSchema`). `pow.New(Config{InstanceKey, Nonces:
-pow.SQLNonces(writer), ScriptURL, WorkerURL})`, the URLs from
-`rastrillo.NewAssets(pow.Assets())` mounted e.g. at `/pow/`: serve the JS
-from the module, never vendor it (a copy that drifts from the Go
-verifier fails silently). The app owns the Guard: one serves every form,
-is shared by `auth` and `password`, and the app sweeps it
-(`guard.Sweep(now)` from a `background.Group` loop). Sign-in: `Difficulty:
-16` (measured: p95 under 1s at 6x CPU throttle; the default stays 18),
-`MinAge: 500ms`. Render `f := g.Form(now, scope)`: `.Attrs` on the
-`<form>`, `.Fields` inside, `.Script` once per page, `form-foot`'s
-`"Proof"` key (disabled submit with `data-pow-submit`, status line,
-`<noscript>`). Scope is sealed and compared: namespace it
-(`myapp/contact`). **Never cache a page carrying a challenge**
-(`no-store`): one token for every visitor. `NoProof` (token + honeypot)
-needs no JavaScript; any proof of work does. With a transaction:
-`adm := g.Admit(r, pow.Want{Scope: s})` BEFORE `BeginTx` (the writer has
-one connection), validate, then `adm.Commit(ctx, tx)` inside it (GORM:
-`tx.Statement.ConnPool`); `ErrSpent` means refuse, never 500.
-Redirect-after-POST or no transaction: `g.Check(r, want)`, never inside
-an open tx. After a refusal re-render `g.Recovery(now, scope)`
-(trapless; sticky via `adm.Recovered()`). It recovers the challenge
-only: refilling the visitor's answers is the app's risk and needs an
-idempotent write.
+honeypot, proof of work). Apply `pow.Schema` BEFORE `pow.New` (else
+`ErrNoSchema`): `pow.New(Config{InstanceKey, Nonces:
+pow.SQLNonces(writer), ScriptURL, WorkerURL})`, URLs from
+`rastrillo.NewAssets(pow.Assets())` (e.g. at `/pow/`); never vendor the
+JS (a copy drifting from the Go verifier fails silently). One Guard
+serves every form, `auth` and `password` included; `guard.Sweep(now)`
+it from a `background.Group` loop. Sign-in: `Difficulty: 16` (p95 under
+1s at 6x CPU throttle; default 18), `MinAge: 500ms`. Render `f :=
+g.Form(now, scope)`: `.Attrs` on the `<form>`, `.Fields` inside,
+`.Script` once per page, `"Proof"` to `form-foot` (disabled
+`data-pow-submit` button, status line, `<noscript>`). Namespace the
+scope (`myapp/contact`); it is sealed and compared. **Never cache a page
+carrying a challenge** (`no-store`): every visitor gets one token.
+`NoProof` (token + honeypot) needs no JavaScript; proof of work does.
+In a transaction: `adm := g.Admit(r, pow.Want{Scope: s})` BEFORE
+`BeginTx` (one writer connection), validate, `adm.Commit(ctx, tx)`
+inside (GORM: `tx.Statement.ConnPool`); `ErrSpent` is a refusal, never
+a 500. Without one: `g.Check(r, want)`, never inside an open tx. After a
+refusal render `g.Recovery(now, scope)` (trapless; sticky via
+`adm.Recovered()`): it recovers the challenge, not the visitor's answers
+(refilling those is the app's risk and needs an idempotent write).
 docs/site/reference/pow.md
 
 ## 6. Background work
@@ -399,6 +399,12 @@ framework fixes remain easy to adopt. Follow an explicit user design
 requirement when it calls for more, but reuse the system wherever it fits.
 docs/site/templates.md
 
+Shells on a phone: `topbar` and `console` put their narrow chrome in
+the Menu card. `sidebar` and `console` rails become an index page: mark
+it `{{define "view"}}index{{end}}`; every other page names its way back
+with `{{define "up"}}/#nav-x{{end}}` and the nav link gets
+`id="nav-x"`. Never build a hamburger drawer.
+
 **One screen, one job.** A screen shows a thing, or asks for one thing —
 never both. The failure it prevents is stacking: a list page that also
 carries a create form, an import panel and a dropzone, so the first
@@ -423,6 +429,22 @@ An empty list is step 1, not an exception: `empty-state` says what the
 screen is for and carries the one link — do not pre-empt it with the
 create form. Destructive actions are the same shape, with `confirm-form`
 on its own URL at step 2, never a modal fired from the row.
+
+## 7a. Tests and budgets
+
+`make ci` holds each directory to 5,000 source and 8,000 test lines,
+each test package to 10s, each GET screen to 150ms to first byte and a
+cold boot to 500ms; exceptions go in `.rastrillo/budgets.txt`, each with
+a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). Every test
+package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
+`rastrillo budget test` judges, cached runs included. Tests start with
+`t.Parallel()` (perf tests never) and open a copy of a `dbtest` template
+instead of migrating. Screens are gated by `perf/perftest` in `make
+perf`; a new GET route fails there until measured or recorded. While
+editing, test the package you touch plus `internal/<app>test`; `make ci`
+before pushing. A test whose inputs Go cannot see (execs `go build`,
+reads outside its package, uses the network) gets its own `-count=1`
+target. docs/site/testing.md
 
 ## 8. What NOT to do
 
@@ -474,7 +496,14 @@ on its own URL at step 2, never a modal fired from the row.
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
   names another group, and a nested `rst-menu-group` MUST name a
-  different one or it closes its parent. Full vocabulary:
+  different one or it closes its parent. A row that stands for an item
+  is a link across its whole width through its one name link; never
+  link only the name. Row actions use `row-menu`, and a destructive one
+  is a link to its confirm page. Inside a bulk-selection form, row-menu
+  items are links only. A GET handler never changes anything, and no
+  script changes anything while `document.prerendering` is true:
+  `Serve` prerenders shell navigation, on a phone before it is tapped
+  (turn it off with `Options.NoSpeculationRules`). Full vocabulary:
   rastrillo.org/design-system (built from `ui` by `cmd/dsgen`, not
   committed); `go generate ./...` renders a local copy into
   `.design-system/`. docs/site/templates.md

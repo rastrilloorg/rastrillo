@@ -105,24 +105,28 @@
 // content is a data table you want announced as one; this is for list
 // screens whose rows are links. The card sets its columns once: give it
 // a class and set the --rst-cols custom property in your stylesheet
-// (trailing 32px reserved for a kebab), never in a style attribute,
-// which the default CSP blocks. Rows only choose cells. A head row
-// carries rst-lrow="head"; a data row's identity cell is rst-nm, a
-// column hidden below 800px is rst-m-hide, and the per-row overflow
-// menu is a native <details rst-row-menu> — no JavaScript:
+// (trailing var(--rst-col-menu) reserved for a kebab), never in a style
+// attribute, which the default CSP blocks. Rows only choose cells. A
+// head row carries rst-lrow="head"; a data row's identity cell is
+// rst-nm, a column hidden below 800px is rst-m-hide, and the per-row
+// overflow menu is the row-menu partial:
 //
 //	<div rst-card class="orders">
 //	  <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
 //	  <div rst-lrow>
 //	    <a class="rst-nm" href="/orders/AB3PX">Grace Hopper<small>AB3PX · grace@example.com</small></a>
 //	    <span class="rst-m-hide rst-cell-mut">Paid</span>
-//	    <details rst-row-menu name="rst-menus"><summary aria-label="Actions for order AB3PX">{{icon "kebab"}}</summary>
-//	      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
-//	    </details>
+//	    {{template "row-menu" dict "Name" "Grace Hopper" "Items" (list (dict "Label" "View" "Href" "/orders/AB3PX") (dict "Label" "Refund order…" "Href" "/orders/AB3PX/refund" "Danger" true))}}
 //	  </div>
 //	</div>
 //
-//	.orders { --rst-cols: 2fr 110px 32px; }
+//	.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }
+//
+// A row with a primary link is clickable across its whole width: the
+// identity link's ::after covers the row, and every other link, button,
+// summary, label and form control in it sits above that overlay. A row
+// with no link gets neither, so it never looks clickable. Give each row
+// one identity link.
 //
 // dropdown — the details/summary menu vocabulary behind header overflow
 // menus and a list-bar's Filter/Sort controls. Only one menu is open at
@@ -138,9 +142,10 @@
 // so a submenu sharing its parent's group closes that parent the instant
 // it opens — the submenu flashes and the whole menu vanishes.
 //
-// Shell chrome and the toggle-block stay out of the group on purpose:
-// neither is a menu, and closing the narrow-screen nav rail because
-// someone opened a filter would take the navigation away.
+// The toggle-block stays out of the group on purpose: it is not a menu.
+// So does the Menu button of the topbar and console on a phone: the
+// account menu opens inside it, and in the same group opening the
+// account menu would close it.
 //
 // rst-caret is the disclosure arrow that flips on [open]:
 //
@@ -222,17 +227,21 @@
 // rst-shell-bar holding rst-shell-brand, rst-shell-nav,
 // rst-shell-account and, below the page, rst-shell-foot;
 // rst-shell-sidebar wraps a rst-shell-rail of rst-shell-group-labelled
-// nav beside rst-shell-main, collapsing below 800px into a
-// <details rst-shell-chrome> — no JavaScript. rst-shell-console is
-// both at once: the bar's tail and the rail collapse behind the ONE
-// <details rst-shell-menu>, which gates its sibling tail with + and
-// the rail with :has(). rst-stage has no chrome at all: one card over
-// a rst-stage-scene backdrop, for a screen that stands alone. All five
-// carry rst-skip, the skip link — column and stage included. The
-// canonical markup is Styleguide's "shell-topbar" and "shell-sidebar",
-// and an app does not usually write any of it by hand: Layout ships
-// the five shells as whole templates and rastrillo new writes the
-// chosen one as templates/layout.html.
+// nav beside rst-shell-main. Below 800px it shows each URL in one of
+// two ways, named by the page's view block: the index
+// (rst-shell-sidebar="index"), where the rail is the whole page under
+// its rst-shell-title, and a content page (rst-shell-sidebar="page",
+// the default), which carries a rst-shell-back link to the page's up
+// block. No JavaScript; shell.js adds a slide, history reuse and focus
+// return. rst-shell-console is both at once: its bar's tail folds
+// behind the one <details rst-shell-menu> as a card over the page, and
+// its rail is an index like the sidebar's. rst-stage has no chrome at
+// all: one card over a rst-stage-scene backdrop, for a screen that
+// stands alone. All five carry rst-skip, the skip link — column and
+// stage included. The canonical markup is Styleguide's "shell-topbar"
+// and "shell-sidebar", and an app does not usually write any of it by
+// hand: Layout ships the five shells as whole templates and rastrillo
+// new writes the chosen one as templates/layout.html.
 package ui
 
 import (
@@ -266,6 +275,12 @@ var datetimeJS []byte
 
 //go:embed calendar.js
 var calendarJS []byte
+
+//go:embed shell.js
+var shellJS []byte
+
+//go:embed shell.css
+var shellCSS []byte
 
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
@@ -391,6 +406,21 @@ func DatetimeJS() []byte { return datetimeJS }
 // screen arrive translated on data-rst-date-calendar,
 // data-rst-date-prev-month and data-rst-date-next-month.
 func CalendarJS() []byte { return calendarJS }
+
+// ShellJS returns shell.js: the sidebar and console shells' phone
+// navigation. It types the slide between pages, makes the back control
+// reuse history when it can prove what is behind it, and returns focus
+// to the section the reader left. Delivered once by rastrillo new like
+// ShimJS and app-owned from then on. Only the sidebar and console
+// layouts link it, and it is optional there: without it the index and
+// the back control are ordinary pages and links.
+func ShellJS() []byte { return shellJS }
+
+// ShellCSS returns shell.css: the slide between the index and a page on
+// a phone. It is a stylesheet of its own because the slide's opt-in
+// cannot be scoped from tokens.css, where it would opt every shell's
+// pages in, the sign-in page included.
+func ShellCSS() []byte { return shellCSS }
 
 // layoutNames lists the shipped shells, column first: it is the plain
 // centred page every scaffolded app starts on, the three chrome shells

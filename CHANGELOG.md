@@ -37,9 +37,57 @@ A sign-in page left open across the deploy posts no challenge. Its visitor sees 
 
 See [pow](/docs/reference/pow), [Magic links](/docs/magic-links#the-front-door) and [Passwords](/docs/passwords#the-front-door).
 
+### Added: budgets for directory size, test time and screen time
+
+A new app's `make ci` now holds each directory to 5,000 lines of code and
+8,000 of tests (`make budget`), each test package to 10 seconds (`make
+test`), and every GET screen to 150ms to first byte and a cold start to
+500ms (`make perf`). The timing budgets fail only on CI. Exceptions go in
+`.rastrillo/budgets.txt`, each with a reason. There is a new `budget`
+package, a new `perf/perftest` package, and a new `rastrillo budget`
+command. [Testing](/docs/testing) explains all of it.
+
+The scaffold also changed: tests copy a migrated `dbtest` template
+instead of migrating, every example test runs in parallel, `perf`'s
+middleware is mounted by default, and `App` is split into `Router` and
+`Mux`, with a new `Configure` that `main.go` calls.
+
+Apps scaffolded earlier keep their old gate. To adopt the budgets, follow
+"Adopting the budgets in an existing app" in [Testing](/docs/testing).
+
+### Changed: a new app's `make ci` runs govulncheck and gitleaks, on a pinned Go
+
+`rastrillo new` now adds `govulncheck` and `gitleaks` to `make ci`, as `.amadan/ci.d` steps 26 and 27, and the Makefile exports `GOTOOLCHAIN` so the gate and `make release` run on one named Go release, fetched on first use. Both tools go through `go run` at the versions rastrillo's own gate uses. Apps scaffolded earlier keep their old gate; to add these, put this in the Makefile and add `govulncheck gitleaks` to the `ci:` line after `staticcheck`:
+
+```make
+export GOTOOLCHAIN = go1.26.6
+
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.8.0
+govulncheck:
+	go run $(GOVULNCHECK) ./...
+
+GITLEAKS := github.com/zricethezav/gitleaks/v8@v8.30.1
+gitleaks:
+	go run $(GITLEAKS) git --no-banner --redact .
+```
+
+On an older app the first govulncheck run reports whatever its code can already reach; the standard-library findings go away with the pinned Go alone. Rastrillo's own `make ci` runs both too.
+
+### Changed: phones get 16px type and 44px targets, sidebar shells an index and a back control; re-vendor `tokens.css`, add `shell.js` and `shell.css`, and update your layout
+
+Until it takes this release's `tokens.css`, an app zooms in on every form on a phone. Upgrade the module, then run `rastrillo doctor --fix`: it re-copies `tokens.css` and adds `shell.js` and `shell.css`.
+
+On a phone or a narrow window, text is one step bigger (16px body text) and controls are at least 44px; on a 320px screen calendar days narrow to about 41px wide. Desktops change in a few places: a list row is clickable across its width and its focus ring goes round the whole row, a row with no link no longer lights up on hover, a row's checkbox has a 24px target, and a form button in a row's menu has a little more room at its end.
+
+The sidebar shell has no menu button on a phone, and neither does the console's navigation rail: the index page lists the sections, and every other page has a back control. Mark your index with `{{define "view"}}index{{end}}` and give other pages an `up` block; see "Upgrading" in the [templates guide](/docs/templates). Old layouts keep working, and `rastrillo doctor` tells you when yours is one. The topbar's and console's Menu button opens a card over the page that closes on a tap outside it or Escape.
+
+New: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. In this release's sidebar and console layouts, `Serve` prerenders the navigation by default.
+
+Watch for three things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it. And once you move to the new layouts, a page linked from the navigation may be prerendered: its scripts run before anyone sees it, so a script that changes something as the page opens must wait until `document.prerendering` is false.
+
 ### Fixed: `KeymailServers: []string{}` now means no server, ever — a behaviour change for anyone already passing it
 
-`auth.Config.KeymailServers` is meant to be nil for "any delegated server" (the default) and non-nil for a closed allowlist. But `keymailServers` read `len(list) == 0` rather than `list == nil`, so a non-nil *empty* slice silently fell back to "any server" too — continuation.go's own predicate already checked `a.servers == nil`, not `len() == 0`; only the parser disagreed with it. An app with no real keymail federation partners had no way to say so: every sign-in still probed the address's own domain — a real DNS `_keymail` lookup, then an HTTPS `.well-known/keymail` request if that resolved anything — before giving up. A domain that accepts the TCP connection but never answers costs the classifier's full 5s timeout, on every single sign-in.
+`auth.Config.KeymailServers` is meant to be nil for "any delegated server" (the default) and non-nil for a closed allowlist. But `keymailServers` read `len(list) == 0` rather than `list == nil`, so a non-nil *empty* slice silently fell back to "any server" too — continuation.go's own predicate already checked `a.servers == nil`, not `len() == 0`; only the parser disagreed with it. An app with no real keymail federation partners had no way to say so. Sign-in still looked up the domain's `_keymail` delegation, then made an HTTPS request to `.well-known/keymail` on the server it named, or on the domain itself when it named none. A server that accepts the TCP connection but never answers costs the classifier's full 5s timeout, and the classifier remembers that "not keymail" answer for only a minute, so in a quiet app the wait comes back on nearly every sign-in from that domain.
 
 `KeymailServers: []string{}` now means none: the classifier never performs a delegation lookup or an HTTPS probe for any address, and sign-in is plain magic-link only. **If your app already sets `KeymailServers` to a dynamically-built slice that can come out empty** (filtered from an env var, say) and relied on empty meaning "any server", it now means "no server" instead — pin it to `nil` explicitly if "any server" is what you want when the list is empty.
 

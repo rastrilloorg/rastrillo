@@ -75,14 +75,8 @@ doing the same work:
   app-owned from that moment. The known cost is drift — an app can run
   new markup against frozen old CSS — and `rastrillo doctor` compares an
   app's frozen files against the module's and offers to re-copy.
-- One gate definition, run before pushing and by CI:
-  `go vet ./... && gofmt -l . && go test ./...`. A scaffolded app's own
-  gate is its `Makefile`'s `ci` target.
-- Every change lands on its own branch through `amadan branch merge`,
-  never a direct merge to main and never a squash. On the amadan hub the
-  branch *is* the pull request, and merge is detected by ancestry — a
-  squash rewrites the commits and the branch stays open. The GitHub
-  remote is a mirror; `make mirror` and `make mirror-check` keep it one.
+- One gate definition, run before pushing and by CI: `make ci`. It sets `GOFLAGS`, `CGO_ENABLED` and the Go release (`GOTOOLCHAIN`) itself, so running it by hand and running it on a runner are the same thing. A scaffolded app's own gate is its `Makefile`'s `ci` target.
+- Every change lands on its own branch and is squashed into main as one commit with `amadan branch merge -squash`; nothing is pushed to main directly. On the amadan hub the branch *is* the pull request. The GitHub remote is a mirror; `make mirror` and `make mirror-check` keep it one, and work carried across from the mirror is the one ordinary merge.
 - The design system gallery is generated at build time by the public
   `cmd/dsgen` and is not committed; it is published at
   rastrillo.org/design-system.

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -141,20 +140,37 @@ func TestEmptyKeymailServersMeansNone(t *testing.T) {
 }
 
 // wireKeymail always overwrites Classifier.LookupTXT with the fake's
-// own, so TestEmptyKeymailServersMeansNone — which calls it — never
-// exercises New's own short-circuit; it only proves the guard refuses
-// the HTTP probe a real (or fake) delegation names. This test checks
-// the short-circuit itself, directly, before anything can overwrite
-// it: without it, KeymailServers: []string{} would still issue a real
-// DNS query for every sign-in's domain, pointlessly, since its answer
-// can never survive the guard either way.
-func TestEmptyKeymailServersNeverResolvesADomain(t *testing.T) {
-	a, _ := newTestAuth(t, func(c *Config) { c.KeymailServers = []string{} })
+// own, so TestEmptyKeymailServersMeansNone never exercises New's own
+// short-circuit; it only proves the guard refuses the HTTP probe a
+// delegation names. This test keeps New's lookup and takes the guard
+// away instead, putting the fake straight under the classifier: the
+// guard refuses a probe before its transport sees it, so behind the
+// guard a lookup that answered "not found" (which upstream reads as
+// "probe the domain itself") would look exactly like one that names
+// nothing. Without the guard, any probe the classifier builds lands
+// on the fake and is counted.
+func TestEmptyKeymailServersNeverProbes(t *testing.T) {
+	a, m := newTestAuth(t, func(c *Config) { c.KeymailServers = []string{} })
+	// Checked first so a missing short-circuit fails here rather than
+	// sending the test out to the real resolver.
 	if a.flow.Classifier.LookupTXT == nil {
-		t.Fatal("KeymailServers: []string{} left LookupTXT at its default (net.DefaultResolver) — every sign-in still pays a real DNS round trip whose answer can never matter")
+		t.Fatal("KeymailServers: []string{} left LookupTXT at its default (net.DefaultResolver), so every sign-in still pays a real DNS round trip whose answer can never matter")
 	}
-	if _, err := a.flow.Classifier.LookupTXT(context.Background(), "example.org"); err == nil {
-		t.Fatal("the short-circuited lookup must refuse every domain, not resolve one")
+	f := kayFake()
+	f.servers["example.org"] = true
+	a.flow.Classifier.HTTP = &http.Client{Transport: f}
+	res := beginKeymail(a, newBrowser(), "kay@example.org")
+	if loc := res.Header.Get("Location"); loc != "/signin?sent=1" {
+		t.Fatalf("a claimed address with KeymailServers: []string{} → %q, want a magic link", loc)
+	}
+	f.mu.Lock()
+	seen := f.seen
+	f.mu.Unlock()
+	if len(seen) != 0 {
+		t.Fatalf("the classifier built %d probes (%v); with no servers listed it must not build one", len(seen), seen)
+	}
+	if m.sentTo() != "kay@example.org" {
+		t.Fatalf("the link went to %q", m.sentTo())
 	}
 }
 

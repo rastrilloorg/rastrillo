@@ -256,10 +256,13 @@ type Config struct {
 	// no DNS delegation lookup, no HTTPS probe, to the address's own
 	// domain or anywhere else. Every sign-in is plain magic-link. Set
 	// this, not nil, for an app with no real keymail federation
-	// partners: left unset, the classifier still probes each address's
-	// own domain before giving up, and a domain that accepts the
-	// connection without ever answering costs the classifier's full
-	// timeout on every single sign-in.
+	// partners: left unset, the classifier still looks up each domain's
+	// _keymail delegation and probes the server it names, or the domain
+	// itself when DNS says it has none. A server that accepts the
+	// connection without ever answering costs the full classify
+	// timeout, and the classifier remembers a "not keymail" answer for
+	// only a minute, so in a quiet app that is nearly every sign-in
+	// from that domain.
 	//
 	// Copied at New; changing it means a restart, which also empties
 	// the classifier's caches. It applies whether or not SigninScreen

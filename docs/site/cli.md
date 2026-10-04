@@ -473,3 +473,26 @@ suite is neither a Go package nor a static asset.
 `generate --check` runs this same gate automatically when
 `cmd/genvectors` exists — one gate before ship, not two to remember; CI
 that already runs `generate --check` needs no extra step.
+
+## rastrillo budget
+
+```sh
+rastrillo budget size [dir]
+rastrillo budget test [-no-time] [-require TestA,TestB] [go test arguments]
+```
+
+`budget size` counts the lines in each directory of the module at `dir`
+(default `.`) and holds them to 5,000 lines of code and 8,000 of tests,
+minus the exceptions in `.rastrillo/budgets.txt`. It stops at a nested
+module, which has its own budget. It exits 1 when something is over and 2
+when `budgets.txt` cannot be read.
+
+`budget test` runs `go test -json` with your arguments (`./...` if you give
+none), and exits with `go test`'s own status. It holds each package to its
+time budget using the line `budget.Main` prints, fails a package that ran
+tests without printing it, and ends with a receipt. `-no-time` turns the
+time budget off, for the perf lane. `-require` names tests that must pass
+in the run, so a lane cannot go green having run nothing.
+
+The scaffold's `make budget`, `make test` and `make perf` call these.
+[Testing](/docs/testing) explains the budgets.

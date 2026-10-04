@@ -6,8 +6,16 @@
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{asset "static/tokens.css"}}">
 <link rel="stylesheet" href="{{asset "static/theme.css"}}">
+{{/* shell.css is the slide between the index and a page on a phone;
+     only the two shells that have an index link it, because the opt-in
+     it holds cannot be scoped from tokens.css. */}}
+<link rel="stylesheet" href="{{asset "static/shell.css"}}">
 <script defer src="{{asset "static/rastrillo.js"}}"></script>
 <script defer src="{{asset "static/busy.js"}}"></script>
+{{/* blocking="render": shell.js types the slide in pagereveal, at the
+     first render, and a plain deferred script can run after it. An
+     engine that ignores the attribute gets an untyped cross-fade. */}}
+<script defer blocking="render" src="{{asset "static/shell.js"}}"></script>
 {{iconAssets}}
 <script defer src="{{asset "static/select.js"}}"></script>
 <script defer src="{{asset "static/calendar.js"}}"></script>
@@ -15,7 +23,7 @@
 {{/* head is the app's own slot in <head>: a favicon, a meta tag, one
      more stylesheet. Empty by default, last in the head so an app's
      own CSS wins over the framework's, and the only block in the
-     four shells that is not chrome. */}}
+     shells that is not chrome. */}}
 {{block "head" .}}{{end}}
 </head>
 <body>
@@ -24,47 +32,35 @@
      consoles are and the one the other three shells could not make.
      topbar is this without the rail; sidebar is this without the bar.
 
-     THE TWO CHROMES, AND WHY THERE IS STILL ONE CONTROL.
+     THE TWO CHROMES, ONE PATTERN EACH. Below 800px the bar's tail (the
+     account and language menus) folds behind the one <details
+     rst-shell-menu>, which opens as a card over the page, like the
+     topbar's. The rail is an index page, like the sidebar's: the page
+     says which view it is with the view block and names its way back
+     with up, and the back strip sits under the bar. The rail used to be
+     gated on the same [open] as the tail through :has(); tokens.css keeps
+     that rule for old layouts, scoped to a root with no view.
 
-     Every other shell has one thing to fold below 800px. This one has
-     two — a bar tail and a rail — and the wrong answer is two
-     disclosures a reader has to learn, one for "the account" and one
-     for "the navigation", stacked on top of each other on a phone.
-
-     So: ONE <details>, two reveals. The disclosure below gates its own
-     next sibling (the bar's tail) with the adjacent-sibling combinator
-     the topbar already uses, and gates the rail from the shell root
-     with :has(). One state, one control, one summary drawn at 390px.
-
-     The reveals are written as HIDE-WHEN-CLOSED rather than
-     show-when-open, and that is deliberate: :has() is the newer
-     selector of the two, and in an engine that does not support it the
-     rule that hides the rail simply never matches, so the rail renders
-     as a plain block of links under the bar. The page gets longer; the
-     navigation stays reachable. The show-when-open spelling fails the
-     other way, and the other way is a phone with no way to navigate.
-
-     NOTHING MOVES. The DOM order here — bar, then rail, then main — is
-     the order at 320px and the order at 1280px. Grid places the bar
-     across the top and the rail beside the page at width, and the
-     collapsed panel discloses the bar's tail above the rail's nav
-     because that is where they already are. So focus order matches
+     NOTHING MOVES. The DOM order here — bar, then back strip, then rail,
+     then main — is the order at 320px and the order at 1280px. Grid
+     places the bar across the top and the rail beside the page at
+     width; below 800px each view shows a subset of that order, never a
+     reordering of it, and the open card follows its Menu summary in
+     the bar where the tail already is. So focus order matches
      visual order at every width and in both directions of the
      language, which is the thing an `order` or a `grid-row` shuffle
      would have quietly cost. */}}
-<div rst-shell-console>
+<div rst-shell-console="{{block "view" .}}page{{end}}">
 <a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
 <header rst-shell-bar>
 {{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 {{/* name="rst-shell-menu", and NOT rst-menus — the same group the
-     topbar's disclosure is in, for the same reason and with one more
-     element depending on it here. <details name> exclusivity is
-     DOCUMENT-WIDE rather than sibling-scoped: a disclosure in the
-     menus' group would be closed by the account menu it just revealed,
-     and in this shell that closes the rail too, because the rail is
-     gated on the very same [open]. One wrong attribute takes both
-     chromes away at once. Read this as the reason for the gates rather
-     than as advice to change the line below. */}}
+     topbar's disclosure is in, for the same reason. <details name>
+     exclusivity is DOCUMENT-WIDE rather than sibling-scoped: a
+     disclosure in the menus' group would be closed by the account menu
+     it just revealed, and the card would close under the reader's
+     finger. Read this as the reason for the gates rather than as advice
+     to change the line below. */}}
 <details rst-shell-menu name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
 {{/* The tail is a SIBLING of the disclosure, not its content: a closed
      <details> hides its own content and no CSS reliably un-hides it,
@@ -86,6 +82,7 @@
 {{block "locale" .}}{{end}}
 </div>
 </header>
+<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
 {{/* The rail carries navigation and nothing else — the language
      switcher and the person are up on the bar, which is what makes
      this shell a console rather than a sidebar with a strip above it.
@@ -93,8 +90,11 @@
      release — a person pinned to the bottom of a rail that hung 32px
      under the window — has nothing here to pin. What it has instead is
      a nav that sticks: see the max-block-size in tokens.css, which is
-     measured against the viewport and gated against the viewport. */}}
+     measured against the viewport and gated against the viewport. Its
+     <h1> is the page's title, shown only on the phone index, as in the
+     sidebar. */}}
 <aside rst-shell-rail>
+<h1 rst-shell-title>{{template "title" .}}</h1>
 <nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
 </aside>
 <main rst-shell-main id="main">

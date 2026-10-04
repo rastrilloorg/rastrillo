@@ -29,15 +29,10 @@ const (
 
 // keymailServers parses Config.KeymailServers into a set of
 // serverKeys; nil means any delegated server, and a non-nil empty slice
-// means none — the returned map is non-nil but empty, so the guard it
-// feeds refuses every classify and exchange request outright. That
-// distinction matters to New (servers != nil decides whether the guard
-// is installed at all) and already holds in continuation.go's own
-// predicate ("a.servers == nil", not len() == 0); this parser used to
-// be the one place that disagreed, collapsing KeymailServers:
-// []string{} into the default "any server" behavior and leaving an app
-// with no real federation partners no way to say so — every sign-in
-// still paid a live probe to the address's own domain. An entry that
+// means none. The empty case must come back as a non-nil empty map, not
+// nil: New and continuation.go both test the set against nil, so
+// collapsing it would read as "any server" and leave an app with no
+// federation partners no way to turn probing off. An entry that
 // could never equal a URL's host — a scheme, a path, userinfo, a port
 // that is not a port, an unclosed IPv6 bracket, a control character —
 // is refused here, because accepted it would match nothing and every

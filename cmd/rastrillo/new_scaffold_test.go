@@ -33,16 +33,16 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 		t.Fatalf("runNew: %v", err)
 	}
 
-	for _, rel := range []string{
-		"Makefile", "CLAUDE.md", "manifest/README.md",
-		".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test",
-	} {
+	steps := []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/15-budget", ".amadan/ci.d/20-fmt",
+		".amadan/ci.d/25-staticcheck", ".amadan/ci.d/26-govulncheck", ".amadan/ci.d/27-gitleaks",
+		".amadan/ci.d/30-test", ".amadan/ci.d/35-perf"}
+	for _, rel := range append([]string{"Makefile", "CLAUDE.md", "manifest/README.md", ".rastrillo/budgets.txt"}, steps...) {
 		if _, err := os.Stat(filepath.Join("demoapp", rel)); err != nil {
 			t.Errorf("scaffold missing %s: %v", rel, err)
 		}
 	}
 
-	for _, rel := range []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/20-fmt", ".amadan/ci.d/25-staticcheck", ".amadan/ci.d/30-test"} {
+	for _, rel := range steps {
 		fi, err := os.Stat(filepath.Join("demoapp", rel))
 		if err != nil {
 			continue
@@ -53,14 +53,41 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	}
 
 	mk, _ := os.ReadFile(filepath.Join("demoapp", "Makefile"))
-	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck test migration-check") {
+	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check") {
 		t.Fatalf("Makefile must define the one ci gate:\n%s", mk)
+	}
+	for _, want := range []string{
+		".NOTPARALLEL:",
+		"$(RASTRILLO) budget size",
+		"$(RASTRILLO) budget test ./...",
+		"$(RASTRILLO) budget test -no-time -require TestPerfScreens,TestPerfBoot -tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf' ./...",
+		"go run $(STATICCHECK) -tags browser,perf ./...",
+	} {
+		if !strings.Contains(string(mk), want) {
+			t.Errorf("Makefile missing %q", want)
+		}
+	}
+	for step, target := range map[string]string{"15-budget": "budget", "35-perf": "perf"} {
+		if b, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", step)); !strings.Contains(string(b), "exec make "+target+"\n") {
+			t.Errorf("%s must exec make %s:\n%s", step, target, b)
+		}
 	}
 	if !strings.Contains(string(mk), "honnef.co/go/tools/cmd/staticcheck@"+staticcheckVersion) {
 		t.Fatalf("Makefile must pin staticcheck at %s, the version rastrillo's own gate runs:\n%s", staticcheckVersion, mk)
 	}
-	if step, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", "25-staticcheck")); !strings.Contains(string(step), "exec make staticcheck") {
-		t.Fatalf("the staticcheck step must exec its Makefile target:\n%s", step)
+	for step, target := range map[string]string{"25-staticcheck": "staticcheck", "26-govulncheck": "govulncheck", "27-gitleaks": "gitleaks"} {
+		if b, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", step)); !strings.Contains(string(b), "exec make "+target+"\n") {
+			t.Fatalf("step %s must exec make %s:\n%s", step, target, b)
+		}
+	}
+	for _, pin := range []string{
+		"golang.org/x/vuln/cmd/govulncheck@" + govulncheckVersion,
+		"github.com/zricethezav/gitleaks/v8@" + gitleaksVersion,
+		"export GOTOOLCHAIN = " + goToolchain + "\n",
+	} {
+		if !strings.Contains(string(mk), pin) {
+			t.Fatalf("Makefile must carry %q, the pin rastrillo's own gate uses:\n%s", pin, mk)
+		}
 	}
 	step, _ := os.ReadFile(filepath.Join("demoapp", ".amadan", "ci.d", "10-vet"))
 	if !strings.Contains(string(step), "exec make vet") {
@@ -539,18 +566,118 @@ func apiVersion(t *testing.T, bin, dir string) string {
 	}
 }
 
-// TestStaticcheckPinMatchesRastrillosGate keeps the two pins one pin. The
+// TestGatePinsMatchRastrillosGate keeps each pair of pins one pin. The
 // scaffold's Makefile and rastrillo's own are separate files that would
-// otherwise drift: bump one and a fresh app is linted by a different
-// release than the framework that generated it, so a finding can pass
-// one gate and fail the other.
-func TestStaticcheckPinMatchesRastrillosGate(t *testing.T) {
+// otherwise drift: bump one and a fresh app is checked by a different
+// release, or built on a different Go, than the framework that generated
+// it, so a finding can pass one gate and fail the other.
+func TestGatePinsMatchRastrillosGate(t *testing.T) {
 	mk, err := os.ReadFile(filepath.Join("..", "..", "Makefile"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "STATICCHECK := honnef.co/go/tools/cmd/staticcheck@" + staticcheckVersion + "\n"
-	if !strings.Contains(string(mk), want) {
-		t.Fatalf("rastrillo's Makefile does not pin staticcheck at %s (cmd/rastrillo's staticcheckVersion); want the line %q", staticcheckVersion, want)
+	for constant, want := range map[string]string{
+		"staticcheckVersion": "STATICCHECK := honnef.co/go/tools/cmd/staticcheck@" + staticcheckVersion + "\n",
+		"govulncheckVersion": "GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@" + govulncheckVersion + "\n",
+		"gitleaksVersion":    "GITLEAKS := github.com/zricethezav/gitleaks/v8@" + gitleaksVersion + "\n",
+		"goToolchain":        "export GOTOOLCHAIN = " + goToolchain + "\n",
+	} {
+		if !strings.Contains(string(mk), want) {
+			t.Errorf("rastrillo's Makefile and cmd/rastrillo's %s disagree; want the line %q", constant, want)
+		}
+	}
+}
+
+// TestScaffoldWholeGatePassesOffline is the end-to-end proof the budgets
+// spec asks for: a fresh app's entire make ci (vet, fmt, staticcheck,
+// budget, test, perf, migration-check) passes with only the Go toolchain
+// on PATH, a readonly module graph, and no network. Anything a step
+// fetched at run time, or a step that quietly did nothing, fails here.
+//
+// No network, not GOPROXY=off: a versioned go run asks its proxy for
+// the module's latest version, so the proxy here is the local module
+// cache, and every variable that would route around it is cleared.
+func TestScaffoldWholeGatePassesOffline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs a scaffolded app's whole gate")
+	}
+	setSandboxGoEnv(t)
+	root := repoRoot(t)
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"gateapp"}); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.OpenFile(filepath.Join("gateapp", "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n")
+	f.Close()
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = "gateapp"
+	if out, err := tidy.CombinedOutput(); err != nil {
+		t.Fatalf("go mod tidy: %v\n%s", err, out)
+	}
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	modcache, err := exec.Command("go", "env", "GOMODCACHE").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Every target on the scaffold's own ci: line, read from its Makefile
+	// so the two cannot drift, except govulncheck: it reads the live
+	// vulnerability database, which is the network by design.
+	mkfile, err := os.ReadFile(filepath.Join("gateapp", "Makefile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var targets []string
+	for _, line := range strings.Split(string(mkfile), "\n") {
+		if strings.HasPrefix(line, "ci: ") {
+			for _, tg := range strings.Fields(strings.TrimPrefix(line, "ci: ")) {
+				if tg != "govulncheck" {
+					targets = append(targets, tg)
+				}
+			}
+		}
+	}
+	if len(targets) < 5 {
+		t.Fatalf("read only %v from the scaffold's ci: line", targets)
+	}
+	mk := exec.Command("make", targets...)
+	mk.Dir = "gateapp"
+	mk.Env = append(os.Environ(),
+		"PATH="+filepath.Dir(goBin)+":/usr/bin:/bin",
+		// -buildvcs=false: the scaffold sits in a temp directory with no
+		// repository of its own, and a .git above $TMPDIR (there is one on
+		// this machine) would otherwise fail staticcheck's VCS stamping.
+		"GOFLAGS=-mod=readonly -buildvcs=false",
+		"GOPROXY=file://"+strings.TrimSpace(string(modcache))+"/cache/download",
+		"GOPRIVATE=", "GONOPROXY=", "GONOSUMDB=", "GOSUMDB=off",
+		// Timing reports rather than fails here: this proves the gate's
+		// wiring, and a dev box's load is not evidence about speed.
+		"AMADAN_CI=", "CI=",
+	)
+	out, err := mk.CombinedOutput()
+	if err != nil {
+		t.Fatalf("make ci on a fresh scaffold:\n%s", out)
+	}
+	if !strings.Contains(string(out), "budget size:") {
+		t.Errorf("make ci did not run budget size:\n%s", out)
+	}
+	// One receipt from the suite and one from the perf lane: both steps
+	// ran through budget test, and -require passed in the perf lane.
+	if n := strings.Count(string(out), "receipt: test step"); n != 2 {
+		t.Errorf("want 2 receipts (test, perf), got %d:\n%s", n, out)
+	}
+	for _, want := range []string{"perf: GET /: median", "perf: cold boot: median"} {
+		if !strings.Contains(string(out), want) {
+			t.Errorf("the perf lane did not report %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(string(out), "required test") {
+		t.Errorf("the perf lane's required tests did not both pass:\n%s", out)
 	}
 }

@@ -264,12 +264,27 @@ func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
 // ErrorPage any earlier would be overwritten by nothing but reads
 // stranger than setting it alongside the rest of the app wiring.
 func TestMainTemplateWiresErrorPage(t *testing.T) {
+	// Configure owns the serving options, ErrorPage included, so main.go
+	// and the perf test cannot set them differently.
 	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
-	if !strings.Contains(src, "opts.ErrorPage = blogapp.ErrorPage") {
-		t.Errorf("main.go template does not wire opts.ErrorPage:\n%s", src)
+	if !strings.Contains(src, "blogapp.Configure(&opts, mux, started)") {
+		t.Errorf("main.go template does not set its options through Configure:\n%s", src)
 	}
-	if strings.Index(src, "opts.ErrorPage = blogapp.ErrorPage") < strings.Index(src, "opts.Mux = mux") {
-		t.Error("ErrorPage must be wired after opts.Mux is set, alongside the rest of the app wiring")
+	if strings.Index(src, "started := time.Now()") > strings.Index(src, "rastrillo.Resolve(") {
+		t.Error("started must be taken before anything else, or perf's cold budget misses part of the start")
+	}
+	app := fmt.Sprintf(appTemplate, "blogapp", "")
+	for _, want := range []string{
+		"func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time)",
+		"opts.ErrorPage = ErrorPage",
+		"opts.Mux = mux",
+		"perf.Middleware(",
+		"func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error)",
+		"func Mux(r http.Handler) *http.ServeMux",
+	} {
+		if !strings.Contains(app, want) {
+			t.Errorf("app.go template missing %q:\n%s", want, app)
+		}
 	}
 }
 
@@ -277,7 +292,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 // at) and registers "errors" as a page, so render(w, "errors", …)
 // resolves.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
-	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp")
+	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
 	if !strings.Contains(src, `[]string{"index", "errors"}`) {
 		t.Errorf("render.go's pages init loop does not include \"errors\":\n%s", src)
 	}
@@ -419,7 +434,10 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 		"package myblogtest",
 		"func newApp(t *testing.T) http.Handler",
 		`myblog "my-blog/internal/myblog"`,
-		"db.Open(filepath.Join(t.TempDir()",
+		"var schema = dbtest.FromSet(myblog.BootSchema)",
+		"db.Open(schema.Path(t), logger)",
+		"code := budget.Main(m)",
+		"schema.Remove()",
 		"myblog.App(d, testOrigin, logger)",
 	} {
 		if !strings.Contains(string(harness), want) {
@@ -439,6 +457,24 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 		if !strings.Contains(string(index), want) {
 			t.Errorf("index_test.go missing %q:\n%s", want, index)
 		}
+	}
+	// Every example test opens with t.Parallel(): the scaffold is where
+	// an app learns its habits, and a serial suite is the habit every
+	// slow app on this machine shares.
+	if n, tests := strings.Count(string(index), "\n\tt.Parallel()\n"), strings.Count(string(index), "\nfunc Test"); n != tests {
+		t.Errorf("index_test.go: %d of %d tests start with t.Parallel()", n, tests)
+	}
+	perf, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblogtest", "perf_test.go"))
+	if err != nil {
+		t.Fatalf("expected a scaffolded perf test: %v", err)
+	}
+	for _, want := range []string{"//go:build perf", "func TestPerfScreens", "func TestPerfBoot", "perftest.Screens(", "perftest.Boot(", "Prepare: schema.Path"} {
+		if !strings.Contains(string(perf), want) {
+			t.Errorf("perf_test.go missing %q:\n%s", want, perf)
+		}
+	}
+	if strings.Contains(string(perf), "\tt.Parallel()\n") {
+		t.Error("a perf test must never be parallel: it would measure its neighbours")
 	}
 }
 
@@ -477,10 +513,12 @@ func TestScaffoldedAppTestsPass(t *testing.T) {
 	// type-checks the test files without needing a browser. This is
 	// the "compiles under -tags browser in the existing scaffold-build
 	// test" the spec asks for, at vet cost rather than test cost.
-	vet := exec.Command("go", "vet", "-tags", "browser", "./...")
+	// perf too: the perf lane's tests only compile under their tag, and
+	// a template error there would otherwise wait for the first make perf.
+	vet := exec.Command("go", "vet", "-tags", "browser,perf", "./...")
 	vet.Dir = "blogapp"
 	if out, err := vet.CombinedOutput(); err != nil {
-		t.Fatalf("scaffolded app fails go vet -tags browser:\n%s", out)
+		t.Fatalf("scaffolded app fails go vet -tags browser,perf:\n%s", out)
 	}
 }
 

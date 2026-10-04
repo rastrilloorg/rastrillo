@@ -2,15 +2,19 @@ package ui
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
-// The shim has no browser harness — JS behavior is verified by hand
-// and by the notes example's no-JS end-to-end path. What a Go test can
-// hold honest is the contract the docs promise: the vocabulary the
-// file answers to, its inert-by-default IIFE shape, and the absence of
-// anything a CSP would reject.
+// The shim has no browser harness — JS behavior is verified by hand, by
+// the notes example's no-JS end-to-end path, and for how polling starts
+// by shim_node.mjs in Node. What a Go test can hold honest is the
+// contract the docs promise: the vocabulary the file answers to, its
+// inert-by-default IIFE shape, and the absence of anything a CSP would
+// reject.
 func TestShimContract(t *testing.T) {
 	js := string(ShimJS())
 	for _, want := range []string{
@@ -35,6 +39,17 @@ func TestShimContract(t *testing.T) {
 		// shim has to pair them for the same window or an app's menus
 		// stop dismissing halfway through the upgrade we hand it.
 		`MENUS.replace(`,
+		// The topbar's and console's narrow Menu is a card over the page,
+		// so it is in the light-dismiss list, in both spellings written
+		// out (the rewrite above would give .rst-shell-menu, and the
+		// class is .rst-shell__menu), with its tail counted as inside it
+		// only while its summary is rendered. Scoped to a topbar or a
+		// console that names its view: an old console's Menu also
+		// reveals its rail, which must not close on a tap at a group
+		// label.
+		`[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]`,
+		`.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]`,
+		`TAIL = "[rst-shell-tail],.rst-shell__tail"`, "menuAround", "getClientRects().length",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
@@ -68,8 +83,10 @@ func TestShimContract(t *testing.T) {
 	if n := strings.Count(js, "dismissMenus"); n != 3 {
 		t.Errorf("dismissMenus appears %d times, want 3 (one definition, two document listeners)", n)
 	}
-	// Shell chrome and the toggle-block stay out of it: neither is a
-	// menu, and dismissing them on an outside click would fight the user.
+	// The old sidebar drawer and the toggle-block stay out of it: neither
+	// is a menu, and dismissing them on an outside click would fight the
+	// user. (The topbar's Menu is in, above: it is a card that overlays
+	// the page now, which is what light dismiss is for.)
 	for _, bad := range []string{"rst-shell-chrome", "rst-tblock"} {
 		if strings.Contains(js, bad) {
 			t.Errorf("shim reaches for %q; light dismiss covers menus only", bad)
@@ -249,6 +266,13 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // widget; this is twenty-six lines that belong beside the form
 // vocabulary they extend.
 //
+// The topbar card joined light dismiss: 9,784 → 11,424 bytes, for two
+// selector constants, menuAround, two call sites and their comments.
+// The busy.js split had freed the room; this did not come near the cap.
+// Scoping that Menu to a topbar or a console that names its view, so an
+// old console's rail is never dismissed: 11,424 → 11,957. Holding a
+// prerendered page's polling until it is shown: 11,957 → 12,368.
+//
 // The cap is still the point, and what it protects is the CODE: an app
 // owner owns this file from the moment it is scaffolded and has to be
 // able to read the whole thing in one sitting. The code in it grew from
@@ -355,7 +379,7 @@ func TestSelectContract(t *testing.T) {
 	}
 }
 
-// No scaffolded script may reach off-origin: all five are vendored,
+// No scaffolded script may reach off-origin: all six are vendored,
 // first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
 	for name, js := range map[string]string{
@@ -364,6 +388,7 @@ func TestScriptsAreSelfContained(t *testing.T) {
 		"select.js":    string(SelectJS()),
 		"datetime.js":  string(DatetimeJS()),
 		"calendar.js":  string(CalendarJS()),
+		"shell.js":     string(ShellJS()),
 	} {
 		for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
 			if strings.Contains(js, bad) {
@@ -404,5 +429,66 @@ func TestBusyContract(t *testing.T) {
 	}
 	if n := len(js); n > 16*1024 {
 		t.Fatalf("busy.js is %d bytes; keep it readable in one sitting", n)
+	}
+}
+
+// shell.js holds to the contract every scaffolded script does, with an
+// 8 KiB cap of its own (busy.js's precedent): the three behaviours it
+// exists for, named; both spellings of what it reads; the storage guard;
+// the prerender and pageswap facts its ordering depends on.
+func TestShellContract(t *testing.T) {
+	js := string(ShellJS())
+	for _, want := range []string{
+		// 1. Direction.
+		"pagereveal", "viewTransition.types.add", `"back"`, `"forward"`, "navigationType", `"traverse"`,
+		// 2. History reuse, only when proven. The Navigation API is read
+		// through a local (nav), so the call is spelled nav.entries().
+		"history.back()", "nav.entries()", "sameDocument", "e.button !== 0", "defaultPrevented",
+		// 3. Focus return, record first, never while prerendering.
+		"rst-shell-return", "pageswap", "pagehide", "document.prerendering", "decodeURIComponent", "sessionStorage",
+		// Both spellings.
+		"[rst-shell-back]", ".rst-shell__back", `[rst-shell-sidebar~="index"]`, ".rst-shell-sidebar--index",
+		`[rst-shell-console~="page"]`, ".rst-shell-console--page",
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("shell.js does not mention %q", want)
+		}
+	}
+	if !strings.HasPrefix(strings.TrimSpace(js), "/*") || !strings.Contains(js, "(function () {") || !strings.HasSuffix(strings.TrimSpace(js), "})();") {
+		t.Error("shell.js should be its contract comment and a single IIFE")
+	}
+	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") || strings.Contains(js, "\t") {
+		t.Error("shell.js must stay CSP-clean and use two-space indentation")
+	}
+	if n := len(js); n > 8*1024 {
+		t.Fatalf("shell.js is %d bytes; keep it readable in one sitting (8 KiB)", n)
+	}
+}
+
+// A prerendered page runs its scripts before anyone is looking at it,
+// and may never be looked at: a data-poll there would fetch every two
+// seconds (or hold an EventSource open) for a page the reader only
+// hovered a link to. Polling starts when the page is shown: at once on
+// a page being viewed, at activation on a prerendered one.
+func TestPollingWaitsForAPrerenderedPageToBeShown(t *testing.T) {
+	type count struct{ Timers, Sources int }
+	var got map[string]struct {
+		Viewed      count
+		Prerendered struct{ Before, After count }
+	}
+	if err := json.Unmarshal(nodetest.Run(t, nodetest.Cmd{Args: []string{"shim_node.mjs"}}), &got); err != nil {
+		t.Fatal(err)
+	}
+	for kind, want := range map[string]count{"timer": {Timers: 1}, "push": {Sources: 1}} {
+		g := got[kind]
+		if g.Viewed != want {
+			t.Errorf("%s polling on a page being viewed started %+v, want %+v", kind, g.Viewed, want)
+		}
+		if g.Prerendered.Before != (count{}) {
+			t.Errorf("%s polling on a prerendered page nobody is viewing started %+v, want nothing", kind, g.Prerendered.Before)
+		}
+		if g.Prerendered.After != want {
+			t.Errorf("%s polling on a prerendered page, once activated, started %+v, want %+v", kind, g.Prerendered.After, want)
+		}
 	}
 }

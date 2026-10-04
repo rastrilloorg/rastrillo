@@ -111,12 +111,17 @@ const DefaultMount = "/design-system"
 //	                                      the form fields on it and
 //	                                      display.html the display ones.
 //	<theme>/<locale>/modal.html           36 modal demos, one per gallery
-//	<theme>/<locale>/demo.html            36 copies of the demo app
-//	<theme>/<locale>/shells/<shell>.html  108 full-page shell demos
-//	tokens.css theme-<theme>.css          the stylesheets, once each
-//	rastrillo.js select.js datetime.js    the framework's four scripts
-//	calendar.js                           (calendar.js draws the month
-//	                                      grid datetime.js opens)
+//	<theme>/<locale>/demo.html            the demo app's index, and
+//	<theme>/<locale>/demo-dashboard.html  its three section pages beside it
+//	<theme>/<locale>/demo-requests.html
+//	<theme>/<locale>/demo-request.html
+//	<theme>/<locale>/shells/<shell>.html  one full-page demo per shell, and
+//	<theme>/<locale>/shells/<shell>-page.html  a section page for the sidebar
+//	                                      and console
+//	tokens.css theme-<theme>.css shell.css  the stylesheets, once each
+//	rastrillo.js busy.js shell.js          the framework's scripts
+//	select.js datetime.js calendar.js     (calendar.js draws the month grid
+//	                                      datetime.js opens)
 //	gallery.js gallery.css                the gallery's own furniture,
 //	                                      once each
 //
@@ -136,6 +141,8 @@ func Render(mount string) (map[string][]byte, error) {
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
 		"busy.js":      ui.BusyJS(),
+		"shell.js":     ui.ShellJS(),
+		"shell.css":    ui.ShellCSS(),
 		"select.js":    ui.SelectJS(),
 		"datetime.js":  ui.DatetimeJS(),
 		"calendar.js":  ui.CalendarJS(),
@@ -165,17 +172,21 @@ func Render(mount string) (map[string][]byte, error) {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"modal.html", err)
 			}
 			out[dir+"modal.html"] = modal
-			demo, err := renderDemo(mount, theme, locale)
+			docs, err := renderDemo(mount, theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"demo.html", err)
 			}
-			out[dir+"demo.html"] = demo
+			for name, doc := range docs {
+				out[dir+name] = doc
+			}
 			for _, shell := range ui.LayoutNames() {
-				demo, err := renderShell(mount, theme, locale, shell)
+				docs, err := renderShell(mount, theme, locale, shell)
 				if err != nil {
 					return nil, fmt.Errorf("designsystem: %s: %w", dir+"shells/"+shell+".html", err)
 				}
-				out[dir+"shells/"+shell+".html"] = demo
+				for name, doc := range docs {
+					out[dir+"shells/"+name] = doc
+				}
 			}
 		}
 	}
