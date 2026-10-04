@@ -366,10 +366,21 @@ func buildReduceIndex(blocks []string) reduceIndex {
 // comma-split selector match in selectorList/buildReduceIndex rather than
 // a substring check.
 func TestReducedMotionDisablesEveryTransition(t *testing.T) {
-	css := string(TokensCSS())
+	assertReducedMotion(t, "tokens.css", string(TokensCSS()))
+}
+
+// shell.css is the other stylesheet a shell links, and every rule in it
+// animates: the gate holds it to the same exact-selector rule, unchanged
+// in what it accepts, so the slide cannot escape it.
+func TestShellCSSReducedMotionDisablesEveryAnimation(t *testing.T) {
+	assertReducedMotion(t, "shell.css", string(ShellCSS()))
+}
+
+func assertReducedMotion(t *testing.T, name, css string) {
+	t.Helper()
 	reduceBlocks, rest := reducedMotionBlocks(css)
 	if len(reduceBlocks) == 0 {
-		t.Fatal("tokens.css declares no @media (prefers-reduced-motion: reduce) block at all")
+		t.Fatal(name + " declares no @media (prefers-reduced-motion: reduce) block at all")
 	}
 	idx := buildReduceIndex(reduceBlocks)
 
@@ -397,7 +408,7 @@ func TestReducedMotionDisablesEveryTransition(t *testing.T) {
 		}
 	}
 	if tested == 0 {
-		t.Fatal("found no transition/animation declarations to check outside reduce blocks — the parser likely broke, not that tokens.css lost every transition")
+		t.Fatal("found no transition/animation declarations to check outside reduce blocks — the parser likely broke, not that " + name + " lost every transition")
 	}
 }
 
@@ -959,6 +970,14 @@ func allPartials() []struct {
 			"ActionAria": "Edit Release notes, August",
 			"Lead":       "accent", "LeadInitial": "RN",
 		}},
+		{"row-menu", map[string]any{
+			"Name": "Grace Hopper",
+			"Items": []any{
+				map[string]any{"Label": "Edit", "Href": "/orders/AB3PX/edit"},
+				map[string]any{"Label": "Archive", "Action": "/orders/AB3PX/archive", "Hidden": [][2]string{{"state", "archived"}}},
+				map[string]any{"Label": "Delete order…", "Href": "/orders/AB3PX/delete", "Danger": true},
+			},
+		}},
 		{"status-pill", map[string]any{"Tone": "positive", "Label": "Published"}},
 		{"empty-state", map[string]any{
 			"Title": "Nothing here yet", "Body": "No posts yet. Your first one is a good place to start.",
@@ -1194,15 +1213,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
-		"field-url", "signin", "signin-title",
+		"field-url", "signin", "signin-title", "row-menu",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 37 {
-		t.Fatalf("the shipped set is 37 partials, this list has %d", len(want))
+	if len(want) != 38 {
+		t.Fatalf("the shipped set is 38 partials, this list has %d", len(want))
 	}
 }
 
@@ -1333,6 +1352,10 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 	trackEnd := strings.Index(check, `</span>`)
 	if trackEnd == -1 || !strings.Contains(check[trackEnd:], "Email me about replies") {
 		t.Errorf("field-check's label text must render outside the aria-hidden track: %s", check)
+	}
+	menu := render(t, "row-menu", fixtureFor(t, "row-menu"))
+	if !strings.Contains(menu, `<summary aria-label="`+template.HTMLEscapeString(defaultTf("rastrillo.ui.row_menu", "name", "Grace Hopper"))+`">`) {
+		t.Errorf("the row menu's trigger has no name: %s", menu)
 	}
 }
 
@@ -1809,7 +1832,7 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 		"rst-shell-topbar", "rst-shell-bar", "rst-shell-brand", "rst-shell-nav",
 		"rst-shell-account", "rst-shell-foot",
 		"rst-shell-menu", "rst-shell-tail",
-		"rst-shell-sidebar", "rst-shell-chrome", "rst-shell-rail", "rst-shell-group", "rst-shell-main",
+		"rst-shell-sidebar", "rst-shell-back", "rst-shell-title", "rst-shell-rail", "rst-shell-group", "rst-shell-main",
 	} {
 		if !seen[name] {
 			t.Errorf("selector %q was added to tokens.css in the shells task but no styleguide sample uses it", name)
@@ -1992,8 +2015,8 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	}
 
 	// And the two <details> that are NOT menus stay out of it. The
-	// sidebar's chrome strip is the narrow-screen nav rail: closing it
-	// because a filter opened would take the whole navigation away.
+	// sidebar has no disclosure of its own since the phone index; it
+	// must not grow one in the menus' group.
 	sidebar, ok := Layout("sidebar")
 	if !ok {
 		t.Fatal(`Layout("sidebar") reports no such layout`)
@@ -2021,9 +2044,9 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	// altogether — but a name in the shared group would break it even
 	// so, because the exclusivity does not care about nesting.
 	//
-	// console is read the same way and costs more when it is wrong: its
-	// rail is gated on the SAME [open] as its tail, so a disclosure in
-	// the menus' group takes both chromes away at once rather than one.
+	// console is read the same way: its Menu opens the bar's tail as a
+	// card, and a disclosure in the menus' group would close that card
+	// under the reader's finger.
 	for _, shell := range []string{"topbar", "console"} {
 		src, ok := Layout(shell)
 		if !ok {
@@ -2057,16 +2080,14 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 // actions on this row". aria-hidden throughout: the visible label
 // beside the glyph is the accessible name, and a second one would be
 // read out twice.
-func TestEveryChromeShellCollapsesBehindTheMenuIcon(t *testing.T) {
+func TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer(t *testing.T) {
 	if rastrillo.Icon("menu") == "" {
 		t.Fatal(`rastrillo.Icon("menu") is empty: the shells' collapse has no icon to draw`)
 	}
 	for _, c := range []struct{ layout, class string }{
 		{"topbar", "rst-shell-menu"},
-		{"sidebar", "rst-shell-chrome"},
-		// console reuses the topbar's control rather than inventing a
-		// third: one disclosure, one icon, one idiom across all three
-		// chrome shells.
+		// console reuses the topbar's control for its bar; its rail is an
+		// index page, like the sidebar's.
 		{"console", "rst-shell-menu"},
 	} {
 		src, ok := Layout(c.layout)
@@ -2092,12 +2113,24 @@ func TestEveryChromeShellCollapsesBehindTheMenuIcon(t *testing.T) {
 			t.Errorf(`layouts/%s.html spends "kebab" on navigation; kebab means "more actions on this row"`, c.layout)
 		}
 	}
+	// The sidebar has no disclosure at all: on a phone its
+	// navigation is an index page, and every other page carries a back
+	// link to it. A drawer control here would be the hamburger the
+	// guidance now discourages.
+	sidebar, _ := Layout("sidebar")
+	if strings.Contains(string(sidebar), "<details") {
+		t.Error("layouts/sidebar.html still has a <details>; its phone navigation is the index page")
+	}
+	if !strings.Contains(string(sidebar), `<div rst-shell-back><a href=`) {
+		t.Error("layouts/sidebar.html has no back link")
+	}
 	// And the styleguide samples, which are the markup an app copying by
 	// hand reads — they inline the SVG rather than calling {{icon}}.
-	for _, name := range []string{"shell-topbar", "shell-sidebar"} {
-		if !strings.Contains(Styleguide()[name], `<path d="M4 12h16"/>`) {
-			t.Errorf("styleguide sample %q shows a collapse summary with no menu icon in it", name)
-		}
+	if !strings.Contains(Styleguide()["shell-topbar"], `<path d="M4 12h16"/>`) {
+		t.Error(`styleguide sample "shell-topbar" shows a collapse summary with no menu icon in it`)
+	}
+	if s := Styleguide()["shell-sidebar"]; strings.Contains(s, "<details") || !strings.Contains(s, "rst-shell-back") {
+		t.Error(`styleguide sample "shell-sidebar" should show the back link and no drawer`)
 	}
 }
 
@@ -2118,7 +2151,7 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 	want := map[string][]string{
 		"column":  {"lang", "dir", "title", "head", "content"},
 		"topbar":  {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
-		"sidebar": {"lang", "dir", "title", "head", "brand", "nav", "locale", "account", "content"},
+		"sidebar": {"lang", "dir", "title", "head", "view", "up", "title", "brand", "nav", "locale", "account", "content"},
 		// console offers topbar's SET exactly — every block a screen
 		// can override is the same, which is what makes the two shells
 		// interchangeable for a screen and is the whole claim of a
@@ -2132,7 +2165,11 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// bar, which is the sidebar's rail deleted and this shell with
 		// it. Order is irrelevant to the contract anyway: a block is
 		// found by name.
-		"console": {"lang", "dir", "title", "head", "brand", "account", "locale", "nav", "content", "foot"},
+		//
+		// view and up are the phone index's two blocks, as in sidebar;
+		// title appears twice because the rail's <h1> is the page's own
+		// title, reused rather than redefined.
+		"console": {"lang", "dir", "title", "head", "view", "brand", "account", "locale", "up", "title", "nav", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
 		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
@@ -3456,6 +3493,90 @@ func TestFieldAndCalloutStillTakeAnOlderStruct(t *testing.T) {
 func TestHiddenButtonsStayHidden(t *testing.T) {
 	if !strings.Contains(string(TokensCSS()), `.rst-btn[hidden], [rst-btn][hidden] { display: none; }`) {
 		t.Fatal("tokens.css does not keep a [hidden] button hidden")
+	}
+}
+
+// renderShellLayout renders a shipped layout with extra defines and
+// nil data, the way TestLayoutsParseAndRender does.
+func renderShellLayout(t *testing.T, name string, defs ...string) string {
+	t.Helper()
+	src, ok := Layout(name)
+	if !ok {
+		t.Fatalf("no %s layout", name)
+	}
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
+		"asset":      func(p string) string { return "/" + p },
+		"iconAssets": func() template.HTML { return "" },
+	}).Parse(string(src)))
+	template.Must(tmpl.Parse(`{{define "content"}}<h1>Content</h1>{{end}}`))
+	for _, d := range defs {
+		template.Must(tmpl.Parse(d))
+	}
+	var b strings.Builder
+	if err := tmpl.ExecuteTemplate(&b, "layout", nil); err != nil {
+		t.Fatal(err)
+	}
+	return b.String()
+}
+
+// A page says which view it is with the view block (default page), and
+// names its way back with up (default "/", the brand's href). The back
+// control's visible label is inside its accessible name (WCAG 2.5.3),
+// rel="up" says the relationship, the rail's <h1> is the page's title,
+// the drawer is gone, and only these two shells link shell.js and
+// shell.css, the script with blocking="render" so it is there for the
+// first pagereveal.
+func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
+	label := defaultT("rastrillo.ui.shell_up_label")
+	name := defaultTf("rastrillo.ui.shell_up", "name", label)
+	if !strings.Contains(name, label) {
+		t.Fatalf("the back control's name %q does not contain its visible label %q", name, label)
+	}
+	for _, shell := range []string{"sidebar", "console"} {
+		page := renderShellLayout(t, shell)
+		for _, want := range []string{
+			`<div rst-shell-` + shell + `="page">`,
+			`<div rst-shell-back><a href="/" rel="up" aria-label="` + template.HTMLEscapeString(name) + `">` + template.HTMLEscapeString(label) + `</a></div>`,
+			`<h1 rst-shell-title>Hello</h1>`,
+			`<link rel="stylesheet" href="/static/shell.css">`,
+			`<script defer blocking="render" src="/static/shell.js"></script>`,
+		} {
+			if !strings.Contains(page, want) {
+				t.Errorf("%s: missing %q", shell, want)
+			}
+		}
+		if strings.Contains(page, "rst-shell-chrome") {
+			t.Errorf("%s: the drawer is still in the layout", shell)
+		}
+		skip, back, rail := strings.Index(page, "rst-skip"), strings.Index(page, "rst-shell-back"), strings.Index(page, "<aside rst-shell-rail>")
+		if !(skip >= 0 && skip < back && back < rail) {
+			t.Errorf("%s: the back control is not after the skip link and before the rail (focus order must match what is seen)", shell)
+		}
+		if index := renderShellLayout(t, shell, `{{define "view"}}index{{end}}`); !strings.Contains(index, `<div rst-shell-`+shell+`="index">`) {
+			t.Errorf("%s: the view block does not reach the root", shell)
+		}
+		if up := renderShellLayout(t, shell, `{{define "up"}}/#nav-invoices{{end}}`); !strings.Contains(up, `<a href="/#nav-invoices" rel="up"`) {
+			t.Errorf("%s: the up block does not reach the back link", shell)
+		}
+	}
+	for _, shell := range []string{"column", "topbar", "stage"} {
+		if src, _ := Layout(shell); strings.Contains(string(src), "shell.js") || strings.Contains(string(src), "shell.css") {
+			t.Errorf("%s links shell.js or shell.css; only the sidebar and console need them", shell)
+		}
+	}
+}
+
+// A view block written the way a template author writes a multi-line
+// file is still the index, because the value is a word list and
+// [rst-shell-sidebar~="index"] matches a word.
+func TestAViewBlockWithWhitespaceIsStillTheIndex(t *testing.T) {
+	out := renderShellLayout(t, "sidebar", "{{define \"view\"}}\n  index\n{{end}}")
+	m := regexp.MustCompile(`rst-shell-sidebar="([^"]*)"`).FindStringSubmatch(out)
+	if m == nil {
+		t.Fatalf("no view on the root: %s", out)
+	}
+	if words := strings.Fields(html.UnescapeString(m[1])); len(words) != 1 || words[0] != "index" {
+		t.Errorf("the root's view is %q, want the one word index", m[1])
 	}
 }
 

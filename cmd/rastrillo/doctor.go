@@ -164,6 +164,7 @@ type report struct {
 	// require preMoveModule directly, relative to dir.
 	preMoveNested []string
 	files         []vendoredFile
+	layoutAdvice  string // relative path of an old shell layout, if the app has one
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -211,6 +212,41 @@ func (r *report) exit() error {
 	return nil
 }
 
+// doctorLayoutAdvisory is the one line doctor prints for a shell layout
+// written before the phone index shipped. It is user-facing copy, so a
+// change to it goes through the copy review.
+// "Upgrading" is the section of docs/site/templates.md that gives the
+// edit.
+const doctorLayoutAdvisory = `This layout still has the old mobile menu. See "Upgrading" in the templates guide.`
+
+// templateCommentRE matches a Go template comment action, including its
+// trim forms ({{- /* ... */ -}}), so oldShellLayout can strip one before
+// looking for markup: a note explaining the old shell to the next
+// reader must not be read as the shell itself.
+var templateCommentRE = regexp.MustCompile(`(?s)\{\{-?\s*/\*.*?\*/\s*-?\}\}`)
+
+// viewBlockRE matches the opening of a view block in any spelling
+// text/template accepts: spaces inside the braces and a trim marker
+// (which must be followed by a space) are the same block. Matched
+// literally, {{ block "view" . }} read as no view block, and doctor told
+// an app with a current layout that it still had the old menu.
+var viewBlockRE = regexp.MustCompile(`\{\{(?:-\s+|\s*)block\s+"view"`)
+
+// oldShellLayout reports whether an app's layout.html predates the phone
+// index: the drawer is in it, or it is a sidebar or console layout with
+// no view block. Doctor cannot diff a layout, which is the app's own and
+// edited from day one, but it can recognise these two shapes, and an app
+// that re-vendored tokens.css keeps working on them (the legacy rules),
+// so it is advice and never a failure.
+func oldShellLayout(src string) bool {
+	src = templateCommentRE.ReplaceAllString(src, "")
+	if strings.Contains(src, "rst-shell-chrome") {
+		return true
+	}
+	shell := strings.Contains(src, "rst-shell-sidebar") || strings.Contains(src, "rst-shell-console")
+	return shell && !viewBlockRE.MatchString(src)
+}
+
 // diagnose does the reading: where the app keeps its vendored files,
 // what version it is on, which theme it chose, and how each file
 // compares. It writes nothing.
@@ -249,6 +285,11 @@ func diagnose(dir, themeFlag string) (*report, error) {
 		return nil, err
 	}
 	r.staticDir = rel(dir, staticDir)
+
+	layout := filepath.Join(filepath.Dir(staticDir), "templates", "layout.html")
+	if b, err := os.ReadFile(layout); err == nil && oldShellLayout(string(b)) {
+		r.layoutAdvice = rel(dir, layout)
+	}
 
 	pinPath, pin := readPin(dir, pkg)
 	r.pinFile, r.pinLegacy = rel(dir, pinPath), pin.legacy
@@ -545,6 +586,10 @@ func (r *report) print(w io.Writer, fixing bool) {
 		}
 	}
 	fmt.Fprintln(w)
+
+	if r.layoutAdvice != "" {
+		fmt.Fprintf(w, "%s: %s\n\n", r.layoutAdvice, doctorLayoutAdvisory)
+	}
 
 	// The summary counts what was compared, not what exists: a file the
 	// app has claimed was never a candidate for drift, and saying "5

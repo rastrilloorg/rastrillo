@@ -108,6 +108,10 @@ func WithT(t func(key string, args ...any) string) Option {
 // stageArt draws the stage shell's default backdrop from a seed (see
 // its own comment).
 //
+// rowMenuItems checks the row-menu partial's Items and hands the partial
+// one ready-to-render item each, stopping the render on an item it
+// cannot show.
+//
 // displayURL and safeHref are form.DisplayURL and form.SafeHref, the
 // read side of field-url: a stored address shown without its scheme,
 // and linked only when it is http(s). They are here rather than left
@@ -117,7 +121,7 @@ func WithT(t func(key string, args ...any) string) Option {
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
 // An app is free to add its own entries on top; it must not drop these
-// sixteen. The shipped partials and shells stop parsing without most
+// seventeen. The shipped partials and shells stop parsing without most
 // of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -138,6 +142,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"opt":          opt, "Tbdi": tbdi(c.t),
 		"stageArt":   stageArt,
 		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
+		"rowMenuItems": rowMenuItems,
 	}
 }
 
@@ -406,6 +411,117 @@ func opt(data any, key string) any {
 		return nil
 	}
 	return v.Interface()
+}
+
+// rowMenuItem is one row-menu entry as the partial renders it. Rule is
+// set on the first destructive item that follows a plain one: the
+// partial draws its <hr> there and nowhere else.
+type rowMenuItem struct {
+	Label, Href, Action string
+	Hidden              [][2]string
+	Danger, Rule        bool
+}
+
+// rowMenuItems validates row-menu's Items, a dict-built list or a slice
+// of structs, and fails loudly (at Execute, the way dict does for an
+// odd argument count) on a menu or an item it cannot render:
+//
+//   - no Name: the trigger would be announced as "Actions for" and
+//     nothing else, on every row;
+//   - no Label;
+//   - both or neither of Href (a link) and Action (a POST);
+//   - Danger without Href. A destructive item is a link to its confirm
+//     page (SKILL.md §7: confirm-form on its own URL, never fired from the
+//     row), so Action alone has nowhere to confirm;
+//   - Danger that is not a bool. "true" as a string would render the
+//     destructive item as a plain one;
+//   - Hidden without Action. Hidden fields ride a POST;
+//   - Hidden that is not a list of pairs of strings, exactly two each.
+//
+// Silently dropping an item or a field, or rendering a destructive
+// POST, are the failures this exists to rule out.
+func rowMenuItems(data any) ([]rowMenuItem, error) {
+	v := optKey(data, "Items")
+	if !v.IsValid() || (v.Kind() != reflect.Slice && v.Kind() != reflect.Array) || v.Len() == 0 {
+		return nil, fmt.Errorf("ui: row-menu wants Items, a non-empty list of items")
+	}
+	if optString(data, "Name") == "" {
+		return nil, fmt.Errorf("ui: row-menu wants Name, the row's name, which the trigger's accessible name carries")
+	}
+	out := make([]rowMenuItem, 0, v.Len())
+	plain, ruled := false, false
+	for i := 0; i < v.Len(); i++ {
+		item, ok := deref(v.Index(i))
+		if !ok {
+			return nil, fmt.Errorf("ui: row-menu item %d is nil", i)
+		}
+		it := item.Interface()
+		m := rowMenuItem{Label: optString(it, "Label"), Href: optString(it, "Href"), Action: optString(it, "Action")}
+		d := optKey(it, "Danger")
+		dangerOK := !d.IsValid() || d.Kind() == reflect.Bool
+		if d.IsValid() && dangerOK {
+			m.Danger = d.Bool()
+		}
+		hidden, listOK, pairsOK := rowMenuHidden(it)
+		m.Hidden = hidden
+		switch {
+		case m.Label == "":
+			return nil, fmt.Errorf("ui: row-menu item %d has no Label", i)
+		case (m.Href == "") == (m.Action == ""):
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) wants exactly one of Href (a link) and Action (a POST)", i, m.Label)
+		case !dangerOK:
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) has a Danger that is not a bool", i, m.Label)
+		case m.Danger && m.Href == "":
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) is Danger, so it needs Href: a destructive item links to its confirm page", i, m.Label)
+		case !listOK:
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) has Hidden that is not a list of pairs", i, m.Label)
+		case len(hidden) > 0 && m.Action == "":
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) carries Hidden, which only a POST (Action) item sends", i, m.Label)
+		case !pairsOK:
+			return nil, fmt.Errorf("ui: row-menu item %d (%q) has a Hidden entry that is not a pair of strings", i, m.Label)
+		}
+		if m.Danger && plain && !ruled {
+			m.Rule, ruled = true, true
+		}
+		if !m.Danger {
+			plain = true
+		}
+		out = append(out, m)
+	}
+	return out, nil
+}
+
+// rowMenuHidden reads an item's Hidden strictly, where optPairs is
+// lenient. optPairs skips what it cannot read, which suits a search box
+// carrying parameters along; here every skip is a field missing from
+// the POST (a map read as a list was nothing at all, so an archive went
+// out without its version). listOK is false when Hidden is there but
+// is not a list; pairsOK is false when an entry is not exactly two
+// strings. Absent, nil and empty are a list with nothing to send: a
+// struct caller has the field, nil or empty, on every item, and a link
+// item with nothing to send has broken no rule.
+func rowMenuHidden(item any) (pairs [][2]string, listOK, pairsOK bool) {
+	h := optKey(item, "Hidden")
+	if !h.IsValid() {
+		return nil, true, true
+	}
+	if h.Kind() != reflect.Slice && h.Kind() != reflect.Array {
+		return nil, false, false
+	}
+	pairs = make([][2]string, 0, h.Len())
+	for i := 0; i < h.Len(); i++ {
+		p, ok := deref(h.Index(i))
+		if !ok || (p.Kind() != reflect.Slice && p.Kind() != reflect.Array) || p.Len() != 2 {
+			return pairs, true, false
+		}
+		name, okName := deref(p.Index(0))
+		value, okValue := deref(p.Index(1))
+		if !okName || !okValue || name.Kind() != reflect.String || value.Kind() != reflect.String {
+			return pairs, true, false
+		}
+		pairs = append(pairs, [2]string{name.String(), value.String()})
+	}
+	return pairs, true, true
 }
 
 // tbdi returns the {{Tbdi}} helper bound to one translator, like T and

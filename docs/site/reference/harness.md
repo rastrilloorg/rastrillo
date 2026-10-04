@@ -51,6 +51,7 @@ type Option func(*config)
 
 func WithoutPRFAtCreation() Option
 func WithScrollbars() Option
+func WithCoarsePointer() Option
 ```
 
 `New` takes a variadic list of `Option` values to adjust what it builds.
@@ -77,6 +78,11 @@ agree with whatever the stylesheet claimed. `ui`'s `scrollbar-gutter`
 drive is that drive, and it fails rather than passes if this option
 stops working — its control page asks for the shift and requires to see
 it.
+
+`WithCoarsePointer` launches Chromium with a touch screen as its main
+pointer, so `(pointer: coarse)` matches. CDP's touch emulation does not
+do this, and a phone drive that ran on a mouse pointer would pass at
+desktop sizes.
 
 The own-property shape matters. Patching
 `PublicKeyCredential.prototype.getClientExtensionResults` would strip

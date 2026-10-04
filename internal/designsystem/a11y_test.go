@@ -340,11 +340,13 @@ func a11yTargets() []a11yTarget {
 		{"signal/en display", page("signal", "en", "display"), "and the same page at the other end of the same risk"},
 		{"day/ar form", page("day", "ar", "form"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
-		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a disclosure and a main column"},
+		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a back control and a main column"},
 		{"day/en console shell", shellHref(mountPath, "day", "en", "console"), "the only page in the tree with two chromes at once — a banner bar and a complementary rail, both landmarks, in one document with one <main> and one contentinfo. A shell that is two other shells is exactly where a duplicated landmark, a second control with the same name, or a nav with nothing to tell it from the bar would come from, and none of the three shows on a shell that has only one of them"},
 		{"day/en stage shell", shellHref(mountPath, "day", "en", "stage"), "the sign-in shell: a generated backdrop behind one card, no navigation at all — the page every visitor meets first, and the only one whose main landmark sits over a decorative picture"},
-		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: three screens in one document, a form, a data grid and a rail — the page a first-time reader meets before any of the vocabulary"},
-		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: its rail, its grid columns and its back link all flip, and a label lost in the mirror is invisible in en"},
+		{"day/en demo app", demoHref(mountPath, "day", "en"), "the demo application: the index of a four-page application, the rail and, on a desktop, the dashboard beside it — the page a first-time reader meets before any of the vocabulary"},
+		{"day/ar demo app", demoHref(mountPath, "day", "ar"), "the demo application mirrored: the index of a four-page application, the rail and, on a desktop, the dashboard beside it; its rail and grid columns flip, and a label lost in the mirror is invisible in en"},
+		{"day/en demo requests page", demoPageHref(mountPath, "day", "en", "requests"), "the demo's list as its own page: a list grid with a row menu per row, under the back control"},
+		{"day/en sidebar content page", shellPageHref(mountPath, "day", "en", "sidebar"), "the sidebar's content view: the back control and the page"},
 	}
 }
 
@@ -459,119 +461,168 @@ func shownIn(t *testing.T, bctx context.Context, where, sel string) bool {
 }
 
 // TestA11yScansTheShellsCollapsed is the scan the others did not
-// cover: every chrome shell below its 800px breakpoint, with the
-// disclosure open.
+// cover: every chrome shell below its 800px breakpoint.
 //
 // Every scan above runs at the browser's default width, where the
-// sidebar's chrome strip is display: none and the topbar's collapse
-// control does not exist at all. So the two controls a reader on a
-// phone meets FIRST were the two controls axe had never seen — which is
-// the same gap, in a different shape, as a rail whose height was only
-// ever compared to itself: the shells are demonstrated as chrome, and
-// nobody drove them narrow.
+// topbar's collapse control does not exist at all and the sidebar and
+// console show their rails beside the page. So the views a reader on a
+// phone meets FIRST were views axe had never seen. The topbar is
+// scanned with its card open. The sidebar and console are two views of
+// every URL below 800px, so both of their documents are scanned, in
+// every theme and scheme: the index (the rail is the page), with the
+// console's card open as well, and the content page (the back control
+// and the page, no rail).
 //
-// It also measures the one thing axe will not: WCAG 2.2 target size.
-// 2.5.8 asks for 24×24 CSS px, axe's target-size rule is not in the
-// tag set this gate runs, and both summaries are new or newly
-// icon-bearing, so measure them here rather than assume.
+// It also measures what axe will not: target size. The topbar's
+// summary against WCAG 2.2's 24×24 floor, and the back control against
+// the 44px the touch block promises (390px is inside its width half).
 func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 600*time.Second)
+	ctx, cancel := context.WithTimeout(rig.Context(), 900*time.Second)
 	defer cancel()
 
 	axeJS := axeSource(t)
-	total := 0
-	for _, sh := range []struct {
-		shell string
-		open  string
-		// revealed is what the click has to bring on screen. Nothing
-		// here asserted it before: Click, then axe, and a summary that
-		// had stopped opening — a gallery-side regression, a stray
-		// pointer-events, an overlay — would have been scanned CLOSED
-		// and reported clean, which is the shape of every gate this
-		// project has shipped that gated nothing. The scan is of the
-		// disclosed document or it is not the scan this test claims.
-		revealed []string
-	}{
-		{"topbar", "[rst-shell-menu] > summary", []string{"[rst-shell-tail] [rst-shell-nav] a"}},
-		{"sidebar", "[rst-shell-chrome] > summary", []string{"[rst-shell-rail] [rst-shell-nav] a"}},
-		// console discloses TWO chromes from this one summary — the
-		// bar's tail and the rail — so the collapsed document it
-		// produces is the largest of the three and the only one where
-		// a landmark revealed by a disclosure sits beside another
-		// landmark revealed by the same one. Both are named here: half
-		// a reveal is exactly the regression the ui drives gate on
-		// their own fixture, and this is the gallery's own page.
-		{"console", "[rst-shell-menu] > summary", []string{
-			"[rst-shell-tail] [rst-shell-account] > summary",
-			"[rst-shell-rail] [rst-shell-nav] a",
-		}},
-	} {
-		for _, scheme := range a11ySchemes {
-			where := "day/en " + sh.shell + " shell at 390px, disclosed (" + scheme + ")"
-			if err := chromedp.Run(ctx,
-				chromedp.EmulateViewport(390, 780),
-				chromedp.Navigate(rig.Origin+shellHref(mountPath, "day", "en", sh.shell)),
-				chromedp.WaitVisible(sh.open, chromedp.ByQuery),
-			); err != nil {
-				t.Fatalf("%s: loading: %v", where, err)
-			}
-			// The CONTROL, and it costs one evaluate: the same reading,
-			// on the same page, one click earlier, where the answer is
-			// already known. A patency check hard-wired true — a
-			// selector that matches something the disclosure does not
-			// gate, a shown() that cannot return false — passes the
-			// assertion below and fails here.
-			for _, sel := range sh.revealed {
-				if shownIn(t, ctx, where, sel) {
-					t.Errorf("%s: %q is on screen with the disclosure still CLOSED, so it is not gated by the disclosure and its visibility proves nothing about the click", where, sel)
-				}
-			}
-			if err := chromedp.Run(ctx, chromedp.Click(sh.open, chromedp.ByQuery)); err != nil {
-				t.Fatalf("%s: opening: %v", where, err)
-			}
-			// Patency. Before axe, because a scan of the closed
-			// document reported as a scan of the open one is worse than
-			// no scan: it is a gate saying it looked.
-			for _, sel := range sh.revealed {
-				if !shownIn(t, ctx, where, sel) {
-					t.Fatalf("%s: clicking the disclosure did not bring %q on screen. axe would have scanned the COLLAPSED document and reported it as the disclosed one", where, sel)
-				}
-			}
-			if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
-				t.Fatalf("%s: loading axe: %v", where, err)
-			}
-			paint(t, ctx, scheme)
-			total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
+	total, scans := 0, 0
 
-			// The target the reader taps. Measured on the summary
-			// itself, which is the control: a 24px floor on both axes,
-			// and the accessible name the icon must not have replaced.
-			var raw string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
-			  const s = document.querySelector(`+"`"+sh.open+"`"+`);
-			  const r = s.getBoundingClientRect();
-			  return JSON.stringify({W: Math.round(r.width), H: Math.round(r.height), Text: s.innerText.trim()});
-			})()`, &raw)); err != nil {
-				t.Fatalf("%s: measuring the summary: %v", where, err)
-			}
-			var got struct {
-				W, H int
-				Text string
-			}
-			if err := json.Unmarshal([]byte(raw), &got); err != nil {
-				t.Fatalf("%s: reading the measurement (%q): %v", where, raw, err)
-			}
-			if got.W < 24 || got.H < 24 {
-				t.Errorf("%s: the disclosure's target is %d×%dpx, under WCAG 2.2 SC 2.5.8's 24×24", where, got.W, got.H)
-			}
-			if got.Text == "" {
-				t.Errorf("%s: the disclosure has no visible label; the icon beside it is aria-hidden, so the control would have no accessible name at all", where)
+	load := func(where, href, ready string) {
+		t.Helper()
+		if err := chromedp.Run(ctx,
+			chromedp.EmulateViewport(390, 780),
+			chromedp.Navigate(rig.Origin+href),
+			chromedp.WaitVisible(ready, chromedp.ByQuery),
+		); err != nil {
+			t.Fatalf("%s: loading: %v", where, err)
+		}
+	}
+	// settle waits out the page's finite animations and any view
+	// transition. The cards fade in over 0.14s and a narrow navigation
+	// between two shell documents slides; axe reading either mid-flight
+	// measured text at partial opacity, blended colours no reader sees
+	// once it has landed. Finite animations only: a spinner's never
+	// finishes, and waiting on it would hang the scan.
+	settle := func(where string) {
+		t.Helper()
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => {
+		  if (document.activeViewTransition) await document.activeViewTransition.finished.catch(() => null);
+		  await Promise.all(document.getAnimations()
+		    .filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+		    .map(a => a.finished.catch(() => null)));
+		  return true;
+		})()`, nil,
+			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+			t.Fatalf("%s: waiting for animations: %v", where, err)
+		}
+	}
+	// axe scans the document with engine, a JavaScript expression for
+	// an object with axe's run method.
+	axe := func(where, scheme, engine string) {
+		t.Helper()
+		settle(where)
+		if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
+			t.Fatalf("%s: loading axe: %v", where, err)
+		}
+		paint(t, ctx, scheme)
+		total += report(t, where, scan(t, ctx, where, engine, "document", "false"))
+		scans++
+	}
+	// box is a control's size and visible label.
+	box := func(where, sel string) (w, h int, text string) {
+		t.Helper()
+		var raw string
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+		  const s = document.querySelector(`+"`"+sel+"`"+`);
+		  const r = s.getBoundingClientRect();
+		  return JSON.stringify({W: Math.round(r.width), H: Math.round(r.height), Text: s.innerText.trim()});
+		})()`, &raw)); err != nil {
+			t.Fatalf("%s: measuring %s: %v", where, sel, err)
+		}
+		var got struct {
+			W, H int
+			Text string
+		}
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("%s: reading the measurement (%q): %v", where, raw, err)
+		}
+		return got.W, got.H, got.Text
+	}
+	// open clicks a disclosure and asserts what it reveals, with the
+	// CONTROL first: the same reading one click earlier, where the
+	// answer is known. A patency check hard-wired true passes the
+	// assertion after the click and fails here; and a summary that had
+	// stopped opening would otherwise be scanned CLOSED and reported
+	// clean, which is a gate saying it looked.
+	open := func(where, summary, revealed string) {
+		t.Helper()
+		if shownIn(t, ctx, where, revealed) {
+			t.Errorf("%s: %q is on screen with the disclosure still CLOSED, so it is not gated by the disclosure and its visibility proves nothing about the click", where, revealed)
+		}
+		if err := chromedp.Run(ctx, chromedp.Click(summary, chromedp.ByQuery)); err != nil {
+			t.Fatalf("%s: opening: %v", where, err)
+		}
+		if !shownIn(t, ctx, where, revealed) {
+			t.Fatalf("%s: clicking the disclosure did not bring %q on screen. axe would have scanned the COLLAPSED document and reported it as the disclosed one", where, revealed)
+		}
+	}
+
+	// The topbar: its card, open.
+	for _, scheme := range a11ySchemes {
+		where := "day/en topbar shell at 390px, card open (" + scheme + ")"
+		load(where, shellHref(mountPath, "day", "en", "topbar"), "[rst-shell-menu] > summary")
+		open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-nav] a")
+		axe(where, scheme, "window.axe")
+		w, h, text := box(where, "[rst-shell-menu] > summary")
+		if w < 24 || h < 24 {
+			t.Errorf("%s: the disclosure's target is %d×%dpx, under WCAG 2.2 SC 2.5.8's 24×24", where, w, h)
+		}
+		if text == "" {
+			t.Errorf("%s: the disclosure has no visible label; the icon beside it is aria-hidden, so the control would have no accessible name at all", where)
+		}
+	}
+
+	// The sidebar and console: both documents, every theme and scheme.
+	for _, shell := range []string{"sidebar", "console"} {
+		for _, theme := range ui.ThemeNames() {
+			for _, scheme := range a11ySchemes {
+				where := theme + "/en " + shell + " index at 390px (" + scheme + ")"
+				load(where, shellHref(mountPath, theme, "en", shell), "[rst-shell-rail]")
+				// Patency: the document is the index before axe reads it.
+				if !shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a") || shownIn(t, ctx, where, "[rst-shell-main]") {
+					t.Fatalf("%s: not the index (rail shown %v, main shown %v); axe would scan the wrong view", where,
+						shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a"), shownIn(t, ctx, where, "[rst-shell-main]"))
+				}
+				axe(where, scheme, "window.axe")
+				if shell == "console" {
+					// The whole document with the card open, every rule but
+					// target-size. With the card open everything outside it
+					// lies under the summary's ::before light-dismiss layer,
+					// which axe cannot see (it works out what obscures a
+					// target from element boxes): a rail row half under the
+					// card read as a target cut to 22px (signal's measure)
+					// when no tap can reach it at all. The rows' size is
+					// measured with the card closed, just above.
+					where := theme + "/en console index at 390px, card open (" + scheme + ")"
+					open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-account] > summary")
+					axe(where, scheme, `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`)
+				}
+
+				where = theme + "/en " + shell + " content page at 390px (" + scheme + ")"
+				load(where, shellPageHref(mountPath, theme, "en", shell), "[rst-shell-back] a")
+				if shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a") {
+					t.Fatalf("%s: the rail's nav is on screen on a content page; axe would scan the index", where)
+				}
+				axe(where, scheme, "window.axe")
+				w, h, text := box(where, "[rst-shell-back] a")
+				if w < 44 || h < 44 {
+					t.Errorf("%s: the back control is %d×%dpx; the touch block promises 44×44", where, w, h)
+				}
+				if text == "" {
+					t.Errorf("%s: the back control has no visible label", where)
+				}
 			}
 		}
 	}
 	if total == 0 {
-		t.Logf("clean: 3 shells × %d schemes at 390px, disclosed, %v", len(a11ySchemes), axeTags)
+		t.Logf("clean: %d scans at 390px, %v", scans, axeTags)
 	}
 }
 
@@ -648,7 +699,17 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 	if len(got.Frames) != got.Articles {
 		t.Fatalf("%d partial sections on the %s page but only %d gave up a preview frame", got.Articles, kind, len(got.Frames))
 	}
-	return got.Frames[:1]
+	// The first frame, and the row menu's wherever it is: axe runs on that
+	// sample in every theme and scheme because it is a shipped control
+	// with a name built from a catalog pattern, and it is not first on its
+	// page, so the first-frame rule alone would never scan it.
+	picked := got.Frames[:1]
+	for _, f := range got.Frames[1:] {
+		if f.Of == anchorID("partial", "row-menu") {
+			picked = append(picked, f)
+		}
+	}
+	return picked
 }
 
 // previewPageKinds is every page kind that frames a sample worth
@@ -841,7 +902,12 @@ func TestA11yReflowsAt320(t *testing.T) {
 		struct{ name, href string }{"day/ar tokens", pageHref(mountPath, "day", "ar", fileOf("tokens"))},
 		struct{ name, href string }{"day/en modal", modalHref(mountPath, "day", "en")},
 		struct{ name, href string }{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar")},
+		struct{ name, href string }{"day/en sidebar content page", shellPageHref(mountPath, "day", "en", "sidebar")},
+		struct{ name, href string }{"day/en console shell", shellHref(mountPath, "day", "en", "console")},
+		struct{ name, href string }{"day/en console content page", shellPageHref(mountPath, "day", "en", "console")},
 		struct{ name, href string }{"day/en stage shell", shellHref(mountPath, "day", "en", "stage")},
+		struct{ name, href string }{"day/en demo app", demoHref(mountPath, "day", "en")},
+		struct{ name, href string }{"day/en demo requests page", demoPageHref(mountPath, "day", "en", "requests")},
 	)
 	// Overflow is measured on both edges, because "sideways" is not
 	// one direction: an LTR page spills past the right edge and an RTL

@@ -904,8 +904,8 @@ func shellViews(mount, theme, locale string) []shellView {
 	blurbs := map[string]string{
 		"column":  "The plain centred page every scaffolded app starts on: a skip link, a title, and the content column.",
 		"topbar":  "Brand, navigation and an account menu across the top, with a footer under the page.",
-		"sidebar": "A navigation rail beside the page, collapsing below 800px into a details disclosure. No JavaScript.",
-		"console": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. Below 800px one disclosure folds both. No JavaScript.",
+		"sidebar": "A navigation rail beside the page. On a phone, the rail is an index page and every other page has a back control. No JavaScript needed.",
+		"console": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. On a phone, the bar's menu opens as a card and the rail is an index page. No JavaScript needed.",
 		"stage":   "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.",
 	}
 	out := make([]shellView, 0, len(ui.LayoutNames()))
@@ -940,6 +940,18 @@ func shellViews(mount, theme, locale string) []shellView {
 func shellHref(mount, theme, locale, shell string) string {
 	return mount + "/" + theme + "/" + locale + "/shells/" + shell + ".html"
 }
+
+// shellPageHref is the content page of a shell demo that has an index
+// (sidebar and console): shells/<shell>.html is the index, the address
+// the gallery has always linked, and this is the page its nav opens.
+func shellPageHref(mount, theme, locale, shell string) string {
+	return mount + "/" + theme + "/" + locale + "/shells/" + shell + "-page.html"
+}
+
+// shellHasIndex is the shells whose layout has a view block: their demo
+// is two documents, the index and a content page, because a phone shows
+// one or the other and one document cannot be both.
+func shellHasIndex(shell string) bool { return shell == "sidebar" || shell == "console" }
 
 // modalHref is the modal demo's address — which is the whole point of
 // the demo. A modal is its own URL, so the sample that shows one open
@@ -1328,7 +1340,7 @@ var previewHeights = map[string]int{
 	"screen-signin-social":            290,
 	"screen-signin-password":          420,
 
-	"demo-app":      780,
+	"demo-app":      700, // demo.html is the index: 680px of dashboard beside the rail at 1200, the phone index well inside the Mobile tab's 875
 	"shell-column":  780,
 	"shell-topbar":  780,
 	"shell-sidebar": 780,
@@ -1560,7 +1572,7 @@ var idiomBlurbs = map[string]string{
 	"help":          "A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.",
 	"selbox":        "The selection checkbox a list row wears in select mode. Its label restates the row's identity.",
 	"shell-topbar":  "The topbar shell's own chrome, as markup. Layout ships it as a whole template.",
-	"shell-sidebar": "The sidebar shell's chrome, collapsing below 800px into a details disclosure.",
+	"shell-sidebar": "The sidebar shell's chrome on a content page: on a phone, a back control to the index.",
 }
 
 // idiomRules attaches the two rules from docs/site/templates.md to the
@@ -1680,6 +1692,12 @@ type shellData struct {
 	// and the Screens page's own sample brand, so the two show one app.
 	Signin auth.SigninState
 	Brand  map[string]any
+	// View, Up and PageHref are the index/page pair of the shells that
+	// have one: which view this document is, where its back control
+	// goes, and the content page its nav opens. "#" for the others.
+	View     string
+	Up       string
+	PageHref string
 }
 
 // accountMarkup is the one block whose shape differs between the
@@ -1698,10 +1716,13 @@ var accountMarkup = map[string]template.HTML{
 		`<span rst-person-email>grace@example.com</span></span></a></div>`,
 }
 
-// renderShell builds one full-page shell demo: ui.Layout's own template,
-// its chrome blocks filled with sample links so the frame is visible,
-// and a small representative screen in the content hole.
-func renderShell(mount, theme, locale, shell string) ([]byte, error) {
+// renderShell builds one shell's full-page demo: ui.Layout's own
+// template, its chrome blocks filled with sample links so the frame is
+// visible, and a small representative screen in the content hole. The
+// result is keyed by file name under shells/: <shell>.html, and for a
+// shell with an index also <shell>-page.html, the content page its nav
+// opens, whose back control returns to <shell>.html#nav-posts.
+func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) {
 	src, ok := ui.Layout(shell)
 	if !ok {
 		return nil, fmt.Errorf("no shell %q", shell)
@@ -1731,23 +1752,47 @@ func renderShell(mount, theme, locale, shell string) ([]byte, error) {
 	if _, err := tmpl.Parse(shellCommon + overrides); err != nil {
 		return nil, fmt.Errorf("parsing the shell overrides: %w", err)
 	}
-	var buf strings.Builder
-	err = tmpl.ExecuteTemplate(&buf, "layout", shellData{
-		Locale:  locale,
-		Dir:     rastrillo.Dir(locale),
-		Name:    shell,
-		Title:   proseIn(locale, "The {shell} shell", "shell", shell) + " — " + proseIn(locale, "rastrillo design system"),
-		Mount:   mount,
-		Index:   indexHref(mount, theme, locale),
-		Locales: localeLinks(mount, theme, locale, "index.html"),
-		Account: accountMarkup[shell],
-		Signin:  auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
-		Brand:   galleryBrand,
-	})
-	if err != nil {
-		return nil, err
+	data := shellData{
+		Locale:   locale,
+		Dir:      rastrillo.Dir(locale),
+		Name:     shell,
+		Title:    proseIn(locale, "The {shell} shell", "shell", shell) + " — " + proseIn(locale, "rastrillo design system"),
+		Mount:    mount,
+		Index:    indexHref(mount, theme, locale),
+		Locales:  localeLinks(mount, theme, locale, "index.html"),
+		Account:  accountMarkup[shell],
+		Signin:   auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
+		Brand:    galleryBrand,
+		PageHref: "#",
 	}
-	return []byte(buf.String()), nil
+	type doc struct {
+		file string
+		data shellData
+	}
+	docs := []doc{{shell + ".html", data}}
+	if shellHasIndex(shell) {
+		index, page := data, data
+		index.View, index.Up = "index", shellHref(mount, theme, locale, shell)
+		page.View, page.Up = "page", shellHref(mount, theme, locale, shell)+"#nav-posts"
+		index.PageHref = shellPageHref(mount, theme, locale, shell)
+		page.PageHref = index.PageHref
+		docs = []doc{{shell + ".html", index}, {shell + "-page.html", page}}
+	}
+	out := make(map[string][]byte, len(docs))
+	for _, d := range docs {
+		// A clone per document: html/template refuses to clone a tree
+		// that has executed, and each document is its own execution.
+		run, err := tmpl.Clone()
+		if err != nil {
+			return nil, err
+		}
+		var buf strings.Builder
+		if err := run.ExecuteTemplate(&buf, "layout", d.data); err != nil {
+			return nil, fmt.Errorf("%s: %w", d.file, err)
+		}
+		out[d.file] = []byte(buf.String())
+	}
+	return out, nil
 }
 
 // ── The modal demo ───────────────────────────────────────────────────
@@ -1810,21 +1855,21 @@ func renderModal(mount, theme, locale string) ([]byte, error) {
 // frames an application — a dashboard, a list of requests and one
 // request open — before it says a word about any of that.
 //
-// One page with three views inside it rather than three pages, which
-// is Paul's choice and the honest constraint of a static tree. The
-// views are :target: each has an address of its own, the browser's back
-// button walks them, and a reader can copy a link to the detail view
-// out of the frame. That is the framework's URL-per-view idiom rendered
-// in the only currency a single static file has, and the demo says so
-// on the page rather than implying a route it does not have.
+// Four documents, one per view, each a real page, the way the app it
+// stands for would serve them: demo.html is the index (on a phone the
+// rail is the whole page; on a desktop the dashboard sits beside it),
+// and demo-dashboard.html, demo-requests.html and demo-request.html are
+// content pages whose back control returns to demo.html#nav-…. It used
+// to be one document switching three views with :target, which cannot
+// show the two server-rendered views of one URL a phone needs.
 //
-// The framework's own three scripts load on it, because a real app gets
-// them and this is meant to read as a real app — and not one of them
-// does any of the switching. TestTheDemoApplicationSwitchesViewsWithNoScript
-// drives the whole journey with script execution disabled in the
-// engine, which is the strongest form of that claim. gallery.js loads
-// too, restoring the colour scheme a reader chose in the gallery,
-// exactly as the shell demos do.
+// The framework's own scripts load on it, because a real app gets them
+// and this is meant to read as a real app — and none of them is needed
+// to move around it. TestTheDemoApplicationWorksWithNoScript drives the
+// whole journey with script execution disabled in the engine, which is
+// the strongest form of that claim. gallery.js loads too, restoring the
+// colour scheme a reader chose in the gallery, exactly as the shell
+// demos do.
 
 // demoShell is the page frame the demo application is built in. Named,
 // not derived: a demo has to pick one shell, and the sidebar is the
@@ -1840,21 +1885,42 @@ func demoHref(mount, theme, locale string) string {
 	return mount + "/" + theme + "/" + locale + "/demo.html"
 }
 
-// demoData is what the demo page executes against. Self is the page's
-// own address, which the language switcher uses so choosing a language
-// keeps you in the app; Index is the gallery it came from.
-type demoData struct {
-	Locale  string
-	Dir     string
-	Mount   string
-	Title   string
-	Index   string
-	Self    string
-	Locales []localeLink
+// demoPageHref is one content page of the demo application. The demo is
+// four documents, like the app it stands for: demo.html is the index
+// (on a desktop it shows the dashboard beside the rail), and the
+// dashboard, the request list and one request are pages whose back
+// control returns to demo.html#nav-…. One document switching views with
+// :target could not express two server-rendered views of one URL.
+func demoPageHref(mount, theme, locale, view string) string {
+	return mount + "/" + theme + "/" + locale + "/demo-" + view + ".html"
 }
 
-// renderDemo builds one theme × locale copy of the demo application.
-func renderDemo(mount, theme, locale string) ([]byte, error) {
+// demoViews are the demo's four documents, the index first.
+var demoViews = []string{"index", "dashboard", "requests", "request"}
+
+// demoData is what a demo page executes against. Self is the page's own
+// address; Index is the gallery it came from. View is which of the four
+// documents this is, Up its back control's address, Home the index, and
+// the last three the content pages the rail and the rows link to.
+type demoData struct {
+	Locale    string
+	Dir       string
+	Mount     string
+	Title     string
+	Index     string
+	Self      string
+	Locales   []localeLink
+	View      string
+	Up        string
+	Home      string
+	Dashboard string
+	Requests  string
+	Request   string
+}
+
+// renderDemo builds one theme × locale copy of the demo application:
+// its four documents, keyed by file name.
+func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 	src, ok := ui.Layout(demoShell)
 	if !ok {
 		return nil, fmt.Errorf("no shell %q to build the demo application in", demoShell)
@@ -1877,20 +1943,44 @@ func renderDemo(mount, theme, locale string) ([]byte, error) {
 	if _, err := tmpl.Parse(demoTemplate); err != nil {
 		return nil, fmt.Errorf("parsing the demo application: %w", err)
 	}
-	var buf strings.Builder
-	err = tmpl.ExecuteTemplate(&buf, "layout", demoData{
-		Locale:  locale,
-		Dir:     rastrillo.Dir(locale),
-		Mount:   mount,
-		Title:   proseIn(locale, "The demo application") + " — " + proseIn(locale, "rastrillo design system"),
-		Index:   indexHref(mount, theme, locale),
-		Self:    demoHref(mount, theme, locale),
-		Locales: localeLinks(mount, theme, locale, "demo.html"),
-	})
-	if err != nil {
-		return nil, err
+	home := demoHref(mount, theme, locale)
+	out := make(map[string][]byte, len(demoViews))
+	for _, view := range demoViews {
+		file, self, up := "demo-"+view+".html", demoPageHref(mount, theme, locale, view), home+"#nav-requests"
+		switch view {
+		case "index":
+			file, self, up = "demo.html", home, home
+		case "dashboard":
+			up = home + "#nav-dashboard"
+		}
+		// A clone per document: html/template refuses to clone a tree
+		// that has executed, and each document is its own execution.
+		run, err := tmpl.Clone()
+		if err != nil {
+			return nil, err
+		}
+		var buf strings.Builder
+		err = run.ExecuteTemplate(&buf, "layout", demoData{
+			Locale:    locale,
+			Dir:       rastrillo.Dir(locale),
+			Mount:     mount,
+			Title:     proseIn(locale, "The demo application") + " — " + proseIn(locale, "rastrillo design system"),
+			Index:     indexHref(mount, theme, locale),
+			Self:      self,
+			Locales:   localeLinks(mount, theme, locale, file),
+			View:      view,
+			Up:        up,
+			Home:      home,
+			Dashboard: demoPageHref(mount, theme, locale, "dashboard"),
+			Requests:  demoPageHref(mount, theme, locale, "requests"),
+			Request:   demoPageHref(mount, theme, locale, "request"),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", file, err)
+		}
+		out[file] = []byte(buf.String())
 	}
-	return []byte(buf.String()), nil
+	return out, nil
 }
 
 // demoView is the widget the Overview frames the demo application in:
@@ -1907,44 +1997,17 @@ func demoView(mount, theme, locale string) previewView {
 	}
 }
 
-// demoCSS is the whole of the demo's own stylesheet, and it is worth
-// reading for how little of it there is: everything visible on the page
-// is tokens.css, and this is the view switching plus one margin.
-//
-// It used to carry a three-up grid and two type rules for the
-// dashboard's numbers, which was four rules doing by hand what the
-// stat band now does as vocabulary. Their going is the point rather
-// than a tidy-up: a demo that hand-rolls a component the framework
-// ships is a demo quietly saying the framework does not ship it.
-//
-// The switching, in four rules. The list and the detail view are hidden
-// until they are the :target; the dashboard is shown until one of them
-// is, which is what makes the address with no fragment land somewhere.
-// Written that way round on purpose: where :has() is missing, the only
-// rule that drops is the one hiding the dashboard, so the address with
-// no fragment still shows the dashboard alone and a targeted view
-// stacks under it — two screens at worst, never three, and never a
-// blank one.
-//
-// The rail's current item is the same trick. A real rastrillo app
-// renders each view at its own route and puts aria-current on the link
-// server-side; a single document cannot know which view is showing
-// without asking CSS, so the marker here is visual — background, colour
-// and weight, the three signals tokens.css uses for aria-current — and
-// the screen's own <h1> is what actually tells a reader where they are.
+// demoCSS is the whole of the demo's own stylesheet: one margin. The
+// view switching it used to carry went when the demo became four
+// documents, and the rail's current item is aria-current written by the
+// server now, as in a real app.
 const demoCSS = `
-#view-requests, #view-request { display: none; }
-#view-requests:target, #view-request:target { display: block; }
-body:has(#view-requests:target) #view-dashboard,
-body:has(#view-request:target) #view-dashboard { display: none; }
-body:not(:has(#view-requests:target, #view-request:target)) [rst-shell-nav] a[href="#view-dashboard"],
-body:has(#view-requests:target) [rst-shell-nav] a[href="#view-requests"],
-body:has(#view-request:target) [rst-shell-nav] a[href="#view-requests"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
 [rst-stats] { margin-block-end: var(--rst-sp-5); }
 `
 
 // demoTemplate fills every block demoShell leaves open, and then the
-// content hole with the three views.
+// content hole with whichever view this document is (the index shows
+// the dashboard, which is what a desktop sees beside the rail).
 //
 // The line between what is translated and what is not runs through the
 // grid, not around it. A ROW is data — a person's name, a subject, a
@@ -1963,11 +2026,14 @@ const demoTemplate = `
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
-{{define "brand"}}<a rst-shell-brand href="#view-dashboard">Harbour</a>{{end}}
-{{define "nav"}}<a href="#view-dashboard">{{P "Dashboard"}}</a><a href="#view-requests">{{P "Requests"}}</a>{{end}}
+{{define "view"}}{{if eq .View "index"}}index{{else}}page{{end}}{{end}}
+{{define "up"}}{{.Up}}{{end}}
+{{define "brand"}}<a rst-shell-brand href="{{.Home}}">Harbour</a>{{end}}
+{{define "nav"}}<a id="nav-dashboard" href="{{.Dashboard}}"{{if or (eq .View "index") (eq .View "dashboard")}} aria-current="page"{{end}}>{{P "Dashboard"}}</a><a id="nav-requests" href="{{.Requests}}"{{if or (eq .View "requests") (eq .View "request")}} aria-current="page"{{end}}>{{P "Requests"}}</a>{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{define "account"}}<div rst-shell-account><a rst-person href="#view-dashboard"><span rst-person-av aria-hidden="true">A</span><span rst-person-meta><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></span></a></div>{{end}}
+{{define "account"}}<div rst-shell-account><a rst-person href="{{.Dashboard}}"><span rst-person-av aria-hidden="true">A</span><span rst-person-meta><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></span></a></div>{{end}}
 {{define "content"}}
+{{if or (eq .View "index") (eq .View "dashboard")}}
 <section class="app-view" id="view-dashboard">
 {{template "page-header" dict "Title" (P "Dashboard") "Sub" (P "Everything the team has waiting this morning.")}}
 <div rst-stats>
@@ -1977,43 +2043,44 @@ const demoTemplate = `
 </div>
 <div rst-box-head><h2>{{P "Mailbox storage"}}</h2></div>
 <section rst-box>{{template "meter" dict "Percent" 82 "Text" "412 / 500"}}</section>
-<div rst-box-head><h2>{{P "Latest activity"}}</h2><a rst-btn href="#view-requests">{{P "Requests"}}</a></div>
+<div rst-box-head><h2>{{P "Latest activity"}}</h2><a rst-btn href="{{.Requests}}">{{P "Requests"}}</a></div>
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small><bdi>Otto Neurath</bdi> · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Card declined on renewal<small><bdi>Otto Neurath</bdi> · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
 </div>
 </section>
-
+{{else if eq .View "requests"}}
 <section class="app-view" id="view-requests">
-{{template "page-header" dict "Title" (P "Requests") "Sub" (P "Every request in the queue, newest first.") "ActionHref" "#view-requests" "ActionLabel" (P "New request") "ActionIcon" "plus"}}
-{{template "seg-tabs" dict "Label" (P "Requests") "Items" (list (dict "Label" (P "All") "Href" "#view-requests" "Current" true) (dict "Label" (P "Open") "Href" "#view-requests") (dict "Label" (P "Resolved") "Href" "#view-requests"))}}
-<div rst-card style="--rst-cols: minmax(0, 1fr) 120px 120px">
-{{template "list-bar" dict "SearchAction" "#view-requests" "Placeholder" (P "Search requests")}}
-<div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Card declined on renewal<small><bdi>Otto Neurath</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Export takes twenty minutes<small><bdi>Mary Sherman</bdi> · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span></div>
-<div rst-lrow><a class="rst-nm" href="#view-request">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span></div>
+{{template "page-header" dict "Title" (P "Requests") "Sub" (P "Every request in the queue, newest first.") "ActionHref" .Requests "ActionLabel" (P "New request") "ActionIcon" "plus"}}
+{{template "seg-tabs" dict "Label" (P "Requests") "Items" (list (dict "Label" (P "All") "Href" .Requests "Current" true) (dict "Label" (P "Open") "Href" .Requests) (dict "Label" (P "Resolved") "Href" .Requests))}}
+<div rst-card style="--rst-cols: minmax(0, 1fr) 120px 120px var(--rst-col-menu)">
+{{template "list-bar" dict "SearchAction" .Requests "Placeholder" (P "Search requests")}}
+<div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span><span></span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span>{{template "row-menu" dict "Name" "Invoice #4471 never arrived" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Card declined on renewal<small><bdi>Otto Neurath</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span>{{template "row-menu" dict "Name" "Card declined on renewal" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Export takes twenty minutes<small><bdi>Mary Sherman</bdi> · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span>{{template "row-menu" dict "Name" "Export takes twenty minutes" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span>{{template "row-menu" dict "Name" "Seat count is wrong on the invoice" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
 </div>
 <p rst-count-line>{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
-{{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" "#view-requests") (dict "Label" "3" "Href" "#view-requests"))}}
+{{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" .Requests) (dict "Label" "3" "Href" .Requests))}}
 </section>
-
+{{else}}
 <section class="app-view" id="view-request">
-{{template "back-nav" dict "Href" "#view-requests" "Label" (P "Requests")}}
+{{template "back-nav" dict "Href" .Requests "Label" (P "Requests")}}
 {{template "page-header" dict "Title" "Invoice #4471 never arrived" "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
 <p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" "Billing"}}</p>
 <div rst-box-head><h2>{{P "Details"}}</h2></div>
 <section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12" "DateTime" "2026-08-14T09:12"))}}</section>
 <div rst-box-head><h2>{{P "Reply"}}</h2></div>
-<section rst-box><form rst-form method="post" action="#view-request">
+<section rst-box><form rst-form method="post" action="{{.Request}}">
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
-{{template "form-foot" dict "Submit" (P "Send reply") "CancelHref" "#view-requests" "CancelLabel" (P "Cancel")}}
+{{template "form-foot" dict "Submit" (P "Send reply") "CancelHref" .Requests "CancelLabel" (P "Cancel")}}
 </form></section>
-{{template "callout" dict "Tone" "info" "Title" (P "Three screens, three addresses") "Body" (P "Every view has its own address, like any rastrillo screen. Turn JavaScript off and it behaves the same. Switching uses CSS.")}}
+{{template "callout" dict "Tone" "info" "Title" (P "Every screen has its own address") "Body" (P "Each screen is a page of its own, like any rastrillo screen, and works the same with JavaScript off. On a phone, the sections are a list and each screen has a way back.")}}
 </section>
+{{end}}
 {{end}}
 `
 
@@ -2185,10 +2252,14 @@ func buildAssets(mount, theme, locale string) assetsView {
 		add(&out, "theme-"+name+".css", css,
 			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
 	}
+	add(&out, "shell.css", ui.ShellCSS(),
+		"The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.")
 	add(&out, "rastrillo.js", ui.ShimJS(),
 		"The progressive-enhancement shim: polling fragments and light dismiss. Every scaffolded app gets it.")
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
+	add(&out, "shell.js", ui.ShellJS(),
+		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
@@ -2550,8 +2621,10 @@ const shellCommon = `
 // executed, so one override set covers all four of them; stage has its
 // own, below.
 const shellTemplate = `
+{{define "view"}}{{if eq .View "index"}}index{{else}}page{{end}}{{end}}
+{{define "up"}}{{.Up}}{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
-{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Comments</a><a href="#">Settings</a>{{end}}
+{{define "nav"}}<a id="nav-posts" href="{{.PageHref}}" aria-current="page">Posts</a><a id="nav-comments" href="{{.PageHref}}">Comments</a><a id="nav-settings" href="{{.PageHref}}">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{define "foot"}}<a href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}

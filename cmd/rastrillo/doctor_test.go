@@ -1080,3 +1080,91 @@ func splitPrelude(prelude string) (lead, selectors string) {
 	}
 	return "", prelude
 }
+
+// doctor cannot diff a layout (it is the app's own), but it can
+// recognise the two shapes a layout written before the phone index
+// takes: the drawer, or a sidebar or console root with no view block.
+// It says so in one line naming the upgrade notes, and the exit code
+// does not change.
+func TestDoctorAdvisesAnOldShellLayout(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		layout func(t *testing.T) []byte
+		advise bool
+	}{
+		{"old sidebar", func(t *testing.T) []byte { b, _ := os.ReadFile("../../ui/testdata/legacy/sidebar.html"); return b }, true},
+		{"old console", func(t *testing.T) []byte { b, _ := os.ReadFile("../../ui/testdata/legacy/console.html"); return b }, true},
+		{"today's sidebar", func(t *testing.T) []byte { b, _ := ui.Layout("sidebar"); return b }, false},
+		{"today's console", func(t *testing.T) []byte { b, _ := ui.Layout("console"); return b }, false},
+		{"topbar", func(t *testing.T) []byte { b, _ := ui.Layout("topbar"); return b }, false},
+	} {
+		dir := doctorApp(t, rastrilloVersion(), "day")
+		body := c.layout(t)
+		if len(body) == 0 {
+			t.Fatalf("%s: no layout to test with", c.name)
+		}
+		mustWrite(t, filepath.Join(dir, "internal", "demoapp", "templates", "layout.html"), string(body))
+		rep, err := diagnose(dir, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := printed(rep, false)
+		line := filepath.Join("internal", "demoapp", "templates", "layout.html") + ": " + doctorLayoutAdvisory
+		if got := strings.Contains(out, line); got != c.advise {
+			t.Errorf("%s: advisory printed %v, want %v:\n%s", c.name, got, c.advise, out)
+		}
+		if code := exitCode(t, rep.exit()); code != 0 {
+			t.Errorf("%s: exit %d; the advisory must not change the exit code", c.name, code)
+		}
+	}
+	if strings.Contains(doctorLayoutAdvisory, "\u2014") {
+		t.Error("the advisory carries an em dash")
+	}
+}
+
+// A template comment that merely mentions the old drawer class must
+// never trip the advisory: oldShellLayout reads markup, not prose about
+// markup, or an upgrade note explaining the old shell to a reader would
+// falsely flag itself. Both comment forms are covered: the plain
+// {{/* ... */}} and the whitespace-trimming {{- /* ... */ -}}.
+func TestOldShellLayoutIgnoresTemplateComments(t *testing.T) {
+	for _, c := range []struct{ name, src string }{
+		{
+			"plain comment",
+			`{{/* an upgrade note mentioning rst-shell-chrome for a reader */}}` + "\n" +
+				`<div rst-shell-sidebar>{{block "view" .}}page{{end}}</div>`,
+		},
+		{
+			"trimmed comment",
+			`{{- /* an upgrade note mentioning rst-shell-chrome for a reader */ -}}` + "\n" +
+				`<div rst-shell-console>{{block "view" .}}page{{end}}</div>`,
+		},
+	} {
+		if oldShellLayout(c.src) {
+			t.Errorf("%s: a comment naming the old markup must not trigger the advisory:\n%s", c.name, c.src)
+		}
+	}
+}
+
+// A view block written with spaces inside the braces or with trim
+// markers is the same block: gofmt does not touch templates, and an app
+// that spaces its actions out must not be told its layout is old.
+func TestOldShellLayoutReadsAViewBlockInAnySpelling(t *testing.T) {
+	for _, block := range []string{
+		`{{block "view" .}}page{{end}}`,
+		`{{ block "view" . }}page{{ end }}`,
+		`{{- block "view" . -}}page{{- end -}}`,
+		"{{-\tblock  \"view\" .}}page{{end}}",
+	} {
+		for _, shell := range []string{"rst-shell-sidebar", "rst-shell-console"} {
+			src := `<div ` + shell + `>` + block + `</div>`
+			if oldShellLayout(src) {
+				t.Errorf("a layout with a view block reads as old: %s", src)
+			}
+		}
+	}
+	// And a block of another name is still no view block.
+	if !oldShellLayout(`<div rst-shell-sidebar>{{ block "views" . }}page{{ end }}</div>`) {
+		t.Error(`a sidebar layout whose only block is "views" reads as having a view block`)
+	}
+}

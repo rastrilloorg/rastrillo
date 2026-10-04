@@ -50,14 +50,12 @@ type consoleReading struct {
 	RailShown        bool
 	VisibleSummaries int
 	AccountMenu      bool
+	BackShown        bool
 
 	// The wide frame.
 	TailEndPx      int
 	BarAboveRail   bool
 	RailBeforeMain bool
-	// And the narrow one: the bar's tail above the rail's nav, which is
-	// also their DOM order. Nothing is reordered at any width.
-	TailAboveRail bool
 
 	// The viewport question. NavHeight is the border box, because
 	// max-block-size is a promise about the window and the window
@@ -103,7 +101,6 @@ const consoleMeasure = `(() => {
   const rr = rail.getBoundingClientRect();
   const nr = nav.getBoundingClientRect();
   const mr = main.getBoundingClientRect();
-  const ar = account.getBoundingClientRect();
   // The inline-end gap of the LAST thing on the bar. Measured on the
   // locale menu rather than on the account, because the account is not
   // last: margin-inline-start: auto pushes the whole tail to the end
@@ -124,11 +121,11 @@ const consoleMeasure = `(() => {
     RailShown: shown(rail),
     VisibleSummaries: summaries,
     AccountMenu: shown(panel),
+    BackShown: shown(document.querySelector("[rst-shell-back] a")),
     TailEndPx: Math.round(ltr ? br.right - lr.right : lr.left - br.left),
     BarAboveRail: Math.round(br.bottom) <= Math.round(rr.top) + 1,
     RailBeforeMain: ltr ? Math.round(rr.right) <= Math.round(mr.left) + 1
                         : Math.round(rr.left) >= Math.round(mr.right) - 1,
-    TailAboveRail: Math.round(ar.bottom) <= Math.round(rr.top) + 1,
     Viewport: window.innerHeight,
     NavTop: Math.round(nr.top),
     NavBottom: Math.round(nr.bottom),
@@ -148,10 +145,10 @@ const consoleMeasure = `(() => {
 // under test, and each half re-creates a bug this project has actually
 // shipped rather than one imagined for the occasion.
 //
-// The first half defeats the :has() rule that hides the rail while the
-// disclosure is closed — the failure "the tail collapsed and the rail
-// did not", which is what a console with two disclosures and one
-// forgotten looks like.
+// The first half defeats the rule that hides the rail on a narrow
+// content page — the failure "the tail folded and the rail did not",
+// which is a phone page with its whole navigation stacked above the
+// content it was opened for.
 //
 // The second half is the rail regression itself, verbatim: a box sized
 // against the viewport that also carries padding, as a CONTENT box, so
@@ -171,14 +168,27 @@ const consoleControlCSS = `
   }
 }`
 
-// consolePage renders the console shell with a given nav and direction,
-// and returns the page and its control twin.
-func consolePage(t *testing.T, nav, dir string) (page, control string) {
+// consolePage renders the console shell with a given nav, direction
+// and extra defines (the view, say), and returns the page and its
+// control twin.
+func consolePage(t *testing.T, nav, dir string, defs ...string) (page, control string) {
 	t.Helper()
 	src, ok := Layout("console")
 	if !ok {
 		t.Fatal("no console layout")
 	}
+	return consolePageFrom(t, src, nav, dir, defs...)
+}
+
+// legacyConsolePage is consolePage through the console layout as it was
+// before the phone index, whose rail is gated on the Menu's [open].
+func legacyConsolePage(t *testing.T, nav, dir string) (page, control string) {
+	t.Helper()
+	return consolePageFrom(t, legacyLayout(t, "console"), nav, dir)
+}
+
+func consolePageFrom(t *testing.T, src []byte, nav, dir string, defs ...string) (page, control string) {
+	t.Helper()
 	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
 		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
 		"iconAssets": func() template.HTML { return "" },
@@ -189,6 +199,9 @@ func consolePage(t *testing.T, nav, dir string) (page, control string) {
 	template.Must(tmpl.Parse(`{{define "account"}}<a href="#">Profile</a><a href="#">Sign out</a>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "locale"}}<details rst-dropdown rst-locale id="bar-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "foot"}}<a href="#">Made with rastrillo</a>{{end}}`))
+	for _, d := range defs {
+		template.Must(tmpl.Parse(d))
+	}
 
 	var buf strings.Builder
 	if err := tmpl.ExecuteTemplate(&buf, "layout", nil); err != nil {
@@ -229,31 +242,31 @@ func readConsole(t *testing.T, raw string) consoleReading {
 	return got
 }
 
-// TestTheConsoleFoldsBothChromesBehindOneControl is the design work of
-// the fourth shell, measured.
+// TestTheConsoleFoldsItsBarAndIndexesItsRail is the design work of the
+// fourth shell, measured.
 //
 // Every other shell has ONE thing to put away below 800px. This one has
-// two — the bar's tail and the navigation rail — and the wrong answer
-// is two disclosures, one for "the account" and one for "the
-// navigation", stacked on a phone for a reader to learn. So: one
-// <details rst-shell-menu>, gating its own next sibling with + and the
-// rail from the shell root with :has(). One [open], two reveals.
+// two — the bar's tail and the navigation rail — and each has its own
+// pattern: the tail folds behind one <details rst-shell-menu> and opens
+// as a card, and the rail is an index page, shown on the page whose
+// view block says index and replaced by a back control everywhere else.
 //
 // The claims, in the order they matter:
 //
 //  1. Wide, both chromes are drawn and neither is behind anything: bar
 //     across the top, rail beside the page, account at the bar's inline
 //     end. This is the layout the shell exists for.
-//  2. Narrow and closed, ONE control. Not "a control" — exactly one
-//     visible summary in the whole document, which is the assertion a
-//     second disclosure would fail and nothing else here would.
-//  3. One click reveals BOTH. If a future edit splits them, the tail
-//     opens and the rail stays hidden, and this is where that shows.
+//  2. Narrow and closed, ONE control for the bar. Not "a control" —
+//     exactly one visible summary in the whole document (the back
+//     control is a link), which is the assertion a second disclosure
+//     would fail and nothing else here would.
+//  3. One click reveals the tail card and NOT the rail: the rail
+//     follows the page's view, never the Menu's [open]. On the index
+//     view the rail is shown with the Menu closed.
 //  4. THE TRAP. The account menu is <details name="rst-menus">.
 //     <details name> exclusivity is document-wide rather than
 //     sibling-scoped, so a disclosure in that group would be closed by
-//     the menu it just revealed — and in this shell that takes the rail
-//     with it, because the rail is gated on the same [open].
+//     the menu it just revealed, and the card with it.
 //  5. Nothing is reordered at any width, so the reader's eye and the
 //     tab key agree: bar, then rail, at 320px and at 1280px, in both
 //     directions of the language.
@@ -264,7 +277,7 @@ func readConsole(t *testing.T, raw string) consoleReading {
 // hard-wired false — a stale selector, a rail that never rendered,
 // getBoundingClientRect on a detached node — passes leg 2 and fails
 // here, which is the whole point.
-func TestTheConsoleFoldsBothChromesBehindOneControl(t *testing.T) {
+func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	page, control := consolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr")
 	rig := consoleServe(t, page, control)
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
@@ -352,26 +365,24 @@ func TestTheConsoleFoldsBothChromesBehindOneControl(t *testing.T) {
 		t.Errorf("CONTROL FAILED: the control is meant to differ from the page only in the rail's hide rule, and its disclosure reads shown=%v open=%v", ctrl.MenuShown, ctrl.MenuOpen)
 	}
 
-	// 3. One click, both reveals.
+	// 3. One click reveals the tail card, and not the rail: on a
+	//    content page the rail is the index's, behind the back control.
 	open := at(t, 390, 780, "/",
 		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-shell-rail] [rst-shell-nav] a`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-account] > summary`, chromedp.ByQuery),
 	)
 	if !open.TailShown {
-		t.Error("opening the one control revealed the rail but not the bar's tail")
+		t.Error("opening the Menu did not reveal the bar's tail")
 	}
-	if !open.RailShown {
-		t.Error("opening the one control revealed the bar's tail but not the rail; the :has() half of the fold is not working")
-	}
-	if !open.TailAboveRail {
-		t.Error("the disclosed panel puts the rail's navigation above the bar's tail; the DOM order is bar-then-rail and nothing here reorders it, so this is a layout that has drifted from the reading order")
+	if open.RailShown {
+		t.Error("opening the Menu revealed the rail on a content page; the rail follows the page's view, and the legacy :has() gate is matching new markup")
 	}
 	if open.Overflow > 1 {
 		t.Errorf("the opened console spills %dpx sideways at 390px", open.Overflow)
 	}
 
 	// 4. The trap: the account menu must not close the disclosure it
-	//    sits behind, and must not take the rail with it.
+	//    sits behind, and opening it must not bring the rail in.
 	var trapRaw string
 	if err := chromedp.Run(ctx,
 		// Settle rather than WaitVisible: the failure this step exists
@@ -391,23 +402,56 @@ func TestTheConsoleFoldsBothChromesBehindOneControl(t *testing.T) {
 	if !trap.TailShown {
 		t.Error("the bar's tail vanished when the account menu opened")
 	}
-	if !trap.RailShown {
-		t.Error("the RAIL vanished when the account menu opened. This shell gates the rail on the same [open] as the tail, so one wrong name attribute takes both chromes away at once — which is why rst-shell-menu is a group of its own")
+	if trap.RailShown {
+		t.Error("the rail appeared when the account menu opened; on a content page it is the index's, never the Menu's")
 	}
 	if !trap.AccountMenu {
 		t.Error("the account menu's panel is not drawn inside the collapsed console")
 	}
 
-	// 5. The smallest viewport the shells promise, with everything open.
+	// 3b. The index view at 390: the rail is the page, with the Menu
+	//     closed, and still one visible summary. 5b below is the same
+	//     page at 320, which keeps the rail's reflow covered now that a
+	//     content page no longer shows it.
+	indexPage, indexControl := consolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr", `{{define "view"}}index{{end}}`)
+	indexRig := consoleServe(t, indexPage, indexControl)
+	indexCtx, indexCancel := context.WithTimeout(indexRig.Context(), 60*time.Second)
+	defer indexCancel()
+	atIndex := func(w, h int) consoleReading {
+		t.Helper()
+		var raw string
+		if err := chromedp.Run(indexCtx,
+			chromedp.EmulateViewport(int64(w), int64(h)),
+			chromedp.Navigate(indexRig.Origin+"/"),
+			chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
+			chromedp.Evaluate(consoleMeasure, &raw),
+		); err != nil {
+			t.Fatalf("driving the console's index at %dx%d: %v", w, h, err)
+		}
+		return readConsole(t, raw)
+	}
+	idx := atIndex(390, 780)
+	if !idx.RailShown || idx.MenuOpen || idx.VisibleSummaries != 1 {
+		t.Errorf("the console's index at 390: rail=%v menu open=%v summaries=%d; want the rail shown with the Menu closed and one visible summary", idx.RailShown, idx.MenuOpen, idx.VisibleSummaries)
+	}
+
+	// 5. The smallest viewport the shells promise, with the card open on
+	//    a content page: the tail, the back control, no rail.
 	tiny := at(t, 320, 640, "/",
 		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-shell-rail] [rst-shell-nav] a`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-account] > summary`, chromedp.ByQuery),
 	)
 	if tiny.Overflow > 1 {
 		t.Errorf("the opened console spills %dpx sideways at 320px", tiny.Overflow)
 	}
-	if !tiny.TailShown || !tiny.RailShown {
-		t.Errorf("at 320px, opened: tail=%v rail=%v", tiny.TailShown, tiny.RailShown)
+	if !tiny.TailShown || !tiny.BackShown || tiny.RailShown {
+		t.Errorf("at 320px, card open: tail=%v back=%v rail=%v; want the tail and the back control, no rail", tiny.TailShown, tiny.BackShown, tiny.RailShown)
+	}
+
+	// 5b. And the index at 320: the rail, reflowed.
+	tinyIndex := atIndex(320, 640)
+	if !tinyIndex.RailShown || tinyIndex.Overflow > 1 {
+		t.Errorf("the console's index at 320: rail=%v, spills %dpx sideways", tinyIndex.RailShown, tinyIndex.Overflow)
 	}
 
 	// 6. And the mirror. Every rule in this shell is a logical property
@@ -659,7 +703,12 @@ func TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas(t *testing.T) {
 	}
 	t.Logf(":has()-less simulation: %d rules dropped, %d console selectors survive", dropped, consoleRules)
 
-	page, _ := consolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr")
+	// The legacy layout: the :has() gate now lives only for markup with
+	// no view, and the legs below are about that gate.
+	page, _ := legacyConsolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr")
+	newPage, _ := consolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr")
+	newIndex, _ := consolePage(t, `<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a><a href="#">Settings</a>`, "ltr", `{{define "view"}}index{{end}}`)
+	stripped := func(p string) string { return strings.Replace(p, `href="/tokens.css"`, `href="/legacy-tokens.css"`, 1) }
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /tokens.css", func(w http.ResponseWriter, r *http.Request) {
@@ -681,7 +730,15 @@ func TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas(t *testing.T) {
 	})
 	mux.HandleFunc("GET /legacy", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, strings.Replace(page, `href="/tokens.css"`, `href="/legacy-tokens.css"`, 1))
+		fmt.Fprint(w, stripped(page))
+	})
+	mux.HandleFunc("GET /new-page", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, stripped(newPage))
+	})
+	mux.HandleFunc("GET /new-index", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, stripped(newIndex))
 	})
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -747,5 +804,13 @@ func TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas(t *testing.T) {
 	if rn.RailShown {
 		t.Errorf("CONTROL FAILED: on the real stylesheet the rail must be hidden at 390px with the disclosure closed, and this drive reports it shown. " +
 			"The visible rail on the legacy page is then the fixture's doing and not the degradation's, and leg 1 measures nothing")
+	}
+
+	// 3. New markup needs no :has() at all: on the stripped stylesheet a
+	//    content page hides its rail and the index shows it, because the
+	//    view decides, not the Menu.
+	np, ni := at(t, 390, 780, "/new-page"), at(t, 390, 780, "/new-index")
+	if np.RailShown || !ni.RailShown {
+		t.Errorf("without :has(), new markup at 390: rail on a content page %v, on the index %v; want hidden then shown", np.RailShown, ni.RailShown)
 	}
 }

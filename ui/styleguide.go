@@ -23,13 +23,14 @@ var styleguideSamples = map[string]string{
   <div rst-stat><span rst-stat-label>Average basket</span><span rst-stat-num>&euro;41.20</span><span rst-stat-delta rst-tone="negative">&minus;3%</span></div>
   <div rst-stat><span rst-stat-label>Refunds</span><span rst-stat-num>7</span></div>
 </div>`,
-	"list-grid": `<div rst-card style="--rst-cols: 2fr 110px 32px">
+	"list-grid": `<div rst-card style="--rst-cols: 2fr 110px var(--rst-col-menu)">
   <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div rst-lrow>
     <a class="rst-nm" href="/orders/AB3PX"><bdi>Grace Hopper</bdi><small>AB3PX · <bdi>grace@example.com</bdi></small></a>
     <span class="rst-m-hide rst-cell-mut">Paid</span>
-    <details rst-row-menu name="rst-menus"><summary aria-label="Actions for order AB3PX"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
-      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><button type="submit" class="rst-danger">Refund order…</button></div>
+    <details rst-row-menu name="rst-menus">
+      <summary aria-label="Actions for Grace Hopper"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></summary>
+      <div rst-row-menu-panel><a href="/orders/AB3PX">View</a><hr><a class="rst-danger" href="/orders/AB3PX/refund">Refund order…</a></div>
     </details>
   </div>
   <p rst-no-match>No orders match. <a href="/orders">Clear filters</a></p>
@@ -41,10 +42,11 @@ var styleguideSamples = map[string]string{
 	// rst-menu-group carries a DIFFERENT name on purpose: <details name>
 	// exclusivity is document-wide, not sibling-scoped, so a submenu
 	// sharing its parent's group would close the parent the instant it
-	// opened — the submenu would flash and vanish. Shell chrome (the
-	// sidebar's rst-shell-chrome strip) and the toggle-block stay out of
-	// the group entirely: neither is a menu, and closing the sidebar
-	// because someone opened a filter would be absurd.
+	// opened — the submenu would flash and vanish. The toggle-block
+	// stays out of the group because it is not a menu. The topbar's and
+	// console's Menu on a phone is one (rastrillo.js light-dismisses it
+	// with the rest) but stays out too: the account menu opens inside
+	// it, and in the same group opening the account menu would close it.
 	"dropdown": `<details rst-dropdown name="rst-menus">
   <summary>Filter<span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="rst-sr-only">Filter orders: Paid</span></summary>
   <div rst-dropdown-menu>
@@ -192,18 +194,17 @@ var styleguideSamples = map[string]string{
   <main rst-page id="main">Content.</main>
   <footer rst-shell-foot>Made with rastrillo</footer>
 </div>`,
-	// shell-sidebar — the same frame with a rail instead of a bar. The
-	// narrow-screen disclosure is a native <details> strip whose open
-	// state reveals the rail (the adjacent-sibling selector in
-	// tokens.css), so the shell stays zero-JS like every other idiom
-	// here. Its summary carries the same `menu` icon the topbar's does,
-	// aria-hidden beside its own visible label. The rail's own [rst-page] still wraps the content, so a
-	// screen's markup is identical in either shell.
-	"shell-sidebar": `<div rst-shell-sidebar>
+	// shell-sidebar — the same frame with a rail instead of a bar, as a
+	// content page: below 800px the rail is not shown and the back link
+	// at the top returns to the index, the page whose view block says
+	// index, where the rail is the whole page. The back link's href is
+	// the page's up block, the index with this page's nav link as the
+	// fragment. No JavaScript: every view is a server-rendered page.
+	"shell-sidebar": `<div rst-shell-sidebar="page">
   <a rst-skip href="#main">Skip to content</a>
-  <details rst-shell-chrome><summary><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>Menu</summary></details>
-  <aside rst-shell-rail><a rst-shell-brand href="/">Notes</a>
-    <nav rst-shell-nav><span rst-shell-group>Work</span><a href="/" aria-current="page">Dashboard</a><a href="/reports">Reports</a></nav>
+  <div rst-shell-back><a href="/#nav-reports" rel="up" aria-label="Back to Sections">Sections</a></div>
+  <aside rst-shell-rail><h1 rst-shell-title>Notes</h1><a rst-shell-brand href="/">Notes</a>
+    <nav rst-shell-nav><span rst-shell-group>Work</span><a id="nav-dashboard" href="/dashboard">Dashboard</a><a id="nav-reports" href="/reports" aria-current="page">Reports</a></nav>
   </aside>
   <main rst-shell-main id="main"><div rst-page>Content.</div></main>
 </div>`,
