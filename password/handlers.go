@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -17,6 +18,24 @@ import (
 // attempt — an unknown email and a wrong password read identically,
 // so the response is not an enumeration oracle.
 const wrongCredentials = "Wrong email or password."
+
+// checkFailed is the message for a submission the front door refused.
+const checkFailed = "Your browser couldn't finish a security check. Try again."
+
+// The scopes password's challenges are issued and checked under, so a
+// Guard shared with auth or the app's own forms keeps tokens apart.
+const (
+	ScopeSignin = "rastrillo/password/signin"
+	ScopeSignup = "rastrillo/password/signup"
+)
+
+var (
+	// ErrProofUnset: Config has neither Proof nor ProofOff.
+	ErrProofUnset = errors.New("rastrillo/password: Config.Proof is unset: build a pow.Guard (serve pow.Assets(), apply pow.Schema) and set Config.Proof, or set Config.ProofOff")
+	// ErrProofMode: the Guard binds its work to an input, and password
+	// forms have no input to bind to before the visitor types it.
+	ErrProofMode = errors.New("rastrillo/password: Config.Proof is a bound pow.Guard; password forms need an unbound one")
+)
 
 // ErrRefused marks a Create failure as a policy refusal rather than a
 // storage failure. Signup renders a wrapped refusal's message to the
@@ -62,6 +81,11 @@ type PageData struct {
 	Error    string
 	Email    string
 	ReturnTo string
+
+	// Proof is the challenge the form must carry; nil with ProofOff.
+	// Render .Proof.Fields and .Proof.Attrs on the form, .Proof.Script
+	// once on the page, and pass it to form-foot as "Proof".
+	Proof *pow.Form
 }
 
 // Config configures New. Sessions, Lookup, and RenderSignin are
@@ -107,6 +131,17 @@ type Config struct {
 	// RenderSignin does for sign-in. Required only when Create is set.
 	RenderSignup func(w http.ResponseWriter, r *http.Request, d PageData)
 
+	// Proof is the front door for Signin and Signup: each runs it before
+	// the rate limiter, so a script cannot make the server hash, look up
+	// or create a row for an address without solving first, and a refused
+	// attempt spends no limiter budget. Build one pow.Guard and share it
+	// with auth; scope keeps their tokens apart. Required unless
+	// ProofOff: an app that upgraded without wiring it must fail at boot,
+	// not refuse every visitor in production.
+	Proof *pow.Guard
+	// ProofOff runs the forms without the front door.
+	ProofOff bool
+
 	Logger *slog.Logger
 }
 
@@ -137,6 +172,14 @@ func New(cfg Config) (*Handlers, error) {
 	if cfg.Create != nil && cfg.RenderSignup == nil {
 		return nil, errors.New("rastrillo/password: Config.RenderSignup is required when Config.Create is set")
 	}
+	switch {
+	case cfg.Proof == nil && !cfg.ProofOff:
+		return nil, ErrProofUnset
+	case cfg.Proof != nil && cfg.ProofOff:
+		return nil, errors.New("rastrillo/password: Config.Proof and Config.ProofOff are both set; choose one")
+	case cfg.Proof != nil && cfg.Proof.Bound():
+		return nil, ErrProofMode
+	}
 	if cfg.SignedInPath == "" {
 		cfg.SignedInPath = "/"
 	}
@@ -146,9 +189,50 @@ func New(cfg Config) (*Handlers, error) {
 	return &Handlers{cfg: cfg, limit: newLimiter(), refusals: newLimiter()}, nil
 }
 
+// show renders one of the two pages. no-store always: the page carries
+// a single-use token, and a cached copy is one token for every visitor
+// who loads it, spent by the first. recovered picks the recovery
+// challenge, which is trapless; once a visitor has one, every re-render
+// for them keeps it, or a password manager that filled the trap fills
+// it again on the next wrong password.
+func (h *Handlers) show(w http.ResponseWriter, r *http.Request, render func(http.ResponseWriter, *http.Request, PageData),
+	scope string, status int, recovered bool, d PageData) {
+	w.Header().Set("Cache-Control", "no-store")
+	if h.cfg.Proof != nil {
+		now := time.Now()
+		f := h.cfg.Proof.Form(now, scope)
+		if recovered {
+			f = h.cfg.Proof.Recovery(now, scope)
+		}
+		d.Proof = &f
+	}
+	if status != 0 {
+		w.WriteHeader(status)
+	}
+	render(w, r, d)
+}
+
+// gate runs the front door. On refusal it has already answered, with a
+// recovery challenge so a visitor whose password manager tripped the
+// trap can resubmit.
+func (h *Handlers) gate(w http.ResponseWriter, r *http.Request, render func(http.ResponseWriter, *http.Request, PageData),
+	scope, email string) (recovered, ok bool) {
+	if h.cfg.Proof == nil {
+		return false, true
+	}
+	adm := h.cfg.Proof.Check(r, pow.Want{Scope: scope})
+	if !adm.OK {
+		h.cfg.Logger.Debug("rastrillo/password: refused at the front door", "scope", scope, "reason", adm.Reason, "also", adm.Also)
+		h.show(w, r, render, scope, http.StatusUnprocessableEntity, true,
+			PageData{Error: checkFailed, Email: email, ReturnTo: r.FormValue("return_to")})
+		return false, false
+	}
+	return adm.Recovered(), true
+}
+
 // SigninPage renders the sign-in form: GET, no state change.
 func (h *Handlers) SigninPage(w http.ResponseWriter, r *http.Request) {
-	h.cfg.RenderSignin(w, r, PageData{ReturnTo: r.URL.Query().Get("return_to")})
+	h.show(w, r, h.cfg.RenderSignin, ScopeSignin, 0, false, PageData{ReturnTo: r.URL.Query().Get("return_to")})
 }
 
 // SignupPage renders the signup form, or 404 when signup is disabled
@@ -158,7 +242,7 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	h.cfg.RenderSignup(w, r, PageData{ReturnTo: r.URL.Query().Get("return_to")})
+	h.show(w, r, h.cfg.RenderSignup, ScopeSignup, 0, false, PageData{ReturnTo: r.URL.Query().Get("return_to")})
 }
 
 // Signin is POST /signin: verify the submitted credential and mint a
@@ -186,13 +270,20 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 	email := normalizeEmail(r.FormValue("email"))
 	submitted := r.FormValue("password")
 
+	// The front door runs before the limiter: a blocked attempt still
+	// costs a solve, and a refusal costs no limiter unit, so a script
+	// without solutions cannot spend a victim's budget.
+	recovered, ok := h.gate(w, r, h.cfg.RenderSignin, ScopeSignin, email)
+	if !ok {
+		return
+	}
+
 	// The limit gate runs before Lookup and Verify: a blocked attempt
 	// costs no PBKDF2 work (that CPU amplification is half of what the
 	// limiter is for) and learns nothing about the account, because the
 	// gate sees only the attempt count.
 	if h.limit.blocked(email, time.Now()) {
-		w.WriteHeader(http.StatusTooManyRequests)
-		h.cfg.RenderSignin(w, r, PageData{
+		h.show(w, r, h.cfg.RenderSignin, ScopeSignin, http.StatusTooManyRequests, recovered, PageData{
 			Error:    tooManyAttempts,
 			Email:    email,
 			ReturnTo: r.FormValue("return_to"),
@@ -208,7 +299,7 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 		// password below — no timing oracle for account enumeration.
 		Verify(decoyHash, submitted)
 		h.limit.fail(email, time.Now())
-		h.rerenderSignin(w, r, email)
+		h.rerenderSignin(w, r, email, recovered)
 		return
 	case err != nil:
 		h.cfg.Logger.Error("rastrillo/password: lookup", "err", err)
@@ -218,7 +309,7 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 
 	if !Verify(hash, submitted) {
 		h.limit.fail(email, time.Now())
-		h.rerenderSignin(w, r, email)
+		h.rerenderSignin(w, r, email, recovered)
 		return
 	}
 
@@ -229,9 +320,8 @@ func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
 // rerenderSignin writes the one shared failure status and message —
 // the 422 is written before RenderSignin runs, so whatever RenderSignin
 // writes lands under that status.
-func (h *Handlers) rerenderSignin(w http.ResponseWriter, r *http.Request, email string) {
-	w.WriteHeader(http.StatusUnprocessableEntity)
-	h.cfg.RenderSignin(w, r, PageData{
+func (h *Handlers) rerenderSignin(w http.ResponseWriter, r *http.Request, email string, recovered bool) {
+	h.show(w, r, h.cfg.RenderSignin, ScopeSignin, http.StatusUnprocessableEntity, recovered, PageData{
 		Error:    wrongCredentials,
 		Email:    email,
 		ReturnTo: r.FormValue("return_to"),
@@ -278,6 +368,14 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	email := normalizeEmail(r.FormValue("email"))
 	submitted := r.FormValue("password")
 
+	// The front door runs first, as in Signin. Without it Signup created
+	// a row for every fresh address and metered only failures, so a
+	// script with a list of addresses was unlimited.
+	recovered, ok := h.gate(w, r, h.cfg.RenderSignup, ScopeSignup, email)
+	if !ok {
+		return
+	}
+
 	// The gate runs before validation and Hash, mirroring Signin: a
 	// blocked attempt costs no PBKDF2 work and hears only the volume
 	// message. Both budgets are consulted here — the refusal budget is
@@ -285,8 +383,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	// it.
 	now := time.Now()
 	if h.limit.blocked(email, now) || h.refusals.blocked(email, now) {
-		w.WriteHeader(http.StatusTooManyRequests)
-		h.cfg.RenderSignup(w, r, PageData{
+		h.show(w, r, h.cfg.RenderSignup, ScopeSignup, http.StatusTooManyRequests, recovered, PageData{
 			Error:    tooManyAttempts,
 			Email:    email,
 			ReturnTo: r.FormValue("return_to"),
@@ -295,11 +392,11 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if email == "" || !strings.Contains(email, "@") {
-		h.rerenderSignup(w, r, "Enter a valid email address.", email)
+		h.rerenderSignup(w, r, "Enter a valid email address.", email, recovered)
 		return
 	}
 	if len(submitted) < 8 {
-		h.rerenderSignup(w, r, "Password must be at least 8 characters.", email)
+		h.rerenderSignup(w, r, "Password must be at least 8 characters.", email, recovered)
 		return
 	}
 
@@ -326,8 +423,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 		// *refusal itself, so a caller who wrapped the sentinel with
 		// their own context cannot put that context on a public page.
 		h.refusals.fail(email, time.Now())
-		w.WriteHeader(http.StatusForbidden)
-		h.cfg.RenderSignup(w, r, PageData{
+		h.show(w, r, h.cfg.RenderSignup, ScopeSignup, http.StatusForbidden, recovered, PageData{
 			Error:    refusalMessage(err),
 			Email:    email,
 			ReturnTo: r.FormValue("return_to"),
@@ -345,7 +441,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 		// so it costs a limiter unit: ten confirmations of one address
 		// inside the window and both doors block.
 		h.limit.fail(email, time.Now())
-		h.rerenderSignup(w, r, "That email is already registered.", email)
+		h.rerenderSignup(w, r, "That email is already registered.", email, recovered)
 		return
 	}
 
@@ -367,9 +463,8 @@ func refusalMessage(err error) string {
 	return refusedGeneric
 }
 
-func (h *Handlers) rerenderSignup(w http.ResponseWriter, r *http.Request, msg, email string) {
-	w.WriteHeader(http.StatusUnprocessableEntity)
-	h.cfg.RenderSignup(w, r, PageData{
+func (h *Handlers) rerenderSignup(w http.ResponseWriter, r *http.Request, msg, email string, recovered bool) {
+	h.show(w, r, h.cfg.RenderSignup, ScopeSignup, http.StatusUnprocessableEntity, recovered, PageData{
 		Error:    msg,
 		Email:    email,
 		ReturnTo: r.FormValue("return_to"),
