@@ -149,8 +149,16 @@ func TestBootKillsAHungChildAndItsDescendants(t *testing.T) {
 	}
 	// WaitDelay alone would meet the time bound and leave the grandchild
 	// running; only the process-group kill reaps it.
+	// SIGKILL to a group is delivered asynchronously, so a dying process
+	// can still be listed for a moment; an orphan would live for 617s.
 	if pgrep, err := exec.LookPath("pgrep"); err == nil {
-		if left, _ := exec.Command(pgrep, "-f", "^sleep "+hungSleep+"$").Output(); len(left) > 0 {
+		var left []byte
+		for deadline := time.Now().Add(3 * time.Second); time.Now().Before(deadline); time.Sleep(50 * time.Millisecond) {
+			if left, _ = exec.Command(pgrep, "-f", "^sleep "+hungSleep+"$").Output(); len(left) == 0 {
+				break
+			}
+		}
+		if len(left) > 0 {
 			exec.Command("pkill", "-f", "^sleep "+hungSleep+"$").Run()
 			t.Fatalf("the hung child's grandchild survived: pid %s", strings.TrimSpace(string(left)))
 		}
