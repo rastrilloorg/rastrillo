@@ -41,9 +41,13 @@ than migrating every time.
 make ci
 ```
 
-is `vet` + `fmt` + `staticcheck` + `test` + `rastrillo migration check`, and it is the one gate definition. `.amadan/ci` and `.amadan/ci.d/` are executable steps that delegate to it, so the CI runner and your terminal cannot disagree about what passing means.
+is `vet` + `fmt` + `staticcheck` + `govulncheck` + `gitleaks` + `test` + `rastrillo migration check`, and it is the one gate definition. `.amadan/ci` and `.amadan/ci.d/` are executable steps that delegate to it, so the CI runner and your terminal cannot disagree about what passing means.
 
 staticcheck runs at a pinned version through `go run`, so there is nothing to install. Raise that version in the Makefile when you raise the `go` line in go.mod: a staticcheck older than your Go does not know that release's deprecations, and says nothing about them.
+
+govulncheck reports only the vulnerabilities your code can reach, and it reads a live database, so the gate can go red with no change of yours. Fix a module finding by raising that requirement in go.mod, and a standard-library one by raising `GOTOOLCHAIN` in the Makefile: it names the Go release both the gate and `make release` use.
+
+gitleaks scans every commit for keys and tokens, because a secret you deleted is still in every clone. Until the app is the root of its own git repository there is nothing committed, and it says so instead of failing.
 
 Keeping [`migration check`](/docs/migrations) in that gate is what stops
 models and migrations drifting apart between deploys. It touches no

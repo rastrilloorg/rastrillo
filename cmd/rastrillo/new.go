@@ -160,7 +160,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg+"test", "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
 		filepath.Join(name, "README.md"):                               fmt.Sprintf(readmeTemplate, name, pkg),
 		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name, staticcheckVersion),
+		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
 		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
@@ -224,6 +224,8 @@ func runNew(args []string) error {
 		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
 		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
 		filepath.Join(name, ".amadan", "ci.d", "25-staticcheck"):     amadanStep("staticcheck"),
+		filepath.Join(name, ".amadan", "ci.d", "26-govulncheck"):     amadanStep("govulncheck"),
+		filepath.Join(name, ".amadan", "ci.d", "27-gitleaks"):        amadanStep("gitleaks"),
 		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
 		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
 	}
@@ -247,7 +249,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + test + migration check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + test + migration check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -1035,7 +1037,7 @@ func TestBrowserWalk(t *testing.T) {
 // app's own call.
 const readmeTemplate = `# %[1]s
 
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
 
 ## Browser drive
 
@@ -1260,9 +1262,30 @@ path under actions/ — the generator skips that one from then on.
 // nothing more here.
 const staticcheckVersion = "v0.7.0"
 
+// govulncheckVersion, gitleaksVersion and goToolchain are the scaffold's
+// copies of the other pins in rastrillo's own Makefile, held to them by
+// TestGatePinsMatchRastrillosGate.
+const (
+	govulncheckVersion = "v1.8.0"
+	gitleaksVersion    = "v8.30.1"
+	goToolchain        = "go1.26.6"
+)
+
 // makefileTemplate is the one gate definition: CI steps exec these
 // targets, never their own copies of the commands (amadan's own rule).
 const makefileTemplate = `APP := %[1]s
+
+# The gate and the release run on one named Go, not whichever release this
+# machine has. govulncheck judges the standard library of the Go doing the
+# scan, and make release builds the binary you ship with it, so a patch
+# release behind is both a red gate and an unpatched binary. go fetches
+# this release through the module proxy on first use. It is the Go
+# rastrillo's own gate runs; raise it with each Go security release.
+#
+# A plain =, not ?=: Go's container images set GOTOOLCHAIN=local, and ?=
+# would quietly keep whatever Go they ship. To override for one run:
+#   make ci GOTOOLCHAIN=local
+export GOTOOLCHAIN = %[5]s
 
 # What ` + "`carlos ship -target`" + ` defaults to, and therefore what a release
 # must be built for. Building for your own machine and shipping that is a
@@ -1286,7 +1309,7 @@ RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
 #   make release VERSION=v0.1.0
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 
-.PHONY: build release version-check test vet fmt-check staticcheck migration-check ci
+.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks migration-check ci
 
 # build is the compile check: with more than one package matched, go
 # build discards the output, so this catches a broken package without
@@ -1368,6 +1391,29 @@ STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
 staticcheck:
 	go run $(STATICCHECK) -tags browser ./...
 
+# govulncheck reports only the vulnerabilities your code can reach: a call
+# path, not a module that merely sits in go.sum. It reads the live
+# vulnerability database, so it can go red with no change here, which is
+# the point of running it on every push. A module finding is fixed by
+# raising that requirement in go.mod; a standard-library one by raising
+# GOTOOLCHAIN above.
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@%[3]s
+govulncheck:
+	go run $(GOVULNCHECK) ./...
+
+# gitleaks scans every commit, not just the files you have now: a key that
+# was committed and then deleted is still in every clone. It only scans
+# when this directory is the root of its own repository. Before git init
+# there is nothing committed, and an app scaffolded inside somebody else's
+# checkout must not scan theirs. --redact keeps a finding out of CI logs.
+GITLEAKS := github.com/zricethezav/gitleaks/v8@%[4]s
+gitleaks:
+	@if [ "$$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] && [ -z "$$(git rev-parse --show-prefix)" ]; then \
+		go run $(GITLEAKS) git --no-banner --redact .; \
+	else \
+		echo "gitleaks: this directory is not the root of a git repository, so there is nothing committed to scan"; \
+	fi
+
 # A step of its own, not folded into another target's recipe: ci.d/
 # steps each exec one make target, so migration-check needs its own
 # name to get its own reported step on a runner with step support.
@@ -1391,7 +1437,7 @@ migration-check:
 # fails the build the moment models.go and migrations/ disagree,
 # instead of at boot on whatever machine notices next. If the app
 # declares manifest resources, also add: rastrillo generate --check
-ci: vet fmt-check staticcheck test migration-check
+ci: vet fmt-check staticcheck govulncheck gitleaks test migration-check
 `
 
 const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
@@ -1457,7 +1503,7 @@ mechanically.
   be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, tests and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design.
+- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
 - Two of the scaffolded tests are about the **placeholder index page**
   and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
   ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in

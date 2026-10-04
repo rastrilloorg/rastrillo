@@ -10,6 +10,24 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: a new app's `make ci` runs govulncheck and gitleaks, on a pinned Go
+
+`rastrillo new` now adds `govulncheck` and `gitleaks` to `make ci`, as `.amadan/ci.d` steps 26 and 27, and the Makefile exports `GOTOOLCHAIN` so the gate and `make release` run on one named Go release, fetched on first use. Both tools go through `go run` at the versions rastrillo's own gate uses. Apps scaffolded earlier keep their old gate; to add these, put this in the Makefile and add `govulncheck gitleaks` to the `ci:` line after `staticcheck`:
+
+```make
+export GOTOOLCHAIN = go1.26.6
+
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.8.0
+govulncheck:
+	go run $(GOVULNCHECK) ./...
+
+GITLEAKS := github.com/zricethezav/gitleaks/v8@v8.30.1
+gitleaks:
+	go run $(GITLEAKS) git --no-banner --redact .
+```
+
+On an older app the first govulncheck run reports whatever its code can already reach; the standard-library findings go away with the pinned Go alone. Rastrillo's own `make ci` runs both too.
+
 ### Changed: phones get 16px type and 44px targets, sidebar shells an index and a back control; re-vendor `tokens.css`, add `shell.js` and `shell.css`, and update your layout
 
 Until it takes this release's `tokens.css`, an app zooms in on every form on a phone. Upgrade the module, then run `rastrillo doctor --fix`: it re-copies `tokens.css` and adds `shell.js` and `shell.css`.
